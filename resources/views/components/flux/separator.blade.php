@@ -1,0 +1,1 @@
+<hr {{ $attributes->merge(['class' => 'my-4 border-gray-300']) }} />

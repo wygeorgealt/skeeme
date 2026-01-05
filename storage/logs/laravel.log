@@ -1,0 +1,87 @@
+[2026-01-05 11:39:58] local.INFO: Initiating payment {"plan":"Pro","billing_period":"monthly","subscription_id":8} 
+[2026-01-05 11:39:58] local.INFO: Timezone and currency detection {"school_id":2,"timezone":"Africa/Lagos","detected_currency":"NGN"} 
+[2026-01-05 11:39:58] local.INFO: Payment details {"plan":"Pro","billing_period":"monthly","months":1,"monthly_price":98983.5,"subtotal":98983.5,"discount":0,"total_amount":98983.5,"currency":"NGN","invoice_id":17} 
+[2026-01-05 11:40:00] local.INFO: Payment response data {"status":true,"message":"Payment initialized","authorization_url":"https://checkout.paystack.com/7co78l3itca3pnj","reference":"z0pmcmmy4v"} 
+[2026-01-05 11:40:00] local.INFO: Redirecting to Paystack {"url":"https://checkout.paystack.com/7co78l3itca3pnj"} 
+[2026-01-05 11:40:10] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"settings.subscription-billing","path":"settings/subscription-billing","url":"http://localhost:8000/settings/subscription-billing"} 
+[2026-01-05 11:40:19] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"settings.subscription-billing","path":"settings/subscription-billing","url":"http://localhost:8000/settings/subscription-billing"} 
+[2026-01-05 11:48:38] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"settings.subscription-billing","path":"settings/subscription-billing","url":"http://localhost:8000/settings/subscription-billing"} 
+[2026-01-05 11:49:10] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"appearance.edit","path":"settings/appearance","url":"http://localhost:8000/settings/appearance"} 
+[2026-01-05 11:49:13] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"settings.integrations","path":"settings/integrations","url":"http://localhost:8000/settings/integrations"} 
+[2026-01-05 11:49:25] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"admin.school-configuration","path":"settings/school-configuration","url":"http://localhost:8000/settings/school-configuration"} 
+[2026-01-05 11:49:30] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"settings.integrations","path":"settings/integrations","url":"http://localhost:8000/settings/integrations"} 
+[2026-01-05 11:49:51] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"integrations.redirect","path":"integrations/google/redirect","url":"http://localhost:8000/integrations/google/redirect"} 
+[2026-01-05 11:50:08] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"settings.integrations","path":"settings/integrations","url":"http://localhost:8000/settings/integrations"} 
+[2026-01-05 11:50:12] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"dashboard","path":"dashboard","url":"http://localhost:8000/dashboard"} 
+[2026-01-05 11:50:13] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"admin.dashboard","path":"admin/dashboard","url":"http://localhost:8000/admin/dashboard"} 
+[2026-01-05 11:57:05] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"dashboard","path":"dashboard","url":"http://localhost:8000/dashboard"} 
+[2026-01-05 11:57:06] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.dashboard","path":"lecturer/dashboard","url":"http://localhost:8000/lecturer/dashboard"} 
+[2026-01-05 11:57:20] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"dashboard","path":"dashboard","url":"http://localhost:8000/dashboard"} 
+[2026-01-05 11:57:21] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.dashboard","path":"lecturer/dashboard","url":"http://localhost:8000/lecturer/dashboard"} 
+[2026-01-05 11:57:24] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.exams","path":"lecturer/exams","url":"http://localhost:8000/lecturer/exams"} 
+[2026-01-05 11:57:41] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.exam-questions","path":"lecturer/exams/639/questions","url":"http://localhost:8000/lecturer/exams/639/questions"} 
+[2026-01-05 12:03:53] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.exam-questions","path":"lecturer/exams/639/questions","url":"http://localhost:8000/lecturer/exams/639/questions"} 
+[2026-01-05 12:04:03] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"dashboard","path":"dashboard","url":"http://localhost:8000/dashboard"} 
+[2026-01-05 12:04:04] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.dashboard","path":"lecturer/dashboard","url":"http://localhost:8000/lecturer/dashboard"} 
+[2026-01-05 12:13:09] local.ERROR: Trait "App\Livewire\Livewire\Attributes\Computed" not found {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Trait \"App\\Livewire\\Livewire\\Attributes\\Computed\" not found at C:\\Users\\kritex\\Herd\\skeeme\\app\\Livewire\\TimetableManagement.php:13)
+[stacktrace]
+#0 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(247): Symfony\\Component\\ErrorHandler\\Error\\FatalError->__construct(message: ''Trait \"App\\\\\\\\Li...', code: '0', error: '['type' => 1, '...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(234): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->fatalErrorFromPhpError(error: '['type' => 1, '...', traceOffset: '0')
+#2 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(258): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->handleShutdown()
+#3 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(0): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->Illuminate\\Foundation\\Bootstrap\\{closure:C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-01-05 12:13:26] local.ERROR: Trait "App\Livewire\Livewire\Attributes\Computed" not found {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Trait \"App\\Livewire\\Livewire\\Attributes\\Computed\" not found at C:\\Users\\kritex\\Herd\\skeeme\\app\\Livewire\\TimetableManagement.php:13)
+[stacktrace]
+#0 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(247): Symfony\\Component\\ErrorHandler\\Error\\FatalError->__construct(message: ''Trait \"App\\\\\\\\Li...', code: '0', error: '['type' => 1, '...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(234): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->fatalErrorFromPhpError(error: '['type' => 1, '...', traceOffset: '0')
+#2 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(258): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->handleShutdown()
+#3 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php(0): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->Illuminate\\Foundation\\Bootstrap\\{closure:C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Bootstrap\\HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-01-05 12:14:44] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"admin.dashboard","path":"admin/dashboard","url":"http://localhost:8000/admin/dashboard"} 
+[2026-01-05 12:14:46] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.dashboard","path":"lecturer/dashboard","url":"http://localhost:8000/lecturer/dashboard"} 
+[2026-01-05 12:14:55] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"academic-calendar","path":"academic-calendar","url":"http://localhost:8000/academic-calendar"} 
+[2026-01-05 12:21:03] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"academic-calendar","path":"academic-calendar","url":"http://localhost:8000/academic-calendar"} 
+[2026-01-05 12:21:10] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.attendance","path":"lecturer/attendance","url":"http://localhost:8000/lecturer/attendance"} 
+[2026-01-05 12:21:37] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"academic-calendar","path":"academic-calendar","url":"http://localhost:8000/academic-calendar"} 
+[2026-01-05 12:24:37] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.courses","path":"lecturer/courses","url":"http://localhost:8000/lecturer/courses"} 
+[2026-01-05 12:25:08] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.exams","path":"lecturer/exams","url":"http://localhost:8000/lecturer/exams"} 
+[2026-01-05 12:25:12] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.courses","path":"lecturer/courses","url":"http://localhost:8000/lecturer/courses"} 
+[2026-01-05 12:27:02] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"academic-calendar","path":"academic-calendar","url":"http://localhost:8000/academic-calendar"} 
+[2026-01-05 12:27:19] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"academic-calendar","path":"academic-calendar","url":"http://localhost:8000/academic-calendar"} 
+[2026-01-05 12:27:56] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"academic-calendar","path":"academic-calendar","url":"http://localhost:8000/academic-calendar"} 
+[2026-01-05 12:28:39] local.ERROR: Class "App\Http\Controllers\Team\Analytics\UserAnalyticsController" does not exist {"exception":"[object] (ReflectionException(code: -1): Class \"App\\Http\\Controllers\\Team\\Analytics\\UserAnalyticsController\" does not exist at C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\RouteListCommand.php:235)
+[stacktrace]
+#0 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\RouteListCommand.php(235): ReflectionClass->__construct('App\\\\Http\\\\Contro...')
+#1 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\RouteListCommand.php(149): Illuminate\\Foundation\\Console\\RouteListCommand->isVendorRoute(Object(Illuminate\\Routing\\Route))
+#2 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\RouteListCommand.php(117): Illuminate\\Foundation\\Console\\RouteListCommand->getRouteInformation(Object(Illuminate\\Routing\\Route))
+#3 [internal function]: Illuminate\\Foundation\\Console\\RouteListCommand->Illuminate\\Foundation\\Console\\{closure}(Object(Illuminate\\Routing\\Route), 266)
+#4 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Collections\\Arr.php(788): array_map(Object(Closure), Array, Array)
+#5 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Collections\\Collection.php(814): Illuminate\\Support\\Arr::map(Array, Object(Closure))
+#6 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\RouteListCommand.php(117): Illuminate\\Support\\Collection->map(Object(Closure))
+#7 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\RouteListCommand.php(102): Illuminate\\Foundation\\Console\\RouteListCommand->getRoutes()
+#8 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php(36): Illuminate\\Foundation\\Console\\RouteListCommand->handle()
+#9 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#10 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#11 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#12 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Container\\Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#13 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Console\\Command.php(211): Illuminate\\Container\\Container->call(Array)
+#14 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Command\\Command.php(341): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#15 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Console\\Command.php(180): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#16 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Application.php(1102): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#17 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Application.php(356): Symfony\\Component\\Console\\Application->doRunCommand(Object(Illuminate\\Foundation\\Console\\RouteListCommand), Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#18 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Application.php(195): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#19 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\Kernel.php(198): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#20 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#21 C:\\Users\\kritex\\Herd\\skeeme\\artisan(16): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#22 {main}
+"} 
+[2026-01-05 12:31:45] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"academic-calendar","path":"academic-calendar","url":"http://localhost:8000/academic-calendar"} 
+[2026-01-05 12:32:08] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"classes-management","path":"classes-management","url":"http://localhost:8000/classes-management"} 
+[2026-01-05 12:32:27] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"classes-management","path":"classes-management","url":"http://localhost:8000/classes-management"} 
+[2026-01-05 12:40:31] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"classes-management","path":"classes-management","url":"http://localhost:8000/classes-management"} 
+[2026-01-05 12:40:58] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"classes-management","path":"classes-management","url":"http://localhost:8000/classes-management"} 
+[2026-01-05 12:41:07] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"students-management","path":"students-management","url":"http://localhost:8000/students-management"} 
+[2026-01-05 12:54:20] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"students-management","path":"students-management","url":"http://localhost:8000/students-management"} 
+[2026-01-05 12:54:41] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"students-management","path":"students-management","url":"http://localhost:8000/students-management"} 

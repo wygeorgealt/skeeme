@@ -1,0 +1,68 @@
+services:
+  - type: web
+    name: skeeme-web
+    env: docker
+    plan: free # or starter
+    region: ohio # Adjust if needed
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        value: https://skeeme.com
+      - key: WEBROOT
+        value: /var/www/html/public
+      - key: PHP_ERRORS_STDERR
+        value: "1"
+      - key: RUN_SCRIPTS
+        value: "1"
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromService:
+          type: private
+          name: skeeme-db
+          property: host
+      - key: DB_PORT
+        value: 3306
+      - key: DB_DATABASE
+        fromService:
+          type: private
+          name: skeeme-db
+          property: envVar:MYSQL_DATABASE
+      - key: DB_USERNAME
+        fromService:
+          type: private
+          name: skeeme-db
+          property: envVar:MYSQL_USER
+      - key: DB_PASSWORD
+        fromService:
+          type: private
+          name: skeeme-db
+          property: envVar:MYSQL_PASSWORD
+      - key: APP_KEY
+        sync: false # Set manually in Render dashboard
+      - key: DEEPSEEK_API_KEY
+        sync: false # Set manually in Render dashboard
+
+  - type: private
+    name: skeeme-db
+    env: docker
+    plan: free # or starter
+    region: ohio
+    dockerfilePath: Dockerfile.mysql # We'll create this or use an image
+    image: mysql:8.0
+    disk:
+      name: mysql-data
+      mountPath: /var/lib/mysql
+      sizeGB: 1
+    envVars:
+      - key: MYSQL_DATABASE
+        value: skeeme
+      - key: MYSQL_USER
+        value: skeeme_user
+      - key: MYSQL_PASSWORD
+        sync: false # Set manually or use a secret
+      - key: MYSQL_ROOT_PASSWORD
+        sync: false # Set manually or use a secret
