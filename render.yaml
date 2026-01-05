@@ -27,20 +27,11 @@ services:
       - key: DB_PORT
         value: 3306
       - key: DB_DATABASE
-        fromService:
-          type: pserv
-          name: skeeme-db
-          property: envVar:MYSQL_DATABASE
+        sync: false # Set manually in Render dashboard
       - key: DB_USERNAME
-        fromService:
-          type: pserv
-          name: skeeme-db
-          property: envVar:MYSQL_USER
+        sync: false # Set manually in Render dashboard
       - key: DB_PASSWORD
-        fromService:
-          type: pserv
-          name: skeeme-db
-          property: envVar:MYSQL_PASSWORD
+        sync: false # Set manually in Render dashboard
       - key: APP_KEY
         sync: false # Set manually in Render dashboard
       - key: DEEPSEEK_API_KEY
