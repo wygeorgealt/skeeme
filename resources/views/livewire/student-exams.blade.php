@@ -13,17 +13,7 @@
 
     <!-- Tab Navigation -->
     <div class="flex gap-1 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-xl w-fit mb-8 border border-zinc-200 dark:border-zinc-800 relative">
-        <button 
-            wire:click="setActiveTab('upcoming')"
-            wire:loading.attr="disabled"
-            class="flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all {{ $activeTab === 'upcoming' ? 'bg-white dark:bg-zinc-800 text-indigo-600 shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300' }}"
-        >
-            <i class="fas fa-calendar-alt"></i>
-            Upcoming
-            @if(count($upcomingExams) > 0)
-                <span class="ml-1 px-1.5 py-0.5 bg-indigo-500 text-white rounded text-[10px]">{{ count($upcomingExams) }}</span>
-            @endif
-        </button>
+
 
 
         <button 
@@ -62,63 +52,7 @@
                 <p class="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Updating view...</p>
             </div>
         </div>
-        <!-- Upcoming Exams Tab -->
-        @if($activeTab === 'upcoming')
-            <div class="space-y-6 animate-fadeIn">
-                @if(count($upcomingExams) === 0)
-                    <div class="col-span-full py-20 bg-zinc-50 dark:bg-zinc-800/30 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 text-center">
-                        <i class="fas fa-calendar-times text-4xl text-zinc-300 dark:text-zinc-600 mb-4 opacity-50"></i>
-                        <h3 class="text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest text-xs">No Upcoming Exams</h3>
-                    </div>
-                @else
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
-                        @foreach($upcomingExams as $exam)
-                            <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-shadow">
-                                <div class="p-6 flex-1">
-                                    <div class="flex items-start justify-between mb-4">
-                                        <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500">
-                                            <i class="fas fa-file-alt"></i>
-                                        </div>
-                                        <span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold uppercase tracking-widest rounded-full border border-indigo-200 dark:border-indigo-800">Upcoming</span>
-                                    </div>
-                                    
-                                    <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1 group-hover:text-indigo-500 transition-colors uppercase tracking-tight">{{ $exam['title'] }}</h3>
-                                    <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-4">
-                                        {{ $exam['course_code'] }} <span class="mx-1 opacity-50">•</span> {{ $exam['course'] }}
-                                    </p>
 
-
-                                    <div class="grid grid-cols-2 gap-4 mb-6">
-                                        <div class="bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                                            <p class="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter mb-1">Date & Time</p>
-                                            <p class="text-xs font-bold text-zinc-700 dark:text-zinc-200">{{ $exam['exam_date']?->format('d M, Y') }}</p>
-                                            <p class="text-[10px] font-medium text-zinc-500">{{ $exam['exam_date']?->format('H:i') }}</p>
-                                        </div>
-                                        <div class="bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                                            <p class="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter mb-1">Duration</p>
-                                            <p class="text-xs font-bold text-zinc-700 dark:text-zinc-200">{{ $exam['duration'] }} Mins</p>
-                                            <p class="text-[10px] font-medium text-zinc-500">{{ $exam['total_marks'] }} Marks</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex items-center gap-2 mb-6">
-                                        <div class="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-500">
-                                            {{ strtoupper(substr($exam['lecturer'] ?? 'U', 0, 1)) }}
-                                        </div>
-                                        <span class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">{{ $exam['lecturer'] ?? 'Unassigned' }}</span>
-                                    </div>
-                                </div>
-
-                                <div class="px-6 py-4 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
-                                    <flux:button wire:click="startExam({{ $exam['id'] }})" variant="primary" class="flex-1 text-[10px] font-bold uppercase tracking-widest">Start Exam</flux:button>
-                                    <flux:button wire:click="showExamDetails({{ $exam['session'] ?? 'null' }})" variant="ghost" icon="eye" class="text-[10px] font-bold uppercase tracking-widest"></flux:button>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            </div>
-        @endif
 
         <!-- Active Exams Tab -->
         @if($activeTab === 'active')
@@ -181,7 +115,11 @@
                                 </div>
 
                                 <div class="px-8 py-6 bg-orange-50 dark:bg-orange-950/20 border-t border-orange-100 dark:border-orange-900/50">
-                                    <flux:button wire:click="resumeExam({{ $exam['session']?->id ?? 'null' }})" variant="primary" color="orange" class="w-full text-xs font-bold uppercase tracking-[0.2em] py-4">Continue Exam Session</flux:button>
+                                    @if($exam['session'])
+                                        <flux:button wire:click="resumeExam({{ $exam['session']->id }})" variant="primary" color="orange" class="w-full text-xs font-bold uppercase tracking-[0.2em] py-4">Continue Exam Session</flux:button>
+                                    @else
+                                        <flux:button wire:click="startExam({{ $exam['id'] }})" variant="primary" color="indigo" class="w-full text-xs font-bold uppercase tracking-[0.2em] py-4">Start Exam Now</flux:button>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach

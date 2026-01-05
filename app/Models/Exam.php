@@ -15,6 +15,7 @@ class Exam extends Model
         'title',
         'description',
         'exam_date',
+        'end_date',
         'duration',
         'total_marks',
         'passing_marks',
@@ -24,11 +25,20 @@ class Exam extends Model
         'randomize_options',
         'category',
         'google_event_id',
+        'release_results_immediately',
     ];
 
     protected $casts = [
         'exam_date' => 'datetime',
+        'end_date' => 'datetime',
         'questions' => 'array',
+        'exam_date' => 'datetime',
+        'end_date' => 'datetime',
+        'questions' => 'array',
+        'release_results_immediately' => 'boolean',
+        'randomize_questions' => 'boolean',
+        'randomize_options' => 'boolean',
+        'sync_to_calendar' => 'boolean',
     ];
 
     public function course()

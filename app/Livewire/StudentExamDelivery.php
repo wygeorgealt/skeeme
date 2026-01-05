@@ -37,6 +37,14 @@ class StudentExamDelivery extends Component
         $this->randomizationService = app(ExamRandomizationService::class);
         $this->isInExamMode = true;
 
+        // Auto-start session if new
+        if ($this->session->status === 'not_started') {
+            $this->session->update([
+                'status' => 'in_progress',
+                'started_at' => now(),
+            ]);
+        }
+
         // Check if exam has expired
         if ($this->session->isActive() && $this->session->hasExpired()) {
             $this->session->submit();

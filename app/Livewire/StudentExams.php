@@ -20,7 +20,7 @@ class StudentExams extends Component
     public $completedExams = [];
     public $selectedExamSession = null;
     public $showDetailsModal = false;
-    public $activeTab = 'upcoming'; // upcoming, active, completed
+    public $activeTab = 'active'; // active, completed
     public $filterSort = 'date'; // date, status, grade
 
     protected $listeners = ['examGraded' => 'refreshExams'];
@@ -69,15 +69,24 @@ class StudentExams extends Component
                 'days_until' => $exam->exam_date ? now()->diffInDays($exam->exam_date, false) : null,
             ];
 
-            if (!$session) {
-                // Not started - upcoming if exam_date is in future
-                if ($exam->exam_date && $exam->exam_date > now()) {
-                    $this->upcomingExams[] = $examData;
+            if ($session) {
+                // Session exists
+                if ($session->status === 'in_progress' || $session->status === 'not_started') {
+                    $this->activeExams[] = $examData;
+                } elseif (in_array($session->status, ['submitted', 'graded', 'appeal'])) {
+                    $this->completedExams[] = $examData;
                 }
-            } elseif ($session->status === 'in_progress') {
-                $this->activeExams[] = $examData;
-            } elseif (in_array($session->status, ['submitted', 'graded', 'appeal'])) {
-                $this->completedExams[] = $examData;
+            } else {
+                // No session yet
+                if ($exam->status === 'published') {
+                    if ($exam->exam_date && $exam->exam_date > now()) {
+                        // $this->upcomingExams[] = $examData; // Hidden by request
+                    } elseif (!$exam->end_date || $exam->end_date > now()) {
+                        // It's published and date has passed (or is null/flexible) AND not ended -> It's Active/Ready
+                        $this->activeExams[] = $examData;
+                    }
+                    // Else: Exam has ended and not started -> Hidden (or move to missed)
+                }
             }
         }
 

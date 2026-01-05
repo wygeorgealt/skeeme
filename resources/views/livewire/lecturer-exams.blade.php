@@ -17,8 +17,8 @@
             <div class="text-3xl font-bold text-zinc-900 dark:text-zinc-100 italic">{{ count($this->exams) }}</div>
         </div>
         <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 rounded-2xl shadow-sm flex flex-col gap-1 transition-all hover:translate-y-[-2px] hover:shadow-md border-l-4 border-l-indigo-500">
-            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Active/Today</div>
-            <div class="text-3xl font-bold text-indigo-500 italic">{{ $this->exams->filter(fn($e) => $e->exam_date->isToday())->count() }}</div>
+            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Active Now</div>
+            <div class="text-3xl font-bold text-indigo-500 italic">{{ $this->exams->filter(fn($e) => $e->status === 'published' && (!$e->end_date || $e->end_date->isFuture()) && $e->exam_date->isPast())->count() }}</div>
         </div>
         <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 rounded-2xl shadow-sm flex flex-col gap-1 transition-all hover:translate-y-[-2px] hover:shadow-md border-l-4 border-l-emerald-500">
             <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Avg. Pass Rate</div>
@@ -52,8 +52,9 @@
             </div>
         </div>
 
-        @if($selectedCourse)
-            <!-- Create/Edit Exam Modal -->
+        @if($selectedCourse || $this->exams->isNotEmpty())
+            <!-- Create/Edit Exam Modal (Only when course selected or editing) -->
+            @if($showCreateForm)
             <flux:modal wire:model="showCreateForm" variant="flyout" class="space-y-6">
                 <div class="p-6 space-y-6 max-h-[90vh]">
                     <div>
@@ -70,11 +71,15 @@
                                 <flux:select.option value="test">Test / Quiz</flux:select.option>
                                 <flux:select.option value="assignment">Assignment / Project</flux:select.option>
                             </flux:select>
-                            <flux:input type="datetime-local" wire:model="newExam.exam_date" label="Scheduled Commencement" />
+                            <flux:input type="datetime-local" wire:model="newExam.exam_date" label="Start Date/Time" />
                         </div>
-
+                        
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <flux:input type="number" wire:model="newExam.duration" label="Allotted Time (Min)" min="1" />
+                            <flux:input type="datetime-local" wire:model="newExam.end_date" label="End Date/Time (Optional)" description="Leave blank for unlimited duration" />
+                            <flux:input type="number" wire:model="newExam.duration" label="Time Limit (Minutes)" min="1" />
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <flux:input type="number" wire:model="newExam.total_marks" label="Max Score" min="1" />
                         </div>
 
@@ -96,6 +101,9 @@
                             
                             <flux:checkbox wire:model="newExam.randomize_questions" label="Shuffle Questions" description="Force unique question paths for every candidate." />
                             <flux:checkbox wire:model="newExam.randomize_options" label="Scramble Options" description="Rearrange MCQ choices to prevent pattern recognition." />
+                            <div class="pt-2 border-t border-zinc-200 dark:border-zinc-700/50">
+                                <flux:checkbox wire:model="newExam.release_results_immediately" label="Immediate Results" description="Allow students to view their grade immediately after submission. (Only for auto-graded exams)" />
+                            </div>
                         </div>
 
                         <div class="flex gap-3 pt-4 justify-end">
@@ -105,6 +113,7 @@
                     </form>
                 </div>
             </flux:modal>
+            @endif
 
             <!-- Exams Listing -->
             <div class="space-y-4 animate-fadeIn">
@@ -185,14 +194,29 @@
                                             </td>
                                             <td class="p-4 text-center">
                                                 @php
-                                                    $status = $exam->exam_date->isPast() ? 'completed' : ($exam->exam_date->isToday() ? 'today' : 'upcoming');
+                                                    // Status Logic
+                                                    $isPublished = $exam->status === 'published';
+                                                    $hasStarted = $exam->exam_date->isPast();
+                                                    $hasEnded = $exam->end_date && $exam->end_date->isPast();
+                                                    
+                                                    if ($isPublished && $hasStarted && !$hasEnded) {
+                                                        $status = 'active';
+                                                    } elseif ($hasEnded) {
+                                                        $status = 'ended';
+                                                    } elseif (!$hasStarted) {
+                                                        $status = 'upcoming';
+                                                    } else {
+                                                        $status = 'draft'; 
+                                                    }
+
                                                     $badges = [
-                                                        'completed' => 'bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700',
-                                                        'today' => 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800 focus:ring-2 focus:ring-zinc-500 outline-none transition-all',
+                                                        'draft' => 'bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-500 dark:border-zinc-700',
+                                                        'ended' => 'bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700',
+                                                        'active' => 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 animate-pulse',
                                                         'upcoming' => 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800',
                                                     ];
                                                 @endphp
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight border {{ $badges[$status] }} shadow-sm">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight border {{ $badges[$status] ?? $badges['draft'] }} shadow-sm">
                                                     {{ $status }}
                                                 </span>
                                             </td>
@@ -259,6 +283,9 @@
                                                     </div>
                                                     <div class="flex items-center gap-1">
                                                         <flux:button wire:click="editExam({{ $exam->id }})" variant="ghost" size="xs" icon="pencil-square" title="Edit Parameters" inset="top bottom" />
+                                                        @if($exam->end_date && $exam->end_date->isPast())
+                                                            <flux:button wire:click="openReactivateModal({{ $exam->id }})" variant="ghost" size="xs" icon="arrow-path" title="Reactivate Exam" inset="top bottom" class="text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20" />
+                                                        @endif
                                                         <flux:button wire:click="confirmDelete({{ $exam->id }})" variant="ghost" size="xs" icon="trash" title="Delete Session" inset="top bottom" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20" />
                                                     </div>
                                                 </div>
@@ -282,14 +309,14 @@
                     @endif
                 </div>
             </div>
-        @else
-            <div class="py-24 text-center space-y-4">
+        @elseif(!$selectedCourse && $this->exams->isEmpty())
+             <div class="py-24 text-center space-y-4">
                 <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 shadow-sm text-zinc-200 dark:text-zinc-700">
                     <i class="fas fa-layers text-3xl"></i>
                 </div>
                 <div>
                     <h3 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest italic">Course Context Required</h3>
-                    <p class="text-xs text-zinc-500 mt-1 max-w-xs mx-auto">Select a course to manage exams.</p>
+                    <p class="text-xs text-zinc-500 mt-1 max-w-xs mx-auto">Select a course to create a new exam, or view all exams above.</p>
                 </div>
             </div>
         @endif
@@ -316,4 +343,29 @@
             </div>
         </div>
     </flux:modal>
+
+    <!-- Reactivate Exam Modal -->
+    <flux:modal wire:model="showReactivateModal" class="md:w-96 rounded-3xl p-0 overflow-hidden">
+        <div class="p-8 space-y-6">
+            <div class="text-center">
+                <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 mb-4 border border-amber-100 dark:border-amber-900/30">
+                    <i class="fas fa-arrow-path"></i>
+                </div>
+                <flux:heading size="lg">Reactivate Exam</flux:heading>
+                <flux:subheading>Extend the duration of this exam to allow new attempts.</flux:subheading>
+            </div>
+
+            <div class="space-y-4">
+                 <flux:input type="datetime-local" wire:model="reactivateEndDate" label="New End Date/Time" />
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <flux:button class="flex-1" wire:click="$set('showReactivateModal', false)" variant="ghost">Cancel</flux:button>
+                <flux:button class="flex-1" variant="primary" wire:click="reactivateExam" wire:loading.attr="disabled">
+                    Reactivate
+                </flux:button>
+            </div>
+        </div>
+    </flux:modal>
+    
 </div>

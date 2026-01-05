@@ -149,7 +149,7 @@
             </a>
             
             <div class="flex items-center gap-3">
-                <flux:button wire:click="previewAsStudent" variant="ghost" class="italic" icon="eye">Preview as Student</flux:button>
+
                 
                 @if($exam->status !== 'published')
                     <flux:button wire:click="publishExam" variant="primary" icon="check-circle">Publish Exam</flux:button>

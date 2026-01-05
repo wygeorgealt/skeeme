@@ -13,6 +13,7 @@ use App\Services\CalendarSyncService;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
+use Masmerise\Toaster\Toaster;
 
 class LecturerExams extends Component
 {
@@ -29,6 +30,7 @@ class LecturerExams extends Component
         'title' => '',
         'description' => '',
         'exam_date' => '',
+        'end_date' => '',
         'duration' => '',
         'total_marks' => '',
         'passing_marks' => '',
@@ -38,6 +40,7 @@ class LecturerExams extends Component
         'randomize_options' => true,
         'category' => 'exam',
         'sync_to_calendar' => false,
+        'release_results_immediately' => false,
     ];
     public $hasLinkedGoogle = false;
     public $newQuestion = [
@@ -93,15 +96,16 @@ class LecturerExams extends Component
     #[Computed]
     public function exams()
     {
-        if (!$this->selectedCourse) {
-            return collect();
-        }
-
-        return Exam::where('course_id', $this->selectedCourse)
+        $query = Exam::where('lecturer_id', Auth::id())
             ->with('course')
             ->withCount(['grades', 'sessions'])
-            ->orderBy('exam_date', 'desc')
-            ->get()
+            ->orderBy('exam_date', 'desc');
+
+        if ($this->selectedCourse) {
+            $query->where('course_id', $this->selectedCourse);
+        }
+
+        return $query->get()
             ->map(function($exam) {
                 $exam->course_name = $exam->course->name;
                 $exam->course_code = $exam->course->code;
@@ -112,12 +116,8 @@ class LecturerExams extends Component
     #[Computed]
     public function avgPassRate()
     {
-        if (!$this->selectedCourse) {
-            return 0;
-        }
-
-        // Get the latest analytics snapshot for each exam in the course
-        $examIds = Exam::where('course_id', $this->selectedCourse)->pluck('id');
+        // Get the latest analytics snapshot for filtered exams
+        $examIds = $this->exams->pluck('id');
         
         if ($examIds->isEmpty()) {
             return 0;
@@ -141,10 +141,16 @@ class LecturerExams extends Component
         $this->validate([
             'newExam.title' => 'required|string|max:255',
             'newExam.description' => 'nullable|string',
-            'newExam.exam_date' => 'required|date|after:today',
+            'newExam.exam_date' => 'required|date',
+            'newExam.end_date' => 'nullable|date|after:newExam.exam_date',
             'newExam.duration' => 'nullable|integer|min:1',
             'newExam.total_marks' => 'nullable|integer|min:1',
+            'newExam.total_marks' => 'nullable|integer|min:1',
             'newExam.passing_marks' => 'nullable|integer|min:1',
+            'newExam.randomize_questions' => 'boolean',
+            'newExam.randomize_options' => 'boolean',
+            'newExam.release_results_immediately' => 'boolean',
+            'newExam.sync_to_calendar' => 'boolean',
         ]);
 
         $exam = Exam::create([
@@ -153,14 +159,16 @@ class LecturerExams extends Component
             'title' => $this->newExam['title'],
             'description' => $this->newExam['description'],
             'exam_date' => $this->newExam['exam_date'],
+            'end_date' => $this->newExam['end_date'] ?? null,
             'duration' => $this->newExam['duration'],
             'total_marks' => $this->newExam['total_marks'],
             'passing_marks' => $this->newExam['passing_marks'],
             'questions' => $this->newExam['questions'],
             'status' => $this->newExam['status'],
-            'randomize_questions' => $this->newExam['randomize_questions'] ?? true,
-            'randomize_options' => $this->newExam['randomize_options'] ?? true,
+            'randomize_questions' => $this->newExam['randomize_questions'] ?? false,
+            'randomize_options' => $this->newExam['randomize_options'] ?? false,
             'category' => $this->newExam['category'] ?? 'exam',
+            'release_results_immediately' => $this->newExam['release_results_immediately'] ?? false,
         ]);
 
         if ($this->newExam['sync_to_calendar'] && $this->hasLinkedGoogle) {
@@ -171,7 +179,7 @@ class LecturerExams extends Component
         $this->resetExamForm();
         unset($this->exams);
 
-        session()->flash('message', 'Exam created successfully!');
+        Toaster::success('Exam created successfully!');
 
         return redirect()->route('lecturer.exam-questions', $exam->id);
     }
@@ -219,7 +227,7 @@ class LecturerExams extends Component
                 $syncService->sync($exam);
             }
 
-            session()->flash('message', 'Exam published successfully!');
+            Toaster::success('Exam published successfully!');
         }
     }
 
@@ -245,7 +253,7 @@ class LecturerExams extends Component
             $exam->delete();
             unset($this->exams);
             \Log::info('Exam deleted successfully.');
-            session()->flash('message', 'Exam deleted successfully!');
+            Toaster::success('Exam deleted successfully!');
         } else {
             \Log::error('Exam not found or lecturer mismatch.', [
                 'exam_id' => $this->examIdToDelete,
@@ -267,6 +275,7 @@ class LecturerExams extends Component
                 'title' => $exam->title,
                 'description' => $exam->description,
                 'exam_date' => $exam->exam_date->format('Y-m-d\TH:i'),
+                'end_date' => $exam->end_date ? $exam->end_date->format('Y-m-d\TH:i') : null,
                 'duration' => $exam->duration,
                 'total_marks' => $exam->total_marks,
                 'passing_marks' => $exam->passing_marks,
@@ -276,6 +285,7 @@ class LecturerExams extends Component
                 'randomize_options' => $exam->randomize_options ?? true,
                 'category' => $exam->category ?? 'exam',
                 'sync_to_calendar' => (bool)$exam->google_event_id,
+                'release_results_immediately' => (bool) $exam->release_results_immediately,
             ];
             $this->showCreateForm = true;
         }
@@ -287,9 +297,15 @@ class LecturerExams extends Component
             'newExam.title' => 'required|string|max:255',
             'newExam.description' => 'nullable|string',
             'newExam.exam_date' => 'required|date',
+            'newExam.end_date' => 'nullable|date|after:newExam.exam_date',
             'newExam.duration' => 'nullable|integer|min:1',
             'newExam.total_marks' => 'nullable|integer|min:1',
+            'newExam.total_marks' => 'nullable|integer|min:1',
             'newExam.passing_marks' => 'nullable|integer|min:1',
+            'newExam.randomize_questions' => 'boolean',
+            'newExam.randomize_options' => 'boolean',
+            'newExam.release_results_immediately' => 'boolean',
+            'newExam.sync_to_calendar' => 'boolean',
         ]);
 
         if ($this->editingExam) {
@@ -297,14 +313,16 @@ class LecturerExams extends Component
                 'title' => $this->newExam['title'],
                 'description' => $this->newExam['description'],
                 'exam_date' => $this->newExam['exam_date'],
+                'end_date' => $this->newExam['end_date'] ?? null,
                 'duration' => $this->newExam['duration'],
                 'total_marks' => $this->newExam['total_marks'],
                 'passing_marks' => $this->newExam['passing_marks'],
                 'questions' => $this->newExam['questions'],
                 'status' => $this->newExam['status'],
-                'randomize_questions' => $this->newExam['randomize_questions'] ?? true,
-                'randomize_options' => $this->newExam['randomize_options'] ?? true,
+                'randomize_questions' => $this->newExam['randomize_questions'] ?? false,
+                'randomize_options' => $this->newExam['randomize_options'] ?? false,
                 'category' => $this->newExam['category'] ?? 'exam',
+                'release_results_immediately' => $this->newExam['release_results_immediately'] ?? false,
             ]);
 
             if ($this->newExam['sync_to_calendar'] && $this->hasLinkedGoogle) {
@@ -312,7 +330,7 @@ class LecturerExams extends Component
                 $syncService->sync($this->editingExam);
             }
 
-            session()->flash('message', 'Exam updated successfully!');
+            Toaster::success('Exam updated successfully!');
         }
 
         $this->resetExamForm();
@@ -325,6 +343,40 @@ class LecturerExams extends Component
         return redirect()->route('lecturer.analytics.dashboard', $examId);
     }
 
+    public $showReactivateModal = false;
+    public $reactivateExamId = null;
+    public $reactivateEndDate = '';
+
+    public function openReactivateModal($examId)
+    {
+        $exam = Exam::find($examId);
+        if ($exam && $exam->lecturer_id === Auth::id()) {
+            $this->reactivateExamId = $exam->id;
+            $this->reactivateEndDate = now()->addHours(2)->format('Y-m-d\TH:i'); // Default to 2 hours from now
+            $this->showReactivateModal = true;
+        }
+    }
+
+    public function reactivateExam()
+    {
+        $this->validate([
+            'reactivateEndDate' => 'required|date|after:now',
+        ]);
+
+        $exam = Exam::find($this->reactivateExamId);
+        if ($exam && $exam->lecturer_id === Auth::id()) {
+            $exam->update([
+                'end_date' => $this->reactivateEndDate,
+                'status' => 'published', // Ensure it is published
+            ]);
+            
+            session()->flash('message', 'Exam reactivated successfully!');
+            $this->showReactivateModal = false;
+            $this->reactivateExamId = null;
+            unset($this->exams);
+        }
+    }
+
     private function resetExamForm()
     {
         $this->editingExam = null;
@@ -332,6 +384,7 @@ class LecturerExams extends Component
             'title' => '',
             'description' => '',
             'exam_date' => '',
+            'end_date' => '',
             'duration' => '',
             'total_marks' => '',
             'passing_marks' => '',

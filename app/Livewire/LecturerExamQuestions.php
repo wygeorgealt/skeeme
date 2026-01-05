@@ -645,6 +645,18 @@ class LecturerExamQuestions extends Component
 
     public function publishExam()
     {
+        // Validation: If "Release Results Immediately" is on, ensure no manual grading questions exist
+        if ($this->exam->release_results_immediately) {
+            $nonAutoGradableTypes = ['essay', 'short_answer', 'fill_blank'];
+            $hasManualQuestions = $this->exam->questions()->whereIn('question_type', $nonAutoGradableTypes)->exists();
+
+            if ($hasManualQuestions) {
+                // Auto-disable the setting and inform the lecturer
+                $this->exam->update(['release_results_immediately' => false]);
+                $this->toastWarning('Immediate results setting disabled. This exam contains questions that require manual grading.', 'Note');
+            }
+        }
+
         $this->exam->update(['status' => 'published']);
         $this->toastSuccess('Exam published successfully!', 'Success');
     }

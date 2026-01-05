@@ -1,284 +1,287 @@
-<div class="exam-delivery-container">
-        <!-- Header with Timer and Progress -->
-        <div class="exam-header bg-white shadow-md p-4 sticky top-0 z-10">
-        <div class="flex justify-between items-center gap-4 flex-wrap md:flex-nowrap">
-            <div class="flex-1 min-w-0">
-                <h2 class="text-xl font-bold truncate">{{ $session->exam->title }}</h2>
-                <p class="text-sm text-gray-600">Question {{ $currentQuestionIndex + 1 }} of {{ $totalQuestions }}</p>
-            </div>
-
-            <!-- Timer -->
-            <div class="text-center flex-shrink-0">
-                <div class="text-2xl md:text-3xl font-mono font-bold {{ $timeRemaining <= 300 ? 'text-red-600' : 'text-blue-600' }}">
-                    {{ $this->getFormattedTime() }}
+<div class="exam-delivery-container min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
+    <!-- Header -->
+    <header class="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-4 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
+                    <i class="fas fa-graduation-cap"></i>
                 </div>
-                <p class="text-xs text-gray-600">Time Remaining</p>
-            </div>
-
-            <!-- Progress (hidden on mobile) -->
-            <div class="w-32 hidden md:block flex-shrink-0">
-                <div class="text-right text-sm font-semibold mb-2">{{ $this->getProgressPercentage() }}%</div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                         style="width: {{ $this->getProgressPercentage() }}%"></div>
+                <div class="min-w-0">
+                    <h1 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-xs md:max-w-md">{{ $session->exam->title }}</h1>
+                    <p class="text-xs text-zinc-500 font-medium">Question {{ $currentQuestionIndex + 1 }} of {{ $totalQuestions }}</p>
                 </div>
             </div>
 
-            <!-- Mobile Menu Button -->
-            <button type="button" class="md:hidden p-2 hover:bg-gray-100 rounded-lg" title="Keyboard help (Press ?)">
-                <i class="fas fa-keyboard text-gray-600"></i>
-            </button>
+            <!-- Timer & Actions -->
+            <div class="flex items-center gap-4 md:gap-6">
+                <!-- Timer -->
+                <div class="flex flex-col items-end">
+                    <div class="text-xl font-mono font-bold leading-none {{ $timeRemaining <= 300 ? 'text-rose-600 animate-pulse' : 'text-zinc-900 dark:text-zinc-100' }}">
+                        {{ $this->getFormattedTime() }}
+                    </div>
+                    <span class="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Time Left</span>
+                </div>
+
+                <!-- Progress Bar (Desktop) -->
+                <div class="hidden md:block w-32">
+                    <div class="flex justify-between text-[10px] font-bold text-zinc-500 mb-1">
+                        <span>Progress</span>
+                        <span>{{ $this->getProgressPercentage() }}%</span>
+                    </div>
+                    <div class="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-indigo-500 transition-all duration-500 ease-out" style="width: {{ $this->getProgressPercentage() }}%"></div>
+                    </div>
+                </div>
+
+                <div class="h-8 w-px bg-zinc-200 dark:bg-zinc-800 hidden md:block"></div>
+
+                <flux:button wire:click="confirmSubmit" variant="primary" class="hidden md:flex">Submit Exam</flux:button>
+                <flux:button wire:click="toggleAnswerPreview" icon="squares-2x2" variant="ghost" class="md:hidden"></flux:button>
+            </div>
         </div>
-    </div>
+    </header>
 
     <!-- Main Content -->
-    <div class="flex flex-col md:flex-row gap-6 p-4 md:p-6 max-w-7xl mx-auto">
-        <!-- Question Panel -->
-        <div class="flex-1 min-w-0">
+    <main class="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 flex items-start gap-8">
+        <!-- Question Area -->
+        <div class="flex-1 min-w-0 space-y-6">
             @if ($currentQuestion)
-                <div class="bg-white rounded-lg shadow-md p-8">
-                    <!-- Question Text -->
-                    <div class="mb-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div>
-                                <h3 class="text-lg font-semibold">
-                                    Question {{ $currentQuestionIndex + 1 }}
-                                    <span class="text-sm font-normal text-gray-600">
-                                        ({{ $currentQuestion['marks'] ?? 1 }} mark{{ $currentQuestion['marks'] > 1 ? 's' : '' }})
-                                    </span>
-                                </h3>
-                            </div>
-                            <!-- Flag Button -->
-                            <button type="button" 
-                                    wire:click="toggleFlagQuestion"
-                                    title="Flag for review (Keyboard: F)"
-                                    class="flex-shrink-0 px-3 py-2 rounded-lg transition-colors {{ $this->isQuestionFlagged($currentQuestionIndex) ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
-                                <i class="fas fa-flag mr-2"></i><span class="hidden sm:inline">{{ $this->isQuestionFlagged($currentQuestionIndex) ? 'Flagged' : 'Flag' }}</span>
-                            </button>
+                <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                    <!-- Toolbar -->
+                    <div class="px-6 py-4 bg-zinc-50/50 dark:bg-zinc-800/20 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-100 dark:border-indigo-800">
+                            <span class="font-black">{{ $currentQuestion['marks'] ?? 1 }}</span> Mark{{ ($currentQuestion['marks'] ?? 1) > 1 ? 's' : '' }}
+                        </span>
+
+                        <button 
+                            wire:click="toggleFlagQuestion"
+                            class="group flex items-center gap-2 text-xs font-bold transition-colors {{ $this->isQuestionFlagged($currentQuestionIndex) ? 'text-amber-500' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300' }}"
+                        >
+                            <i class="{{ $this->isQuestionFlagged($currentQuestionIndex) ? 'fas' : 'far' }} fa-flag group-hover:scale-110 transition-transform"></i>
+                            <span>{{ $this->isQuestionFlagged($currentQuestionIndex) ? 'Flagged for Review' : 'Flag Question' }}</span>
+                        </button>
+                    </div>
+
+                    <div class="p-6 md:p-8">
+                        <!-- Question Text -->
+                        <div class="prose dark:prose-invert max-w-none mb-8">
+                            <h3 class="text-lg md:text-xl font-medium text-zinc-900 dark:text-zinc-100 leading-relaxed">
+                                {!! nl2br(e($currentQuestion['question_text'])) !!}
+                            </h3>
+                            @if(isset($currentQuestion['image_path']) && $currentQuestion['image_path'])
+                                <img src="{{ Storage::url($currentQuestion['image_path']) }}" class="mt-4 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm max-h-96 object-contain">
+                            @endif
                         </div>
-                        <div class="text-base leading-relaxed">
-                            {{ $currentQuestion['question_text'] }}
+
+                        <!-- Answer Input Area -->
+                        <div class="space-y-4">
+                            @if ($currentQuestion['type'] === 'multiple_choice' || $currentQuestion['type'] === 'mcq')
+                                <div class="grid grid-cols-1 gap-3">
+                                    @foreach ($currentQuestion['options'] as $index => $option)
+                                        @php
+                                            $optionValue = $option['id'] ?? $index;
+                                            $isSelected = ($answers[$currentQuestionIndex] ?? '') == $optionValue;
+                                        @endphp
+                                        <label 
+                                            class="relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 group
+                                            {{ $isSelected 
+                                                ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/10 z-10' 
+                                                : 'border-zinc-200 dark:border-zinc-800 hover:border-indigo-200 dark:hover:border-indigo-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50' 
+                                            }}"
+                                        >
+                                            <input type="radio" 
+                                                name="answer_{{ $currentQuestionIndex }}" 
+                                                value="{{ $optionValue }}"
+                                                wire:click="saveAnswer('{{ $optionValue }}')" 
+                                                class="sr-only"
+                                                {{ $isSelected ? 'checked' : '' }}
+                                            >
+                                            
+                                            <div class="flex items-center gap-4 w-full">
+                                                <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors
+                                                    {{ $isSelected ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-zinc-300 dark:border-zinc-600 group-hover:border-indigo-400' }}">
+                                                    @if($isSelected) <i class="fas fa-check text-[10px]"></i> @endif
+                                                </div>
+                                                <span class="text-sm font-medium text-zinc-700 dark:text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
+                                                    {{ $option['text'] ?? $option }}
+                                                </span>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                            @elseif ($currentQuestion['type'] === 'essay')
+                                <div class="relative">
+                                    <textarea 
+                                        wire:model.debounce.500ms="answers.{{ $currentQuestionIndex }}"
+                                        wire:change="saveAnswer($event.target.value)"
+                                        rows="10"
+                                        class="w-full p-4 rounded-xl border-2 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 focus:border-indigo-500 focus:ring-0 transition-colors resize-none"
+                                        placeholder="Type your detailed answer here..."
+                                    ></textarea>
+                                    <div class="absolute bottom-4 right-4 text-xs font-bold text-zinc-400 pointer-events-none">
+                                        {{ strlen($answers[$currentQuestionIndex] ?? '') }} chars
+                                    </div>
+                                </div>
+
+                            @elseif ($currentQuestion['type'] === 'true_false')
+                                <div class="grid grid-cols-2 gap-4">
+                                    @foreach(['true' => 'True', 'false' => 'False'] as $val => $label)
+                                        @php $isSelected = ($answers[$currentQuestionIndex] ?? '') === $val; @endphp
+                                        <label class="flex flex-col items-center justify-center p-6 rounded-xl border-2 cursor-pointer transition-all
+                                            {{ $isSelected 
+                                                ? ($val === 'true' ? 'border-emerald-500 bg-emerald-50/50' : 'border-rose-500 bg-rose-50/50') 
+                                                : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50' 
+                                            }}"
+                                        >
+                                            <input type="radio" 
+                                                name="answer_{{ $currentQuestionIndex }}" 
+                                                value="{{ $val }}"
+                                                wire:click="saveAnswer('{{ $val }}')"
+                                                class="sr-only"
+                                            >
+                                            <span class="text-lg font-bold mb-2 {{ $isSelected ? ($val === 'true' ? 'text-emerald-700' : 'text-rose-700') : 'text-zinc-600 dark:text-zinc-400' }}">
+                                                {{ $label }}
+                                            </span>
+                                            <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center transition-colors
+                                                {{ $isSelected 
+                                                    ? ($val === 'true' ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-rose-500 bg-rose-500 text-white') 
+                                                    : 'border-zinc-300 dark:border-zinc-600' 
+                                                }}">
+                                                @if($isSelected) <i class="fas fa-check text-xs"></i> @endif
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                     </div>
 
-                    <!-- Answer Area -->
-                    <div class="mb-8">
-                        @if ($currentQuestion['type'] === 'multiple_choice' || $currentQuestion['type'] === 'mcq')
-                            <!-- MCQ Options -->
-                            <div class="space-y-3">
-                                @foreach ($currentQuestion['options'] as $index => $option)
-                                    <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-400 transition-colors"
-                                           :class="{ 'border-blue-500 bg-blue-50': $answers[$currentQuestionIndex] === '{{ $option['id'] ?? $index }}' }">
-                                        <input type="radio"
-                                               name="answer"
-                                               value="{{ $option['id'] ?? $index }}"
-                                               @if ($answers[$currentQuestionIndex] === ($option['id'] ?? $index)) checked @endif
-                                               wire:change="saveAnswer($event.target.value)"
-                                               class="w-4 h-4 text-blue-600">
-                                        <span class="ml-3 text-sm">{{ $option['text'] ?? $option }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        @elseif ($currentQuestion['type'] === 'essay')
-                            <!-- Essay Response -->
-                            <textarea wire:model.debounce-500ms="answers.{{ $currentQuestionIndex }}"
-                                      wire:change="saveAnswer($event.target.value)"
-                                      rows="8"
-                                      placeholder="Type your answer here..."
-                                      class="w-full p-4 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500">{{ $answers[$currentQuestionIndex] ?? '' }}</textarea>
-                            <p class="text-xs text-gray-500 mt-2">{{ strlen($answers[$currentQuestionIndex] ?? '') }} characters</p>
-                        @elseif ($currentQuestion['type'] === 'true_false')
-                            <!-- True/False -->
-                            <div class="space-y-3 flex gap-4">
-                                <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-400 flex-1"
-                                       :class="{ 'border-green-500 bg-green-50': $answers[$currentQuestionIndex] === 'true' }">
-                                    <input type="radio"
-                                           name="answer"
-                                           value="true"
-                                           @if ($answers[$currentQuestionIndex] === 'true') checked @endif
-                                           wire:change="saveAnswer('true')"
-                                           class="w-4 h-4 text-green-600">
-                                    <span class="ml-3 text-sm font-semibold">True</span>
-                                </label>
-                                <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-red-400 flex-1"
-                                       :class="{ 'border-red-500 bg-red-50': $answers[$currentQuestionIndex] === 'false' }">
-                                    <input type="radio"
-                                           name="answer"
-                                           value="false"
-                                           @if ($answers[$currentQuestionIndex] === 'false') checked @endif
-                                           wire:change="saveAnswer('false')"
-                                           class="w-4 h-4 text-red-600">
-                                    <span class="ml-3 text-sm font-semibold">False</span>
-                                </label>
-                            </div>
-                        @endif
-                    </div>
+                    <!-- Footer Navigation -->
+                    <div class="bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 p-4 md:px-8 md:py-6 flex items-center justify-between gap-4">
+                        <flux:button 
+                            wire:click="previousQuestion" 
+                            disabled="{{ $currentQuestionIndex === 0 }}"
+                            icon="arrow-left"
+                            variant="subtle"
+                        >
+                            Previous
+                        </flux:button>
 
-                    <!-- Navigation Buttons -->
-                    <div class="flex justify-between items-center pt-6 border-t border-gray-200 gap-3 flex-wrap md:flex-nowrap">
-                        <button wire:click="previousQuestion"
-                                @if ($currentQuestionIndex === 0) disabled @endif
-                                title="Previous question (Keyboard: ← or A)"
-                                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm md:text-base">
-                            ← Previous
-                        </button>
-
-                        <div class="text-sm text-gray-600 text-center">
-                            {{ $currentQuestionIndex + 1 }} / {{ $totalQuestions }}
+                        <div class="hidden md:flex items-center gap-2">
+                             @for($i = max(0, $currentQuestionIndex - 2); $i < min($totalQuestions, $currentQuestionIndex + 3); $i++)
+                                <button 
+                                    wire:click="goToQuestion({{ $i }})"
+                                    class="w-2 h-2 rounded-full transition-all {{ $i === $currentQuestionIndex ? 'bg-indigo-600 w-4' : 'bg-zinc-300 dark:bg-zinc-700 hover:bg-indigo-400' }}"
+                                ></button>
+                             @endfor
                         </div>
 
-                        <button wire:click="nextQuestion"
-                                @if ($currentQuestionIndex === $totalQuestions - 1) disabled @endif
-                                title="Next question (Keyboard: → or D)"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm md:text-base">
-                            Next →
-                        </button>
-
-                        <!-- Preview and Help buttons (mobile friendly) -->
-                        <button wire:click="toggleAnswerPreview"
-                                title="Preview answers (Keyboard: P)"
-                                class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm">
-                            <i class="fas fa-eye mr-1"></i><span class="hidden sm:inline">Preview</span>
-                        </button>
+                        <flux:button 
+                            wire:click="nextQuestion" 
+                            disabled="{{ $currentQuestionIndex === $totalQuestions - 1 }}"
+                            icon="arrow-right"
+                            icon-trailing
+                            variant="primary"
+                        >
+                            Next Question
+                        </flux:button>
                     </div>
                 </div>
             @endif
         </div>
 
-        <!-- Side Navigation Panel (hidden on mobile, shown as modal) -->
-        <div class="w-full md:w-64 flex-shrink-0">
-            <div class="bg-white rounded-lg shadow-md p-4 sticky top-24">
-                <h4 class="font-semibold mb-4">Questions {{ $answeredCount }}/{{ $totalQuestions }}</h4>
-                <div class="grid grid-cols-4 md:grid-cols-5 gap-2 mb-6">
-                    @for ($i = 0; $i < $totalQuestions; $i++)
-                        <button wire:click="goToQuestion({{ $i }})"
-                                title="Question {{ $i + 1 }}{{ $this->isQuestionFlagged($i) ? ' (Flagged)' : '' }}"
-                                class="relative w-full aspect-square rounded-lg font-semibold text-sm transition-colors
-                                    {{ $i === $currentQuestionIndex ? 'bg-blue-600 text-white ring-2 ring-blue-400' : 
-                                       ($this->isQuestionAnswered($i) ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-gray-100 text-gray-800 hover:bg-gray-200') }}">
-                            {{ $i + 1 }}
-                            @if($this->isQuestionFlagged($i))
-                                <span class="absolute top-0 right-0 w-2 h-2 bg-yellow-400 rounded-full"></span>
-                            @endif
-                        </button>
-                    @endfor
-                </div>
-
-                <!-- Quick Stats -->
-                <div class="bg-blue-50 rounded-lg p-3 mb-4 text-sm space-y-2">
-                    <div class="flex justify-between">
-                        <span>Answered:</span>
-                        <strong>{{ $answeredCount }}/{{ $totalQuestions }}</strong>
-                    </div>
-                    @if($flaggedCount > 0)
-                        <div class="flex justify-between text-yellow-700">
-                            <span>Flagged:</span>
-                            <strong>{{ $flaggedCount }}</strong>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Legend -->
-                <div class="text-xs space-y-2 border-t pt-4 mb-4">
-                    <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 bg-gray-100 rounded"></div>
-                        <span>Not Answered</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 bg-green-100 rounded"></div>
-                        <span>Answered</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 bg-blue-600 rounded"></div>
-                        <span>Current</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                        <span>Flagged</span>
+        <!-- Sidebar (Questions Navigator) -->
+        <div class="hidden lg:block w-80 flex-shrink-0">
+            <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm sticky top-24 overflow-hidden">
+                <div class="p-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/20">
+                    <h3 class="font-bold text-sm text-zinc-900 dark:text-zinc-100 uppercase tracking-widest">Question Navigator</h3>
+                    <div class="flex items-center gap-4 mt-3 text-[10px] font-bold text-zinc-500">
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-100 border border-emerald-500"></span>Answered</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-white border border-zinc-300"></span>Unanswered</span>
+                        <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-100 border border-amber-500"></span>Flagged</span>
                     </div>
                 </div>
-
-                <!-- Submit Button -->
-                <button wire:click="confirmSubmit"
-                        class="w-full mt-6 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors text-sm md:text-base">
-                    <i class="fas fa-paper-plane mr-2"></i>Submit Exam
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Answer Preview Modal -->
-    @if ($showAnswerPreview)
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-96 overflow-y-auto">
-                <div class="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
-                    <h3 class="text-lg font-semibold">Answer Preview</h3>
-                    <button wire:click="toggleAnswerPreview"
-                            class="text-gray-500 hover:text-gray-700 transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                <div class="p-4 space-y-3">
-                    @foreach ($answerSummary as $index => $item)
-                        <div class="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer"
-                             wire:click="goToQuestion({{ $index }})">
-                            <div class="flex items-start justify-between gap-2">
-                                <div class="flex-1">
-                                    <p class="font-semibold text-sm">Q{{ $index + 1 }}: {{ $item['question'] }}</p>
-                                    @if($item['answered'])
-                                        <p class="text-sm text-gray-600 mt-1">
-                                            <span class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs mr-2">Answered</span>
-                                            <span class="text-gray-700">{{ $item['answer'] }}</span>
-                                        </p>
-                                    @else
-                                        <p class="text-sm text-gray-400 mt-1"><span class="inline-block px-2 py-1 bg-gray-100 rounded text-xs">Not answered</span></p>
-                                    @endif
-                                </div>
-                                @if($item['flagged'])
-                                    <span class="text-yellow-500 text-lg flex-shrink-0"><i class="fas fa-flag"></i></span>
+                
+                <div class="p-4 max-h-[calc(100vh-250px)] overflow-y-auto">
+                    <div class="grid grid-cols-5 gap-2">
+                        @for ($i = 0; $i < $totalQuestions; $i++)
+                            @php
+                                $isAnswered = $this->isQuestionAnswered($i);
+                                $isFlagged = $this->isQuestionFlagged($i);
+                                $isCurrent = $i === $currentQuestionIndex;
+                            @endphp
+                            <button 
+                                wire:click="goToQuestion({{ $i }})"
+                                class="relative w-full aspect-square rounded-lg flex items-center justify-center text-xs font-bold transition-all border
+                                {{ $isCurrent 
+                                    ? 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-200 dark:ring-indigo-900' 
+                                    : ($isAnswered 
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 hover:bg-emerald-100' 
+                                        : 'bg-white text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700 hover:border-zinc-400') 
+                                }}
+                                "
+                            >
+                                {{ $i + 1 }}
+                                @if($isFlagged)
+                                    <div class="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 border-2 border-white dark:border-zinc-800 rounded-full"></div>
                                 @endif
-                            </div>
+                            </button>
+                        @endfor
+                    </div>
+                </div>
+
+                <div class="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/10">
+                    <div class="flex items-center justify-between text-xs font-medium text-zinc-500 mb-4">
+                        <span>Completed</span>
+                        <span class="text-zinc-900 dark:text-zinc-100 font-bold">{{ $answeredCount }} / {{ $totalQuestions }}</span>
+                    </div>
+                    <flux:button wire:click="confirmSubmit" variant="primary" color="zinc" class="w-full">Submit Final Answers</flux:button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Confirm Submit Modal -->
+    <flux:modal name="confirm-submit"  wire:model="showConfirmSubmit" >
+             <div class="space-y-6">
+                 <div>
+                     <flux:heading size="lg">Submit Assessment?</flux:heading>
+                     <flux:subheading>You are about to submit your exam. This action cannot be undone.</flux:subheading>
+                 </div>
+                 
+                 <div class="bg-zinc-50 dark:bg-zinc-800 rounded-xl p-4 border border-zinc-200 dark:border-zinc-700">
+                     <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-zinc-500">Questions Answered</span>
+                            <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ count(array_filter($answers)) }} / {{ $totalQuestions }}</span>
+                     </div>
+                     @if(count(array_filter($answers) ?? []) < $totalQuestions)
+                        <div class="text-xs text-amber-600 font-medium flex items-center gap-2 mt-2">
+                             <i class="fas fa-exclamation-triangle"></i>
+                             <span>You have unanswered questions!</span>
                         </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    @endif
+                     @endif
+                 </div>
 
-    <!-- Submit Confirmation Modal -->
-    @if ($showConfirmSubmit)
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-lg p-8 max-w-md">
-                <h3 class="text-lg font-semibold mb-4">Confirm Submission</h3>
-                <p class="text-gray-600 mb-2">You have answered <strong>{{ count(array_filter($answers)) }}</strong> of <strong>{{ $totalQuestions }}</strong> questions.</p>
-                <p class="text-gray-600 mb-6">Are you sure you want to submit your exam? You cannot make changes after submission.</p>
-                <div class="flex gap-4 justify-end">
-                    <button wire:click="cancelSubmit"
-                            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
-                        Cancel
-                    </button>
-                    <button wire:click="submit"
-                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                        Submit Exam
-                    </button>
-                </div>
-            </div>
-        </div>
-    @endif
+                 <div class="flex gap-2">
+                     <flux:button wire:click="cancelSubmit" variant="ghost" class="flex-1">Cancel</flux:button>
+                     <flux:button wire:click="submit" variant="primary" class="flex-1">Submit Exam</flux:button>
+                 </div>
+             </div>
+    </flux:modal>
 
-    <!-- Session Expired Notification -->
+    <!-- Session Ended Overlay -->
     @if (!$session->isActive())
-        <div class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-                <h3 class="text-lg font-semibold text-red-600 mb-4">Exam Session Ended</h3>
-                <p class="text-gray-600 mb-6">
-                    Your exam has been {{ $session->status === 'submitted' ? 'submitted' : ($session->status === 'abandoned' ? 'abandoned' : 'ended') }}.
-                    Your responses have been saved.
+        <div class="fixed inset-0 bg-zinc-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-zinc-900 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-zinc-800">
+                <div class="w-16 h-16 bg-rose-100 dark:bg-rose-900/30 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-600 dark:text-rose-400">
+                    <i class="fas fa-stopwatch text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-zinc-900 dark:text-white mb-2">Session Ended</h3>
+                <p class="text-zinc-500 dark:text-zinc-400 text-sm mb-8">
+                    Your exam time has expired or the session was terminated. All provided answers have been saved.
                 </p>
-                <a href="{{ route('student.exams.results', $session) }}"
-                   class="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    View Results
-                </a>
+                <flux:button href="{{ route('student.exams.results', $session) }}" variant="primary" class="w-full">View Results</flux:button>
             </div>
         </div>
     @endif
@@ -287,182 +290,20 @@
 @push('scripts')
 <script>
     document.addEventListener('livewire:navigated', function() {
-        // Auto-update timer every second
-        setInterval(() => {
-            @this.dispatch('timer');
-        }, 1000);
+        setInterval(() => { @this.dispatch('timer'); }, 1000);
 
-        // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
-            // Only trigger if not in a text input/textarea (except for specific cases)
-            const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
-            
-            // Arrow keys / A, D for navigation
-            if (e.key === 'ArrowRight' || (e.key.toLowerCase() === 'd' && !isInput)) {
-                e.preventDefault();
-                @this.call('nextQuestion');
-            } else if (e.key === 'ArrowLeft' || (e.key.toLowerCase() === 'a' && !isInput)) {
-                e.preventDefault();
-                @this.call('previousQuestion');
-            }
-            
-            // F for flag
-            if (e.key.toLowerCase() === 'f' && !isInput) {
-                e.preventDefault();
-                @this.call('toggleFlagQuestion');
-            }
-            
-            // P for preview
-            if (e.key.toLowerCase() === 'p' && !isInput) {
-                e.preventDefault();
-                @this.call('toggleAnswerPreview');
-            }
-            
-            // ? or / for help
-            if ((e.key === '?' || e.key === '/') && !isInput) {
-                e.preventDefault();
-                showKeyboardHelp();
+            const isInput = ['INPUT', 'TEXTAREA'].includes(e.target.tagName);
+            if (!isInput) {
+                if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') { @this.call('nextQuestion'); }
+                if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') { @this.call('previousQuestion'); }
+                if (e.key.toLowerCase() === 'f') { @this.call('toggleFlagQuestion'); }
             }
         });
     });
 
-    // Save answers before leaving page
     window.addEventListener('beforeunload', function(e) {
-        if (@js($session->isActive())) {
-            e.preventDefault();
-            e.returnValue = '';
-        }
-    });
-
-    function showKeyboardHelp() {
-        alert('⌨️ Keyboard Shortcuts:\n\n' +
-              '→ or D: Next question\n' +
-              '← or A: Previous question\n' +
-              'F: Flag question for review\n' +
-              'P: Preview all answers\n' +
-              '?: Show this help\n\n' +
-              'Answers auto-save as you type!');
-    }
-</script>
-
-<script>
-    // Request fullscreen on component load
-    document.addEventListener('DOMContentLoaded', function() {
-        requestFullscreenMode();
-    });
-
-    document.addEventListener('livewire:navigated', function() {
-        requestFullscreenMode();
-    });
-
-    function requestFullscreenMode() {
-        const element = document.documentElement;
-        const container = document.querySelector('.exam-delivery-container');
-        
-        // Try to go fullscreen
-        if (element.requestFullscreen) {
-            element.requestFullscreen().catch(err => {
-                console.log('Fullscreen request denied:', err);
-            });
-        } else if (element.webkitRequestFullscreen) {
-            element.webkitRequestFullscreen();
-        } else if (element.mozRequestFullScreen) {
-            element.mozRequestFullScreen();
-        } else if (element.msRequestFullscreen) {
-            element.msRequestFullscreen();
-        }
-
-        // Add fullscreen class to container
-        if (container) {
-            container.classList.add('fullscreen');
-        }
-
-        // Lock screen orientation if possible
-        if (screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock('portrait-primary').catch(err => {
-                console.log('Could not lock orientation:', err);
-            });
-        }
-    }
-
-    // Handle fullscreen exit
-    document.addEventListener('fullscreenchange', function() {
-        if (!document.fullscreenElement) {
-            // User exited fullscreen - warn them
-            showFullscreenWarning();
-        }
-    });
-
-    function showFullscreenWarning() {
-        const confirmed = confirm('⚠️ Fullscreen mode exited. Please enable fullscreen to continue the exam.');
-        if (confirmed) {
-            requestFullscreenMode();
-        }
-    }
-
-    // Prevent right-click in exam mode
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-        return false;
-    });
-
-    // Warn on page unload
-    window.addEventListener('beforeunload', function(e) {
-        const isExamActive = document.querySelector('.exam-delivery-container') !== null;
-        if (isExamActive) {
-            e.preventDefault();
-            e.returnValue = '';
-        }
+        if (@js($session->isActive())) { e.preventDefault(); e.returnValue = ''; }
     });
 </script>
 @endpush
-
-@assets
-<style>
-    .exam-delivery-container {
-        background-color: #f9fafb;
-        min-height: 100vh;
-    }
-
-    html.fullscreen-mode {
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-    }
-
-    body.exam-mode-active {
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
-    }
-
-    @media (max-width: 768px) {
-        .exam-header {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-    }
-
-    /* Fullscreen mode styles */
-    .exam-delivery-container.fullscreen {
-        width: 100vw;
-        height: 100vh;
-        max-width: 100vw;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .exam-delivery-container.fullscreen .exam-header {
-        flex-shrink: 0;
-        height: auto;
-    }
-
-    .exam-delivery-container.fullscreen > div:nth-child(2) {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
-</style>
-@endassets

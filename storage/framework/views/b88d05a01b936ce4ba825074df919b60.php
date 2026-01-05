@@ -375,7 +375,7 @@
 
                     <div class="mb-10">
                         <div class="flex items-baseline gap-1">
-                            <span class="text-5xl font-black text-slate-900 tracking-tighter" id="pro-price-value">$59.99</span>
+                            <span class="text-5xl font-black text-slate-900 tracking-tighter" id="pro-price-value">$39.00</span>
                             <span class="text-sm font-bold text-slate-400" id="pro-price-period">/mo</span>
                         </div>
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Billed monthly</p>
@@ -1046,7 +1046,7 @@
 <?php $__env->startPush('scripts'); ?>
 <script>
     const currencyMap = {
-        'NG': { code: 'NGN', symbol: '₦', rate: 1550 },
+        'NG': { code: 'NGN', symbol: '₦', rate: 1439.37 },
         'GH': { code: 'GHS', symbol: '₵', rate: 13.5 },
         'KE': { code: 'KES', symbol: 'Ks', rate: 130 },
         'ZA': { code: 'ZAR', symbol: 'R', rate: 18 },
@@ -1054,7 +1054,7 @@
         'default': { code: 'USD', symbol: '$', rate: 1 }
     };
 
-    const basePrice = 59.99;
+    const basePrice = 39.00;
     
     function updateCurrency(code) {
         const currency = currencyMap[code] || currencyMap.default;
