@@ -737,7 +737,7 @@
                                                         $status = 'active';
                                                     } elseif ($hasEnded) {
                                                         $status = 'ended';
-                                                    } elseif (!$hasStarted) {
+                                                    } elseif (!$hasStarted && $isPublished) {
                                                         $status = 'upcoming';
                                                     } else {
                                                         $status = 'draft'; 

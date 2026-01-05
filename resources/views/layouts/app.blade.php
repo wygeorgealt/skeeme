@@ -8,6 +8,24 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     @yield('styles')
+    <script>
+        (function() {
+            try {
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const date = new Date();
+                date.setTime(date.getTime() + (365*24*60*60*1000)); // 1 year
+                const expires = "; expires=" + date.toUTCString();
+                
+                // Check if cookie exists and matches
+                const match = document.cookie.match(new RegExp('(^| )user_timezone=([^;]+)'));
+                if (!match || match[2] !== tz) {
+                    document.cookie = "user_timezone=" + tz + expires + "; path=/; SameSite=Lax";
+                    // If cookie was missing or different, we could reload, but let's avoid infinite loops.
+                    // Ideally, the middleware picks it up on next request.
+                }
+            } catch(e) { console.error('Timezone detection failed', e); }
+        })();
+    </script>
 </head>
 <body class="bg-stone-900 text-white">
     @yield('content')

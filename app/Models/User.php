@@ -34,6 +34,7 @@ class User extends Authenticatable
         'school_id',
         'class_id',
         'approved_at',
+        'timezone',
     ];
 
     /**

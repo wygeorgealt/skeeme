@@ -681,3 +681,10 @@ Did you mean this?
 [2026-01-05 23:05:24] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.exams","path":"lecturer/exams","url":"http://localhost:8000/lecturer/exams"} 
 [2026-01-05 23:10:55] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.exams","path":"lecturer/exams","url":"http://localhost:8000/lecturer/exams"} 
 [2026-01-05 23:14:50] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.exams","path":"lecturer/exams","url":"http://localhost:8000/lecturer/exams"} 
+[2026-01-05 23:20:32] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.exams","path":"lecturer/exams","url":"http://localhost:8000/lecturer/exams"} 
+[2026-01-05 23:21:58] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.exams","path":"lecturer/exams","url":"http://localhost:8000/lecturer/exams"} 
+[2026-01-05 23:22:28] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.exams","path":"lecturer/exams","url":"http://localhost:8000/lecturer/exams"} 
+[2026-01-06 00:32:34] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"profile.edit","path":"settings/profile","url":"http://localhost:8000/settings/profile"} 
+[2026-01-06 00:32:41] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"appearance.edit","path":"settings/appearance","url":"http://localhost:8000/settings/appearance"} 
+[2026-01-06 00:32:46] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"settings.integrations","path":"settings/integrations","url":"http://localhost:8000/settings/integrations"} 
+[2026-01-06 00:33:03] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":5,"user_role":"lecturer","current_route":"lecturer.exams","path":"lecturer/exams","url":"http://localhost:8000/lecturer/exams"} 
