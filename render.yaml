@@ -48,9 +48,10 @@ services:
 
   - type: pserv
     name: skeeme-db
-    plan: free # or starter
+    env: docker
+    plan: starter # Starter plan is REQUIRED for persistent disks
     region: ohio
-    image: mysql:8.0
+    dockerfilePath: Dockerfile.mysql
     disk:
       name: mysql-data
       mountPath: /var/lib/mysql
