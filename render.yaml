@@ -51,7 +51,6 @@ services:
     env: docker
     plan: free # or starter
     region: ohio
-    dockerfilePath: Dockerfile.mysql # We'll create this or use an image
     image: mysql:8.0
     disk:
       name: mysql-data
