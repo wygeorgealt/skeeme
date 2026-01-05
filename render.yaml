@@ -48,7 +48,6 @@ services:
 
   - type: pserv
     name: skeeme-db
-    env: docker
     plan: free # or starter
     region: ohio
     image: mysql:8.0
