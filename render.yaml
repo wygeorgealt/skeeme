@@ -21,24 +21,24 @@ services:
         value: mysql
       - key: DB_HOST
         fromService:
-          type: private
+          type: pserv
           name: skeeme-db
           property: host
       - key: DB_PORT
         value: 3306
       - key: DB_DATABASE
         fromService:
-          type: private
+          type: pserv
           name: skeeme-db
           property: envVar:MYSQL_DATABASE
       - key: DB_USERNAME
         fromService:
-          type: private
+          type: pserv
           name: skeeme-db
           property: envVar:MYSQL_USER
       - key: DB_PASSWORD
         fromService:
-          type: private
+          type: pserv
           name: skeeme-db
           property: envVar:MYSQL_PASSWORD
       - key: APP_KEY
@@ -46,7 +46,7 @@ services:
       - key: DEEPSEEK_API_KEY
         sync: false # Set manually in Render dashboard
 
-  - type: private
+  - type: pserv
     name: skeeme-db
     env: docker
     plan: free # or starter
