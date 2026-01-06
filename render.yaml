@@ -5,10 +5,12 @@ services:
     plan: free
     region: ohio
     envVars:
+      - key: APP_NAME
+        value: Skeeme
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
-        value: true # Enabled for debugging 500 error
+        value: false
       - key: LOG_CHANNEL
         value: stderr # Force logs to console
       - key: APP_URL

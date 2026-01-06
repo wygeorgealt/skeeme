@@ -17,21 +17,6 @@ Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 /* ------------------------------------------------------------------ */
-/* DEBUG ROUTE - REMOVE IN PRODUCTION ONCE FIXED                     */
-/* ------------------------------------------------------------------ */
-Route::get('/debug-logs', function () {
-    $path = storage_path('logs/laravel.log');
-    
-    if (!file_exists($path)) {
-        return response('Log file not found at: ' . $path, 404);
-    }
-    
-    $content = file_get_contents($path);
-    
-    return response($content)->header('Content-Type', 'text/plain');
-});
-
-/* ------------------------------------------------------------------ */
 /* Integration routes                                                 */
 /* ------------------------------------------------------------------ */
 Route::get('/integrations/{provider}/redirect', [IntegrationController::class, 'redirect'])->name('integrations.redirect');
