@@ -2,57 +2,58 @@ services:
   - type: web
     name: skeeme-web
     env: docker
-    plan: free # or starter
-    region: ohio # Adjust if needed
+    plan: free
+    region: ohio
     envVars:
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: false
       - key: APP_URL
-        value: https://skeeme.com
+        value: https://skeeme.com # Update this to your Render URL if different
       - key: WEBROOT
         value: /var/www/html/public
       - key: PHP_ERRORS_STDERR
         value: "1"
       - key: RUN_SCRIPTS
         value: "1"
+      
+      # Database (Aiven)
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
-        fromService:
-          type: pserv
-          name: skeeme-db
-          property: host
+        sync: false # Enter Aiven Host
       - key: DB_PORT
-        value: 3306
+        value: "27463" # From your screenshot
       - key: DB_DATABASE
-        sync: false # Set manually in Render dashboard
+        value: defaultdb
       - key: DB_USERNAME
-        sync: false # Set manually in Render dashboard
+        value: avnadmin
       - key: DB_PASSWORD
-        sync: false # Set manually in Render dashboard
-      - key: APP_KEY
-        sync: false # Set manually in Render dashboard
-      - key: DEEPSEEK_API_KEY
-        sync: false # Set manually in Render dashboard
+        sync: false # Enter Aiven Password
+      
+      # SSL for Aiven
+      - key: MYSQL_ATTR_SSL_CA
+        value: /etc/ssl/certs/ca-certificates.crt
+      
+      # Storage (Cloudflare R2)
+      - key: FILESYSTEM_DISK
+        value: s3
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_DEFAULT_REGION
+        value: auto
+      - key: AWS_BUCKET
+        sync: false
+      - key: AWS_ENDPOINT
+        sync: false # e.g. https://<id>.r2.cloudflarestorage.com
+      - key: AWS_USE_PATH_STYLE_ENDPOINT
+        value: false
 
-  - type: pserv
-    name: skeeme-db
-    env: docker
-    plan: starter # Starter plan is REQUIRED for persistent disks
-    region: ohio
-    dockerfilePath: Dockerfile.mysql
-    disk:
-      name: mysql-data
-      mountPath: /var/lib/mysql
-      sizeGB: 1
-    envVars:
-      - key: MYSQL_DATABASE
-        value: skeeme
-      - key: MYSQL_USER
-        value: skeeme_user
-      - key: MYSQL_PASSWORD
-        sync: false # Set manually or use a secret
-      - key: MYSQL_ROOT_PASSWORD
-        sync: false # Set manually or use a secret
+      # Application Secrets
+      - key: APP_KEY
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
