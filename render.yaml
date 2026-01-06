@@ -10,7 +10,7 @@ services:
       - key: APP_DEBUG
         value: false
       - key: APP_URL
-        value: https://skeeme.com # Update this to your Render URL if different
+        sync: false # e.g. https://skeeme.com
       - key: WEBROOT
         value: /var/www/html/public
       - key: PHP_ERRORS_STDERR
@@ -22,15 +22,15 @@ services:
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
-        sync: false # Enter Aiven Host
+        sync: false
       - key: DB_PORT
-        value: "27463" # From your screenshot
+        value: "27463"
       - key: DB_DATABASE
         value: defaultdb
       - key: DB_USERNAME
         value: avnadmin
       - key: DB_PASSWORD
-        sync: false # Enter Aiven Password
+        sync: false
       
       # SSL for Aiven
       - key: MYSQL_ATTR_SSL_CA
@@ -48,9 +48,53 @@ services:
       - key: AWS_BUCKET
         sync: false
       - key: AWS_ENDPOINT
-        sync: false # e.g. https://<id>.r2.cloudflarestorage.com
+        sync: false
       - key: AWS_USE_PATH_STYLE_ENDPOINT
         value: false
+
+      # Mail (Mailtrap or other)
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        value: sandbox.smtp.mailtrap.io
+      - key: MAIL_PORT
+        value: "2525"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        value: hello@skeeme.com
+      - key: MAIL_FROM_NAME
+        value: "Skeeme Team"
+
+      # Paystack
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      
+      # Google Integration
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false # e.g. https://skeeme.com/integrations/google/callback
+
+      # Recaptcha
+      - key: RECAPTCHA_SITE_KEY
+        sync: false
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
+
+      # Africa's Talking
+      - key: AFRICASTALKING_USERNAME
+        sync: false
+      - key: AFRICASTALKING_API_KEY
+        sync: false
 
       # Application Secrets
       - key: APP_KEY
