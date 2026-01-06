@@ -159,3 +159,4 @@
 [2026-01-06 10:27:57] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":17,"user_role":"student","current_route":"student.exams","path":"student/exams","url":"http://localhost:8000/student/exams"} 
 [2026-01-06 10:28:24] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":17,"user_role":"student","current_route":"student.exam.delivery","path":"student/exams/1","url":"http://localhost:8000/student/exams/1"} 
 [2026-01-06 10:35:02] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":17,"user_role":"student","current_route":"student.exam.delivery","path":"student/exams/1","url":"http://localhost:8000/student/exams/1"} 
+[2026-01-06 11:28:32] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":17,"user_role":"student","current_route":"student.exams","path":"student/exams","url":"http://localhost:8000/student/exams"} 
