@@ -3,7 +3,10 @@
 # Exit on error
 set -e
 
-echo "🐘 Running runtime migrations (FRESH START)..."
-php artisan migrate:fresh --force
+echo "🐘 Importing base schema (skeeme.sql)..."
+php bin/import-base-schema.php
+
+echo "🚀 Running incremental migrations..."
+php artisan migrate --force
 
 echo "🚀 Startup tasks complete!"
