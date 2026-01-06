@@ -37,6 +37,8 @@ services:
       # SSL for Aiven
       - key: MYSQL_ATTR_SSL_CA
         value: /etc/ssl/certs/ca-certificates.crt
+      - key: MYSQL_ATTR_SSL_VERIFY_SERVER_CERT
+        value: false
       
       # Storage (Cloudflare R2)
       - key: FILESYSTEM_DISK
