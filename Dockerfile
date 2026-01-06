@@ -3,6 +3,9 @@ FROM serversideup/php:8.3-fpm-nginx
 # Switch to root to install dependencies
 USER root
 
+# Install PHP extensions
+RUN install-php-extensions intl gd bcmath
+
 # Install Node.js and NPM
 RUN apt-get update && \
     apt-get install -y ca-certificates curl gnupg && \
