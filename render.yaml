@@ -8,7 +8,9 @@ services:
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
-        value: false
+        value: true # Enabled for debugging 500 error
+      - key: LOG_CHANNEL
+        value: stderr # Force logs to console
       - key: APP_URL
         sync: false # e.g. https://skeeme.com
       - key: WEBROOT
