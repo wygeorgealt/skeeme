@@ -140,7 +140,7 @@
                 <flux:textarea wire:model="editCourseDescription" label="Description" rows="3" />
                 <flux:select wire:model="editLecturerId" label="Assign Lecturer" placeholder="Select Lecturer (Optional)">
                     @foreach($availableLecturers as $lecturer)
-                        <flux:option value="{{ $lecturer->id }}">{{ $lecturer->first_name }} {{ $lecturer->last_name }}</flux:option>
+                        <flux:select.option value="{{ $lecturer->id }}">{{ $lecturer->first_name }} {{ $lecturer->last_name }}</flux:select.option>
                     @endforeach
                 </flux:select>
 
@@ -162,7 +162,7 @@
             <form wire:submit.prevent="confirmAddStudentToClass" class="space-y-6">
                 <flux:select wire:model="selectedStudentId" label="Select Student" placeholder="Choose a student..." required>
                     @foreach($availableStudents as $student)
-                        <flux:option value="{{ $student->id }}">{{ $student->first_name }} {{ $student->last_name }} ({{ $student->email }})</flux:option>
+                        <flux:select.option value="{{ $student->id }}">{{ $student->first_name }} {{ $student->last_name }} ({{ $student->email }})</flux:select.option>
                     @endforeach
                 </flux:select>
 
@@ -191,7 +191,7 @@
 
                     <flux:select wire:model="targetClassId" label="Select Class" placeholder="Choose a class..." required>
                         @foreach($availableClasses as $class)
-                            <flux:option value="{{ $class->id }}">{{ $class->name }}</flux:option>
+                            <flux:select.option value="{{ $class->id }}">{{ $class->name }}</flux:select.option>
                         @endforeach
                     </flux:select>
 
