@@ -139,10 +139,7 @@
                     <div class="flex-1" data-aos="zoom-in">
                         <div class="relative group">
                             <div class="absolute -inset-4 bg-gradient-to-br from-orange-500 to-amber-500 rounded-[40px] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
-                            <div class="relative premium-card overflow-hidden bg-slate-50 min-h-[300px] flex items-center justify-center">
-                                <!-- Your Screenshot Here -->
-                                <div class="text-slate-300 text-6xl opacity-20"><i class="fas fa-image"></i></div>
-                            </div>
+                            <img src="{{ asset('landing/ai preview.png') }}" alt="AI Exam Preview" class="relative z-10 w-full h-auto drop-shadow-2xl rounded-2xl">
                         </div>
                     </div>
                     <div class="flex-1" data-aos="fade-left">
@@ -204,10 +201,7 @@
                     <div class="flex-1 order-1 lg:order-2" data-aos="zoom-in">
                         <div class="relative group">
                             <div class="absolute -inset-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-[40px] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
-                            <div class="relative premium-card overflow-hidden bg-slate-50 min-h-[300px] flex items-center justify-center">
-                                <!-- Your Screenshot Here -->
-                                <div class="text-slate-300 text-6xl opacity-20"><i class="fas fa-image"></i></div>
-                            </div>
+                            <img src="{{ asset('landing/student mange.png') }}" alt="Student Management" class="relative z-10 w-full h-auto drop-shadow-2xl rounded-2xl">
                         </div>
                     </div>
                 </div>
