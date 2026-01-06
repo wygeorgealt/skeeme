@@ -23,6 +23,15 @@ WORKDIR /var/www/html
 # Copy project files
 COPY --chown=www-data:www-data . .
 
+# Create necessary directories and set permissions BEFORE composer install
+RUN mkdir -p storage/framework/sessions \
+    storage/framework/views \
+    storage/framework/cache \
+    storage/logs \
+    bootstrap/cache && \
+    chown -R www-data:www-data storage bootstrap/cache && \
+    chmod -R 775 storage bootstrap/cache
+
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
