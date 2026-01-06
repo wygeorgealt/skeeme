@@ -73,7 +73,7 @@ class ExamSession extends Model
             return false;
         }
 
-        $expiresAt = $this->started_at->addMinutes($this->exam->duration);
+        $expiresAt = $this->started_at->copy()->addMinutes($this->exam->duration);
         return now()->isAfter($expiresAt);
     }
 
@@ -82,14 +82,18 @@ class ExamSession extends Model
      */
     public function getTimeRemainingSeconds(): int
     {
-        if (!$this->exam->duration || !$this->started_at) {
-            return 0;
+        if (!$this->exam->duration) {
+            return 999999;
         }
 
-        $expiresAt = $this->started_at->addMinutes($this->exam->duration);
-        $remaining = $expiresAt->diffInSeconds(now());
+        if (!$this->started_at) {
+            return $this->exam->duration * 60;
+        }
 
-        return max(0, $remaining);
+        $expiresAt = $this->started_at->copy()->addMinutes($this->exam->duration);
+        
+        // Use false to get signed value (negative if expired)
+        return (int) now()->diffInSeconds($expiresAt, false);
     }
 
     /**

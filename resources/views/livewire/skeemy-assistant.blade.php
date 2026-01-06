@@ -17,7 +17,11 @@
 
     <!-- Slide-out Panel -->
     <div 
-        x-data="{ open: @entangle('isOpen') }"
+        x-data="{ 
+            open: @entangle('isOpen'),
+            isProcessing: @entangle('isProcessing'),
+            userMessage: @entangle('userMessage')
+        }"
         x-show="open"
         x-cloak
         class="fixed inset-0 z-50 overflow-hidden"
@@ -143,10 +147,10 @@
                         wire:model="userMessage"
                         placeholder="Ask Skeemy anything..."
                         class="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 focus:ring-2 focus:ring-indigo-500 transition-all"
-                        :disabled="$isProcessing">
+                        :disabled="isProcessing">
                     <button 
                         type="submit"
-                        :disabled="$isProcessing || empty(trim($userMessage))"
+                        :disabled="isProcessing || !userMessage || !userMessage.trim()"
                         class="px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-lg hover:shadow-indigo-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                         <flux:icon.paper-airplane class="w-5 h-5" />
                     </button>

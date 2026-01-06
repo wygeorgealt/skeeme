@@ -87,35 +87,21 @@
 
                                     </div>
 
-                                    <div class="bg-zinc-50 dark:bg-zinc-800/30 rounded-2xl p-6 border border-zinc-100 dark:border-zinc-800 mb-8">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="text-xs font-bold text-zinc-500 uppercase tracking-tighter">Time Progress</span>
-                                            <span class="text-xs font-bold text-orange-600">45% REMAINING</span>
-                                        </div>
-                                        <div class="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                                            <div class="h-full bg-orange-500 rounded-full" style="width: 45%"></div>
-                                        </div>
-                                        <p class="text-[10px] font-bold text-zinc-400 mt-2 uppercase tracking-tighter text-right">~25 minutes left</p>
-                                    </div>
 
-                                    <div class="grid grid-cols-3 gap-6">
+                                    <div class="grid grid-cols-2 gap-6">
                                         <div>
-                                            <p class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Answered</p>
-                                            <p class="text-sm font-bold text-zinc-900 dark:text-zinc-100">45 <span class="text-zinc-400">/ 50</span></p>
+                                            <p class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Duration</p>
+                                            <p class="text-sm font-bold text-zinc-900 dark:text-zinc-100">{{ $exam['duration'] }} min</p>
                                         </div>
                                         <div>
-                                            <p class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Avg Time</p>
-                                            <p class="text-sm font-bold text-zinc-900 dark:text-zinc-100">1.2m</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Marks</p>
+                                            <p class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Total Marks</p>
                                             <p class="text-sm font-bold text-zinc-900 dark:text-zinc-100">{{ $exam['total_marks'] }}</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="px-8 py-6 bg-orange-50 dark:bg-orange-950/20 border-t border-orange-100 dark:border-orange-900/50">
-                                    @if($exam['session'])
+                                    @if($exam['session'] && $exam['session']->status === 'in_progress')
                                         <flux:button wire:click="resumeExam({{ $exam['session']->id }})" variant="primary" color="orange" class="w-full text-xs font-bold uppercase tracking-[0.2em] py-4">Continue Exam Session</flux:button>
                                     @else
                                         <flux:button wire:click="startExam({{ $exam['id'] }})" variant="primary" color="indigo" class="w-full text-xs font-bold uppercase tracking-[0.2em] py-4">Start Exam Now</flux:button>

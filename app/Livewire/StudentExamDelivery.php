@@ -30,9 +30,13 @@ class StudentExamDelivery extends Component
     /**
      * Mount the component with exam session
      */
+    /**
+     * Mount the component with exam session
+     */
     public function mount(ExamSession $session)
     {
         $this->session = $session;
+        // Load exam details and questions with correct order if randomized
         $this->exam = $session->exam;
         $this->randomizationService = app(ExamRandomizationService::class);
         $this->isInExamMode = true;
@@ -43,12 +47,13 @@ class StudentExamDelivery extends Component
                 'status' => 'in_progress',
                 'started_at' => now(),
             ]);
+            $this->session->refresh();
         }
 
-        // Check if exam has expired
-        if ($this->session->isActive() && $this->session->hasExpired()) {
-            $this->session->submit();
+        // If already submitted, redirect to results
+        if (in_array($this->session->status, ['submitted', 'graded'])) {
             $this->redirect(route('student.exams.results', $this->session), navigate: true);
+            return;
         }
 
         // Initialize randomization if enabled
@@ -59,8 +64,8 @@ class StudentExamDelivery extends Component
             ->pluck('student_answer', 'question_index')
             ->toArray();
 
-        // Start the timer
-        $this->updateTimeRemaining();
+        // Initial time check only
+        $this->timeRemaining = $this->session->getTimeRemainingSeconds();
     }
 
     /**
@@ -78,28 +83,19 @@ class StudentExamDelivery extends Component
     }
 
     /**
-     * Update time remaining every second
+     * Forced submission from client-side timer
      */
-    #[On('timer')]
-    public function updateTimeRemaining()
+    public function forceSubmit()
     {
-        if (!$this->session->isActive()) {
-            return;
-        }
-
-        // Handle untimed exams
-        if (!$this->exam->duration) {
-            $this->timeRemaining = 999999; // Arbitrary high number for frontend
-            return;
-        }
-
-        $this->timeRemaining = $this->session->getTimeRemainingSeconds();
-
-        if ($this->timeRemaining <= 0) {
-            $this->session->submit();
-            $this->dispatch('exam-expired');
-            $this->redirect(route('student.exams.results', $this->session), navigate: true);
-        }
+        \Illuminate\Support\Facades\Log::info('Exam auto-submitted by client-side timer', [
+            'session_id' => $this->session->id,
+            'exam_id' => $this->exam->id,
+            'now' => now(),
+        ]);
+        
+        $this->session->submit();
+        $this->dispatch('exam-expired');
+        $this->redirect(route('student.exams.results', $this->session), navigate: true);
     }
 
     /**
@@ -354,6 +350,49 @@ class StudentExamDelivery extends Component
         return $summary;
     }
 
+    /**
+     * Get all questions formatted for client-side rendering
+     */
+    public function getAllQuestionsForClientSide(): array
+    {
+        $questions = [];
+        $sourceQuestions = $this->isRandomized ? $this->randomizedQuestions : $this->exam->questions;
+        
+        foreach ($sourceQuestions as $index => $questionData) {
+            $question = $this->isRandomized ? $questionData['question'] : $questionData;
+            $options = $this->isRandomized 
+                ? $questionData['randomized_options'] 
+                : ($question->options ?? []);
+            
+            // Format options for client-side
+            $formattedOptions = [];
+            foreach ($options as $optIndex => $option) {
+                if (is_array($option)) {
+                    $formattedOptions[] = [
+                        'id' => $option['id'] ?? $option['value'] ?? $optIndex,
+                        'text' => $option['value'] ?? $option['text'] ?? $option['label'] ?? 'Option',
+                    ];
+                } else {
+                    $formattedOptions[] = [
+                        'id' => $optIndex,
+                        'text' => (string) $option,
+                    ];
+                }
+            }
+            
+            $questions[] = [
+                'index' => $index,
+                'type' => strtolower($question->question_type ?? 'unknown'),
+                'text' => $question->question_text ?? '',
+                'marks' => $question->marks ?? 1,
+                'image_path' => $question->image_path ? \Storage::url($question->image_path) : null,
+                'options' => $formattedOptions,
+            ];
+        }
+        
+        return $questions;
+    }
+
     public function render()
     {
         $totalQuestions = $this->isRandomized 
@@ -368,6 +407,7 @@ class StudentExamDelivery extends Component
             'flaggedCount' => count($this->flaggedQuestions),
             'answerSummary' => $this->getAnswerSummary(),
             'isRandomized' => $this->isRandomized,
+            'allQuestionsJson' => json_encode($this->getAllQuestionsForClientSide()),
         ])->layout('layouts.exam');
     }
 }

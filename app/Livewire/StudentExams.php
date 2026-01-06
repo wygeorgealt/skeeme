@@ -79,8 +79,8 @@ class StudentExams extends Component
             } else {
                 // No session yet
                 if ($exam->status === 'published') {
-                    if ($exam->exam_date && $exam->exam_date > now()) {
-                        // $this->upcomingExams[] = $examData; // Hidden by request
+                    if ($exam->exam_date && $exam->exam_date->isAfter(now()->endOfDay())) {
+                        // $this->upcomingExams[] = $examData; // Hidden by request (future days)
                     } elseif (!$exam->end_date || $exam->end_date > now()) {
                         // It's published and date has passed (or is null/flexible) AND not ended -> It's Active/Ready
                         $this->activeExams[] = $examData;
@@ -109,7 +109,7 @@ class StudentExams extends Component
     public function showExamDetails(?ExamSession $session): void
     {
         if ($session) {
-            $this->selectedExamSession = $session->load('exam', 'student', 'examAnswers');
+            $this->selectedExamSession = $session->load('exam', 'student');
             $this->showDetailsModal = true;
         }
     }
@@ -141,7 +141,7 @@ class StudentExams extends Component
     public function resumeExam($sessionId): void
     {
         $session = ExamSession::find($sessionId);
-        if ($session && $session->status === 'in_progress') {
+        if ($session && in_array($session->status, ['in_progress', 'not_started'])) {
             $this->redirect(route('student.exam.delivery', $session->id));
         }
     }
