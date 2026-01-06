@@ -1,33 +1,40 @@
-FROM richarvey/nginx-php-fpm:3.1.6
+FROM serversideup/php:8.3-fpm-nginx
+
+# Switch to root to install dependencies
+USER root
+
+# Install Node.js and NPM
+RUN apt-get update && \
+    apt-get install -y ca-certificates curl gnupg && \
+    mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    NODE_MAJOR=20 && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update && \
+    apt-get install nodejs -y && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /var/www/html
 
 # Copy project files
-COPY . .
+COPY --chown=www-data:www-data . .
 
-# Image config
-ENV SKIP_COMPOSER 1
-ENV PHP_ERRORS_STDERR 1
-ENV RUN_SCRIPTS 1
-ENV REAL_IP_HEADER 1
-
-# Laravel config
-ENV WEBROOT /var/www/html/public
-ENV APP_ENV production
-ENV APP_DEBUG false
-
-# Install dependencies if not already done (though typically handled by image if RUN_SCRIPTS=1)
-# However, for efficiency we can do it here
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Install Node and build assets
-RUN apk add --no-cache nodejs npm \
-    && npm install \
-    && npm run build
+# Install Node dependencies and build assets
+RUN npm install && npm run build
 
-# Set permissions
-RUN chown -R fresh:fresh /var/www/html/storage /var/www/html/bootstrap/cache
+# Optimize Laravel
+RUN php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache
 
-# Expose port (8080 is common for this image but Render uses 80 by default)
-EXPOSE 80
+# Set permissions for Laravel
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Switch back to www-data user
+USER www-data
+
+# The base image already has the entrypoint configured for Nginx and PHP-FPM
