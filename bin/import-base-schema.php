@@ -1,6 +1,6 @@
 <?php
 
-echo "🐘 Importing base schema from database/skeeme.sql...\n";
+echo "🏗️ Starting full database reconstruction...\n";
 
 try {
     $host = getenv('DB_HOST');
@@ -21,7 +21,30 @@ try {
     $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
     $pdo = new PDO($dsn, $user, $pass, $options);
 
-    // Read the SQL file
+    // 1. Wipe the current database
+    echo "🧼 Wiping all existing tables, procedures, and functions...\n";
+    $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
+    
+    // Drop all tables
+    $stmt = $pdo->query("SHOW TABLES");
+    while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
+        $pdo->exec("DROP TABLE IF EXISTS `{$row[0]}`");
+    }
+    
+    // Drop all procedures
+    $stmt = $pdo->query("SHOW PROCEDURE STATUS WHERE Db = '$db'");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $pdo->exec("DROP PROCEDURE IF EXISTS `{$row['Name']}`");
+    }
+    
+    // Drop all functions
+    $stmt = $pdo->query("SHOW FUNCTION STATUS WHERE Db = '$db'");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $pdo->exec("DROP FUNCTION IF EXISTS `{$row['Name']}`");
+    }
+
+    // 2. Prep the SQL Foundation
+    echo "📝 Preparing foundation from database/skeeme.sql...\n";
     $sqlFile = __DIR__ . '/../database/skeeme.sql';
     if (!file_exists($sqlFile)) {
         throw new Exception("SQL file not found at: $sqlFile");
@@ -29,10 +52,18 @@ try {
 
     $sql = file_get_contents($sqlFile);
     
-    // Split by semicolon, but handle procedures/functions delimited by $$
-    // This is a simple parser, but should work for this specific file structure
+    // CLEANING: Remove DEFINER statements which cause permission errors in cloud DBs
+    $sql = preg_replace('/DEFINER\s*=\s*`[^`]+`@`[^`]+`/', '', $sql);
     
-    // First, handle the DELIMITER blocks
+    // CLEANING: Remove parent_tokens table and inserts if present (deprecated)
+    // First, find the table creation and remove it
+    $sql = preg_replace('/CREATE TABLE IF NOT EXISTS `parent_tokens`[^;]+;/is', '-- Removed parent_tokens', $sql);
+    $sql = preg_replace('/INSERT INTO `parent_tokens`[^;]+;/is', '-- Removed parent_tokens data', $sql);
+    $sql = preg_replace('/DROP TABLE IF EXISTS `parent_tokens`;/i', '-- Removed parent_tokens drop', $sql);
+
+    // 3. Import the SQL Foundation
+    echo "🐘 Importing base schema commands...\n";
+    
     $commands = [];
     $currentCommand = '';
     $delimiter = ';';
@@ -40,6 +71,10 @@ try {
     $lines = explode("\n", $sql);
     foreach ($lines as $line) {
         $trimmedLine = trim($line);
+        if (empty($trimmedLine) || str_starts_with($trimmedLine, '--') || str_starts_with($trimmedLine, '/*')) {
+            continue;
+        }
+        
         if (str_starts_with($trimmedLine, 'DELIMITER $$')) {
             $delimiter = '$$';
             continue;
@@ -57,21 +92,20 @@ try {
         }
     }
 
-    echo "Found " . count($commands) . " commands to execute.\n";
-
+    echo "Found " . count($commands) . " foundation commands.\n";
     foreach ($commands as $index => $command) {
-        if (empty(trim($command))) continue;
+        $cmd = trim($command);
+        if (empty($cmd)) continue;
         try {
-            $pdo->exec($command);
+            $pdo->exec($cmd);
         } catch (Exception $e) {
-            // Ignore "Table already exists" or "Procedure already exists" if it happens, 
-            // but log other errors. Actually, migrate:fresh drops tables, so these should be clean.
-            echo "Error in command " . ($index + 1) . ": " . $e->getMessage() . "\n";
-            // We don't exit here to try following commands unless they are critical
+            echo "⚠️ Command " . ($index + 1) . " Warning: " . $e->getMessage() . "\n";
+            // We continue here because some warnings are expected (like "Table already exists" if our wipe somehow missed something)
         }
     }
 
-    echo "✅ Base schema import complete!\n";
+    $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
+    echo "✅ Database foundation reconstructed successfully!\n";
 
 } catch (Exception $e) {
     echo "❌ FATAL ERROR: " . $e->getMessage() . "\n";
