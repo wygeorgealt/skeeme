@@ -45,6 +45,11 @@ RUN php artisan view:cache
 # Set permissions for Laravel
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
+# Add runtime startup script for migrations
+# Serversideup images execute scripts in /etc/entrypoint.d/ on boot
+COPY --chown=www-data:www-data bin/render-startup.sh /etc/entrypoint.d/render-startup.sh
+RUN chmod +x /etc/entrypoint.d/render-startup.sh
+
 # Switch back to www-data user
 USER www-data
 
