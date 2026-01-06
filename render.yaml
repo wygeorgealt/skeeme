@@ -103,3 +103,9 @@ services:
         sync: false
       - key: DEEPSEEK_API_KEY
         sync: false
+
+      # System Stability (File-based to prevent boot crash if DB fails)
+      - key: SESSION_DRIVER
+        value: file
+      - key: CACHE_STORE
+        value: file
