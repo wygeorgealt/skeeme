@@ -1,6 +1,6 @@
 <?php
 
-echo "🏗️ Starting full database reconstruction...\n";
+echo "🏗️ Starting SQUASHED database reconstruction...\n";
 
 try {
     $host = getenv('DB_HOST');
@@ -21,8 +21,8 @@ try {
     $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
     $pdo = new PDO($dsn, $user, $pass, $options);
 
-    // 1. Wipe the current database
-    echo "🧼 Wiping all existing tables, procedures, and functions...\n";
+    // 1. Wipe everything
+    echo "🧼 Wiping database foundation (ignoring foreign keys)...\n";
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
     
     // Drop all tables
@@ -31,38 +31,39 @@ try {
         $pdo->exec("DROP TABLE IF EXISTS `{$row[0]}`");
     }
     
-    // Drop all procedures
-    $stmt = $pdo->query("SHOW PROCEDURE STATUS WHERE Db = '$db'");
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $pdo->exec("DROP PROCEDURE IF EXISTS `{$row['Name']}`");
-    }
+    // 2. Prep the SQUASHED Foundation
+    // We search for the file in a few possible names
+    $sqlFiles = [
+        __DIR__ . '/../skeeme structure.sql',
+        __DIR__ . '/../database/skeeme.sql'
+    ];
     
-    // Drop all functions
-    $stmt = $pdo->query("SHOW FUNCTION STATUS WHERE Db = '$db'");
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $pdo->exec("DROP FUNCTION IF EXISTS `{$row['Name']}`");
+    $foundationFile = null;
+    foreach ($sqlFiles as $file) {
+        if (file_exists($file)) {
+            $foundationFile = $file;
+            break;
+        }
     }
 
-    // 2. Prep the SQL Foundation
-    echo "📝 Preparing foundation from database/skeeme.sql...\n";
-    $sqlFile = __DIR__ . '/../database/skeeme.sql';
-    if (!file_exists($sqlFile)) {
-        throw new Exception("SQL file not found at: $sqlFile");
+    if (!$foundationFile) {
+        throw new Exception("Foundation SQL file not found (checked skeeme structure.sql and database/skeeme.sql)");
     }
 
-    $sql = file_get_contents($sqlFile);
+    echo "📝 Loading foundation from: " . basename($foundationFile) . "\n";
+    $sql = file_get_contents($foundationFile);
     
-    // CLEANING: Remove DEFINER statements which cause permission errors in cloud DBs
+    // CLEANING: Strip DEFINERs
     $sql = preg_replace('/DEFINER\s*=\s*`[^`]+`@`[^`]+`/', '', $sql);
     
-    // CLEANING: Remove parent_tokens table and inserts if present (deprecated)
-    // First, find the table creation and remove it
-    $sql = preg_replace('/CREATE TABLE IF NOT EXISTS `parent_tokens`[^;]+;/is', '-- Removed parent_tokens', $sql);
-    $sql = preg_replace('/INSERT INTO `parent_tokens`[^;]+;/is', '-- Removed parent_tokens data', $sql);
-    $sql = preg_replace('/DROP TABLE IF EXISTS `parent_tokens`;/i', '-- Removed parent_tokens drop', $sql);
+    // CLEANING: Convert MyISAM to InnoDB (for foreign keys)
+    $sql = str_ireplace('ENGINE=MyISAM', 'ENGINE=InnoDB', $sql);
+    
+    // CLEANING: Handle common collation issues (0900_ai_ci vs unicode_ci)
+    $sql = str_ireplace('utf8mb4_0900_ai_ci', 'utf8mb4_unicode_ci', $sql);
 
-    // 3. Import the SQL Foundation
-    echo "🐘 Importing base schema commands...\n";
+    // 3. Import
+    echo "🐘 Importing foundation commands...\n";
     
     $commands = [];
     $currentCommand = '';
@@ -99,13 +100,13 @@ try {
         try {
             $pdo->exec($cmd);
         } catch (Exception $e) {
-            echo "⚠️ Command " . ($index + 1) . " Warning: " . $e->getMessage() . "\n";
-            // We continue here because some warnings are expected (like "Table already exists" if our wipe somehow missed something)
+            // Log but continue
+            echo "⚠️ Cmd " . ($index + 1) . " Warning: " . substr($e->getMessage(), 0, 100) . "...\n";
         }
     }
 
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
-    echo "✅ Database foundation reconstructed successfully!\n";
+    echo "✅ Foundation reconstructed! Moving to incremental migrations...\n";
 
 } catch (Exception $e) {
     echo "❌ FATAL ERROR: " . $e->getMessage() . "\n";
