@@ -59,7 +59,7 @@
         </div>
     </section>
 
-    <!-- Stats Row (Premium dashboard style) -->
+    <!-- Stats Row (Premium dashboard style) - Voided for launch
     <section class="py-12 bg-slate-50 border-y border-slate-100">
         <div class="max-w-7xl mx-auto px-6">
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
@@ -82,6 +82,7 @@
             </div>
         </div>
     </section>
+    -->
 
     <!-- SaaS Feature Showcase (Replacing Problems) -->
     <section class="py-32 relative overflow-hidden">
