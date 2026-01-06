@@ -38,10 +38,9 @@ RUN composer install --no-dev --optimize-autoloader
 # Install Node dependencies and build assets
 RUN npm install && npm run build
 
-# Optimize Laravel
-RUN php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache
+# Optimize Laravel (Runtime only - do NOT run config:cache here as env vars are missing at build time)
+# We can enable these later via a startup script if needed
+RUN php artisan view:cache
 
 # Set permissions for Laravel
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
