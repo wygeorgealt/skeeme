@@ -125,7 +125,6 @@
                                         </div>
                                         <div>
                                             <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">{{ $course->name }}</h4>
-                                            <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">{{ $course->code }}</p>
                                         </div>
                                     </div>
                                     <div class="flex flex-col items-end gap-1">

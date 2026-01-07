@@ -31,9 +31,6 @@
                             >
                                 <div>
                                     <div class="font-bold text-sm {{ $selectedCourseId === $course->id ? 'text-indigo-700 dark:text-indigo-400' : 'text-zinc-700 dark:text-zinc-300' }}">
-                                        {{ $course->code }}
-                                    </div>
-                                    <div class="text-xs {{ $selectedCourseId === $course->id ? 'text-indigo-600/80 dark:text-indigo-400/80' : 'text-zinc-500' }} truncate max-w-[150px]">
                                         {{ $course->name }}
                                     </div>
                                 </div>

@@ -93,7 +93,6 @@
                                         <td class="p-6">
                                             <div class="flex flex-col gap-1">
                                                 <span class="text-sm font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 transition-colors leading-none">{{ $course->name }}</span>
-                                                <span class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest font-mono">{{ $course->code }}</span>
                                             </div>
                                         </td>
                                         <td class="p-6 text-center">

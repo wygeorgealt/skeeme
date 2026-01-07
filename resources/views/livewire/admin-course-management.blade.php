@@ -44,7 +44,7 @@
                 <thead class="bg-zinc-50 dark:bg-zinc-800/50 text-xs uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-wider">
                     <tr>
                         <th class="px-6 py-4">Course Name</th>
-                        <th class="px-6 py-4">Code</th>
+
                         <th class="px-6 py-4">Lecturer</th>
                         <th class="px-6 py-4">Status</th>
                         <th class="px-6 py-4 text-right">Actions</th>
@@ -62,7 +62,7 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 font-mono text-xs">{{ $course->code }}</td>
+
                             <td class="px-6 py-4">
                                 @if($course->lecturers->count() > 0)
                                     <div class="flex items-center gap-2">

@@ -48,7 +48,7 @@
                                 <thead>
                                     <tr class="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800">
                                         <th class="p-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Course Details</th>
-                                        <th class="p-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">Code</th>
+
                                         <th class="p-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">Students</th>
                                         <th class="p-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Actions</th>
                                     </tr>
@@ -60,11 +60,6 @@
                                                 <div class="flex flex-col">
                                                     <span class="text-sm font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 transition-colors">{{ $course->name }}</span>
                                                 </div>
-                                            </td>
-                                            <td class="p-4 text-center">
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight border bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700 font-mono">
-                                                    {{ $course->code }}
-                                                </span>
                                             </td>
                                             <td class="p-4 text-center">
                                                 <span class="text-sm font-bold text-zinc-900 dark:text-zinc-100">{{ $course->enrollments_count ?? 0 }}</span>

@@ -96,7 +96,6 @@
                         <div class="course-card">
                             <div class="course-info">
                                 <div class="course-name">{{ $course->name }}</div>
-                                <div class="course-code">{{ $course->code }}</div>
                                 <div class="course-description">{{ $course->description }}</div>
                             </div>
                             <div class="course-actions">
