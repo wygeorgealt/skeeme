@@ -59,29 +59,29 @@ new class extends Component {
                     </div>
                 </div>
 
-                <!-- Microsoft Integration -->
+                <!-- Slack Integration -->
                 <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col justify-between">
                     <div>
                         <div class="flex items-center gap-3 mb-4">
-                            <div class="size-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
-                                <i class="fab fa-microsoft"></i>
+                            <div class="size-10 rounded-xl bg-slate-50 text-[#4A154B] flex items-center justify-center text-xl">
+                                <i class="fab fa-slack"></i>
                             </div>
                             <div>
-                                <h4 class="font-bold text-slate-900">Microsoft Teams</h4>
-                                <p class="text-xs text-slate-500">Meetings & Online Presence</p>
+                                <h4 class="font-bold text-slate-900">Slack</h4>
+                                <p class="text-xs text-slate-500">Notifications & Commands</p>
                             </div>
                         </div>
-                        <p class="text-xs text-slate-500 mb-6">Generate Teams meeting links directly from your Skeeme classes.</p>
+                        <p class="text-xs text-slate-500 mb-6">Connect Slack to receive real-time alerts and manage school operations.</p>
                     </div>
-
+ 
                     <div class="flex items-center justify-between">
-                        @if(in_array('microsoft', $connectedProviders))
+                        @if(in_array('slack', $connectedProviders))
                             <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-wider">
                                 <span class="size-1.5 rounded-full bg-emerald-500"></span> Connected
                             </span>
-                            <flux:button wire:click="disconnect('microsoft')" variant="ghost" size="sm" class="text-slate-400 hover:text-red-600">Disconnect</flux:button>
+                            <flux:button wire:click="disconnect('slack')" variant="ghost" size="sm" class="text-slate-400 hover:text-red-600">Disconnect</flux:button>
                         @else
-                            <flux:button href="{{ route('integrations.redirect', 'microsoft') }}" variant="primary" size="sm" class="w-full">Connect</flux:button>
+                            <flux:button href="{{ route('integrations.redirect', 'slack') }}" variant="primary" size="sm" class="w-full">Connect</flux:button>
                         @endif
                     </div>
                 </div>

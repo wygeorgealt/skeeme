@@ -16,7 +16,7 @@ class IntegrationController extends Controller
     public function redirect(string $provider)
     {
         $scopes = $this->getScopesForProvider($provider);
-        $driver = $provider === 'microsoft' ? 'graph' : $provider;
+        $driver = $provider;
         
         return Socialite::driver($driver)
             ->scopes($scopes)
@@ -29,7 +29,7 @@ class IntegrationController extends Controller
     public function callback(string $provider)
     {
         try {
-            $driver = $provider === 'microsoft' ? 'graph' : $provider;
+            $driver = $provider;
             
             $socialUser = Socialite::driver($driver)->user();
             $user = Auth::user();
@@ -134,14 +134,14 @@ class IntegrationController extends Controller
                 'profile',
                 'email'
             ],
-            'microsoft' => [
-                'OnlineMeetings.ReadWrite',
-                'User.Read',
-                'offline_access'
-            ],
             'zoom' => [
                 'meeting:write',
                 'meeting:read'
+            ],
+            'slack' => [
+                'incoming-webhook',
+                'commands',
+                'bot'
             ],
             default => [],
         };

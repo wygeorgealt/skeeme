@@ -69,7 +69,7 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(
             \SocialiteProviders\Manager\SocialiteWasCalled::class,
-            \SocialiteProviders\Graph\GraphExtendSocialite::class.'@handle',
+            \SocialiteProviders\Slack\SlackExtendSocialite::class.'@handle',
         );
 
         Event::listen(

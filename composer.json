@@ -20,9 +20,13 @@
         "livewire/flux": "^2.1.1",
         "livewire/volt": "^1.7.0",
         "masmerise/livewire-toaster": "^2.8",
+        "nyholm/psr7": "^1.8",
         "pusher/pusher-php-server": "^7.2",
+        "railsware/mailtrap-php": "^3.9",
         "socialiteproviders/microsoft-graph": "^4.1",
+        "socialiteproviders/slack": "^5.2",
         "socialiteproviders/zoom": "^4.0",
+        "symfony/http-client": "^7.4",
         "tecnickcom/tcpdf": "^6.10"
     },
     "require-dev": {

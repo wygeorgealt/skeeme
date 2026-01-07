@@ -35,6 +35,11 @@
                         <i class="fas fa-check-circle text-indigo-500"></i> Admin Health Reports
                     </li>
                 </ul>
+                @auth
+                    <div class="mt-8">
+                        <flux:button href="{{ route('integrations.redirect', 'slack') }}" variant="primary" size="sm" class="w-full !rounded-xl">Connect Slack</flux:button>
+                    </div>
+                @endauth
             </div>
 
             <!-- Zoom -->
@@ -57,6 +62,11 @@
                         <i class="fas fa-check-circle text-indigo-500"></i> Class Summary Archive
                     </li>
                 </ul>
+                @auth
+                    <div class="mt-8">
+                        <flux:button href="{{ route('integrations.redirect', 'zoom') }}" variant="primary" size="sm" class="w-full !rounded-xl">Connect Zoom</flux:button>
+                    </div>
+                @endauth
             </div>
 
             <!-- Google Calendar -->
