@@ -407,7 +407,6 @@ class StudentExamDelivery extends Component
             'flaggedCount' => count($this->flaggedQuestions),
             'answerSummary' => $this->getAnswerSummary(),
             'isRandomized' => $this->isRandomized,
-            'allQuestionsJson' => json_encode($this->getAllQuestionsForClientSide()),
         ])->layout('layouts.exam');
     }
 }

@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    @include('partials.google-tag')
-    <title>{{ $title ?? 'Exam' }}</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @livewireStyles
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo e($title ?? 'Exam'); ?></title>
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
+    <?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::styles(); ?>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         (function() {
@@ -23,13 +23,16 @@
             } catch(e) { console.error('Timezone detection failed', e); }
         })();
     </script>
-    {{ $head ?? '' }}
+    <?php echo e($head ?? ''); ?>
+
 </head>
 <body class="bg-zinc-950 text-zinc-100 exam-mode-active">
     
-    {{ $slot }}
+    <?php echo e($slot); ?>
 
-    @livewireScripts
+
+    <?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::scripts(); ?>
+
     
     <!-- KaTeX for Math Rendering -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -56,8 +59,12 @@
         });
     </script>
 
-    @fluxScripts
-    @stack('scripts')
-    {{ $scripts ?? '' }}
+    <?php app('livewire')->forceAssetInjection(); ?>
+<?php echo app('flux')->scripts(); ?>
+
+    <?php echo $__env->yieldPushContent('scripts'); ?>
+    <?php echo e($scripts ?? ''); ?>
+
 </body>
 </html>
+<?php /**PATH C:\Users\kritex\Herd\skeeme\resources\views/layouts/exam.blade.php ENDPATH**/ ?>
