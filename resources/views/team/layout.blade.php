@@ -6,7 +6,7 @@
     <div class="team-sidebar">
         <div class="sidebar-header">
             <h3>Team Dashboard</h3>
-            <span class="role-badge">{{ auth()->user()->teamMember->role }}</span>
+            <span class="role-badge">{{ auth()->user()->teamMember?->role ?? 'Team User' }}</span>
         </div>
 
         <nav class="sidebar-nav">

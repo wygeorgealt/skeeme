@@ -49,7 +49,7 @@
                     @endphp
 
                     <flux:sidebar.item 
-                        icon="academic-cap" 
+                        icon="magnifying-glass" 
                         :href="route('lecturer.grading.hub')" 
                         wire:navigate
                         :badge="$pendingGradingCount > 0 ? $pendingGradingCount : null"
