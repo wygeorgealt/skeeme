@@ -9,7 +9,6 @@ use App\Models\Exam;
 use App\Models\ExamSession;
 use Livewire\Attributes\Layout;
 
-#[Layout('team.layout')]
 class LecturerGradingHub extends Component
 {
     public $selectedCourseId = null;
