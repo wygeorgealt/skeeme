@@ -44,7 +44,7 @@
                     
                     @php
                         $pendingGradingCount = \App\Models\ExamSession::whereHas('exam', function($q) {
-                            $q->whereIn('course_id', auth()->user()->courses()->pluck('id'));
+                            $q->whereIn('course_id', auth()->user()->courses()->pluck('courses.id'));
                         })->whereIn('status', ['submitted', 'graded'])->count();
                     @endphp
 
