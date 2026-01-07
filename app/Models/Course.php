@@ -22,6 +22,11 @@ class Course extends Model
         'course_rep_id',
         'created_by',
         'status',
+        'zoom_meeting_id',
+        'zoom_join_url',
+        'zoom_start_url',
+        'zoom_recording_url',
+        'class_summary',
     ];
 
     protected $casts = [

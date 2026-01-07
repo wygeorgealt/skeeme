@@ -143,11 +143,11 @@
 
                 <flux:dropdown>
                     <flux:button variant="ghost" class="!font-bold !text-sm !text-slate-900 hover:!text-indigo-600 !px-4 !py-2">
-                        Learn <flux:icon.chevron-down variant="micro" class="ml-1 opacity-50" />
+                        Resources <flux:icon.chevron-down variant="micro" class="ml-1 opacity-50" />
                     </flux:button>
                     <flux:menu class="min-w-64 p-3 rounded-2xl shadow-2xl border-slate-100 bg-white" appearance="light">
-                        <flux:menu.item href="{{ url('learn/tutorials') }}" icon="play-circle">Tutorials</flux:menu.item>
-                        <flux:menu.item href="{{ url('learn/blog') }}" icon="newspaper">Blog</flux:menu.item>
+                        <flux:menu.item href="{{ url('integrations') }}" icon="puzzle-piece">Integration</flux:menu.item>
+                        <flux:menu.item href="{{ url('changelog') }}" icon="rocket-launch">Changelog</flux:menu.item>
                     </flux:menu>
                 </flux:dropdown>
             </nav>
@@ -205,7 +205,8 @@
                     <ul class="space-y-4">
                         <li><flux:link href="{{ url('/') }}#features" class="text-slate-500 hover:text-indigo-600 text-sm font-bold no-underline transition-colors">Features</flux:link></li>
                         <li><flux:link href="{{ url('pricing') }}" class="text-slate-500 hover:text-indigo-600 text-sm font-bold no-underline transition-colors">Pricing</flux:link></li>
-                        <li><flux:link href="{{ url('register') }}" class="text-slate-500 hover:text-indigo-600 text-sm font-bold no-underline transition-colors">Registration</flux:link></li>
+                        <li><flux:link href="{{ url('integrations') }}" class="text-slate-500 hover:text-indigo-600 text-sm font-bold no-underline transition-colors">Integration</flux:link></li>
+                        <li><flux:link href="{{ url('changelog') }}" class="text-slate-500 hover:text-indigo-600 text-sm font-bold no-underline transition-colors">Changelog</flux:link></li>
                     </ul>
                 </div>
 

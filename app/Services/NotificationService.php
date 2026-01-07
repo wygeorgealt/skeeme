@@ -68,6 +68,9 @@ class NotificationService
      */
     public function sendGradeReleased(User $student, object $exam, float $score, string $grade): Notification
     {
+        // Trigger external notifications (Slack + Mail)
+        $student->notify(new \App\Notifications\GradeReleasedNotification($exam, $score, $grade));
+
         return $this->createNotification(
             $student,
             Notification::TYPE_GRADE_RELEASED,

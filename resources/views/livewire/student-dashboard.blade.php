@@ -127,10 +127,24 @@
                                             <h4 class="text-sm font-bold text-zinc-900 dark:text-zinc-100">{{ $course->name }}</h4>
                                         </div>
                                     </div>
-                                    <div class="flex flex-col items-end gap-1">
-                                        <div class="text-[10px] font-bold text-zinc-900 dark:text-zinc-100">{{ ($course->completed_topics / max(1, $course->total_topics)) * 100 }}%</div>
-                                        <div class="w-24 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                                            <div class="h-full bg-emerald-500 rounded-full" style="width: {{ ($course->completed_topics / max(1, $course->total_topics)) * 100 }}%"></div>
+                                    <div class="flex flex-col items-end gap-2">
+                                        @if($course->zoom_join_url)
+                                            <a href="{{ $course->zoom_join_url }}" target="_blank" class="flex items-center gap-2 px-3 py-1 bg-rose-500 text-white rounded-full text-[9px] font-bold uppercase tracking-widest animate-pulse hover:bg-rose-600 transition-colors">
+                                                <i class="fas fa-video"></i>
+                                                Join Live
+                                            </a>
+                                        @endif
+                                        @if($course->zoom_recording_url)
+                                            <a href="{{ $course->zoom_recording_url }}" target="_blank" class="flex items-center gap-2 px-3 py-1 bg-indigo-500 text-white rounded-full text-[9px] font-bold uppercase tracking-widest hover:bg-indigo-600 transition-colors">
+                                                <i class="fas fa-play-circle"></i>
+                                                Watch Rewind
+                                            </a>
+                                        @endif
+                                        <div class="flex items-center gap-2">
+                                            <div class="text-[10px] font-bold text-zinc-900 dark:text-zinc-100">{{ round(($course->completed_topics / max(1, $course->total_topics)) * 100) }}%</div>
+                                            <div class="w-24 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                                                <div class="h-full bg-emerald-500 rounded-full" style="width: {{ ($course->completed_topics / max(1, $course->total_topics)) * 100 }}%"></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -17,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetUserTimezone::class,
             \App\Http\Middleware\RedirectBasedOnRole::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'api/v1/webhooks/zoom',
+        ]);
         
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,

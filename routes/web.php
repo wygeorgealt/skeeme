@@ -115,13 +115,13 @@ Route::get('/learn/documentation/data-import-export', function () {
     return view('landing.learn.data-import-export');
 })->name('learn.documentation.data-import-export');
 
-Route::get('/learn/tutorials', function () {
-    return view('landing.learn.tutorials');
-})->name('learn.tutorials');
+Route::get('/integrations', function () {
+    return view('landing.integrations');
+})->name('integrations.showcase');
 
-Route::get('/learn/blog', function () {
-    return view('landing.learn.blog');
-})->name('learn.blog');
+Route::get('/changelog', function () {
+    return view('landing.changelog');
+})->name('changelog');
 
 // Blog articles
 Route::get('/learn/blog/ai-powered-education', function () {

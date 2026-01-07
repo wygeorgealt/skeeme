@@ -45,7 +45,8 @@ use App\Http\Controllers\API\VectorStoreEntryController;
 */
 
 Route::prefix('v1')->group(function () {
-    // Public endpoints (if any) can go here
+    // Public endpoints
+    Route::post('/webhooks/zoom', [\App\Http\Controllers\Webhooks\ZoomWebhookController::class, 'handle']);
 
     // Authenticated routes
     Route::middleware('auth:sanctum')->group(function () {

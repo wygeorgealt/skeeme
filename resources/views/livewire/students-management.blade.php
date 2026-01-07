@@ -2,8 +2,8 @@
     <!-- Page Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
-            <flux:heading size="xl" class="italic">Manage Students</flux:heading>
-            <flux:subheading>Add, edit, and manage student accounts for your school.</flux:subheading>
+            <h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Manage Students</h1>
+            <p class="text-zinc-600 dark:text-zinc-400">Add, edit, and manage student accounts for your school.</p>
         </div>
         <div class="flex items-center gap-3">
             <flux:button wire:click="exportStudents" icon="arrow-down-tray">Export CSV</flux:button>
@@ -81,19 +81,19 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 rounded-2xl shadow-sm flex flex-col gap-1 transition-all hover:translate-y-[-2px] hover:shadow-md">
             <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Active Students</div>
-            <div class="text-3xl font-bold text-emerald-500">{{ $students->where('status', 'active')->count() }}</div>
+            <div class="text-3xl font-bold text-emerald-500">{{ $stats['active'] }}</div>
         </div>
         <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 rounded-2xl shadow-sm flex flex-col gap-1 transition-all hover:translate-y-[-2px] hover:shadow-md border-l-4 border-l-amber-500">
             <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Suspended</div>
-            <div class="text-3xl font-bold text-amber-500">{{ $students->where('status', 'suspended')->count() }}</div>
+            <div class="text-3xl font-bold text-amber-500">{{ $stats['suspended'] }}</div>
         </div>
-        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 rounded-2xl shadow-sm flex flex-col gap-1 transition-all hover:translate-y-[-2px] hover:shadow-md">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 rounded-2xl shadow-sm flex flex-col gap-1 transition-all hover:translate-y-[-2px] hover:shadow-md border-l-4 border-l-blue-500">
             <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">No Class</div>
-            <div class="text-3xl font-bold text-blue-500">{{ $students->whereNull('class_id')->count() }}</div>
+            <div class="text-3xl font-bold text-blue-500">{{ $stats['no_class'] }}</div>
         </div>
         <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 rounded-2xl shadow-sm flex flex-col gap-1 transition-all hover:translate-y-[-2px] hover:shadow-md border-l-4 border-l-zinc-900 dark:border-l-zinc-100">
             <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Total Population</div>
-            <div class="text-3xl font-bold text-zinc-900 dark:text-zinc-100">{{ $students->total() }}</div>
+            <div class="text-3xl font-bold text-zinc-900 dark:text-zinc-100">{{ $stats['total'] }}</div>
         </div>
     </div>
 
@@ -211,8 +211,19 @@
             </div>
 
             <!-- Pagination -->
-            <div class="p-4 border-t border-zinc-100 dark:divide-zinc-800">
-                {{ $students->links() }}
+            <div class="px-6 py-4 bg-zinc-50 dark:bg-zinc-800/50 border-t border-zinc-100 dark:border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-zinc-500 font-medium">Show</span>
+                    <select wire:model.live="perPage" class="h-8 pl-2 pr-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs focus:ring-2 focus:ring-zinc-500 outline-none appearance-none transition-all text-zinc-700 dark:text-zinc-300">
+                        <option value="10">10 per page</option>
+                        <option value="20">20 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="all">Show All</option>
+                    </select>
+                </div>
+                <div class="flex-1 flex justify-end">
+                    {{ $students->links() }}
+                </div>
             </div>
         @else
             <div class="py-24 text-center">

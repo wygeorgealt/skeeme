@@ -3,8 +3,8 @@
         {{ $slot }}
     </flux:main>
 
-    <!-- Skeemy AI Assistant -->
-    @livewire('skeemy-assistant')
+    <!-- Skeemy AI Assistant (Disabled for now) -->
+    {{-- @livewire('skeemy-assistant') --}}
 </x-layouts.app.sidebar>
 
 <!-- Global Loading Overlay for Tab Switching -->

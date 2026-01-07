@@ -126,9 +126,8 @@
                     <div class="flex-1 order-1 lg:order-2" data-aos="zoom-in">
                         <div class="relative group">
                             <div class="absolute -inset-4 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-[40px] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
-                            <div class="relative premium-card overflow-hidden bg-slate-50 min-h-[300px] flex items-center justify-center">
-                                <!-- Your Screenshot Here -->
-                                <div class="text-slate-300 text-6xl opacity-20"><i class="fas fa-image"></i></div>
+                            <div class="relative z-10 w-full overflow-hidden rounded-2xl" style="-webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%); mask-image: linear-gradient(to bottom, black 50%, transparent 100%);">
+                                <img src="{{ asset('landing/analytics.png') }}" alt="Intelligence Analytics" class="w-full h-auto drop-shadow-2xl">
                             </div>
                         </div>
                     </div>
@@ -139,7 +138,9 @@
                     <div class="flex-1" data-aos="zoom-in">
                         <div class="relative group">
                             <div class="absolute -inset-4 bg-gradient-to-br from-orange-500 to-amber-500 rounded-[40px] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
-                            <img src="{{ asset('landing/ai preview.png') }}" alt="AI Exam Preview" class="relative z-10 w-full h-auto drop-shadow-2xl rounded-2xl">
+                            <div class="relative z-10 w-full overflow-hidden rounded-2xl" style="-webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%); mask-image: linear-gradient(to bottom, black 50%, transparent 100%);">
+                                <img src="{{ asset('landing/ai preview-modified.png') }}" alt="AI Exam Preview" class="w-full h-auto drop-shadow-2xl">
+                            </div>
                         </div>
                     </div>
                     <div class="flex-1" data-aos="fade-left">
@@ -201,7 +202,9 @@
                     <div class="flex-1 order-1 lg:order-2" data-aos="zoom-in">
                         <div class="relative group">
                             <div class="absolute -inset-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-[40px] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
-                            <img src="{{ asset('landing/student mange.png') }}" alt="Student Management" class="relative z-10 w-full h-auto drop-shadow-2xl rounded-2xl">
+                            <div class="relative z-10 w-full overflow-hidden rounded-2xl" style="-webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%); mask-image: linear-gradient(to bottom, black 50%, transparent 100%);">
+                                <img src="{{ asset('landing/student.png') }}" alt="Student Management" class="w-full h-auto drop-shadow-2xl">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -304,27 +307,13 @@
             <h2 data-aos="fade-up" class="text-xs font-black uppercase tracking-[0.3em] text-indigo-600 mb-4">Integrations</h2>
             <h3 data-aos="fade-up" data-aos-delay="100" class="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-16">Connects with your ecosystem.</h3>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6" data-aos="fade-up" data-aos-delay="200">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6" data-aos="fade-up" data-aos-delay="200">
                 <!-- Google Workspace -->
                 <div class="premium-card p-6 flex flex-col items-center justify-center gap-3 group">
                     <div class="size-12 flex items-center justify-center text-3xl text-slate-400 group-hover:text-[#4285F4] transition-colors duration-500">
                         <i class="fab fa-google"></i>
                     </div>
                     <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Workspace</span>
-                </div>
-                <!-- Microsoft Teams -->
-                <div class="premium-card p-6 flex flex-col items-center justify-center gap-3 group">
-                    <div class="size-12 flex items-center justify-center text-3xl text-slate-400 group-hover:text-[#6264A7] transition-colors duration-500">
-                        <i class="fab fa-microsoft"></i>
-                    </div>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Teams</span>
-                </div>
-                <!-- Zoom -->
-                <div class="premium-card p-6 flex flex-col items-center justify-center gap-3 group">
-                    <div class="size-12 flex items-center justify-center text-3xl text-slate-400 group-hover:text-[#2D8CFF] transition-colors duration-500">
-                        <i class="fas fa-video"></i>
-                    </div>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Zoom</span>
                 </div>
                 <!-- Slack -->
                 <div class="premium-card p-6 flex flex-col items-center justify-center gap-3 group">
@@ -333,25 +322,14 @@
                     </div>
                     <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Slack</span>
                 </div>
-                <!-- Dropbox -->
+                <!-- Zoom -->
                 <div class="premium-card p-6 flex flex-col items-center justify-center gap-3 group">
-                    <div class="size-12 flex items-center justify-center text-3xl text-slate-400 group-hover:text-[#0061FF] transition-colors duration-500">
-                        <i class="fab fa-dropbox"></i>
+                    <div class="size-12 flex items-center justify-center text-3xl text-slate-400 group-hover:text-[#2D8CFF] transition-colors duration-500">
+                        <i class="fas fa-video"></i>
                     </div>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Dropbox</span>
-                </div>
-                <!-- GitHub (for labs) -->
-                <div class="premium-card p-6 flex flex-col items-center justify-center gap-3 group">
-                    <div class="size-12 flex items-center justify-center text-3xl text-slate-400 group-hover:text-[#333] transition-colors duration-500">
-                        <i class="fab fa-github"></i>
-                    </div>
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">GitHub</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Zoom</span>
                 </div>
             </div>
-
-            <p data-aos="fade-up" data-aos-delay="300" class="mt-12 text-sm text-slate-500 font-medium">
-                And 20+ more. <a href="#" class="text-indigo-600 font-bold hover:underline">View all integrations</a>
-            </p>
         </div>
     </section>
     <section class="py-32 relative overflow-hidden bg-slate-900 text-white">

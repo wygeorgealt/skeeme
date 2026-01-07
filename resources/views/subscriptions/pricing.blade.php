@@ -67,7 +67,7 @@
                                             type="submit"
                                             class="w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white {{ $planKey === 'Pro' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 hover:bg-gray-700' }} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                         >
-                                            {{ $plan['price'] > 0 ? 'Start Free Trial' : 'Get Started' }}
+                                            {{ $plan['price'] > 0 ? 'Subscribe Now' : 'Get Started' }}
                                         </button>
                                     </form>
                                 </div>
@@ -99,7 +99,7 @@
 
                     <div class="mt-12 text-center">
                         <p class="text-gray-600">
-                            All plans include a 14-day free trial. No credit card required to start.
+                            Transparent pricing with all core features included. No hidden costs.
                         </p>
                         <p class="text-sm text-gray-500 mt-2">
                             Need a custom plan? <a href="#" class="text-blue-600 hover:text-blue-500">Contact us</a>

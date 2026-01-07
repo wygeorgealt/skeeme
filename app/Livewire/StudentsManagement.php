@@ -25,6 +25,7 @@ class StudentsManagement extends Component
     public $classFilter = 'all';
     public $sortBy = 'name';
     public $sortDirection = 'asc';
+    public $perPage = 10;
 
     public $showAddModal = false;
     public $showEditModal = false;
@@ -61,6 +62,7 @@ class StudentsManagement extends Component
         'classFilter' => ['except' => 'all'],
         'sortBy' => ['except' => 'name'],
         'sortDirection' => ['except' => 'asc'],
+        'perPage' => ['except' => 10],
     ];
 
     public function mount()
@@ -91,6 +93,11 @@ class StudentsManagement extends Component
     {
         $this->resetPage();
         $this->resetSelection();
+    }
+
+    public function updatedPerPage()
+    {
+        $this->resetPage();
     }
 
     public function updatedSelectAll($value)
@@ -171,7 +178,11 @@ class StudentsManagement extends Component
                 break;
         }
 
-        return $query->paginate(10);
+        if ($this->perPage === 'all') {
+            return $query->paginate($query->count() ?: 10);
+        }
+
+        return $query->paginate($this->perPage);
     }
 
     public function getAvailableClasses()
@@ -529,11 +540,25 @@ class StudentsManagement extends Component
         }
     }
 
+    public function getStats()
+    {
+        $baseQuery = User::where('role', 'student')
+            ->where('school_id', auth()->user()->school_id);
+
+        return [
+            'active' => (clone $baseQuery)->where('status', 'active')->count(),
+            'suspended' => (clone $baseQuery)->where('status', 'suspended')->count(),
+            'no_class' => (clone $baseQuery)->whereNull('class_id')->count(),
+            'total' => $baseQuery->count(),
+        ];
+    }
+
     public function render()
     {
         return view('livewire.students-management', [
             'students' => $this->getStudents(),
             'availableClasses' => $this->getAvailableClasses(),
+            'stats' => $this->getStats(),
         ]);
     }
 }

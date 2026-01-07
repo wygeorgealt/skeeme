@@ -37,7 +37,9 @@ class LecturerCourses extends Component
                 'courses.*',
                 'schools.name as school_name',
                 DB::raw('(SELECT COUNT(*) FROM enrollments WHERE enrollments.course_id = courses.id) as enrollments_count'),
-                DB::raw('(SELECT COUNT(*) FROM scheme_of_work WHERE scheme_of_work.course_id = courses.id) as topics_count')
+                DB::raw('(SELECT COUNT(*) FROM scheme_of_work WHERE scheme_of_work.course_id = courses.id) as topics_count'),
+                'courses.zoom_join_url',
+                'courses.zoom_start_url'
             )
             ->orderBy('courses.created_at', 'desc')
             ->get()
@@ -56,7 +58,9 @@ class LecturerCourses extends Component
                 'schools.name as school_name',
                 DB::raw('(SELECT COUNT(*) FROM enrollments WHERE enrollments.course_id = courses.id) as enrollments_count'),
                 DB::raw('(SELECT COUNT(*) FROM scheme_of_work WHERE scheme_of_work.course_id = courses.id) as topics_count'),
-                DB::raw('(SELECT COUNT(*) FROM exams WHERE exams.course_id = courses.id) as exams_count')
+                DB::raw('(SELECT COUNT(*) FROM exams WHERE exams.course_id = courses.id) as exams_count'),
+                'courses.zoom_join_url',
+                'courses.zoom_start_url'
             )
             ->orderBy('courses.name')
             ->get();
@@ -154,6 +158,53 @@ class LecturerCourses extends Component
             $this->showDeleteModal = false;
             $this->courseIdToDelete = null;
         }
+    }
+    public function startLiveClass($courseId)
+    {
+        try {
+            $course = \App\Models\Course::find($courseId);
+            $zoomService = new \App\Services\ZoomService();
+            
+            $meeting = $zoomService->createMeeting(
+                "Live Class: " . $course->name,
+                now()->toIso8601String()
+            );
+
+            $course->update([
+                'zoom_meeting_id' => $meeting['id'],
+                'zoom_join_url' => $meeting['join_url'],
+                'zoom_start_url' => $meeting['start_url'],
+            ]);
+
+            $this->toastSuccess('Live class initialized! Students have been notified.', 'Class Started');
+            
+            // Notify students via Slack and Email
+            $students = $course->enrolledStudents;
+            foreach ($students as $student) {
+                $student->notify(new \App\Notifications\LiveClassStarted($course));
+            }
+
+            $this->loadCourses();
+            
+            // Redirect to the start URL
+            $this->dispatch('open-url', url: $meeting['start_url']);
+
+        } catch (\Exception $e) {
+            $this->toastError('Failed to start live class: ' . $e->getMessage(), 'Zoom Error');
+        }
+    }
+
+    public function endLiveClass($courseId)
+    {
+        $course = \App\Models\Course::find($courseId);
+        $course->update([
+            'zoom_meeting_id' => null,
+            'zoom_join_url' => null,
+            'zoom_start_url' => null,
+        ]);
+        
+        $this->loadCourses();
+        $this->toastInfo('Live session cleared.', 'Session Ended');
     }
 
     public function render()

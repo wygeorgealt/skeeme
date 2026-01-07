@@ -124,6 +124,13 @@
                                             <div class="flex items-center justify-end gap-2 group/actions">
                                                 <flux:button href="{{ route('lecturer.exams', ['selectedCourse' => $course->id]) }}" variant="ghost" size="xs" icon="document-magnifying-glass" class="opacity-0 group-hover/actions:opacity-100 transition-all hover:text-indigo-600" title="Exams" />
                                                 <flux:button wire:click="shareCourse({{ $course->id }})" variant="ghost" size="xs" icon="share" class="opacity-0 group-hover/actions:opacity-100 transition-all hover:text-indigo-600" title="Share" />
+                                                
+                                                @if($course->zoom_join_url)
+                                                    <flux:button wire:click="endLiveClass({{ $course->id }})" variant="ghost" size="xs" icon="video-camera" class="text-rose-600 opacity-100 transition-all animate-pulse" title="End Live Class" />
+                                                @else
+                                                    <flux:button wire:click="startLiveClass({{ $course->id }})" variant="ghost" size="xs" icon="video-camera" class="opacity-0 group-hover/actions:opacity-100 transition-all hover:text-indigo-600" title="Start Live Class" />
+                                                @endif
+
                                                 <flux:button wire:click="editCourse({{ $course->id }})" variant="ghost" size="xs" icon="pencil-square" class="opacity-0 group-hover/actions:opacity-100 transition-all hover:text-amber-600" title="Edit" />
                                                 <flux:button wire:click="deleteCourse({{ $course->id }})" variant="ghost" size="xs" icon="trash" class="opacity-0 group-hover/actions:opacity-100 transition-all hover:text-rose-600" title="Delete" />
                                                 <i class="fas fa-ellipsis-v text-zinc-200 group-hover/actions:hidden text-[10px]"></i>
@@ -186,6 +193,13 @@
                                                 <div class="flex items-center gap-1">
                                                     <flux:button href="{{ route('lecturer.exams', ['selectedCourse' => $course->id]) }}" variant="ghost" size="xs" icon="document-magnifying-glass" class="hover:text-indigo-600" title="Exams" />
                                                     <flux:button wire:click="shareCourse({{ $course->id }})" variant="ghost" size="xs" icon="share" class="hover:text-indigo-600" title="Share" />
+                                                    
+                                                    @if($course->zoom_join_url)
+                                                        <flux:button wire:click="endLiveClass({{ $course->id }})" variant="ghost" size="xs" icon="video-camera" class="text-rose-600 animate-pulse" title="End Live Class" />
+                                                    @else
+                                                        <flux:button wire:click="startLiveClass({{ $course->id }})" variant="ghost" size="xs" icon="video-camera" class="hover:text-indigo-600" title="Start Live Class" />
+                                                    @endif
+
                                                     <flux:button href="{{ route('lecturer.attendance', ['course' => $course->id]) }}" variant="ghost" size="xs" icon="check-badge" class="hover:text-amber-600" title="Attendance" />
                                                     <flux:button href="{{ route('lecturer.curriculum', ['course' => $course->id]) }}" variant="ghost" size="xs" icon="academic-cap" class="hover:text-indigo-600" title="Curriculum" />
                                                     <flux:button href="{{ route('lecturer.notes', ['course' => $course->id]) }}" variant="ghost" size="xs" icon="document-text" class="hover:text-blue-600" title="Notes" />
@@ -421,4 +435,11 @@
 
         .dark .stat-detail { color: #71717a; }
     </style>
+    <script>
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('open-url', (event) => {
+                window.open(event.url, '_blank');
+            });
+        });
+    </script>
 </div>
