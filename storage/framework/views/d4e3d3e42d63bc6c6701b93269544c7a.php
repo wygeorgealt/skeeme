@@ -337,6 +337,36 @@
 <?php $component = $__componentOriginalfe86969babb72517ecf97426e7c9330d; ?>
 <?php unset($__componentOriginalfe86969babb72517ecf97426e7c9330d); ?>
 <?php endif; ?>
+                    
+                    <?php
+                        $pendingGradingCount = \App\Models\ExamSession::whereHas('exam', function($q) {
+                            $q->whereIn('course_id', auth()->user()->courses()->pluck('courses.id'));
+                        })->whereIn('status', ['submitted', 'graded'])->count();
+                    ?>
+
+                    <?php if (isset($component)) { $__componentOriginalfe86969babb72517ecf97426e7c9330d = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalfe86969babb72517ecf97426e7c9330d = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::sidebar.item','data' => ['icon' => 'magnifying-glass','href' => route('lecturer.grading.hub'),'wire:navigate' => true,'badge' => $pendingGradingCount > 0 ? $pendingGradingCount : null]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::sidebar.item'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['icon' => 'magnifying-glass','href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('lecturer.grading.hub')),'wire:navigate' => true,'badge' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($pendingGradingCount > 0 ? $pendingGradingCount : null)]); ?>
+                        <?php echo e(__('Grading')); ?>
+
+                     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalfe86969babb72517ecf97426e7c9330d)): ?>
+<?php $attributes = $__attributesOriginalfe86969babb72517ecf97426e7c9330d; ?>
+<?php unset($__attributesOriginalfe86969babb72517ecf97426e7c9330d); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalfe86969babb72517ecf97426e7c9330d)): ?>
+<?php $component = $__componentOriginalfe86969babb72517ecf97426e7c9330d; ?>
+<?php unset($__componentOriginalfe86969babb72517ecf97426e7c9330d); ?>
+<?php endif; ?>
+                    
                     <?php if (isset($component)) { $__componentOriginalfe86969babb72517ecf97426e7c9330d = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalfe86969babb72517ecf97426e7c9330d = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::sidebar.item','data' => ['icon' => 'document-magnifying-glass','href' => route('lecturer.exams'),'wire:navigate' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>

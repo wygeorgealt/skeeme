@@ -91,7 +91,7 @@
                                 <flux:button href="{{ route('lecturer.gradings.dashboard', $this->selectedSession->id) }}" icon="chart-bar" variant="ghost">
                                     Advanced Review
                                 </flux:button>
-                                <flux:button wire:click="publishResult({{ $this->selectedSession->id }})" icon="paper-airplane" variant="success">
+                                <flux:button wire:click="publishResult({{ $this->selectedSession->id }})" icon="paper-airplane" variant="filled" class="bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600">
                                     Publish Result
                                 </flux:button>
                             @endif
@@ -100,16 +100,25 @@
 
                     <!-- Questions & Grading -->
                     <div class="space-y-6">
-                        @foreach($this->selectedSession->answers as $answer)
+                        @foreach($this->selectedSession->examAnswers as $answer)
                             <div class="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-700">
                                 <div class="flex justify-between items-start mb-4">
                                     <div class="flex-1">
-                                        <h3 class="font-medium text-gray-900 dark:text-white mb-2">
-                                            Q{{ $loop->iteration }}: {{ $answer->question->question_text }}
-                                        </h3>
-                                        <div class="text-xs text-gray-500 mb-4 bg-gray-50 dark:bg-zinc-700/50 p-2 rounded">
-                                            Max Marks: {{ $answer->question->marks }} | Type: {{ ucfirst(str_replace('_', ' ', $answer->question->question_type)) }}
-                                        </div>
+                                        @if($answer->question)
+                                            <h3 class="font-medium text-gray-900 dark:text-white mb-2">
+                                                Q{{ $loop->iteration }}: {{ $answer->question->question_text }}
+                                            </h3>
+                                            <div class="text-xs text-gray-500 mb-4 bg-gray-50 dark:bg-zinc-700/50 p-2 rounded">
+                                                Max Marks: {{ $answer->question->marks }} | Type: {{ ucfirst(str_replace('_', ' ', $answer->question->question_type)) }}
+                                            </div>
+                                        @else
+                                            <h3 class="font-medium text-gray-900 dark:text-white mb-2">
+                                                Q{{ $loop->iteration }}: <span class="text-amber-600">Question data missing</span>
+                                            </h3>
+                                            <div class="text-xs text-amber-600 mb-4 bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                                                ⚠️ This answer's question reference is missing. Please re-grade this exam.
+                                            </div>
+                                        @endif
                                     </div>
                                     <div class="ml-4 shrink-0 flex flex-col items-end gap-2">
                                         <div class="flex items-center gap-2">
@@ -120,7 +129,7 @@
                                                 value="{{ $answer->marks_obtained }}"
                                                 class="w-20 px-2 py-1 text-right border border-gray-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-900 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                                 min="0"
-                                                max="{{ $answer->question->marks }}"
+                                                max="{{ $answer->question?->marks ?? 100 }}"
                                                 step="0.5"
                                             >
                                         </div>

@@ -14,7 +14,6 @@ class LecturerGradingDashboard extends Component
     use WithPagination;
 
     public ExamSession $session;
-    public AIGradingService $gradingService;
 
     public $selectedGrading = null;
     public $filterConfidence = null;
@@ -35,17 +34,16 @@ class LecturerGradingDashboard extends Component
 
     protected $listeners = ['refreshGradings'];
 
-    public function mount(ExamSession $session, AIGradingService $gradingService)
+    public function mount(ExamSession $session)
     {
         $this->authorize('view', $session->exam);
         $this->session = $session;
-        $this->gradingService = $gradingService;
     }
 
-    public function render()
+    public function render(AIGradingService $gradingService)
     {
         $gradings = $this->getFilteredGradings();
-        $statistics = $this->gradingService->getSessionStatistics($this->session);
+        $statistics = $gradingService->getSessionStatistics($this->session);
 
         return view('livewire.lecturer-grading-dashboard', [
             'gradings' => $gradings,
@@ -200,11 +198,11 @@ class LecturerGradingDashboard extends Component
         $this->authorize('view', $this->session->exam);
 
         // Calculate final score
-        $score = $this->session->answers()->sum('marks_obtained');
+        $score = $this->session->examAnswers()->sum('marks_obtained');
         
         $this->session->update([
             'score' => $score,
-            'status' => 'published', // Release to student
+            'status' => 'graded',
             'graded_at' => now(),
         ]);
 
@@ -304,10 +302,10 @@ class LecturerGradingDashboard extends Component
         }
     }
 
-    public function downloadGradingReport()
+    public function downloadGradingReport(AIGradingService $gradingService)
     {
         $gradings = AIGrading::where('exam_session_id', $this->session->id)->get();
-        $stats = $this->gradingService->getSessionStatistics($this->session);
+        $stats = $gradingService->getSessionStatistics($this->session);
 
         // Generate CSV
         $csv = "Student,Question,Marks Awarded,Confidence,Status,Grading Method\n";

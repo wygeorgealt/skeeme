@@ -26,7 +26,7 @@ class GradingService
             return;
         }
 
-        $session->load(['exam.questions', 'answers']);
+        $session->load(['exam.questions', 'examAnswers']);
         $totalReceivedMarks = 0;
         $questionsAnswered = 0;
 
@@ -44,12 +44,20 @@ class GradingService
             // stored in ExamAnswer. Randomization logic in StudentExamDelivery 
             // saves the *original* index, so this should match $session->exam->questions order.
 
-            $questionIndex = $this->getQuestionIndex($session->exam, $question);
-            $answer = $session->getRelation('answers')->firstWhere('question_index', $questionIndex);
+            // Try to find answer by question_id (more robust)
+            $answer = $session->getRelation('examAnswers')->firstWhere('question_id', $question->id);
+
+            // Fallback to index if question_id lookup fails (backwards compatibility)
+            if (!$answer) {
+                $questionIndex = $this->getQuestionIndex($session->exam, $question);
+                $answer = $session->getRelation('examAnswers')->firstWhere('question_index', $questionIndex);
+            } else {
+                 $questionIndex = $this->getQuestionIndex($session->exam, $question);
+            }
 
             if (!$answer) {
-                // Create a blank answer entry if not found, to record 0 marks
-                $answer = $session->answers()->create([
+                // Create a blank answer entry if not found
+                $answer = $session->examAnswers()->create([
                     'question_index' => $questionIndex,
                     'question_id' => $question->id,
                     'student_answer' => null,
@@ -87,7 +95,7 @@ class GradingService
     public function gradeQuestion(Question $question, ExamAnswer $answer): void
     {
         // Skip if already manually marked (optional, depending on policy)
-        if ($answer->marking_status === 'manually_graded') {
+        if ($answer->marking_status === 'pending_review') {
             return;
         }
 

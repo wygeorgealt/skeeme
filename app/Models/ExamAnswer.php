@@ -36,6 +36,14 @@ class ExamAnswer extends Model
     }
 
     /**
+     * Relationship to ExamQuestion
+     */
+    public function question()
+    {
+        return $this->belongsTo(ExamQuestion::class, 'question_id');
+    }
+
+    /**
      * Check if answer has been marked
      */
     public function isMarked(): bool

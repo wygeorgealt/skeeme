@@ -62,7 +62,7 @@ class StudentExamDelivery extends Component
         $this->initializeRandomization();
 
         // Load existing answers
-        $this->answers = $this->session->answers()
+        $this->answers = $this->session->examAnswers()
             ->pluck('student_answer', 'question_index')
             ->toArray();
 
@@ -156,10 +156,11 @@ class StudentExamDelivery extends Component
         }
 
         // Persist to database (store original index)
-        $this->session->answers()->updateOrCreate(
+        $this->session->examAnswers()->updateOrCreate(
             ['question_index' => $questionIndexToSave],
             [
                 'student_answer' => $answer,
+                'question_id' => $this->isRandomized ? $this->randomizedQuestions[$index]['question']['id'] : $this->exam->questions[$index]->id,
                 'answered_at' => now(),
             ]
         );
@@ -248,10 +249,11 @@ class StudentExamDelivery extends Component
                 $questionIndexToSave = $this->randomizedQuestions[$index]['original_index'];
             }
 
-            $this->session->answers()->updateOrCreate(
+            $this->session->examAnswers()->updateOrCreate(
                 ['question_index' => $questionIndexToSave],
                 [
                     'student_answer' => $answer, 
+                    'question_id' => $this->isRandomized ? $this->randomizedQuestions[$index]['question']['id'] : $this->exam->questions[$index]->id,
                     'answered_at' => now(),
                 ]
             );

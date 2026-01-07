@@ -49,7 +49,7 @@ class LecturerExamGrading extends Component
     {
         if (!$this->selectedSessionId) return null;
 
-        return ExamSession::with(['answers.question', 'student', 'exam.questions'])
+        return ExamSession::with(['examAnswers.question', 'student', 'exam.questions'])
             ->find($this->selectedSessionId);
     }
 
@@ -78,8 +78,8 @@ class LecturerExamGrading extends Component
             
             // Refund/Refresh view
             if ($this->selectedSessionId == $sessionId) {
-                // Computed property will refresh automatically on next render request usually, 
-                // but sometimes explicitunset needed if cached. Default computed is cached per request.
+                unset($this->selectedSession); 
+                unset($this->sessions);
             }
 
         } catch (\Exception $e) {
@@ -103,7 +103,6 @@ class LecturerExamGrading extends Component
         $answer->update([
             'marks_obtained' => $mark,
             'feedback' => $feedback ?? $answer->feedback,
-            'marking_status' => 'manually_graded',
         ]);
         
         // Recalculate total score for the session
@@ -114,7 +113,7 @@ class LecturerExamGrading extends Component
 
     protected function recalculateSessionScore(ExamSession $session)
     {
-        $total = $session->answers()->sum('marks_obtained');
+        $total = $session->examAnswers()->sum('marks_obtained');
         $session->update(['score' => $total]);
     }
 

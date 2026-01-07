@@ -51,7 +51,7 @@ class ExamSession extends Model
     /**
      * Relationship to ExamAnswers
      */
-    public function answers()
+    public function examAnswers()
     {
         return $this->hasMany(ExamAnswer::class);
     }
@@ -139,10 +139,10 @@ class ExamSession extends Model
      */
     public function calculateTotalScore(): float
     {
-        if ($this->relationLoaded('answers')) {
-            return (float) $this->getRelation('answers')->sum('marks_obtained');
+        if ($this->relationLoaded('examAnswers')) {
+            return (float) $this->getRelation('examAnswers')->sum('marks_obtained');
         }
 
-        return (float) $this->answers()->sum('marks_obtained');
+        return (float) $this->examAnswers()->sum('marks_obtained');
     }
 }
