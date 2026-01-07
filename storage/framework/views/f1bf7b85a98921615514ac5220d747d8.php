@@ -1,15 +1,14 @@
 <div 
-    x-data="examDelivery({
-        timer: <?php echo e($timeRemaining); ?>,
-        questions: <?php echo $allQuestionsJson; ?>,
-        answers: <?php echo \Illuminate\Support\Js::from($answers)->toHtml() ?>,
-        flaggedQuestions: <?php echo \Illuminate\Support\Js::from($flaggedQuestions)->toHtml() ?>,
-        sessionId: <?php echo e($session->id); ?>,
-        examTitle: <?php echo \Illuminate\Support\Js::from($session->exam->title)->toHtml() ?>,
-        totalQuestions: <?php echo e($totalQuestions); ?>,
-        answeredCount: <?php echo e($answeredCount); ?>
-
-    })"
+    x-data="examDelivery(<?php echo e(Js::from([
+        'timer' => $timeRemaining,
+        'questions' => $this->getAllQuestionsForClientSide(),
+        'answers' => (object) $answers,
+        'flaggedQuestions' => $flaggedQuestions,
+        'sessionId' => $session->id,
+        'examTitle' => $session->exam->title,
+        'totalQuestions' => $totalQuestions,
+        'currentIndex' => $currentQuestionIndex,
+    ])); ?>)"
     class="exam-delivery-wrapper"
     x-cloak
 >
@@ -46,8 +45,8 @@
         </div>
     </div>
 
-    <!-- Main Exam Interface (Only visible after start) -->
-    <div x-show="examStarted" class="min-h-screen bg-white dark:bg-zinc-950 py-8 px-4 sm:px-6 lg:px-8 font-sans">
+    <!-- Main Exam Interface -->
+    <div x-show="examStarted && !$wire.showReviewPage" class="min-h-screen bg-white dark:bg-zinc-950 py-8 px-4 sm:px-6 lg:px-8 font-sans">
         <div class="max-w-[1600px] mx-auto">
             
             <!-- Header Section -->
@@ -95,14 +94,14 @@
 <?php endif; ?>
                     <?php if (isset($component)) { $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['@click' => 'Flux.modal(\'confirm-submit\').show()','variant' => 'primary']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['@click' => '$wire.goToReview()','variant' => 'primary']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('flux::button'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['@click' => 'Flux.modal(\'confirm-submit\').show()','variant' => 'primary']); ?>Submit Exam <?php echo $__env->renderComponent(); ?>
+<?php $component->withAttributes(['@click' => '$wire.goToReview()','variant' => 'primary']); ?>Submit Exam <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
 <?php $attributes = $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
@@ -283,14 +282,14 @@
                             </div>
                              <?php if (isset($component)) { $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['@click' => 'Flux.modal(\'confirm-submit\').show()','class' => 'w-full']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['@click' => '$wire.goToReview()','class' => 'w-full']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('flux::button'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['@click' => 'Flux.modal(\'confirm-submit\').show()','class' => 'w-full']); ?>Submit All Answers <?php echo $__env->renderComponent(); ?>
+<?php $component->withAttributes(['@click' => '$wire.goToReview()','class' => 'w-full']); ?>Submit All Answers <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
 <?php $attributes = $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
@@ -307,6 +306,133 @@
 
         </div>
     </div>
+
+    <!-- Review Page -->
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($showReviewPage): ?>
+    <div class="min-h-screen bg-white dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+        <div class="max-w-4xl mx-auto">
+            <div class="mb-12 text-center">
+                <h1 class="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">Review Your Answers</h1>
+                <p class="text-zinc-500 dark:text-zinc-400">Please carefully check your work before final submission.</p>
+            </div>
+
+            <div class="space-y-6 mb-12">
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $this->getAllQuestionsForClientSide(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $q): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div class="bg-white dark:bg-zinc-900 rounded-xl border <?php echo e(isset($answers[$index]) && $answers[$index] !== '' ? 'border-zinc-200 dark:border-zinc-800' : 'border-amber-200 dark:border-amber-900/50 bg-amber-50/10'); ?> p-6 shadow-sm">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Question <?php echo e($index + 1); ?></span>
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($answers[$index]) && $answers[$index] !== ''): ?>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                                            <i class="fas fa-check"></i> ANSWERED
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                                            <i class="fas fa-exclamation-circle"></i> NOT ANSWERED
+                                        </span>
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                </div>
+                                <h4 class="text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-4"><?php echo nl2br(e($q['text'])); ?></h4>
+                                
+                                <div class="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-4 border border-zinc-100 dark:border-zinc-800">
+                                    <span class="text-xs font-bold text-zinc-400 block mb-2 uppercase tracking-tight">Your Answer:</span>
+                                    <div class="text-zinc-700 dark:text-zinc-300 italic">
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($answers[$index]) && $answers[$index] !== ''): ?>
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($q['type'] === 'multiple_choice' || $q['type'] === 'mcq'): ?>
+                                                <?php
+                                                    $selectedOption = collect($q['options'])->firstWhere('id', $answers[$index]);
+                                                ?>
+                                                <?php echo e($selectedOption['text'] ?? 'Unknown Option'); ?>
+
+                                            <?php elseif($q['type'] === 'true_false' || $q['type'] === 'boolean'): ?>
+                                                <?php echo e(ucfirst($answers[$index])); ?>
+
+                                            <?php else: ?>
+                                                <?php echo nl2br(e($answers[$index])); ?>
+
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                        <?php else: ?>
+                                            <span class="text-zinc-400">— No answer provided —</span>
+                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php if (isset($component)) { $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['@click' => '$wire.set(\'showReviewPage\', false); goToQuestion('.e($index).')','variant' => 'ghost','size' => 'sm','class' => 'flex-shrink-0']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['@click' => '$wire.set(\'showReviewPage\', false); goToQuestion('.e($index).')','variant' => 'ghost','size' => 'sm','class' => 'flex-shrink-0']); ?>
+                                Edit
+                             <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $attributes = $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $component = $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-6 p-8 bg-indigo-50 dark:bg-indigo-500/5 rounded-2xl border border-indigo-100 dark:border-indigo-500/20">
+                <div class="text-center sm:text-left">
+                    <h3 class="text-xl font-bold text-indigo-900 dark:text-indigo-400 mb-1">Finished Reviewing?</h3>
+                    <p class="text-indigo-700/60 dark:text-indigo-400/60 text-sm">Once you confirm, you cannot change your answers.</p>
+                </div>
+                <div class="flex gap-4 w-full sm:w-auto">
+                    <?php if (isset($component)) { $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['@click' => '$wire.backToExam()','variant' => 'ghost','class' => 'flex-1 sm:flex-initial']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['@click' => '$wire.backToExam()','variant' => 'ghost','class' => 'flex-1 sm:flex-initial']); ?>Back to Exam <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $attributes = $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $component = $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+                    <?php if (isset($component)) { $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['@click' => 'Flux.modal(\'confirm-submit\').show()','variant' => 'primary','class' => 'flex-1 sm:flex-initial !bg-indigo-600 !hover:bg-indigo-500']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['@click' => 'Flux.modal(\'confirm-submit\').show()','variant' => 'primary','class' => 'flex-1 sm:flex-initial !bg-indigo-600 !hover:bg-indigo-500']); ?>Confirm Submission <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $attributes = $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $component = $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     
     <!-- Confirm Modal -->
     <?php if (isset($component)) { $__componentOriginal8cc9d3143946b992b324617832699c5f = $component; } ?>
@@ -426,8 +552,8 @@
 
 <?php $__env->startPush('scripts'); ?>
 <script>
-function examDelivery(config) {
-    return {
+document.addEventListener('alpine:init', () => {
+    Alpine.data('examDelivery', (config) => ({
         timer: config.timer,
         timerInterval: null,
         isFullscreen: false,
@@ -438,16 +564,53 @@ function examDelivery(config) {
         sessionId: config.sessionId,
         examTitle: config.examTitle,
         totalQuestions: config.totalQuestions,
-        currentIndex: 0,
+        currentIndex: config.currentIndex || 0,
         saving: false,
+        heartbeatInterval: null,
+        lastWarningShown: null,
         
         init() {
             this.startTimer();
+            this.startHeartbeat();
+
+            this.$cleanup(() => {
+                this.stopTimer();
+                this.stopHeartbeat();
+            });
+
             this.$watch('timer', value => {
+                this.checkWarnings(value);
                 if (value <= 0) {
                     this.stopTimer();
+                    this.stopHeartbeat();
                     this.forceSubmit();
                 }
+            });
+        },
+
+        checkWarnings(seconds) {
+            if (seconds === 300 && this.lastWarningShown !== 300) { // 5 minutes
+                this.showWarning("5 minutes remaining! Please start finalizing your answers.");
+                this.lastWarningShown = 300;
+            } else if (seconds === 60 && this.lastWarningShown !== 60) { // 1 minute
+                this.showWarning("Only 1 minute left! The exam will auto-submit soon.");
+                this.lastWarningShown = 60;
+            } else if (seconds === 10 && this.lastWarningShown !== 10) { // 10 seconds
+                 this.showWarning("10 seconds remaining! AUTO-SUBMITTING NOW.");
+                 this.lastWarningShown = 10;
+            }
+        },
+
+        showWarning(message) {
+            // Use existing flux notification or standard alert for critical warnings
+            if (window.Flux) {
+                // Flash the timer red as well
+            }
+            // Standard browser notification for extreme cases or local toast
+            console.warn(message);
+             this.$dispatch('notify', {
+                type: 'warning',
+                message: message
             });
         },
         
@@ -499,7 +662,7 @@ function examDelivery(config) {
             
             const answer = this.answers[this.currentIndex];
             if (answer !== undefined && answer !== null && answer !== '') {
-                $wire.saveAnswer(answer);
+                this.$wire.saveAnswer(this.currentIndex, answer);
             }
             
             setTimeout(() => { this.saving = false; }, 300);
@@ -535,6 +698,17 @@ function examDelivery(config) {
         stopTimer() {
             clearInterval(this.timerInterval);
         },
+
+        startHeartbeat() {
+            if (this.heartbeatInterval) return;
+            this.heartbeatInterval = setInterval(() => {
+                this.$wire.heartbeat(this.currentIndex);
+            }, 30000); // 30 seconds
+        },
+
+        stopHeartbeat() {
+            clearInterval(this.heartbeatInterval);
+        },
         
         toggleFullscreen() {
             if (!document.fullscreenElement) {
@@ -552,15 +726,15 @@ function examDelivery(config) {
         },
         
         forceSubmit() {
-            $wire.forceSubmit();
+            this.$wire.forceSubmit();
         },
         
         submitExam() {
             Flux.modal('confirm-submit').close();
-            $wire.submit();
+            this.$wire.submit();
         }
-    }
-}
+    }));
+});
 
 window.addEventListener('beforeunload', function(e) {
     if (<?php echo \Illuminate\Support\Js::from($session->isActive())->toHtml() ?>) { e.preventDefault(); e.returnValue = ''; }

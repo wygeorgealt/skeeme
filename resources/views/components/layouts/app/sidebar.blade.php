@@ -41,6 +41,22 @@
                     <flux:sidebar.item icon="clipboard-document-check" :href="route('lecturer.attendance')" wire:navigate>{{ __('Attendance') }}</flux:sidebar.item>
                     <flux:sidebar.item icon="book-open" :href="route('lecturer.curriculum')" wire:navigate>{{ __('Curriculum') }}</flux:sidebar.item>
                     <flux:sidebar.item icon="document-text" :href="route('lecturer.notes')" wire:navigate>{{ __('Notes/Materials') }}</flux:sidebar.item>
+                    
+                    @php
+                        $pendingGradingCount = \App\Models\ExamSession::whereHas('exam', function($q) {
+                            $q->whereIn('course_id', auth()->user()->courses()->pluck('id'));
+                        })->whereIn('status', ['submitted', 'graded'])->count();
+                    @endphp
+
+                    <flux:sidebar.item 
+                        icon="academic-cap" 
+                        :href="route('lecturer.grading.hub')" 
+                        wire:navigate
+                        :badge="$pendingGradingCount > 0 ? $pendingGradingCount : null"
+                    >
+                        {{ __('Grading') }}
+                    </flux:sidebar.item>
+                    
                     <flux:sidebar.item icon="document-magnifying-glass" :href="route('lecturer.exams')" wire:navigate>{{ __('Exams') }}</flux:sidebar.item>
                     @if(auth()->user()->canAccessFeature('messages'))
                     <flux:sidebar.item icon="chat-bubble-left-right" :href="route('lecturer.messages')" wire:navigate>{{ __('messages.Messages') }}</flux:sidebar.item>

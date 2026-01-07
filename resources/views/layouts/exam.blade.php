@@ -26,6 +26,7 @@
     {{ $head ?? '' }}
 </head>
 <body class="bg-zinc-950 text-zinc-100 exam-mode-active">
+    <livewire:toast-notification />
     
     {{ $slot }}
 

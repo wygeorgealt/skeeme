@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Exam;
 use App\Models\ExamSession;
 use App\Services\ExamRandomizationService;
+use App\Services\AIGradingService;
 use Livewire\Component;
 use Livewire\Attributes\On;
 
@@ -21,6 +22,7 @@ class StudentExamDelivery extends Component
     public bool $showKeyboardHelp = false;
     public bool $isFullscreen = false;
     public bool $isInExamMode = true;
+    public bool $showReviewPage = false;
     
     // Randomization support
     public array $randomizedQuestions = [];
@@ -64,8 +66,12 @@ class StudentExamDelivery extends Component
             ->pluck('student_answer', 'question_index')
             ->toArray();
 
-        // Initial time check only
+        // Initial time check and state restoration
         $this->timeRemaining = $this->session->getTimeRemainingSeconds();
+        
+        if (isset($this->session->metadata['last_question_index'])) {
+            $this->currentQuestionIndex = (int) $this->session->metadata['last_question_index'];
+        }
     }
 
     /**
@@ -85,17 +91,9 @@ class StudentExamDelivery extends Component
     /**
      * Forced submission from client-side timer
      */
-    public function forceSubmit()
+    public function forceSubmit(AIGradingService $aiGradingService)
     {
-        \Illuminate\Support\Facades\Log::info('Exam auto-submitted by client-side timer', [
-            'session_id' => $this->session->id,
-            'exam_id' => $this->exam->id,
-            'now' => now(),
-        ]);
-        
-        $this->session->submit();
-        $this->dispatch('exam-expired');
-        $this->redirect(route('student.exams.results', $this->session), navigate: true);
+        $this->performSubmission($aiGradingService, true);
     }
 
     /**
@@ -141,20 +139,20 @@ class StudentExamDelivery extends Component
     /**
      * Save answer (autosave)
      */
-    public function saveAnswer($answer)
+    public function saveAnswer(int $index, $answer)
     {
         if (!$this->session->isActive()) {
             $this->dispatch('session-expired');
             return;
         }
 
-        // Store answer using the current question index
-        $this->answers[$this->currentQuestionIndex] = $answer;
+        // Store answer locally
+        $this->answers[$index] = $answer;
 
         // Get the original question index if randomized
-        $questionIndexToSave = $this->currentQuestionIndex;
-        if ($this->isRandomized && isset($this->randomizedQuestions[$this->currentQuestionIndex])) {
-            $questionIndexToSave = $this->randomizedQuestions[$this->currentQuestionIndex]['original_index'];
+        $questionIndexToSave = $index;
+        if ($this->isRandomized && isset($this->randomizedQuestions[$index])) {
+            $questionIndexToSave = $this->randomizedQuestions[$index]['original_index'];
         }
 
         // Persist to database (store original index)
@@ -170,7 +168,23 @@ class StudentExamDelivery extends Component
         $answeredCount = collect($this->answers)->filter(fn($a) => !empty($a))->count();
         $this->session->update(['questions_answered' => $answeredCount]);
 
-        $this->dispatch('answer-saved', question: $this->currentQuestionIndex);
+        $this->dispatch('answer-saved', question: $index);
+    }
+
+    /**
+     * Heartbeat to keep session alive and sync state
+     */
+    public function heartbeat(int $currentIndex)
+    {
+        if (!$this->session->isActive()) return;
+
+        $this->currentQuestionIndex = $currentIndex;
+        
+        $metadata = $this->session->metadata ?? [];
+        $metadata['last_question_index'] = $currentIndex;
+        $metadata['last_heartbeat'] = now();
+        
+        $this->session->update(['metadata' => $metadata]);
     }
 
     /**
@@ -190,12 +204,39 @@ class StudentExamDelivery extends Component
     }
 
     /**
+     * Go to review page
+     */
+    public function goToReview()
+    {
+        $this->showReviewPage = true;
+        $this->dispatch('go-to-review');
+    }
+
+    /**
+     * Return to exam from review
+     */
+    public function backToExam()
+    {
+        $this->showReviewPage = false;
+    }
+
+    /**
      * Submit exam
      */
-    public function submit()
+    public function submit(AIGradingService $aiGradingService)
+    {
+        $this->performSubmission($aiGradingService);
+    }
+
+    /**
+     * Core submission logic
+     */
+    private function performSubmission(AIGradingService $aiGradingService, bool $isAutoSubmit = false)
     {
         if (!$this->session->isActive()) {
-            session()->flash('error', 'Exam session is no longer active');
+            if (!$isAutoSubmit) {
+                session()->flash('error', 'Exam session is no longer active');
+            }
             return;
         }
 
@@ -223,11 +264,33 @@ class StudentExamDelivery extends Component
             'time_spent_seconds' => $timeSpent,
             'metadata' => array_merge(
                 $this->session->metadata ?? [],
-                ['was_randomized' => $this->isRandomized]
+                ['was_randomized' => $this->isRandomized, 'is_auto_submit' => $isAutoSubmit]
             ),
         ]);
 
-        session()->flash('success', 'Exam submitted successfully! Awaiting grading.');
+        // AI Grading Logic
+        try {
+            // First, trigger AI grading (pre-grading)
+            $aiGradingService->gradeSession($this->session);
+            
+            // Check if results should be released immediately (redundant as AIGradingService does it now, but good to be explicit here)
+            if ($this->exam->release_results_immediately) {
+                $this->session->update(['status' => 'published']); 
+            } else {
+                $this->session->update(['status' => 'graded']);
+            }
+        } catch (\Exception $e) {
+            \Log::error('AI Grading failed after submission: ' . $e->getMessage());
+        }
+
+        if ($isAutoSubmit) {
+            $this->dispatch('exam-expired');
+        } else {
+            session()->flash('success', $this->exam->release_results_immediately 
+                ? 'Exam submitted and graded successfully!' 
+                : 'Exam submitted successfully! Awaiting lecturer review.');
+        }
+            
         $this->redirect(route('student.exams.results', $this->session), navigate: true);
     }
 
@@ -395,6 +458,8 @@ class StudentExamDelivery extends Component
 
     public function render()
     {
+        $this->timeRemaining = $this->session->getTimeRemainingSeconds();
+
         $totalQuestions = $this->isRandomized 
             ? count($this->randomizedQuestions) 
             : count($this->exam->questions);

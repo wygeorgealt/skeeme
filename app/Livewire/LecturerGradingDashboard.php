@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\AIGrading;
 use App\Models\ExamSession;
 use App\Services\AIGradingService;
+use App\Services\NotificationService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -192,6 +193,77 @@ class LecturerGradingDashboard extends Component
         ]);
 
         $this->refreshGradings();
+    }
+
+    public function confirmFinalGrade()
+    {
+        $this->authorize('view', $this->session->exam);
+
+        // Calculate final score
+        $score = $this->session->answers()->sum('marks_obtained');
+        
+        $this->session->update([
+            'score' => $score,
+            'status' => 'published', // Release to student
+            'graded_at' => now(),
+        ]);
+
+        // Send notification to student
+        $student = $this->session->student;
+        $exam = $this->session->exam;
+        $gradingPercentage = ($score / ($exam->total_marks ?: 100)) * 100;
+        $grade = $this->calculateGrade($gradingPercentage);
+
+        // Database notification
+        app(NotificationService::class)->sendGradeReleased(
+            $student, 
+            $exam, 
+            (float) $score, 
+            $grade
+        );
+
+        // Real-time toast for online student
+        $this->dispatch('notificationBroadcast', [
+            'userIds' => [$student->id],
+            'type' => 'success',
+            'title' => 'Grade Released',
+            'message' => "Your grade for {$exam->title} is now available.",
+            'action' => ['label' => 'View Grades', 'url' => route('student.grades')]
+        ]);
+
+        // Create or update Grade record
+        \App\Models\Grade::updateOrCreate(
+            [
+                'student_id' => $student->id,
+                'course_id' => $exam->course_id,
+                'exam_id' => $exam->id,
+            ],
+            [
+                'score' => $score,
+                'grade' => $grade,
+                'credit_units' => $exam->course->credit_units ?? 3, // Snapshot credits
+                'graded_at' => now(),
+            ]
+        );
+
+        // Calculate and Update GPA
+        app(\App\Services\GPACalculationService::class)->updateStudentGPA($student);
+
+        $this->dispatch('notify', [
+            'type' => 'success',
+            'message' => "Exam grade for {$student->name} confirmed and released! GPA Updated.",
+        ]);
+
+        return redirect()->route('lecturer.exams.grading', $this->session->exam);
+    }
+
+    private function calculateGrade($percentage)
+    {
+        if ($percentage >= 70) return 'A';
+        if ($percentage >= 60) return 'B';
+        if ($percentage >= 50) return 'C';
+        if ($percentage >= 45) return 'D';
+        return 'F';
     }
 
     public function refreshGradings()

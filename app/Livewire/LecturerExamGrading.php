@@ -127,10 +127,41 @@ class LecturerExamGrading extends Component
         if ($session) {
             $session->update([
                 'status' => 'published',
-                // 'published_at' => now(), // If we add this column later
+                'graded_at' => now(),
             ]);
+
+            // Create/Update Grade and GPA
+            $this->finalizeGrade($session);
+
             $this->toastSuccess('Result published to student.', 'Published');
         }
+    }
+
+    protected function finalizeGrade(ExamSession $session)
+    {
+        $student = $session->student;
+        $exam = $session->exam;
+        $score = $session->score;
+        
+        // Calculate Grade Letter (Logic duplicated from Dashboard for now, or move to Service)
+        $percentage = ($score / ($exam->total_marks ?: 100)) * 100;
+        $gradeLetter = app(\App\Services\GPACalculationService::class)->calculateLetterGrade($percentage);
+
+        \App\Models\Grade::updateOrCreate(
+            [
+                'student_id' => $student->id,
+                'course_id' => $exam->course_id,
+                'exam_id' => $exam->id,
+            ],
+            [
+                'score' => $score,
+                'grade' => $gradeLetter,
+                'credit_units' => $exam->course->credit_units ?? 3,
+                'graded_at' => now(),
+            ]
+        );
+
+        app(\App\Services\GPACalculationService::class)->updateStudentGPA($student);
     }
 
     /**
@@ -138,9 +169,16 @@ class LecturerExamGrading extends Component
      */
     public function publishAllGraded()
     {
-        $count = $this->exam->sessions()
-            ->where('status', 'graded')
-            ->update(['status' => 'published']);
+        $sessions = $this->exam->sessions()->where('status', 'graded')->get();
+        $count = $sessions->count();
+
+        foreach ($sessions as $session) {
+            $session->update([
+                'status' => 'published',
+                'graded_at' => now(),
+            ]);
+            $this->finalizeGrade($session);
+        }
 
         $this->toastSuccess("$count results published.", 'Batch Publish');
     }

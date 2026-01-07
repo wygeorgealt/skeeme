@@ -247,6 +247,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:lecturer'])->group(function () {
         Route::get('/lecturer/exams/{exam}/grading', \App\Livewire\LecturerExamGrading::class)->name('lecturer.exam.grading');
         Route::get('/lecturer/courses', \App\Livewire\LecturerCourses::class)->name('lecturer.courses');
+        Route::get('/lecturer/grading-hub', \App\Livewire\LecturerGradingHub::class)->name('lecturer.grading.hub');
         Route::get('/lecturer/attendance', \App\Livewire\LecturerAttendance::class)->name('lecturer.attendance');
         Route::get('/lecturer/attendance/history', \App\Livewire\LecturerAttendanceHistory::class)->name('lecturer.attendance.history');
         Route::get('/lecturer/attendance/reports', \App\Livewire\LecturerAttendanceReports::class)->name('lecturer.attendance.reports');

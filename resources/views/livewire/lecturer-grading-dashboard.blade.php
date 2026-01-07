@@ -13,8 +13,11 @@
             </flux:subheading>
         </div>
         <div class="flex items-center gap-2">
+            @if($session->status !== 'published')
+                <flux:button wire:click="confirmFinalGrade" variant="primary" class="!bg-emerald-600 !hover:bg-emerald-500 shadow-lg shadow-emerald-500/20" icon="check-badge">Confirm {{ explode(' ', $session->student->name)[0] }}'s Grade</flux:button>
+            @endif
             <flux:button wire:click="downloadGradingReport" icon="arrow-down-tray" variant="ghost">Export Dataset</flux:button>
-            <flux:button href="{{ route('lecturer.exams') }}" icon="arrow-left" variant="primary">Close Session</flux:button>
+            <flux:button href="{{ route('lecturer.exams') }}" icon="arrow-left" variant="ghost">Close Session</flux:button>
         </div>
     </div>
 

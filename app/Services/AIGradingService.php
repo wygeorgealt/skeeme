@@ -10,6 +10,13 @@ use Illuminate\Support\Facades\Log;
 
 class AIGradingService
 {
+    protected $deepseek;
+
+    public function __construct(DeepseekAIService $deepseek)
+    {
+        $this->deepseek = $deepseek;
+    }
+
     /**
      * Grade all answers in an exam session
      *
@@ -61,8 +68,10 @@ class AIGradingService
         }
 
         // Update session with score and grading status
+        $status = $session->exam->release_results_immediately ? 'published' : 'graded';
+        
         $session->update([
-            'status' => 'graded',
+            'status' => $status,
             'score' => $results['total_marks'],
             'graded_at' => now(),
         ]);
@@ -174,13 +183,13 @@ class AIGradingService
         $rubric = $question->correct_answer['rubric'] ?? [];
         $modelAnswer = $question->correct_answer['model_answer'] ?? '';
 
-        // Call comprehensive essay grading
-        $gradingResult = $this->callAIEssayGrading(
+        // Call comprehensive Deepseek essay grading
+        $gradingResult = $this->deepseek->gradeTheoryAnswer(
+            $question->question_text ?? '',
             $studentAnswer,
             $modelAnswer,
             $rubric,
-            (float) $marks,
-            $answer->examSession->exam
+            (float) $marks
         );
 
         $marksAwarded = $gradingResult['marks'] ?? 0;

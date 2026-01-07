@@ -159,6 +159,76 @@ class DeepseekAIService
     }
 
     /**
+     * Grade a theory/essay answer using Deepseek AI
+     */
+    public function gradeTheoryAnswer(
+        string $questionText,
+        string $studentAnswer,
+        string $modelAnswer = '',
+        array $rubric = [],
+        float $maxMarks = 10.0
+    ): array {
+        try {
+            $rubricText = !empty($rubric) ? json_encode($rubric) : 'Grade based on accuracy and completeness.';
+            $modelAnswerText = !empty($modelAnswer) ? "MODEL ANSWER: {$modelAnswer}" : "No model answer provided. Use general knowledge of the topic.";
+
+            $systemPrompt = "You are an expert academic examiner. Grade the student's answer based on the question and criteria provided.
+            
+            Return the result in JSON format with the following keys:
+            - 'marks': (float) Marks awarded out of {$maxMarks}.
+            - 'confidence': (float) Your confidence in this grade (0-100).
+            - 'reasoning': (string) Brief explanation of Why you gave this grade.
+            - 'feedback': (string) Constructive feedback for the student.
+            - 'analysis': (object) Breakdown of the grade (e.g. content, structure, grammar).
+            
+            Be fair but strict. A partially correct answer should get partial marks.";
+
+            $prompt = "QUESTION: {$questionText}
+            {$modelAnswerText}
+            RUBRIC/CRITERIA: {$rubricText}
+            STUDENT ANSWER: {$studentAnswer}
+            MAX MARKS: {$maxMarks}
+            
+            Grade this answer now.";
+
+            $response = $this->client->post(
+                $this->baseUrl . '/chat/completions',
+                [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $this->apiKey,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'model' => 'deepseek-chat',
+                        'messages' => [
+                            ['role' => 'system', 'content' => $systemPrompt],
+                            ['role' => 'user', 'content' => $prompt],
+                        ],
+                        'temperature' => 0.3, // Lower temperature for more consistent grading
+                        'response_format' => ['type' => 'json_object'],
+                    ],
+                ]
+            );
+
+            $data = json_decode($response->getBody()->getContents(), true);
+            $content = json_decode($data['choices'][0]['message']['content'], true);
+
+            return [
+                'marks' => (float) ($content['marks'] ?? 0),
+                'confidence' => (float) ($content['confidence'] ?? 50),
+                'reasoning' => $content['reasoning'] ?? 'AI graded response.',
+                'ai_feedback' => $content['feedback'] ?? '',
+                'analysis' => $content['analysis'] ?? [],
+                'plagiarism_score' => 0, // Deepseek doesn't natively provide this yet
+                'consistency_score' => 100,
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Deepseek Grading Error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
      * Generate generic text response (for Chat/Tutor mode)
      */
     public function generateText(string $prompt, string $systemPrompt = "You are a helpful assistant."): string

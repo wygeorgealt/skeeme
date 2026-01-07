@@ -223,6 +223,8 @@
                                             <td class="p-4 text-right">
                                                 <div class="flex items-center justify-end gap-2">
                                                     <div class="flex items-center bg-zinc-50 dark:bg-zinc-800/50 p-1 rounded-xl border border-zinc-100 dark:border-zinc-800 shadow-inner">
+                                                        <flux:button href="{{ route('lecturer.exam.grading', $exam->id) }}" variant="ghost" size="xs" icon="academic-cap" title="Grade Submissions" inset="top bottom" />
+                                                        <div class="w-px h-3 bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
                                                         <!-- Manage Questions Tooltip -->
                                                         <div id="anchor_exam_questions">
                                                             <flux:button href="{{ route('lecturer.exam-questions', $exam->id) }}" variant="ghost" size="xs" icon="question-mark-circle" title="Questions" inset="top bottom" />

@@ -88,6 +88,9 @@
                             @endif
 
                             @if($this->selectedSession->status === 'graded')
+                                <flux:button href="{{ route('lecturer.gradings.dashboard', $this->selectedSession->id) }}" icon="chart-bar" variant="ghost">
+                                    Advanced Review
+                                </flux:button>
                                 <flux:button wire:click="publishResult({{ $this->selectedSession->id }})" icon="paper-airplane" variant="success">
                                     Publish Result
                                 </flux:button>

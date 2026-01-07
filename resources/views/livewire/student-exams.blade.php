@@ -148,14 +148,18 @@
                                             <p class="text-[11px] font-bold text-zinc-700 dark:text-zinc-200">{{ $exam['session']?->submitted_at?->format('M d, Y') }}</p>
                                         </div>
 
-                                        @if($exam['session']?->status === 'graded')
+                                        @if($exam['session']?->status === 'published' || ($exam['session']?->status === 'graded' && $exam['session']?->exam->release_results_immediately))
                                             <div>
                                                 <p class="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Final Result</p>
-                                                <p class="text-sm font-black text-emerald-600">85 / 100</p>
+                                                <p class="text-sm font-black text-emerald-600">{{ $exam['session']->score }} / {{ $exam['session']->exam->total_marks }}</p>
                                             </div>
                                             <div class="px-3 py-1 bg-emerald-500/10 text-emerald-600 text-[10px] font-bold uppercase tracking-widest rounded-full border border-emerald-500/20">GRADED</div>
                                         @else
-                                            <div class="px-3 py-1 bg-amber-500/10 text-amber-600 text-[10px] font-bold uppercase tracking-widest rounded-full border border-amber-500/20">PENDING GRADE</div>
+                                            <div>
+                                                <p class="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1">Status</p>
+                                                <p class="text-xs font-bold text-amber-600 italic">Grading in Progress</p>
+                                            </div>
+                                            <div class="px-3 py-1 bg-amber-500/10 text-amber-600 text-[10px] font-bold uppercase tracking-widest rounded-full border border-amber-500/20">PENDING</div>
                                         @endif
                                     </div>
 

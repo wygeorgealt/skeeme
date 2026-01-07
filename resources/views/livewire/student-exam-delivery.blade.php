@@ -7,6 +7,7 @@
         'sessionId' => $session->id,
         'examTitle' => $session->exam->title,
         'totalQuestions' => $totalQuestions,
+        'currentIndex' => $currentQuestionIndex,
     ]) }})"
     class="exam-delivery-wrapper"
     x-cloak
@@ -26,8 +27,8 @@
         </div>
     </div>
 
-    <!-- Main Exam Interface (Only visible after start) -->
-    <div x-show="examStarted" class="min-h-screen bg-white dark:bg-zinc-950 py-8 px-4 sm:px-6 lg:px-8 font-sans">
+    <!-- Main Exam Interface -->
+    <div x-show="examStarted && !$wire.showReviewPage" class="min-h-screen bg-white dark:bg-zinc-950 py-8 px-4 sm:px-6 lg:px-8 font-sans">
         <div class="max-w-[1600px] mx-auto">
             
             <!-- Header Section -->
@@ -55,7 +56,7 @@
                     <flux:button @click="toggleFullscreen()" variant="ghost">
                         <i class="fas fa-expand mr-2"></i> Fullscreen
                     </flux:button>
-                    <flux:button @click="Flux.modal('confirm-submit').show()" variant="primary">Submit Exam</flux:button>
+                    <flux:button @click="$wire.goToReview()" variant="primary">Submit Exam</flux:button>
                 </div>
             </div>
 
@@ -225,7 +226,7 @@
                             <div class="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-1.5 mb-4">
                                  <div class="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" :style="'width: ' + (getAnsweredCount() / totalQuestions * 100) + '%'"></div>
                             </div>
-                             <flux:button @click="Flux.modal('confirm-submit').show()" class="w-full">Submit All Answers</flux:button>
+                             <flux:button @click="$wire.goToReview()" class="w-full">Submit All Answers</flux:button>
                         </div>
                     </div>
                 </div>
@@ -233,6 +234,76 @@
 
         </div>
     </div>
+
+    <!-- Review Page -->
+    @if ($showReviewPage)
+    <div class="min-h-screen bg-white dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+        <div class="max-w-4xl mx-auto">
+            <div class="mb-12 text-center">
+                <h1 class="text-3xl font-extrabold text-zinc-900 dark:text-white mb-2">Review Your Answers</h1>
+                <p class="text-zinc-500 dark:text-zinc-400">Please carefully check your work before final submission.</p>
+            </div>
+
+            <div class="space-y-6 mb-12">
+                @foreach($this->getAllQuestionsForClientSide() as $index => $q)
+                    <div class="bg-white dark:bg-zinc-900 rounded-xl border {{ isset($answers[$index]) && $answers[$index] !== '' ? 'border-zinc-200 dark:border-zinc-800' : 'border-amber-200 dark:border-amber-900/50 bg-amber-50/10' }} p-6 shadow-sm">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider">Question {{ $index + 1 }}</span>
+                                    @if(isset($answers[$index]) && $answers[$index] !== '')
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                                            <i class="fas fa-check"></i> ANSWERED
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                                            <i class="fas fa-exclamation-circle"></i> NOT ANSWERED
+                                        </span>
+                                    @endif
+                                </div>
+                                <h4 class="text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-4">{!! nl2br(e($q['text'])) !!}</h4>
+                                
+                                <div class="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-4 border border-zinc-100 dark:border-zinc-800">
+                                    <span class="text-xs font-bold text-zinc-400 block mb-2 uppercase tracking-tight">Your Answer:</span>
+                                    <div class="text-zinc-700 dark:text-zinc-300 italic">
+                                        @if(isset($answers[$index]) && $answers[$index] !== '')
+                                            @if($q['type'] === 'multiple_choice' || $q['type'] === 'mcq')
+                                                @php
+                                                    $selectedOption = collect($q['options'])->firstWhere('id', $answers[$index]);
+                                                @endphp
+                                                {{ $selectedOption['text'] ?? 'Unknown Option' }}
+                                            @elseif($q['type'] === 'true_false' || $q['type'] === 'boolean')
+                                                {{ ucfirst($answers[$index]) }}
+                                            @else
+                                                {!! nl2br(e($answers[$index])) !!}
+                                            @endif
+                                        @else
+                                            <span class="text-zinc-400">— No answer provided —</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            <flux:button @click="$wire.set('showReviewPage', false); goToQuestion({{ $index }})" variant="ghost" size="sm" class="flex-shrink-0">
+                                Edit
+                            </flux:button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-6 p-8 bg-indigo-50 dark:bg-indigo-500/5 rounded-2xl border border-indigo-100 dark:border-indigo-500/20">
+                <div class="text-center sm:text-left">
+                    <h3 class="text-xl font-bold text-indigo-900 dark:text-indigo-400 mb-1">Finished Reviewing?</h3>
+                    <p class="text-indigo-700/60 dark:text-indigo-400/60 text-sm">Once you confirm, you cannot change your answers.</p>
+                </div>
+                <div class="flex gap-4 w-full sm:w-auto">
+                    <flux:button @click="$wire.backToExam()" variant="ghost" class="flex-1 sm:flex-initial">Back to Exam</flux:button>
+                    <flux:button @click="Flux.modal('confirm-submit').show()" variant="primary" class="flex-1 sm:flex-initial !bg-indigo-600 !hover:bg-indigo-500">Confirm Submission</flux:button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
     
     <!-- Confirm Modal -->
     <flux:modal name="confirm-submit" class="min-w-[400px]">
@@ -292,16 +363,53 @@ document.addEventListener('alpine:init', () => {
         sessionId: config.sessionId,
         examTitle: config.examTitle,
         totalQuestions: config.totalQuestions,
-        currentIndex: 0,
+        currentIndex: config.currentIndex || 0,
         saving: false,
+        heartbeatInterval: null,
+        lastWarningShown: null,
         
         init() {
             this.startTimer();
+            this.startHeartbeat();
+
             this.$watch('timer', value => {
+                this.checkWarnings(value);
                 if (value <= 0) {
                     this.stopTimer();
+                    this.stopHeartbeat();
                     this.forceSubmit();
                 }
+            });
+        },
+
+        destroy() {
+            this.stopTimer();
+            this.stopHeartbeat();
+        },
+
+        checkWarnings(seconds) {
+            if (seconds === 300 && this.lastWarningShown !== 300) { // 5 minutes
+                this.showWarning("5 minutes remaining! Please start finalizing your answers.");
+                this.lastWarningShown = 300;
+            } else if (seconds === 60 && this.lastWarningShown !== 60) { // 1 minute
+                this.showWarning("Only 1 minute left! The exam will auto-submit soon.");
+                this.lastWarningShown = 60;
+            } else if (seconds === 10 && this.lastWarningShown !== 10) { // 10 seconds
+                 this.showWarning("10 seconds remaining! AUTO-SUBMITTING NOW.");
+                 this.lastWarningShown = 10;
+            }
+        },
+
+        showWarning(message) {
+            // Use existing flux notification or standard alert for critical warnings
+            if (window.Flux) {
+                // Flash the timer red as well
+            }
+            // Standard browser notification for extreme cases or local toast
+            console.warn(message);
+             this.$dispatch('notify', {
+                type: 'warning',
+                message: message
             });
         },
         
@@ -353,7 +461,7 @@ document.addEventListener('alpine:init', () => {
             
             const answer = this.answers[this.currentIndex];
             if (answer !== undefined && answer !== null && answer !== '') {
-                $wire.saveAnswer(answer);
+                this.$wire.saveAnswer(this.currentIndex, answer);
             }
             
             setTimeout(() => { this.saving = false; }, 300);
@@ -389,6 +497,17 @@ document.addEventListener('alpine:init', () => {
         stopTimer() {
             clearInterval(this.timerInterval);
         },
+
+        startHeartbeat() {
+            if (this.heartbeatInterval) return;
+            this.heartbeatInterval = setInterval(() => {
+                this.$wire.heartbeat(this.currentIndex);
+            }, 30000); // 30 seconds
+        },
+
+        stopHeartbeat() {
+            clearInterval(this.heartbeatInterval);
+        },
         
         toggleFullscreen() {
             if (!document.fullscreenElement) {
@@ -406,12 +525,12 @@ document.addEventListener('alpine:init', () => {
         },
         
         forceSubmit() {
-            $wire.forceSubmit();
+            this.$wire.forceSubmit();
         },
         
         submitExam() {
             Flux.modal('confirm-submit').close();
-            $wire.submit();
+            this.$wire.submit();
         }
     }));
 });
