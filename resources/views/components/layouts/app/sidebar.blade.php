@@ -58,9 +58,6 @@
                     </flux:sidebar.item>
                     
                     <flux:sidebar.item icon="document-magnifying-glass" :href="route('lecturer.exams')" wire:navigate>{{ __('Exams') }}</flux:sidebar.item>
-                    @if(auth()->user()->canAccessFeature('messages'))
-                    <flux:sidebar.item icon="chat-bubble-left-right" :href="route('lecturer.messages')" wire:navigate>{{ __('messages.Messages') }}</flux:sidebar.item>
-                    @endif
                 </flux:navlist.group>
                 @elseif(auth()->user()->hasRole('student'))
                 <flux:navlist.group class="grid gap-4">
@@ -69,9 +66,6 @@
                     <flux:sidebar.item icon="document-magnifying-glass" :href="route('student.exams')" wire:navigate>{{ __('My Exams') }}</flux:sidebar.item>
                     <flux:sidebar.item icon="document-text" :href="route('student.notes')" wire:navigate>{{ __('Notes/Materials') }}</flux:sidebar.item>
                     <flux:sidebar.item icon="chart-bar" :href="route('student.grades')" wire:navigate>{{ __('My Grades') }}</flux:sidebar.item>
-                    @if(auth()->user()->canAccessFeature('messages'))
-                    <flux:sidebar.item icon="chat-bubble-left-right" :href="route('student.messages')" wire:navigate>{{ __('messages.Messages') }}</flux:sidebar.item>
-                    @endif
                 </flux:navlist.group>
                 @endif
             </flux:sidebar.nav>

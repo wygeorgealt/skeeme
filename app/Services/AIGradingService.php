@@ -29,7 +29,7 @@ class AIGradingService
             throw new \InvalidArgumentException('Can only grade submitted sessions');
         }
 
-        $answers = $session->answers()->get();
+        $answers = $session->examAnswers()->get();
         $results = [
             'total_answers' => 0,
             'auto_marked' => 0,

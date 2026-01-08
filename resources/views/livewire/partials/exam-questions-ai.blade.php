@@ -1,5 +1,5 @@
 <!-- AI Generator Tab -->
-<div id="tab-ai_generator" class="space-y-10 {{ $activeTab === 'ai_generator' ? 'block' : 'hidden' }}" x-data="aiGenerator(@this)">
+<div id="tab-ai_generator" class="space-y-10 {{ $activeTab === 'ai_generator' ? 'block' : 'hidden' }}">
     <div>
         <flux:heading size="lg">AI Question Generation</flux:heading>
         <flux:subheading>Create questions from your course material.</flux:subheading>
@@ -79,9 +79,9 @@
                 </div>
 
                 <div class="pt-4">
-                    <flux:button @click="generateWithPuter()" icon="sparkles" variant="primary" class="w-full h-12 shadow-lg shadow-indigo-500/20" x-bind:disabled="isGeneratingPuter">
-                        <span x-show="!isGeneratingPuter">Create Questions</span>
-                        <span x-show="isGeneratingPuter" x-text="puterProgress"></span>
+                    <flux:button wire:click="generateAIQuestions" icon="sparkles" variant="primary" class="w-full h-12 shadow-lg shadow-indigo-500/20" wire:loading.attr="disabled">
+                        <span wire:loading.remove>Create Questions</span>
+                        <span wire:loading x-text="generationProgressMessage">Generating...</span>
                     </flux:button>
                 </div>
             </div>
@@ -91,8 +91,7 @@
 
         <!-- Generated Results -->
         <div class="min-h-[600px] flex flex-col">
-            <!-- Puter Loading Overlay using Alpine -->
-            <div x-data="{ show: false }" x-init="$watch('isGeneratingPuter', value => show = value)" x-show="show" class="flex-1 flex flex-col items-center justify-center p-10 space-y-8 animate-fadeIn" style="display: none;">
+            <div wire:loading wire:target="generateAIQuestions" class="flex-1 flex flex-col items-center justify-center p-10 space-y-8 animate-fadeIn">
                 <div class="relative">
                     <div class="w-24 h-24 rounded-full border-4 border-indigo-500/10 border-t-indigo-500 animate-spin"></div>
                     <div class="absolute inset-0 flex items-center justify-center">
@@ -100,12 +99,12 @@
                     </div>
                 </div>
                 <div class="text-center space-y-2">
-                    <flux:heading size="lg" class="italic" x-text="puterProgress">Processing...</flux:heading>
+                    <flux:heading size="lg" class="italic" wire:loading.attr="x-text" x-text="$wire.generationProgressMessage">Processing...</flux:heading>
                 </div>
             </div>
 
             @if(count($aiGeneratedQuestions) > 0)
-                <div class="space-y-6 animate-fadeIn h-full" x-data x-show="!isGeneratingPuter">
+                <div class="space-y-6 animate-fadeIn h-full" wire:loading.remove wire:target="generateAIQuestions">
                     <div class="flex items-center justify-between px-2">
                         <div>
                             <flux:heading size="lg">Draft Results</flux:heading>
@@ -173,7 +172,7 @@
                     @endif
                 </div>
             @else
-                <div class="flex-1 flex flex-col items-center justify-center p-10 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl" x-data x-show="!isGeneratingPuter">
+                <div class="flex-1 flex flex-col items-center justify-center p-10 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl" wire:loading.remove wire:target="generateAIQuestions">
                     <div class="w-20 h-20 rounded-full bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-center text-zinc-100 dark:text-zinc-800 mb-6 scale-125">
                         <i class="fas fa-brain text-4xl"></i>
                     </div>

@@ -70,7 +70,6 @@ class Subscription extends Model
                 'api_access' => false,
                 'priority_support' => false,
                 'unlimited_storage' => false,
-                'messages' => true,
                 'ai_management' => true,
                 'ai_exams_management' => true,
             ],

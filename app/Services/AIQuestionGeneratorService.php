@@ -93,137 +93,54 @@ class AIQuestionGeneratorService
      */
     private function generateQuestionsFromChunk(string $text, int $count, array $config): array
     {
-        // TODO: Call DeepSeek API for actual question generation
-        // For now, return simulated questions
-        $questions = [];
-
-        for ($i = 0; $i < $count; $i++) {
-            $bloomLevel = $config['bloom_levels'][array_rand($config['bloom_levels'])];
-            $type = $config['types'][array_rand($config['types'])];
-
-            $question = $this->generateSingleQuestion($text, $bloomLevel, $type, $config);
-            if ($question) {
-                $questions[] = $question;
-            }
+        try {
+            $deepseekService = new DeepseekAIService();
+            
+            // Map difficulty distribution to a single difficulty string if possible, 
+            // otherwise use 'mixed' as DeepseekAIService supports it.
+            $difficulty = 'mixed';
+            
+            // DeepseekAIService expects an array of notes/texts
+            return $deepseekService->generateQuestions(
+                [$text],
+                $count,
+                $difficulty,
+                $config['types'],
+                $config['prompt'] ?? ''
+            );
+        } catch (\Exception $e) {
+            Log::error("DeepSeek generation failed for chunk: " . $e->getMessage());
+            return [];
         }
-
-        return $questions;
     }
 
     /**
      * Generate a single question with AI
+     * @deprecated Use generateQuestionsFromChunk instead
      */
     private function generateSingleQuestion(string $text, string $bloomLevel, string $type, array $config): ?array
     {
-        try {
-            $prompt = $this->buildPrompt($text, $bloomLevel, $type);
-            
-            // TODO: Integrate with DeepSeek API
-            // For now, return template structure
-            $apiResponse = $this->callDeepSeekAPI($prompt);
-
-            if (!$apiResponse) {
-                return null;
-            }
-
-            return $this->parseAPIResponse($apiResponse, $bloomLevel, $type);
-        } catch (\Exception $e) {
-            Log::error("Failed to generate single question: " . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Build prompt for DeepSeek API
-     */
-    private function buildPrompt(string $text, string $bloomLevel, string $type): string
-    {
-        $bloomDescriptions = [
-            'remember' => 'recall factual information',
-            'understand' => 'explain or summarize concepts',
-            'apply' => 'use knowledge in new situations',
-            'analyze' => 'break down and examine relationships',
-            'evaluate' => 'make judgments based on criteria',
-            'create' => 'put elements together to form something new',
-        ];
-
-        $description = $bloomDescriptions[$bloomLevel] ?? $bloomLevel;
-
-        if ($type === 'multiple_choice') {
-            return <<<PROMPT
-Based on the following text, generate a multiple-choice question that requires students to $description.
-
-Text: $text
-
-Requirements:
-- Question should be clear and concise
-- Provide 4 plausible options with one correct answer
-- Include realistic distractors based on common misconceptions
-- Format as JSON: {"question": "...", "options": [{"text": "...", "is_correct": true/false}], "bloom_level": "$bloomLevel"}
-PROMPT;
-        } else {
-            return <<<PROMPT
-Based on the following text, generate an essay/short-answer question that requires students to $description.
-
-Text: $text
-
-Requirements:
-- Question should be open-ended and encourage critical thinking
-- Provide clear expectations for a good answer
-- Format as JSON: {"question": "...", "model_answer": "...", "rubric": {...}, "bloom_level": "$bloomLevel"}
-PROMPT;
-        }
-    }
-
-    /**
-     * Call DeepSeek API (placeholder)
-     */
-    private function callDeepSeekAPI(string $prompt): ?array
-    {
-        // TODO: Implement actual DeepSeek API integration
-        // For now, return null to use fallback
         return null;
     }
 
     /**
-     * Parse API response into question structure
+     * Build prompt for DeepSeek API
+     * @deprecated Handled by DeepseekAIService
      */
-    private function parseAPIResponse(array $response, string $bloomLevel, string $type): ?array
+    private function buildPrompt(string $text, string $bloomLevel, string $type): string
     {
-        try {
-            if ($type === 'multiple_choice') {
-                return [
-                    'question_text' => $response['question'] ?? '',
-                    'question_type' => 'multiple_choice',
-                    'options' => $response['options'] ?? [],
-                    'bloom_level' => $bloomLevel,
-                    'metadata' => [
-                        'source' => 'ai_generated',
-                        'ai_model' => 'deepseek',
-                        'requires_review' => true,
-                    ],
-                ];
-            } else {
-                return [
-                    'question_text' => $response['question'] ?? '',
-                    'question_type' => 'essay',
-                    'correct_answer' => [
-                        'model_answer' => $response['model_answer'] ?? '',
-                        'rubric' => $response['rubric'] ?? [],
-                    ],
-                    'bloom_level' => $bloomLevel,
-                    'metadata' => [
-                        'source' => 'ai_generated',
-                        'ai_model' => 'deepseek',
-                        'requires_review' => true,
-                    ],
-                ];
-            }
-        } catch (\Exception $e) {
-            Log::error("Failed to parse API response: " . $e->getMessage());
-            return null;
-        }
+        return '';
     }
+
+    /**
+     * Call DeepSeek API (placeholder)
+     * @deprecated Handled by DeepseekAIService
+     */
+    private function callDeepSeekAPI(string $prompt): ?array
+    {
+        return null;
+    }
+
 
     /**
      * Extract text from various sources

@@ -234,7 +234,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/student/attendance', \App\Livewire\StudentAttendance::class)->name('student.attendance');
         Route::get('/student/notes', \App\Livewire\StudentNotes::class)->name('student.notes');
         Route::get('/student/curriculum', \App\Livewire\StudentCurriculum::class)->name('student.curriculum');
-        Route::get('/student/messages', \App\Livewire\StudentMessages::class)->name('student.messages');
     });
 
     // Shareable Exam Routes (accessible by student and lecturer preview)
@@ -259,7 +258,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/lecturer/ai-questions', \App\Livewire\LecturerAIQuestionGenerator::class)->name('lecturer.ai-questions');
         Route::get('/lecturer/gradings/{session}', \App\Livewire\LecturerGradingDashboard::class)->name('lecturer.gradings.dashboard');
         Route::get('/lecturer/analytics/{exam}', \App\Livewire\AnalyticsDashboard::class)->name('lecturer.analytics.dashboard');
-        Route::get('/lecturer/messages', \App\Livewire\LecturerMessages::class)->name('lecturer.messages');
     });
 
     Route::get('lecturer-management', \App\Livewire\LecturerManagement::class)

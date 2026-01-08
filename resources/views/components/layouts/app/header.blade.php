@@ -99,9 +99,6 @@
                     <flux:navlist.item icon="document-text" href="#" wire:navigate>{{ __('messages.Notes/Materials') }}</flux:navlist.item>
                     <flux:navlist.item icon="document-magnifying-glass" href="#" wire:navigate>{{ __('Exams') }}</flux:navlist.item>
                     <flux:navlist.item icon="chart-bar" href="#" wire:navigate>{{ __('Reports/Analytics') }}</flux:navlist.item>
-                    @if(auth()->user()->canAccessFeature('messages'))
-                    <flux:navlist.item icon="chat-bubble-left-right" href="#" wire:navigate>{{ __('messages.Messages') }}</flux:navlist.item>
-                    @endif
                 </flux:navlist.group>
                 @elseif(auth()->user()->hasRole('student'))
                 <flux:navlist.group :heading="__('Learning')" class="grid">
@@ -109,9 +106,6 @@
                     <flux:navlist.item icon="calendar-days" href="#" wire:navigate>{{ __('Course Plan') }}</flux:navlist.item>
                     <flux:navlist.item icon="document-magnifying-glass" href="#" wire:navigate>{{ __('messages.My Exams') }}</flux:navlist.item>
                     <flux:navlist.item icon="document-text" href="#" wire:navigate>{{ __('messages.Notes/Materials') }}</flux:navlist.item>
-                    @if(auth()->user()->canAccessFeature('messages'))
-                    <flux:navlist.item icon="chat-bubble-left-right" href="#" wire:navigate>{{ __('messages.Messages') }}</flux:navlist.item>
-                    @endif
                 </flux:navlist.group>
                 @endif
             </flux:navlist>
