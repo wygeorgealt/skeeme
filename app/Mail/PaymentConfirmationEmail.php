@@ -47,10 +47,22 @@ class PaymentConfirmationEmail extends Mailable
 
     public function attachments(): array
     {
-        return [
-            Attachment::fromPath(storage_path("app/invoices/invoice-{$this->invoice->id}.pdf"))
-                ->as("Invoice-{$this->invoiceNumber}.pdf")
-                ->withMime('application/pdf'),
-        ];
+        try {
+            $path = storage_path("app/invoices/invoice-{$this->invoice->id}.pdf");
+            if (file_exists($path)) {
+                return [
+                    Attachment::fromPath($path)
+                        ->as("Invoice-{$this->invoiceNumber}.pdf")
+                        ->withMime('application/pdf'),
+                ];
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to attach invoice PDF for confirmation', [
+                'invoice_id' => $this->invoice->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return [];
     }
 }
