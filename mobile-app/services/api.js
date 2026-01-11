@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Replace with your actual Render URL
+// Use your primary domain
 const API_URL = 'https://skeeme.com/api/v1/team';
 
 const api = axios.create({
@@ -9,6 +9,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
     },
 });
 
@@ -16,11 +17,23 @@ api.interceptors.request.use(
     async (config) => {
         const token = await AsyncStorage.getItem('userToken');
         if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers.Authorization = `Bearer ${token.trim()}`;
         }
         return config;
     },
     (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        if (error.response && error.response.status === 401) {
+            console.log('Unauthorized - clearing token');
+            await AsyncStorage.removeItem('userToken');
+            // You might want to trigger a logout in context here too
+        }
+        return Promise.reject(error);
+    }
 );
 
 export const login = async (email, password) => {

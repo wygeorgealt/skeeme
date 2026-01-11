@@ -22,14 +22,14 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (token) => {
-        setUserToken(token);
         await AsyncStorage.setItem('userToken', token);
+        setUserToken(token);
     };
 
     const logout = async () => {
-        setUserToken(null);
         await AsyncStorage.removeItem('userToken');
         await AsyncStorage.removeItem('userData');
+        setUserToken(null);
     };
 
     return (
