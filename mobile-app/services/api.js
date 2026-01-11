@@ -9,7 +9,6 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
     },
 });
 
@@ -17,6 +16,7 @@ api.interceptors.request.use(
     async (config) => {
         const token = await AsyncStorage.getItem('userToken');
         if (token) {
+            console.log('Sending token:', token.trim().substring(0, 10) + '...');
             config.headers.Authorization = `Bearer ${token.trim()}`;
         }
         return config;
