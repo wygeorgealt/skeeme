@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('personal_access_tokens', function (Blueprint $blueprint) {
-            $blueprint->id();
-            $blueprint->morphs('tokenable');
-            $blueprint->string('name');
-            $blueprint->string('token', 64)->unique();
-            $blueprint->text('abilities')->nullable();
-            $blueprint->timestamp('last_used_at')->nullable();
-            $blueprint->timestamp('expires_at')->nullable();
-            $blueprint->timestamps();
-        });
+        if (!Schema::hasTable('personal_access_tokens')) {
+            Schema::create('personal_access_tokens', function (Blueprint $blueprint) {
+                $blueprint->id();
+                $blueprint->morphs('tokenable');
+                $blueprint->string('name');
+                $blueprint->string('token', 64)->unique();
+                $blueprint->text('abilities')->nullable();
+                $blueprint->timestamp('last_used_at')->nullable();
+                $blueprint->timestamp('expires_at')->nullable();
+                $blueprint->timestamps();
+            });
+        }
     }
 
     /**
