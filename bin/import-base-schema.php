@@ -25,10 +25,16 @@ try {
     echo "🧼 Wiping database foundation (ignoring foreign keys)...\n";
     $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
     
-    // Drop all tables
+    // Drop all tables EXCEPT personal_access_tokens and migrations
     $stmt = $pdo->query("SHOW TABLES");
     while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
-        $pdo->exec("DROP TABLE IF EXISTS `{$row[0]}`");
+        $tableName = $row[0];
+        // Preserve these tables across deployments
+        if ($tableName === 'personal_access_tokens' || $tableName === 'migrations') {
+            echo "  ⏭️  Skipping $tableName (preserving data)...\n";
+            continue;
+        }
+        $pdo->exec("DROP TABLE IF EXISTS `{$tableName}`");
     }
     
     // 2. Prep the SQUASHED Foundation
