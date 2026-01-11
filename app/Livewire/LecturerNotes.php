@@ -92,7 +92,7 @@ class LecturerNotes extends Component
             'newNote.description' => 'nullable|string',
         ]);
 
-        $filePath = $this->uploadedFile->store('notes', 'public');
+        $filePath = $this->uploadedFile->store('notes');
 
         $note = Note::create([
             'course_id' => $this->selectedCourse,
@@ -132,8 +132,8 @@ class LecturerNotes extends Component
 
         if ($note && $note->lecturer_id === Auth::id()) {
             // Delete file from storage
-            if ($note->file_path && Storage::disk('public')->exists($note->file_path)) {
-                Storage::disk('public')->delete($note->file_path);
+            if ($note->file_path && Storage::exists($note->file_path)) {
+                Storage::delete($note->file_path);
             }
 
             $note->delete();
@@ -155,7 +155,7 @@ class LecturerNotes extends Component
                 ->where('course_id', $this->selectedCourse)
                 ->pluck('student_id');
 
-            // Send notifications to students
+            // Send notifications to students after response
             foreach ($studentIds as $studentId) {
                 $user = \App\Models\User::find($studentId);
                 if ($user) {

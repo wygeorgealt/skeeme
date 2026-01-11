@@ -286,6 +286,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('academic-calendar')
         ->middleware('admin');
 
+    Route::get('data-storage', \App\Livewire\AdminDataStorage::class)
+        ->name('admin.data-storage')
+        ->middleware('admin');
+
     Route::get('timetable', \App\Livewire\TimetableManagement::class)
         ->name('timetable');
 
@@ -336,6 +340,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('invoices.download');
     Route::get('/invoices/{invoice}/view', [\App\Http\Controllers\InvoiceController::class, 'view'])
         ->name('invoices.view');
+
+    /* Exam Report Routes */
+    Route::get('/exams/{exam}/print/paper', [\App\Http\Controllers\ExamReportController::class, 'downloadQuestionPaper'])
+        ->name('exams.print.paper');
+    Route::get('/exams/sessions/{session}/print/script', [\App\Http\Controllers\ExamReportController::class, 'downloadMarkedScript'])
+        ->name('exams.sessions.print.script');
 });
 
 /* ------------------------------------------------------------------ */

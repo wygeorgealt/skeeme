@@ -178,7 +178,7 @@ class LecturerCourses extends Component
 
             $this->toastSuccess('Live class initialized! Students have been notified.', 'Class Started');
             
-            // Notify students via Slack and Email
+            // Notify students via Slack and Email after the response is sent
             $students = $course->enrolledStudents;
             foreach ($students as $student) {
                 $student->notify(new \App\Notifications\LiveClassStarted($course));

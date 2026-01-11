@@ -3,7 +3,7 @@
     <div wire:loading.flex wire:target="selectSession, autoGradeSession, publishAllGraded, publishResult" class="fixed inset-0 h-screen w-screen bg-white/60 dark:bg-zinc-950/60 backdrop-blur-md z-[100] items-center justify-center animate-fadeIn text-center">
         <div class="flex flex-col items-center gap-4">
             <div class="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
-            <p class="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Synchronizing grading data...</p>
+            <p class="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Processing grading request...</p>
         </div>
     </div>
 
@@ -91,6 +91,9 @@
                                 <flux:button href="{{ route('lecturer.gradings.dashboard', $this->selectedSession->id) }}" icon="chart-bar" variant="ghost">
                                     Advanced Review
                                 </flux:button>
+                                <flux:button href="{{ route('exams.sessions.print.script', $this->selectedSession->id) }}" target="_blank" icon="printer" variant="ghost">
+                                    Download Script
+                                </flux:button>
                                 <flux:button wire:click="publishResult({{ $this->selectedSession->id }})" icon="paper-airplane" variant="filled" class="bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600">
                                     Publish Result
                                 </flux:button>
@@ -147,25 +150,21 @@
                                 <!-- AI Feedback / Grading Info -->
                                 @if($answer->isAutoMarked() || $answer->isAIGraded())
                                     <div class="mb-4 p-4 border rounded-lg {{ $answer->isAIGraded() ? 'border-purple-100 bg-purple-50 dark:border-purple-900/30 dark:bg-purple-900/10' : 'border-gray-100 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-700/30' }}">
-                                        <div class="flex items-center gap-2 mb-2">
+                                        <div class="flex items-center gap-2 mb-3">
                                             <flux:icon name="{{ $answer->isAIGraded() ? 'sparkles' : 'check-circle' }}" class="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                                            <span class="text-xs font-bold text-purple-700 dark:text-purple-300">
-                                                {{ $answer->isAIGraded() ? 'AI Analysis' : 'Auto-Marked' }}
+                                            <span class="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
+                                                {{ $answer->isAIGraded() ? 'Advice' : 'Auto-Marked' }}
                                             </span>
                                             @if($answer->getConfidenceScore())
-                                                <span class="text-xs text-purple-500 ml-auto">Confidence: {{ $answer->getConfidenceScore() * 100 }}%</span>
+                                                <span class="text-xs font-medium text-purple-500/80 ml-auto bg-purple-100/50 dark:bg-purple-900/30 px-2 py-0.5 rounded-full">
+                                                    Confidence: {{ $answer->getConfidenceScore() * 100 }}%
+                                                </span>
                                             @endif
                                         </div>
                                         
-                                        @if($answer->feedback)
-                                            <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                                                <span class="font-semibold">Feedback:</span> {{ $answer->feedback }}
-                                            </p>
-                                        @endif
-                                        
                                         @if($answer->getGradingReasoning())
-                                            <p class="text-sm text-gray-600 dark:text-gray-400 italic border-t border-purple-100 dark:border-purple-900/30 pt-2 mt-2">
-                                                Reasoning: {{ $answer->getGradingReasoning() }}
+                                            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                {{ $answer->getGradingReasoning() }}
                                             </p>
                                         @endif
                                     </div>

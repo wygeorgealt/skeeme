@@ -49,7 +49,7 @@ class LecturerExamGrading extends Component
     {
         if (!$this->selectedSessionId) return null;
 
-        return ExamSession::with(['examAnswers.question', 'student', 'exam.questions'])
+        return ExamSession::with(['examAnswers.question', 'examAnswers.aiGrading', 'student', 'exam.questions'])
             ->find($this->selectedSessionId);
     }
 
@@ -95,26 +95,22 @@ class LecturerExamGrading extends Component
         $answer = ExamAnswer::find($answerId);
         if (!$answer) return;
 
-        // Validation
-        // Ensure mark is within question range?
-        // We'd need to load the question. $answer->question or $answer->examSession...
-        // For speed, let's assume UI does validation or we trust the input within reason.
-        
         $answer->update([
             'marks_obtained' => $mark,
             'feedback' => $feedback ?? $answer->feedback,
         ]);
         
         // Recalculate total score for the session
-        $this->recalculateSessionScore($answer->examSession);
-
-        $this->toastSuccess('Mark updated.', 'Saved');
-    }
-
-    protected function recalculateSessionScore(ExamSession $session)
-    {
+        $session = $answer->examSession;
         $total = $session->examAnswers()->sum('marks_obtained');
-        $session->update(['score' => $total]);
+        
+        $session->update([
+            'score' => $total,
+            'status' => 'graded',
+            'graded_at' => now(),
+        ]);
+
+        $this->toastSuccess('Mark updated. Remember to publish results when finished.', 'Saved');
     }
 
     /**
@@ -136,33 +132,6 @@ class LecturerExamGrading extends Component
         }
     }
 
-    protected function finalizeGrade(ExamSession $session)
-    {
-        $student = $session->student;
-        $exam = $session->exam;
-        $score = $session->score;
-        
-        // Calculate Grade Letter (Logic duplicated from Dashboard for now, or move to Service)
-        $percentage = ($score / ($exam->total_marks ?: 100)) * 100;
-        $gradeLetter = app(\App\Services\GPACalculationService::class)->calculateLetterGrade($percentage);
-
-        \App\Models\Grade::updateOrCreate(
-            [
-                'student_id' => $student->id,
-                'course_id' => $exam->course_id,
-                'exam_id' => $exam->id,
-            ],
-            [
-                'score' => $score,
-                'grade' => $gradeLetter,
-                'credit_units' => $exam->course->credit_units ?? 3,
-                'graded_at' => now(),
-            ]
-        );
-
-        app(\App\Services\GPACalculationService::class)->updateStudentGPA($student);
-    }
-
     /**
      * Publish ALL graded sessions
      */
@@ -181,6 +150,13 @@ class LecturerExamGrading extends Component
 
         $this->toastSuccess("$count results published.", 'Batch Publish');
     }
+
+    protected function finalizeGrade(ExamSession $session)
+    {
+        app(GradingService::class)->syncSessionResults($session);
+    }
+
+    // Finalize grade and update GPA on explicit publish
 
     public function render()
     {

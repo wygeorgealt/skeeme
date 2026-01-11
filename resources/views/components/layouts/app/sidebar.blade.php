@@ -34,6 +34,7 @@
                     <flux:sidebar.item icon="user-group" :href="route('lecturer-management')" :current="request()->routeIs('lecturer-management')" wire:navigate>{{ __('Lecturers') }}</flux:sidebar.item>
                     <flux:sidebar.item icon="megaphone" :href="route('announcements')" :current="request()->routeIs('announcements')" wire:navigate>{{ __('Announcements') }}</flux:sidebar.item>
                     <flux:sidebar.item icon="calendar" :href="route('academic-calendar')" :current="request()->routeIs('academic-calendar')" wire:navigate>{{ __('Academic Calendar') }}</flux:sidebar.item>
+                    <flux:sidebar.item icon="archive-box" :href="route('admin.data-storage')" :current="request()->routeIs('admin.data-storage')" wire:navigate>{{ __('Data and Storage') }}</flux:sidebar.item>
                 </flux:navlist.group>
                 @elseif(auth()->user()->hasRole('lecturer'))
                 <flux:navlist.group class="grid gap-4">

@@ -198,7 +198,6 @@
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.2em]">Latest Announcements</h2>
                 <div class="h-px flex-1 bg-zinc-200 dark:bg-zinc-800 mx-6"></div>
-                <flux:button variant="ghost" size="sm" class="text-[10px] uppercase tracking-wider font-bold">View All</flux:button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

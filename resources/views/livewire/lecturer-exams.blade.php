@@ -196,13 +196,18 @@
                                                 @php
                                                     // Status Logic
                                                     $isPublished = $exam->status === 'published';
+                                                    $isEndedInDb = $exam->status === 'ended';
                                                     $hasStarted = $exam->exam_date->isPast();
-                                                    $hasEnded = $exam->end_date && $exam->end_date->isPast();
                                                     
-                                                    if ($isPublished && $hasStarted && !$hasEnded) {
-                                                        $status = 'active';
-                                                    } elseif ($hasEnded) {
+                                                    // Calculate true end date (explicit or implicit duration-based)
+                                                    $durationMinutes = $exam->duration ?? 0;
+                                                    $calculatedEndDate = $exam->end_date ?? $exam->exam_date->addMinutes($durationMinutes);
+                                                    $hasEndedByDate = $calculatedEndDate->isPast();
+                                                    
+                                                    if ($isEndedInDb || ($isPublished && $hasEndedByDate)) {
                                                         $status = 'ended';
+                                                    } elseif ($isPublished && $hasStarted) {
+                                                        $status = 'active';
                                                     } elseif (!$hasStarted && $isPublished) {
                                                         $status = 'upcoming';
                                                     } else {

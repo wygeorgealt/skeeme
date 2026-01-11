@@ -377,7 +377,7 @@ class ManageClass extends Component
 
         $code = $this->generateCourseCode();
 
-        DB::transaction(function () use ($code) {
+        $course = DB::transaction(function () use ($code) {
             // Create new course
             $course = Course::create([
                 'name' => $this->courseName,
@@ -402,6 +402,8 @@ class ManageClass extends Component
 
             // Notify lecturers about the new course creation and assignment
             $this->notifyLecturersAboutCourseAssignment($course->id, $this->classId);
+
+            return $course;
         });
 
         $this->toastSuccess('Course created and assigned successfully. All students enrolled.', 'Success');

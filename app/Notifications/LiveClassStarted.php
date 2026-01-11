@@ -8,7 +8,9 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Slack\SlackMessage;
 use App\Models\Course;
 
-class LiveClassStarted extends Notification
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class LiveClassStarted extends Notification implements ShouldQueue
 {
     use Queueable;
 

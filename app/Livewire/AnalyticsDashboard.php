@@ -6,6 +6,7 @@ use App\Models\AnalyticsSnapshot;
 use App\Models\Exam;
 use App\Services\AnalyticsService;
 use App\Services\InsightsService;
+use App\Services\AnalyticsPdfService;
 use Carbon\Carbon;
 use Livewire\Component;
 
@@ -23,7 +24,7 @@ class AnalyticsDashboard extends Component
     public $trends = [];
     public $insights = [];
     public $comparison = null;
-    public $showInsightsPanel = true;
+    public $showInsightsPanel = false;
 
     protected $listeners = ['refreshAnalytics'];
 
@@ -61,6 +62,15 @@ class AnalyticsDashboard extends Component
 
         if (!$this->currentSnapshot) {
             $this->currentSnapshot = $analyticsService->generateSnapshot($this->exam);
+        } else {
+            // If snapshot exists but has 0 students while sessions exist, regenerate
+            $sessionCount = \App\Models\ExamSession::where('exam_id', $this->exam->id)
+                ->whereIn('status', ['submitted', 'graded', 'published'])
+                ->count();
+            
+            if ($this->currentSnapshot->total_students == 0 && $sessionCount > 0) {
+                $this->currentSnapshot = $analyticsService->generateSnapshot($this->exam);
+            }
         }
 
         // Get historical snapshots
@@ -106,6 +116,27 @@ class AnalyticsDashboard extends Component
         return response()->streamDownload(function () {
             echo $this->generateReport();
         }, 'analytics-report-' . $this->exam->id . '.csv');
+    }
+
+    /**
+     * Download a professional PDF summary report
+     */
+    public function downloadPdfReport(AnalyticsPdfService $pdfService)
+    {
+        $snapshot = \App\Models\AnalyticsSnapshot::where('exam_id', $this->exam->id)->latest()->first();
+        
+        if (!$snapshot) {
+            $snapshot = app(\App\Services\AnalyticsService::class)->generateSnapshot($this->exam);
+        }
+
+        $insights = app(\App\Services\InsightsService::class)->generateInsights($snapshot);
+        $pdfContent = $pdfService->generateReport($this->exam, $snapshot, $insights);
+
+        return response()->streamDownload(function () use ($pdfContent) {
+            echo $pdfContent;
+        }, 'Exam-Summary-' . $this->exam->id . '.pdf', [
+            'Content-Type' => 'application/pdf',
+        ]);
     }
 
     public function refreshAnalytics(AnalyticsService $analyticsService)

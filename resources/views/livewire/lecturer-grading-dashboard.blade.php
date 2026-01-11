@@ -12,12 +12,17 @@
                 <span class="text-xs font-bold text-zinc-500 uppercase">{{ $session->student->name }}</span>
             </flux:subheading>
         </div>
-        <div class="flex items-center gap-2">
-            @if($session->status !== 'published')
-                <flux:button wire:click="confirmFinalGrade" variant="primary" class="!bg-emerald-600 !hover:bg-emerald-500 shadow-lg shadow-emerald-500/20" icon="check-badge">Confirm {{ explode(' ', $session->student->name)[0] }}'s Grade</flux:button>
-            @endif
-            <flux:button wire:click="downloadGradingReport" icon="arrow-down-tray" variant="ghost">Export Dataset</flux:button>
-            <flux:button href="{{ route('lecturer.exams') }}" icon="arrow-left" variant="ghost">Close Session</flux:button>
+        <div class="flex items-center gap-3">
+             <div class="flex items-center gap-2 mr-4 border-r border-zinc-200 dark:border-zinc-800 pr-4">
+                <flux:button wire:click="undo" icon="arrow-uturn-left" variant="ghost" size="sm" :disabled="empty($history)" tooltip="Undo (Ctrl+Z)" />
+                <flux:button wire:click="redo" icon="arrow-uturn-right" variant="ghost" size="sm" :disabled="empty($redoStack)" tooltip="Redo (Ctrl+Y)" />
+             </div>
+             <div class="flex items-center gap-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-800 shadow-sm">
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                Live Sync Active
+             </div>
+             <flux:button wire:click="downloadGradingReport" icon="arrow-down-tray" variant="ghost">Export Dataset</flux:button>
+            <flux:button href="{{ route('lecturer.exam.grading', $session->exam) }}" icon="arrow-left" variant="ghost">Close Session</flux:button>
         </div>
     </div>
 

@@ -40,7 +40,7 @@ class ExamAnswer extends Model
      */
     public function question()
     {
-        return $this->belongsTo(ExamQuestion::class, 'question_id');
+        return $this->belongsTo(Question::class, 'question_id');
     }
 
     /**
@@ -84,10 +84,22 @@ class ExamAnswer extends Model
      */
     public function getGradingReasoning(): ?string
     {
+        if ($this->aiGrading) {
+            return $this->aiGrading->reasoning;
+        }
+
         if (!$this->grading_details || !isset($this->grading_details['reasoning'])) {
             return null;
         }
 
         return $this->grading_details['reasoning'];
+    }
+
+    /**
+     * Relationship to AIGrading
+     */
+    public function aiGrading()
+    {
+        return $this->hasOne(AIGrading::class);
     }
 }

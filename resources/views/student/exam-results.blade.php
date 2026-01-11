@@ -14,7 +14,7 @@
             </div>
             <div class="flex items-center gap-3">
                 <flux:button href="{{ route('student.exams') }}" icon="arrow-left" variant="ghost">Back to Exams</flux:button>
-                <flux:button icon="printer" onclick="window.print()" variant="subtle">Print Result</flux:button>
+                <flux:button href="{{ route('exams.sessions.print.script', $session) }}" target="_blank" icon="printer" variant="subtle">Print Result</flux:button>
             </div>
         </div>
 

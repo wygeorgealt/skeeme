@@ -208,7 +208,6 @@
             <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col">
                 <div class="px-6 py-5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50">
                     <h2 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest">Recent Activities</h2>
-                    <flux:button variant="ghost" size="sm">View All</flux:button>
                 </div>
                 <div class="p-6 flex-1">
                     @if(count($recent_activities) > 0)
@@ -250,7 +249,6 @@
             <div class="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col">
                 <div class="px-6 py-5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50">
                     <h2 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest">Classes Overview</h2>
-                    <flux:button variant="ghost" size="sm">Manage</flux:button>
                 </div>
                 <div class="p-6 flex-1">
                     @if(count($classes) > 0)

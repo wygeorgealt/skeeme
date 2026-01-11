@@ -32,6 +32,10 @@ class LecturerGradingDashboard extends Component
     public $selectedRubric = null;
     public $batchSelectedIds = [];
 
+    // History tracking
+    public $history = [];
+    public $redoStack = [];
+
     protected $listeners = ['refreshGradings'];
 
     public function mount(ExamSession $session)
@@ -109,12 +113,21 @@ class LecturerGradingDashboard extends Component
             return;
         }
 
+        $this->addToHistory([
+            'type' => 'status_change',
+            'grading_id' => $this->selectedGrading->id,
+            'old_status' => $this->selectedGrading->status,
+            'new_status' => 'approved'
+        ]);
+
         $grading = AIGrading::find($this->selectedGrading->id);
         $grading->approve(auth()->id());
 
+        app(\App\Services\GradingService::class)->syncSessionResults($this->session);
+
         $this->dispatch('notify', [
             'type' => 'success',
-            'message' => 'Grading approved successfully',
+            'message' => 'Grading approved and autosaved.',
         ]);
 
         $this->selectedGrading = null;
@@ -127,12 +140,21 @@ class LecturerGradingDashboard extends Component
             return;
         }
 
+        $this->addToHistory([
+            'type' => 'status_change',
+            'grading_id' => $this->selectedGrading->id,
+            'old_status' => $this->selectedGrading->status,
+            'new_status' => 'rejected'
+        ]);
+
         $grading = AIGrading::find($this->selectedGrading->id);
         $grading->reject('Rejected for manual grading by lecturer', auth()->id());
 
+        app(\App\Services\GradingService::class)->syncSessionResults($this->session);
+
         $this->dispatch('notify', [
             'type' => 'info',
-            'message' => 'Grading rejected. Please grade manually.',
+            'message' => 'Grading rejected and marks cleared.',
         ]);
 
         $this->selectedGrading = null;
@@ -156,15 +178,27 @@ class LecturerGradingDashboard extends Component
         ]);
 
         $grading = AIGrading::find($this->selectedGrading->id);
+
+        $this->addToHistory([
+            'type' => 'override',
+            'grading_id' => $grading->id,
+            'old_marks' => $grading->marks_awarded,
+            'new_marks' => (float) $this->overrideMarks,
+            'old_status' => $grading->status,
+            'old_reason' => $grading->lecturer_override_reason
+        ]);
+
         $grading->override(
             (float) $this->overrideMarks,
             $this->overrideReason,
             auth()->id()
         );
 
+        app(\App\Services\GradingService::class)->syncSessionResults($this->session);
+
         $this->dispatch('notify', [
             'type' => 'success',
-            'message' => 'Marks overridden successfully',
+            'message' => 'Marks overridden and autosaved.',
         ]);
 
         $this->selectedGrading = null;
@@ -183,86 +217,102 @@ class LecturerGradingDashboard extends Component
             $pending->where('confidence_score', '>=', 90);
         }
 
-        $count = $pending->update(['status' => 'approved', 'reviewed_by' => auth()->id()]);
+        $gradings = $pending->get();
+        $count = $gradings->count();
+
+        if ($count > 0) {
+            $this->addToHistory([
+                'type' => 'batch_approve',
+                'grading_ids' => $gradings->pluck('id')->toArray()
+            ]);
+
+            foreach ($gradings as $grading) {
+                $grading->approve(auth()->id());
+            }
+
+            app(\App\Services\GradingService::class)->syncSessionResults($this->session);
+        }
 
         $this->dispatch('notify', [
             'type' => 'success',
-            'message' => "$count gradings approved",
+            'message' => "$count gradings approved and results updated.",
         ]);
 
         $this->refreshGradings();
     }
 
-    public function confirmFinalGrade()
+    protected function addToHistory($action)
     {
-        $this->authorize('view', $this->session->exam);
-
-        // Calculate final score
-        $score = $this->session->examAnswers()->sum('marks_obtained');
-        
-        $this->session->update([
-            'score' => $score,
-            'status' => 'graded',
-            'graded_at' => now(),
-        ]);
-
-        // Send notification to student
-        $student = $this->session->student;
-        $exam = $this->session->exam;
-        $gradingPercentage = ($score / ($exam->total_marks ?: 100)) * 100;
-        $grade = $this->calculateGrade($gradingPercentage);
-
-        // Database notification
-        app(NotificationService::class)->sendGradeReleased(
-            $student, 
-            $exam, 
-            (float) $score, 
-            $grade
-        );
-
-        // Real-time toast for online student
-        $this->dispatch('notificationBroadcast', [
-            'userIds' => [$student->id],
-            'type' => 'success',
-            'title' => 'Grade Released',
-            'message' => "Your grade for {$exam->title} is now available.",
-            'action' => ['label' => 'View Grades', 'url' => route('student.grades')]
-        ]);
-
-        // Create or update Grade record
-        \App\Models\Grade::updateOrCreate(
-            [
-                'student_id' => $student->id,
-                'course_id' => $exam->course_id,
-                'exam_id' => $exam->id,
-            ],
-            [
-                'score' => $score,
-                'grade' => $grade,
-                'credit_units' => $exam->course->credit_units ?? 3, // Snapshot credits
-                'graded_at' => now(),
-            ]
-        );
-
-        // Calculate and Update GPA
-        app(\App\Services\GPACalculationService::class)->updateStudentGPA($student);
-
-        $this->dispatch('notify', [
-            'type' => 'success',
-            'message' => "Exam grade for {$student->name} confirmed and released! GPA Updated.",
-        ]);
-
-        return redirect()->route('lecturer.exams.grading', $this->session->exam);
+        array_push($this->history, $action);
+        $this->redoStack = [];
+        if (count($this->history) > 20) array_shift($this->history);
     }
 
-    private function calculateGrade($percentage)
+    public function undo()
     {
-        if ($percentage >= 70) return 'A';
-        if ($percentage >= 60) return 'B';
-        if ($percentage >= 50) return 'C';
-        if ($percentage >= 45) return 'D';
-        return 'F';
+        if (empty($this->history)) return;
+
+        $action = array_pop($this->history);
+        array_push($this->redoStack, $action);
+
+        $this->applyHistoryAction($action, true);
+        $this->dispatch('notify', ['type' => 'info', 'message' => 'Undid last action']);
     }
+
+    public function redo()
+    {
+        if (empty($this->redoStack)) return;
+
+        $action = array_pop($this->redoStack);
+        array_push($this->history, $action);
+
+        $this->applyHistoryAction($action, false);
+        $this->dispatch('notify', ['type' => 'info', 'message' => 'Redid last action']);
+    }
+
+    protected function applyHistoryAction($action, $isUndo)
+    {
+        if ($action['type'] === 'status_change') {
+            $grading = AIGrading::find($action['grading_id']);
+            $status = $isUndo ? $action['old_status'] : $action['new_status'];
+            
+            if ($status === 'approved') $grading->approve(auth()->id());
+            elseif ($status === 'rejected') $grading->reject('Manual Rejection', auth()->id());
+            else $grading->update(['status' => $status]); // Revert to pending
+            
+        } elseif ($action['type'] === 'override') {
+            $grading = AIGrading::find($action['grading_id']);
+            $marks = $isUndo ? $action['old_marks'] : $action['new_marks'];
+            
+            if ($isUndo && $action['old_status'] === 'pending_review') {
+                $grading->update([
+                    'status' => 'pending_review',
+                    'lecturer_override_marks' => null,
+                    'lecturer_override_reason' => null
+                ]);
+                $grading->examAnswer->update(['marks_obtained' => $action['old_marks']]);
+            } else {
+                $grading->override((float) $marks, $action['old_reason'] ?? 'Reverted', auth()->id());
+            }
+        } elseif ($action['type'] === 'batch_approve') {
+            foreach ($action['grading_ids'] as $id) {
+                $grading = AIGrading::find($id);
+                if ($isUndo) {
+                    $grading->update(['status' => 'pending_review', 'reviewed_by' => null, 'reviewed_at' => null]);
+                    $grading->examAnswer->update(['marks_obtained' => $grading->marks_awarded]); // Revert to AI marks
+                } else {
+                    $grading->approve(auth()->id());
+                }
+            }
+        }
+
+        app(\App\Services\GradingService::class)->syncSessionResults($this->session);
+        $this->refreshGradings();
+    }
+
+    // Manual confirmation removed in favor of autosave
+
+    // Unified calculation is now in GradingService and GPACalculationService
 
     public function refreshGradings()
     {
@@ -436,26 +486,28 @@ class LecturerGradingDashboard extends Component
         }
     }
 
-    /**
-     * Batch approve selected gradings
-     */
     public function batchApproveSelected()
     {
-        if (empty($this->batchSelectedIds)) {
-            $this->dispatch('notify', [
-                'type' => 'warning',
-                'message' => 'Please select gradings to approve',
-            ]);
-            return;
-        }
+        $gradings = AIGrading::whereIn('id', $this->batchSelectedIds)->get();
+        $count = $gradings->count();
 
-        $count = AIGrading::whereIn('id', $this->batchSelectedIds)
-            ->update(['status' => 'approved', 'reviewed_by' => auth()->id()]);
+        if ($count > 0) {
+            $this->addToHistory([
+                'type' => 'batch_approve',
+                'grading_ids' => $this->batchSelectedIds
+            ]);
+
+            foreach ($gradings as $grading) {
+                $grading->approve(auth()->id());
+            }
+
+            app(\App\Services\GradingService::class)->syncSessionResults($this->session);
+        }
 
         $this->batchSelectedIds = [];
         $this->dispatch('notify', [
             'type' => 'success',
-            'message' => "$count gradings approved",
+            'message' => "$count gradings approved and results updated.",
         ]);
 
         $this->refreshGradings();

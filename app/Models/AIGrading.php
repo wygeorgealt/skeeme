@@ -110,6 +110,8 @@ class AIGrading extends Model
             'reviewed_at' => now(),
             'status' => 'revised',
         ]);
+
+        $this->examAnswer->update(['marks_obtained' => $marks]);
     }
 
     /**
@@ -122,6 +124,8 @@ class AIGrading extends Model
             'reviewed_at' => now(),
             'status' => 'approved',
         ]);
+
+        $this->examAnswer->update(['marks_obtained' => $this->marks_awarded]);
     }
 
     /**
@@ -135,6 +139,8 @@ class AIGrading extends Model
             'reviewed_by' => $lecturerId,
             'reviewed_at' => now(),
         ]);
+
+        $this->examAnswer->update(['marks_obtained' => 0]);
     }
 
     /**

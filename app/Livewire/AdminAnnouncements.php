@@ -212,16 +212,10 @@ class AdminAnnouncements extends Component
             try {
                 $userModel = \App\Models\User::find($user->id);
                 if ($userModel) {
-                    $notification = $userModel->notify(new AnnouncementNotification($announcement));
-                    if ($notification) {
-                        $notificationIds[] = $notification->id;
-                        // Broadcast the notification for real-time updates
-                        broadcast(new NotificationSent($notification, $userModel))->toOthers();
-                    }
+                    $userModel->notify(new AnnouncementNotification($announcement));
                 }
             } catch (\Exception $e) {
-                // Log error but continue
-                logger('Failed to send real-time notification: ' . $e->getMessage());
+                \Log::warning("Failed to send real-time notification to user {$user->id}: " . $e->getMessage());
             }
         }
 
@@ -282,10 +276,9 @@ class AdminAnnouncements extends Component
         // Send emails
         foreach ($recipients as $email) {
             try {
-                Mail::to($email)->send(new AnnouncementMail($announcement));
+                \Illuminate\Support\Facades\Mail::to($email)->send(new AnnouncementMail($announcement));
             } catch (\Exception $e) {
-                // Log error but continue
-                logger('Failed to send announcement email: ' . $e->getMessage());
+                \Log::warning("Failed to send announcement email to {$email}: " . $e->getMessage());
             }
         }
     }

@@ -107,9 +107,16 @@ class ExamRandomizationService
         
         // Update new indices
         $result = [];
+        $isOptionRandomizationEnabled = $this->isOptionRandomizationEnabled($session->exam);
+        
         foreach ($randomized as $newIndex => $option) {
             $option['new_index'] = $newIndex;
-            $result[$newIndex] = $option;
+            $result[$newIndex] = $isOptionRandomizationEnabled ? $option : $indexedOptions[$newIndex];
+        }
+
+        // If not enabled, we should ideally just return the original indexed options or ensure they are NOT shuffled.
+        if (!$isOptionRandomizationEnabled) {
+            $result = $indexedOptions;
         }
 
         Cache::put($cacheKey, $result, now()->addHours(24));
@@ -200,8 +207,7 @@ class ExamRandomizationService
      */
     public function isRandomizationEnabled(Exam $exam): bool
     {
-        $metadata = $exam->metadata ?? [];
-        return $metadata['randomize_questions'] ?? true; // Default to true
+        return (bool) $exam->randomize_questions;
     }
 
     /**
@@ -212,8 +218,7 @@ class ExamRandomizationService
      */
     public function isOptionRandomizationEnabled(Exam $exam): bool
     {
-        $metadata = $exam->metadata ?? [];
-        return $metadata['randomize_options'] ?? true; // Default to true
+        return (bool) $exam->randomize_options;
     }
 
     /**

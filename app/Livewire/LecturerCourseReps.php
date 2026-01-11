@@ -87,8 +87,8 @@ class LecturerCourseReps extends Component
 
         $course->update(['course_rep_id' => $studentId]);
         
-        // Notify student
-        $student->notify(new CourseRepAssigned($course));
+        // Notify student after response
+        dispatch(fn() => $student->notify(new CourseRepAssigned($course)))->afterResponse();
 
         $this->toastSuccess("{$student->name} assigned as rep for {$course->name}.", 'Assigned');
         $this->closeAssignModal();

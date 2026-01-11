@@ -528,14 +528,20 @@ class StudentsManagement extends Component
 
         $class = SchoolClass::find($classId);
 
+            // Notify lecturers after response
+            $studentId = $student->id;
         foreach ($lecturers as $lecturer) {
-            $lecturerUser = User::find($lecturer->id);
-            if ($lecturerUser) {
-                $lecturerUser->notify(new LecturerAlert(
-                    'New Student Added to Class',
-                    "A new student {$student->first_name} {$student->last_name} has been added to class {$class->name}. Please ensure they are properly enrolled in your courses.",
-                    route('dashboard')
-                ));
+            try {
+                $lecturerUser = User::find($lecturer->id);
+                if ($lecturerUser && $student) {
+                    $lecturerUser->notify(new \App\Notifications\LecturerAlert(
+                        'New Student Added to Class',
+                        "A new student {$student->first_name} {$student->last_name} has been added to class {$class->name}. Please ensure they are properly enrolled in your courses.",
+                        route('dashboard')
+                    ));
+                }
+            } catch (\Exception $e) {
+                \Log::warning("Failed to notify lecturer {$lecturer->id} about student addition: " . $e->getMessage());
             }
         }
     }

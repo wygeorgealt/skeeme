@@ -145,7 +145,6 @@
         <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm overflow-hidden flex flex-col animate-slideUp">
             <div class="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
                 <flux:heading size="sm" class="uppercase tracking-widest text-[10px] text-zinc-400">Recent Activity</flux:heading>
-                <flux:button variant="ghost" size="xs">View All</flux:button>
             </div>
             <div class="p-8 space-y-6 flex-1">
                 @forelse(collect($recent_activities)->take(5) as $activity)

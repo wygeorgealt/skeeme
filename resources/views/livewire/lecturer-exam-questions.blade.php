@@ -22,6 +22,9 @@
                 <div class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Questions</div>
                 <div class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 italic font-mono">{{ $this->questionCount }}</div>
             </div>
+            <div class="pl-4 border-l border-zinc-100 dark:border-zinc-800">
+                <flux:button href="{{ route('exams.print.paper', $exam) }}" target="_blank" icon="printer" variant="ghost" size="sm">Print Paper</flux:button>
+            </div>
         </div>
     </div>
 

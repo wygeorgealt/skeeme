@@ -187,9 +187,13 @@ class LecturerCurriculum extends Component
 
             // Send notifications to students
             foreach ($studentIds as $studentId) {
-                $user = \App\Models\User::find($studentId);
-                if ($user) {
-                    $user->notify(new CurriculumUpdated($schemeOfWork, $course));
+                try {
+                    $user = \App\Models\User::find($studentId);
+                    if ($user && $schemeOfWork) {
+                        $user->notify(new CurriculumUpdated($schemeOfWork, $course));
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning("Failed to notify student {$studentId} for curriculum update: " . $e->getMessage());
                 }
             }
 

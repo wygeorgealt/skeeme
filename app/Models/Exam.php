@@ -104,10 +104,29 @@ class Exam extends Model
     }
 
     /**
-     * Get exam blueprint
+     * Check if all submitted sessions are published and transition to ended
      */
-    public function blueprint()
+    public function checkAndEndStatus(): void
     {
-        return $this->hasOne(ExamBlueprint::class);
+        // Only transition if currently published
+        if ($this->status !== 'published') {
+            return;
+        }
+
+        // Check if there are any sessions in progress or needing grading
+        $activeStatuses = ['started', 'pending', 'submitted', 'graded'];
+        $hasActiveSessions = $this->sessions()
+            ->whereIn('status', $activeStatuses)
+            ->exists();
+
+        // Check if we have at least one published result
+        $hasPublishedSessions = $this->sessions()
+            ->where('status', 'published')
+            ->exists();
+
+        // If results are out and no one is actively being graded or writing, end the exam.
+        if ($hasPublishedSessions && !$hasActiveSessions) {
+            $this->update(['status' => 'ended']);
+        }
     }
 }

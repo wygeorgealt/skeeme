@@ -208,6 +208,57 @@ EOT;
     }
 
     /**
+     * Synchronize session results with the Grade model and update GPA.
+     * This is the core logic for the autosave functionality.
+     */
+    public function syncSessionResults(ExamSession $session): void
+    {
+        // 1. Recalculate total score for the session
+        $totalScore = $session->examAnswers()->sum('marks_obtained');
+        
+        // 2. Update session
+        // Only move to 'graded' if it's currently 'submitted'. 
+        // If it's already 'published', keep it 'published'.
+        $newStatus = $session->status === 'submitted' ? 'graded' : $session->status;
+
+        $session->update([
+            'score' => $totalScore,
+            'status' => $newStatus,
+            'graded_at' => $session->graded_at ?? now()
+        ]);
+
+        // 3. Update or Create Grade record
+        $student = $session->student;
+        $exam = $session->exam;
+        
+        // Calculate Grade Letter
+        $percentage = ($totalScore / ($exam->total_marks ?: 100)) * 100;
+        $gradeLetter = app(\App\Services\GPACalculationService::class)->calculateLetterGrade($percentage);
+
+        \App\Models\Grade::updateOrCreate(
+            [
+                'student_id' => $student->id,
+                'course_id' => $exam->course_id,
+                'exam_id' => $exam->id,
+            ],
+            [
+                'score' => $totalScore,
+                'grade' => $gradeLetter,
+                'credit_units' => $exam->course->credit_units ?? 3,
+                'graded_at' => now(),
+            ]
+        );
+
+        // 4. Update Student GPA
+        app(\App\Services\GPACalculationService::class)->updateStudentGPA($student);
+
+        // 5. Check if exam should transition to 'ended'
+        if ($session->status === 'published') {
+            $exam->checkAndEndStatus();
+        }
+    }
+
+    /**
      * Helper to find the index of a question in the exam's collection
      */
     protected function getQuestionIndex(Exam $exam, Question $question)

@@ -23,8 +23,8 @@ class AnalyticsService
     {
         // Eager load all required relationships
         $sessions = ExamSession::where('exam_id', $exam->id)
-            ->where('status', 'submitted')
-            ->with(['answers', 'student'])
+            ->whereIn('status', ['submitted', 'graded', 'published'])
+            ->with(['examAnswers', 'student'])
             ->get();
         
         if ($sessions->isEmpty()) {
@@ -34,7 +34,7 @@ class AnalyticsService
         // Student performance metrics
         $scores = $sessions->mapWithKeys(fn($s) => [$s->id => $s->calculateTotalScore()]);
         $totalStudents = $sessions->count();
-        $submittedCount = $sessions->where('status', 'submitted')->count();
+        $submittedCount = $sessions->whereIn('status', ['submitted', 'graded', 'published'])->count();
         
         $avgScore = $scores->average();
         $medianScore = $scores->median();
@@ -61,17 +61,21 @@ class AnalyticsService
         $lastMinuteSubmissions = $sessions->where('time_spent_seconds', '>', ($exam->duration * 60) * 0.95)->count();
         
         // Question performance - cache answers in memory
-        $allAnswers = $sessions->flatMap(fn($s) => $s->answers()->get());
+        $allAnswers = $sessions->flatMap(fn($s) => $s->examAnswers);
         $questionPerf = [];
-        foreach ($questions as $question) {
+        foreach ($questions->values() as $index => $question) {
             $answers = $allAnswers->where('question_id', $question->id);
             if ($answers->count() > 0) {
                 // Count correct answers (those with marks_obtained > 0)
                 $correctCount = $answers->filter(fn($a) => $a->marks_obtained > 0)->count();
                 $questionPerf[$question->id] = [
+                    'number' => $index + 1,
+                    'text' => $question->question_text,
                     'correct' => $correctCount,
                     'total' => $answers->count(),
                     'difficulty' => $question->difficulty ?? 'unknown',
+                    'type' => $question->type,
+                    'bloom_level' => $question->bloom_level,
                 ];
             }
         }
@@ -146,7 +150,7 @@ class AnalyticsService
         }
 
         $sessions = $query->get();
-        $answers = $sessions->flatMap(fn($s) => $s->answers)->where('question_id', $question->id);
+        $answers = $sessions->flatMap(fn($s) => $s->examAnswers)->where('question_id', $question->id);
         
         if ($answers->isEmpty()) {
             return $this->createEmptyQuestionAnalytics($question, $exam);
@@ -160,8 +164,8 @@ class AnalyticsService
         $topHalf = $sessions->sortByDesc(fn($s) => $s->calculateTotalScore())->take(ceil($total / 2));
         $bottomHalf = $sessions->sortBy(fn($s) => $s->calculateTotalScore())->take(ceil($total / 2));
 
-        $topCorrect = $topHalf->flatMap(fn($s) => $s->answers)->where('question_id', $question->id)->filter(fn($a) => $a->marks_obtained > 0)->count();
-        $bottomCorrect = $bottomHalf->flatMap(fn($s) => $s->answers)->where('question_id', $question->id)->filter(fn($a) => $a->marks_obtained > 0)->count();
+        $topCorrect = $topHalf->flatMap(fn($s) => $s->examAnswers)->where('question_id', $question->id)->filter(fn($a) => $a->marks_obtained > 0)->count();
+        $bottomCorrect = $bottomHalf->flatMap(fn($s) => $s->examAnswers)->where('question_id', $question->id)->filter(fn($a) => $a->marks_obtained > 0)->count();
 
         $discriminationIndex = ($topCorrect - $bottomCorrect) / max($topHalf->count(), $bottomHalf->count());
 
@@ -218,8 +222,8 @@ class AnalyticsService
             
         $sessions = ExamSession::where('student_id', $student->id)
             ->whereIn('exam_id', $exams->pluck('id'))
-            ->where('status', 'submitted')
-            ->with('answers')
+            ->whereIn('status', ['submitted', 'graded', 'published'])
+            ->with('examAnswers')
             ->get();
 
         if ($sessions->isEmpty()) {
@@ -247,7 +251,7 @@ class AnalyticsService
         }
 
         // Cache all answers
-        $allAnswers = $sessions->flatMap('answers');
+        $allAnswers = $sessions->flatMap(fn($s) => $s->examAnswers);
 
         // Skill levels by Bloom's level
         $skillLevels = [];
@@ -343,7 +347,9 @@ class AnalyticsService
      */
     public function compareToClass(Exam $exam, $comparisonType = 'course'): ClassComparisonData
     {
-        $sessions = ExamSession::where('exam_id', $exam->id)->where('status', 'submitted')->get();
+        $sessions = ExamSession::where('exam_id', $exam->id)
+            ->whereIn('status', ['submitted', 'graded', 'published'])
+            ->get();
         $scores = $sessions->map(fn($s) => $s->calculateTotalScore());
 
         $classAvg = round($scores->average(), 2);

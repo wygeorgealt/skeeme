@@ -61,6 +61,12 @@ class LecturerExams extends Component
                 $this->selectedCourse = '';
             }
         }
+
+        // Catch-up: Check and end any published exams that should be finished
+        Exam::where('lecturer_id', Auth::id())
+            ->where('status', 'published')
+            ->get()
+            ->each->checkAndEndStatus();
     }
 
     public function loadCourses()
@@ -367,7 +373,7 @@ class LecturerExams extends Component
         if ($exam && $exam->lecturer_id === Auth::id()) {
             $exam->update([
                 'end_date' => $this->reactivateEndDate,
-                'status' => 'published', // Ensure it is published
+                'status' => 'published',
             ]);
             
             session()->flash('message', 'Exam reactivated successfully!');

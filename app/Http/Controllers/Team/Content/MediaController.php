@@ -14,7 +14,7 @@ class MediaController extends Controller
         $search = $request->get('search', '');
 
         // Get files from public disk
-        $files = collect(Storage::disk('public')->files('media'))
+        $files = collect(Storage::files('media'))
             ->map(function ($path) {
                 return [
                     'path' => $path,
@@ -51,7 +51,7 @@ class MediaController extends Controller
         ]);
 
         $file = $request->file('file');
-        $path = $file->store('media', 'public');
+        $path = $file->store('media');
 
         return redirect()->back()
             ->with('success', 'File uploaded successfully')
@@ -65,8 +65,8 @@ class MediaController extends Controller
         ]);
 
         $path = $request->path;
-        if (Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        if (Storage::exists($path)) {
+            Storage::delete($path);
             return redirect()->back()->with('success', 'File deleted successfully');
         }
 

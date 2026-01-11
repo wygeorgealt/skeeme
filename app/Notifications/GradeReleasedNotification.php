@@ -2,14 +2,12 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Slack\SlackMessage;
 
 class GradeReleasedNotification extends Notification
 {
-    use Queueable;
 
     protected $exam;
     protected $score;

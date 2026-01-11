@@ -10,6 +10,12 @@ use Carbon\Carbon;
 
 class InsightsService
 {
+    protected $deepseek;
+
+    public function __construct(DeepseekAIService $deepseek)
+    {
+        $this->deepseek = $deepseek;
+    }
     /**
      * Generate AI insights from analytics snapshot
      */
@@ -19,7 +25,6 @@ class InsightsService
             return [
                 'key_findings' => $this->extractKeyFindings($snapshot),
                 'at_risk_students' => $this->identifyAtRiskStudents($snapshot),
-                'topic_recommendations' => $this->generateTopicRecommendations($snapshot),
                 'performance_anomalies' => $this->detectAnomalies($snapshot),
                 'learning_groups' => $this->segmentLearners($snapshot),
                 'improvement_areas' => $this->identifyImprovementAreas($snapshot),
@@ -139,8 +144,8 @@ class InsightsService
             $passingScore = $exam->passing_marks ?? ($exam->total_marks ?? 100) * 0.6;
             
             $sessions = ExamSession::where('exam_id', $exam->id)
-                ->where('status', 'submitted')
-                ->with(['student', 'answers'])
+                ->whereIn('status', ['submitted', 'graded', 'published'])
+                ->with(['student', 'examAnswers'])
                 ->get();
 
             if ($sessions->isEmpty()) {
@@ -164,7 +169,7 @@ class InsightsService
                             'percentage' => round($scorePercentage, 2),
                             'risk_level' => $riskLevel,
                             'time_spent' => ($session->time_spent_seconds ?? 0) / 60,
-                            'questions_attempted' => $session->answers()->count(),
+                            'questions_attempted' => $session->examAnswers()->count(),
                             'total_questions' => $exam->load('questions')->getRelation('questions')->count() ?? 0,
                         ];
                     }
@@ -196,16 +201,16 @@ class InsightsService
                     'bloom_level' => $bloomLevel,
                     'mastery_percent' => round($masteryPercent, 2),
                     'priority' => 'high',
-                    'suggestion' => "Students struggle with {$bloomLevel} level thinking. Review teaching strategies.",
-                    'action' => "Focus on {$bloomLevel} level activities in next lesson",
+                    'suggestion' => "Students are finding " . $this->simplifyBloomLevel($bloomLevel) . " questions very difficult. Try explaining these concepts again.",
+                    'action' => "Re-teach " . $this->simplifyBloomLevel($bloomLevel) . " concepts in the next class.",
                 ];
             } elseif ($masteryPercent < 75) {
                 $recommendations[] = [
                     'bloom_level' => $bloomLevel,
                     'mastery_percent' => round($masteryPercent, 2),
                     'priority' => 'medium',
-                    'suggestion' => "{$bloomLevel} level mastery is moderate. Additional practice recommended.",
-                    'action' => "Include more {$bloomLevel} practice problems",
+                    'suggestion' => "Students have an average understanding of " . $this->simplifyBloomLevel($bloomLevel) . " topics, but could use more practice.",
+                    'action' => "Give more practice problems for " . $this->simplifyBloomLevel($bloomLevel) . " skills.",
                 ];
             }
         }
@@ -226,9 +231,9 @@ class InsightsService
         
         if ($stdDev > $avgScore * 0.5) {
             $anomalies[] = [
-                'type' => 'high_variance',
-                'title' => 'Highly Variable Performance',
-                'description' => 'Large performance gaps between students suggest mixed understanding.',
+                'type' => 'mixed_results',
+                'title' => 'Big Gaps in Student Scores',
+                'description' => 'There is a wide range of scores. Some students did very well while others struggled significantly.',
                 'metric' => 'std_deviation',
                 'value' => round($stdDev, 2),
             ];
@@ -242,17 +247,17 @@ class InsightsService
                 
                 if ($correctRate < 20) {
                     $anomalies[] = [
-                        'type' => 'difficult_question',
-                        'title' => 'Problematic Question',
-                        'description' => "Question {$qId} has only {$correctRate}% correct rate. Review or revise.",
+                        'type' => 'hard_question',
+                        'title' => 'Very Tough Question',
+                        'description' => "Question {$qId} was only answered correctly by {$correctRate}% of students. You might want to review this question.",
                         'question_id' => $qId,
                         'correct_rate' => round($correctRate, 2),
                     ];
                 } elseif ($correctRate > 95) {
                     $anomalies[] = [
-                        'type' => 'too_easy_question',
-                        'title' => 'Over-Easy Question',
-                        'description' => "Question {$qId} is answered correctly by {$correctRate}% of students. Consider removing.",
+                        'type' => 'easy_question',
+                        'title' => 'Very Easy Question',
+                        'description' => "Almost every student got Question {$qId} right ({$correctRate}%). It might be too easy for this level.",
                         'question_id' => $qId,
                         'correct_rate' => round($correctRate, 2),
                     ];
@@ -273,7 +278,7 @@ class InsightsService
             if (!$exam) return [];
 
             $sessions = ExamSession::where('exam_id', $exam->id)
-                ->where('status', 'submitted')
+                ->whereIn('status', ['submitted', 'graded', 'published'])
                 ->with('student')
                 ->get();
 
@@ -321,25 +326,25 @@ class InsightsService
                     'count' => count($groups['advanced']),
                     'percentage' => $totalSessions > 0 ? (count($groups['advanced']) / $totalSessions * 100) : 0,
                     'students' => array_slice($groups['advanced'], 0, 10), // Limit to first 10
-                    'suggestion' => 'Challenge these students with extension activities',
+                    'suggestion' => 'These students are doing great! Give them more challenging work to keep them engaged.',
                 ],
                 'proficient' => [
                     'count' => count($groups['proficient']),
                     'percentage' => $totalSessions > 0 ? (count($groups['proficient']) / $totalSessions * 100) : 0,
                     'students' => array_slice($groups['proficient'], 0, 10),
-                    'suggestion' => 'These students are on track. Maintain current support.',
+                    'suggestion' => 'These students understand the core material well.',
                 ],
                 'developing' => [
                     'count' => count($groups['developing']),
                     'percentage' => $totalSessions > 0 ? (count($groups['developing']) / $totalSessions * 100) : 0,
                     'students' => array_slice($groups['developing'], 0, 10),
-                    'suggestion' => 'Provide targeted remediation and additional practice.',
+                    'suggestion' => 'These students need some extra help and more practice with the basics.',
                 ],
                 'beginning' => [
                     'count' => count($groups['beginning']),
                     'percentage' => $totalSessions > 0 ? (count($groups['beginning']) / $totalSessions * 100) : 0,
                     'students' => array_slice($groups['beginning'], 0, 10),
-                    'suggestion' => 'Intensive support needed. Consider one-on-one intervention.',
+                    'suggestion' => 'These students are struggling significantly and need one-on-one attention.',
                 ],
             ];
         } catch (\Exception $e) {
@@ -349,11 +354,13 @@ class InsightsService
     }
 
     /**
-     * Identify specific areas needing improvement
+     * Identify specific areas needing improvement with detailed question analysis
      */
     private function identifyImprovementAreas(AnalyticsSnapshot $snapshot): array
     {
         $improvements = [];
+        $exam = $snapshot->exam;
+        if (!$exam) return [];
 
         // Question performance
         $questionPerf = $snapshot->question_performance ?? [];
@@ -363,55 +370,126 @@ class InsightsService
             if (!empty($perf['total'])) {
                 $correctRate = ($perf['correct'] / $perf['total']) * 100;
                 if ($correctRate < 60) {
+                    $question = null;
+                    if (empty($perf['text'])) {
+                        $question = \App\Models\Question::find($qId);
+                    }
+                    
                     $lowPerformers[] = [
                         'question_id' => $qId,
+                        'question_number' => $perf['number'] ?? '-',
+                        'text' => $perf['text'] ?? ($question->question_text ?? 'Unknown'),
+                        'type' => $perf['type'] ?? ($question->type ?? 'mcq'),
                         'correct_rate' => round($correctRate, 2),
-                        'difficulty' => $perf['difficulty'] ?? 'unknown',
+                        'difficulty' => $perf['difficulty'] ?? ($question->difficulty ?? 'medium'),
+                        'bloom_level' => $perf['bloom_level'] ?? ($question->bloom_level ?? 'understand'),
                     ];
                 }
             }
         }
 
         if (!empty($lowPerformers)) {
-            $improvements[] = [
-                'area' => 'Question Performance',
-                'priority' => 'high',
-                'description' => 'Some questions have low pass rates',
-                'items_needing_work' => count($lowPerformers),
-                'suggestions' => [
-                    'Review teaching content related to these questions',
-                    'Consider question clarity and wording',
-                    'Provide additional practice materials',
-                    'Conduct post-exam discussion of challenging questions',
-                ],
-            ];
-        }
-
-        // Bloom's levels
-        $skillMastery = $snapshot->skill_mastery ?? [];
-        $weaker_levels = [];
-        
-        foreach ($skillMastery as $level => $mastery) {
-            if ($mastery < 70) {
-                $weaker_levels[] = $level;
+            foreach ($lowPerformers as $item) {
+                $specificAdvice = $this->getDeepReasoningAdvice($item, $snapshot);
+                $improvements[] = [
+                    'area' => 'Question performance issue',
+                    'priority' => $item['correct_rate'] < 40 ? 'high' : 'medium',
+                    'question_id' => $item['question_id'],
+                    'question_number' => $item['question_number'],
+                    'question_text' => $item['text'],
+                    'description' => "Only {$item['correct_rate']}% of students got this right.",
+                    'suggestions' => $specificAdvice,
+                    'is_ai_reasoned' => true,
+                ];
             }
         }
 
-        if (!empty($weaker_levels)) {
-            $improvements[] = [
-                'area' => 'Cognitive Levels',
-                'priority' => 'high',
-                'description' => 'Students struggle with higher-order thinking',
-                'weak_levels' => $weaker_levels,
-                'suggestions' => [
-                    'Increase activities at Bloom\'s ' . implode(', ', $weaker_levels) . ' levels',
-                    'Use scaffolding to build toward higher-order thinking',
-                    'Include more analysis, synthesis, and evaluation activities',
-                ],
-            ];
+        // Bloom's levels / Skill gaps
+        $skillMastery = $snapshot->skill_mastery ?? [];
+        foreach ($skillMastery as $level => $mastery) {
+            if ($mastery < 60) {
+                $improvements[] = [
+                    'area' => 'Skill gap: ' . $this->simplifyBloomLevel($level),
+                    'priority' => 'high',
+                    'description' => "Students' " . $this->simplifyBloomLevel($level) . " skills are significantly below target ({$mastery}%).",
+                    'suggestions' => [
+                        "Divert more class time to " . $this->simplifyBloomLevel($level) . " activities.",
+                        "Use step-by-step scaffolding for complex " . $this->simplifyBloomLevel($level) . " tasks.",
+                        "Provide targeted homework focusing specifically on " . $level . " thinking."
+                    ],
+                ];
+            }
         }
 
         return $improvements;
+    }
+
+    /**
+     * Get deep reasoning advice using AI with caching
+     */
+    private function getDeepReasoningAdvice(array $item, AnalyticsSnapshot $snapshot): array
+    {
+        $cacheKey = "deep_reasoning_{$item['question_id']}_{$snapshot->snapshot_date->format('Ymd')}";
+        
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addDays(7), function() use ($item) {
+            return $this->generateDeepReasoningAdvice($item);
+        });
+    }
+
+    /**
+     * Generate highly specific, AI-driven reasoning for a particular question
+     */
+    private function generateDeepReasoningAdvice(array $item): array
+    {
+        try {
+            $questionText = $item['text'];
+            $correctRate = $item['correct_rate'];
+            $bloomLevel = $this->simplifyBloomLevel($item['bloom_level']);
+            $difficulty = $item['difficulty'];
+            
+            // Fetch a few sample answers to provide context to the AI
+            $sampleAnswers = \App\Models\ExamAnswer::whereHas('examSession', function($q) use ($item) {
+                    $q->where('exam_id', \App\Models\Question::find($item['question_id'])->exam_id);
+                })
+                ->where('student_answer', '!=', '')
+                ->orderBy('marks_obtained', 'asc') // Get some wrong ones
+                ->limit(5)
+                ->pluck('student_answer')
+                ->toArray();
+
+            $samplesText = !empty($sampleAnswers) ? "SAMPLE STUDENT ANSWERS:\n- " . implode("\n- ", $sampleAnswers) : "No sample answers available.";
+
+            $systemPrompt = "You are an expert pedagogical consultant. Analyze the student performance data for a specific exam question and provide deep, actionable reasoning for why students might be struggling and how the teacher can improve their understanding. Avoid generic advice.";
+            
+            $userPrompt = "QUESTION: \"{$questionText}\"
+            BLOOM LEVEL: {$bloomLevel}
+            DIFFICULTY: {$difficulty}
+            SUCCESS RATE: {$correctRate}%
+            
+            {$samplesText}
+            
+            Based on this, please provide 2-3 highly specific, deep-reasoning suggestions for the teacher. 
+            Format: Return a JSON array of specific suggestion strings only. Each suggestion should be at most 2 sentences long and focus on the 'why' and 'how' of improving student understanding for this specific topic.";
+
+            $response = $this->deepseek->generateText($userPrompt, $systemPrompt);
+            
+            // Clean response to ensure it's JSON
+            $cleanJson = preg_replace('/^```json\s*|\s*```$/', '', trim($response));
+            $advice = json_decode($cleanJson, true);
+            
+            if (is_array($advice) && !empty($advice)) {
+                return $advice;
+            }
+            
+            // Fallback if AI fails
+            return [
+                "The low success rate suggests a fundamental disconnect with {$bloomLevel} concepts in this topic.",
+                "Observe the sample answers to see if students are consistently choosing a specific incorrect option or making a shared logical error."
+            ];
+        } catch (\Exception $e) {
+            \Log::error("Deep Reasoning API Error: " . $e->getMessage());
+            return ["Analysis temporarily unavailable. Please review the question manually."];
+        }
     }
 
     /**
@@ -475,5 +553,21 @@ class InsightsService
             \Log::error('Error in compareWithPrevious: ' . $e->getMessage());
             return ['status' => 'error', 'message' => 'Unable to compare with previous exam'];
         }
+    }
+
+    /**
+     * Simplify Bloom's levels for teachers
+     */
+    private function simplifyBloomLevel($level): string
+    {
+        return match(strtolower($level)) {
+            'remember' => 'Basic Facts',
+            'understand' => 'Understanding',
+            'apply' => 'Practical Application',
+            'analyze' => 'Analyzing Problems',
+            'evaluate' => 'Critical Evaluation',
+            'create' => 'Creative Thinking',
+            default => 'Core Skills'
+        };
     }
 }
