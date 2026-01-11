@@ -117,4 +117,19 @@ Route::prefix('v1')->group(function () {
             Route::get('/exams/{exam}/export', [AnalyticsController::class, 'exportReport'])->name('analytics.export');
         });
     });
+
+    // Team/Admin Mobile App API
+    Route::prefix('team')->group(function () {
+        Route::post('login', [\App\Http\Controllers\API\Team\AuthController::class, 'login']);
+
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::post('logout', [\App\Http\Controllers\API\Team\AuthController::class, 'logout']);
+            Route::get('me', [\App\Http\Controllers\API\Team\AuthController::class, 'user']);
+            
+            Route::get('dashboard', [\App\Http\Controllers\API\Team\DashboardController::class, 'index']);
+            Route::get('logs', [\App\Http\Controllers\API\Team\LogController::class, 'index']);
+            Route::get('logs/errors', [\App\Http\Controllers\API\Team\LogController::class, 'errors']);
+        });
+    });
+
 });

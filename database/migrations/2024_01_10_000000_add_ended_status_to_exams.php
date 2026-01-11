@@ -13,7 +13,9 @@ return new class extends Migration
     public function up(): void
     {
         // For MySQL, we need to alter the enum column
-        DB::statement("ALTER TABLE exams MODIFY COLUMN status ENUM('draft', 'published', 'completed', 'ended') DEFAULT 'draft'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE exams MODIFY COLUMN status ENUM('draft', 'published', 'completed', 'ended') DEFAULT 'draft'");
+        }
     }
 
     /**
@@ -21,6 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE exams MODIFY COLUMN status ENUM('draft', 'published', 'completed') DEFAULT 'draft'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE exams MODIFY COLUMN status ENUM('draft', 'published', 'completed') DEFAULT 'draft'");
+        }
     }
 };
