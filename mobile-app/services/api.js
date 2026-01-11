@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Replace with your actual Render URL
-const API_URL = 'https://skeeme.onrender.com/api/v1/team';
+const API_URL = 'https://skeeme.com/api/v1/team';
 
 const api = axios.create({
     baseURL: API_URL,
