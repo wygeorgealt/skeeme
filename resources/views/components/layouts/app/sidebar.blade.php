@@ -176,6 +176,17 @@
         @livewire('toast-notification')
 
         <style>
+            /* Hide scrollbar for the sidebar specifically */
+            [data-flux-sidebar],
+            [data-flux-sidebar] * {
+                scrollbar-width: none !important; /* Firefox */
+                -ms-overflow-style: none !important; /* IE and Edge */
+            }
+            [data-flux-sidebar]::-webkit-scrollbar,
+            [data-flux-sidebar] *::-webkit-scrollbar {
+                display: none !important; /* Chrome, Safari and Opera */
+            }
+
             /* Ultra-Premium Toast Notification Styles */
             .toast-container {
                 position: fixed;

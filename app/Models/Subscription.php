@@ -55,6 +55,7 @@ class Subscription extends Model
                 'ai_management' => false,
                 'ai_exams_management' => false,
             ],
+            'id_protection_limit' => 3,
         ],
         self::PLAN_PRO => [
             'name' => 'Pro Plan',
@@ -73,6 +74,7 @@ class Subscription extends Model
                 'ai_management' => true,
                 'ai_exams_management' => true,
             ],
+            'id_protection_limit' => null, // Unlimited
         ],
         self::PLAN_ENTERPRISE => [
             'name' => 'Enterprise Plan',
@@ -91,6 +93,7 @@ class Subscription extends Model
                 'ai_management' => true,
                 'ai_exams_management' => true,
             ],
+            'id_protection_limit' => null, // Unlimited
         ],
     ];
 

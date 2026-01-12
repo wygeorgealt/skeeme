@@ -20,6 +20,8 @@ new class extends Component {
     public string $grading_scale = '0-100';
     public $logo = null;
     public ?string $logoPath = null;
+    public array $allowed_ips = [];
+    public string $new_ip = '';
 
     protected array $timezones = [];
     protected array $languages = [
@@ -63,6 +65,7 @@ new class extends Component {
         $this->academic_year = $school->academic_year ?? '';
         $this->grading_scale = $school->grading_scale ?? '0-100';
         $this->logoPath = $school->logo_path;
+        $this->allowed_ips = $school->allowed_ips ?? [];
         
         // Initialize timezones
         $this->initializeTimezones();
@@ -119,6 +122,8 @@ new class extends Component {
             $validated['logo_path'] = $path;
         }
 
+        $validated['allowed_ips'] = $this->allowed_ips;
+
         $school->update($validated);
 
         // Refresh properties from updated school
@@ -132,6 +137,7 @@ new class extends Component {
         $this->academic_year = $school->academic_year;
         $this->grading_scale = $school->grading_scale;
         $this->logoPath = $school->logo_path;
+        $this->allowed_ips = $school->allowed_ips ?? [];
         $this->logo = null;
         $this->dispatch('school-configuration-updated');
         
@@ -151,6 +157,49 @@ new class extends Component {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($school->logo_path);
             $school->update(['logo_path' => null]);
             $this->logoPath = null;
+        }
+    }
+
+    /**
+     * Add a new IP address.
+     */
+    public function addIp(): void
+    {
+        $this->validate([
+            'new_ip' => ['required', 'ip'],
+        ]);
+
+        // Check for duplicates
+        if (in_array($this->new_ip, $this->allowed_ips)) {
+            $this->addError('new_ip', 'This IP address is already allowed.');
+            return;
+        }
+
+        // Check subscription limits
+        $user = Auth::user();
+        $school = $user->school;
+        
+        // Determine limit based on plan
+        $plan = $school->activeSubscription ? $school->activeSubscription->getPlanDetails() : \App\Models\Subscription::PLANS[\App\Models\Subscription::PLAN_FREE];
+        $limit = $plan['id_protection_limit'];
+
+        if ($limit !== null && count($this->allowed_ips) >= $limit) {
+            $this->addError('new_ip', "Your current plan is limited to {$limit} IP addresses. Upgrade to Pro for unlimited access.");
+            return;
+        }
+
+        $this->allowed_ips[] = $this->new_ip;
+        $this->new_ip = '';
+    }
+
+    /**
+     * Remove an IP address.
+     */
+    public function removeIp(int $index): void
+    {
+        if (isset($this->allowed_ips[$index])) {
+            unset($this->allowed_ips[$index]);
+            $this->allowed_ips = array_values($this->allowed_ips); // Re-index array
         }
     }
 
@@ -317,6 +366,84 @@ new class extends Component {
                     <option value="{{ $key }}">{{ $value }}</option>
                 @endforeach
             </flux:select>
+
+            <flux:separator />
+
+            <!-- ID Protection / IP Restrictions -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <flux:heading size="lg">{{ __('messages.ID Protection') }}</flux:heading>
+                        <flux:subheading>{{ __('messages.Restrict student access to specific networks (e.g., School WiFi).') }}</flux:subheading>
+                    </div>
+                    @php
+                        $user = Auth::user();
+                        $school = $user->school;
+                        $plan = $school->activeSubscription ? $school->activeSubscription->getPlanDetails() : \App\Models\Subscription::PLANS[\App\Models\Subscription::PLAN_FREE];
+                        $limit = $plan['id_protection_limit'];
+                        $isUnlimited = $limit === null;
+                        $count = count($allowed_ips);
+                    @endphp
+                    
+                    <flux:badge size="sm" color="{{ $isUnlimited || $count < $limit ? 'gray' : 'red' }}">
+                        {{ $isUnlimited ? 'Unlimited' : "$count / $limit IPs" }}
+                    </flux:badge>
+                </div>
+
+                <!-- Add IP Form -->
+                <div class="flex gap-2">
+                    <flux:input 
+                        wire:model="new_ip" 
+                        placeholder="192.168.1.1" 
+                        class="flex-1"
+                    />
+                    <flux:button wire:click="addIp" icon="plus" variant="primary">
+                        {{ __('messages.Add IP') }}
+                    </flux:button>
+                </div>
+                @error('new_ip') <flux:error>{{ $message }}</flux:error> @enderror
+
+                <!-- IP List -->
+                @if(count($allowed_ips) > 0)
+                    <div class="border rounded-lg divide-y dark:border-zinc-700 dark:divide-zinc-700">
+                        @foreach($allowed_ips as $index => $ip)
+                            <div class="px-4 py-3 flex items-center justify-between">
+                                <span class="font-mono text-sm">{{ $ip }}</span>
+                                <flux:button icon="trash" variant="danger" size="sm" wire:click="removeIp({{ $index }})" />
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-sm text-zinc-500 italic">
+                        {{ __('messages.No active IP restrictions. Students can access from anywhere.') }}
+                    </div>
+                @endif
+                
+                @if(!$isUnlimited && $count >= $limit)
+                    <div class="rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-4 border border-yellow-200 dark:border-yellow-800">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <flux:icon.exclamation-triangle variant="mini" class="h-5 w-5 text-yellow-500" />
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                                    Upgrade Plan
+                                </h3>
+                                <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                                    <p>
+                                        To add more IP addresses, please <a href="{{ route('admin.subscription') }}" class="font-bold underline hover:text-yellow-900 dark:hover:text-yellow-100">upgrade to Pro</a>.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            <flux:separator />
+
+
+            <flux:separator />
 
             <!-- Submit Button -->
             <div class="flex items-center gap-4">

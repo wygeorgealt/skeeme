@@ -21,20 +21,13 @@ try {
     $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
     $pdo = new PDO($dsn, $user, $pass, $options);
 
-    // 1. Wipe everything
-    echo "🧼 Wiping database foundation (ignoring foreign keys)...\n";
-    $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
-    
-    // Drop all tables EXCEPT personal_access_tokens and migrations
-    $stmt = $pdo->query("SHOW TABLES");
-    while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
-        $tableName = $row[0];
-        // Preserve these tables across deployments
-        if ($tableName === 'personal_access_tokens' || $tableName === 'migrations') {
-            echo "  ⏭️  Skipping $tableName (preserving data)...\n";
-            continue;
-        }
-        $pdo->exec("DROP TABLE IF EXISTS `{$tableName}`");
+    // 0. Check if we already have a foundation
+    echo "🔍 Checking for existing foundation...\n";
+    $check = $pdo->query("SHOW TABLES LIKE 'users'");
+    if ($check->rowCount() > 0) {
+        echo "✅ Foundation already exists. Skipping reconstruction to preserve data.\n";
+        echo "🚀 Moving to incremental migrations...\n";
+        exit(0);
     }
     
     // 2. Prep the SQUASHED Foundation

@@ -26,11 +26,13 @@ class School extends Model
         'logo_path',
         'allow_student_password_change',
         'grade_weighting',
+        'allowed_ips',
     ];
 
     protected $casts = [
         'allow_student_password_change' => 'boolean',
         'grade_weighting' => 'array',
+        'allowed_ips' => 'array',
     ];
 
     /**

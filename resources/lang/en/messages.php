@@ -185,4 +185,9 @@ return array (
   'Each recovery code can be used once to access your account and will be removed after use. If you need more, click Regenerate Codes above.' => 'Each recovery code can be used once to access your account and will be removed after use. If you need more, click Regenerate Codes above.',
   'Manage your profile and account settings' => 'Manage your profile and account settings',
   'Choose Your Plan' => 'Choose Your Plan',
+  'ID Protection' => 'ID Protection',
+  'Restrict student access to specific networks (e.g., School WiFi).' => 'Restrict student access to specific networks (e.g., School WiFi).',
+  'Add IP' => 'Add IP',
+  'No active IP restrictions. Students can access from anywhere.' => 'No active IP restrictions. Students can access from anywhere.',
+  'No IP restrictions active. Students can login from anywhere.' => 'No IP restrictions active. Students can login from anywhere.',
 );

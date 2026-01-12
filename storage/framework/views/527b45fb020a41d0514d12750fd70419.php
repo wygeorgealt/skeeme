@@ -318,6 +318,41 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Pillar 4: Security (ID Protection) -->
+                <div class="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+                    <div class="flex-1" data-aos="zoom-in">
+                        <div class="relative group">
+                            <div class="absolute -inset-4 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-[40px] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
+                            <div class="relative z-10 w-full overflow-hidden rounded-2xl" style="-webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%); mask-image: linear-gradient(to bottom, black 50%, transparent 100%);">
+                                <img src="<?php echo e(asset('landing/Security.png')); ?>" alt="ID Protection" class="w-full h-auto drop-shadow-2xl">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1" data-aos="fade-left">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest mb-6">
+                            <span class="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Security
+                        </div>
+                        <h4 class="text-3xl lg:text-4xl font-extrabold text-slate-900 mb-6 leading-[1.1]">Ironclad Access Control. <br>ID Protection.</h4>
+                        <p class="text-lg text-slate-500 font-medium leading-relaxed mb-8">
+                            Ensure students focus on learning, not loopholes. Restrict dashboard access to your school's WiFi network or specific approved locations.
+                        </p>
+                        <div class="flex flex-col gap-4">
+                            <div class="flex items-start gap-4">
+                                <div class="size-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                    <i class="fas fa-network-wired text-sm"></i>
+                                </div>
+                                <div class="text-sm font-bold text-slate-700">Lock access to verified school networks.</div>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <div class="size-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                    <i class="fas fa-lock text-sm"></i>
+                                </div>
+                                <div class="text-sm font-bold text-slate-700">Prevent proxy attendance and unauthorized usage.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
