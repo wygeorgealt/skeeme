@@ -704,7 +704,7 @@
 
             <!-- Bottom -->
             <div class="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p class="text-slate-400 text-xs font-bold">© 2025 Skeeme Inc. All rights reserved.</p>
+                <p class="text-slate-400 text-xs font-bold">© 2026 Skeeme Inc. All rights reserved.</p>
                 <div class="flex items-center gap-2">
                     <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="text-slate-500 text-[10px] font-extrabold uppercase tracking-widest leading-none">System Operational</span>

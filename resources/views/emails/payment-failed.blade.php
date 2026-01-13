@@ -130,7 +130,7 @@
         </div>
 
         <div class="footer">
-            <p>&copy; 2025 Skeeme. All rights reserved.</p>
+            <p>&copy; 2026 Skeeme. All rights reserved.</p>
             <p><a href="https://skeeme.ng/support">Contact Support</a> | <a href="https://skeeme.ng/billing-help">Billing Help</a></p>
         </div>
     </div>
