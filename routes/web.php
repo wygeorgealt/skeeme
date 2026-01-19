@@ -16,6 +16,11 @@ Route::get('/', [LandingController::class, 'index'])->name('home');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
+Route::get('/students', fn() => view('landing.products.students'))->name('products.students');
+Route::get('/students/subscribe', [\App\Http\Controllers\StudentSubscriptionController::class, 'subscribe'])->name('students.subscribe');
+Route::get('/students/callback', [\App\Http\Controllers\StudentSubscriptionController::class, 'callback'])->name('students.callback');
+
+
 /* ------------------------------------------------------------------ */
 /* Integration routes                                                 */
 /* ------------------------------------------------------------------ */
@@ -39,22 +44,11 @@ Route::get('/features/integrations', function () {
     return view('landing.features.integrations');
 })->name('features.integrations');
 
-// Platform pages
-Route::get('/platform/overview', function () {
-    return view('landing.platform.overview');
-})->name('platform.overview');
-
-Route::get('/platform/api-access', function () {
-    return view('landing.platform.api-access');
-})->name('platform.api-access');
-
-Route::get('/platform/documentation', function () {
-    return view('landing.platform.documentation');
-})->name('platform.documentation');
-
-Route::get('/platform/security', function () {
-    return view('landing.platform.security');
-})->name('platform.security');
+// Platform pages (Redirecting missing views back to Documentation)
+Route::redirect('/platform/overview', '/learn/documentation');
+Route::redirect('/platform/api-access', '/learn/documentation');
+Route::redirect('/platform/documentation', '/learn/documentation');
+Route::redirect('/platform/security', '/learn/documentation');
 
 // Pricing page
 Route::get('/pricing', function () {

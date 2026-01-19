@@ -139,6 +139,10 @@
                     </flux:menu>
                 </flux:dropdown>
 
+                <a href="{{ route('products.students') }}" class="px-4 py-2 font-bold text-sm text-indigo-600 hover:text-indigo-700 transition-colors flex items-center gap-1.5">
+                    For Students
+                    <span class="bg-indigo-100 text-[10px] text-indigo-600 px-1.5 py-0.5 rounded-full uppercase tracking-tighter">New</span>
+                </a>
                 <a href="{{ url('pricing') }}" class="px-4 py-2 font-bold text-sm text-slate-900 hover:text-indigo-600 transition-colors">Pricing</a>
 
                 <flux:dropdown>
@@ -224,7 +228,6 @@
                     <h4 class="text-slate-900 font-extrabold text-xs uppercase tracking-[0.2em] mb-6">Support</h4>
                     <ul class="space-y-4">
                         <li><flux:link href="{{ url('contact') }}" class="text-slate-500 hover:text-indigo-600 text-sm font-bold no-underline transition-colors">Contact Us</flux:link></li>
-                        <li><flux:link href="{{ url('platform/documentation') }}" class="text-slate-500 hover:text-indigo-600 text-sm font-bold no-underline transition-colors">Help Center</flux:link></li>
                     </ul>
                 </div>
             </div>

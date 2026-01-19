@@ -36,6 +36,9 @@ class User extends Authenticatable
         'class_id',
         'approved_at',
         'timezone',
+        'credits',
+        'is_unlimited_student',
+        'last_credit_refill_at',
     ];
 
     /**
@@ -60,7 +63,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'approved_at' => 'datetime',
+            'last_credit_refill_at' => 'datetime',
             'password' => 'hashed',
+            'is_unlimited_student' => 'boolean',
         ];
     }
 

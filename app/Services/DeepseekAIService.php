@@ -53,6 +53,9 @@ class DeepseekAIService
 
             if ($progressCallback) $progressCallback(50);
             
+            // Dynamic max_tokens based on count (roughly 150 tokens per question + buffer)
+            $calculatedMaxTokens = min(8000, max(1000, $numberOfQuestions * 160));
+
             $response = $this->client->post(
                 $this->baseUrl . '/chat/completions',
                 [
@@ -66,15 +69,16 @@ class DeepseekAIService
                         'messages' => [
                             [
                                 'role' => 'system',
-                                'content' => 'Generate valid JSON only.',
+                                'content' => 'You are a quiz generator. Return only JSON.',
                             ],
                             [
                                 'role' => 'user',
                                 'content' => $prompt,
                             ],
                         ],
-                        'temperature' => 0.7,
-                        'max_tokens' => 8000,
+                        'temperature' => 0.5,
+                        'max_tokens' => $calculatedMaxTokens,
+                        'response_format' => ['type' => 'json_object']
                     ],
                 ]
             );

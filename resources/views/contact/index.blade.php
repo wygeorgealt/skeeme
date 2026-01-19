@@ -95,30 +95,8 @@
                         </div>
                     </div>
 
-                    <div class="group cursor-pointer">
-                        <div class="premium-card p-8 flex items-start gap-6 group-hover:border-emerald-500/20 group-hover:bg-emerald-50/10 transition-all">
-                            <div class="size-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl flex-shrink-0">
-                                <i class="fas fa-location-dot"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-extrabold text-slate-900 mb-1">Office</h3>
-                                <p class="text-sm text-slate-500 font-medium mb-4">Lagos, Nigeria</p>
-                                <span class="text-sm font-black text-emerald-600 uppercase tracking-widest">Visit us anytime</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- Map or Image -->
-    <section class="pb-32 px-6">
-        <div class="max-w-7xl mx-auto h-96 premium-card relative overflow-hidden flex items-center justify-center bg-slate-900">
-             <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40"></div>
-             <div class="relative z-10 text-center">
-                 <h4 class="text-4xl font-extrabold text-white tracking-tight mb-4 italic">"Transforming Education, <br>One School at a Time."</h4>
-             </div>
         </div>
     </section>
 </div>

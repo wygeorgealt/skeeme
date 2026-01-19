@@ -268,6 +268,7 @@
 <?php unset($__componentOriginal2b4bb2cd4b8f1a3c08bae49ea918b888); ?>
 <?php endif; ?>
 
+                <a href="<?php echo e(route('products.students')); ?>" class="px-4 py-2 font-bold text-sm text-slate-900 hover:text-indigo-600 transition-colors">For Students</a>
                 <a href="<?php echo e(url('pricing')); ?>" class="px-4 py-2 font-bold text-sm text-slate-900 hover:text-indigo-600 transition-colors">Pricing</a>
 
                 <?php if (isset($component)) { $__componentOriginal2b4bb2cd4b8f1a3c08bae49ea918b888 = $component; } ?>
