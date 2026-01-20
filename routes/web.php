@@ -16,6 +16,10 @@ Route::get('/', [LandingController::class, 'index'])->name('home');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
+Route::get('/students/profile', [\App\Http\Controllers\StudentProfileController::class, 'edit'])->name('student.profile')->middleware(['auth', 'verified']);
+Route::patch('/students/profile', [\App\Http\Controllers\StudentProfileController::class, 'update'])->name('student.profile.update')->middleware(['auth', 'verified']);
+Route::put('/students/profile/password', [\App\Http\Controllers\StudentProfileController::class, 'updatePassword'])->name('student.profile.password')->middleware(['auth', 'verified']);
+
 Route::get('/students', fn() => view('landing.products.students'))->name('products.students');
 Route::get('/students/subscribe', [\App\Http\Controllers\StudentSubscriptionController::class, 'subscribe'])->name('students.subscribe');
 Route::get('/students/callback', [\App\Http\Controllers\StudentSubscriptionController::class, 'callback'])->name('students.callback');
@@ -200,7 +204,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         } elseif ($user->role === 'lecturer') {
             return redirect()->route('lecturer.dashboard');
         } elseif ($user->role === 'student') {
-            return redirect()->route('student.dashboard');
+            return redirect()->route('products.students');
         }
         return redirect()->route('role-selection');
     })->name('dashboard');

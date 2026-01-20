@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ContactMessage;
 
 class ContactController extends Controller
 {
@@ -26,8 +28,8 @@ class ContactController extends Controller
             'message' => 'required|string|min:10',
         ]);
 
-        // TODO: Store the contact message or send email
-        // Mail::to(config('mail.from.address'))->send(new ContactMessage($validated));
+        // Send the contact message to the support email
+        Mail::to(config('mail.from.address'))->send(new ContactMessage($validated));
 
         return redirect()->back()->with('success', 'Thank you for your message. We will get back to you soon.');
     }

@@ -27,16 +27,27 @@ class StudentSubscriptionController extends Controller
         }
 
         try {
-            // Price is fixed for now: $2.99
-            // Paystack might require NGN if using Nigerian keys. 
-            // Assuming we use USD for now as per user request.
-            $amount = 2.99;
-            $currency = 'USD';
+            // Detect currency from user's timezone (cookie or model)
+            $timezone = request()->cookie('user_timezone') ?? $user->timezone ?? 'UTC';
+            $currency = $this->paystack->detectCurrencyFromTimezone($timezone);
+            
+            // Set price based on currency
+            $amount = ($currency === 'NGN') ? 5000 : 2.99;
+            
+            \Log::info('Student currency detection', [
+                'user_id' => $user->id,
+                'timezone' => $timezone,
+                'detected_currency' => $currency,
+                'amount' => $amount,
+                'cookie_timezone' => request()->cookie('user_timezone'),
+                'user_timezone' => $user->timezone
+            ]);
 
             // Create Invoice
             $invoice = Invoice::create([
-                'school_id' => null, // Students might not belong to a school yet, or we ignore for student product
-                'subscription_id' => null, // No subscription model for direct student yet
+                'school_id' => null,
+                'user_id' => $user->id,
+                'subscription_id' => null,
                 'invoice_number' => Invoice::generateInvoiceNumber(),
                 'plan_name' => 'Student Unlimited',
                 'amount' => $amount,
@@ -60,7 +71,8 @@ class StudentSubscriptionController extends Controller
             // Create Payment Record
             Payment::create([
                 'school_id' => null,
-                'subscription_id' => null, // Link if we add Subscription model later
+                'user_id' => $user->id,
+                'subscription_id' => null,
                 'invoice_id' => $invoice->id,
                 'transaction_id' => $paymentData['reference'],
                 'payment_method' => 'paystack',
@@ -88,7 +100,7 @@ class StudentSubscriptionController extends Controller
         $reference = request()->query('reference');
 
         if (!$reference) {
-            return redirect()->route('products.students')->with('error', 'No payment reference found.');
+            return redirect()->route('student.profile')->with('error', 'No payment reference found.');
         }
 
         try {
@@ -118,14 +130,14 @@ class StudentSubscriptionController extends Controller
                      }
                 }
 
-                return redirect()->route('products.students')->with('success', 'Upgrade successful! You now have unlimited access.');
+                return redirect()->route('student.profile')->with('success', 'Upgrade successful! You now have unlimited access.');
             } else {
-                 return redirect()->route('products.students')->with('error', 'Payment verification failed.');
+                 return redirect()->route('student.profile')->with('error', 'Payment verification failed.');
             }
 
         } catch (\Exception $e) {
             Log::error('Student Subscription Callback Error: ' . $e->getMessage());
-            return redirect()->route('products.students')->with('error', 'An error occurred during verification.');
+            return redirect()->route('student.profile')->with('error', 'An error occurred during verification.');
         }
     }
 }

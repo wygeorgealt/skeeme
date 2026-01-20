@@ -66,7 +66,12 @@ class InvoiceController extends Controller
         }
 
         // School owner/manager can view their school's invoices
-        if ($user->school_id === $invoice->school_id) {
+        if ($invoice->school_id && $user->school_id === $invoice->school_id) {
+            return true;
+        }
+
+        // Student can view their own invoices
+        if ($invoice->user_id && $user->id === $invoice->user_id) {
             return true;
         }
 

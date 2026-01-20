@@ -17,7 +17,7 @@ class InvoicePdfService
         
         // Set document information
         $pdf->SetCreator('Skeeme');
-        $pdf->SetAuthor($invoice->school->name ?? 'School');
+        $pdf->SetAuthor($invoice->school->name ?? config('app.name', 'Skeeme'));
         $pdf->SetTitle('Invoice ' . $invoice->invoice_number);
         $pdf->SetSubject('Invoice for subscription');
         
@@ -104,13 +104,14 @@ class InvoicePdfService
     {
         // Company/School name and logo area
         $pdf->SetFont('helvetica', 'B', 20);
-        $pdf->Cell(0, 10, $invoice->school->name ?? 'School Name', 0, 1, 'L');
+        $issuerName = $invoice->school->name ?? config('app.name', 'Skeeme');
+        $pdf->Cell(0, 10, $issuerName, 0, 1, 'L');
         
         $pdf->SetFont('helvetica', '', 10);
-        if ($invoice->school->email) {
-            $pdf->Cell(0, 5, 'Email: ' . $invoice->school->email, 0, 1, 'L');
-        }
-        if ($invoice->school->phone) {
+        $issuerEmail = $invoice->school->email ?? config('mail.from.address', 'hello@skeeme.com');
+        $pdf->Cell(0, 5, 'Email: ' . $issuerEmail, 0, 1, 'L');
+
+        if ($invoice->school && $invoice->school->phone) {
             $pdf->Cell(0, 5, 'Phone: ' . $invoice->school->phone, 0, 1, 'L');
         }
         
@@ -157,11 +158,18 @@ class InvoicePdfService
         $pdf->SetFont('helvetica', '', 10);
         $pdf->SetFillColor(255, 255, 255);
         
-        // School details
-        $pdf->MultiCell(90, 5, $invoice->school->name . "\n" . 
-                              ($invoice->school->address ?? 'Address not provided') . "\n" .
-                              ($invoice->school->city ?? '') . ', ' . 
-                              ($invoice->school->country ?? ''), 0, 'L');
+        // Recipient details
+        if ($invoice->user) {
+            $billingInfo = ($invoice->user->name ?: 'Student') . "\n" . 
+                          ($invoice->user->email ?? '');
+        } else {
+            $billingInfo = ($invoice->school->name ?? 'School') . "\n" . 
+                          ($invoice->school->address ?? 'Address not provided') . "\n" .
+                          ($invoice->school->city ?? '') . ', ' . 
+                          ($invoice->school->country ?? '');
+        }
+
+        $pdf->MultiCell(90, 5, $billingInfo, 0, 'L');
         
         // Move to right column
         $pdf->SetXY(110, $pdf->GetY() - 15);

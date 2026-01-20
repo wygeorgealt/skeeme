@@ -207,14 +207,17 @@ class AdminOnboarding extends Component
     {
         $this->plan = $selectedPlan;
         
-        if ($selectedPlan === 'free') {
-            // For free plan, go directly to completion
-            $this->complete();
-        } elseif ($selectedPlan === 'pro') {
-            // For pro plan, show billing period modal
-            $this->showBillingPeriodSelection();
+        try {
+            if ($selectedPlan === 'free') {
+                $this->complete();
+            } elseif ($selectedPlan === 'pro') {
+                $this->showBillingPeriodSelection();
+            }
+        } catch (\Exception $e) {
+            Log::error('Plan selection failed', ['plan' => $selectedPlan, 'error' => $e->getMessage()]);
+            // Use a toast or session flash if available, or just dispatch an alert
+            $this->js("alert('Something went wrong selecting the plan: " . addslashes($e->getMessage()) . "')");
         }
-        // For enterprise, user is redirected via email link, so nothing happens here
     }
 
     public function showBillingPeriodSelection()
@@ -225,64 +228,59 @@ class AdminOnboarding extends Component
 
         $user = Auth::user();
 
-        // Handle logo upload
-        $logoPath = null;
-        if ($this->logo) {
-            $logoPath = $this->logo->store('logos', 'public');
+        // Prevent duplicate school creation if user clicks back/forth
+        if (!$this->school) {
+            // Check if user already has a partial school linked (safety check)
+            if ($user->school_id) {
+                 $this->school = School::find($user->school_id);
+            }
+            
+            if (!$this->school) {
+                $logoPath = $this->logo ? $this->logo->store('logos', 'public') : null;
+
+                $this->school = School::create([
+                    'name' => $this->schoolName,
+                    'admin_id' => $user->id,
+                    'academic_year' => $this->academicYear,
+                    'timezone' => $this->timezone,
+                    'theme' => $this->theme,
+                    'phone' => $this->countryCode . $this->phoneNumber,
+                    'address' => $this->address,
+                    'logo_path' => $logoPath,
+                ]);
+
+                $user->update([
+                    'name' => "{$this->firstName} {$this->lastName}",
+                    'first_name' => $this->firstName,
+                    'last_name' => $this->lastName,
+                    'phone_number' => $this->countryCode . $this->phoneNumber,
+                    'school_id' => $this->school->id,
+                    'role' => 'admin',
+                ]);
+            }
         }
 
-        // Create school first (but don't finalize subscription yet)
-        $this->school = School::create([
-            'name' => $this->schoolName,
-            'admin_id' => $user->id,
-            'academic_year' => $this->academicYear,
-            'timezone' => $this->timezone,
-            'theme' => $this->theme,
-            'phone' => $this->countryCode . $this->phoneNumber,
-            'address' => $this->address,
-            'logo_path' => $logoPath,
-        ]);
+        // Create temp subscription if not exists
+        $subscription = $this->school->subscriptions()->where('plan_name', 'Pro')->first();
+        if (!$subscription) {
+            $subscription = Subscription::create([
+                'school_id' => $this->school->id,
+                'plan_name' => 'Pro',
+                'student_limit' => null,
+                'price' => 39.00,
+                'start_date' => now(),
+                'expiry_date' => now()->addDays(14),
+                'is_active' => false,
+                'auto_renew' => true,
+            ]);
+        }
 
-        // Update user
-        $user->update([
-            'name' => "{$this->firstName} {$this->lastName}",
-            'first_name' => $this->firstName,
-            'last_name' => $this->lastName,
-            'phone_number' => $this->countryCode . $this->phoneNumber,
-            'school_id' => $this->school->id,
-            'role' => 'admin',
-        ]);
-
-        // Create a temporary subscription for billing calculation
-        $subscription = Subscription::create([
-            'school_id' => $this->school->id,
-            'plan_name' => 'Pro',
-            'student_limit' => null,
-            'price' => 39.00,
-            'start_date' => now(),
-            'expiry_date' => now()->addDays(14), // 14-day trial
-            'is_active' => false, // Not active until payment verified
-            'auto_renew' => true,
-        ]);
-
-        // Detect currency from timezone
         $this->currency = $this->detectCurrencyFromTimezone($this->timezone);
 
-        Log::info('Before getBillingOptions', [
-            'plan' => $this->plan,
-            'plan_uppercase' => ucfirst($this->plan),
-            'currency' => $this->currency,
-        ]);
-
-        // Get billing options
         $this->billingOptions = $subscription->getBillingOptions(
             ucfirst($this->plan),
             $this->currency
         );
-        
-        Log::info('After getBillingOptions', [
-            'billingOptions' => $this->billingOptions,
-        ]);
         
         $this->selectedBillingPeriod = 'monthly';
         $this->showBillingPeriodModal = true;

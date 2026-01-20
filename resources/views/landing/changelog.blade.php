@@ -17,14 +17,43 @@
         <!-- Changelog List -->
         <div class="space-y-16">
 
-            <!-- v3.3 -->
+            <!-- v3.4 -->
             <div class="group relative pl-8 border-l-2 border-indigo-600" data-aos="fade-up">
                 <div class="absolute -left-[9px] top-0 size-4 rounded-full bg-indigo-600 border-4 border-white dark:border-zinc-950 shadow-sm"></div>
                 <div class="flex flex-col md:flex-row md:items-baseline justify-between mb-4">
-                    <h3 class="text-2xl font-black text-zinc-900 dark:text-zinc-100">v3.3</h3>
-                    <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">The Collaborative Update</span>
+                    <h3 class="text-2xl font-black text-zinc-900 dark:text-zinc-100">v3.4</h3>
+                    <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Skeeme for Students</span>
                 </div>
                 <div class="premium-card p-8 bg-zinc-50 dark:bg-zinc-900/50">
+                    <ul class="space-y-3 text-zinc-600 dark:text-zinc-400 text-sm font-bold">
+                        <li class="flex gap-2">
+                            <flux:icon.sparkles class="size-4 text-indigo-600 shrink-0" />
+                            <span>Independent Student Flow: AI Quiz Generator launched for students without institutional affiliation.</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <flux:icon.paint-brush class="size-4 text-indigo-600 shrink-0" />
+                            <span>Premium UI Overhaul: Redesigned Login, Registration, and Role Selection with ultra-modern aesthetic.</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <flux:icon.credit-card class="size-4 text-indigo-600 shrink-0" />
+                            <span>Credit System: Automated 500 monthly credits for free accounts with Unlimited Pro plan via Paystack.</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <flux:icon.envelope class="size-4 text-indigo-600 shrink-0" />
+                            <span>Enhanced Communication: Automated support mailer with premium-styled inquiry templates.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- v3.3 -->
+            <div class="group relative pl-8 border-l-2 border-zinc-200 dark:border-zinc-800" data-aos="fade-up">
+                <div class="absolute -left-[9px] top-0 size-4 rounded-full bg-zinc-200 dark:bg-zinc-800 border-4 border-white dark:border-zinc-950"></div>
+                <div class="flex flex-col md:flex-row md:items-baseline justify-between mb-4">
+                    <h3 class="text-xl font-bold text-zinc-900 dark:text-zinc-100">v3.3</h3>
+                    <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">The Collaborative Update</span>
+                </div>
+                <div class="premium-card p-8 bg-white dark:bg-zinc-900/10">
                     <ul class="space-y-3 text-zinc-600 dark:text-zinc-400 text-sm">
                         <li class="flex gap-2"><span>•</span> <span>Deep Zoom integration with automated meeting creation and recording sync.</span></li>
                         <li class="flex gap-2"><span>•</span> <span>Real-time Slack notification system for automated school operations.</span></li>

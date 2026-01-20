@@ -15,8 +15,16 @@ new class extends Component {
      */
     public function mount(): void
     {
-        $this->name = Auth::user()->name;
-        $this->email = Auth::user()->email;
+        $user = Auth::user();
+        
+        // Redirect independent students to their premium profile
+        if (!$user->school_id && $user->role === 'student') {
+            $this->redirect(route('student.profile'), navigate: true);
+            return;
+        }
+
+        $this->name = $user->name;
+        $this->email = $user->email;
     }
 
     /**

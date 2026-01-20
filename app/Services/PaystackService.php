@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Log;
 
 class PaystackService
 {
-    protected string $baseUrl;
-    protected string $secretKey;
-    protected string $publicKey;
+    protected ?string $baseUrl;
+    protected ?string $secretKey;
+    protected ?string $publicKey;
 
     public function __construct()
     {
@@ -48,7 +48,7 @@ class PaystackService
                 'Authorization' => "Bearer {$this->secretKey}",
                 'Content-Type' => 'application/json',
             ])->withoutVerifying() // Disable SSL verification for test environments
-            ->post("{$this->baseUrl}/transaction/initialize", [
+            ->post(($this->baseUrl ?? 'https://api.paystack.co') . "/transaction/initialize", [
                 'email' => $email,
                 'amount' => $amountInSmallestUnit,
                 'currency' => $currency,
@@ -107,7 +107,7 @@ class PaystackService
             $response = Http::withHeaders([
                 'Authorization' => "Bearer {$this->secretKey}",
             ])->withoutVerifying()
-            ->get("{$this->baseUrl}/transaction/verify/{$reference}");
+            ->get(($this->baseUrl ?? 'https://api.paystack.co') . "/transaction/verify/{$reference}");
 
             if (!$response->successful()) {
                 Log::error('Paystack verification failed', [
@@ -190,7 +190,7 @@ class PaystackService
                 'Authorization' => "Bearer {$this->secretKey}",
                 'Content-Type' => 'application/json',
             ])->withoutVerifying()
-            ->post("{$this->baseUrl}/transaction/charge_authorization", [
+            ->post(($this->baseUrl ?? 'https://api.paystack.co') . "/transaction/charge_authorization", [
                 'authorization_code' => $authorizationCode,
                 'email' => $email,
                 'amount' => $amount, // In kobo
@@ -232,7 +232,7 @@ class PaystackService
             $response = Http::withHeaders([
                 'Authorization' => "Bearer {$this->secretKey}",
             ])->withoutVerifying()
-            ->get("{$this->baseUrl}/customer/{$customerCode}");
+            ->get(($this->baseUrl ?? 'https://api.paystack.co') . "/customer/{$customerCode}");
 
             if (!$response->successful()) {
                 throw new \Exception('Failed to fetch customer');
@@ -278,7 +278,7 @@ class PaystackService
                 'Authorization' => "Bearer {$this->secretKey}",
                 'Content-Type' => 'application/json',
             ])->withoutVerifying()
-            ->post("{$this->baseUrl}/plan", [
+            ->post(($this->baseUrl ?? 'https://api.paystack.co') . "/plan", [
                 'name' => $planName,
                 'description' => $description,
                 'amount' => $amountInKobo,
@@ -394,5 +394,30 @@ class PaystackService
             ]);
             return null;
         }
+    }
+
+    /**
+     * Detect currency from timezone
+     */
+    public function detectCurrencyFromTimezone(?string $timezone): string
+    {
+        $timezoneToRegion = [
+            'Africa/Lagos' => 'NGN',
+            'Africa/Accra' => 'GHS',
+            'Africa/Cairo' => 'EGP',
+            'Africa/Johannesburg' => 'ZAR',
+            'Africa/Nairobi' => 'KES',
+            'Europe/London' => 'GBP',
+            'Europe/Paris' => 'EUR',
+            'Europe/Berlin' => 'EUR',
+            'Asia/Dubai' => 'AED',
+            'Asia/Singapore' => 'SGD',
+            'America/New_York' => 'USD',
+            'America/Los_Angeles' => 'USD',
+            'America/Toronto' => 'CAD',
+            'UTC' => 'NGN', // Fallback for Nigerian test environments where UTC is reported
+        ];
+
+        return $timezoneToRegion[$timezone] ?? 'USD';
     }
 }

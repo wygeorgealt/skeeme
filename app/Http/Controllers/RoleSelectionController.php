@@ -22,7 +22,7 @@ class RoleSelectionController extends Controller
         } elseif ($user->role === 'lecturer') {
             return redirect()->route('onboarding.lecturer');
         } elseif ($user->role === 'student') {
-            return redirect()->route('dashboard');
+            return redirect()->route('products.students');
         }
         
         // Show role selection form
@@ -33,7 +33,7 @@ class RoleSelectionController extends Controller
     {
         // Validate role input
         $validated = $request->validate([
-            'role' => 'required|in:admin,lecturer',
+            'role' => 'required|in:admin,lecturer,student',
         ]);
         
         $user = Auth::user();
@@ -55,8 +55,11 @@ class RoleSelectionController extends Controller
             // Redirect to appropriate onboarding page
             if ($validated['role'] === 'admin') {
                 return redirect()->route('onboarding.admin')->with('success', 'Welcome! Let\'s set up your school.');
-            } else {
+            } elseif ($validated['role'] === 'lecturer') {
                 return redirect()->route('onboarding.lecturer')->with('success', 'Welcome! Let\'s get you started.');
+            } else {
+                // Independent Student - Redir to students page
+                return redirect()->route('products.students')->with('success', 'Welcome! You can now use Skeeme for Students.');
             }
         } catch (\Exception $e) {
             Log::error('Role selection failed: ' . $e->getMessage());
