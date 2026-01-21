@@ -1,0 +1,1 @@
+<?php /**PATH C:\Users\kritex\Herd\skeeme\resources\views\components\app-layout.blade.php ENDPATH**/ ?>

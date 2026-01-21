@@ -82,7 +82,7 @@
                             <div class="flex items-start justify-between relative z-10">
                                 <div class="flex items-center gap-4">
                                     <div class="size-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-indigo-500 transition-colors">
-                                        <flux:icon.rocket variant="solid" class="size-5" />
+                                        <flux:icon.rocket-launch variant="solid" class="size-5" />
                                     </div>
                                     <div>
                                         <h4 class="font-black text-slate-900">Basic (Free)</h4>

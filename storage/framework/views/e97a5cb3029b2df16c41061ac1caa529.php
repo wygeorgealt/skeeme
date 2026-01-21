@@ -1,0 +1,1 @@
+<hr <?php echo e($attributes->merge(['class' => 'my-4 border-gray-300'])); ?> /><?php /**PATH C:\Users\kritex\Herd\skeeme\resources\views\components\flux\separator.blade.php ENDPATH**/ ?>

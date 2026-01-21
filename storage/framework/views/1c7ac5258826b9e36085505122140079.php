@@ -1,0 +1,1 @@
+<button <?php echo e($attributes->merge(['class' => 'px-4 py-2 rounded bg-blue-600 text-white'])); ?>><?php echo e($slot); ?></button><?php /**PATH C:\Users\kritex\Herd\skeeme\resources\views\components\flux\button.blade.php ENDPATH**/ ?>

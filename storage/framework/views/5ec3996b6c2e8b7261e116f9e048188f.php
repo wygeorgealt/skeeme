@@ -1,0 +1,1 @@
+<span <?php echo e($attributes); ?>><?php echo e($slot); ?></span><?php /**PATH C:\Users\kritex\Herd\skeeme\resources\views\components\flux\text.blade.php ENDPATH**/ ?>
