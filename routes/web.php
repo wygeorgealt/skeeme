@@ -202,13 +202,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Main dashboard - redirect based on role
     Route::get('dashboard', function () {
         $user = auth()->user();
+        
+        // If it's the super admin/creator, take them to the creator dashboard
+        if ($user->isCreator()) {
+            return redirect('/creator');
+        }
+
+        // If user has no role yet and is not on role-selection or onboarding pages, redirect to role selection
+        // CREATOR EXCEPTION: Creators don't need a school-specific role
+        $currentRoute = Route::currentRouteName();
+        if (!$user->role && !$user->isCreator() && !in_array($currentRoute, ['role-selection', 'role-selection.store', 'onboarding.admin', 'onboarding.lecturer', 'lecturer.pending-approval'])) {
+            Log::error('RedirectBasedOnRole - REDIRECTING TO ROLE-SELECTION', [
+                'user_id' => $user->id,
+                'current_route' => $currentRoute,
+            ]);
+            return redirect()->route('role-selection');
+        }
+
         if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         } elseif ($user->role === 'lecturer') {
             return redirect()->route('lecturer.dashboard');
         } elseif ($user->role === 'student') {
+            // For students, taking them to the specific student view
             return redirect()->route('products.students');
         }
+        
         return redirect()->route('role-selection');
     })->name('dashboard');
 

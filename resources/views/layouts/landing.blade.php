@@ -158,39 +158,55 @@
 
             <!-- Actions -->
             <div class="hidden lg:flex items-center gap-4">
-                @if(auth()->check() && auth()->user()->role === 'student' && !auth()->user()->school_id)
-                    <flux:dropdown>
-                        <flux:button variant="ghost" class="!p-1 !pr-4 !rounded-full border border-slate-200 hover:border-indigo-300 transition-all flex items-center gap-2.5 bg-white/50 backdrop-blur-sm shadow-sm group">
-                            <div class="size-8 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] font-black text-white uppercase tracking-tighter shadow-indigo-100 shadow-md group-hover:scale-105 transition-transform">
-                                {{ auth()->user()->name ? auth()->user()->initials() : 'S' }}
-                            </div>
-                            <span class="text-xs font-black text-slate-700 tracking-tight">{{ auth()->user()->name ?: 'Student' }}</span>
-                        </flux:button>
-                        <flux:menu class="min-w-56 p-2 rounded-2xl shadow-2xl border-slate-100 bg-white" appearance="light">
-                            <flux:menu.item class="!pointer-events-none mb-2 px-3 py-2.5 bg-slate-50 rounded-xl">
-                                <div class="text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] leading-none mb-1.5">Account</div>
-                                <div class="text-xs font-bold text-indigo-900 truncate">{{ auth()->user()->email }}</div>
-                            </flux:menu.item>
-                            
-                            <flux:menu.item href="{{ route('student.profile') }}" icon="user-circle">My Profile</flux:menu.item>
-                            <flux:menu.item href="{{ route('student.profile') }}#billing" icon="credit-card">Credits & Billing</flux:menu.item>
-                            
-                            <flux:menu.separator />
-                            
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="!text-red-500 hover:!bg-red-50 !font-bold">
-                                    Log Out
+                @auth
+                    @if(auth()->user()->role === 'student' && !auth()->user()->school_id)
+                        {{-- Non-school student: show profile dropdown --}}
+                        <flux:dropdown>
+                            <flux:button variant="ghost" class="!p-1 !pr-4 !rounded-full border border-slate-200 hover:border-indigo-300 transition-all flex items-center gap-2.5 bg-white/50 backdrop-blur-sm shadow-sm group">
+                                <div class="size-8 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] font-black text-white uppercase tracking-tighter shadow-indigo-100 shadow-md group-hover:scale-105 transition-transform">
+                                    {{ auth()->user()->name ? auth()->user()->initials() : 'S' }}
+                                </div>
+                                <span class="text-xs font-black text-slate-700 tracking-tight">{{ auth()->user()->name ?: 'Student' }}</span>
+                            </flux:button>
+                            <flux:menu class="min-w-56 p-2 rounded-2xl shadow-2xl border-slate-100 bg-white" appearance="light">
+                                <flux:menu.item class="!pointer-events-none mb-2 px-3 py-2.5 bg-slate-50 rounded-xl">
+                                    <div class="text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] leading-none mb-1.5">Account</div>
+                                    <div class="text-xs font-bold text-indigo-900 truncate">{{ auth()->user()->email }}</div>
                                 </flux:menu.item>
-                            </form>
-                        </flux:menu>
-                    </flux:dropdown>
+                                
+                                <flux:menu.item href="{{ route('student.profile') }}" icon="user-circle">My Profile</flux:menu.item>
+                                <flux:menu.item href="{{ route('student.profile') }}#billing" icon="credit-card">Credits & Billing</flux:menu.item>
+                                
+                                <flux:menu.separator />
+                                
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="!text-red-500 hover:!bg-red-50 !font-bold">
+                                        Log Out
+                                    </flux:menu.item>
+                                </form>
+                            </flux:menu>
+                        </flux:dropdown>
+                    @else
+                        {{-- Other authenticated users (Admins, Lecturers, Creators, School Students) --}}
+                        <flux:button href="{{ route('dashboard') }}" variant="ghost" class="!font-bold !text-sm !text-slate-900 !px-4 hover:!text-indigo-600">
+                            Dashboard
+                        </flux:button>
+                        
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <flux:button type="submit" variant="primary" class="!rounded-xl !px-6 !py-2.5 font-bold shadow-indigo-200">
+                                Log Out
+                            </flux:button>
+                        </form>
+                    @endif
                 @else
+                    {{-- Guest --}}
                     <flux:link href="{{ url('login') }}" class="font-bold text-sm text-slate-900 no-underline px-4">Log in</flux:link>
                     <flux:button href="{{ url('register') }}" variant="primary" class="!rounded-xl !px-6 !py-2.5 font-bold shadow-indigo-200">
                         Get Started Free
                     </flux:button>
-                @endif
+                @endauth
             </div>
 
             <!-- Mobile Toggle -->
@@ -202,8 +218,12 @@
         <!-- Mobile Menu (Simplified for brevity) -->
         <div id="mobile-menu" class="hidden lg:hidden border-t border-slate-100 bg-white/95 backdrop-blur-xl">
             <div class="p-6 flex flex-col gap-4 text-center">
-                @if(auth()->check() && auth()->user()->role === 'student' && !auth()->user()->school_id)
-                    <a href="{{ route('student.profile') }}" class="font-bold text-slate-900 px-4 py-2 bg-indigo-50 rounded-xl text-indigo-600">My Profile</a>
+                @auth
+                    @if(auth()->user()->role === 'student' && !auth()->user()->school_id)
+                        <a href="{{ route('student.profile') }}" class="font-bold text-slate-900 px-4 py-2 bg-indigo-50 rounded-xl text-indigo-600">My Profile</a>
+                    @else
+                        <a href="{{ route('dashboard') }}" class="font-bold text-slate-900 px-4 py-2 bg-indigo-50 rounded-xl text-indigo-600">Dashboard</a>
+                    @endif
                     <a href="{{ url('pricing') }}" class="font-bold text-slate-600">Pricing</a>
                     <div class="h-px bg-slate-100 my-2"></div>
                     <form method="POST" action="{{ route('logout') }}">
@@ -216,7 +236,7 @@
                     <div class="h-px bg-slate-100 my-2"></div>
                     <flux:button href="{{ url('login') }}" variant="ghost" class="w-full">Log in</flux:button>
                     <flux:button href="{{ url('register') }}" variant="primary" class="w-full">Get Started Free</flux:button>
-                @endif
+                @endauth
             </div>
         </div>
     </header>

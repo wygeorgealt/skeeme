@@ -31,7 +31,8 @@ class RedirectBasedOnRole
             ]);
             
             // If user has no role yet and is not on role-selection or onboarding pages, redirect to role selection
-            if (!$user->role && !in_array($currentRoute, ['role-selection', 'role-selection.store', 'onboarding.admin', 'onboarding.lecturer', 'lecturer.pending-approval'])) {
+            // CREATOR EXCEPTION: Creators don't need a school-specific role
+            if (!$user->role && !$user->isCreator() && !in_array($currentRoute, ['role-selection', 'role-selection.store', 'onboarding.admin', 'onboarding.lecturer', 'lecturer.pending-approval'])) {
                 Log::error('RedirectBasedOnRole - REDIRECTING TO ROLE-SELECTION', [
                     'user_id' => $user->id,
                     'current_route' => $currentRoute,
