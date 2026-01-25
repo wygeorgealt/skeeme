@@ -23,8 +23,18 @@ class SystemLogs extends Page
     {
         $logPath = storage_path('logs/laravel.log');
 
+        // If default log not found, try to find the latest daily log or any log file
         if (!file_exists($logPath)) {
-            $this->logs = 'Log file not found.';
+            $files = glob(storage_path('logs/*.log'));
+            if (!empty($files)) {
+                // Sort by last modified timedescending
+                usort($files, fn($a, $b) => filemtime($b) <=> filemtime($a));
+                $logPath = $files[0];
+            }
+        }
+
+        if (!file_exists($logPath)) {
+            $this->logs = "⚠️ Log file not found.\n\nTroubleshooting for Live Site (Render):\n1. Check your LOG_CHANNEL environment variable.\n2. If it's set to 'stderr', logs are sent to Render's dashboard, not a file.\n3. To see logs here, set LOG_CHANNEL to 'stack' and LOG_STACK to 'single,stderr'.";
             return;
         }
 
