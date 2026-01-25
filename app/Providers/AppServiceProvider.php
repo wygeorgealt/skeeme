@@ -78,10 +78,6 @@ class AppServiceProvider extends ServiceProvider
         );
 
         // Authorization Gates for Creator Tools
-        Gate::define('viewLogViewer', function ($user) {
-            return $user->isCreator();
-        });
-
         Gate::define('viewWebTinker', function ($user) {
             return $user->isCreator();
         });
