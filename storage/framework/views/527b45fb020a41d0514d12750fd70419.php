@@ -1,6 +1,4 @@
-@extends('layouts.landing')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="relative overflow-hidden bg-white">
     <!-- Background Accents -->
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[1000px] pointer-events-none z-0 overflow-hidden">
@@ -40,20 +38,75 @@
 
             <!-- Buttons -->
             <div data-aos="fade-up" data-aos-delay="250" class="flex flex-col sm:flex-row items-center gap-3 justify-center mb-16">
-                <flux:button href="{{ url('register') }}" variant="primary" class="!rounded-xl !px-8 !py-3 text-sm font-extrabold shadow-xl shadow-indigo-100">
+                <?php if (isset($component)) { $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['href' => ''.e(url('register')).'','variant' => 'primary','class' => '!rounded-xl !px-8 !py-3 text-sm font-extrabold shadow-xl shadow-indigo-100']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => ''.e(url('register')).'','variant' => 'primary','class' => '!rounded-xl !px-8 !py-3 text-sm font-extrabold shadow-xl shadow-indigo-100']); ?>
                     Get Started Free
-                </flux:button>
-                <flux:button href="{{ route('book-demo') }}" variant="ghost" class="!rounded-xl !px-6 !py-3 !text-sm !font-extrabold !text-slate-900 hover:!text-indigo-600 hover:!bg-indigo-50">
-                    Book a Demo <flux:icon.arrow-right variant="micro" class="ml-2" />
-                </flux:button>
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $attributes = $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $component = $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+                <?php if (isset($component)) { $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['href' => '#solutions','variant' => 'ghost','class' => '!rounded-xl !px-6 !py-3 !text-sm !font-extrabold !text-slate-900 hover:!text-indigo-600 hover:!bg-indigo-50']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => '#solutions','variant' => 'ghost','class' => '!rounded-xl !px-6 !py-3 !text-sm !font-extrabold !text-slate-900 hover:!text-indigo-600 hover:!bg-indigo-50']); ?>
+                    Explore Platform <?php if (isset($component)) { $__componentOriginal5c84e1af936cb00c34687173a7f14ca8 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5c84e1af936cb00c34687173a7f14ca8 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::icon.arrow-right','data' => ['variant' => 'micro','class' => 'ml-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::icon.arrow-right'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['variant' => 'micro','class' => 'ml-2']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5c84e1af936cb00c34687173a7f14ca8)): ?>
+<?php $attributes = $__attributesOriginal5c84e1af936cb00c34687173a7f14ca8; ?>
+<?php unset($__attributesOriginal5c84e1af936cb00c34687173a7f14ca8); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5c84e1af936cb00c34687173a7f14ca8)): ?>
+<?php $component = $__componentOriginal5c84e1af936cb00c34687173a7f14ca8; ?>
+<?php unset($__componentOriginal5c84e1af936cb00c34687173a7f14ca8); ?>
+<?php endif; ?>
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $attributes = $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $component = $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
             </div>
 
             <!-- Trust Bar -->
             <div data-aos="fade-up" data-aos-delay="300" class="pt-8 border-t border-slate-100 flex flex-col items-center gap-6">
                 <span class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Powered by Leading AI</span>
                 <div class="flex items-center justify-center gap-8 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                    <img src="{{ asset('landing/Deepseek-Logo-White-PNG.png') }}" alt="Deepseek" class="h-6 filter brightness-0">
-                    <img src="{{ asset('landing/OpenAI-Logo-PNG.png') }}" alt="OpenAI" class="h-6 filter brightness-0">
+                    <img src="<?php echo e(asset('landing/Deepseek-Logo-White-PNG.png')); ?>" alt="Deepseek" class="h-6 filter brightness-0">
+                    <img src="<?php echo e(asset('landing/OpenAI-Logo-PNG.png')); ?>" alt="OpenAI" class="h-6 filter brightness-0">
                 </div>
             </div>
         </div>
@@ -127,7 +180,7 @@
                         <div class="relative group">
                             <div class="absolute -inset-4 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-[40px] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
                             <div class="relative z-10 w-full overflow-hidden rounded-2xl" style="-webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%); mask-image: linear-gradient(to bottom, black 50%, transparent 100%);">
-                                <img src="{{ asset('landing/analytics.png') }}" alt="Intelligence Analytics" class="w-full h-auto drop-shadow-2xl">
+                                <img src="<?php echo e(asset('landing/analytics.png')); ?>" alt="Intelligence Analytics" class="w-full h-auto drop-shadow-2xl">
                             </div>
                         </div>
                     </div>
@@ -139,7 +192,7 @@
                         <div class="relative group">
                             <div class="absolute -inset-4 bg-gradient-to-br from-orange-500 to-amber-500 rounded-[40px] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
                             <div class="relative z-10 w-full overflow-hidden rounded-2xl" style="-webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%); mask-image: linear-gradient(to bottom, black 50%, transparent 100%);">
-                                <img src="{{ asset('landing/ai preview-modified.png') }}" alt="AI Exam Preview" class="w-full h-auto drop-shadow-2xl">
+                                <img src="<?php echo e(asset('landing/ai preview-modified.png')); ?>" alt="AI Exam Preview" class="w-full h-auto drop-shadow-2xl">
                             </div>
                         </div>
                     </div>
@@ -181,19 +234,76 @@
                         <ul class="space-y-3">
                             <li class="flex items-center gap-3 text-sm font-bold text-slate-600">
                                 <div class="size-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                                    <flux:icon.check variant="micro" />
+                                    <?php if (isset($component)) { $__componentOriginal9c2dfd6cb98f4df18e26d1694500af11 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::icon.check','data' => ['variant' => 'micro']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::icon.check'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['variant' => 'micro']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11)): ?>
+<?php $attributes = $__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11; ?>
+<?php unset($__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9c2dfd6cb98f4df18e26d1694500af11)): ?>
+<?php $component = $__componentOriginal9c2dfd6cb98f4df18e26d1694500af11; ?>
+<?php unset($__componentOriginal9c2dfd6cb98f4df18e26d1694500af11); ?>
+<?php endif; ?>
                                 </div>
                                 360-degree Student Profiles
                             </li>
                             <li class="flex items-center gap-3 text-sm font-bold text-slate-600">
                                 <div class="size-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                                    <flux:icon.check variant="micro" />
+                                    <?php if (isset($component)) { $__componentOriginal9c2dfd6cb98f4df18e26d1694500af11 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::icon.check','data' => ['variant' => 'micro']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::icon.check'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['variant' => 'micro']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11)): ?>
+<?php $attributes = $__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11; ?>
+<?php unset($__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9c2dfd6cb98f4df18e26d1694500af11)): ?>
+<?php $component = $__componentOriginal9c2dfd6cb98f4df18e26d1694500af11; ?>
+<?php unset($__componentOriginal9c2dfd6cb98f4df18e26d1694500af11); ?>
+<?php endif; ?>
                                 </div>
                                 Dynamic Course Assignments
                             </li>
                             <li class="flex items-center gap-3 text-sm font-bold text-slate-600">
                                 <div class="size-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                                    <flux:icon.check variant="micro" />
+                                    <?php if (isset($component)) { $__componentOriginal9c2dfd6cb98f4df18e26d1694500af11 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::icon.check','data' => ['variant' => 'micro']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::icon.check'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['variant' => 'micro']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11)): ?>
+<?php $attributes = $__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11; ?>
+<?php unset($__attributesOriginal9c2dfd6cb98f4df18e26d1694500af11); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9c2dfd6cb98f4df18e26d1694500af11)): ?>
+<?php $component = $__componentOriginal9c2dfd6cb98f4df18e26d1694500af11; ?>
+<?php unset($__componentOriginal9c2dfd6cb98f4df18e26d1694500af11); ?>
+<?php endif; ?>
                                 </div>
                                 Interactive Note & Library System
                             </li>
@@ -203,7 +313,7 @@
                         <div class="relative group">
                             <div class="absolute -inset-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-[40px] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
                             <div class="relative z-10 w-full overflow-hidden rounded-2xl" style="-webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%); mask-image: linear-gradient(to bottom, black 50%, transparent 100%);">
-                                <img src="{{ asset('landing/student.png') }}" alt="Student Management" class="w-full h-auto drop-shadow-2xl">
+                                <img src="<?php echo e(asset('landing/student.png')); ?>" alt="Student Management" class="w-full h-auto drop-shadow-2xl">
                             </div>
                         </div>
                     </div>
@@ -215,7 +325,7 @@
                         <div class="relative group">
                             <div class="absolute -inset-4 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-[40px] blur-2xl opacity-10 group-hover:opacity-20 transition-opacity"></div>
                             <div class="relative z-10 w-full overflow-hidden rounded-2xl" style="-webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%); mask-image: linear-gradient(to bottom, black 50%, transparent 100%);">
-                                <img src="{{ asset('landing/Security.png') }}" alt="ID Protection" class="w-full h-auto drop-shadow-2xl">
+                                <img src="<?php echo e(asset('landing/Security.png')); ?>" alt="ID Protection" class="w-full h-auto drop-shadow-2xl">
                             </div>
                         </div>
                     </div>
@@ -380,14 +490,51 @@
                 Join thousands of forward-thinking educators using Skeeme to build a smarter, faster, and more efficient campus.
             </p>
             <div data-aos="fade-up" data-aos-delay="200" class="flex flex-col sm:flex-row items-center gap-6 justify-center">
-                <flux:button href="{{ url('register') }}" variant="primary" class="!rounded-2xl !px-12 !py-4 text-base font-extrabold">
+                <?php if (isset($component)) { $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['href' => ''.e(url('register')).'','variant' => 'primary','class' => '!rounded-2xl !px-12 !py-4 text-base font-extrabold']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => ''.e(url('register')).'','variant' => 'primary','class' => '!rounded-2xl !px-12 !py-4 text-base font-extrabold']); ?>
                     Create Free Account
-                </flux:button>
-                <flux:button href="{{ url('contact') }}" variant="ghost" class="!rounded-2xl !px-10 !py-4 text-base font-extrabold !text-white !bg-white/5 !border-white/10 hover:!bg-white/10">
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $attributes = $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $component = $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+                <?php if (isset($component)) { $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['href' => ''.e(url('contact')).'','variant' => 'ghost','class' => '!rounded-2xl !px-10 !py-4 text-base font-extrabold !text-white !bg-white/5 !border-white/10 hover:!bg-white/10']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('flux::button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => ''.e(url('contact')).'','variant' => 'ghost','class' => '!rounded-2xl !px-10 !py-4 text-base font-extrabold !text-white !bg-white/5 !border-white/10 hover:!bg-white/10']); ?>
                     Contact Sales
-                </flux:button>
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $attributes = $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580)): ?>
+<?php $component = $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580; ?>
+<?php unset($__componentOriginalc04b147acd0e65cc1a77f86fb0e81580); ?>
+<?php endif; ?>
             </div>
         </div>
     </section>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.landing', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Users\kritex\Herd\skeeme\resources\views/landing/index.blade.php ENDPATH**/ ?>

@@ -130,3 +130,19 @@
 #31 C:\\Users\\kritex\\Herd\\skeeme\\artisan(16): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
 #32 {main}
 "} 
+[2026-01-23 20:00:44] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"dashboard","path":"dashboard","url":"https://skeeme.test/dashboard"} 
+[2026-01-23 20:00:44] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"admin.dashboard","path":"admin/dashboard","url":"https://skeeme.test/admin/dashboard"} 
+[2026-01-23 20:00:58] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"admin.data-storage","path":"data-storage","url":"https://skeeme.test/data-storage"} 
+[2026-01-23 20:01:05] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"dashboard","path":"dashboard","url":"https://skeeme.test/dashboard"} 
+[2026-01-23 20:01:05] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"admin.dashboard","path":"admin/dashboard","url":"https://skeeme.test/admin/dashboard"} 
+[2026-01-23 20:04:10] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"admin.dashboard","path":"admin/dashboard","url":"https://skeeme.test/admin/dashboard"} 
+[2026-01-23 20:04:49] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"admin.school-configuration","path":"settings/school-configuration","url":"https://skeeme.test/settings/school-configuration"} 
+[2026-01-23 20:04:52] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"appearance.edit","path":"settings/appearance","url":"https://skeeme.test/settings/appearance"} 
+[2026-01-23 20:04:56] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"dashboard","path":"dashboard","url":"https://skeeme.test/dashboard"} 
+[2026-01-23 20:04:57] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"admin.dashboard","path":"admin/dashboard","url":"https://skeeme.test/admin/dashboard"} 
+[2026-01-23 20:05:49] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"students-management","path":"students-management","url":"https://skeeme.test/students-management"} 
+[2026-01-23 20:07:56] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"academic-calendar","path":"academic-calendar","url":"https://skeeme.test/academic-calendar"} 
+[2026-01-23 20:11:03] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"announcements","path":"announcements","url":"https://skeeme.test/announcements"} 
+[2026-01-23 20:12:02] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"students-management","path":"students-management","url":"https://skeeme.test/students-management"} 
+[2026-01-23 20:12:04] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"classes-management","path":"classes-management","url":"https://skeeme.test/classes-management"} 
+[2026-01-23 20:12:13] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"manage-class","path":"manage-class/1","url":"https://skeeme.test/manage-class/1"} 
