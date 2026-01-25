@@ -10,8 +10,9 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Course;
+use Filament\Models\Contracts\FilamentUser;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
@@ -103,6 +104,26 @@ class User extends Authenticatable
     public function hasRole(string $role): bool
     {
         return $this->role === $role;
+    }
+
+    /**
+     * Check if user is the creator (Super Admin Team Member)
+     */
+    public function isCreator(): bool
+    {
+        return $this->teamMember && $this->teamMember->role === 'super-admin';
+    }
+
+    /**
+     * Determine if the user can access a Filament panel.
+     */
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    {
+        if ($panel->getId() === 'creator') {
+            return $this->isCreator();
+        }
+
+        return true; // Default allow for other panels if they exist and have their own middleware
     }
 
     /**

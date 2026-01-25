@@ -1,1 +1,0 @@
-<h2 <?php echo e($attributes->merge(['class' => 'text-lg text-gray-600'])); ?>><?php echo e($slot); ?></h2><?php /**PATH C:\Users\kritex\Herd\skeeme\resources\views\components\flux\subheading.blade.php ENDPATH**/ ?>

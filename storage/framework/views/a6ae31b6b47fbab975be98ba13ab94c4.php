@@ -1,1 +1,0 @@
-<h1 <?php echo e($attributes->merge(['class' => 'font-bold text-xl'])); ?>><?php echo e($slot); ?></h1><?php /**PATH C:\Users\kritex\Herd\skeeme\resources\views\components\flux\heading.blade.php ENDPATH**/ ?>

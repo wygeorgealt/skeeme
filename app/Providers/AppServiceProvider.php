@@ -76,6 +76,15 @@ class AppServiceProvider extends ServiceProvider
             \SocialiteProviders\Manager\SocialiteWasCalled::class,
             \SocialiteProviders\Zoom\ZoomExtendSocialite::class.'@handle',
         );
+
+        // Authorization Gates for Creator Tools
+        Gate::define('viewLogViewer', function ($user) {
+            return $user->isCreator();
+        });
+
+        Gate::define('viewWebTinker', function ($user) {
+            return $user->isCreator();
+        });
     }
 
     /**

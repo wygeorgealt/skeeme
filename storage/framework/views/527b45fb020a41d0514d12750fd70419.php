@@ -61,15 +61,15 @@
 <?php endif; ?>
                 <?php if (isset($component)) { $__componentOriginalc04b147acd0e65cc1a77f86fb0e81580 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalc04b147acd0e65cc1a77f86fb0e81580 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['href' => '#solutions','variant' => 'ghost','class' => '!rounded-xl !px-6 !py-3 !text-sm !font-extrabold !text-slate-900 hover:!text-indigo-600 hover:!bg-indigo-50']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::button.index','data' => ['href' => ''.e(route('book-demo')).'','variant' => 'ghost','class' => '!rounded-xl !px-6 !py-3 !text-sm !font-extrabold !text-slate-900 hover:!text-indigo-600 hover:!bg-indigo-50']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('flux::button'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['href' => '#solutions','variant' => 'ghost','class' => '!rounded-xl !px-6 !py-3 !text-sm !font-extrabold !text-slate-900 hover:!text-indigo-600 hover:!bg-indigo-50']); ?>
-                    Explore Platform <?php if (isset($component)) { $__componentOriginal5c84e1af936cb00c34687173a7f14ca8 = $component; } ?>
+<?php $component->withAttributes(['href' => ''.e(route('book-demo')).'','variant' => 'ghost','class' => '!rounded-xl !px-6 !py-3 !text-sm !font-extrabold !text-slate-900 hover:!text-indigo-600 hover:!bg-indigo-50']); ?>
+                    Book a Demo <?php if (isset($component)) { $__componentOriginal5c84e1af936cb00c34687173a7f14ca8 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginal5c84e1af936cb00c34687173a7f14ca8 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::icon.arrow-right','data' => ['variant' => 'micro','class' => 'ml-2']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('flux::icon.arrow-right'); ?>

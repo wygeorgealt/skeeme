@@ -1,1 +1,0 @@
-<span <?php echo e($attributes->merge(['class' => 'inline-block px-2 py-1 rounded bg-gray-200 text-xs font-semibold'])); ?>><?php echo e($slot); ?></span><?php /**PATH C:\Users\kritex\Herd\skeeme\resources\views\components\flux\badge.blade.php ENDPATH**/ ?>

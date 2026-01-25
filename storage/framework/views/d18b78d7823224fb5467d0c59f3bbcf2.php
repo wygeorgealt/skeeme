@@ -1,1 +1,0 @@
-<input type="checkbox" <?php echo e($attributes); ?> /><?php /**PATH C:\Users\kritex\Herd\skeeme\resources\views\components\flux\checkbox.blade.php ENDPATH**/ ?>

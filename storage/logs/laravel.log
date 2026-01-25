@@ -146,3 +146,47 @@
 [2026-01-23 20:12:02] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"students-management","path":"students-management","url":"https://skeeme.test/students-management"} 
 [2026-01-23 20:12:04] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"classes-management","path":"classes-management","url":"https://skeeme.test/classes-management"} 
 [2026-01-23 20:12:13] local.ERROR: RedirectBasedOnRole DEBUG {"user_id":2,"user_role":"admin","current_route":"manage-class","path":"manage-class/1","url":"https://skeeme.test/manage-class/1"} 
+[2026-01-25 20:55:15] local.ERROR: There are no commands defined in the "web-tinker" namespace. {"exception":"[object] (Symfony\\Component\\Console\\Exception\\NamespaceNotFoundException(code: 0): There are no commands defined in the \"web-tinker\" namespace. at C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Application.php:694)
+[stacktrace]
+#0 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Application.php(743): Symfony\\Component\\Console\\Application->findNamespace('web-tinker')
+#1 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Application.php(298): Symfony\\Component\\Console\\Application->find('web-tinker:inst...')
+#2 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Application.php(195): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#3 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\Kernel.php(198): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#4 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#5 C:\\Users\\kritex\\Herd\\skeeme\\artisan(16): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#6 {main}
+"} 
+[2026-01-25 20:55:34] local.ERROR: There are no commands defined in the "log-viewer" namespace. {"exception":"[object] (Symfony\\Component\\Console\\Exception\\NamespaceNotFoundException(code: 0): There are no commands defined in the \"log-viewer\" namespace. at C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Application.php:694)
+[stacktrace]
+#0 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Application.php(743): Symfony\\Component\\Console\\Application->findNamespace('log-viewer')
+#1 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Application.php(298): Symfony\\Component\\Console\\Application->find('log-viewer:publ...')
+#2 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\symfony\\console\\Application.php(195): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#3 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\Kernel.php(198): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#4 C:\\Users\\kritex\\Herd\\skeeme\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#5 C:\\Users\\kritex\\Herd\\skeeme\\artisan(16): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#6 {main}
+"} 
+[2026-01-25 21:17:18] local.ERROR: PHP Parse error: Syntax error, unexpected T_NS_SEPARATOR, expecting T_VARIABLE on line 1 {"exception":"[object] (Psy\\Exception\\ParseErrorException(code: 0): PHP Parse error: Syntax error, unexpected T_NS_SEPARATOR, expecting T_VARIABLE on line 1 at C:/Users/kritex/Herd/skeeme/vendor/psy/psysh/src/Exception/ParseErrorException.php:44)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/psy/psysh/src/CodeCleaner.php(488): Psy/Exception/ParseErrorException::fromParseError(Object(PhpParser/Error))
+#1 C:/Users/kritex/Herd/skeeme/vendor/psy/psysh/src/CodeCleaner.php(269): Psy/CodeCleaner->parse('<?php print_r(A...', false)
+#2 C:/Users/kritex/Herd/skeeme/vendor/psy/psysh/src/Shell.php(985): Psy/CodeCleaner->clean(Array, false)
+#3 C:/Users/kritex/Herd/skeeme/vendor/psy/psysh/src/Shell.php(1018): Psy/Shell->addCode('print_r(App//Mod...', true)
+#4 C:/Users/kritex/Herd/skeeme/vendor/psy/psysh/src/Shell.php(1562): Psy/Shell->setCode('print_r(App//Mod...', true)
+#5 C:/Users/kritex/Herd/skeeme/vendor/laravel/tinker/src/Console/TinkerCommand.php(76): Psy/Shell->execute('print_r(App//Mod...')
+#6 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Laravel/Tinker/Console/TinkerCommand->handle()
+#7 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate/Container/BoundMethod::Illuminate/Container/{closure}()
+#8 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate/Container/Util::unwrapIfClosure(Object(Closure))
+#9 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate/Container/BoundMethod::callBoundMethod(Object(Illuminate/Foundation/Application), Array, Object(Closure))
+#10 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate/Container/BoundMethod::call(Object(Illuminate/Foundation/Application), Array, Array, NULL)
+#11 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Console/Command.php(211): Illuminate/Container/Container->call(Array)
+#12 C:/Users/kritex/Herd/skeeme/vendor/symfony/console/Command/Command.php(341): Illuminate/Console/Command->execute(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#13 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Console/Command.php(180): Symfony/Component/Console/Command/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Illuminate/Console/OutputStyle))
+#14 C:/Users/kritex/Herd/skeeme/vendor/symfony/console/Application.php(1102): Illuminate/Console/Command->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#15 C:/Users/kritex/Herd/skeeme/vendor/symfony/console/Application.php(356): Symfony/Component/Console/Application->doRunCommand(Object(Laravel/Tinker/Console/TinkerCommand), Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#16 C:/Users/kritex/Herd/skeeme/vendor/symfony/console/Application.php(195): Symfony/Component/Console/Application->doRun(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#17 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony/Component/Console/Application->run(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#18 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate/Foundation/Console/Kernel->handle(Object(Symfony/Component/Console/Input/ArgvInput), Object(Symfony/Component/Console/Output/ConsoleOutput))
+#19 C:/Users/kritex/Herd/skeeme/artisan(16): Illuminate/Foundation/Application->handleCommand(Object(Symfony/Component/Console/Input/ArgvInput))
+#20 {main}
+"} 
