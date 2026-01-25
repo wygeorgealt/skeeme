@@ -10,22 +10,22 @@ class DemoRequestForm
     {
         return $schema
             ->components([
-                \Filament\Schemas\Components\TextInput::make('name')
+                \Filament\Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
-                \Filament\Schemas\Components\TextInput::make('email')
+                \Filament\Forms\Components\TextInput::make('email')
                     ->email()
                     ->required()
                     ->maxLength(255),
-                \Filament\Schemas\Components\TextInput::make('school_name')
+                \Filament\Forms\Components\TextInput::make('school_name')
                     ->required()
                     ->maxLength(255),
-                \Filament\Schemas\Components\TextInput::make('role')
+                \Filament\Forms\Components\TextInput::make('role')
                     ->maxLength(255),
-                \Filament\Schemas\Components\TextInput::make('phone')
+                \Filament\Forms\Components\TextInput::make('phone')
                     ->tel()
                     ->maxLength(255),
-                \Filament\Schemas\Components\Select::make('status')
+                \Filament\Forms\Components\Select::make('status')
                     ->options([
                         'pending' => 'Pending',
                         'contacted' => 'Contacted',
@@ -34,10 +34,10 @@ class DemoRequestForm
                     ])
                     ->required()
                     ->default('pending'),
-                \Filament\Schemas\Components\Textarea::make('message')
+                \Filament\Forms\Components\Textarea::make('message')
                     ->maxLength(65535)
                     ->columnSpanFull(),
-                \Filament\Schemas\Components\TextInput::make('ip_address')
+                \Filament\Forms\Components\TextInput::make('ip_address')
                     ->disabled()
                     ->maxLength(255),
             ]);

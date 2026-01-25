@@ -36,10 +36,6 @@ class CreatorPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->navigationItems([
-                \Filament\Navigation\NavigationItem::make('Log Viewer')
-                    ->url('/log-viewer', shouldOpenInNewTab: true)
-                    ->icon('heroicon-o-document-text')
-                    ->group('System Tools'),
                 \Filament\Navigation\NavigationItem::make('Web Tinker')
                     ->url('/tinker', shouldOpenInNewTab: true)
                     ->icon('heroicon-o-command-line')

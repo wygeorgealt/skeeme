@@ -20,7 +20,9 @@ class DemoRequestResource extends Resource
 {
     protected static ?string $model = DemoRequest::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-list-bullet';
+
+    protected static \UnitEnum|string|null $navigationGroup = 'Resources';
 
     protected static ?string $recordTitleAttribute = 'name';
 

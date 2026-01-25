@@ -23,7 +23,6 @@
         "livewire/volt": "^1.7.0",
         "masmerise/livewire-toaster": "^2.8",
         "nyholm/psr7": "^1.8",
-        "opcodesio/log-viewer": "^3.21",
         "phpoffice/phpword": "^1.4",
         "pusher/pusher-php-server": "^7.2",
         "railsware/mailtrap-php": "^3.9",

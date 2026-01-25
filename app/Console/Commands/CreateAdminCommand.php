@@ -41,7 +41,7 @@ class CreateAdminCommand extends Command
             $user->save();
             $this->info("User {$email} promoted to admin successfully.");
         } else {
-            User::create([
+            $user = User::create([
                 'name' => 'Admin User',
                 'first_name' => 'Admin',
                 'last_name' => 'User',
@@ -53,6 +53,16 @@ class CreateAdminCommand extends Command
             ]);
             $this->info("New admin user {$email} created successfully with password: {$password}");
         }
+
+        // Also ensure they are a super-admin team member
+        \App\Models\TeamMember::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'role' => 'super-admin',
+                'is_active' => true,
+            ]
+        );
+        $this->info("User {$email} is now also a super-admin creator.");
 
         return Command::SUCCESS;
     }
