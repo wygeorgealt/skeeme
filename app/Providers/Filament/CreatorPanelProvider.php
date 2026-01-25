@@ -25,6 +25,7 @@ class CreatorPanelProvider extends PanelProvider
     {
         return $panel
             ->id('creator')
+            ->default()
             ->path('creator')
             ->login()
             ->colors([

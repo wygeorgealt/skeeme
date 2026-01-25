@@ -158,18 +158,7 @@
 
             <!-- Actions -->
             <div class="hidden lg:flex items-center gap-4">
-                @guest
-                    <flux:link href="{{ url('login') }}" class="font-bold text-sm text-slate-900 no-underline px-4">Log in</flux:link>
-                    <flux:button href="{{ url('register') }}" variant="primary" class="!rounded-xl !px-6 !py-2.5 font-bold shadow-indigo-200">
-                        Get Started Free
-                    </flux:button>
-                @else
-                    @if(auth()->user()->school_id || auth()->user()->role !== 'student')
-                        <flux:button href="{{ route('dashboard') }}" variant="ghost" class="!font-bold !text-sm !text-slate-900 !px-4 hover:!text-indigo-600">
-                            Dashboard
-                        </flux:button>
-                    @endif
-                    
+                @if(auth()->check() && auth()->user()->role === 'student' && !auth()->user()->school_id)
                     <flux:dropdown>
                         <flux:button variant="ghost" class="!p-1 !pr-4 !rounded-full border border-slate-200 hover:border-indigo-300 transition-all flex items-center gap-2.5 bg-white/50 backdrop-blur-sm shadow-sm group">
                             <div class="size-8 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] font-black text-white uppercase tracking-tighter shadow-indigo-100 shadow-md group-hover:scale-105 transition-transform">
@@ -183,12 +172,8 @@
                                 <div class="text-xs font-bold text-indigo-900 truncate">{{ auth()->user()->email }}</div>
                             </flux:menu.item>
                             
-                            <flux:menu.item href="{{ auth()->user()->role === 'student' && !auth()->user()->school_id ? route('student.profile') : route('profile.edit') }}" icon="user-circle">My Profile</flux:menu.item>
-                            @if(auth()->user()->role === 'student' && !auth()->user()->school_id)
-                                <flux:menu.item href="{{ route('student.profile') }}#billing" icon="credit-card">Credits & Billing</flux:menu.item>
-                            @else
-                                <flux:menu.item href="{{ url('pricing') }}" icon="credit-card">Credits & Billing</flux:menu.item>
-                            @endif
+                            <flux:menu.item href="{{ route('student.profile') }}" icon="user-circle">My Profile</flux:menu.item>
+                            <flux:menu.item href="{{ route('student.profile') }}#billing" icon="credit-card">Credits & Billing</flux:menu.item>
                             
                             <flux:menu.separator />
                             
@@ -200,7 +185,12 @@
                             </form>
                         </flux:menu>
                     </flux:dropdown>
-                @endguest
+                @else
+                    <flux:link href="{{ url('login') }}" class="font-bold text-sm text-slate-900 no-underline px-4">Log in</flux:link>
+                    <flux:button href="{{ url('register') }}" variant="primary" class="!rounded-xl !px-6 !py-2.5 font-bold shadow-indigo-200">
+                        Get Started Free
+                    </flux:button>
+                @endif
             </div>
 
             <!-- Mobile Toggle -->
@@ -212,25 +202,21 @@
         <!-- Mobile Menu (Simplified for brevity) -->
         <div id="mobile-menu" class="hidden lg:hidden border-t border-slate-100 bg-white/95 backdrop-blur-xl">
             <div class="p-6 flex flex-col gap-4 text-center">
-                @guest
-                    <a href="{{ url('features/dashboard') }}" class="font-bold text-slate-600">Features</a>
-                    <a href="{{ url('pricing') }}" class="font-bold text-slate-600">Pricing</a>
-                    <div class="h-px bg-slate-100 my-2"></div>
-                    <flux:button href="{{ url('login') }}" variant="ghost" class="w-full">Log in</flux:button>
-                    <flux:button href="{{ url('register') }}" variant="primary" class="w-full">Get Started</flux:button>
-                @else
-                    @if(auth()->user()->school_id || auth()->user()->role !== 'student')
-                        <a href="{{ route('dashboard') }}" class="font-bold text-slate-900 px-4 py-2 bg-indigo-50 rounded-xl text-indigo-600">Dashboard</a>
-                    @else
-                        <a href="{{ route('student.profile') }}" class="font-bold text-slate-900 px-4 py-2 bg-indigo-50 rounded-xl text-indigo-600">My Profile</a>
-                    @endif
+                @if(auth()->check() && auth()->user()->role === 'student' && !auth()->user()->school_id)
+                    <a href="{{ route('student.profile') }}" class="font-bold text-slate-900 px-4 py-2 bg-indigo-50 rounded-xl text-indigo-600">My Profile</a>
                     <a href="{{ url('pricing') }}" class="font-bold text-slate-600">Pricing</a>
                     <div class="h-px bg-slate-100 my-2"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <flux:button type="submit" variant="ghost" class="w-full !text-red-500">Log Out</flux:button>
                     </form>
-                @endguest
+                @else
+                    <a href="{{ url('features/dashboard') }}" class="font-bold text-slate-600">Features</a>
+                    <a href="{{ url('pricing') }}" class="font-bold text-slate-600">Pricing</a>
+                    <div class="h-px bg-slate-100 my-2"></div>
+                    <flux:button href="{{ url('login') }}" variant="ghost" class="w-full">Log in</flux:button>
+                    <flux:button href="{{ url('register') }}" variant="primary" class="w-full">Get Started Free</flux:button>
+                @endif
             </div>
         </div>
     </header>
