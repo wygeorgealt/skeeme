@@ -38,6 +38,20 @@ class StudentAiProduct extends Component
         }
     }
 
+    public function updatedTopic($value)
+    {
+        if (!empty($value)) {
+            $this->file = null;
+        }
+    }
+
+    public function updatedFile($value)
+    {
+        if ($value) {
+            $this->topic = '';
+        }
+    }
+
     public function updatedQuestionCount($value)
     {
         if (empty($value)) return;

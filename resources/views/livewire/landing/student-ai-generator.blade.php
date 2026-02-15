@@ -6,10 +6,19 @@
             <div class="p-6 rounded-3xl bg-white border border-slate-100 shadow-xl shadow-indigo-100/50">
 
                 <!-- Inputs -->
-                <div class="space-y-4">
+                <div class="space-y-4" x-data="{ inputMode: @js($file ? 'file' : ($topic ? 'topic' : 'none')) }"
+                     x-init="
+                        $wire.$watch('topic', value => { inputMode = value ? 'topic' : ($wire.file ? 'file' : 'none') });
+                        $wire.$watch('file', value => { inputMode = value ? 'file' : ($wire.topic ? 'topic' : 'none') });
+                     ">
                     <div>
                         <flux:label class="text-xs font-bold text-slate-500 mb-1">Topic</flux:label>
-                        <flux:input wire:model="topic" placeholder="e.g. Photosynthesis, World War II..." class="!bg-slate-50 !border-slate-200" />
+                        <div class="relative">
+                            <flux:input wire:model.live.debounce.300ms="topic" placeholder="e.g. Photosynthesis, World War II..." class="!bg-slate-50 !border-slate-200" ::class="inputMode === 'file' && '!opacity-50 !pointer-events-none'" :disabled="inputMode === 'file'" />
+                            <button x-show="inputMode === 'topic'" x-cloak wire:click="$set('topic', '')" class="absolute right-3 top-1/2 -translate-y-1/2 size-5 rounded-full bg-slate-200 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors text-slate-500">
+                                <flux:icon.x-mark variant="micro" class="size-3" />
+                            </button>
+                        </div>
                         @error('topic') <span class="text-xs text-red-500 font-bold">{{ $message }}</span> @enderror
                     </div>
 
@@ -42,11 +51,11 @@
                             <div class="w-full border-t border-slate-100"></div>
                         </div>
                         <div class="relative flex justify-center">
-                            <span class="bg-white px-2 text-xs text-slate-400 font-bold uppercase transition hover:text-indigo-400 cursor-help" title="To fix R2 CORS locally, add LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK=local to your .env">Or Upload File</span>
+                            <span class="bg-white px-2 text-xs text-slate-400 font-bold uppercase">Or Upload File</span>
                         </div>
                     </div>
 
-                            <div class="relative group">
+                            <div class="relative group" :class="inputMode === 'topic' && 'opacity-50 pointer-events-none'">
                                 <label class="flex flex-col items-center justify-center h-48 border-2 border-slate-100 border-dashed rounded-xl cursor-pointer bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-200 transition-all">
                                     <div class="flex flex-col items-center justify-center pt-2">
                                         @if($file)
@@ -62,7 +71,7 @@
                                 </label>
                                 
                                 @if($file)
-                                    <button wire:click="$set('file', null)" class="absolute top-4 right-4 size-6 rounded-full bg-slate-200 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors">
+                                    <button wire:click="$set('file', null)" class="absolute top-4 right-4 size-6 rounded-full bg-slate-200 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors" style="pointer-events: auto;">
                                         <flux:icon.x-mark variant="micro" class="size-4" />
                                     </button>
                                 @endif
