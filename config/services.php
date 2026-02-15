@@ -60,4 +60,8 @@ return [
         'redirect' => env('ZOOM_REDIRECT_URI'),
     ],
 
+    'mailtrap' => [
+        'api_key' => env('MAILTRAP_API_KEY'),
+    ],
+
 ];

@@ -26,7 +26,28 @@ class ContactController extends Controller
             'email' => 'required|email|max:255',
             'subject' => 'required|string|max:255',
             'message' => 'required|string|min:10',
+            'website' => 'nullable|max:0', // Honeypot field - should be empty
         ]);
+
+        // Honeypot check - if filled, it's likely a bot
+        if (!empty($validated['website'])) {
+            return redirect()->back()->with('success', 'Thank you for your message. We will get back to you soon.');
+        }
+
+        // Block suspicious email domains commonly used by spammers
+        $suspiciousDomains = [
+            'search-skeeme.com',
+            'ai-skeeme.com',
+            'seo4skeeme.com',
+            'seodir.pro',
+            'aireg.pro',
+            'searchregister.info',
+        ];
+
+        $emailDomain = substr(strrchr($validated['email'], "@"), 1);
+        if (in_array(strtolower($emailDomain), $suspiciousDomains)) {
+            return redirect()->back()->with('success', 'Thank you for your message. We will get back to you soon.');
+        }
 
         // Send the contact message to the support email
         Mail::to(config('mail.from.address'))->send(new ContactMessage($validated));

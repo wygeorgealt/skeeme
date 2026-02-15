@@ -58,6 +58,9 @@
 
                             <flux:input label="Subject" name="subject" placeholder="General Inquiry" value="{{ old('subject') }}" required class="!rounded-xl" />
                             
+                            <!-- Honeypot field - hidden from users, catches bots -->
+                            <input type="text" name="website" value="" style="position:absolute;left:-9999px;" tabindex="-1" autocomplete="off" />
+                            
                             <flux:textarea label="Your Message" name="message" placeholder="How can we help?" rows="6" required class="!rounded-xl" />
 
                             <flux:button type="submit" variant="primary" class="w-full !rounded-2xl !py-4 font-extrabold shadow-xl shadow-indigo-100">

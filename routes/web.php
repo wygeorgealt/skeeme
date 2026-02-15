@@ -14,7 +14,7 @@ use App\Http\Controllers\IntegrationController;
 /* ------------------------------------------------------------------ */
 Route::get('/', [LandingController::class, 'index'])->name('home');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
-Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store')->middleware('throttle:3,1');
 
 Route::get('/book-demo', [\App\Http\Controllers\BookDemoController::class, 'index'])->name('book-demo');
 Route::post('/book-demo', [\App\Http\Controllers\BookDemoController::class, 'store'])->name('book-demo.store');
