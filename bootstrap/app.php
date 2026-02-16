@@ -19,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\CheckSchoolIpRestriction::class,
         ]);
 
+        $middleware->trustProxies(at: '*');
+
         $middleware->validateCsrfTokens(except: [
             'api/v1/webhooks/zoom',
         ]);

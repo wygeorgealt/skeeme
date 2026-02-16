@@ -87,7 +87,7 @@
                                 @error('file') <span class="text-xs text-red-500 font-bold mt-1 block">{{ $message }}</span> @enderror
                             </div>
 
-                            <flux:button wire:click="generate" @click="resultsVisible = true" variant="primary" class="w-full !rounded-xl !py-4 font-bold shadow-lg shadow-indigo-500/20" x-bind:disabled="$isGenerating">
+                            <flux:button wire:click="generate" @click="resultsVisible = true" variant="primary" class="w-full !rounded-xl !py-4 font-bold shadow-lg shadow-indigo-500/20" wire:loading.attr="disabled">
                         <span wire:loading.remove wire:target="generate">Generate Quiz</span>
                         <span wire:loading wire:target="generate" class="flex items-center gap-2">
                             <flux:icon.loading class="animate-spin" /> Thinking...
