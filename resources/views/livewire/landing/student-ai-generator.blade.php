@@ -14,7 +14,7 @@
                     <div>
                         <flux:label class="text-xs font-bold text-slate-500 mb-1">Topic</flux:label>
                         <div class="relative">
-                            <flux:input wire:model.live.debounce.300ms="topic" placeholder="e.g. Photosynthesis, World War II..." class="!bg-slate-50 !border-slate-200" ::class="inputMode === 'file' && '!opacity-50 !pointer-events-none'" :disabled="inputMode === 'file'" />
+                            <flux:input wire:model.live.debounce.300ms="topic" placeholder="e.g. Photosynthesis, World War II..." class="!bg-slate-50 !border-slate-200" x-bind:class="inputMode === 'file' && '!opacity-50 !pointer-events-none'" x-bind:disabled="inputMode === 'file'" />
                             <button x-show="inputMode === 'topic'" x-cloak wire:click="$set('topic', '')" class="absolute right-3 top-1/2 -translate-y-1/2 size-5 rounded-full bg-slate-200 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors text-slate-500">
                                 <flux:icon.x-mark variant="micro" class="size-3" />
                             </button>
@@ -55,7 +55,7 @@
                         </div>
                     </div>
 
-                            <div class="relative group" :class="inputMode === 'topic' && 'opacity-50 pointer-events-none'">
+                            <div class="relative group" x-bind:class="inputMode === 'topic' && 'opacity-50 pointer-events-none'">
                                 <label class="flex flex-col items-center justify-center h-48 border-2 border-slate-100 border-dashed rounded-xl cursor-pointer bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-200 transition-all">
                                     <div class="flex flex-col items-center justify-center pt-2">
                                         @if($file)
@@ -87,7 +87,7 @@
                                 @error('file') <span class="text-xs text-red-500 font-bold mt-1 block">{{ $message }}</span> @enderror
                             </div>
 
-                            <flux:button wire:click="generate" @click="resultsVisible = true" variant="primary" class="w-full !rounded-xl !py-4 font-bold shadow-lg shadow-indigo-500/20" :disabled="$isGenerating">
+                            <flux:button wire:click="generate" @click="resultsVisible = true" variant="primary" class="w-full !rounded-xl !py-4 font-bold shadow-lg shadow-indigo-500/20" x-bind:disabled="$isGenerating">
                         <span wire:loading.remove wire:target="generate">Generate Quiz</span>
                         <span wire:loading wire:target="generate" class="flex items-center gap-2">
                             <flux:icon.loading class="animate-spin" /> Thinking...
