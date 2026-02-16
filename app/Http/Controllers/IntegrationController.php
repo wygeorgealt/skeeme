@@ -128,11 +128,10 @@ class IntegrationController extends Controller
     {
         return match ($provider) {
             'google' => [
-                'https://www.googleapis.com/auth/calendar.events',
-                'https://www.googleapis.com/auth/drive.file',
+                'https://www.googleapis.com/auth/userinfo.email',
+                'https://www.googleapis.com/auth/userinfo.profile',
                 'openid',
-                'profile',
-                'email'
+                'https://www.googleapis.com/auth/calendar.app.created',
             ],
             'zoom' => [
                 'meeting:write',
