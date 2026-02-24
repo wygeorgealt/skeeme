@@ -99,6 +99,12 @@ class PlagiarismDetectionService
             }
 
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Plagiarism check failed', [
+                'check_id' => $check->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             $check->update([
                 'plagiarism_status' => 'checked',
                 'metadata' => ['error' => $e->getMessage()],

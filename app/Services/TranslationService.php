@@ -23,7 +23,7 @@ class TranslationService
 
     public function __construct()
     {
-        $this->apiKey = env('DEEPSEEK_API_KEY');
+        $this->apiKey = config('services.deepseek.api_key');
         $this->client = new Client([
             'timeout' => 300,
             'connect_timeout' => 10,

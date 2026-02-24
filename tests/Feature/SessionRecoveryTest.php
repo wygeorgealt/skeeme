@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\ExamSession;
 use App\Models\ExamAnswer;
 use App\Models\ExamSessionRecovery;
+use Mockery\MockInterface;
 use App\Services\SessionRecoveryService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use PHPUnit\Framework\Attributes\Test;

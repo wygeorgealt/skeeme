@@ -33,6 +33,7 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+        'webhook_url' => env('SLACK_WEBHOOK_URL'),
     ],
 
     'paystack' => [
@@ -55,9 +56,15 @@ return [
     ],
 
     'zoom' => [
+        'account_id' => env('ZOOM_ACCOUNT_ID'),
         'client_id' => env('ZOOM_CLIENT_ID'),
         'client_secret' => env('ZOOM_CLIENT_SECRET'),
+        'secret_token' => env('ZOOM_SECRET_TOKEN'),
         'redirect' => env('ZOOM_REDIRECT_URI'),
+    ],
+
+    'deepseek' => [
+        'api_key' => env('DEEPSEEK_API_KEY'),
     ],
 
     'mailtrap' => [

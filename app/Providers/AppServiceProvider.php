@@ -39,6 +39,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
+        \Illuminate\Database\Eloquent\Model::preventLazyLoading(! app()->isProduction());
+
         if ($this->app->environment('production')) {
             \URL::forceScheme('https');
         }

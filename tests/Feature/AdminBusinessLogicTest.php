@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class AdminBusinessLogicTest extends TestCase
 {
+    use DatabaseTransactions;
 
     #[Test]
     public function test_admin_selects_subscription_plan_correctly()

@@ -17,7 +17,7 @@ class ZoomWebhookController extends Controller
         // 1. Handle Endpoint Validation
         if ($event === 'endpoint.url_validation') {
             $plainToken = $payload['plainToken'];
-            $encryptedToken = hash_hmac('sha256', $plainToken, env('ZOOM_SECRET_TOKEN'));
+            $encryptedToken = hash_hmac('sha256', $plainToken, config('services.zoom.secret_token'));
             
             return response()->json([
                 'plainToken' => $plainToken,

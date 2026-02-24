@@ -131,7 +131,7 @@
                                     </div>
 
                                     <div class="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-relaxed pr-8">
-                                        {!! $question['question_text'] ?? 'No Question Text' !!}
+                                        {!! nl2br(e($question['question_text'] ?? 'No Question Text')) !!}
                                     </div>
                                     
                                     <!-- Simplified Choice Display -->

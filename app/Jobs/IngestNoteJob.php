@@ -14,6 +14,9 @@ class IngestNoteJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $tries = 3;
+    public array $backoff = [60, 300, 600];
+
     protected $note;
 
     /**
@@ -35,5 +38,16 @@ class IngestNoteJob implements ShouldQueue
     {
         $ingestionService = new NoteIngestionService();
         $ingestionService->ingestNote($this->note);
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(\Throwable $exception)
+    {
+        \Illuminate\Support\Facades\Log::error('IngestNoteJob failed for note ' . $this->note->id, [
+            'error' => $exception->getMessage(),
+            'trace' => $exception->getTraceAsString(),
+        ]);
     }
 }

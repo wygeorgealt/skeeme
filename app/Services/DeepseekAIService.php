@@ -14,7 +14,7 @@ class DeepseekAIService
 
     public function __construct()
     {
-        $this->apiKey = env('DEEPSEEK_API_KEY');
+        $this->apiKey = config('services.deepseek.api_key');
         $this->client = new Client([
             'timeout' => 300,
             'connect_timeout' => 10,
@@ -233,6 +233,93 @@ class DeepseekAIService
     }
 
     /**
+     * Generate Flashcards from notes or a topic
+     */
+    public function generateFlashcards(
+        array $notes,
+        int $numberOfCards,
+        string $difficulty = 'mixed',
+        string $prompt = '',
+        ?callable $progressCallback = null
+    ): array {
+        $optimizedPrompt = $this->buildFlashcardPrompt(
+            $notes,
+            $numberOfCards,
+            $difficulty,
+            $prompt
+        );
+
+        try {
+            if ($progressCallback) $progressCallback(0, 'Calling AI...');
+            
+            $jsonString = $this->callDeepseekChat($optimizedPrompt, 'You are an expert tutor creating highly effective flashcards.');
+            
+            if ($progressCallback) $progressCallback(50, 'Parsing Flashcards...');
+
+            $decoded = json_decode($jsonString, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                // Fallback attempt: Try to extract JSON array using regex if raw decode fails
+                preg_match('/\[.*\]/s', $jsonString, $matches);
+                if (!empty($matches[0])) {
+                    $decoded = json_decode($matches[0], true);
+                }
+            }
+
+            if (!is_array($decoded)) {
+                throw new \Exception("AI generated invalid JSON: " . substr($jsonString, 0, 100));
+            }
+
+            return $decoded;
+
+        } catch (\Exception $e) {
+            \Log::error('Flashcard Generation Error: ' . $e->getMessage(), [
+                'prompt_preview' => substr($optimizedPrompt, 0, 200),
+                'error' => $e->getMessage()
+            ]);
+            throw new \Exception("Failed to generate flashcards: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Build OPTIMIZED prompt for flashcards
+     */
+    protected function buildFlashcardPrompt(
+        array $notes,
+        int $numberOfCards,
+        string $difficulty,
+        string $userPrompt = ''
+    ): string {
+        $notesText = implode("\n", $notes);
+        $notesText = preg_replace('/\s+/', ' ', $notesText);
+        
+        $diffShort = match($difficulty) {
+            'easy' => 'E',
+            'medium' => 'M',
+            'hard' => 'H',
+            'mixed' => 'E/M/H',
+            default => 'E/M/H',
+        };
+
+        $focusSection = !empty($userPrompt) ? "\nFOCUS: {$userPrompt}" : '';
+
+        return <<<PROMPT
+Gen EXACTLY {$numberOfCards} Flashcards. Diff: {$diffShort}.{$focusSection}
+
+INPUT: {$notesText}
+
+Format: JSON strictly. No markdown wrappers. Just a raw array.
+Language: Ultra-simple English.
+Schema: [{"front": "Question or concept (short)", "back": "Answer or definition"}]
+
+Rules:
+1. The 'front' should be a clear, concise question, term, or concept.
+2. The 'back' must be the direct answer or definition. Keep it under 3 sentences.
+3. Output ONLY valid JSON.
+PROMPT;
+    }
+
+    /**
      * Generate generic text response (for Chat/Tutor mode)
      */
     public function generateText(string $prompt, string $systemPrompt = "You are a helpful assistant."): string
@@ -259,7 +346,7 @@ class DeepseekAIService
             $data = json_decode($response->getBody()->getContents(), true);
             return $data['choices'][0]['message']['content'] ?? "I'm sorry, I couldn't generate a response.";
         } catch (\Exception $e) {
-            \Log::error('Text Generation Error: ' . $e->getMessage());
+            \Log::error('Text Generation Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return "I'm having trouble connecting to my brain right now. Please try again later.";
         }
     }

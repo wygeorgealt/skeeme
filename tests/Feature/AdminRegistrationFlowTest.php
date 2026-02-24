@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class AdminRegistrationFlowTest extends TestCase
 {
+    use DatabaseTransactions;
     /**
      * Admin Registration & Onboarding Flow Tests
      * 

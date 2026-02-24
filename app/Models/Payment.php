@@ -5,9 +5,12 @@ namespace App\Models;
 use App\Events\PaymentCompleted;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Payment extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'school_id',
         'user_id',
@@ -105,19 +108,21 @@ class Payment extends Model
      */
     public function markAsCompleted(?string $transactionId = null): void
     {
-        $this->status = self::STATUS_COMPLETED;
-        $this->paid_at = now();
-        if ($transactionId) {
-            $this->transaction_id = $transactionId;
-        }
-        $this->save();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($transactionId) {
+            $this->status = self::STATUS_COMPLETED;
+            $this->paid_at = now();
+            if ($transactionId) {
+                $this->transaction_id = $transactionId;
+            }
+            $this->save();
 
-        // Update associated invoice status if exists
-        if ($this->invoice) {
-            $this->invoice->markAsPaid();
-        }
+            // Update associated invoice status if exists
+            if ($this->invoice) {
+                $this->invoice->markAsPaid();
+            }
+        });
 
-        // Dispatch PaymentCompleted event to trigger email and other actions
+        // Dispatch PaymentCompleted event to trigger email and other actions outside transaction
         event(new PaymentCompleted($this, [
             'invoice_id' => $this->invoice_id,
             'subscription_id' => $this->subscription_id,

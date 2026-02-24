@@ -77,7 +77,19 @@ class MonitoringController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        SystemMetric::recordMetric($request->all());
+        $validated = $request->validate([
+            'cpu_usage' => 'required|numeric',
+            'memory_usage' => 'required|numeric',
+            'disk_usage' => 'required|numeric',
+            'active_users' => 'nullable|integer',
+            'total_requests' => 'nullable|integer',
+            'response_time_ms' => 'nullable|numeric',
+            'failed_requests' => 'nullable|integer',
+            'uptime_percentage' => 'nullable|numeric',
+            'service_status' => 'nullable|array',
+        ]);
+
+        SystemMetric::recordMetric($validated);
 
         return response()->json(['status' => 'recorded']);
     }

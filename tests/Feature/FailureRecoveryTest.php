@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use Illuminate\Support\Facades\Session;
 use Tests\TestCase;
+use Mockery\MockInterface;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class FailureRecoveryTest extends TestCase
 {

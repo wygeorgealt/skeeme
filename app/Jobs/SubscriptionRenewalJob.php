@@ -129,4 +129,16 @@ class SubscriptionRenewalJob implements ShouldQueue
             // Don't rethrow - continue processing other subscriptions
         }
     }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        Log::critical('SubscriptionRenewalJob failed completely', [
+            'message' => $exception->getMessage(),
+            'trace' => $exception->getTraceAsString(),
+        ]);
+        // Here you could send an alert to admin/monitoring channel
+    }
 }

@@ -215,7 +215,7 @@
             </button>
         </div>
 
-        <!-- Mobile Menu (Simplified for brevity) -->
+        <!-- Mobile Menu -->
         <div id="mobile-menu" class="hidden lg:hidden border-t border-slate-100 bg-white/95 backdrop-blur-xl">
             <div class="p-6 flex flex-col gap-4 text-center">
                 @auth
@@ -224,16 +224,42 @@
                     @else
                         <a href="{{ route('dashboard') }}" class="font-bold text-slate-900 px-4 py-2 bg-indigo-50 rounded-xl text-indigo-600">Dashboard</a>
                     @endif
+                    
+                    <a href="{{ route('products.students') }}" class="font-bold text-indigo-600">For Students</a>
                     <a href="{{ url('pricing') }}" class="font-bold text-slate-600">Pricing</a>
+                    
                     <div class="h-px bg-slate-100 my-2"></div>
+                    
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <flux:button type="submit" variant="ghost" class="w-full !text-red-500">Log Out</flux:button>
                     </form>
                 @else
-                    <a href="{{ url('features/dashboard') }}" class="font-bold text-slate-600">Features</a>
+                    <a href="{{ route('products.students') }}" class="font-bold text-indigo-600 flex items-center justify-center gap-2">
+                        For Students
+                        <span class="bg-indigo-100 text-[10px] text-indigo-600 px-1.5 py-0.5 rounded-full uppercase">New</span>
+                    </a>
                     <a href="{{ url('pricing') }}" class="font-bold text-slate-600">Pricing</a>
+                    
+                    <div class="py-2">
+                        <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Features</p>
+                        <div class="flex flex-col gap-3">
+                            <a href="{{ url('features/dashboard') }}" class="text-sm font-bold text-slate-600">Admin Dashboard</a>
+                            <a href="{{ url('features/analytics') }}" class="text-sm font-bold text-slate-600">Advanced Analytics</a>
+                            <a href="{{ url('features/reports') }}" class="text-sm font-bold text-slate-600">Dynamic Reports</a>
+                        </div>
+                    </div>
+
+                    <div class="py-2">
+                        <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Resources</p>
+                        <div class="flex flex-col gap-3">
+                            <a href="{{ url('integrations') }}" class="text-sm font-bold text-slate-600">Integrations</a>
+                            <a href="{{ url('changelog') }}" class="text-sm font-bold text-slate-600">Changelog</a>
+                        </div>
+                    </div>
+
                     <div class="h-px bg-slate-100 my-2"></div>
+                    
                     <flux:button href="{{ url('login') }}" variant="ghost" class="w-full">Log in</flux:button>
                     <flux:button href="{{ url('register') }}" variant="primary" class="w-full">Get Started Free</flux:button>
                 @endauth

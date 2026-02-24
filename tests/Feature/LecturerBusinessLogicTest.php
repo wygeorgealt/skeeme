@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
+use Illuminate\Support\Facades\Mail;
+use Mockery\MockInterface;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class LecturerBusinessLogicTest extends TestCase
 {

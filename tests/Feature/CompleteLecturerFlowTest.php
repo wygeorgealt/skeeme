@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class CompleteLecturerFlowTest extends TestCase
 {
+    use DatabaseTransactions;
 
     #[Test]
     public function test_complete_lecturer_registration_flow_with_approval()

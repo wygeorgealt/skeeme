@@ -13,9 +13,9 @@ use App\Http\Controllers\API\AIGradingController;
 use App\Http\Controllers\API\AnalyticsController;
 use App\Http\Controllers\API\GradeController;
 use App\Http\Controllers\API\IndividualSubscriptionController;
-use App\Http\Controllers\API\MessageController;
+// use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\API\NoteController;
-use App\Http\Controllers\API\ParentTokenController;
+// use App\Http\Controllers\API\ParentTokenController;
 use App\Http\Controllers\API\SchemeOfWorkController;
 use App\Http\Controllers\API\SchoolController;
 use App\Http\Controllers\API\SchoolClassController;
@@ -24,14 +24,14 @@ use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\InvoiceController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\API\QuestionController;
-use App\Http\Controllers\API\QuestionPoolController;
+// use App\Http\Controllers\API\QuestionPoolController;
 use App\Http\Controllers\API\ExamQuestionController;
 use App\Http\Controllers\API\QuestionBankController;
-use App\Http\Controllers\API\QuestionAnalyticsController;
+// use App\Http\Controllers\API\QuestionAnalyticsController;
 use App\Http\Controllers\API\StudentLearningProgressController;
-use App\Http\Controllers\API\GradingTrendController;
+// use App\Http\Controllers\API\GradingTrendController;
 use App\Http\Controllers\API\ClassComparisonDataController;
-use App\Http\Controllers\API\VectorStoreEntryController;
+// use App\Http\Controllers\API\VectorStoreEntryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,9 +58,9 @@ Route::prefix('v1')->group(function () {
             'exams' => ExamController::class,
             'grades' => GradeController::class,
             'individual-subscriptions' => IndividualSubscriptionController::class,
-            'messages' => MessageController::class,
+            // 'messages' => MessageController::class,
             'notes' => NoteController::class,
-            'parent-tokens' => ParentTokenController::class,
+            // 'parent-tokens' => ParentTokenController::class,
             'schemes' => SchemeOfWorkController::class,
             'schools' => SchoolController::class,
             'classes' => SchoolClassController::class,
@@ -115,6 +115,42 @@ Route::prefix('v1')->group(function () {
             Route::get('/exams/{exam}/class-comparison', [AnalyticsController::class, 'classComparison'])->name('analytics.classComparison');
             Route::get('/exams/{exam}/recommendations', [AnalyticsController::class, 'recommendations'])->name('analytics.recommendations');
             Route::get('/exams/{exam}/export', [AnalyticsController::class, 'exportReport'])->name('analytics.export');
+        });
+    });
+
+    // Student Mobile App API
+    Route::prefix('student')->group(function () {
+        Route::post('login', [\App\Http\Controllers\API\Student\AuthController::class, 'login']);
+
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::post('logout', [\App\Http\Controllers\API\Student\AuthController::class, 'logout']);
+            Route::get('me', [\App\Http\Controllers\API\Student\AuthController::class, 'me']);
+            
+            // Practice Quizzes & Flashcards
+            Route::post('quizzes/generate', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'generate']);
+            Route::post('quizzes/grade-theory', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'gradeTheory']);
+            
+            Route::prefix('quizzes/history')->group(function () {
+                Route::get('/', [\App\Http\Controllers\API\Student\QuizSessionController::class, 'index']);
+                Route::post('/', [\App\Http\Controllers\API\Student\QuizSessionController::class, 'store']);
+                Route::get('{id}', [\App\Http\Controllers\API\Student\QuizSessionController::class, 'show']);
+            });
+
+            Route::prefix('flashcards')->group(function () {
+                Route::get('decks', [\App\Http\Controllers\API\Student\FlashcardController::class, 'index']);
+                Route::post('generate', [\App\Http\Controllers\API\Student\FlashcardController::class, 'generate']);
+                Route::get('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'show']);
+                Route::delete('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'destroy']);
+            });
+
+            Route::get('streaks/heatmap', [\App\Http\Controllers\API\Student\StreakController::class, 'heatmap']);
+            
+            // B2C / Independent Student Features
+            Route::get('billing/history', [\App\Http\Controllers\API\Student\InvoiceController::class, 'index']);
+            Route::get('billing/invoices/{invoice}/download', [\App\Http\Controllers\API\Student\InvoiceController::class, 'download']);
+            
+            Route::patch('profile', [\App\Http\Controllers\API\Student\ProfileController::class, 'update']);
+            Route::post('profile/password', [\App\Http\Controllers\API\Student\ProfileController::class, 'updatePassword']);
         });
     });
 

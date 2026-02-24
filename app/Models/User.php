@@ -270,6 +270,6 @@ class User extends Authenticatable implements FilamentUser
      */
     public function routeNotificationForSlack()
     {
-        return env('SLACK_WEBHOOK_URL');
+        return config('services.slack.webhook_url');
     }
 }

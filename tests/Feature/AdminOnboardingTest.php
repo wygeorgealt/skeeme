@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class AdminOnboardingTest extends TestCase
@@ -19,9 +20,9 @@ class AdminOnboardingTest extends TestCase
     {
         parent::setUp();
 
-        // Create a test user and authenticate
+        // Create a test user and authenticate with a unique email
         $user = User::factory()->create([
-            'email' => 'test@example.com',
+            'email' => 'admin_' . uniqid() . '@example.com',
             'role' => null,
             'school_id' => null,
         ]);
@@ -177,35 +178,34 @@ class AdminOnboardingTest extends TestCase
             });
     }
 
+
     #[Test]
-    public function test_different_country_codes_work_correctly()
+    #[DataProvider('countryCodeProvider')]
+    public function test_different_country_codes_work_correctly($countryCode, $phoneNumber, $expected)
     {
-        $testCases = [
-            ['+1', '5551234567', '+15551234567'],
-            ['+44', '7912345678', '+447912345678'],
-            ['+234', '8031234567', '+2348031234567'],
+        Livewire::test(\App\Livewire\AdminOnboarding::class)
+            ->set('schoolName', 'Test School')
+            ->set('firstName', 'John')
+            ->set('lastName', 'Doe')
+            ->set('phoneNumber', $phoneNumber)
+            ->set('countryCode', $countryCode)
+            ->set('academicYear', '2024/2025')
+            ->set('timezone', 'America/New_York')
+            ->set('theme', 'light')
+            ->call('nextStep') // Step 1 to 2
+            ->call('nextStep') // Step 2 to 3
+            ->call('selectPlan', 'free');
+
+        $user = Auth::user()->fresh();
+        $this->assertEquals($expected, $user->phone_number);
+    }
+
+    public static function countryCodeProvider(): array
+    {
+        return [
+            'US' => ['+1', '5551234567', '+15551234567'],
+            'UK' => ['+44', '7912345678', '+447912345678'],
+            'Nigeria' => ['+234', '8031234567', '+2348031234567'],
         ];
-
-        foreach ($testCases as [$countryCode, $phoneNumber, $expected]) {
-            Livewire::test(\App\Livewire\AdminOnboarding::class)
-                ->set('schoolName', 'Test School')
-                ->set('firstName', 'John')
-                ->set('lastName', 'Doe')
-                ->set('phoneNumber', $phoneNumber)
-                ->set('countryCode', $countryCode)
-                ->set('academicYear', '2024/2025')
-                ->set('timezone', 'America/New_York')
-                ->set('theme', 'light')
-                ->call('nextStep') // Step 1 to 2
-                ->call('nextStep') // Step 2 to 3
-                ->call('selectPlan', 'free');
-
-            $user = Auth::user()->fresh();
-            $this->assertEquals($expected, $user->phone_number);
-
-            // Clean up for next test
-            $user->update(['phone_number' => null, 'school_id' => null]);
-            School::where('admin_id', $user->id)->delete();
-        }
     }
 }
