@@ -13,16 +13,22 @@ class FileExtractionService
      * Extract text from a file based on its extension.
      *
      * @param string $filePath Absolute path or path relative to storage/app/public
+     * @param string|null $originalExtension Optional original extension (useful for .tmp uploads)
      * @return string|null Extracted text or null on failure
      */
-    public function extractText(string $filePath): ?string
+    public function extractText(string $filePath, ?string $originalExtension = null): ?string
     {
         if (!file_exists($filePath)) {
             Log::error("FileExtractionService: File not found at {$filePath}");
             return null;
         }
 
-        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $extension = $originalExtension 
+            ? strtolower($originalExtension) 
+            : strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+        // Strip leading dot if accidentally provided
+        $extension = ltrim($extension, '.');
 
         try {
             return match ($extension) {

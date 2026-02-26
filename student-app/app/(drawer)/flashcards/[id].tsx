@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,11 +50,11 @@ function FlashcardItem({ card, isActive }: { card: Card; isActive: boolean }) {
             <TouchableOpacity activeOpacity={0.9} onPress={handleFlip} style={{ flex: 0.8 }}>
                 {/* FRONT */}
                 <Animated.View style={[frontAnimatedStyle, {
-                    flex: 1, backgroundColor: 'white', borderRadius: 32, padding: 32,
+                    flex: 1, borderRadius: 32, padding: 32,
                     justifyContent: 'center', alignItems: 'center',
                     shadowColor: '#6366f1', shadowOpacity: 0.15, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 10,
                     borderWidth: 1, borderColor: '#e0e7ff'
-                }]} className="dark:bg-slate-800 dark:border-slate-700">
+                }]} className="bg-white dark:bg-slate-800 dark:border-slate-700">
                     <View style={{ position: 'absolute', top: 24, right: 24 }}>
                         <Ionicons name="sparkles" size={24} color="#c7d2fe" />
                     </View>
@@ -102,7 +102,6 @@ export default function StudyDeckScreen() {
 
     if (isLoading) return (
         <View className="flex-1 bg-slate-50 dark:bg-brand-dark justify-center items-center">
-            <Stack.Screen options={{ title: 'Loading...', headerStyle: { backgroundColor: '#010100' }, headerTintColor: '#fff' }} />
             <ActivityIndicator size="large" color="#4f46e5" />
         </View>
     );
@@ -138,13 +137,7 @@ export default function StudyDeckScreen() {
 
     return (
         <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
-            <Stack.Screen options={{
-                title: deck.title,
-                headerShown: true,
-                headerBackTitle: 'Back',
-                headerStyle: { backgroundColor: '#010100' },
-                headerTintColor: '#fff'
-            }} />
+            <Stack.Screen options={{ title: deck.title || 'Study Deck' }} />
 
             {/* Progress Bar */}
             <View className="px-6 pt-6 pb-2">
@@ -188,8 +181,7 @@ export default function StudyDeckScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    onPress={nextCard}
-                    disabled={currentIndex === cards.length - 1}
+                    onPress={currentIndex === cards.length - 1 ? () => router.back() : nextCard}
                     className={`flex-1 rounded-full py-4 items-center justify-center ${currentIndex === cards.length - 1 ? 'bg-emerald-500' : 'bg-slate-900 border-2 border-slate-900'}`}
                     activeOpacity={0.8}
                 >

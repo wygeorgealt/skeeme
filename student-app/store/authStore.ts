@@ -12,6 +12,17 @@ interface User {
         longest_streak: number;
         last_study_date: string | null;
     };
+    pricing?: {
+        amount: string;
+        currency: string;
+        period: string;
+    };
+    ai_preferences?: {
+        education_level?: string;
+        field_of_study?: string;
+        learning_style?: string;
+        tone?: string;
+    };
 }
 
 interface AuthState {

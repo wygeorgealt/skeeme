@@ -71,4 +71,8 @@ return [
         'api_key' => env('MAILTRAP_API_KEY'),
     ],
 
+    'optiic' => [
+        'api_key' => env('OPTIIC_API_KEY'),
+    ],
+
 ];

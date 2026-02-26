@@ -8,9 +8,28 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { QueryProvider } from '@/components/QueryProvider';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold, Inter_900Black } from '@expo-google-fonts/inter';
-import { useColorScheme as useNativeColorScheme } from 'react-native';
+import { useColorScheme as useNativeColorScheme, LogBox } from 'react-native';
 import { cssInterop } from 'nativewind';
 import { useColorScheme as useTailwindColorScheme } from 'nativewind';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+
+cssInterop(LinearGradient, {
+  className: 'style',
+});
+
+// @ts-ignore
+cssInterop(Ionicons, {
+  className: {
+    target: 'style',
+    nativeStyleToProp: {
+      color: true,
+      size: true,
+    },
+  },
+});
+
+LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
 
 SplashScreen.preventAutoHideAsync();
 
@@ -60,12 +79,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     const storeTheme = useAuthStore.getState().theme;
-    if (storeTheme === 'system') {
+    if (storeTheme === 'system' || !storeTheme) {
       setTailwindScheme(systemTheme || 'light');
     } else {
-      setTailwindScheme(storeTheme);
+      setTailwindScheme(storeTheme as 'light' | 'dark');
     }
-  }, [systemTheme, useAuthStore.getState().theme]);
+  }, [systemTheme]);
 
   if (!fontsLoaded || isLoading) {
     return null;
@@ -77,7 +96,10 @@ export default function RootLayout() {
         <ThemeProvider value={tailwindScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
+            <Stack.Screen name="signup" options={{ headerShown: false, animation: 'fade' }} />
+            <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="(drawer)" options={{ headerShown: false, animation: 'fade' }} />
+            <Stack.Screen name="upgrade" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', headerShown: false }} />
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />

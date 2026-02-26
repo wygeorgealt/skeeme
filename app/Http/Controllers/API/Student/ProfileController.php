@@ -19,6 +19,8 @@ class ProfileController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
+            'first_name' => 'sometimes|nullable|string|max:100',
+            'last_name' => 'sometimes|nullable|string|max:100',
             'phone_number' => 'sometimes|nullable|string|max:20',
         ]);
 
@@ -29,6 +31,8 @@ class ProfileController extends Controller
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
                 'email' => $user->email,
                 'phone_number' => $user->phone_number,
                 'credits' => $user->credits,

@@ -1,14 +1,17 @@
 import { Drawer } from 'expo-router/drawer';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { router } from 'expo-router';
-import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
-import { GradientButton } from '@/components/ui/GradientButton';
+import { router, usePathname } from 'expo-router';
+import { DrawerContentScrollView } from '@react-navigation/drawer';
 
 function CustomDrawerContent(props: any) {
     const { user, logout } = useAuthStore();
+    const { colorScheme } = require('nativewind').useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const iconColor = isDark ? '#ffffff' : '#0f172a';
+    const pathname = usePathname();
 
     const handleLogout = async () => {
         try {
@@ -21,109 +24,110 @@ function CustomDrawerContent(props: any) {
         }
     };
 
+    const NavItem = ({ icon, label, route }: { icon: any, label: string, route: string }) => {
+        const isActive = pathname === route || (pathname.startsWith(route + '/') && route !== '/');
+        const isRootActive = pathname === '/' && route === '/';
+        const active = isActive || isRootActive;
+
+        return (
+            <TouchableOpacity
+                onPress={() => router.push(route as any)}
+                className="px-6 py-4 flex-row items-center"
+            >
+                <Ionicons name={icon} size={22} color={iconColor} style={{ opacity: active ? 1 : 0.7 }} />
+                <Text className={`ml-5 font-semibold text-[15px] ${isDark ? 'text-white' : 'text-slate-900'}`} style={{ opacity: active ? 1 : 0.8 }}>
+                    {label}
+                </Text>
+            </TouchableOpacity>
+        );
+    };
+
     return (
-        <View className="flex-1 bg-brand-dark pt-10">
-            <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 0 }}>
-
+        <View className="flex-1 bg-white dark:bg-[#010100]">
+            <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 40, paddingBottom: 20 }}>
                 {/* Profile Header section */}
-                <View className="px-5 py-6 border-b border-white/5">
-                    <View className="flex-row items-center mb-3">
-                        <View className="size-12 rounded-full bg-indigo-600 items-center justify-center mr-3 border-2 border-slate-800">
-                            <Text className="text-white font-black text-lg">
-                                {user?.name?.charAt(0).toUpperCase() || 'S'}
-                            </Text>
-                        </View>
-                        <View className="flex-1">
-                            <Text className="text-white font-bold text-base" numberOfLines={1}>{user?.name}</Text>
-                            <Text className="text-slate-400 font-medium text-xs" numberOfLines={1}>{user?.email}</Text>
-                        </View>
-                    </View>
-
-                    <View className="flex-row items-center bg-slate-800 self-start px-3 py-1 rounded-full">
-                        <Ionicons name="flash" size={12} color="#fbbf24" />
-                        <Text className="text-slate-300 font-bold text-xs ml-1">
-                            {user?.is_unlimited ? 'Pro Server' : 'Free Tier'}
+                <View className="px-6 mb-6">
+                    <View className="size-20 rounded-full bg-indigo-600 items-center justify-center mb-4 border-4 border-slate-50 dark:border-[#111111] overflow-hidden shadow-sm shadow-slate-200 dark:shadow-none">
+                        <Text className="text-white font-black text-3xl">
+                            {user?.name?.charAt(0).toUpperCase() || 'S'}
                         </Text>
                     </View>
+                    <Text className="text-slate-900 dark:text-white font-bold text-2xl mb-1" numberOfLines={1}>{user?.name}</Text>
+                    <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm" numberOfLines={1}>{user?.email}</Text>
+                </View>
 
-                    {!user?.is_unlimited && (
-                        <View className="flex-row items-center bg-slate-800/50 self-start px-3 py-1 rounded-full mt-2">
-                            <Ionicons name="wallet-outline" size={11} color="#a5b4fc" />
-                            <Text className="text-indigo-300 font-bold text-xs ml-1">
-                                {user?.credits ?? 0} credits
-                            </Text>
+                {/* Divider exactly like image */}
+                <View className="h-[1px] bg-slate-100 dark:bg-white/10 mx-6 mb-4" />
+
+                {/* Nav Items */}
+                <NavItem icon="home-outline" label="Dashboard" route="/" />
+                <NavItem icon="scan-outline" label="Scan & Solve" route="/scan" />
+                <NavItem icon="sparkles-outline" label="AI Practice Quiz" route="/generate" />
+                <NavItem icon="albums-outline" label="Flashcards" route="/flashcards" />
+                <NavItem icon="time-outline" label="Quiz History" route="/history" />
+                <NavItem icon="settings-outline" label="Account & Settings" route="/account" />
+                <NavItem icon="color-wand-outline" label="Personalize AI" route="/preferences" />
+
+                {/* Equivalent of "Send a Gift / $10" in the image -> Credits */}
+                <TouchableOpacity
+                    onPress={() => router.push('/upgrade')}
+                    className="px-6 py-4 flex-row items-center justify-between"
+                >
+                    <View className="flex-row items-center">
+                        <Ionicons name="wallet-outline" size={22} color={iconColor} style={{ opacity: 0.7 }} />
+                        <Text className={`ml-5 font-semibold text-[15px] ${isDark ? 'text-white' : 'text-slate-900'}`} style={{ opacity: 0.8 }}>
+                            {user?.is_unlimited ? 'Pro Plan' : 'Credits'}
+                        </Text>
+                    </View>
+                    {user?.is_unlimited ? (
+                        <View className="bg-amber-400 px-3 py-1 rounded-full">
+                            <Text className="text-amber-900 font-bold text-[11px]">∞</Text>
+                        </View>
+                    ) : (
+                        <View className="bg-amber-400 px-3 py-1 rounded-full text-center">
+                            <Text className="text-amber-900 font-extrabold text-[12px]">{user?.credits ?? 0}</Text>
                         </View>
                     )}
-                </View>
-
-                {/* Study Tools */}
-                <View className="px-5 mt-2 mb-2">
-                    <Text className="text-slate-500 font-bold text-xs uppercase tracking-wider mb-3">Study Tools</Text>
-
-                    <GradientButton
-                        onPress={() => router.push('/generate')}
-                        className="py-3 px-4"
-                        containerStyle="mb-3"
-                        icon={<Ionicons name="sparkles" size={18} color="white" />}
-                    >
-                        AI Practice Quiz
-                    </GradientButton>
-
-                    <TouchableOpacity
-                        onPress={() => router.push('/flashcards')}
-                        className="bg-emerald-600 flex-row items-center py-3 px-4 rounded-xl mb-4 shadow-sm shadow-emerald-500/20"
-                    >
-                        <Ionicons name="albums" size={18} color="white" />
-                        <Text className="text-white font-black ml-3">Flashcards</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Existing Routes */}
-                <View className="px-2">
-                    <DrawerItemList {...props} />
-                </View>
-
+                </TouchableOpacity>
             </DrawerContentScrollView>
 
-            {/* Footer */}
-            <View className="border-t border-white/5 p-4">
+            {/* Footer with Sign Out like image */}
+            <View className="p-6 pb-12 mt-2">
                 <TouchableOpacity
                     onPress={handleLogout}
-                    className="flex-row items-center p-3 rounded-xl"
+                    className="bg-[#f1f5f9] dark:bg-[#111111] rounded-full py-[14px] items-center justify-center"
                     activeOpacity={0.7}
                 >
-                    <Ionicons name="log-out-outline" size={22} color="#ef4444" />
-                    <Text className="text-red-500 font-bold ml-3">Sign Out</Text>
+                    <Text className="text-slate-900 dark:text-slate-300 font-bold text-[14px]">Sign out</Text>
                 </TouchableOpacity>
-                <Text className="text-slate-600 text-[10px] font-medium text-center mt-2">Skeeme v1.0.0</Text>
             </View>
         </View>
     );
 }
 
 export default function DrawerLayout() {
+    const { colorScheme } = require('nativewind').useColorScheme();
+    const isDark = colorScheme === 'dark';
+
+    const bgColor = isDark ? '#010100' : '#ffffff';
+    const drawerBg = isDark ? '#010100' : '#ffffff';
+    const tintColor = isDark ? '#fff' : '#0f172a';
+
     return (
         <Drawer
             drawerContent={(props) => <CustomDrawerContent {...props} />}
             screenOptions={{
+                headerTitle: '', // Keep the hamburger icon, but remove text titles
                 headerStyle: {
-                    backgroundColor: '#010100',
+                    backgroundColor: bgColor,
                     borderBottomWidth: 0,
                     elevation: 0,
                     shadowOpacity: 0,
                 },
-                headerTintColor: '#fff',
+                headerTintColor: tintColor,
                 drawerStyle: {
-                    backgroundColor: '#010100',
-                    width: 300,
-                },
-                drawerActiveBackgroundColor: '#111111',
-                drawerActiveTintColor: '#fff',
-                drawerInactiveTintColor: '#94a3b8', // slate-400
-                drawerLabelStyle: {
-                    fontFamily: 'Inter_500Medium',
-                    fontSize: 15,
-                    marginLeft: -10,
+                    backgroundColor: drawerBg,
+                    width: '85%',
                 },
             }}>
 
@@ -152,21 +156,20 @@ export default function DrawerLayout() {
             />
 
             <Drawer.Screen
-                name="upgrade"
-                options={{
-                    title: 'Get Unlimited Pro',
-                    drawerIcon: ({ color }) => <Ionicons name="star-outline" size={22} color={color} />,
-                    headerTitle: 'Upgrade Plan',
-                }}
-            />
-
-            <Drawer.Screen
                 name="account"
                 options={{
                     title: 'Account & Settings',
                     drawerIcon: ({ color }) => <Ionicons name="settings-outline" size={22} color={color} />,
                 }}
             />
-        </Drawer>
+
+            <Drawer.Screen
+                name="preferences"
+                options={{
+                    title: 'Personalize AI',
+                    drawerIcon: ({ color }) => <Ionicons name="color-wand-outline" size={22} color={color} />,
+                }}
+            />
+        </Drawer >
     );
 }

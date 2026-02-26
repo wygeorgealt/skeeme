@@ -24,10 +24,12 @@ class IndividualSubscriptionController extends Controller
     {
         $validated = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
-            'subscription_type' => ['required', 'string'],
+            'plan_name' => ['required', 'string', 'in:Free,Standard,Elite'],
+            'billing_cycle' => ['required', 'in:monthly,yearly'],
+            'price' => ['required', 'numeric'],
             'status' => ['required', 'in:active,inactive,expired'],
-            'started_at' => ['nullable', 'date'],
-            'expires_at' => ['nullable', 'date'],
+            'start_date' => ['required', 'date'],
+            'expiry_date' => ['nullable', 'date'],
         ]);
 
         $subscription = IndividualSubscription::create($validated);

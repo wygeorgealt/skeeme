@@ -92,7 +92,7 @@ class StudentAiProduct extends Component
 
             // Handle File Extraction if present
             if ($this->file) {
-                $sourceContent = $extractionService->extractText($this->file->getRealPath());
+                $sourceContent = $extractionService->extractText($this->file->getRealPath(), $this->file->getClientOriginalExtension());
                 
                 if (!$sourceContent) {
                     throw new \Exception("Could not extract text from the uploaded file.");

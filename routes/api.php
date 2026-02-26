@@ -121,6 +121,7 @@ Route::prefix('v1')->group(function () {
     // Student Mobile App API
     Route::prefix('student')->group(function () {
         Route::post('login', [\App\Http\Controllers\API\Student\AuthController::class, 'login']);
+        Route::post('register', [\App\Http\Controllers\API\Student\AuthController::class, 'register']);
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('logout', [\App\Http\Controllers\API\Student\AuthController::class, 'logout']);
@@ -151,6 +152,11 @@ Route::prefix('v1')->group(function () {
             
             Route::patch('profile', [\App\Http\Controllers\API\Student\ProfileController::class, 'update']);
             Route::post('profile/password', [\App\Http\Controllers\API\Student\ProfileController::class, 'updatePassword']);
+
+            Route::post('preferences', [\App\Http\Controllers\API\Student\AuthController::class, 'updatePreferences']);
+
+            // Scan & Solve (Camera AI)
+            Route::post('scan/solve', [\App\Http\Controllers\API\Student\ScanController::class, 'solve']);
         });
     });
 

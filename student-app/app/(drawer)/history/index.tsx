@@ -90,13 +90,15 @@ export default function QuizHistoryDashboard() {
                         <Text className="text-slate-500 dark:text-slate-400 text-center px-4 mb-6">
                             Complete a practice quiz to see your results and review answers here.
                         </Text>
-                        <GradientButton
-                            onPress={() => router.push('/generate')}
-                            icon={<Ionicons name="arrow-forward" size={16} color="white" />}
-                            className="px-6 py-3"
-                        >
-                            Take a Quiz
-                        </GradientButton>
+                        <View className="w-full px-8 items-center mt-2">
+                            <GradientButton
+                                onPress={() => router.push('/generate')}
+                                icon={<Ionicons name="arrow-forward" size={16} color="white" />}
+                                className="px-6 py-3"
+                            >
+                                Take a Quiz
+                            </GradientButton>
+                        </View>
                     </View>
                 ) : (
                     sessions?.map(session => (

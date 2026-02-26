@@ -3,7 +3,10 @@ import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import { QuizShareCard } from '@/components/QuizShareCard';
 
 type QuizQuestionItem = {
     id: number;
@@ -102,6 +105,12 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
 
 export default function QuizHistoryDetailScreen() {
     const { id } = useLocalSearchParams();
+    const { colorScheme } = require('nativewind').useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const bgColor = isDark ? '#010100' : '#f8fafc';
+    const tintColor = isDark ? '#fff' : '#0f172a';
+    const [isSharing, setIsSharing] = useState(false);
+    const viewShotRef = useRef<View>(null);
 
     const { data: session, isLoading } = useQuery({
         queryKey: ['quiz-history', id],
@@ -113,7 +122,7 @@ export default function QuizHistoryDetailScreen() {
 
     if (isLoading) return (
         <View className="flex-1 bg-slate-50 dark:bg-brand-dark justify-center items-center">
-            <Stack.Screen options={{ title: 'Loading...', headerStyle: { backgroundColor: '#010100' }, headerTintColor: '#fff' }} />
+            <Stack.Screen options={{ title: 'Loading...', headerStyle: { backgroundColor: bgColor }, headerTintColor: tintColor, headerBackVisible: false, headerShadowVisible: false }} />
             <ActivityIndicator size="large" color="#4f46e5" />
         </View>
     );
@@ -133,10 +142,21 @@ export default function QuizHistoryDetailScreen() {
             <Stack.Screen options={{
                 title: 'Quiz Results',
                 headerShown: true,
-                headerBackTitle: 'Back',
-                headerStyle: { backgroundColor: '#010100' },
-                headerTintColor: '#fff'
+                headerBackVisible: false,
+                headerShadowVisible: false,
+                headerStyle: { backgroundColor: bgColor },
+                headerTintColor: tintColor
             }} />
+
+            {/* Hidden capture view for sharing */}
+            <View style={{ position: 'absolute', left: -9999, top: -9999 }}>
+                <View ref={viewShotRef} collapsable={false}>
+                    <QuizShareCard
+                        topic={session.topic}
+                        percentage={Math.round(session.score_percentage)}
+                    />
+                </View>
+            </View>
 
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
                 {/* Result Overview Card */}
@@ -149,7 +169,7 @@ export default function QuizHistoryDetailScreen() {
                         {session.topic}
                     </Text>
 
-                    <View className="flex-row items-center justify-center space-x-4 w-full pt-4 border-t border-slate-200/50 dark:border-slate-700/50">
+                    <View className="flex-row items-center justify-center space-x-4 w-full pt-4 border-t border-slate-200/50 dark:border-slate-700/50 mb-4">
                         <View className="items-center">
                             <Text className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase mb-1">Correct</Text>
                             <Text className="text-slate-700 dark:text-slate-300 font-bold">{session.correct_answers}/{session.total_questions}</Text>
@@ -171,6 +191,30 @@ export default function QuizHistoryDetailScreen() {
                             </>
                         )}
                     </View>
+
+                    <TouchableOpacity
+                        onPress={async () => {
+                            if (!viewShotRef.current) return;
+                            setIsSharing(true);
+                            try {
+                                const uri = await captureRef(viewShotRef.current, { format: 'png', quality: 1.0 });
+                                await Sharing.shareAsync(uri);
+                            } catch (e) {
+                                console.error(e);
+                            } finally {
+                                setIsSharing(false);
+                            }
+                        }}
+                        disabled={isSharing}
+                        className="flex-row items-center bg-indigo-600 px-6 py-3 rounded-2xl shadow-sm shadow-indigo-300 active:opacity-90"
+                    >
+                        {isSharing ? (
+                            <ActivityIndicator size="small" color="white" className="mr-2" />
+                        ) : (
+                            <Ionicons name="share-social" size={18} color="white" className="mr-2" />
+                        )}
+                        <Text className="text-white font-bold">{isSharing ? 'Generating...' : 'Share Results'}</Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Questions List */}

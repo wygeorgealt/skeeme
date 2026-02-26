@@ -11,12 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('flashcards')) {
-            Schema::create('flashcards', function (Blueprint $table) {
-                $table->id();
-                $table->timestamps();
-            });
-        }
+        Schema::table('users', function (Blueprint $table) {
+            $table->json('ai_preferences')->nullable()->after('password');
+        });
     }
 
     /**
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('flashcards');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('ai_preferences');
+        });
     }
 };

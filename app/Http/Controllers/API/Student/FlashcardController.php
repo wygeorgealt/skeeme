@@ -54,12 +54,16 @@ class FlashcardController extends Controller
      */
     public function generate(Request $request)
     {
+        Log::info("Flashcard Generation Started", $request->except(['file']));
+
         $validated = $request->validate([
             'topic'          => 'nullable|string|max:255',
             'file'           => 'nullable|file|mimes:pdf,doc,docx,txt,md|max:5120',
             'card_count'     => 'required|integer|min:5|max:50',
             'difficulty'     => 'nullable|string|in:easy,medium,hard,mixed',
         ]);
+        
+        Log::info("Validation Passed");
 
         if (empty($validated['topic']) && !$request->hasFile('file')) {
             return response()->json(['message' => 'Please provide a topic or upload a file.'], 422);
@@ -72,19 +76,32 @@ class FlashcardController extends Controller
 
         // 1. Extract content if file provided
         if ($request->hasFile('file')) {
+            Log::info("Processing File Upload");
             $sourceType = 'file';
             $file = $request->file('file');
-            $title = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            // Decode URL-encoded names (e.g. "My%20File.pdf" -> "My File")
+            $title = urldecode(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
             
             try {
                 $sourceContent = $this->extractionService->extractText($file->getPathname(), $file->getClientOriginalExtension());
                 if (empty(trim($sourceContent))) {
+                    Log::error("Text extraction failed for flashcards.");
                     return response()->json(['message' => 'Could not extract text from this file. Try a different document.'], 422);
                 }
+                Log::info("Text Extracted", ['length' => strlen($sourceContent)]);
+                
+                // Upload to R2 for persistent storage
+                $safeName = time() . '_' . \Str::slug($title) . '.' . $file->getClientOriginalExtension();
+                Log::info("Uploading to R2...", ['name' => $safeName]);
+                $r2Path = $file->storeAs('student-uploads/flashcards/' . $user->id, $safeName, config('filesystems.default'));
+                Log::info("R2 Upload Success", ['path' => $r2Path]);
+                
             } catch (\Exception $e) {
                 Log::error("File extraction failed in Flashcards: " . $e->getMessage());
                 return response()->json(['message' => 'Failed to read file: ' . $e->getMessage()], 422);
             }
+        } else {
+            Log::info("Processing Topic", ['topic' => $sourceContent]);
         }
 
         // 2. Calculate dynamic cost
@@ -98,9 +115,11 @@ class FlashcardController extends Controller
         };
         $baseContentCost = max(floor($wordCount / 500), 1);
         $totalCost = (int) ceil(($validated['card_count'] * $costPerQuestion) + $baseContentCost);
+        Log::info("Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount]);
 
         // 3. Check credits
         if (!$user->is_unlimited && $user->credits < $totalCost) {
+            Log::warning("Insufficient Credits", ['user_id' => $user->id, 'credits' => $user->credits, 'needed' => $totalCost]);
             return response()->json([
                 'message' => "Insufficient credits. Generating this deck requires ~$totalCost credits.",
                 'required' => $totalCost,
@@ -109,6 +128,7 @@ class FlashcardController extends Controller
         }
 
         // 4. Generate Cards
+        Log::info("Calling Deepseek AI...");
         try {
             $cardsData = $this->aiService->generateFlashcards(
                 [$sourceContent],
@@ -156,8 +176,10 @@ class FlashcardController extends Controller
             app(StreakService::class)->logActivity($user->id);
 
             // Return full deck with cards
+            Log::info("Flashcard Generation Success", ['deck_id' => $deck->id, 'cards' => count($cardsToInsert)]);
             return response()->json([
                 'data' => $deck->load('flashcards'),
+                'deck_id' => $deck->id,
                 'remaining_credits' => $user->credits,
             ]);
 

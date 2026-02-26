@@ -13,6 +13,9 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { Stack } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import { QuizShareCard } from '@/components/QuizShareCard';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type QuizMode = 'topic' | 'file';
@@ -46,14 +49,15 @@ const DIFF_COLORS: Record<string, string> = {
 // Front: question + options  |  Back: explanation panel
 // ──────────────────────────────────────────────────────────────────────────────
 function QuizFlipCard({
-    front, back, isFlipped, minHeight,
+    front, back, isFlipped
 }: {
     front: React.ReactNode;
     back: React.ReactNode;
     isFlipped: boolean;
-    minHeight: number;
 }) {
     const rot = useSharedValue(0);
+    const [frontHeight, setFrontHeight] = useState(0);
+    const [backHeight, setBackHeight] = useState(0);
 
     useEffect(() => {
         rot.value = withTiming(isFlipped ? 1 : 0, { duration: 500 });
@@ -67,6 +71,7 @@ function QuizFlipCard({
         backfaceVisibility: 'hidden',
         position: 'absolute',
         top: 0, left: 0, right: 0,
+        zIndex: isFlipped ? 0 : 1,
     }));
 
     const backStyle = useAnimatedStyle(() => ({
@@ -77,12 +82,20 @@ function QuizFlipCard({
         backfaceVisibility: 'hidden',
         position: 'absolute',
         top: 0, left: 0, right: 0,
+        zIndex: isFlipped ? 1 : 0,
     }));
 
+    // Give a nice default min block so it doesn't snap to 0 immediately
+    const containerHeight = Math.max(frontHeight, backHeight, 150);
+
     return (
-        <View style={{ minHeight }}>
-            <Animated.View style={frontStyle}>{front}</Animated.View>
-            <Animated.View style={backStyle}>{back}</Animated.View>
+        <View style={{ minHeight: containerHeight }}>
+            <Animated.View style={frontStyle} pointerEvents={isFlipped ? 'none' : 'auto'} onLayout={(e) => setFrontHeight(e.nativeEvent.layout.height)}>
+                {front}
+            </Animated.View>
+            <Animated.View style={backStyle} pointerEvents={isFlipped ? 'auto' : 'none'} onLayout={(e) => setBackHeight(e.nativeEvent.layout.height)}>
+                {back}
+            </Animated.View>
         </View>
     );
 }
@@ -102,9 +115,6 @@ function MCQCard({
     const [flipped, setFlipped] = useState(false);
     const answered = selectedAnswer !== undefined;
     const isCorrect = selectedAnswer === q.correct_answer;
-
-    // Estimate height: header + options
-    const estimatedFrontH = 120 + q.options.length * 64;
 
     const { colorScheme } = require('nativewind').useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -190,7 +200,6 @@ function MCQCard({
                 front={front}
                 back={back}
                 isFlipped={flipped}
-                minHeight={estimatedFrontH}
             />
         </View>
     );
@@ -299,6 +308,10 @@ function TheoryCard({
 // ══════════════════════════════════════════════════════════════════════════════
 export default function GenerateQuizScreen() {
     const { updateUser } = useAuthStore();
+    const { colorScheme } = require('nativewind').useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const bgColor = isDark ? '#010100' : '#f8fafc';
+    const tintColor = isDark ? '#fff' : '#0f172a';
 
     // Setup state
     const [mode, setMode] = useState<QuizMode>('topic');
@@ -315,6 +328,8 @@ export default function GenerateQuizScreen() {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
     const [theoryResults, setTheoryResults] = useState<Record<number, boolean>>({});
+    const [isSharing, setIsSharing] = useState(false);
+    const viewShotRef = useRef<View>(null);
 
     // Timer
     const [timeLeft, setTimeLeft] = useState(0);
@@ -332,6 +347,23 @@ export default function GenerateQuizScreen() {
         }, 1000);
     }, []);
 
+    const handleShare = async () => {
+        if (!viewShotRef.current) return;
+        setIsSharing(true);
+        try {
+            const uri = await captureRef(viewShotRef.current, {
+                format: 'png',
+                quality: 1.0,
+            });
+            await Sharing.shareAsync(uri);
+        } catch (e) {
+            console.error('Sharing failed', e);
+            Alert.alert('Sharing failed', 'Could not generate result image.');
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
     useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
     // File picker
@@ -342,7 +374,17 @@ export default function GenerateQuizScreen() {
                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
                 copyToCacheDirectory: false,
             });
-            if (!r.canceled && r.assets?.length) { setSelectedFile(r.assets[0]); setMode('file'); setTopic(''); }
+            if (!r.canceled && r.assets?.length) {
+                const asset = r.assets[0];
+                // 2MB size limit to prevent huge processing costs or timeouts
+                if (asset.size && asset.size > 2 * 1024 * 1024) {
+                    Alert.alert('File too large', 'Please upload a file smaller than 2MB. Ensure it contains extractable text, not just scanned images.');
+                    return;
+                }
+                setSelectedFile(asset);
+                setMode('file');
+                setTopic('');
+            }
         } catch { Alert.alert('Error', 'Failed to pick document.'); }
     };
 
@@ -427,7 +469,7 @@ export default function GenerateQuizScreen() {
     if (questions.length === 0) {
         return (
             <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
-                <Stack.Screen options={{ title: 'AI Practice Quiz', headerShown: true, headerBackTitle: 'Back', headerStyle: { backgroundColor: '#010100' }, headerTintColor: '#fff' }} />
+                <Stack.Screen options={{ title: 'AI Practice Quiz', headerShown: true, headerBackVisible: false, headerStyle: { backgroundColor: bgColor }, headerTintColor: tintColor, headerShadowVisible: false }} />
                 <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
 
                     {/* Source card */}
@@ -440,7 +482,8 @@ export default function GenerateQuizScreen() {
                             <View className="flex-row bg-slate-100 dark:bg-brand-dark rounded-xl p-1">
                                 {(['topic', 'file'] as QuizMode[]).map(m => (
                                     <TouchableOpacity key={m} onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                        className={`px-3 py-1.5 rounded-lg ${mode === m ? 'bg-white dark:bg-slate-800 shadow-sm' : ''}`}>
+                                        className={`px-3 py-1.5 rounded-lg ${mode === m ? 'bg-white dark:bg-slate-800' : ''}`}
+                                        style={mode === m ? { shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 1 } : {}}>
                                         <Text className={`font-bold text-[11px] capitalize ${mode === m ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`}>{m}</Text>
                                     </TouchableOpacity>
                                 ))}
@@ -454,7 +497,7 @@ export default function GenerateQuizScreen() {
                         ) : (
                             <>
                                 <Text style={styles.label}>Upload study material</Text>
-                                <TouchableOpacity onPress={handleFileSelect} className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-5 items-center bg-slate-50 dark:bg-brand-dark/30">
+                                <TouchableOpacity onPress={handleFileSelect} className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-5 items-center bg-slate-50 dark:bg-slate-800">
                                     {selectedFile ? (
                                         <>
                                             <Ionicons name="document-text" size={28} color="#4f46e5" />
@@ -484,8 +527,8 @@ export default function GenerateQuizScreen() {
                         <View style={styles.optionRow}>
                             {(['easy', 'medium', 'hard'] as Difficulty[]).map(d => (
                                 <TouchableOpacity key={d} onPress={() => setDifficulty(d)}
-                                    className={`flex-1 border-2 rounded-xl py-3 items-center justify-center flex-row gap-1 ${difficulty === d ? '' : 'border-slate-200 dark:border-slate-700 opacity-60'}`}
-                                    style={difficulty === d ? { borderColor: DIFF_COLORS[d] } : {}}>
+                                    className={`flex-1 border-2 rounded-xl py-3 items-center justify-center flex-row gap-1 ${difficulty === d ? '' : 'border-slate-200 dark:border-slate-700'}`}
+                                    style={difficulty === d ? { borderColor: DIFF_COLORS[d] } : { opacity: 0.6 }}>
                                     <Text className="font-bold text-xs capitalize" style={{ color: difficulty === d ? DIFF_COLORS[d] : '#94a3b8' }}>{d}</Text>
                                 </TouchableOpacity>
                             ))}
@@ -495,7 +538,7 @@ export default function GenerateQuizScreen() {
                         <View style={styles.optionRow}>
                             {([{ id: 'mcq', label: 'MCQ', icon: 'list' }, { id: 'theory', label: 'Theory', icon: 'create-outline' }, { id: 'both', label: 'Both', icon: 'layers-outline' }] as any[]).map(f => (
                                 <TouchableOpacity key={f.id} onPress={() => setFormat(f.id)}
-                                    className={`flex-1 border-2 rounded-xl py-3 items-center justify-center flex-row gap-1 ${format === f.id ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-brand-dark/30'}`}>
+                                    className={`flex-1 border-2 rounded-xl py-3 items-center justify-center flex-row gap-1 ${format === f.id ? 'border-indigo-600 bg-indigo-50 dark:bg-slate-800' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900'}`}>
                                     <Ionicons name={f.icon} size={14} color={format === f.id ? '#4f46e5' : '#94a3b8'} />
                                     <Text className={`font-bold text-xs ml-1 ${format === f.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}>{f.label}</Text>
                                 </TouchableOpacity>
@@ -538,7 +581,7 @@ export default function GenerateQuizScreen() {
     // ── QUIZ VIEW ───────────────────────────────────────────────────────────────
     return (
         <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
-            <Stack.Screen options={{ title: 'AI Practice Quiz', headerShown: true, headerStyle: { backgroundColor: '#010100' }, headerTintColor: '#fff', headerLeft: () => null }} />
+            <Stack.Screen options={{ title: 'AI Practice Quiz', headerShown: true, headerStyle: { backgroundColor: bgColor }, headerTintColor: tintColor, headerBackVisible: false, headerShadowVisible: false }} />
 
             {/* Quiz header bar */}
             <View style={styles.quizBar}>
@@ -565,24 +608,51 @@ export default function GenerateQuizScreen() {
 
             {/* Sticky completion footer — always visible when quiz is done */}
             {totalAnswered === questions.length && (
-                <LinearGradient
-                    colors={['#4f46e5', '#0ea5e9']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.completionFooter}
-                >
-                    <View>
-                        <Text style={styles.completionLabel}>QUIZ COMPLETE</Text>
-                        <Text style={styles.completionScore2}>{correctCount}/{questions.length} · {Math.round((correctCount / questions.length) * 100)}%</Text>
+                <>
+                    {/* Hidden capture view for sharing */}
+                    <View style={{ position: 'absolute', left: -9999, top: -9999 }}>
+                        <View ref={viewShotRef} collapsable={false}>
+                            <QuizShareCard
+                                topic={mode === 'topic' ? topic : (selectedFile?.name || 'File Upload')}
+                                percentage={Math.round((correctCount / questions.length) * 100)}
+                            />
+                        </View>
                     </View>
-                    <TouchableOpacity
-                        onPress={() => { setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); if (timerRef.current) clearInterval(timerRef.current); }}
-                        style={styles.completionFooterBtn}
+
+                    <LinearGradient
+                        colors={['#4f46e5', '#0ea5e9']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.completionFooter}
                     >
-                        <Ionicons name="refresh" size={16} color="white" />
-                        <Text style={styles.tryAgainText}>New Quiz</Text>
-                    </TouchableOpacity>
-                </LinearGradient>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.completionLabel}>QUIZ COMPLETE</Text>
+                            <Text style={styles.completionScore2}>{correctCount}/{questions.length} · {Math.round((correctCount / questions.length) * 100)}%</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                            <TouchableOpacity
+                                onPress={handleShare}
+                                disabled={isSharing}
+                                style={styles.completionFooterBtn}
+                            >
+                                {isSharing ? (
+                                    <ActivityIndicator size="small" color="white" />
+                                ) : (
+                                    <Ionicons name="share-social" size={16} color="white" />
+                                )}
+                                <Text style={styles.tryAgainText}>{isSharing ? 'Generating...' : 'Share'}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => { setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); if (timerRef.current) clearInterval(timerRef.current); }}
+                                style={styles.completionFooterBtn}
+                            >
+                                <Ionicons name="refresh" size={16} color="white" />
+                                <Text style={styles.tryAgainText}>New Quiz</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </LinearGradient>
+                </>
             )}
         </View>
     );

@@ -6,7 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { Stack, router } from 'expo-router';
+import { router } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useQueryClient } from '@tanstack/react-query';
 import { GradientButton } from '@/components/ui/GradientButton';
@@ -78,9 +78,14 @@ export default function GenerateFlashcardScreen() {
                 updateUser({ credits: response.data.remaining_credits });
             }
 
-            // Invalidate decks list then go back
+            // Invalidate decks list then go into the new deck
             queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
-            router.back();
+
+            if (response.data?.deck_id) {
+                router.replace(`/(drawer)/flashcards/${response.data.deck_id}`);
+            } else {
+                router.back();
+            }
 
         } catch (e: any) {
             if (e.response?.status === 403) Alert.alert('Insufficient Credits', e.response.data.message);
@@ -92,14 +97,6 @@ export default function GenerateFlashcardScreen() {
 
     return (
         <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
-            <Stack.Screen options={{
-                title: 'New Deck',
-                headerShown: true,
-                headerBackTitle: 'Back',
-                headerStyle: { backgroundColor: '#010100' },
-                headerTintColor: '#fff'
-            }} />
-
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
                 {/* Source card */}
                 <View className="bg-white dark:bg-slate-800 rounded-3xl p-5 mb-4 shadow-sm shadow-slate-200 dark:shadow-none border border-slate-100 dark:border-slate-700">
@@ -110,11 +107,11 @@ export default function GenerateFlashcardScreen() {
                             </View>
                             <Text className="text-base font-black text-slate-800 dark:text-white">Material</Text>
                         </View>
-                        <View className="flex-row bg-slate-100 dark:bg-slate-700/50 rounded-xl p-1">
+                        <View style={{ flexDirection: 'row', backgroundColor: '#f1f5f9', borderRadius: 12, padding: 4 }}>
                             {(['topic', 'file'] as QuizMode[]).map(m => (
                                 <TouchableOpacity key={m} onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                    className={`px-4 py-2 rounded-lg ${mode === m ? 'bg-white dark:bg-slate-600 shadow-sm' : ''}`} activeOpacity={0.8}>
-                                    <Text className={`font-bold text-xs capitalize ${mode === m ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-400 dark:text-slate-500'}`}>{m}</Text>
+                                    style={[{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10 }, mode === m ? { backgroundColor: 'white', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 } : {}]} activeOpacity={0.8}>
+                                    <Text style={{ fontSize: 13, fontWeight: '700', textTransform: 'capitalize', color: mode === m ? '#4f46e5' : '#94a3b8' }}>{m}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -134,18 +131,28 @@ export default function GenerateFlashcardScreen() {
                     ) : (
                         <>
                             <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Upload study material</Text>
-                            <TouchableOpacity onPress={handleFileSelect} className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-6 items-center bg-slate-50 dark:bg-brand-dark/50" activeOpacity={0.7}>
+                            <TouchableOpacity onPress={handleFileSelect}
+                                style={{
+                                    borderWidth: 2,
+                                    borderStyle: 'dashed',
+                                    borderColor: '#cbd5e1',
+                                    borderRadius: 16,
+                                    padding: 24,
+                                    alignItems: 'center',
+                                    backgroundColor: '#f8fafc'
+                                }}
+                                activeOpacity={0.7}>
                                 {selectedFile ? (
                                     <>
                                         <Ionicons name="document-text" size={28} color="#4f46e5" />
-                                        <Text className="text-sm font-bold text-slate-900 dark:text-white mt-3 text-center">{selectedFile.name}</Text>
-                                        <Text className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mt-1">Tap to change</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#1e293b', marginTop: 10, textAlign: 'center' }}>{selectedFile.name}</Text>
+                                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#4f46e5', marginTop: 4 }}>Tap to change</Text>
                                     </>
                                 ) : (
                                     <>
                                         <Ionicons name="cloud-upload-outline" size={28} color="#94a3b8" />
-                                        <Text className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-3">Tap to browse files</Text>
-                                        <Text className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-1">.pdf · .docx · .txt · .md</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#64748b', marginTop: 10 }}>Tap to browse files</Text>
+                                        <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, fontWeight: '500' }}>.pdf · .docx · .txt · .md</Text>
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -166,13 +173,25 @@ export default function GenerateFlashcardScreen() {
                     />
 
                     <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Difficulty Depth</Text>
-                    <View className="flex-row gap-2 mt-1">
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
                         {(['easy', 'medium', 'hard'] as Difficulty[]).map(d => (
                             <TouchableOpacity key={d} onPress={() => setDifficulty(d)} activeOpacity={0.7}
-                                className={`flex-1 border-2 rounded-2xl py-3 items-center justify-center ${difficulty === d ? '' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-brand-dark/50'}`}
-                                style={difficulty === d ? { borderColor: DIFF_COLORS[d], backgroundColor: DIFF_COLORS[d] + '11' } : {}}>
-                                <Text className={`font-black text-xs capitalize ${difficulty === d ? '' : 'text-slate-400 dark:text-slate-500'}`}
-                                    style={difficulty === d ? { color: DIFF_COLORS[d] } : {}}>{d}</Text>
+                                style={{
+                                    flex: 1,
+                                    borderWidth: 2,
+                                    borderRadius: 16,
+                                    paddingVertical: 12,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderColor: difficulty === d ? DIFF_COLORS[d] : '#e2e8f0',
+                                    backgroundColor: difficulty === d ? DIFF_COLORS[d] + '11' : '#f8fafc'
+                                }}>
+                                <Text style={{
+                                    fontWeight: '900',
+                                    fontSize: 12,
+                                    textTransform: 'capitalize',
+                                    color: difficulty === d ? DIFF_COLORS[d] : '#94a3b8'
+                                }}>{d}</Text>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -182,7 +201,7 @@ export default function GenerateFlashcardScreen() {
                 <GradientButton
                     onPress={handleGenerate}
                     loading={isLoading}
-                    containerStyle="mt-2"
+                    containerStyle="mt-2 py-1.5"
                     icon={<Ionicons name="flash" size={18} color="white" />}
                 >
                     {isLoading ? 'Creating Deck...' : 'Generate Flashcards'}

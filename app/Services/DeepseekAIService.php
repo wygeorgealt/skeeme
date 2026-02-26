@@ -31,7 +31,8 @@ class DeepseekAIService
         array $questionTypes = ['mcq', 'true_false', 'short_answer', 'essay', 'fill_blank'],
         string $prompt = '',
         bool $includeVisuals = false,
-        ?callable $progressCallback = null
+        ?callable $progressCallback = null,
+        ?array $aiPreferences = null
     ): array {
         try {
             set_time_limit(300);
@@ -49,12 +50,12 @@ class DeepseekAIService
             if ($progressCallback) $progressCallback(30);
 
             // Build optimized prompt (fewer tokens = lower cost)
-            $prompt = $this->buildOptimizedPrompt($notes, $numberOfQuestions, $difficulty, $questionTypes, $prompt, $includeVisuals);
+            $prompt = $this->buildOptimizedPrompt($notes, $numberOfQuestions, $difficulty, $questionTypes, $prompt, $includeVisuals, $aiPreferences);
 
             if ($progressCallback) $progressCallback(50);
             
-            // Dynamic max_tokens based on count (roughly 150 tokens per question + buffer)
-            $calculatedMaxTokens = min(8000, max(1000, $numberOfQuestions * 160));
+            // Dynamic max_tokens based on count (roughly 350 tokens per question to prevent truncation)
+            $calculatedMaxTokens = min(8000, max(1500, $numberOfQuestions * 350));
 
             $response = $this->client->post(
                 $this->baseUrl . '/chat/completions',
@@ -251,10 +252,47 @@ class DeepseekAIService
 
         try {
             if ($progressCallback) $progressCallback(0, 'Calling AI...');
-            
-            $jsonString = $this->callDeepseekChat($optimizedPrompt, 'You are an expert tutor creating highly effective flashcards.');
+
+            $response = $this->client->post(
+                $this->baseUrl . '/chat/completions',
+                [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $this->apiKey,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'timeout' => 300,
+                    'json' => [
+                        'model' => 'deepseek-chat',
+                        'messages' => [
+                            [
+                                'role' => 'system',
+                                'content' => 'You are an expert tutor creating highly effective flashcards. Return only JSON.',
+                            ],
+                            [
+                                'role' => 'user',
+                                'content' => $optimizedPrompt,
+                            ],
+                        ],
+                        'temperature' => 0.5,
+                        'max_tokens' => max(1000, $numberOfCards * 200),
+                        'response_format' => ['type' => 'json_object'],
+                    ],
+                ]
+            );
+
+            $data = json_decode($response->getBody()->getContents(), true);
+
+            if (!isset($data['choices'][0]['message']['content'])) {
+                throw new \Exception('Invalid response from Deepseek API');
+            }
+
+            $jsonString = $data['choices'][0]['message']['content'];
             
             if ($progressCallback) $progressCallback(50, 'Parsing Flashcards...');
+
+            // Clean up markdown code blocks if present
+            $jsonString = preg_replace('/```(?:json)?|```/', '', $jsonString);
+            $jsonString = trim($jsonString);
 
             $decoded = json_decode($jsonString, true);
 
@@ -264,6 +302,11 @@ class DeepseekAIService
                 if (!empty($matches[0])) {
                     $decoded = json_decode($matches[0], true);
                 }
+            }
+
+            // Handle {flashcards: [...]} wrapper from JSON object mode
+            if (is_array($decoded) && isset($decoded['flashcards']) && is_array($decoded['flashcards'])) {
+                $decoded = $decoded['flashcards'];
             }
 
             if (!is_array($decoded)) {
@@ -316,6 +359,7 @@ Rules:
 1. The 'front' should be a clear, concise question, term, or concept.
 2. The 'back' must be the direct answer or definition. Keep it under 3 sentences.
 3. Output ONLY valid JSON.
+4. MATH/SCIENCE: Use proper Unicode characters for math (e.g. sec²(x), x³, √x). Do NOT use raw caret signs like sec^2.
 PROMPT;
     }
 
@@ -386,7 +430,8 @@ PROMPT;
         string $difficulty,
         array $questionTypes,
         string $userPrompt = '',
-        bool $includeVisuals = false
+        bool $includeVisuals = false,
+        ?array $aiPreferences = null
     ): string {
         // Abbreviate question types to reduce token count
         $typeMap = [
@@ -424,14 +469,41 @@ PROMPT;
             RULES FOR MATH: MUST wrap all math in $$...$$ (e.g. $$x^2$$).";
         }
 
+        // Build personalization instructions from user preferences
+        $personalization = '';
+        if ($aiPreferences) {
+            $parts = [];
+            $levelMap = ['high_school' => 'High School', 'undergraduate' => 'Undergraduate', 'masters' => 'Masters/Graduate', 'professional' => 'Professional'];
+            $styleMap = ['simple' => 'Use ultra-simple language and everyday analogies', 'detailed' => 'Give detailed academic breakdowns', 'analogies' => 'Explain with real-world analogies and examples'];
+            $toneMap = ['encouraging' => 'Be warm and encouraging', 'strict' => 'Be strict and formal', 'concise' => 'Be very concise and direct'];
+
+            if (!empty($aiPreferences['education_level'])) {
+                $parts[] = 'Level: ' . ($levelMap[$aiPreferences['education_level']] ?? $aiPreferences['education_level']);
+            }
+            if (!empty($aiPreferences['field_of_study'])) {
+                $parts[] = 'Field: ' . $aiPreferences['field_of_study'];
+            }
+            if (!empty($aiPreferences['learning_style'])) {
+                $parts[] = 'Style: ' . ($styleMap[$aiPreferences['learning_style']] ?? $aiPreferences['learning_style']);
+            }
+            if (!empty($aiPreferences['tone'])) {
+                $parts[] = 'Tone: ' . ($toneMap[$aiPreferences['tone']] ?? $aiPreferences['tone']);
+            }
+
+            if (!empty($parts)) {
+                $personalization = "\nSTUDENT PROFILE: " . implode('. ', $parts) . ". Tailor ALL questions and explanations to this profile.";
+            }
+        }
+
         // Minimal but effective prompt with focus capability
         return <<<PROMPT
-Gen EXACTLY {$numberOfQuestions} Q. Types: {$typesText}. Diff: {$diffShort}.{$focusSection}{$visualsInstruction}
+Gen EXACTLY {$numberOfQuestions} Q. Types: {$typesText}. Diff: {$diffShort}.{$focusSection}{$visualsInstruction}{$personalization}
 
 INPUT (Notes or Topic): {$notesText}
 
 Format: JSON only. Expand on topic or extract from notes.
 Language: Use ultra-simple English. Avoid ALL academic jargon and complex words. Every single word must be easy for a regular person to understand.
+Math: Use proper Unicode characters for math (e.g. sec²(x), x³, √x). Do NOT use raw caret signs like sec^2.
 Schema: [{"q":"text","t":"MC|TF|SA|ES|FB","d":"E|M|H","o":["A","B"],"c":"A","x":"why"}]
 PROMPT;
     }
@@ -441,6 +513,22 @@ PROMPT;
      */
     protected function parseQuestionsFromResponse(string $response): array
     {
+        // Clean up markdown code blocks if the AI decided to wrap the JSON
+        $cleanResponse = preg_replace('/```(?:json)?|```/', '', $response);
+        $cleanResponse = trim($cleanResponse);
+
+        // Attempt 1: Direct JSON Decode (Best for JSON Object mode)
+        $data = json_decode($cleanResponse, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            if (isset($data['questions']) && is_array($data['questions'])) {
+                return $this->formatQuestions($data['questions']);
+            }
+            if (is_array($data) && array_is_list($data)) {
+                return $this->formatQuestions($data);
+            }
+        }
+
+        // Attempt 2: Fallback Regex Extraction (In case there's surrounding text)
         $jsonPattern = '/\[[\s\S]*\]/';
         if (preg_match($jsonPattern, $response, $matches)) {
             $questions = json_decode($matches[0], true);
@@ -450,7 +538,25 @@ PROMPT;
             }
         }
 
-        throw new \Exception('Could not parse questions from response');
+        // Attempt 3: Truncated JSON Salvage (If max_tokens cut it off)
+        // Extract all complete { ... } objects from the broken array
+        preg_match_all('/\{[^{}]+\}/', $response, $objectMatches);
+        if (!empty($objectMatches[0])) {
+            $salvagedData = [];
+            foreach ($objectMatches[0] as $jsonObj) {
+                $decoded = json_decode($jsonObj, true);
+                // Ensure it has at least 'q' or 'question_text' to be considered a valid question
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && (isset($decoded['q']) || isset($decoded['question_text']))) {
+                    $salvagedData[] = $decoded;
+                }
+            }
+            if (!empty($salvagedData)) {
+                \Log::warning('DeepseekAIService: JSON was truncated, but salvaged ' . count($salvagedData) . ' valid questions.');
+                return $this->formatQuestions($salvagedData);
+            }
+        }
+
+        throw new \Exception('Could not parse questions from response. Raw: ' . substr($response, 0, 100));
     }
 
     /**
@@ -510,6 +616,165 @@ PROMPT;
         ];
 
         return $mapping[strtolower($type)] ?? 'multiple_choice';
+    }
+
+    /**
+     * Solve a question (or multiple questions) from a scanned image.
+     * Step 1: OCR the image to extract text (via OCR.space free API)
+     * Step 2: Send extracted text to DeepSeek for solving
+     */
+    public function solveFromImage(string $base64Image): array
+    {
+        try {
+            set_time_limit(120);
+
+            // ── Step 1: OCR the image ──
+            \Log::info('Step 1: Running OCR on image...');
+            $extractedText = $this->ocrFromBase64($base64Image);
+
+            if (empty(trim($extractedText))) {
+                throw new \Exception('Could not read any text from the image. Please try a clearer photo.');
+            }
+
+            \Log::info('OCR Success', ['text_length' => strlen($extractedText), 'preview' => substr($extractedText, 0, 100)]);
+
+            // ── Step 2: Solve with DeepSeek ──
+            \Log::info('Step 2: Solving with DeepSeek...');
+
+            $prompt = <<<PROMPT
+The student took a photo of an exam paper or question sheet. Here is the text extracted via OCR:
+
+"{$extractedText}"
+
+Your job:
+1. Identify ALL questions or sub-questions (e.g., 1a, 1b, Question 2, c, d) present in the text.
+2. Solve EVERY single one of them accurately and step-by-step.
+3. Handle both Math/Science and General Theory questions.
+   - For Math: Use proper Unicode math symbols (e.g. x², √x, ∫, π, θ). NEVER use raw caret notation like x^2.
+   - For Theory: Give clear, academic, yet simple explanations.
+
+RULES:
+- If a question has sub-parts (a, b, c), treat them as separate items in the list.
+- Reconstruct mangled OCR text intelligently (e.g., "dy dx" -> "dy/dx").
+- Use ultra-simple English.
+
+Return JSON only in this format:
+{
+  "results": [
+    {
+      "question": "reconstructed question text",
+      "topic": "subject area",
+      "solution": "final answer",
+      "steps": ["step 1...", "step 2..."]
+    },
+    ...
+  ]
+}
+PROMPT;
+
+            $response = $this->client->post(
+                $this->baseUrl . '/chat/completions',
+                [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $this->apiKey,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'timeout' => 120,
+                    'json' => [
+                        'model' => 'deepseek-chat',
+                        'messages' => [
+                            [
+                                'role' => 'system',
+                                'content' => 'You are a world-class tutor solving exam papers. Return only JSON.',
+                            ],
+                            [
+                                'role' => 'user',
+                                'content' => $prompt,
+                            ],
+                        ],
+                        'temperature' => 0.3,
+                        'max_tokens' => 3000, // Increased for multiple solutions
+                        'response_format' => ['type' => 'json_object'],
+                    ],
+                ]
+            );
+
+            $data = json_decode($response->getBody()->getContents(), true);
+
+            if (!isset($data['choices'][0]['message']['content'])) {
+                throw new \Exception('Invalid response from Deepseek API');
+            }
+
+            $content = $data['choices'][0]['message']['content'];
+            $decoded = json_decode($content, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $content = preg_replace('/```(?:json)?|```/', '', $content);
+                $decoded = json_decode(trim($content), true);
+            }
+
+            if (!is_array($decoded) || !isset($decoded['results'])) {
+                throw new \Exception('AI returned invalid JSON structure for multi-scan');
+            }
+
+            return $decoded;
+
+        } catch (RequestException $e) {
+            \Log::error('Scan Solve API Error: ' . $e->getMessage());
+            throw new \Exception('Failed to solve question: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            \Log::error('Scan Solve Error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * OCR: Extract text from a base64-encoded image using OCR.space (Engine 2 for Math)
+     */
+    protected function ocrFromBase64(string $base64Image): string
+    {
+        $ocrClient = new Client(['timeout' => 45]);
+
+        try {
+            $response = $ocrClient->post('https://api.ocr.space/parse/image', [
+                'headers' => [
+                    'apikey' => 'helloworld', // Free tier public key
+                ],
+                'multipart' => [
+                    [
+                        'name' => 'base64Image',
+                        'contents' => 'data:image/jpeg;base64,' . $base64Image,
+                    ],
+                    [
+                        'name' => 'language',
+                        'contents' => 'eng',
+                    ],
+                    [
+                        'name' => 'isOverlayRequired',
+                        'contents' => 'false',
+                    ],
+                    [
+                        'name' => 'OCREngine',
+                        'contents' => '2', // Engine 2 is gold for math/handwriting
+                    ],
+                ],
+            ]);
+
+            $data = json_decode($response->getBody()->getContents(), true);
+
+            if (isset($data['ParsedResults'][0]['ParsedText'])) {
+                return trim($data['ParsedResults'][0]['ParsedText']);
+            }
+
+            if (isset($data['ErrorMessage'])) {
+                \Log::error('OCR.space Error: ' . implode(', ', (array) $data['ErrorMessage']));
+            }
+
+            return '';
+        } catch (\Exception $e) {
+            \Log::error('OCR.space Request Exception: ' . $e->getMessage());
+            return '';
+        }
     }
 
     /**

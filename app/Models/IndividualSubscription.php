@@ -14,54 +14,62 @@ class IndividualSubscription extends Model
     protected $fillable = [
         'user_id',
         'plan_name',
-        'student_limit',
+        'billing_cycle',
         'price',
         'start_date',
         'expiry_date',
-        'is_active',
+        'status', // active, inactive, expired
     ];
 
     protected $casts = [
-        'student_limit' => 'integer',
         'price' => 'decimal:2',
         'start_date' => 'date',
         'expiry_date' => 'date',
-        'is_active' => 'boolean',
     ];
 
-    // Plan constants for individual lecturers
+    // Plan constants for students
     const PLAN_FREE = 'Free';
-    const PLAN_PRO = 'Pro';
+    const PLAN_STANDARD = 'Standard';
+    const PLAN_ELITE = 'Elite';
 
     const PLANS = [
         self::PLAN_FREE => [
-            'name' => 'Free Plan',
-            'course_limit' => 10,
-            'price' => 0.00,
+            'name' => 'Free',
+            'credits_monthly' => 500,
+            'price_monthly_ngn' => 0,
+            'price_monthly_usd' => 0,
             'features' => [
-                'basic_dashboard' => true,
-                'course_notes' => true,
-                'manual_exams' => true,
-                'basic_attendance' => true,
-                'email_support' => true,
-                'ai_exams' => false,
-                'unlimited_uploads' => false,
-                'advanced_analytics' => false,
+                'credits' => '500 / month',
+                'queue' => 'Standard',
+                'speed' => 'Basic',
             ],
         ],
-        self::PLAN_PRO => [
-            'name' => 'Pro Plan',
-            'course_limit' => null, // Unlimited
-            'price' => 20.00, // Base USD, can be converted
+        self::PLAN_STANDARD => [
+            'name' => 'Skeeme Standard',
+            'credits_monthly' => 5000,
+            'price_monthly_ngn' => 5000,
+            'price_yearly_ngn' => 29999,
+            'price_monthly_usd' => 12.99,
+            'price_yearly_usd' => 99.99, // Calculated as ~7.5 months
             'features' => [
-                'basic_dashboard' => true,
-                'course_notes' => true,
-                'manual_exams' => true,
-                'basic_attendance' => true,
-                'email_support' => true,
-                'ai_exams' => true,
-                'unlimited_uploads' => true,
-                'advanced_analytics' => true,
+                'credits' => '5,000 / month',
+                'queue' => 'Priority',
+                'speed' => 'Fast AI',
+                'badge' => 'Most Popular',
+            ],
+        ],
+        self::PLAN_ELITE => [
+            'name' => 'Skeeme Elite',
+            'credits_monthly' => 15000,
+            'price_monthly_ngn' => 13000,
+            'price_yearly_ngn' => 119000,
+            'price_monthly_usd' => 29.99,
+            'price_yearly_usd' => 249.99,
+            'features' => [
+                'credits' => '15,000 / month',
+                'queue' => 'Highest Priority',
+                'speed' => 'Best Performance',
+                'badge' => 'For Power Users',
             ],
         ],
     ];
@@ -79,7 +87,7 @@ class IndividualSubscription extends Model
      */
     public function isExpired(): bool
     {
-        return $this->expiry_date->isPast();
+        return $this->expiry_date && $this->expiry_date->isPast();
     }
 
     /**
@@ -87,7 +95,7 @@ class IndividualSubscription extends Model
      */
     public function isValid(): bool
     {
-        return $this->is_active && !$this->isExpired();
+        return $this->status === 'active' && !$this->isExpired();
     }
 
     /**
@@ -108,27 +116,14 @@ class IndividualSubscription extends Model
     }
 
     /**
-     * Get course limit for the plan
-     */
-    public function getCourseLimit(): ?int
-    {
-        return $this->getPlanDetails()['course_limit'] ?? null;
-    }
-
-    /**
-     * Get price for the plan
-     */
-    public function getPrice(): float
-    {
-        return $this->price ?? $this->getPlanDetails()['price'] ?? 0.00;
-    }
-
-    /**
      * Scope for active subscriptions
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true)
-                    ->where('expiry_date', '>', now());
+        return $query->where('status', 'active')
+                    ->where(function ($q) {
+                        $q->whereNull('expiry_date')
+                          ->orWhere('expiry_date', '>', now());
+                    });
     }
 }

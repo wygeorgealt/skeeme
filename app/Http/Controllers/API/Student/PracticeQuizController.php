@@ -25,55 +25,72 @@ class PracticeQuizController extends Controller
      */
     public function generate(Request $request)
     {
-        $validated = $request->validate([
-            'topic' => 'required_without:file|nullable|string|max:100',
-            'file' => 'required_without:topic|nullable|file|mimes:pdf,docx,txt,md|max:10240',
-            'question_count' => 'required|integer|min:10|max:50',
-            'question_types' => 'required|array|min:1',
-            'question_types.*' => 'in:mcq,theory',
-            'difficulty' => 'nullable|in:easy,medium,hard',
-        ]);
-
-        $user = Auth::user();
+        Log::info("Quiz Generation Started", $request->except(['file']));
 
         try {
+            // Log 1: Validation
+            $validated = $request->validate([
+                'topic' => 'required_without:file|nullable|string|max:255',
+                'file' => 'required_without:topic|nullable|file|mimes:pdf,docx,txt,md|max:10240',
+                'question_count' => 'required|integer|min:10|max:50',
+                'question_types' => 'required|array|min:1',
+                'question_types.*' => 'in:mcq,theory',
+                'difficulty' => 'nullable|in:easy,medium,hard',
+            ]);
+            Log::info("Validation Passed");
+
+            $user = Auth::user();
             $sourceContent = '';
 
-            // 1. Extract content to determine the weight and cost
+            // 1. Handle File Upload & Extraction
             if ($request->hasFile('file')) {
-                $sourceContent = $this->extractionService->extractText($request->file('file')->getRealPath());
+                Log::info("Processing File Upload");
+                $file = $request->file('file');
+                $tempPath = $file->getRealPath();
+                
+                // Extract text immediately for AI analysis
+                $sourceContent = $this->extractionService->extractText($tempPath, $file->getClientOriginalExtension());
                 if (!$sourceContent) {
+                    Log::error("Text extraction failed for path: " . $tempPath);
                     throw new \Exception("Could not extract text from the uploaded file.");
                 }
+                Log::info("Text Extracted", ['length' => strlen($sourceContent)]);
+
+                // Upload to R2 for persistent storage
+                $safeName = time() . '_' . \Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+                Log::info("Uploading to R2...", ['name' => $safeName]);
+                $r2Path = $file->storeAs('student-uploads/quizzes/' . $user->id, $safeName, config('filesystems.default'));
+                Log::info("R2 Upload Success", ['path' => $r2Path]);
             } else {
                 $sourceContent = $validated['topic'];
+                Log::info("Processing Topic", ['topic' => $sourceContent]);
             }
 
             // 2. Calculate Dynamic Cost
             $wordCount = str_word_count($sourceContent);
-            $baseCost = $validated['question_count'] * 1; // 1 credit per question
-            $weightCost = (int) ceil($wordCount / 50); // 1 credit per 50 words analyzed
+            $baseCost = $validated['question_count'] * 1; 
+            $weightCost = (int) ceil($wordCount / 50); 
             $totalCost = $baseCost + $weightCost;
-            
-            // Apply a minimum floor just in case
             if ($totalCost < 10) $totalCost = 10;
+            Log::info("Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount]);
 
-            // 3. Check Access (Credits or Unlimited)
+            // 3. Check Access
             if (!$user->is_unlimited_student && $user->credits < $totalCost) {
+                Log::warning("Insufficient Credits", ['user_id' => $user->id, 'credits' => $user->credits, 'needed' => $totalCost]);
                 return response()->json([
-                    'message' => "Insufficient credits. This specific generation costs $totalCost credits based on its length and complexity.",
+                    'message' => "Insufficient credits. This generation costs $totalCost credits.",
                     'credits' => $user->credits,
                     'required_credits' => $totalCost
                 ], 403);
             }
 
-            // 4. Map types for AI Service
+            // 4. AI Generation
+            Log::info("Calling Deepseek AI...");
             $types = [];
             foreach ($validated['question_types'] as $type) {
                 if ($type === 'mcq') $types[] = 'multiple_choice';
                 if ($type === 'theory') $types[] = 'essay';
             }
-
             $difficulty = $validated['difficulty'] ?? 'medium';
 
             $questions = $this->aiService->generateQuestions(
@@ -81,8 +98,12 @@ class PracticeQuizController extends Controller
                 $validated['question_count'],
                 $difficulty,
                 $types ?: ['multiple_choice'],
-                $validated['topic'] ?? 'Mobile Practice File'
+                $validated['topic'] ?? 'Mobile Practice File',
+                false,
+                null,
+                $user->ai_preferences
             );
+            Log::info("AI Generation Success", ['count' => count($questions)]);
 
             // 5. Cleanup Multiple Choice formatting
             foreach ($questions as &$q) {
@@ -100,6 +121,7 @@ class PracticeQuizController extends Controller
             // 6. Deduct Usage
             if (!$user->is_unlimited_student) {
                 $user->decrement('credits', $totalCost);
+                Log::info("Credits Deducted", ['new_total' => $user->fresh()->credits]);
             }
 
             return response()->json([
@@ -108,8 +130,16 @@ class PracticeQuizController extends Controller
                 'cost' => $totalCost
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning("Validation Failed", $e->errors());
+            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            Log::error("API Quiz Gen Error: " . $e->getMessage());
+            Log::error("API Quiz Gen Critical Error", [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => substr($e->getTraceAsString(), 0, 1000)
+            ]);
             return response()->json(['message' => 'Failed to generate quiz: ' . $e->getMessage()], 500);
         }
     }

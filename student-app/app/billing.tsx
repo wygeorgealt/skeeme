@@ -26,6 +26,11 @@ function SkeletonCard() {
 }
 
 export default function BillingHistoryScreen() {
+    const { colorScheme } = require('nativewind').useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const bgColor = isDark ? '#010100' : '#f8fafc';
+    const tintColor = isDark ? '#fff' : '#0f172a';
+
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['billing-history'],
         queryFn: async () => {
@@ -63,9 +68,10 @@ export default function BillingHistoryScreen() {
                 options={{
                     title: 'Billing History',
                     headerShown: true,
-                    headerBackTitle: 'Back',
-                    headerStyle: { backgroundColor: '#010100' },
-                    headerTintColor: '#fff',
+                    headerBackVisible: false,
+                    headerShadowVisible: false,
+                    headerStyle: { backgroundColor: bgColor },
+                    headerTintColor: tintColor,
                 }}
             />
 

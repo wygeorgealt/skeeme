@@ -129,6 +129,13 @@ export default function LoginScreen() {
                             containerStyle="mt-8">
                             Sign In
                         </GradientButton>
+
+                        <View className="flex-row justify-center mt-8">
+                            <Text className="text-slate-500 dark:text-slate-400 font-medium">Don't have an account? </Text>
+                            <TouchableOpacity onPress={() => router.push('/signup')}>
+                                <Text className="text-indigo-600 dark:text-indigo-400 font-bold">Sign Up</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </ScrollView>

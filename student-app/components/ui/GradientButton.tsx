@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface GradientButtonProps {
@@ -37,16 +37,19 @@ export function GradientButton({
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.gradient, style]}
-                className={`flex-row justify-center items-center px-6 ${className}`}
             >
                 {loading ? (
                     <ActivityIndicator color="white" size="small" />
                 ) : (
                     <>
-                        {icon && <React.Fragment>{icon}</React.Fragment>}
+                        {icon && (
+                            <View style={styles.iconContainer}>
+                                {icon}
+                            </View>
+                        )}
                         <Text
-                            style={textStyle}
-                            className={`text-white font-black text-lg text-center ${icon ? 'ml-2' : ''}`}
+                            style={[{ textAlign: 'center' }, textStyle]}
+                            className="text-white font-black text-lg"
                         >
                             {children}
                         </Text>
@@ -59,10 +62,14 @@ export function GradientButton({
 
 const styles = StyleSheet.create({
     gradient: {
-        width: '100%',
-        height: 56, // Match standard input height (py-4 + text-base)
+        height: 56,
+        paddingHorizontal: 24,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    iconContainer: {
+        position: 'absolute',
+        left: 20,
     },
 });

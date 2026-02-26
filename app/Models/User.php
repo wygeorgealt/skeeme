@@ -40,6 +40,7 @@ class User extends Authenticatable implements FilamentUser
         'credits',
         'is_unlimited_student',
         'last_credit_refill_at',
+        'ai_preferences',
     ];
 
     /**
@@ -67,6 +68,7 @@ class User extends Authenticatable implements FilamentUser
             'last_credit_refill_at' => 'datetime',
             'password' => 'hashed',
             'is_unlimited_student' => 'boolean',
+            'ai_preferences' => 'array',
         ];
     }
 
