@@ -44,7 +44,7 @@ export default function LoginScreen() {
         setIsLoading(true);
         try {
             console.log('[Login] Attempting sign in for:', email.trim().toLowerCase());
-            const response = await api.post('/student/login', {
+            const response = await api.post('/login', {
                 email: email.trim().toLowerCase(),
                 password,
                 device_name: `${Platform.OS}_app`,

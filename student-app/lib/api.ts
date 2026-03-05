@@ -5,7 +5,8 @@ import { useAuthStore } from '../store/authStore';
 // For local Android emulator testing pointing to Laravel Herd on host machine, use 10.0.2.2.
 // For iOS Simulator pointing to host, use localhost or 127.0.0.1.
 // A physical device needs the internal IP address of the computer running Herd.
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8000/api/v1/student';
+// Production URL for the Skeeme API
+const API_URL = 'https://skeeme.com/api/v1/student';
 
 export const api = axios.create({
     baseURL: API_URL,

@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 interface QuizShareCardProps {
     topic: string;
     percentage: number;
+    strength?: string;
+    focusArea?: string;
 }
 
 const GRADIENTS = [
@@ -96,6 +98,18 @@ export const QuizShareCard = ({ topic, percentage, strength, focusArea }: QuizSh
 
                     <View style={styles.mainQuoteBox}>
                         <Text style={styles.quoteText}>✨ {aiMessage}</Text>
+                    </View>
+
+                    {/* Performance Insights Section */}
+                    <View style={styles.insightsRow}>
+                        <View style={styles.insightCard}>
+                            <Text style={styles.insightLabel}>STRENGTH</Text>
+                            <Text style={styles.insightValue}>{strength || 'Fast Learner'}</Text>
+                        </View>
+                        <View style={styles.insightCard}>
+                            <Text style={styles.insightLabel}>FOCUS AREA</Text>
+                            <Text style={styles.insightValue}>{focusArea || 'Key Concepts'}</Text>
+                        </View>
                     </View>
 
                 </View>
@@ -306,5 +320,31 @@ const styles = StyleSheet.create({
         fontWeight: '900',
         color: '#fff',
         letterSpacing: 0.5,
+    } as TextStyle,
+    insightsRow: {
+        flexDirection: 'row',
+        width: '100%',
+        gap: 20,
+        marginBottom: 30,
+    } as ViewStyle,
+    insightCard: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        padding: 24,
+        borderRadius: 25,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    } as ViewStyle,
+    insightLabel: {
+        fontSize: 18,
+        fontWeight: '900',
+        color: 'rgba(255, 255, 255, 0.6)',
+        letterSpacing: 2,
+        marginBottom: 8,
+    } as TextStyle,
+    insightValue: {
+        fontSize: 32,
+        fontWeight: '800',
+        color: 'white',
     } as TextStyle,
 });
