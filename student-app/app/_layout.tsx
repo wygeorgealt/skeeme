@@ -4,30 +4,23 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
 import '../global.css';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { QueryProvider } from '@/components/QueryProvider';
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold, Inter_900Black } from '@expo-google-fonts/inter';
-import { useColorScheme as useNativeColorScheme, LogBox } from 'react-native';
+// Using platform system fonts (SF Pro on iOS, Roboto on Android) - no custom font loading needed
+import { useColorScheme as useNativeColorScheme, LogBox, View } from 'react-native';
 import { cssInterop } from 'nativewind';
 import { useColorScheme as useTailwindColorScheme } from 'nativewind';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import AnimatedSplash from '@/components/AnimatedSplash';
+import Animated, { FadeOut } from 'react-native-reanimated';
 
 cssInterop(LinearGradient, {
   className: 'style',
 });
+cssInterop(Ionicons, { className: 'style' as any });
 
-// @ts-ignore
-cssInterop(Ionicons, {
-  className: {
-    target: 'style',
-    nativeStyleToProp: {
-      color: true,
-      size: true,
-    },
-  },
-});
 
 LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
 
@@ -41,13 +34,10 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const { hydrate, isLoading, user } = useAuthStore();
+  const [isAnimationFinished, setIsAnimationFinished] = useState(false);
 
-  const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_700Bold,
-    Inter_900Black,
-  });
+  // System fonts: SF Pro (iOS) / Roboto (Android) — no loading needed
+  const fontsLoaded = true;
 
   const segments = useSegments();
   const router = useRouter();
@@ -62,11 +52,13 @@ export default function RootLayout() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === 'login';
+    const publicRoutes = ['login', 'signup', 'welcome'];
+    const currentSegment = segments[0] as string;
+    const isPublicRoute = publicRoutes.includes(currentSegment);
 
-    if (!user && !inAuthGroup) {
-      router.replace('/login');
-    } else if (user && inAuthGroup) {
+    if (!user && !isPublicRoute) {
+      router.replace('/welcome');
+    } else if (user && isPublicRoute) {
       router.replace('/(drawer)');
     }
   }, [user, isLoading, segments, router]);
@@ -94,10 +86,18 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryProvider>
         <ThemeProvider value={tailwindScheme === 'dark' ? DarkTheme : DefaultTheme}>
+
+          {/* High-Fidelity Animated Splash Overlay */}
+          {!isAnimationFinished && (
+            <Animated.View exiting={FadeOut.duration(500)} style={{ position: 'absolute', zIndex: 99999, width: '100%', height: '100%' }}>
+              <AnimatedSplash onFinish={() => setIsAnimationFinished(true)} />
+            </Animated.View>
+          )}
+
           <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="welcome" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="signup" options={{ headerShown: false, animation: 'fade' }} />
-            <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="(drawer)" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="upgrade" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', headerShown: false }} />
             <Stack.Screen name="+not-found" />

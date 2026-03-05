@@ -1,76 +1,93 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    ActivityIndicator,
-    Alert,
-    Image,
+    View, Text, TextInput, TouchableOpacity,
+    KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
+    ScrollView
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
-import { LinearGradient } from 'expo-linear-gradient';
+import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
+import { signInWithGoogle, signInWithApple } from '@/lib/socialAuth';
+
+// ─── REVOLUT-INSPIRED MULTI-STEP SIGNUP ────────────────────────────────────
 
 export default function SignupScreen() {
+    const router = useRouter();
+    const { login } = useAuthStore();
+
+    // Steps: 1 = Email, 2 = Password, 3 = Profile (Name)
+    const [step, setStep] = useState(1);
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [passwordConfirmation, setPasswordConfirmation] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [name, setName] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
-    const router = useRouter();
-    const { setAuth } = useAuthStore();
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSocialLoading, setIsSocialLoading] = useState(false);
+
+    const handleSocialLogin = async (provider: 'google' | 'apple') => {
+        setIsSocialLoading(true);
+        try {
+            const signInFn = provider === 'google' ? signInWithGoogle : signInWithApple;
+            const result = await signInFn();
+            if (result) {
+                login(result.user, result.token);
+                if (result.isNewUser) {
+                    router.replace('/upgrade');
+                } else {
+                    router.replace('/(drawer)');
+                }
+            }
+        } finally {
+            setIsSocialLoading(false);
+        }
+    };
+
+    const nextStep = () => {
+        if (step === 1) {
+            if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+                return Alert.alert('Invalid Email', 'Please enter a valid email address.');
+            }
+            setStep(2);
+        } else if (step === 2) {
+            if (!password || password.length < 8) {
+                return Alert.alert('Too Short', 'Password must be at least 8 characters.');
+            }
+            if (password !== confirmPassword) {
+                return Alert.alert('Mismatch', 'Passwords do not match.');
+            }
+            setStep(3);
+        }
+    };
 
     const handleSignup = async () => {
-        if (!email || !password || !passwordConfirmation) {
-            Alert.alert('Error', 'Please fill in all fields');
-            return;
-        }
-
-        if (password !== passwordConfirmation) {
-            Alert.alert('Error', 'Passwords do not match');
-            return;
-        }
-
-        if (password.length < 8) {
-            Alert.alert('Error', 'Password must be at least 8 characters');
-            return;
-        }
-
+        if (!name.trim()) return Alert.alert('Required', 'Please enter your full name.');
         setIsLoading(true);
+
         try {
-            const response = await fetch('http://localhost:8000/api/v1/student/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({
-                    name: 'Independent Student', // Placeholder until onboarding
-                    email,
-                    password,
-                    password_confirmation: passwordConfirmation,
-                    device_name: Platform.OS + ' ' + Platform.Version,
-                }),
+            const response = await api.post('/student/register', {
+                name: name.trim(),
+                email: email.trim().toLowerCase(),
+                password,
+                password_confirmation: confirmPassword,
+                device_name: `${Platform.OS}_app`,
             });
 
-            const data = await response.json();
+            const { token, user } = response.data;
+            login(user, token);
 
-            if (response.ok) {
-                await setAuth(data.user, data.token);
-                // Redirect to onboarding after successful registration
-                router.replace('/onboarding');
-            } else {
-                Alert.alert('Signup Failed', data.message || 'Something went wrong');
-            }
-        } catch (error) {
-            console.error(error);
-            Alert.alert('Error', 'Could not connect to the server');
+            // Directly push to upgrade ad post-registration per plan
+            router.replace('/upgrade');
+
+        } catch (error: any) {
+            Alert.alert(
+                'Registration Failed',
+                error.response?.data?.message || 'Check your details and try again.'
+            );
         } finally {
             setIsLoading(false);
         }
@@ -79,209 +96,193 @@ export default function SignupScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
+            className="flex-1 bg-brand-dark"
         >
-            <LinearGradient
-                colors={['#4f46e5', '#3730a3']}
-                style={StyleSheet.absoluteFill}
-            />
+            <StatusBar style="light" />
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <View style={styles.header}>
-                    <View style={styles.logoContainer}>
-                        <Image
-                            source={require('@/assets/images/icon.png')}
-                            style={styles.logo}
-                            resizeMode="contain"
-                        />
-                    </View>
-                    <Text style={styles.title}>Join Skeeme</Text>
-                    <Text style={styles.subtitle}>Start your journey to mastery today</Text>
-                </View>
+            {/* Back Button / Header Navigation */}
+            <View className="px-6 pt-16 pb-4 flex-row justify-between items-center z-10">
+                <TouchableOpacity
+                    onPress={() => step > 1 ? setStep(step - 1) : router.back()}
+                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                >
+                    <Ionicons name="arrow-back" size={24} color="white" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push('/login')}>
+                    <Ionicons name="help-circle-outline" size={24} color="white" />
+                </TouchableOpacity>
+            </View>
 
-                <View style={styles.form}>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Email Address</Text>
-                        <View style={styles.inputWrapper}>
-                            <Ionicons name="mail-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+            <ScrollView className="flex-1 px-8" keyboardShouldPersistTaps="handled">
+                {/* Step 1: Email */}
+                {step === 1 && (
+                    <AnimatedStep>
+                        <Text className="text-white text-[34px] font-black tracking-tight leading-[40px] mb-2 mt-4">
+                            Create your Skeeme account
+                        </Text>
+                        <Text className="text-slate-400 text-[15px] font-medium leading-relaxed mb-8">
+                            Enter your email address to get started.
+                        </Text>
+
+                        <View className="bg-[#2c2c2e] rounded-[16px] px-4 py-1 flex-row items-center border border-[#3a3a3c] focus:border-[#6366f1]">
                             <TextInput
-                                style={styles.input}
+                                className="flex-1 text-white font-medium text-[17px] h-[56px]"
                                 placeholder="name@example.com"
-                                placeholderTextColor="#94a3b8"
-                                value={email}
-                                onChangeText={setEmail}
+                                placeholderTextColor="#8e8e93"
                                 keyboardType="email-address"
                                 autoCapitalize="none"
-                                autoComplete="email"
+                                value={email}
+                                onChangeText={setEmail}
+                                autoFocus
                             />
+                            {email.length > 0 && (
+                                <TouchableOpacity onPress={() => setEmail('')}>
+                                    <Ionicons name="close-circle" size={20} color="#8e8e93" />
+                                </TouchableOpacity>
+                            )}
                         </View>
-                    </View>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Password</Text>
-                        <View style={styles.inputWrapper}>
-                            <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                        <TouchableOpacity onPress={() => router.push('/login')} className="mt-6 mb-12">
+                            <Text className="text-[#6366f1] font-bold text-[15px]">
+                                Already have a Skeeme account?
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={nextStep}
+                            className={`w-full py-[18px] rounded-[12px] items-center justify-center mb-8 ${email.length > 3 ? 'bg-white' : 'bg-white/30'}`}
+                            disabled={email.length <= 3}
+                        >
+                            <Text className={`font-bold text-[17px] tracking-tight ${email.length > 3 ? 'text-black' : 'text-black/50'}`}>Continue</Text>
+                        </TouchableOpacity>
+
+                        {/* Social Auth Separator placeholder */}
+                        <View className="flex-row items-center mb-8">
+                            <View className="flex-1 h-[1px] bg-[#3a3a3c]" />
+                            <Text className="text-[#8e8e93] font-medium px-4 text-[13px]">or sign up with</Text>
+                            <View className="flex-1 h-[1px] bg-[#3a3a3c]" />
+                        </View>
+
+                        {/* Social Buttons */}
+                        <TouchableOpacity
+                            onPress={() => handleSocialLogin('google')}
+                            disabled={isSocialLoading}
+                            className="w-full bg-[#1c1c1e] py-[16px] rounded-[12px] flex-row items-center justify-center mb-4 border border-[#2c2c2e]"
+                        >
+                            {isSocialLoading ? (
+                                <ActivityIndicator color="white" size="small" />
+                            ) : (
+                                <>
+                                    <Ionicons name="logo-google" size={20} color="white" />
+                                    <Text className="text-white font-medium text-[15px] ml-3">Sign up with Google</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => handleSocialLogin('apple')}
+                            disabled={isSocialLoading}
+                            className="w-full bg-[#1c1c1e] py-[16px] rounded-[12px] flex-row items-center justify-center border border-[#2c2c2e]"
+                        >
+                            <Ionicons name="logo-apple" size={20} color="white" />
+                            <Text className="text-white font-medium text-[15px] ml-3">Sign up with Apple</Text>
+                        </TouchableOpacity>
+                    </AnimatedStep>
+                )}
+
+                {/* Step 2: Password */}
+                {step === 2 && (
+                    <AnimatedStep>
+                        <Text className="text-white text-[34px] font-black tracking-tight leading-[40px] mb-2 mt-4">
+                            Secure your account
+                        </Text>
+                        <Text className="text-slate-400 text-[15px] font-medium leading-relaxed mb-8">
+                            Choose a strong password with at least 8 characters.
+                        </Text>
+
+                        <View className="bg-[#2c2c2e] rounded-[16px] px-4 py-1 flex-row items-center border border-[#3a3a3c] mb-4">
                             <TextInput
-                                style={styles.input}
-                                placeholder="Create a strong password"
-                                placeholderTextColor="#94a3b8"
+                                className="flex-1 text-white font-medium text-[17px] h-[56px]"
+                                placeholder="Password"
+                                placeholderTextColor="#8e8e93"
+                                secureTextEntry={!showPassword}
                                 value={password}
                                 onChangeText={setPassword}
-                                secureTextEntry
+                                autoFocus
                             />
+                            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#8e8e93" />
+                            </TouchableOpacity>
                         </View>
-                    </View>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Confirm Password</Text>
-                        <View style={styles.inputWrapper}>
-                            <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                        <View className="bg-[#2c2c2e] rounded-[16px] px-4 py-1 flex-row items-center border border-[#3a3a3c] mb-12">
                             <TextInput
-                                style={styles.input}
-                                placeholder="Repeat your password"
-                                placeholderTextColor="#94a3b8"
-                                value={passwordConfirmation}
-                                onChangeText={setPasswordConfirmation}
-                                secureTextEntry
+                                className="flex-1 text-white font-medium text-[17px] h-[56px]"
+                                placeholder="Confirm Password"
+                                placeholderTextColor="#8e8e93"
+                                secureTextEntry={!showPassword}
+                                value={confirmPassword}
+                                onChangeText={setConfirmPassword}
                             />
                         </View>
-                    </View>
 
-                    <TouchableOpacity
-                        style={styles.signupButton}
-                        onPress={handleSignup}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <Text style={styles.signupButtonText}>Create Account</Text>
-                        )}
-                    </TouchableOpacity>
-
-                    <View style={styles.footer}>
-                        <Text style={styles.footerText}>Already have an account? </Text>
-                        <TouchableOpacity onPress={() => router.push('/login')}>
-                            <Text style={styles.loginLink}>Log In</Text>
+                        <TouchableOpacity
+                            onPress={nextStep}
+                            className={`w-full py-[18px] rounded-[12px] items-center justify-center ${password.length >= 8 && confirmPassword === password ? 'bg-white' : 'bg-white/30'}`}
+                            disabled={password.length < 8 || confirmPassword !== password}
+                        >
+                            <Text className={`font-bold text-[17px] tracking-tight ${password.length >= 8 && confirmPassword === password ? 'text-black' : 'text-black/50'}`}>Continue</Text>
                         </TouchableOpacity>
-                    </View>
-                </View>
+                    </AnimatedStep>
+                )}
+
+                {/* Step 3: Name */}
+                {step === 3 && (
+                    <AnimatedStep>
+                        <Text className="text-white text-[34px] font-black tracking-tight leading-[40px] mb-2 mt-4">
+                            What's your name?
+                        </Text>
+                        <Text className="text-slate-400 text-[15px] font-medium leading-relaxed mb-8">
+                            This is how you will appear inside Skeeme.
+                        </Text>
+
+                        <View className="bg-[#2c2c2e] rounded-[16px] px-4 py-1 flex-row items-center border border-[#3a3a3c] mb-12">
+                            <TextInput
+                                className="flex-1 text-white font-medium text-[17px] h-[56px]"
+                                placeholder="First & Last Name"
+                                placeholderTextColor="#8e8e93"
+                                autoCapitalize="words"
+                                value={name}
+                                onChangeText={setName}
+                                autoFocus
+                            />
+                            {name.length > 0 && (
+                                <TouchableOpacity onPress={() => setName('')}>
+                                    <Ionicons name="close-circle" size={20} color="#8e8e93" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
+                        <TouchableOpacity
+                            onPress={handleSignup}
+                            className={`w-full py-[18px] rounded-[12px] items-center justify-center flex-row ${name.length > 1 && !isLoading ? 'bg-[#6366f1]' : 'bg-[#6366f1]/50'}`}
+                            disabled={name.length <= 1 || isLoading}
+                        >
+                            {isLoading ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text className="font-bold text-[17px] tracking-tight text-white">Create Account</Text>
+                            )}
+                        </TouchableOpacity>
+                    </AnimatedStep>
+                )}
             </ScrollView>
         </KeyboardAvoidingView>
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#4f46e5',
-    },
-    scrollContent: {
-        flexGrow: 1,
-        paddingHorizontal: 24,
-        paddingTop: Platform.OS === 'ios' ? 80 : 60,
-        paddingBottom: 40,
-    },
-    header: {
-        alignItems: 'center',
-        marginBottom: 40,
-    },
-    logoContainer: {
-        width: 80,
-        height: 80,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: 24,
-        padding: 16,
-        marginBottom: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.3)',
-    },
-    logo: {
-        width: '100%',
-        height: '100%',
-    },
-    title: {
-        fontSize: 32,
-        fontWeight: '900',
-        color: 'white',
-        letterSpacing: -1,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: 'rgba(255, 255, 255, 0.7)',
-        marginTop: 8,
-        fontWeight: '500',
-    },
-    form: {
-        backgroundColor: 'white',
-        borderRadius: 32,
-        padding: 32,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-        elevation: 10,
-    },
-    inputGroup: {
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#1e293b',
-        marginBottom: 8,
-        marginLeft: 4,
-    },
-    inputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#f8fafc',
-        borderRadius: 16,
-        borderWidth: 1.5,
-        borderColor: '#f1f5f9',
-        paddingHorizontal: 16,
-    },
-    inputIcon: {
-        marginRight: 12,
-    },
-    input: {
-        flex: 1,
-        height: 52,
-        fontSize: 16,
-        color: '#1e293b',
-        fontWeight: '500',
-    },
-    signupButton: {
-        backgroundColor: '#4f46e5',
-        borderRadius: 16,
-        height: 56,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 12,
-        shadowColor: '#4f46e5',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    signupButtonText: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: '800',
-    },
-    footer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginTop: 24,
-    },
-    footerText: {
-        color: '#64748b',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    loginLink: {
-        color: '#4f46e5',
-        fontSize: 14,
-        fontWeight: '800',
-    },
-});
+// Simple wrapper for animating step transitions (Fade/Slide would be ideal here if reanimated was strictly requested per component, 
+// but sticking to native View for raw performance in forms based on Revolut flow)
+function AnimatedStep({ children }: { children: React.ReactNode }) {
+    return <View className="flex-1">{children}</View>;
+}

@@ -1,9 +1,10 @@
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl, Linking, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Linking, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
+import { GradientButton } from '@/components/ui/GradientButton';
 
 interface Invoice {
     id: number;
@@ -17,10 +18,16 @@ interface Invoice {
 // Skeleton loading placeholder
 function SkeletonCard() {
     return (
-        <View className="bg-white p-6 rounded-3xl border border-slate-100 mb-4 shadow-sm shadow-slate-200">
-            <View className="bg-slate-100 h-3 w-24 rounded-full mb-3" />
-            <View className="bg-slate-100 h-5 w-32 rounded-full mb-3" />
-            <View className="bg-slate-100 h-3 w-20 rounded-full" />
+        <View className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 mb-4 flex-row justify-between">
+            <View>
+                <View className="bg-slate-200 dark:bg-slate-800 h-3 w-24 rounded-full mb-3" />
+                <View className="bg-slate-200 dark:bg-slate-800 h-5 w-32 rounded-full mb-3" />
+                <View className="bg-slate-200 dark:bg-slate-800 h-3 w-20 rounded-full" />
+            </View>
+            <View className="items-end">
+                <View className="bg-slate-200 dark:bg-slate-800 h-6 w-16 rounded-full mb-4" />
+                <View className="bg-slate-200 dark:bg-slate-800 h-4 w-16 rounded-full" />
+            </View>
         </View>
     );
 }
@@ -28,7 +35,7 @@ function SkeletonCard() {
 export default function BillingHistoryScreen() {
     const { colorScheme } = require('nativewind').useColorScheme();
     const isDark = colorScheme === 'dark';
-    const bgColor = isDark ? '#010100' : '#f8fafc';
+    const bgColor = isDark ? '#010100' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#0f172a';
 
     const { data, isLoading, error, refetch } = useQuery({
@@ -63,7 +70,7 @@ export default function BillingHistoryScreen() {
     };
 
     return (
-        <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
+        <View className="flex-1 bg-white dark:bg-brand-dark">
             <Stack.Screen
                 options={{
                     title: 'Billing History',
@@ -77,66 +84,64 @@ export default function BillingHistoryScreen() {
 
             {isLoading ? (
                 <View className="flex-1 px-6 pt-6">
-                    <Text className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Past Invoices</Text>
+                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-6">Past Invoices</Text>
                     <SkeletonCard />
                     <SkeletonCard />
                     <SkeletonCard />
                 </View>
             ) : error ? (
                 <View className="flex-1 justify-center items-center p-6">
-                    <View className="size-16 bg-red-50 rounded-2xl items-center justify-center mb-4">
-                        <Ionicons name="cloud-offline-outline" size={32} color="#ef4444" />
+                    <View className="size-24 bg-red-500/10 rounded-[24px] items-center justify-center mb-6">
+                        <Ionicons name="cloud-offline" size={40} color="#ef4444" />
                     </View>
-                    <Text className="text-red-500 font-bold mb-2 text-lg">Connection Error</Text>
-                    <Text className="text-slate-500 text-center mb-6">
+                    <Text className="text-red-500 font-black mb-2 text-[22px] tracking-tight">Connection Error</Text>
+                    <Text className="text-slate-500 text-center mb-8 font-bold text-[14px]">
                         Could not load billing history. Check your connection and try again.
                     </Text>
-                    <TouchableOpacity
-                        onPress={() => refetch()}
-                        className="bg-slate-900 px-6 py-3 rounded-xl flex-row items-center"
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="refresh" size={16} color="white" />
-                        <Text className="text-white font-bold ml-2">Retry</Text>
-                    </TouchableOpacity>
+                    <View className="w-full max-w-[200px]">
+                        <GradientButton onPress={() => refetch()} icon={<Ionicons name="refresh" size={20} color={isDark ? '#0f172a' : 'white'} />}>
+                            Retry
+                        </GradientButton>
+                    </View>
                 </View>
             ) : (
                 <ScrollView
                     className="flex-1 px-6 pt-6"
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? 'white' : '#0f172a'} />}
+                    showsVerticalScrollIndicator={false}
                 >
-                    <Text className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Past Invoices</Text>
+                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Past Invoices</Text>
 
                     {data?.data?.length === 0 ? (
-                        <View className="items-center py-14">
-                            <View className="size-16 bg-slate-200 rounded-2xl items-center justify-center mb-4">
-                                <Ionicons name="receipt" size={32} color="#94a3b8" />
+                        <View className="items-center py-16 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] bg-slate-50 dark:bg-slate-900/50 mt-4">
+                            <View className="size-24 bg-white dark:bg-slate-800 rounded-[24px] border-2 border-slate-200 dark:border-slate-700 items-center justify-center mb-6">
+                                <Ionicons name="receipt" size={40} color={isDark ? 'white' : '#0f172a'} />
                             </View>
-                            <Text className="text-slate-700 font-bold text-lg">No Invoices Yet</Text>
-                            <Text className="text-slate-500 text-center mt-2 px-6">
+                            <Text className="text-slate-900 dark:text-white font-black text-[22px] tracking-tight mb-2">No Invoices Yet</Text>
+                            <Text className="text-slate-500 font-bold text-[14px] text-center px-8 leading-relaxed">
                                 Your billing history will appear here once you make a payment.
                             </Text>
                         </View>
                     ) : (
                         data?.data?.map((invoice: Invoice) => (
-                            <View key={invoice.id} className="bg-white p-6 rounded-3xl border border-slate-100 mb-4 flex-row items-center justify-between shadow-sm shadow-slate-200">
+                            <View key={invoice.id} className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 mb-4 flex-row items-center justify-between">
                                 <View>
-                                    <Text className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{invoice.invoice_number}</Text>
-                                    <Text className="text-lg font-black text-slate-900 mb-2">
+                                    <Text className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{invoice.invoice_number}</Text>
+                                    <Text className="text-[20px] font-black text-slate-900 dark:text-white mb-1 tracking-tight">
                                         {invoice.currency} {Number(invoice.amount).toFixed(2)}
                                     </Text>
-                                    <Text className="text-slate-500 font-medium text-sm">
+                                    <Text className="text-slate-500 font-bold text-[12px] uppercase tracking-widest">
                                         {new Date(invoice.invoice_date).toLocaleDateString()}
                                     </Text>
                                 </View>
 
                                 <View className="items-end">
-                                    <View className={`px-3 py-1 rounded-full border ${invoice.status === 'paid' ? 'bg-emerald-50 border-emerald-100' :
-                                        invoice.status === 'pending' ? 'bg-amber-50 border-amber-100' :
-                                            'bg-slate-50 border-slate-200'
+                                    <View className={`px-4 py-1.5 rounded-xl border-2 ${invoice.status === 'paid' ? 'border-[#2EBD85] bg-[#2EBD85]/10' :
+                                        invoice.status === 'pending' ? 'border-[#FCD34D] bg-[#FCD34D]/10' :
+                                            'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
                                         }`}>
-                                        <Text className={`text-[10px] uppercase tracking-widest font-black ${invoice.status === 'paid' ? 'text-emerald-700' :
-                                            invoice.status === 'pending' ? 'text-amber-700' :
+                                        <Text className={`text-[11px] uppercase tracking-widest font-black ${invoice.status === 'paid' ? 'text-[#2EBD85]' :
+                                            invoice.status === 'pending' ? 'text-[#eab308]' :
                                                 'text-slate-500'
                                             }`}>
                                             {invoice.status}
@@ -145,11 +150,11 @@ export default function BillingHistoryScreen() {
 
                                     <TouchableOpacity
                                         onPress={() => handleDownload(invoice.id)}
-                                        className="mt-4 flex-row items-center"
+                                        className="mt-4 flex-row items-center border-b-2 border-slate-900 dark:border-white pb-0.5"
                                         activeOpacity={0.7}
                                     >
-                                        <Text className="text-indigo-600 font-bold text-xs mr-1">Download</Text>
-                                        <Ionicons name="download" size={14} color="#4f46e5" />
+                                        <Text className="text-slate-900 dark:text-white font-black text-[12px] uppercase tracking-widest mr-1">Receipt</Text>
+                                        <Ionicons name="download" size={14} color={isDark ? 'white' : '#0f172a'} />
                                     </TouchableOpacity>
                                 </View>
                             </View>

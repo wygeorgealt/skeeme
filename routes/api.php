@@ -122,6 +122,7 @@ Route::prefix('v1')->group(function () {
     Route::prefix('student')->group(function () {
         Route::post('login', [\App\Http\Controllers\API\Student\AuthController::class, 'login']);
         Route::post('register', [\App\Http\Controllers\API\Student\AuthController::class, 'register']);
+        Route::post('oauth/{provider}', [\App\Http\Controllers\API\Student\AuthController::class, 'handleOAuthLogin']);
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('logout', [\App\Http\Controllers\API\Student\AuthController::class, 'logout']);

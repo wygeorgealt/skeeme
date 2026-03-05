@@ -1,12 +1,11 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface GradientButtonProps {
     onPress: () => void;
     children: React.ReactNode;
     containerStyle?: string;
-    className?: string;
+    className?: string; // Kept for backwards compatibility but we'll use solid classes
     disabled?: boolean;
     loading?: boolean;
     icon?: React.ReactNode;
@@ -14,6 +13,7 @@ interface GradientButtonProps {
     textStyle?: TextStyle;
 }
 
+// Renamed internally, but exported as GradientButton to prevent breaking imports across 5+ files
 export function GradientButton({
     onPress,
     children,
@@ -30,44 +30,31 @@ export function GradientButton({
             onPress={onPress}
             disabled={disabled || loading}
             activeOpacity={0.8}
-            className={`overflow-hidden rounded-2xl ${containerStyle} ${disabled ? 'opacity-50' : ''}`}
+            className={`w-full h-[56px] bg-slate-900 dark:bg-white rounded-xl items-center justify-center flex-row shadow-sm ${containerStyle} ${className} ${disabled ? 'opacity-50' : ''}`}
+            style={style}
         >
-            <LinearGradient
-                colors={['#4f46e5', '#0ea5e9']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.gradient, style]}
-            >
-                {loading ? (
-                    <ActivityIndicator color="white" size="small" />
-                ) : (
-                    <>
-                        {icon && (
-                            <View style={styles.iconContainer}>
-                                {icon}
-                            </View>
-                        )}
-                        <Text
-                            style={[{ textAlign: 'center' }, textStyle]}
-                            className="text-white font-black text-lg"
-                        >
-                            {children}
-                        </Text>
-                    </>
-                )}
-            </LinearGradient>
+            {loading ? (
+                <ActivityIndicator color="#cbd5e1" size="small" />
+            ) : (
+                <>
+                    {icon && (
+                        <View style={styles.iconContainer}>
+                            {icon}
+                        </View>
+                    )}
+                    <Text
+                        style={textStyle}
+                        className="text-white dark:text-slate-900 font-bold text-[17px]"
+                    >
+                        {children}
+                    </Text>
+                </>
+            )}
         </TouchableOpacity>
     );
 }
 
 const styles = StyleSheet.create({
-    gradient: {
-        height: 56,
-        paddingHorizontal: 24,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
     iconContainer: {
         position: 'absolute',
         left: 20,

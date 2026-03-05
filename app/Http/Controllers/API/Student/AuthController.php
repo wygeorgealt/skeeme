@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Log;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -20,6 +22,91 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         // ... (existing login code)
+    }
+
+    /**
+     * Handle OAuth login from mobile app (Google, Apple, etc.)
+     * Accepts an id_token from the native SDK, verifies it via Socialite,
+     * and returns a Sanctum token.
+     */
+    public function handleOAuthLogin(Request $request, string $provider)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'device_name' => 'nullable|string',
+        ]);
+
+        $allowedProviders = ['google', 'apple'];
+        if (!in_array($provider, $allowedProviders)) {
+            return response()->json(['message' => 'Unsupported provider.'], 422);
+        }
+
+        try {
+            $socialUser = Socialite::driver($provider)->stateless()->userFromToken($request->token);
+        } catch (\Exception $e) {
+            Log::error("OAuth verification failed for {$provider}", ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Authentication failed. Invalid or expired token.'], 401);
+        }
+
+        // Find existing user by provider+id OR by email
+        $user = User::where('provider', $provider)->where('provider_id', $socialUser->getId())->first();
+
+        if (!$user) {
+            $user = User::where('email', $socialUser->getEmail())->first();
+        }
+
+        $isNewUser = false;
+
+        if ($user) {
+            // Link social provider if not yet linked
+            if (!$user->provider) {
+                $user->update([
+                    'provider' => $provider,
+                    'provider_id' => $socialUser->getId(),
+                    'avatar' => $socialUser->getAvatar(),
+                ]);
+            }
+        } else {
+            // Create new student account
+            $nameParts = explode(' ', $socialUser->getName() ?? 'Student');
+            $user = User::create([
+                'name' => $socialUser->getName() ?? 'Student',
+                'first_name' => $nameParts[0] ?? '',
+                'last_name' => $nameParts[1] ?? '',
+                'email' => $socialUser->getEmail(),
+                'password' => \Illuminate\Support\Facades\Hash::make(Str::random(32)),
+                'role' => 'student',
+                'status' => 'active',
+                'approved_at' => now(),
+                'credits' => 500,
+                'provider' => $provider,
+                'provider_id' => $socialUser->getId(),
+                'avatar' => $socialUser->getAvatar(),
+            ]);
+            $isNewUser = true;
+        }
+
+        $deviceName = $request->input('device_name', 'mobile_app');
+        $token = $user->createToken($deviceName)->plainTextToken;
+
+        Log::info("Student OAuth login via {$provider}", ['user_id' => $user->id, 'new' => $isNewUser]);
+
+        $pricing = $this->getLocalizedPrice($request);
+
+        return response()->json([
+            'user' => [
+                'name' => $user->name,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'email' => $user->email,
+                'credits' => $user->credits,
+                'is_unlimited' => (bool) $user->is_unlimited_student,
+                'ai_preferences' => $user->ai_preferences,
+            ],
+            'token' => $token,
+            'pricing' => $pricing,
+            'is_new_user' => $isNewUser,
+        ], $isNewUser ? 201 : 200);
     }
 
     /**

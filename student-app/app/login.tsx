@@ -1,56 +1,55 @@
 import { useState } from 'react';
-import {
-    View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator,
-    KeyboardAvoidingView, Platform, ScrollView, Image
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { api } from '@/lib/api';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
-import { router } from 'expo-router';
-import { GradientButton } from '@/components/ui/GradientButton';
+import { api } from '@/lib/api';
+import { Ionicons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
+import { signInWithGoogle, signInWithApple } from '@/lib/socialAuth';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const setAuth = useAuthStore((state) => state.setAuth);
+    const [isSocialLoading, setIsSocialLoading] = useState(false);
+    const router = useRouter();
+    const { login } = useAuthStore();
 
-    const validateEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+    const handleSocialLogin = async (provider: 'google' | 'apple') => {
+        setIsSocialLoading(true);
+        try {
+            const signInFn = provider === 'google' ? signInWithGoogle : signInWithApple;
+            const result = await signInFn();
+            if (result) {
+                login(result.user, result.token);
+                router.replace('/(drawer)');
+            }
+        } finally {
+            setIsSocialLoading(false);
+        }
+    };
 
     const handleLogin = async () => {
         if (!email.trim() || !password) {
-            Alert.alert('Missing Fields', 'Please fill in both email and password.');
-            return;
-        }
-        if (!validateEmail(email.trim())) {
-            Alert.alert('Invalid Email', 'Please enter a valid email address.');
-            return;
+            return Alert.alert('Missing Details', 'Please provide both your email and password.');
         }
 
         setIsLoading(true);
         try {
-            const response = await api.post('/login', {
+            const response = await api.post('/student/login', {
                 email: email.trim().toLowerCase(),
                 password,
-                device_name: 'student_mobile_app',
+                device_name: `${Platform.OS}_app`,
             });
-
-            const { user, token } = response.data;
-            await setAuth(user, token);
+            const { token, user } = response.data;
+            login(user, token);
             router.replace('/(drawer)');
         } catch (error: any) {
-            let message = 'Invalid email or password. Please try again.';
-
-            if (error.response?.data?.message) {
-                // Server responded with an explicit error
-                message = error.response.data.message;
-            } else if (error.request && !error.response) {
-                // The request was made but no response was received (Network Error)
-                message = 'Network Error: Cannot connect to the server. Please check your internet connection or backend URL configuration.';
-            }
-
-            Alert.alert('Login Failed', message);
+            Alert.alert(
+                'Login Failed',
+                error.response?.data?.message || 'Invalid credentials or network issue.'
+            );
         } finally {
             setIsLoading(false);
         }
@@ -59,85 +58,103 @@ export default function LoginScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 bg-white dark:bg-brand-dark"
+            className="flex-1 bg-brand-dark"
         >
-            <ScrollView
-                contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-                keyboardShouldPersistTaps="handled"
-            >
-                <View className="px-6 py-12">
-                    {/* Branding */}
-                    <View className="mb-12 items-center">
-                        <View className="size-20 bg-white dark:bg-slate-800 rounded-3xl items-center justify-center mb-5 shadow-lg shadow-indigo-500/10 overflow-hidden border border-slate-100 dark:border-brand-dark">
-                            <Image
-                                source={require('@/assets/images/icon.png')}
-                                style={{ width: '100%', height: '100%' }}
-                                resizeMode="cover"
-                            />
-                        </View>
-                        <Text className="text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Skeeme</Text>
-                        <Text className="text-slate-500 dark:text-slate-400 font-medium text-center text-base">
-                            AI-powered study companion
-                        </Text>
-                    </View>
+            <StatusBar style="light" />
 
-                    {/* Form */}
-                    <View>
-                        <Text className="text-slate-500 dark:text-slate-300 font-bold text-xs ml-1 mb-2 uppercase tracking-wider">Email Address</Text>
+            {/* Back Button / Header Navigation */}
+            <View className="px-6 pt-16 pb-4 flex-row justify-between items-center z-10">
+                <TouchableOpacity
+                    onPress={() => router.back()}
+                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                >
+                    <Ionicons name="close" size={28} color="white" />
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView className="flex-1 px-8 pt-8" keyboardShouldPersistTaps="handled">
+                <Text className="text-white text-[34px] font-black tracking-tight leading-[40px] mb-2">
+                    Welcome back
+                </Text>
+                <Text className="text-slate-400 text-[15px] font-medium leading-relaxed mb-8">
+                    Enter your details to sign in to Skeeme.
+                </Text>
+
+                {/* Email Input */}
+                <View className="mb-4">
+                    <View className="bg-[#2c2c2e] rounded-[16px] px-4 flex-row items-center border border-[#3a3a3c] focus:border-[#6366f1]">
                         <TextInput
-                            className="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white px-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 font-medium text-base"
-                            placeholder="student@example.com"
-                            placeholderTextColor="#94a3b8"
+                            className="flex-1 text-white font-medium text-[17px] h-[56px]"
+                            placeholder="Email address"
+                            placeholderTextColor="#8e8e93"
                             keyboardType="email-address"
                             autoCapitalize="none"
-                            autoCorrect={false}
-                            autoComplete="email"
-                            returnKeyType="next"
                             value={email}
                             onChangeText={setEmail}
                         />
-
-                        <Text className="text-slate-500 dark:text-slate-300 font-bold text-xs ml-1 mb-2 mt-5 uppercase tracking-wider">Password</Text>
-                        <View className="relative">
-                            <TextInput
-                                className="w-full bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white px-4 py-4 pr-14 rounded-2xl border border-slate-200 dark:border-slate-700 font-medium text-base"
-                                placeholder="••••••••"
-                                placeholderTextColor="#94a3b8"
-                                secureTextEntry={!showPassword}
-                                autoComplete="password"
-                                returnKeyType="done"
-                                value={password}
-                                onChangeText={setPassword}
-                                onSubmitEditing={handleLogin}
-                            />
-                            <TouchableOpacity
-                                onPress={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-0 bottom-0 justify-center"
-                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            >
-                                <Ionicons
-                                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                                    size={20}
-                                    color="#64748b"
-                                />
-                            </TouchableOpacity>
-                        </View>
-
-                        <GradientButton
-                            onPress={handleLogin}
-                            loading={isLoading}
-                            containerStyle="mt-8">
-                            Sign In
-                        </GradientButton>
-
-                        <View className="flex-row justify-center mt-8">
-                            <Text className="text-slate-500 dark:text-slate-400 font-medium">Don't have an account? </Text>
-                            <TouchableOpacity onPress={() => router.push('/signup')}>
-                                <Text className="text-indigo-600 dark:text-indigo-400 font-bold">Sign Up</Text>
-                            </TouchableOpacity>
-                        </View>
                     </View>
                 </View>
+
+                {/* Password Input */}
+                <View className="bg-[#2c2c2e] rounded-[16px] px-4 flex-row items-center border border-[#3a3a3c] mb-8 focus:border-[#6366f1]">
+                    <TextInput
+                        className="flex-1 text-white font-medium text-[17px] h-[56px]"
+                        placeholder="Password"
+                        placeholderTextColor="#8e8e93"
+                        secureTextEntry={!showPassword}
+                        value={password}
+                        onChangeText={setPassword}
+                    />
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                        <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#8e8e93" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Social Auth Separator */}
+                <View className="flex-row items-center mb-8">
+                    <View className="flex-1 h-[1px] bg-[#3a3a3c]" />
+                    <Text className="text-[#8e8e93] font-medium px-4 text-[13px]">or sign in with</Text>
+                    <View className="flex-1 h-[1px] bg-[#3a3a3c]" />
+                </View>
+
+                {/* Social Buttons */}
+                <TouchableOpacity
+                    onPress={() => handleSocialLogin('google')}
+                    disabled={isSocialLoading}
+                    className="w-full bg-[#1c1c1e] py-[16px] rounded-[12px] flex-row items-center justify-center mb-4 border border-[#2c2c2e]"
+                >
+                    {isSocialLoading ? (
+                        <ActivityIndicator color="white" size="small" />
+                    ) : (
+                        <>
+                            <Ionicons name="logo-google" size={20} color="white" />
+                            <Text className="text-white font-medium text-[15px] ml-3">Continue with Google</Text>
+                        </>
+                    )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={() => handleSocialLogin('apple')}
+                    disabled={isSocialLoading}
+                    className="w-full bg-[#1c1c1e] py-[16px] rounded-[12px] flex-row items-center justify-center border border-[#2c2c2e] mb-8"
+                >
+                    <Ionicons name="logo-apple" size={20} color="white" />
+                    <Text className="text-white font-medium text-[15px] ml-3">Continue with Apple</Text>
+                </TouchableOpacity>
+
+                {/* Primary Action */}
+                <TouchableOpacity
+                    onPress={handleLogin}
+                    className={`w-full py-[18px] rounded-[12px] items-center justify-center flex-row ${email.length > 5 && password.length > 0 && !isLoading ? 'bg-white' : 'bg-white/30'}`}
+                    disabled={email.length <= 5 || password.length === 0 || isLoading}
+                >
+                    {isLoading ? (
+                        <ActivityIndicator color="black" />
+                    ) : (
+                        <Text className={`font-bold text-[17px] tracking-tight ${email.length > 5 && password.length > 0 ? 'text-black' : 'text-black/50'}`}>Sign In</Text>
+                    )}
+                </TouchableOpacity>
+
             </ScrollView>
         </KeyboardAvoidingView>
     );

@@ -4,7 +4,7 @@ import {
     ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { GradientButton } from '@/components/ui/GradientButton';
+import { GradientButton } from '@/components/ui/GradientButton'; // This is now a solid V2 button
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useColorScheme as useTailwindColorScheme } from 'nativewind';
@@ -95,11 +95,11 @@ export default function AccountScreen() {
         label: string; value: string; onChangeText: (v: string) => void;
         show: boolean; onToggle: () => void; placeholder?: string; autoComplete?: string;
     }) => (
-        <View className="mb-4">
-            <Text className="text-slate-500 dark:text-slate-400 font-medium mb-2 text-xs">{label}</Text>
+        <View className="mb-6">
+            <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-3">{label}</Text>
             <View className="relative">
                 <TextInput
-                    className="w-full bg-slate-50 dark:bg-brand-dark text-slate-900 dark:text-white px-4 py-4 pr-14 rounded-2xl border border-slate-200 dark:border-slate-700 font-medium"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white pr-14 focus:border-slate-900 dark:focus:border-white"
                     placeholder={placeholder}
                     placeholderTextColor="#94a3b8"
                     secureTextEntry={!show}
@@ -111,7 +111,7 @@ export default function AccountScreen() {
                     className="absolute right-4 top-0 bottom-0 justify-center"
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <Ionicons name={show ? 'eye-off-outline' : 'eye-outline'} size={18} color="#94a3b8" />
+                    <Ionicons name={show ? 'eye-off' : 'eye'} size={20} color="#94a3b8" />
                 </TouchableOpacity>
             </View>
         </View>
@@ -120,40 +120,41 @@ export default function AccountScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 bg-slate-50 dark:bg-brand-dark"
+            className="flex-1 bg-white dark:bg-brand-dark"
         >
             <ScrollView
                 className="flex-1"
-                contentContainerStyle={{ paddingBottom: 40 }}
+                contentContainerStyle={{ paddingBottom: 60 }}
                 keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
             >
                 {/* Subscription Overview */}
                 <View className="px-6 py-8">
-                    <Text className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Subscription</Text>
-                    <View className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm shadow-slate-200 dark:shadow-none flex-row items-center justify-between">
+                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Subscription</Text>
+                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[24px] p-6 border-2 border-slate-200 dark:border-slate-800 flex-row items-center justify-between">
                         <View>
-                            <Text className="text-xl font-black text-slate-900 dark:text-white mb-1">
+                            <Text className="text-[20px] font-black text-slate-900 dark:text-white mb-1 tracking-tight">
                                 {user.is_unlimited ? 'Unlimited Pro' : 'Free Tier'}
                             </Text>
                             {user.is_unlimited ? (
-                                <Text className="text-emerald-500 dark:text-emerald-400 font-bold text-xs">Active Subscription</Text>
+                                <Text className="text-[#2EBD85] font-bold text-[13px] uppercase tracking-widest">Active Subscription</Text>
                             ) : (
-                                <Text className="text-slate-500 dark:text-slate-400 font-medium text-xs">{user.credits} Credits Remaining</Text>
+                                <Text className="text-slate-500 font-bold text-[13px] uppercase tracking-widest">{user.credits} Credits Remaining</Text>
                             )}
                         </View>
-                        <View className={`size-12 rounded-full items-center justify-center ${user.is_unlimited ? 'bg-emerald-50 dark:bg-emerald-900/30' : 'bg-slate-100 dark:bg-slate-700'}`}>
-                            <Ionicons name="flash" size={24} color={user.is_unlimited ? "#10b981" : "#94a3b8"} />
+                        <View className={`size-14 rounded-full items-center justify-center border-2 ${user.is_unlimited ? 'border-[#2EBD85] bg-[#2EBD85]/10' : 'border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800'}`}>
+                            <Ionicons name="flash" size={24} color={user.is_unlimited ? "#2EBD85" : "#94a3b8"} />
                         </View>
                     </View>
                 </View>
 
                 {/* Profile Details */}
                 <View className="px-6 pb-8">
-                    <Text className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Profile Details</Text>
-                    <View className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm shadow-slate-200 dark:shadow-none">
-                        <Text className="text-slate-500 dark:text-slate-400 font-medium mb-2 text-xs">Full Name</Text>
+                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Profile Info</Text>
+                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[24px] p-6 border-2 border-slate-200 dark:border-slate-800">
+                        <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-3">Full Name</Text>
                         <TextInput
-                            className="w-full bg-slate-50 dark:bg-brand-dark text-slate-900 dark:text-white px-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 font-medium mb-4"
+                            className="w-full bg-white dark:bg-brand-dark border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white mb-6 focus:border-slate-900 dark:focus:border-white"
                             placeholder="John Doe"
                             placeholderTextColor="#94a3b8"
                             value={name}
@@ -161,9 +162,9 @@ export default function AccountScreen() {
                             autoComplete="name"
                         />
 
-                        <Text className="text-slate-500 dark:text-slate-400 font-medium mb-2 text-xs">Email Address</Text>
+                        <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-3">Email Address</Text>
                         <TextInput
-                            className="w-full bg-slate-50 dark:bg-brand-dark text-slate-900 dark:text-white px-4 py-4 rounded-2xl border border-slate-200 dark:border-slate-700 font-medium mb-6"
+                            className="w-full bg-white dark:bg-brand-dark border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white mb-8 focus:border-slate-900 dark:focus:border-white"
                             placeholder="john@example.com"
                             placeholderTextColor="#94a3b8"
                             keyboardType="email-address"
@@ -178,15 +179,15 @@ export default function AccountScreen() {
                             loading={isUpdatingProfile}
                             containerStyle="w-full"
                         >
-                            {profileSuccess ? 'Profile Updated!' : 'Update Profile'}
+                            {profileSuccess ? 'Updated Successfully' : 'Save Changes'}
                         </GradientButton>
                     </View>
                 </View>
 
                 {/* Theme Preferences */}
                 <View className="px-6 pb-8">
-                    <Text className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Appearance</Text>
-                    <View className="bg-white dark:bg-slate-800 rounded-3xl p-2 border border-slate-100 dark:border-slate-700 shadow-sm shadow-slate-200 dark:shadow-none">
+                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Appearance</Text>
+                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[24px] p-2 border-2 border-slate-200 dark:border-slate-800">
                         {(['system', 'light', 'dark'] as const).map((t, index) => {
                             const isSelected = theme === t;
                             const icons = { system: 'phone-portrait-outline', light: 'sunny-outline', dark: 'moon-outline' };
@@ -196,18 +197,18 @@ export default function AccountScreen() {
                                 <TouchableOpacity
                                     key={t}
                                     onPress={() => handleThemeChange(t)}
-                                    className={`flex-row items-center justify-between p-4 ${index !== 2 ? 'border-b border-slate-50 dark:border-slate-700/50' : ''}`}
+                                    className={`flex-row items-center justify-between p-4 ${index !== 2 ? 'border-b-2 border-slate-200 dark:border-slate-800' : ''}`}
                                 >
                                     <View className="flex-row items-center">
-                                        <View className={`size-10 rounded-xl items-center justify-center mr-3 ${isSelected ? 'bg-indigo-50 dark:bg-indigo-900/30' : 'bg-slate-50 dark:bg-slate-700'}`}>
-                                            <Ionicons name={icons[t] as any} size={20} color={isSelected ? '#4f46e5' : '#64748b'} />
+                                        <View className={`size-12 rounded-xl border-2 items-center justify-center mr-4 ${isSelected ? 'border-slate-900 dark:border-white bg-slate-900 dark:bg-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-brand-dark'}`}>
+                                            <Ionicons name={icons[t] as any} size={20} color={isSelected ? (t === 'dark' ? '#0f172a' : 'white') : '#64748b'} />
                                         </View>
-                                        <Text className={`font-bold text-base ${isSelected ? 'text-indigo-900 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400'}`}>
+                                        <Text className={`font-black tracking-tight text-[16px] ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
                                             {labels[t]}
                                         </Text>
                                     </View>
-                                    <View className={`size-6 rounded-full border-2 items-center justify-center ${isSelected ? 'border-indigo-600 dark:border-indigo-400' : 'border-slate-200 dark:border-slate-600'}`}>
-                                        {isSelected && <View className="size-3 bg-indigo-600 dark:bg-indigo-400 rounded-full" />}
+                                    <View className={`size-6 rounded-full border-2 items-center justify-center ${isSelected ? 'border-slate-900 dark:border-white' : 'border-slate-300 dark:border-slate-600'}`}>
+                                        {isSelected && <View className="size-3 bg-slate-900 dark:bg-white rounded-full" />}
                                     </View>
                                 </TouchableOpacity>
                             );
@@ -217,22 +218,22 @@ export default function AccountScreen() {
 
                 {/* Security */}
                 <View className="px-6 pb-12">
-                    <Text className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Security</Text>
-                    <View className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm shadow-slate-200 dark:shadow-none">
+                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Security</Text>
+                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[24px] p-6 border-2 border-slate-200 dark:border-slate-800">
 
                         <PasswordField label="Current Password" value={currentPassword} onChangeText={setCurrentPassword} show={showCurrentPw} onToggle={() => setShowCurrentPw(!showCurrentPw)} />
                         <PasswordField label="New Password" value={newPassword} onChangeText={setNewPassword} show={showNewPw} onToggle={() => setShowNewPw(!showNewPw)} />
 
                         {newPassword.length > 0 && newPassword.length < 8 && (
-                            <Text className="text-amber-500 text-xs font-medium -mt-2 mb-3 ml-1">
-                                Password must be at least 8 characters
+                            <Text className="text-red-500 text-[12px] font-bold uppercase tracking-widest -mt-4 mb-5 ml-1">
+                                Must be at least 8 characters
                             </Text>
                         )}
 
-                        <PasswordField label="Confirm New Password" value={confirmPassword} onChangeText={setConfirmPassword} show={showConfirmPw} onToggle={() => setShowConfirmPw(!showConfirmPw)} />
+                        <PasswordField label="Confirm Password" value={confirmPassword} onChangeText={setConfirmPassword} show={showConfirmPw} onToggle={() => setShowConfirmPw(!showConfirmPw)} />
 
                         {confirmPassword.length > 0 && newPassword !== confirmPassword && (
-                            <Text className="text-red-500 text-xs font-medium -mt-2 mb-3 ml-1">
+                            <Text className="text-red-500 text-[12px] font-bold uppercase tracking-widest -mt-4 mb-5 ml-1">
                                 Passwords do not match
                             </Text>
                         )}
@@ -240,7 +241,7 @@ export default function AccountScreen() {
                         <TouchableOpacity
                             onPress={handleUpdatePassword}
                             disabled={isUpdatingPassword}
-                            className={`w-full py-4 rounded-xl items-center flex-row justify-center mt-2 ${passwordSuccess ? 'bg-emerald-500' : 'bg-slate-100 dark:bg-slate-700'} ${isUpdatingPassword ? 'opacity-70' : ''}`}
+                            className={`w-full h-[56px] rounded-xl items-center flex-row justify-center mt-4 border-2 ${passwordSuccess ? 'bg-[#2EBD85] border-[#2EBD85]' : 'bg-white dark:bg-brand-dark border-slate-200 dark:border-slate-700'} ${isUpdatingPassword ? 'opacity-70' : ''}`}
                             activeOpacity={0.8}
                         >
                             {isUpdatingPassword ? (
@@ -248,10 +249,10 @@ export default function AccountScreen() {
                             ) : passwordSuccess ? (
                                 <>
                                     <Ionicons name="checkmark-circle" size={18} color="white" />
-                                    <Text className="text-white font-black ml-2">Updated!</Text>
+                                    <Text className="text-white font-black ml-2 text-[15px] tracking-widest uppercase">Secured</Text>
                                 </>
                             ) : (
-                                <Text className="text-slate-900 dark:text-white font-black">Change Password</Text>
+                                <Text className="text-slate-900 dark:text-white font-black text-[15px] tracking-widest uppercase">Change Password</Text>
                             )}
                         </TouchableOpacity>
                     </View>

@@ -17,11 +17,11 @@ type FlashcardDeck = {
 
 function SkeletonDeck() {
     return (
-        <View className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 mb-4 shadow-sm shadow-slate-200 dark:shadow-none">
-            <View className="h-5 w-3/4 bg-slate-100 dark:bg-slate-700 rounded-lg mb-3" />
-            <View className="flex-row items-center gap-3">
-                <View className="h-4 w-16 bg-slate-100 dark:bg-slate-700 rounded-lg" />
-                <View className="h-4 w-24 bg-slate-100 dark:bg-slate-700 rounded-lg" />
+        <View className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 mb-4">
+            <View className="h-6 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-lg mb-4" />
+            <View className="flex-row gap-3">
+                <View className="h-4 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                <View className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded-lg" />
             </View>
         </View>
     );
@@ -30,6 +30,8 @@ function SkeletonDeck() {
 export default function FlashcardsDashboard() {
     const queryClient = useQueryClient();
     const [refreshing, setRefreshing] = useState(false);
+    const { colorScheme } = require('nativewind').useColorScheme();
+    const isDark = colorScheme === 'dark';
 
     const { data: decks, isLoading, refetch } = useQuery({
         queryKey: ['flashcard-decks'],
@@ -64,46 +66,43 @@ export default function FlashcardsDashboard() {
     };
 
     return (
-        <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
+        <View className="flex-1 bg-white dark:bg-brand-dark">
             {/* Header */}
-            <View className="px-6 py-6 pb-2 flex-row justify-between items-center">
-                <View>
-                    <Text className="text-3xl font-black text-slate-900 dark:text-white">Flashcards</Text>
-                    <Text className="text-slate-500 dark:text-slate-400 font-medium mt-1">Master topics with spaced repetition</Text>
-                </View>
+            <View className="px-6 py-8 pb-4">
+                <Text className="text-[32px] font-black tracking-tight text-slate-900 dark:text-white">Flashcards</Text>
+                <Text className="text-slate-500 font-bold text-[15px] mt-1">Master topics with spaced repetition</Text>
             </View>
 
             {/* Content */}
             <ScrollView
-                className="flex-1 px-6 pt-4"
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />}
+                className="flex-1 px-6 pt-2"
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "white" : "#0f172a"} />}
+                showsVerticalScrollIndicator={false}
             >
                 {/* Create New Button */}
-                <GradientButton
-                    onPress={() => router.push('/(drawer)/flashcards/create')}
-                    containerStyle="mb-8"
-                    className="p-3"
-                    icon={<View className="size-12 bg-white/20 rounded-2xl items-center justify-center mr-2">
-                        <Ionicons name="add" size={28} color="white" />
-                    </View>}
-                >
-                    Generate Deck
-                </GradientButton>
+                <View className="mb-8">
+                    <GradientButton
+                        onPress={() => router.push('/(drawer)/flashcards/create')}
+                        icon={<Ionicons name="add" size={24} color={isDark ? '#0f172a' : 'white'} />}
+                    >
+                        Generate New Deck
+                    </GradientButton>
+                </View>
 
-                <View className="flex-row justify-between items-end mb-4">
-                    <Text className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Your Decks</Text>
-                    {decks && decks.length > 0 && <Text className="text-slate-400 dark:text-slate-500 font-bold text-xs">{decks.length} DECKS</Text>}
+                <View className="flex-row justify-between items-end mb-6">
+                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400">Your Decks</Text>
+                    {decks && decks.length > 0 && <Text className="text-slate-400 font-black text-[11px] tracking-widest uppercase">{decks.length} Decks</Text>}
                 </View>
 
                 {isLoading ? (
                     <><SkeletonDeck /><SkeletonDeck /><SkeletonDeck /></>
                 ) : decks?.length === 0 ? (
-                    <View className="items-center py-10">
-                        <View className="size-20 bg-slate-200 dark:bg-slate-800 rounded-full items-center justify-center mb-4">
-                            <Ionicons name="layers" size={32} color="#94a3b8" />
+                    <View className="items-center py-16 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] bg-slate-50 dark:bg-slate-900/50">
+                        <View className="w-24 h-24 bg-white dark:bg-slate-800 rounded-[24px] border-2 border-slate-200 dark:border-slate-700 items-center justify-center mb-6">
+                            <Ionicons name="layers" size={40} color={isDark ? 'white' : '#0f172a'} />
                         </View>
-                        <Text className="text-slate-700 dark:text-slate-300 font-bold text-lg mb-2">No Decks Yet</Text>
-                        <Text className="text-slate-500 dark:text-slate-400 text-center px-4">
+                        <Text className="text-slate-900 dark:text-white font-black text-[22px] tracking-tight mb-2">No Decks Yet</Text>
+                        <Text className="text-slate-500 font-bold text-[14px] text-center px-8 leading-relaxed">
                             Generate your first set of flashcards to start studying smarter.
                         </Text>
                     </View>
@@ -112,29 +111,29 @@ export default function FlashcardsDashboard() {
                         <TouchableOpacity
                             key={deck.id}
                             onPress={() => router.push(`/(drawer)/flashcards/${deck.id}` as any)}
-                            className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 mb-4 shadow-sm shadow-slate-200 dark:shadow-none"
-                            activeOpacity={0.7}
+                            className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 mb-4"
+                            activeOpacity={0.8}
                         >
-                            <View className="flex-row justify-between items-start mb-3">
-                                <Text className="text-slate-900 dark:text-white font-bold text-lg flex-1" numberOfLines={2}>
+                            <View className="flex-row justify-between items-start mb-6">
+                                <Text className="text-slate-900 dark:text-white font-black text-[19px] tracking-tight flex-1 mr-4" numberOfLines={2}>
                                     {deck.title}
                                 </Text>
                                 <TouchableOpacity
                                     onPress={() => handleDelete(deck.id, deck.title)}
-                                    className="p-2 ml-2 -mr-2 -mt-2 opacity-50 hover:opacity-100"
+                                    className="p-2 -mr-2 -mt-2 opacity-50 justify-center items-center rounded-xl"
                                 >
-                                    <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                                    <Ionicons name="trash" size={20} color="#ef4444" />
                                 </TouchableOpacity>
                             </View>
 
                             <View className="flex-row items-center">
-                                <View className="flex-row items-center bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md mr-3">
-                                    <Ionicons name="copy" size={12} color="#4f46e5" />
-                                    <Text className="text-indigo-700 dark:text-indigo-300 font-bold text-xs ml-1.5">{deck.flashcards_count} Cards</Text>
+                                <View className="flex-row items-center border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-brand-dark px-3 py-1.5 rounded-xl mr-2 mb-2 w-auto">
+                                    <Ionicons name="copy" size={12} color={isDark ? "white" : "#0f172a"} />
+                                    <Text className="text-slate-900 dark:text-white font-bold text-[11px] ml-1.5 uppercase tracking-widest">{deck.flashcards_count} Cards</Text>
                                 </View>
-                                <View className="flex-row items-center">
+                                <View className="flex-row items-center mt-[-6px]">
                                     <Ionicons name="time-outline" size={14} color="#94a3b8" />
-                                    <Text className="text-slate-400 dark:text-slate-500 font-medium text-xs ml-1">
+                                    <Text className="text-slate-400 font-bold text-[11px] ml-1 uppercase tracking-widest">
                                         {new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                     </Text>
                                 </View>

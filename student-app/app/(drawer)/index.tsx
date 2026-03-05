@@ -5,8 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { LinearGradient } from 'expo-linear-gradient';
-import { GradientButton } from '@/components/ui/GradientButton';
+import { useColorScheme } from 'nativewind';
 
 function getGreeting(): string {
     const hour = new Date().getHours();
@@ -18,10 +17,10 @@ function getGreeting(): string {
 function HeatmapGrid({ activeDates }: { activeDates: string[] }) {
     if (!activeDates || activeDates.length === 0) {
         return (
-            <View className="py-8 items-center justify-center">
-                <Ionicons name="calendar-outline" size={36} color="#cbd5e1" />
+            <View className="py-8 items-center justify-center border border-slate-200 dark:border-slate-800 rounded-2xl">
+                <Ionicons name="calendar-outline" size={32} color="#94a3b8" />
                 <Text className="text-slate-500 dark:text-slate-400 font-medium mt-3 text-sm text-center">
-                    No recent activity.{'\n'}Complete a quiz or flashcard to start your streak!
+                    No recent activity.{'\n'}Complete a quiz to start your streak!
                 </Text>
             </View>
         );
@@ -44,7 +43,7 @@ function HeatmapGrid({ activeDates }: { activeDates: string[] }) {
                     <View
                         key={d}
                         style={{ width: '12%', minWidth: 28, maxWidth: 42, aspectRatio: 1 }}
-                        className={`rounded-lg border ${isActive ? 'bg-orange-500 border-orange-600 shadow-sm shadow-orange-500/20' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}
+                        className={`rounded-sm border ${isActive ? 'bg-[#2EBD85] border-[#2EBD85]' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}
                     />
                 );
             })}
@@ -55,6 +54,8 @@ function HeatmapGrid({ activeDates }: { activeDates: string[] }) {
 export default function DashboardScreen() {
     const { user, updateUser } = useAuthStore();
     const [refreshing, setRefreshing] = useState(false);
+    const { colorScheme } = useColorScheme();
+    const isDark = colorScheme === 'dark';
 
     const { data: heatmapDates = [], refetch: refetchHeatmap } = useQuery({
         queryKey: ['streak-heatmap'],
@@ -64,7 +65,7 @@ export default function DashboardScreen() {
         }
     });
 
-    // Refresh user data from API whenever this screen comes into focus and every 5 seconds
+    // Refresh user data from API whenever this screen comes into focus
     useFocusEffect(
         useCallback(() => {
             const fetchData = async () => {
@@ -93,181 +94,173 @@ export default function DashboardScreen() {
 
     if (!user) return null;
 
-    const creditPercentage = user.is_unlimited ? 100 : Math.min(Math.round((user.credits / 500) * 100), 100);
-
     return (
         <ScrollView
-            className="flex-1 bg-slate-50 dark:bg-brand-dark"
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />}
+            className="flex-1 bg-white dark:bg-brand-dark"
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2EBD85" />}
         >
-            {/* Greeting */}
-            <View className="px-6 py-8 pb-4">
-                <Text className="text-slate-400 dark:text-slate-500 font-medium mb-1">{getGreeting()},</Text>
-                <Text className="text-3xl font-black text-slate-900 dark:text-white">{user.name}</Text>
+            {/* Header */}
+            <View className="px-6 py-8 pb-6 flex-row justify-between items-center">
+                <View>
+                    <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                        {user.name}
+                    </Text>
+                    <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-0.5">
+                        {getGreeting()}
+                    </Text>
+                </View>
+                <TouchableOpacity onPress={() => router.push('/account')} className="size-11 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center border border-slate-200 dark:border-slate-700">
+                    <Ionicons name="person" size={18} color={isDark ? '#cbd5e1' : '#0f172a'} />
+                </TouchableOpacity>
             </View>
 
-            {/* Dashboard Stats Row */}
-            <View>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={{ flexGrow: 0 }}
-                    contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24, gap: 16 }}
-                >
-                    {/* Credit Balance Card */}
-                    <View style={{ width: 280, height: 160 }} className="rounded-3xl shadow-lg shadow-indigo-900/30 overflow-hidden">
-                        <LinearGradient
-                            colors={['#4f46e5', '#0ea5e9']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={{ flex: 1, padding: 20, justifyContent: 'space-between' }}
-                        >
+            {/* Stake-Style Balance Area */}
+            <View className="px-6 pb-8">
+                <View className="flex-row items-end justify-between mb-2">
+                    <View>
+                        <Text className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-1">
+                            Available Credits
+                        </Text>
+                        <View className="flex-row items-baseline">
                             {user.is_unlimited ? (
-                                <View className="items-center justify-center flex-1 py-2">
-                                    <Ionicons name="infinite" size={54} color="white" />
-                                    <Text className="text-xl font-black text-white mt-1 opacity-90">Unlimited Pro</Text>
+                                <View className="flex-row items-center">
+                                    <Ionicons name="infinite" size={36} color={isDark ? "white" : "black"} />
+                                    <Text className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter ml-2">Unlimited</Text>
                                 </View>
                             ) : (
-                                <View className="flex-row justify-between flex-wrap items-start mb-3">
-                                    <View>
-                                        <Text className="text-indigo-100 font-bold uppercase tracking-widest text-[10px] mb-0.5">
-                                            Credits
-                                        </Text>
-                                        <Text className="text-3xl font-black text-white">{user.credits}</Text>
-                                    </View>
-                                    <View className="size-10 bg-white/20 rounded-full items-center justify-center">
-                                        <Ionicons name="flash" size={18} color="white" />
-                                    </View>
-                                </View>
-                            )}
-
-                            {/* Credit Progress Bar (free users only) */}
-                            {!user.is_unlimited && (
-                                <View className="mb-3">
-                                    <View className="bg-white/20 rounded-full h-1.5 overflow-hidden">
-                                        <View
-                                            className="bg-white rounded-full h-1.5"
-                                            style={{ width: `${creditPercentage}%` }}
-                                        />
-                                    </View>
-                                </View>
-                            )}
-
-                            {!user.is_unlimited && (
-                                <TouchableOpacity
-                                    onPress={() => router.push('/upgrade')}
-                                    className="bg-white dark:bg-slate-800 py-2 rounded-xl flex-row justify-center items-center"
-                                    activeOpacity={0.8}
-                                >
-                                    <Ionicons name="star" size={14} color="#4338ca" />
-                                    <Text className="text-indigo-900 dark:text-indigo-400 font-black text-xs ml-1">Upgrade</Text>
-                                </TouchableOpacity>
-                            )}
-                        </LinearGradient>
-                    </View>
-
-                    {/* Study Streak Card */}
-                    <View style={{ width: 280, height: 160 }} className="bg-orange-500 dark:bg-orange-600 rounded-3xl p-5 shadow-lg shadow-orange-900/30 justify-between">
-                        <View className="flex-row justify-between flex-wrap items-start mb-2">
-                            <View>
-                                <Text className="text-orange-200 dark:text-orange-300 font-bold uppercase tracking-widest text-[10px] mb-0.5">
-                                    Day Streak
+                                <Text className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                    {user.credits.toLocaleString()}
                                 </Text>
-                                <Text className="text-3xl font-black text-white">
-                                    {user.streak?.current_streak || 0}
-                                </Text>
-                            </View>
-                            <View className="size-10 bg-white/20 dark:bg-black/20 rounded-full items-center justify-center">
-                                <Ionicons name="flame" size={20} color="white" />
-                            </View>
-                        </View>
-
-                        <View className="bg-orange-600/50 dark:bg-black/20 rounded-xl p-2.5 flex-row justify-between items-center mt-1">
-                            <Text className="text-orange-100 dark:text-orange-200 font-bold text-[10px] uppercase">Longest</Text>
-                            <Text className="text-white font-black text-sm">{user.streak?.longest_streak || 0} days</Text>
+                            )}
                         </View>
                     </View>
-                </ScrollView>
+                    {!user.is_unlimited && (
+                        <TouchableOpacity
+                            onPress={() => router.push('/upgrade')}
+                            className="bg-[#2EBD85] px-5 py-3 rounded-full flex-row items-center"
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="add" size={18} color="white" />
+                            <Text className="text-white font-black text-sm ml-1">Add</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+                {!user.is_unlimited && (
+                    <View className="flex-row items-center mt-2">
+                        <Ionicons name="trending-up" size={14} color="#2EBD85" />
+                        <Text className="text-[#2EBD85] font-bold text-xs ml-1">Top up today</Text>
+                    </View>
+                )}
             </View>
 
-            {/* Quick Actions */}
-            <View className="px-6 pb-10">
-                <Text className="text-lg font-black text-slate-900 dark:text-white mb-4">Study Tools</Text>
+            {/* Promo Banner (Black & White Stake Style) */}
+            {!user.is_unlimited && (
+                <View className="px-6 pb-8">
+                    <TouchableOpacity
+                        onPress={() => router.push('/upgrade')}
+                        activeOpacity={0.8}
+                        className="bg-slate-900 dark:bg-slate-800 rounded-3xl p-5 flex-row items-center justify-between border border-slate-900 dark:border-slate-700"
+                    >
+                        <View className="flex-1 pr-4">
+                            <Text className="text-white text-xl font-black tracking-tight mb-1">
+                                UPGRADE TO PRO
+                            </Text>
+                            <Text className="text-slate-400 text-xs font-medium leading-relaxed">
+                                Get unlimited answers, priority speed, and priority access for one flat fee.
+                            </Text>
+                            <View className="flex-row items-center mt-3">
+                                <Text className="text-white font-bold text-xs mr-1">Unlock now</Text>
+                                <Ionicons name="arrow-forward" size={14} color="white" />
+                            </View>
+                        </View>
+                        <View className="size-16 bg-white/10 rounded-2xl items-center justify-center rotate-3">
+                            <Ionicons name="infinite" size={32} color="white" />
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            )}
 
-                <TouchableOpacity
-                    onPress={() => router.push('/generate')}
-                    className="bg-white dark:bg-slate-800 p-6 rounded-3xl mb-4 border border-slate-100 dark:border-slate-700 flex-row items-center shadow-sm shadow-slate-200 dark:shadow-none"
-                    activeOpacity={0.7}
-                >
-                    <View className="size-14 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl items-center justify-center mr-4">
-                        <Ionicons name="school" size={28} color="#6366f1" />
-                    </View>
-                    <View className="flex-1">
-                        <Text className="text-lg font-bold text-slate-900 dark:text-white">AI Practice Quiz</Text>
-                        <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Generate unlimited quizzes</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
-                </TouchableOpacity>
+            {/* Study Tools (Clean outline cards) */}
+            <View className="px-6 pb-6">
+                <Text className="text-lg font-black text-slate-900 dark:text-white mb-4 tracking-tight">Study Tools</Text>
 
-                <TouchableOpacity
-                    onPress={() => router.push('/flashcards')}
-                    className="bg-white dark:bg-slate-800 p-6 rounded-3xl mb-4 border border-slate-100 dark:border-slate-700 flex-row items-center shadow-sm shadow-slate-200 dark:shadow-none"
-                    activeOpacity={0.7}
-                >
-                    <View className="size-14 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl items-center justify-center mr-4">
-                        <Ionicons name="albums" size={28} color="#10b981" />
-                    </View>
-                    <View className="flex-1">
-                        <Text className="text-lg font-bold text-slate-900 dark:text-white">Flashcards</Text>
-                        <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Generate and study AI decks</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
-                </TouchableOpacity>
+                <View className="gap-3">
+                    <TouchableOpacity
+                        onPress={() => router.push('/generate')}
+                        className="bg-white dark:bg-brand-dark p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex-row items-center"
+                        activeOpacity={0.7}
+                    >
+                        <View className="size-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl items-center justify-center mr-4">
+                            <Ionicons name="school" size={24} color={isDark ? '#e2e8f0' : '#0f172a'} />
+                        </View>
+                        <View className="flex-1">
+                            <Text className="text-base font-black text-slate-900 dark:text-white tracking-tight">AI Practice Quiz</Text>
+                            <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Generate unlimited quizzes</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                    onPress={() => router.push('/scan')}
-                    className="bg-white dark:bg-slate-800 p-6 rounded-3xl mb-4 border border-slate-100 dark:border-slate-700 flex-row items-center shadow-sm shadow-slate-200 dark:shadow-none"
-                    activeOpacity={0.7}
-                >
-                    <View className="size-14 bg-violet-50 dark:bg-violet-900/30 rounded-2xl items-center justify-center mr-4">
-                        <Ionicons name="scan" size={28} color="#8b5cf6" />
-                    </View>
-                    <View className="flex-1">
-                        <Text className="text-lg font-bold text-slate-900 dark:text-white">Scan & Solve</Text>
-                        <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Snap a photo, get the answer</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => router.push('/flashcards')}
+                        className="bg-white dark:bg-brand-dark p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex-row items-center"
+                        activeOpacity={0.7}
+                    >
+                        <View className="size-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl items-center justify-center mr-4">
+                            <Ionicons name="albums" size={24} color={isDark ? '#e2e8f0' : '#0f172a'} />
+                        </View>
+                        <View className="flex-1">
+                            <Text className="text-base font-black text-slate-900 dark:text-white tracking-tight">Flashcards</Text>
+                            <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Generate and study AI decks</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                    onPress={() => router.push('/billing')}
-                    className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 flex-row items-center shadow-sm shadow-slate-200 dark:shadow-none"
-                    activeOpacity={0.7}
-                >
-                    <View className="size-14 bg-slate-50 dark:bg-slate-700/50 rounded-2xl items-center justify-center mr-4">
-                        <Ionicons name="receipt" size={28} color="#64748b" />
-                    </View>
-                    <View className="flex-1">
-                        <Text className="text-lg font-bold text-slate-900 dark:text-white">Billing History</Text>
-                        <Text className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">View past invoices</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => router.push('/scan')}
+                        className="bg-white dark:bg-brand-dark p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex-row items-center"
+                        activeOpacity={0.7}
+                    >
+                        <View className="size-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl items-center justify-center mr-4">
+                            <Ionicons name="scan" size={24} color={isDark ? '#e2e8f0' : '#0f172a'} />
+                        </View>
+                        <View className="flex-1">
+                            <Text className="text-base font-black text-slate-900 dark:text-white tracking-tight">Scan & Solve</Text>
+                            <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Snap a photo, get the answer</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+                    </TouchableOpacity>
+                </View>
             </View>
 
-            {/* Heatmap Card */}
+            {/* Streak & Activity */}
             <View className="px-6 pb-12">
-                <View className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm shadow-slate-200 dark:shadow-none">
-                    <View className="flex-row justify-between items-center mb-4">
-                        <View>
-                            <Text className="text-slate-900 dark:text-white font-bold text-lg">Activity map</Text>
-                            <Text className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">Last 28 days of study</Text>
+                <Text className="text-lg font-black text-slate-900 dark:text-white mb-4 tracking-tight">Activity</Text>
+
+                <View className="flex-row gap-3 mb-3">
+                    <View className="flex-1 bg-white dark:bg-brand-dark border border-slate-200 dark:border-slate-800 rounded-3xl p-5">
+                        <Text className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-1">Current Streak</Text>
+                        <View className="flex-row items-baseline">
+                            <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{user.streak?.current_streak || 0}</Text>
+                            <Text className="text-xs font-bold text-slate-400 ml-1">Days</Text>
                         </View>
-                        <Ionicons name="calendar" size={20} color="#94a3b8" />
+                    </View>
+                    <View className="flex-1 bg-white dark:bg-brand-dark border border-slate-200 dark:border-slate-800 rounded-3xl p-5">
+                        <Text className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-1">Longest Streak</Text>
+                        <View className="flex-row items-baseline">
+                            <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{user.streak?.longest_streak || 0}</Text>
+                            <Text className="text-xs font-bold text-slate-400 ml-1">Days</Text>
+                        </View>
+                    </View>
+                </View>
+
+                <View className="bg-white dark:bg-brand-dark p-5 rounded-3xl border border-slate-200 dark:border-slate-800">
+                    <View className="flex-row justify-between items-center mb-4">
+                        <Text className="text-slate-900 dark:text-white font-bold text-sm">Last 28 days</Text>
+                        <Ionicons name="flame" size={16} color="#2EBD85" />
                     </View>
                     <HeatmapGrid activeDates={heatmapDates} />
                 </View>
             </View>
-        </ScrollView >
+        </ScrollView>
     );
 }

@@ -41,6 +41,9 @@ class User extends Authenticatable implements FilamentUser
         'is_unlimited_student',
         'last_credit_refill_at',
         'ai_preferences',
+        'provider',
+        'provider_id',
+        'avatar',
     ];
 
     /**

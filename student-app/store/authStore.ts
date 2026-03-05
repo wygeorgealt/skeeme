@@ -29,7 +29,7 @@ interface AuthState {
     user: User | null;
     token: string | null;
     isLoading: boolean;
-    setAuth: (user: User, token: string) => void;
+    login: (user: User, token: string) => void;
     updateUser: (user: Partial<User>) => void;
     logout: () => void;
     hydrate: () => Promise<void>;
@@ -70,7 +70,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     isLoading: true,
     theme: 'system',
 
-    setAuth: async (user, token) => {
+    login: async (user, token) => {
         set({ user, token });
         try {
             await storage.setItem('auth_token', token);
