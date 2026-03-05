@@ -21,7 +21,50 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        // ... (existing login code)
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+            'device_name' => 'nullable|string',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' => 'The provided credentials do not match our records.',
+            ], 401);
+        }
+
+        if ($user->role !== 'student') {
+            return response()->json([
+                'message' => 'You do not have permission to access the student portal.',
+            ], 403);
+        }
+
+        if ($user->status !== 'active') {
+            return response()->json([
+                'message' => 'Your account is ' . $user->status . '. Please contact support.',
+            ], 403);
+        }
+
+        $deviceName = $request->input('device_name', 'mobile_app');
+        $token = $user->createToken($deviceName)->plainTextToken;
+
+        $pricing = $this->getLocalizedPrice($request);
+
+        return response()->json([
+            'user' => [
+                'name' => $user->name,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'email' => $user->email,
+                'credits' => $user->credits,
+                'is_unlimited' => (bool) $user->is_unlimited_student,
+                'ai_preferences' => $user->ai_preferences,
+            ],
+            'token' => $token,
+            'pricing' => $pricing,
+        ], 200);
     }
 
     /**
