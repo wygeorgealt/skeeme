@@ -1,15 +1,23 @@
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { api } from '@/lib/api';
 import { Platform, Alert } from 'react-native';
 
-// ─── CONFIGURATION ─────────────────────────────────────────────────────────
-// Configure Google Sign-In with your Web Client ID from Google Cloud Console.
-// This MUST be the Web Client ID (not the iOS or Android one).
-// Set this in your .env as EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
-GoogleSignin.configure({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
-    offlineAccess: false,
-});
+// Safely import GoogleSignin so it doesn't crash Expo Go
+let GoogleSignin: any = null;
+let statusCodes: any = {};
+
+try {
+    const GoogleAuthModule = require('@react-native-google-signin/google-signin');
+    GoogleSignin = GoogleAuthModule.GoogleSignin;
+    statusCodes = GoogleAuthModule.statusCodes;
+
+    // ─── CONFIGURATION ─────────────────────────────────────────────────────────
+    GoogleSignin?.configure({
+        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+        offlineAccess: false,
+    });
+} catch (error) {
+    console.log("Google Sign-In native module not available (likely running in Expo Go or Web).");
+}
 
 // ─── GOOGLE SIGN IN ────────────────────────────────────────────────────────
 
@@ -18,6 +26,14 @@ export async function signInWithGoogle(): Promise<{
     token: string;
     isNewUser: boolean;
 } | null> {
+    if (!GoogleSignin) {
+        Alert.alert(
+            'Native Module Missing',
+            'Google Sign-In requires a custom dev build. It will not work in Expo Go. Please run `npx expo run:android` or use EAS Build.'
+        );
+        return null;
+    }
+
     try {
         await GoogleSignin.hasPlayServices();
         const response = await GoogleSignin.signIn();

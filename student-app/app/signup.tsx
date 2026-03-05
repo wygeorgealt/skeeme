@@ -68,14 +68,20 @@ export default function SignupScreen() {
         if (!name.trim()) return Alert.alert('Required', 'Please enter your full name.');
         setIsLoading(true);
 
+        const payload = {
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            password,
+            password_confirmation: confirmPassword,
+            device_name: `${Platform.OS}_app`,
+        };
+
+        console.log('[Signup] Sending payload:', JSON.stringify(payload, null, 2));
+
         try {
-            const response = await api.post('/student/register', {
-                name: name.trim(),
-                email: email.trim().toLowerCase(),
-                password,
-                password_confirmation: confirmPassword,
-                device_name: `${Platform.OS}_app`,
-            });
+            const response = await api.post('/student/register', payload);
+
+            console.log('[Signup] Success:', response.status, JSON.stringify(response.data, null, 2));
 
             const { token, user } = response.data;
             login(user, token);
@@ -84,10 +90,21 @@ export default function SignupScreen() {
             router.replace('/upgrade');
 
         } catch (error: any) {
-            Alert.alert(
-                'Registration Failed',
-                error.response?.data?.message || 'Check your details and try again.'
-            );
+            console.error('[Signup] Error status:', error.response?.status);
+            console.error('[Signup] Error data:', JSON.stringify(error.response?.data, null, 2));
+            console.error('[Signup] Error message:', error.message);
+
+            // Extract meaningful message from Laravel validation errors
+            let errorMessage = error.response?.data?.message || 'Check your details and try again.';
+
+            // If it's a 422 validation error, show the first validation message
+            if (error.response?.status === 422 && error.response?.data?.errors) {
+                const errors = error.response.data.errors;
+                const firstKey = Object.keys(errors)[0];
+                errorMessage = errors[firstKey][0];
+            }
+
+            Alert.alert('Registration Failed', errorMessage);
         } finally {
             setIsLoading(false);
         }

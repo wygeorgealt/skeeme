@@ -1,45 +1,46 @@
 import { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions, useColorScheme, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { useAnimatedStyle, withTiming, interpolateColor } from 'react-native-reanimated';
 
 const { width, height } = Dimensions.get('window');
 
+// Slide 1: indigo bg baked into image → match exactly
+// Slide 2: white bg baked into image → always use white bg; dark mode shows a card overlay
+// Slide 3: amber bg baked into image → match exactly
 const SLIDES = [
     {
         id: 1,
-        title: 'Custom Solutions',
-        description: 'Creating mobile applications and study tools for every student need.',
+        title: 'Your Pocket\nTutor',
+        description: 'Skeeme turns your notes, slides, and textbooks into ready-to-study quizzes — in seconds.',
         image: require('@/assets/images/slide1.png'),
-        bgLight: '#4f46e5', // brand-indigo
-        bgDark: '#4f46e5',
-        textLight: '#ffffff',
-        textDark: '#ffffff',
-        accent: '#ffffff',
+        bgColor: '#4f46e5',
+        textColor: '#ffffff',
+        accentBg: '#ffffff',
+        accentIcon: '#4f46e5',
     },
     {
         id: 2,
-        title: 'Design Interfaces',
-        description: 'Designing intuitive and engaging learning experiences powered by Ai.',
+        title: 'Scan it.\nSolve it.',
+        description: 'Point your camera at any problem. Skeeme\'s AI breaks it down and walks you through the answer.',
         image: require('@/assets/images/slide2.png'),
-        bgLight: '#ffffff',
-        bgDark: '#010100', // brand-dark
-        textLight: '#000000',
-        textDark: '#ffffff',
-        accent: '#4f46e5',
+        bgColor: '#ffffff',
+        bgColorDark: '#1a1a2e',
+        textColor: '#000000',
+        textColorDark: '#ffffff',
+        accentBg: '#4f46e5',
+        accentIcon: '#ffffff',
     },
     {
         id: 3,
-        title: 'Smart Learning',
-        description: 'Innovative tools for managing your courses, exams, and academic insights.',
+        title: 'Ace Every\nExam',
+        description: 'Track streaks, revisit missed questions, and stay ahead of every deadline — all in one place.',
         image: require('@/assets/images/slide3.png'),
-        bgLight: '#f59e0b', // amber-500
-        bgDark: '#f59e0b',
-        textLight: '#ffffff',
-        textDark: '#ffffff',
-        accent: '#ffffff',
+        bgColor: '#f59e0b',
+        textColor: '#ffffff',
+        accentBg: '#ffffff',
+        accentIcon: '#f59e0b',
     }
 ];
 
@@ -66,11 +67,26 @@ export default function WelcomeScreen() {
 
     const currentSlide = SLIDES[currentIndex];
 
-    // Dynamic status bar based on slide background
+    // Slide 2 uses dark mode bg variant; others are always the same
+    const getSlideBg = (slide: typeof SLIDES[0]) => {
+        if (slide.id === 2 && isDark && (slide as any).bgColorDark) {
+            return (slide as any).bgColorDark;
+        }
+        return slide.bgColor;
+    };
+
+    const getSlideText = (slide: typeof SLIDES[0]) => {
+        if (slide.id === 2 && isDark && (slide as any).textColorDark) {
+            return (slide as any).textColorDark;
+        }
+        return slide.textColor;
+    };
+
+    // Status bar: dark icons on slide 2 light mode, white on everything else
     const statusBarStyle = currentIndex === 1 && !isDark ? 'dark' : 'light';
 
     return (
-        <View style={{ flex: 1, backgroundColor: isDark ? currentSlide.bgDark : currentSlide.bgLight }}>
+        <View style={{ flex: 1, backgroundColor: getSlideBg(currentSlide) }}>
             <StatusBar style={statusBarStyle} animated />
 
             <ScrollView
@@ -81,64 +97,61 @@ export default function WelcomeScreen() {
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 bounces={false}
-                className="flex-1"
+                style={{ flex: 1 }}
             >
-                {SLIDES.map((slide, index) => (
-                    <View key={slide.id} style={{ width, height }} className="pt-20 pb-12 px-8 flex-col">
+                {SLIDES.map((slide, index) => {
+                    const slideBg = getSlideBg(slide);
+                    const slideText = getSlideText(slide);
 
-                        {/* 3D Isometric Image Container */}
-                        <View className="flex-1 justify-center items-center mt-8">
-                            {/* For Slide 2 in dark mode, we wrap the white image in a nice intentional card */}
-                            <View className={`${index === 1 && isDark ? 'bg-white rounded-[40px] p-2 shadow-2xl overflow-hidden' : ''}`}>
+                    return (
+                        <View key={slide.id} style={[styles.slide, { backgroundColor: slideBg }]}>
+
+                            {/* Full-bleed image fills the top portion of the slide */}
+                            <View style={styles.imageContainer}>
                                 <Image
                                     source={slide.image}
-                                    style={{
-                                        width: width * 0.85,
-                                        height: width * 0.9,
-                                        resizeMode: 'contain',
-                                    }}
+                                    style={styles.image}
+                                    resizeMode="cover"
                                 />
                             </View>
-                        </View>
 
-                        {/* Typography Section */}
-                        <View className="mt-8 mb-20">
-                            <Text
-                                style={{ color: isDark ? slide.textDark : slide.textLight }}
-                                className="text-[42px] font-black tracking-tight leading-[48px] mb-4"
-                            >
-                                {slide.title.replace(' ', '\n')}
-                            </Text>
-                            <Text
-                                style={{ color: isDark ? slide.textDark : slide.textLight, opacity: 0.85 }}
-                                className="text-[17px] font-medium leading-relaxed pr-8"
-                            >
-                                {slide.description}
-                            </Text>
+                            {/* Text Section pinned at the bottom */}
+                            <View style={styles.textSection}>
+                                <Text style={[styles.title, { color: slideText }]}>
+                                    {slide.title}
+                                </Text>
+                                <Text style={[styles.description, { color: slideText, opacity: 0.8 }]}>
+                                    {slide.description}
+                                </Text>
+                            </View>
+
                         </View>
-                    </View>
-                ))}
+                    );
+                })}
             </ScrollView>
 
-            {/* Bottom Actions Fixed Footer */}
-            <View className="absolute bottom-12 left-0 right-0 px-8 flex-row justify-between items-center">
-                {/* Skip / Login Text */}
-                <TouchableOpacity onPress={() => router.push('/login')} className="py-2 pr-4">
-                    <Text
-                        style={{ color: isDark ? currentSlide.textDark : currentSlide.textLight, opacity: 0.7 }}
-                        className="font-bold text-[16px]"
-                    >
+            {/* Bottom Actions — overlaid above everything */}
+            <View style={styles.footer}>
+                {/* Skip */}
+                <TouchableOpacity onPress={() => router.push('/login')} style={styles.skipBtn}>
+                    <Text style={[styles.skipText, { color: getSlideText(currentSlide) }]}>
                         Skip
                     </Text>
                 </TouchableOpacity>
 
                 {/* Progress Dots */}
-                <View className="flex-row items-center space-x-2 absolute left-0 right-0 justify-center pointer-events-none">
+                <View style={styles.dotsContainer}>
                     {SLIDES.map((_, i) => (
                         <View
                             key={i}
-                            style={{ backgroundColor: isDark ? currentSlide.textDark : currentSlide.textLight }}
-                            className={`h-[4px] rounded-full transition-all duration-300 ${i === currentIndex ? 'w-6 opacity-100' : 'w-2 opacity-30'}`}
+                            style={[
+                                styles.dot,
+                                {
+                                    backgroundColor: getSlideText(currentSlide),
+                                    width: i === currentIndex ? 24 : 8,
+                                    opacity: i === currentIndex ? 1 : 0.35,
+                                }
+                            ]}
                         />
                     ))}
                 </View>
@@ -146,17 +159,88 @@ export default function WelcomeScreen() {
                 {/* Next / Finish FAB */}
                 <TouchableOpacity
                     onPress={goNext}
-                    style={{ backgroundColor: currentSlide.accent }}
-                    className="w-16 h-16 rounded-[24px] items-center justify-center shadow-lg"
+                    style={[styles.fab, { backgroundColor: currentSlide.accentBg }]}
                     activeOpacity={0.8}
                 >
                     {currentIndex === SLIDES.length - 1 ? (
-                        <Ionicons name="checkmark" size={32} color={currentSlide.bgLight} />
+                        <Ionicons name="checkmark" size={28} color={currentSlide.accentIcon} />
                     ) : (
-                        <Ionicons name="chevron-forward" size={32} color={currentSlide.bgLight} />
+                        <Ionicons name="chevron-forward" size={28} color={currentSlide.accentIcon} />
                     )}
                 </TouchableOpacity>
             </View>
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    slide: {
+        width,
+        height,
+        flexDirection: 'column',
+    },
+    imageContainer: {
+        flex: 1.1,
+        overflow: 'hidden',
+    },
+    image: {
+        width,
+        height: '100%',
+    },
+    textSection: {
+        paddingHorizontal: 32,
+        paddingTop: 24,
+        paddingBottom: 120,
+    },
+    title: {
+        fontSize: 40,
+        fontWeight: '900',
+        letterSpacing: -0.5,
+        lineHeight: 46,
+        marginBottom: 12,
+    },
+    description: {
+        fontSize: 16,
+        fontWeight: '500',
+        lineHeight: 24,
+        paddingRight: 24,
+    },
+    footer: {
+        position: 'absolute',
+        bottom: 48,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 32,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    skipBtn: {
+        paddingVertical: 8,
+        paddingRight: 8,
+    },
+    skipText: {
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    dotsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        justifyContent: 'center',
+    },
+    dot: {
+        height: 4,
+        borderRadius: 2,
+    },
+    fab: {
+        width: 64,
+        height: 64,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+});
