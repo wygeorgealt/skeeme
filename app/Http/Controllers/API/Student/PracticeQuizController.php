@@ -8,6 +8,10 @@ use App\Services\DeepseekAIService;
 use App\Services\FileExtractionService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
+use App\Jobs\ProcessAIQuiz;
 
 class PracticeQuizController extends Controller
 {
@@ -68,14 +72,34 @@ class PracticeQuizController extends Controller
 
             // 2. Calculate Dynamic Cost
             $wordCount = str_word_count($sourceContent);
+
+            // Hard Word Limit Protector
+            if ($wordCount > 8000) {
+                Log::warning("Word limit exceeded", ['user_id' => $user->id, 'word_count' => $wordCount]);
+                return response()->json([
+                    'message' => "This document is too large for AI processing. Please limit it to 8,000 words (approx. 16 pages).",
+                ], 422);
+            }
+
             $baseCost = $validated['question_count'] * 1; 
-            $weightCost = (int) ceil($wordCount / 50); 
+            $chunks = (int) ceil($wordCount / 500); 
+            $weightCost = $chunks * 5; // 5 credits per 500 words
+            
             $totalCost = $baseCost + $weightCost;
             if ($totalCost < 10) $totalCost = 10;
-            Log::info("Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount]);
+            Log::info("Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'chunks' => $chunks]);
 
-            // 3. Check Access
-            if (!$user->is_unlimited_student && $user->credits < $totalCost) {
+            // 3. Check & Lock Credits (Atomic)
+            $canProceed = DB::transaction(function() use ($user, $totalCost) {
+                $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+                
+                if (!$lockedUser->is_unlimited_student && $lockedUser->credits < $totalCost) {
+                    return false;
+                }
+                return true;
+            });
+
+            if (!$canProceed) {
                 Log::warning("Insufficient Credits", ['user_id' => $user->id, 'credits' => $user->credits, 'needed' => $totalCost]);
                 return response()->json([
                     'message' => "Insufficient credits. This generation costs $totalCost credits.",
@@ -85,7 +109,8 @@ class PracticeQuizController extends Controller
             }
 
             // 4. AI Generation
-            Log::info("Calling Deepseek AI...");
+            // 4. Prepare for AI Generation (Dispatch Job)
+            Log::info("Preparing to dispatch AI quiz generation job...");
             $types = [];
             foreach ($validated['question_types'] as $type) {
                 if ($type === 'mcq') $types[] = 'multiple_choice';
@@ -93,46 +118,35 @@ class PracticeQuizController extends Controller
             }
             $difficulty = $validated['difficulty'] ?? 'medium';
 
-            $questions = $this->aiService->generateQuestions(
-                [$sourceContent],
-                $validated['question_count'],
-                $difficulty,
-                $types ?: ['multiple_choice'],
-                $validated['topic'] ?? 'Mobile Practice File',
-                false,
-                null,
-                $user->ai_preferences
-            );
-            
-            if (empty($questions) || count($questions) === 0) {
-                throw new \Exception('AI could not extract enough information to build a quiz. Please provide a more detailed topic or file.');
-            }
-
-            Log::info("AI Generation Success", ['count' => count($questions)]);
-
-            // 5. Cleanup Multiple Choice formatting
-            foreach ($questions as &$q) {
-                if ($q['question_type'] === 'multiple_choice' && !empty($q['options'])) {
-                    $originalCorrectKey = $q['correct_answer'];
-                    $keyMap = ['A' => 0, 'B' => 1, 'C' => 2, 'D' => 3, 'E' => 4];
-                    $correctIndex = $keyMap[strtoupper($originalCorrectKey)] ?? 0;
-                    $correctText = $q['options'][$correctIndex] ?? $q['options'][0] ?? '';
-                    
-                    shuffle($q['options']);
-                    $q['correct_answer'] = $correctText;
-                }
-            }
-
-            // 6. Deduct Usage
+            // 6. Deduct Usage (Atomic)
             if (!$user->is_unlimited_student) {
-                $user->decrement('credits', $totalCost);
+                DB::transaction(function() use ($user, $totalCost) {
+                    \App\Models\User::where('id', $user->id)->lockForUpdate()->decrement('credits', $totalCost);
+                });
                 Log::info("Credits Deducted", ['new_total' => $user->fresh()->credits]);
             }
 
+            // 7. Dispatch Background Job
+            $jobId = (string) Str::uuid();
+            Cache::put("ai_job_status:{$jobId}", "pending", 1800);
+
+            ProcessAIQuiz::dispatch(
+                $sourceContent, // Changed from $notes to $sourceContent
+                $validated['question_count'] ?? 10,
+                $validated['difficulty'] ?? 'medium',
+                $types, // Changed from $validated['question_types'] ?? ['multiple_choice'] to $types
+                $validated['topic'] ?? 'General Knowledge',
+                $user->id,
+                $jobId,
+                $user->is_unlimited_student ? 0 : $totalCost
+            );
+
             return response()->json([
-                'questions' => $questions,
-                'remaining_credits' => $user->fresh()->credits,
-                'cost' => $totalCost
+                'message' => 'AI quiz generation started. You can check the status using the job_id.',
+                'job_id' => $jobId,
+                'status' => 'pending',
+                'credits_deducted' => $user->is_unlimited_student ? 0 : $totalCost,
+                'remaining_credits' => $user->fresh()->credits
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {

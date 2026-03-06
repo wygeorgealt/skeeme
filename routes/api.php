@@ -128,8 +128,15 @@ Route::prefix('v1')->group(function () {
             Route::post('logout', [\App\Http\Controllers\API\Student\AuthController::class, 'logout']);
             Route::get('me', [\App\Http\Controllers\API\Student\AuthController::class, 'me']);
             
-            // Practice Quizzes & Flashcards
-            Route::post('quizzes/generate', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'generate']);
+            // AI-Intensive Routes (Throttled: 5 per minute)
+            Route::middleware('throttle:5,1')->group(function () {
+                Route::post('quizzes/generate', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'generate']);
+                Route::post('flashcards/generate', [\App\Http\Controllers\API\Student\FlashcardController::class, 'generate']);
+                Route::post('scan/solve', [\App\Http\Controllers\API\Student\ScanController::class, 'solve']);
+            });
+
+            Route::get('ai-jobs/status/{job_id}', [\App\Http\Controllers\API\Student\AIJobStatusController::class, 'show']);
+
             Route::post('quizzes/grade-theory', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'gradeTheory']);
             
             Route::prefix('quizzes/history')->group(function () {
@@ -140,7 +147,6 @@ Route::prefix('v1')->group(function () {
 
             Route::prefix('flashcards')->group(function () {
                 Route::get('decks', [\App\Http\Controllers\API\Student\FlashcardController::class, 'index']);
-                Route::post('generate', [\App\Http\Controllers\API\Student\FlashcardController::class, 'generate']);
                 Route::get('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'show']);
                 Route::delete('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'destroy']);
             });
@@ -156,8 +162,8 @@ Route::prefix('v1')->group(function () {
 
             Route::post('preferences', [\App\Http\Controllers\API\Student\AuthController::class, 'updatePreferences']);
 
-            // Scan & Solve (Camera AI)
-            Route::post('scan/solve', [\App\Http\Controllers\API\Student\ScanController::class, 'solve']);
+            // Scan & Solve (Camera AI) moved to throttled group above
+            // Route::post('scan/solve', [\App\Http\Controllers\API\Student\ScanController::class, 'solve']);
         });
     });
 

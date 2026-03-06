@@ -108,8 +108,41 @@ services:
       - key: DEEPSEEK_API_KEY
         sync: false
 
-      # System Stability (File-based to prevent boot crash if DB fails)
+      # System Stability (Use Redis for Queues/Cache in production)
       - key: SESSION_DRIVER
         value: file
       - key: CACHE_STORE
-        value: file
+        value: redis
+      - key: QUEUE_CONNECTION
+        value: redis
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: skeeme-redis
+          property: connectionString
+
+  - type: worker
+    name: skeeme-worker
+    env: docker
+    plan: free
+    region: ohio
+    startCommand: "php artisan queue:work --queue=default"
+    envVars:
+      - fromService:
+          name: skeeme-web
+          type: web
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: skeeme-redis
+          property: connectionString
+      - key: APP_ENV
+        value: production
+      - key: RUN_SCRIPTS
+        value: "0" # Don't run migrations in the worker, only in the web service
+
+  - type: redis
+    name: skeeme-redis
+    region: ohio
+    plan: free # Use 'starter' for persistence and larger memory
+    ipAllowList: [] # Internal access only

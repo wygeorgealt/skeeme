@@ -15,6 +15,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { QuizShareCard } from '@/components/QuizShareCard';
+import { RewardModal } from '@/components/RewardModal';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type QuizMode = 'topic' | 'file';
@@ -339,9 +340,12 @@ export default function GenerateQuizScreen() {
     const [isSharing, setIsSharing] = useState(false);
     const viewShotRef = useRef<View>(null);
 
-    // Timer
     const [timeLeft, setTimeLeft] = useState(0);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Reward Modal State
+    const [rewardData, setRewardData] = useState<any>(null);
+    const [isRewardModalVisible, setIsRewardModalVisible] = useState(false);
 
     const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
@@ -460,7 +464,12 @@ export default function GenerateQuizScreen() {
                     };
                 }),
             };
-            api.post('/quizzes/history', payload).catch(err => { console.warn('Failed to save quiz history', err); });
+            api.post('/quizzes/history', payload).then(res => {
+                if (res.data.reward?.earned) {
+                    setRewardData(res.data.reward);
+                    setIsRewardModalVisible(true);
+                }
+            }).catch(err => { console.warn('Failed to save quiz history', err); });
         }
     }, [totalAnswered]);
 
@@ -684,6 +693,12 @@ export default function GenerateQuizScreen() {
                     </View>
                 </>
             )}
+
+            <RewardModal
+                isVisible={isRewardModalVisible}
+                onClose={() => setIsRewardModalVisible(false)}
+                reward={rewardData}
+            />
         </View>
     );
 }

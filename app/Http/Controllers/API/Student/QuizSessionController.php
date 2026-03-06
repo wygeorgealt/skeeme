@@ -88,8 +88,13 @@ class QuizSessionController extends Controller
         QuizQuestion::insert($questionsData);
 
         // Update User Streak
-        app(StreakService::class)->logActivity($request->user()->id);
+        $streakResult = app(StreakService::class)->logActivity($request->user()->id);
 
-        return response()->json(['message' => 'Quiz session saved successfully', 'data' => $session], 201);
+        return response()->json([
+            'message' => 'Quiz session saved successfully', 
+            'data' => $session,
+            'streak' => $streakResult['streak'],
+            'reward' => $streakResult['reward']
+        ], 201);
     }
 }

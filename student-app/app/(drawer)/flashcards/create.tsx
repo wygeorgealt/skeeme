@@ -10,6 +10,7 @@ import { router } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useQueryClient } from '@tanstack/react-query';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { RewardModal } from '@/components/RewardModal';
 
 type QuizMode = 'topic' | 'file';
 type Difficulty = 'easy' | 'medium' | 'hard';
@@ -28,6 +29,11 @@ export default function GenerateFlashcardScreen() {
     const [cardCount, setCardCount] = useState('10');
     const [difficulty, setDifficulty] = useState<Difficulty>('medium');
     const [isLoading, setIsLoading] = useState(false);
+
+    // Reward Modal State
+    const [rewardData, setRewardData] = useState<any>(null);
+    const [isRewardModalVisible, setIsRewardModalVisible] = useState(false);
+    const [pendingDeckId, setPendingDeckId] = useState<number | null>(null);
 
     const handleFileSelect = async () => {
         try {
@@ -81,7 +87,11 @@ export default function GenerateFlashcardScreen() {
             // Invalidate decks list then go into the new deck
             queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
 
-            if (response.data?.deck_id) {
+            if (response.data.reward?.earned) {
+                setRewardData(response.data.reward);
+                setPendingDeckId(response.data.deck_id);
+                setIsRewardModalVisible(true);
+            } else if (response.data?.deck_id) {
                 router.replace(`/(drawer)/flashcards/${response.data.deck_id}`);
             } else {
                 router.back();
@@ -208,6 +218,19 @@ export default function GenerateFlashcardScreen() {
                 </GradientButton>
                 <Text className="text-slate-400 dark:text-slate-500 text-xs text-center mt-3 font-medium">Credits scale with content length & card count.</Text>
             </ScrollView>
+
+            <RewardModal
+                isVisible={isRewardModalVisible}
+                onClose={() => {
+                    setIsRewardModalVisible(false);
+                    if (pendingDeckId) {
+                        router.replace(`/(drawer)/flashcards/${pendingDeckId}`);
+                    } else {
+                        router.back();
+                    }
+                }}
+                reward={rewardData}
+            />
         </View>
     );
 }

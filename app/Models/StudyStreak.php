@@ -10,6 +10,6 @@ class StudyStreak extends Model
         'user_id',
         'current_streak',
         'longest_streak',
-        'last_activity_date',
+        'last_study_date',
     ];
 }
