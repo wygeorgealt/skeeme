@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AnimatedSplash from '@/components/AnimatedSplash';
 import Animated, { FadeOut } from 'react-native-reanimated';
+import { NetworkStatus } from '@/components/NetworkStatus';
 
 cssInterop(LinearGradient, {
   className: 'style',
@@ -93,6 +94,8 @@ export default function RootLayout() {
               <AnimatedSplash onFinish={() => setIsAnimationFinished(true)} />
             </Animated.View>
           )}
+
+          <NetworkStatus />
 
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="welcome" options={{ headerShown: false, animation: 'fade' }} />

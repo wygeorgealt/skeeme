@@ -103,6 +103,11 @@ class PracticeQuizController extends Controller
                 null,
                 $user->ai_preferences
             );
+            
+            if (empty($questions) || count($questions) === 0) {
+                throw new \Exception('AI could not extract enough information to build a quiz. Please provide a more detailed topic or file.');
+            }
+
             Log::info("AI Generation Success", ['count' => count($questions)]);
 
             // 5. Cleanup Multiple Choice formatting

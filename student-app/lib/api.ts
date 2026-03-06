@@ -35,7 +35,7 @@ api.interceptors.response.use(
     },
     (error) => {
         console.error(`[API] ❌ ${error.message} on ${error.config?.url}`);
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && !error.config?.url?.includes('logout')) {
             useAuthStore.getState().logout();
         }
         return Promise.reject(error);

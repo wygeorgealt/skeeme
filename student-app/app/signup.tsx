@@ -131,7 +131,7 @@ export default function SignupScreen() {
             {/* Back Button / Header Navigation */}
             <View className="px-6 pt-16 pb-4 flex-row justify-between items-center z-10">
                 <TouchableOpacity
-                    onPress={() => step > 1 ? setStep(step - 1) : router.back()}
+                    onPress={() => step > 1 ? setStep(step - 1) : (router.canGoBack() ? router.back() : router.replace('/login'))}
                     hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                 >
                     <Ionicons name="arrow-back" size={24} color={iconColor} />
