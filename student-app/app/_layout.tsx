@@ -28,12 +28,32 @@ LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
 SplashScreen.preventAutoHideAsync();
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://601ccf3499704acaf849f097cac845a2@o4510997913927680.ingest.de.sentry.io/4510997917073488',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 export const unstable_settings = {
   anchor: '(drawer)',
 };
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   const { hydrate, isLoading, user } = useAuthStore();
   const [isAnimationFinished, setIsAnimationFinished] = useState(false);
 
@@ -110,4 +130,4 @@ export default function RootLayout() {
       </QueryProvider>
     </GestureHandlerRootView>
   );
-}
+});

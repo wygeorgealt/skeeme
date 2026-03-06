@@ -62,12 +62,15 @@ export default function DashboardScreen() {
         queryFn: async () => {
             const res = await api.get('streaks/heatmap');
             return res.data.data as string[];
-        }
+        },
+        enabled: !!user, // Don't fetch if not logged in
     });
 
     // Refresh user data from API whenever this screen comes into focus
     useFocusEffect(
         useCallback(() => {
+            if (!user) return; // Don't fetch if not logged in
+
             const fetchData = async () => {
                 try {
                     const res = await api.get('me');
@@ -80,17 +83,18 @@ export default function DashboardScreen() {
 
             const interval = setInterval(fetchData, 5000);
             return () => clearInterval(interval);
-        }, [updateUser, refetchHeatmap])
+        }, [user, updateUser, refetchHeatmap])
     );
 
     const onRefresh = useCallback(async () => {
+        if (!user) return;
         setRefreshing(true);
         try {
             const res = await api.get('me');
             if (res.data) updateUser(res.data);
         } catch { /* silent */ }
         setRefreshing(false);
-    }, []);
+    }, [user]);
 
     if (!user) return null;
 

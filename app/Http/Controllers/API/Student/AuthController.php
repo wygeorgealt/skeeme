@@ -158,14 +158,27 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:127',
+            'last_name' => 'required|string|max:127',
+            'dob_month' => 'nullable|integer|between:1,12',
+            'dob_year' => 'nullable|integer|min:1900',
+            'age' => 'nullable|integer|min:0',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'device_name' => 'nullable|string',
         ]);
 
+        $dob = null;
+        if (isset($validated['dob_year']) && isset($validated['dob_month'])) {
+            $dob = $validated['dob_year'] . '-' . str_pad($validated['dob_month'], 2, '0', STR_PAD_LEFT) . '-01';
+        }
+
         $user = User::create([
-            'name' => $validated['name'],
+            'name' => trim($validated['first_name'] . ' ' . $validated['last_name']),
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'dob' => $dob,
+            'age' => $validated['age'] ?? null,
             'email' => $validated['email'],
             'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
             'role' => 'student',
