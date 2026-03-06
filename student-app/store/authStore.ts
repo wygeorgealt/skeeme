@@ -33,7 +33,7 @@ interface AuthState {
     login: (user: User, token: string) => void;
     updateUser: (user: Partial<User>) => void;
     logout: () => void;
-    hydrate: () => Promise<void>;
+    checkAuth: () => Promise<void>;
     theme: 'light' | 'dark' | 'system';
     setTheme: (theme: 'light' | 'dark' | 'system') => void;
 }
@@ -118,6 +118,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         } catch (e) {
             console.error('Failed to hydrate auth state', e);
             set({ isLoading: false });
+        }
+    },
+
+    checkAuth: async () => {
+        try {
+            // Import api dynamically to avoid circular dependency
+            const { api } = await import('../lib/api');
+            const response = await api.get('me');
+            if (response.data) {
+                const refreshedUser = response.data.user || response.data;
+                const currentUser = get().user;
+                const newUser = { ...currentUser, ...refreshedUser };
+                set({ user: newUser });
+                await storage.setItem('auth_user', JSON.stringify(newUser));
+            }
+        } catch (e) {
+            console.error('Failed to refresh auth state', e);
         }
     },
 

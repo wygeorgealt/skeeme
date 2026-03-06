@@ -40,6 +40,19 @@ class UpdateSubscriptionOnPayment
             return;
         }
 
+        // Handle Individual Student Subscriptions
+        if ($payment->user_id && $invoice->plan_name === 'Student Unlimited' || str_contains($invoice->plan_name, 'Standard') || str_contains($invoice->plan_name, 'Elite')) {
+            $user = $payment->user;
+            if ($user && $user->role === 'student') {
+                $user->update([
+                    'is_unlimited_student' => true,
+                    'credits' => min(999999, $user->credits + 5000), // Refill logic
+                ]);
+                Log::info('Student Subscription Activated', ['user_id' => $user->id]);
+                return;
+            }
+        }
+
         $planName = $invoice->plan_name;
         
         // If we have a plan name and it's valid

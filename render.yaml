@@ -108,18 +108,13 @@ services:
       - key: DEEPSEEK_API_KEY
         sync: false
 
-      # System Stability (Use Redis for Queues/Cache in production)
+      # System Stability (Use Database for Queues/Cache on Free Plan)
       - key: SESSION_DRIVER
         value: file
       - key: CACHE_STORE
-        value: redis
+        value: database
       - key: QUEUE_CONNECTION
-        value: redis
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: skeeme-redis
-          property: connectionString
+        value: database
 
   - type: worker
     name: skeeme-worker
@@ -131,18 +126,8 @@ services:
       - fromService:
           name: skeeme-web
           type: web
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: skeeme-redis
-          property: connectionString
       - key: APP_ENV
         value: production
       - key: RUN_SCRIPTS
         value: "0" # Don't run migrations in the worker, only in the web service
 
-  - type: redis
-    name: skeeme-redis
-    region: ohio
-    plan: free # Use 'starter' for persistence and larger memory
-    ipAllowList: [] # Internal access only

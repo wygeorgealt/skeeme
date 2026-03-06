@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, useColorScheme, StyleSheet, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { router, Stack } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
+import { api } from '@/lib/api';
 
 type PlanType = 'standard' | 'elite';
 type BillingCycle = 'monthly' | 'yearly';
@@ -51,11 +52,58 @@ export default function UpgradeScreen() {
 
     const currentRates = pricing[currency][activeTab];
 
-    const handlePurchase = () => {
-        const price = billingCycle === 'monthly' ? currentRates.monthly : currentRates.yearly;
-        const planName = `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ${billingCycle}`;
+    const [isVerifying, setIsVerifying] = useState(false);
 
-        console.log(`[Billing] Starting purchase flow for ${planName} at ${currencySymbol}${price}`);
+    const handlePurchase = async () => {
+        try {
+            setIsVerifying(true);
+            const response = await api.post('/subscriptions/checkout', {
+                plan: activeTab,
+                cycle: billingCycle,
+            });
+
+            if (response.data.authorization_url) {
+                // Open system browser for payment
+                await Linking.openURL(response.data.authorization_url);
+
+                // Show verification message
+                Alert.alert(
+                    "Payment Started",
+                    "Please complete the payment in your browser. Tap 'Check Status' once finished.",
+                    [
+                        {
+                            text: "Check Status",
+                            onPress: () => verifyPayment(response.data.reference)
+                        }
+                    ]
+                );
+            }
+        } catch (error) {
+            console.error('Checkout failed', error);
+            Alert.alert("Checkout Failed", "Could not start the payment process. Please try again.");
+        } finally {
+            setIsVerifying(false);
+        }
+    };
+
+    const verifyPayment = async (reference: string) => {
+        try {
+            setIsVerifying(true);
+            const response = await api.get(`/subscriptions/verify/${reference}`);
+
+            if (response.data.status === 'success') {
+                // Sync store and go home
+                await useAuthStore.getState().checkAuth();
+                Alert.alert("Success", "Welcome to the premium club! Your subscription is active.");
+                router.replace('/(drawer)');
+            } else {
+                Alert.alert("Still Processing", "We haven't confirmed your payment yet. If you've paid, please wait 30 seconds and try again.");
+            }
+        } catch (error) {
+            Alert.alert("Verification Error", "Could not verify payment status.");
+        } finally {
+            setIsVerifying(false);
+        }
     };
 
     const bgClass = isDark ? 'bg-brand-dark' : 'bg-white';
@@ -126,7 +174,7 @@ export default function UpgradeScreen() {
                             {activeTab} Benefits
                         </Text>
                         <View className="gap-y-4">
-                            {FEATURES[activeTab].map((feature, idx) => (
+                            {FEATURES[activeTab as keyof typeof FEATURES].map((feature: string, idx: number) => (
                                 <View key={idx} className="flex-row items-center">
                                     <View className="size-6 bg-brand-primary/10 rounded-full items-center justify-center mr-3">
                                         <Ionicons name="checkmark" size={14} color="#2EBD85" />

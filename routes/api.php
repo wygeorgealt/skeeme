@@ -28,6 +28,7 @@ use App\Http\Controllers\API\QuestionController;
 use App\Http\Controllers\API\ExamQuestionController;
 use App\Http\Controllers\API\QuestionBankController;
 // use App\Http\Controllers\API\QuestionAnalyticsController;
+use App\Http\Controllers\API\Student\SubscriptionController as StudentSubscriptionController;
 use App\Http\Controllers\API\StudentLearningProgressController;
 // use App\Http\Controllers\API\GradingTrendController;
 use App\Http\Controllers\API\ClassComparisonDataController;
@@ -137,6 +138,11 @@ Route::prefix('v1')->group(function () {
 
             Route::get('ai-jobs/status/{job_id}', [\App\Http\Controllers\API\Student\AIJobStatusController::class, 'show']);
 
+            // Subscriptions (Web-to-App flow)
+            Route::post('subscriptions/checkout', [StudentSubscriptionController::class, 'checkout']);
+            Route::get('subscriptions/verify/{reference}', [StudentSubscriptionController::class, 'verify']);
+            Route::get('diag/system', [StudentSubscriptionController::class, 'debug']); // Performance diag
+            
             Route::post('quizzes/grade-theory', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'gradeTheory']);
             
             Route::prefix('quizzes/history')->group(function () {
