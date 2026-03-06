@@ -56,35 +56,30 @@ export default function DashboardScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const { colorScheme } = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const isFreePlan = !user?.is_unlimited && (!user?.plan_name || user?.plan_name === 'free');
 
-    const { data: heatmapDates = [], refetch: refetchHeatmap } = useQuery({
+    const { data: heatmapDates = [] } = useQuery({
         queryKey: ['streak-heatmap'],
         queryFn: async () => {
             const res = await api.get('streaks/heatmap');
             return res.data.data as string[];
         },
         enabled: !!user, // Don't fetch if not logged in
+        staleTime: 1000 * 60 * 60 * 4, // 4 hours
     });
 
-    // Refresh user data from API whenever this screen comes into focus
-    useFocusEffect(
-        useCallback(() => {
-            if (!user) return; // Don't fetch if not logged in
-
-            const fetchData = async () => {
-                try {
-                    const res = await api.get('me');
-                    if (res.data) updateUser(res.data);
-                } catch { /* silent — stale data is fine */ }
-            };
-
-            fetchData();
-            refetchHeatmap();
-
-            const interval = setInterval(fetchData, 5000);
-            return () => clearInterval(interval);
-        }, [user, updateUser, refetchHeatmap])
-    );
+    // Fetch user data with 30s throttling
+    useQuery({
+        queryKey: ['me'],
+        queryFn: async () => {
+            const res = await api.get('me');
+            if (res.data) updateUser(res.data);
+            return res.data;
+        },
+        enabled: !!user,
+        staleTime: 30000, // Keep data fresh for 30s (prevents refetch on focus within this window)
+        refetchInterval: 30000, // Background refresh every 30s
+    });
 
     const onRefresh = useCallback(async () => {
         if (!user) return;
@@ -138,7 +133,7 @@ export default function DashboardScreen() {
                             )}
                         </View>
                     </View>
-                    {!user.is_unlimited && (
+                    {isFreePlan && (
                         <TouchableOpacity
                             onPress={() => router.push('/upgrade')}
                             className="bg-[#2EBD85] px-5 py-3 rounded-full flex-row items-center"
@@ -149,7 +144,7 @@ export default function DashboardScreen() {
                         </TouchableOpacity>
                     )}
                 </View>
-                {!user.is_unlimited && (
+                {isFreePlan && (
                     <View className="flex-row items-center mt-2">
                         <Ionicons name="trending-up" size={14} color="#2EBD85" />
                         <Text className="text-[#2EBD85] font-bold text-xs ml-1">Top up today</Text>
@@ -158,7 +153,7 @@ export default function DashboardScreen() {
             </View>
 
             {/* Promo Banner (Black & White Stake Style) */}
-            {!user.is_unlimited && (
+            {isFreePlan && (
                 <View className="px-6 pb-8">
                     <TouchableOpacity
                         onPress={() => router.push('/upgrade')}

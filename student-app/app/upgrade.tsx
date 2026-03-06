@@ -1,237 +1,225 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, useColorScheme } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { router, Stack } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { StatusBar } from 'expo-status-bar';
 
-function calculateTrialEndDate() {
-    const d = new Date();
-    d.setDate(d.getDate() + 7);
-    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
+type PlanType = 'standard' | 'elite';
+type BillingCycle = 'monthly' | 'yearly';
+
+const FEATURES = {
+    standard: [
+        '5,000 Monthly Credits',
+        'Advanced Quiz Generation',
+        'Detailed Flashcard creation',
+        'Priority AI model access',
+        'Standard scan & solve limits',
+    ],
+    elite: [
+        '15,000 Monthly Credits',
+        'Unlimited Flashcard creation',
+        'Ultra-fast Elite AI model',
+        'Unlimited Scan & Solve',
+        'Real-time Step-by-Step logic',
+    ]
+};
 
 export default function UpgradeScreen() {
     const { user } = useAuthStore();
-    const trialEndDate = calculateTrialEndDate();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
-    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+    const [activeTab, setActiveTab] = useState<PlanType>('standard');
+    const [billingCycle, setBillingCycle] = useState<BillingCycle>('yearly');
 
-    // Pricing Data matching old version
+    const currencySymbol = user?.pricing?.currency || '$';
+    const currency = user?.pricing?.currency === '₦' ? 'ngn' : 'usd';
+
+    // Pricing rates (Updated per user request)
     const pricing = {
         ngn: {
-            standard: { monthly: '5,000', yearly: '29,999' },
-            elite: { monthly: '13,000', yearly: '119,000' }
+            standard: { monthly: 3500, yearly: 25000, save: '10%' },
+            elite: { monthly: 5000, yearly: 50000, save: '10%' }
         },
         usd: {
-            standard: { monthly: '12.99', yearly: '99.99' },
-            elite: { monthly: '29.99', yearly: '249.99' }
+            standard: { monthly: 4.99, yearly: 39.99, save: '10%' },
+            elite: { monthly: 9.99, yearly: 79.99, save: '10%' }
         }
     };
 
-    const currency = user?.pricing?.currency === '₦' ? 'ngn' : 'usd';
-    const symbol = user?.pricing?.currency || '$';
+    const currentRates = pricing[currency][activeTab];
 
-    const handleSimulatedPayment = (plan: string) => {
-        Alert.alert(
-            `Upgrade to ${plan} (${billingCycle})`,
-            "In a production environment, this would open Native In-App Purchases (Apple/Google) or a Stripe Checkout sheet."
-        );
+    const handlePurchase = () => {
+        const price = billingCycle === 'monthly' ? currentRates.monthly : currentRates.yearly;
+        const planName = `${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} ${billingCycle}`;
+
+        console.log(`[Billing] Starting purchase flow for ${planName} at ${currencySymbol}${price}`);
     };
 
-    return (
-        <View style={StyleSheet.absoluteFill} className="bg-white dark:bg-brand-dark">
-            <Stack.Screen options={{ headerShown: false }} />
-            <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-                {/* TOP HEADER SECTION (DARK) */}
-                <View className="bg-[#0B0F19] pt-16 px-6 pb-12">
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        className="mb-8"
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                        <Ionicons name="close" size={30} color="white" />
-                    </TouchableOpacity>
+    const bgClass = isDark ? 'bg-brand-dark' : 'bg-white';
+    const textBaseClass = isDark ? 'text-white' : 'text-slate-900';
+    const subtextClass = isDark ? 'text-slate-400' : 'text-slate-500';
 
-                    <Text className="text-[32px] font-black tracking-tight mb-8">
-                        <Text className="text-white">Skeeme</Text>
-                        <Text className="text-[#FCD34D]">Pro</Text>
+    return (
+        <View className={`flex-1 ${bgClass}`}>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <Stack.Screen options={{ headerShown: false }} />
+
+            {/* Header */}
+            <View className="pt-14 px-6 flex-row justify-between items-center">
+                <TouchableOpacity
+                    onPress={() => router.back()}
+                    className="size-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"
+                >
+                    <Ionicons name="close" size={24} color={isDark ? '#cbd5e1' : '#64748b'} />
+                </TouchableOpacity>
+                <Text className={`${textBaseClass} font-black text-lg`}>Subscription</Text>
+                <View className="size-10" />
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+                <View className="px-6 pt-8 pb-10">
+                    <Text className={`${textBaseClass} text-3xl font-black tracking-tight mb-2`}>
+                        Unlock <Text className="text-brand-primary">Premium</Text>
+                    </Text>
+                    <Text className={`${subtextClass} font-medium text-[16px] leading-snug mb-8`}>
+                        Choose the plan that fits your learning journey perfectly.
                     </Text>
 
-                    <Text className="text-white text-[22px] font-black mb-6 tracking-tight">Free 7-day trial</Text>
-
-                    {/* Timeline */}
-                    <View className="flex-row">
-                        <View className="items-center mr-5 pt-1.5">
-                            <View className="size-[22px] rounded-full bg-[#4f46e5] z-10" />
-                            <LinearGradient colors={['#4f46e5', '#1e1b4b']} style={{ width: 6, height: 75, marginVertical: -4 }} />
-                            <View className="size-[22px] rounded-full bg-[#312e81] z-10" />
-                        </View>
-                        <View className="flex-1 pb-4">
-                            <View className="h-[75px] justify-start pt-1">
-                                <Text className="text-white font-black text-lg leading-tight">Today</Text>
-                                <Text className="text-slate-300 font-medium text-[15px] mt-1">Get Skeeme Pro free for 7 days.</Text>
-                            </View>
-                            <View className="justify-start pt-1.5">
-                                <Text className="text-white font-black text-lg leading-tight">{trialEndDate}</Text>
-                                <Text className="text-slate-300 font-medium text-[15px] mt-1 leading-relaxed">
-                                    Trial ends. You will be billed for one year unless you cancel before this date.
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-
-                {/* BOTTOM FEATURES SECTION (WHITE) */}
-                <View className="bg-white px-6 pt-10 pb-16">
-
-                    <FeatureItem
-                        icon={<Ionicons name="infinite" size={36} color="#4f46e5" />}
-                        title="UNLIMITED ACCESS*"
-                        description="Generate unlimited practice quizzes and custom flashcards without running out of credits."
-                        iconBg="bg-indigo-100"
-                    />
-
-                    <FeatureItem
-                        icon={<Ionicons name="flash" size={36} color="#10b981" />}
-                        title="Study smarter and faster"
-                        description="Go beyond basic responses. Skip the queue and get your materials generated instantly with top-tier AI."
-                        iconBg="bg-emerald-100"
-                    />
-
-                    <FeatureItem
-                        icon={<Ionicons name="scan-circle" size={36} color="#d946ef" />}
-                        title="Advanced Scan & Solve"
-                        description="Be 100% ready for test day with unlimited deep-analysis photo solving and step-by-step logic."
-                        iconBg="bg-fuchsia-100"
-                    />
-
-                    {/* NEW: Plan Selection */}
-                    <View className="mt-12">
-                        <Text className="text-slate-900 dark:text-white font-black text-xl mb-6 tracking-tight">Select your plan</Text>
-
-                        {/* Billing Cycle Toggle */}
-                        <View className="flex-row bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl mb-8 items-center border border-slate-200 dark:border-slate-800">
-                            {(['monthly', 'yearly'] as const).map((cycle) => (
+                    {/* Tab Switcher */}
+                    <View className="flex-row bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl mb-8">
+                        {(['standard', 'elite'] as PlanType[]).map((tab) => {
+                            const isActive = activeTab === tab;
+                            return (
                                 <TouchableOpacity
-                                    key={cycle}
-                                    onPress={() => setBillingCycle(cycle)}
+                                    key={tab}
+                                    onPress={() => setActiveTab(tab)}
                                     className="flex-1 py-3 rounded-xl items-center"
-                                    style={[
-                                        billingCycle === cycle ? {
-                                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                                            shadowColor: '#000',
-                                            shadowOffset: { width: 0, height: 1 },
-                                            shadowOpacity: 0.05,
-                                            shadowRadius: 2,
-                                            elevation: 1
-                                        } : {}
-                                    ]}
+                                    style={{
+                                        backgroundColor: isActive
+                                            ? (isDark ? '#2EBD85' : '#FFFFFF')
+                                            : 'transparent',
+                                        shadowOpacity: isActive && !isDark ? 0.1 : 0,
+                                        elevation: isActive && !isDark ? 2 : 0,
+                                    }}
                                 >
-                                    <View className="flex-row items-center">
-                                        <Text
-                                            className="font-bold capitalize"
-                                            style={{
-                                                color: billingCycle === cycle ? (isDark ? '#ffffff' : '#0f172a') : '#64748b'
-                                            }}
-                                        >
-                                            {cycle}
-                                        </Text>
-                                        {cycle === 'yearly' && (
-                                            <View className="ml-2 bg-emerald-500 px-2 py-0.5 rounded-full">
-                                                <Text className="text-[8px] font-black text-white">SAVE 50%</Text>
-                                            </View>
-                                        )}
-                                    </View>
+                                    <Text
+                                        className="font-black text-sm capitalize"
+                                        style={{
+                                            color: isActive
+                                                ? (isDark ? '#FFFFFF' : '#0F172A')
+                                                : (isDark ? '#94A3B8' : '#64748B')
+                                        }}
+                                    >
+                                        {tab}
+                                    </Text>
                                 </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+
+                    {/* Benefits Section */}
+                    <Animated.View key={activeTab} entering={FadeIn} className="mb-10">
+                        <Text className="text-xs font-black text-brand-primary tracking-widest uppercase mb-4">
+                            {activeTab} Benefits
+                        </Text>
+                        <View className="gap-y-4">
+                            {FEATURES[activeTab].map((feature, idx) => (
+                                <View key={idx} className="flex-row items-center">
+                                    <View className="size-6 bg-brand-primary/10 rounded-full items-center justify-center mr-3">
+                                        <Ionicons name="checkmark" size={14} color="#2EBD85" />
+                                    </View>
+                                    <Text className="text-slate-700 dark:text-slate-200 font-bold text-[15px]">
+                                        {feature}
+                                    </Text>
+                                </View>
                             ))}
                         </View>
+                    </Animated.View>
 
-                        {/* Plan Cards */}
-                        <View className="gap-4">
-                            <PlanOption
-                                title="Standard"
-                                price={`${symbol}${pricing[currency].standard[billingCycle]}`}
-                                cycle={billingCycle === 'monthly' ? '/mo' : '/yr'}
-                                subtitle="Essential features for regular study"
-                                icon="star"
-                                iconColor="#4f46e5"
-                                onPress={() => handleSimulatedPayment('Standard')}
-                                isDark={isDark}
-                            />
-                            <PlanOption
-                                title="Elite"
-                                price={`${symbol}${pricing[currency].elite[billingCycle]}`}
-                                cycle={billingCycle === 'monthly' ? '/mo' : '/yr'}
-                                subtitle="Full power for exam season"
-                                icon="flash"
-                                iconColor="#f59e0b"
-                                badge="Best Value"
-                                onPress={() => handleSimulatedPayment('Elite')}
-                                isDark={isDark}
-                            />
-                        </View>
+                    {/* Billing Cards */}
+                    <View className="gap-y-4">
+                        <CardOption
+                            title="Yearly"
+                            price={currentRates.yearly}
+                            symbol={currencySymbol}
+                            subtitle={`Total ${currencySymbol}${currentRates.yearly} every 12 months`}
+                            isSelected={billingCycle === 'yearly'}
+                            onSelect={() => setBillingCycle('yearly')}
+                            badge={currentRates.save ? `SAVE ${currentRates.save}` : undefined}
+                            isDark={isDark}
+                        />
+                        <CardOption
+                            title="Monthly"
+                            price={currentRates.monthly}
+                            symbol={currencySymbol}
+                            subtitle="Flat rate, cancel anytime"
+                            isSelected={billingCycle === 'monthly'}
+                            onSelect={() => setBillingCycle('monthly')}
+                            isDark={isDark}
+                        />
                     </View>
-
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        className="mt-12 py-2 items-center"
-                    >
-                        <Text className="text-indigo-600 dark:text-indigo-400 font-bold text-[17px]">
-                            Continue using the free version
-                        </Text>
-                    </TouchableOpacity>
-
-                    <Text className="text-center text-slate-600 font-medium text-[13px] mt-10 px-4">
-                        Get a <Text className="font-bold text-slate-800">free 7-day trial</Text> with an annual subscription. Cancel anytime.
-                    </Text>
                 </View>
             </ScrollView>
+
+            {/* Bottom Button */}
+            <View className={`px-6 pb-12 pt-4 border-t ${isDark ? 'bg-brand-dark border-slate-800' : 'bg-white border-slate-100'}`}>
+                <TouchableOpacity
+                    onPress={handlePurchase}
+                    activeOpacity={0.9}
+                    className="bg-brand-primary h-16 rounded-3xl items-center justify-center shadow-lg shadow-brand-primary/30"
+                >
+                    <Text className="text-white font-black text-lg">
+                        {billingCycle === 'yearly' ? 'Start 7-day Free Trial' : 'Get Started Now'}
+                    </Text>
+                </TouchableOpacity>
+                <Text className="text-center text-slate-400 dark:text-slate-500 text-xs font-medium mt-4 px-8">
+                    By subscribing, you agree to our Terms of Service and Privacy Policy.
+                </Text>
+            </View>
         </View>
     );
 }
 
-function FeatureItem({ icon, title, description, iconBg }: any) {
-    return (
-        <View className="flex-row items-start mb-8 pr-2">
-            <View className={`size-[64px] rounded-xl ${iconBg} items-center justify-center mr-5 border-2 border-white/10`}>
-                {icon}
-            </View>
-            <View className="flex-1 justify-center min-h-[64px] pt-1.5">
-                <Text className="text-slate-900 dark:text-white font-black text-lg mb-1 tracking-tight">{title}</Text>
-                <Text className="text-slate-600 dark:text-slate-400 text-[15px] leading-snug font-medium pt-0.5">{description}</Text>
-            </View>
-        </View>
-    );
-}
+function CardOption({ title, price, symbol, subtitle, isSelected, onSelect, badge, isDark }: any) {
+    const priceFormatted = symbol + price.toLocaleString();
 
-function PlanOption({ title, price, cycle, subtitle, icon, iconColor, badge, onPress, isDark }: any) {
     return (
         <TouchableOpacity
-            onPress={onPress}
-            className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 flex-row items-center justify-between"
+            onPress={onSelect}
             activeOpacity={0.8}
+            className="p-6 rounded-[28px] border-2 flex-row items-center justify-between"
+            style={{
+                borderColor: isSelected ? '#2EBD85' : (isDark ? '#1e293b' : '#f1f5f9'),
+                backgroundColor: isSelected
+                    ? (isDark ? 'rgba(46, 189, 133, 0.1)' : 'rgba(46, 189, 133, 0.05)')
+                    : (isDark ? 'rgba(15, 23, 42, 0.3)' : 'rgba(248, 250, 252, 0.5)')
+            }}
         >
-            <View className="flex-1 mr-4">
+            <View className="flex-1 pr-4">
                 <View className="flex-row items-center mb-1">
-                    <Ionicons name={icon as any} size={16} color={iconColor} className="mr-2" />
-                    <Text className="text-slate-900 dark:text-white font-black text-lg">{title}</Text>
+                    <Text className="text-slate-900 dark:text-white font-black text-xl mr-3">{title}</Text>
                     {badge && (
-                        <View className="ml-3 bg-indigo-600 px-2 py-0.5 rounded-full">
-                            <Text className="text-[9px] font-black text-white uppercase">{badge}</Text>
+                        <View className="bg-brand-primary px-2.5 py-0.5 rounded-full">
+                            <Text className="text-[10px] font-black text-white">{badge}</Text>
                         </View>
                     )}
                 </View>
-                <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold">{subtitle}</Text>
+                <Text className="text-slate-500 dark:text-white/50 font-bold text-xs">{subtitle}</Text>
+                <Text className="text-brand-primary font-black text-[17px] mt-3">
+                    {priceFormatted}
+                    <Text className="text-slate-400 dark:text-white/60 text-sm font-bold"> / {title === 'Yearly' ? 'year' : 'month'}</Text>
+                </Text>
             </View>
-            <View className="items-end">
-                <View className="flex-row items-baseline">
-                    <Text className="text-slate-900 dark:text-white font-black text-xl">{price}</Text>
-                    <Text className="text-slate-400 dark:text-slate-500 text-xs font-bold ml-0.5">{cycle}</Text>
-                </View>
-                <Text className="text-indigo-600 dark:text-indigo-400 font-black text-[10px] uppercase tracking-widest mt-1">Select</Text>
+            <View
+                className="size-6 rounded-full border-2 items-center justify-center"
+                style={{
+                    borderColor: isSelected ? '#2EBD85' : (isDark ? '#475569' : '#cbd5e1')
+                }}
+            >
+                {isSelected && <View className="size-3 rounded-full bg-brand-primary" />}
             </View>
         </TouchableOpacity>
     );

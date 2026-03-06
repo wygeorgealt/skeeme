@@ -241,6 +241,7 @@ class AuthController extends Controller
             'email' => $user->email,
             'credits' => $user->credits,
             'is_unlimited' => $user->is_unlimited_student,
+            'plan_name' => $user->activeSubscription?->plan_name ?? 'free',
             'role' => $user->role,
             'streak' => $streak,
             'pricing' => $pricing,

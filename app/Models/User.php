@@ -98,6 +98,16 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Get the user's active individual subscription
+     */
+    public function activeSubscription()
+    {
+        return $this->hasOne(\App\Models\IndividualSubscription::class)
+            ->where('status', 'active')
+            ->latest();
+    }
+
+    /**
      * Get the team member record if this user is a team/company manager
      */
     public function teamMember()

@@ -34,10 +34,21 @@ api.interceptors.response.use(
         return response;
     },
     (error) => {
-        console.error(`[API] ❌ ${error.message} on ${error.config?.url}`);
-        if (error.response?.status === 401 && !error.config?.url?.includes('logout')) {
-            useAuthStore.getState().logout();
+        const url = error.config?.url;
+        // Don't log spam for background 401s if we're already unauthenticated
+        const isAuthCall = url?.includes('me') || url?.includes('streaks/heatmap');
+        const { user, logout } = useAuthStore.getState();
+
+        if (error.response?.status === 401) {
+            if (user && !url?.includes('logout')) {
+                console.warn(`[API] 401 Unauthorized on ${url} - triggering logout`);
+                logout();
+            }
+            // If it's a 401 on logout, we just ignore it as it's likely a stale token
+            return Promise.reject(error);
         }
+
+        console.error(`[API] ❌ ${error.message} on ${url}`);
         return Promise.reject(error);
     }
 );

@@ -7,6 +7,7 @@ interface User {
     email: string;
     credits: number;
     is_unlimited: boolean;
+    plan_name?: string; // 'free', 'standard', 'elite', etc.
     streak?: {
         current_streak: number;
         longest_streak: number;

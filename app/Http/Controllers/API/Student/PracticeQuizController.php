@@ -170,10 +170,10 @@ class PracticeQuizController extends Controller
             );
 
             return response()->json([
-                'score'    => $result['score'] ?? 0,
-                'max'      => $result['max_marks'] ?? 10,
-                'feedback' => $result['feedback'] ?? 'No feedback available.',
-                'passed'   => ($result['score'] ?? 0) >= 5,
+                'score'    => $result['marks'] ?? 0,
+                'max'      => 10.0,
+                'feedback' => $result['ai_feedback'] ?? 'No feedback available.',
+                'passed'   => ($result['marks'] ?? 0) >= 5,
             ]);
         } catch (\Exception $e) {
             Log::error('Theory grading error: ' . $e->getMessage());

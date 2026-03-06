@@ -157,7 +157,11 @@ function MCQCard({
 
             {/* Flip to Explain button */}
             {answered && q.explanation ? (
-                <TouchableOpacity onPress={() => setFlipped(true)} style={styles.explainBtn}>
+                <TouchableOpacity
+                    onPress={() => setFlipped(true)}
+                    style={styles.explainBtn}
+                    activeOpacity={0.7}
+                >
                     <View
                         className="rounded-xl px-3 py-1.5 flex-row items-center border"
                         style={[
@@ -174,7 +178,7 @@ function MCQCard({
                             {isCorrect ? 'Correct' : 'Incorrect'}
                         </Text>
                     </View>
-                    <View className="bg-slate-900 dark:bg-white rounded-xl px-4 py-2 hover:opacity-80">
+                    <View className="bg-slate-900 dark:bg-white rounded-xl px-4 py-2">
                         <Text className="text-white dark:text-slate-900 font-bold text-[12px]">Explain</Text>
                     </View>
                 </TouchableOpacity>
