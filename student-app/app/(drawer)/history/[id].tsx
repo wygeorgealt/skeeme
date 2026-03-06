@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, useColorScheme } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -105,7 +105,7 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
 
 export default function QuizHistoryDetailScreen() {
     const { id } = useLocalSearchParams();
-    const { colorScheme } = require('nativewind').useColorScheme();
+    const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const bgColor = isDark ? '#010100' : '#f8fafc';
     const tintColor = isDark ? '#fff' : '#0f172a';

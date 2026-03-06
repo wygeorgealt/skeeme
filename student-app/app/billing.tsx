@@ -1,10 +1,11 @@
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Linking, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Linking, Alert, useColorScheme } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { useAuthStore } from '@/store/authStore';
 
 interface Invoice {
     id: number;
@@ -33,7 +34,8 @@ function SkeletonCard() {
 }
 
 export default function BillingHistoryScreen() {
-    const { colorScheme } = require('nativewind').useColorScheme();
+    const { user } = useAuthStore();
+    const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const bgColor = isDark ? '#010100' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#0f172a';
@@ -110,6 +112,28 @@ export default function BillingHistoryScreen() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? 'white' : '#0f172a'} />}
                     showsVerticalScrollIndicator={false}
                 >
+                    {/* Current Plan Overview */}
+                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Your Subscription</Text>
+                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[28px] p-6 border-2 border-slate-200 dark:border-slate-800 mb-10">
+                        <View className="flex-row items-center justify-between mb-6">
+                            <View className="size-14 rounded-full bg-indigo-600 items-center justify-center">
+                                <Ionicons name="sparkles" size={24} color="white" />
+                            </View>
+                            <TouchableOpacity
+                                onPress={() => router.push('/upgrade')}
+                                className="bg-white dark:bg-slate-800 px-5 py-2.5 rounded-full border-2 border-slate-200 dark:border-slate-700 shadow-sm"
+                            >
+                                <Text className="text-slate-900 dark:text-white font-black text-[12px] uppercase">Manage Plans</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <Text className="text-slate-900 dark:text-white font-black text-2xl tracking-tighter mb-1">
+                            {user?.is_unlimited ? 'Unlimited Pro' : 'Free Tier'}
+                        </Text>
+                        <Text className="text-slate-500 font-bold text-[14px]">
+                            {user?.is_unlimited ? 'Fully unlocked experience' : `${user?.credits ?? 0} Credits remaining`}
+                        </Text>
+                    </View>
+
                     <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Past Invoices</Text>
 
                     {data?.data?.length === 0 ? (

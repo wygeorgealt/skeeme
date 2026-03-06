@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator, Alert, useColorScheme } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,19 +30,19 @@ function SkeletonDeck() {
 export default function FlashcardsDashboard() {
     const queryClient = useQueryClient();
     const [refreshing, setRefreshing] = useState(false);
-    const { colorScheme } = require('nativewind').useColorScheme();
+    const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
     const { data: decks, isLoading, refetch } = useQuery({
         queryKey: ['flashcard-decks'],
         queryFn: async () => {
-            const res = await api.get('/flashcards/decks');
+            const res = await api.get('flashcards/decks');
             return res.data.data as FlashcardDeck[];
         }
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id: number) => api.delete(`/flashcards/decks/${id}`),
+        mutationFn: (id: number) => api.delete(`flashcards/decks/${id}`),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
         }

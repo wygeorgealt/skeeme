@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
-    ActivityIndicator, Alert, StyleSheet,
+    ActivityIndicator, Alert, StyleSheet, useColorScheme
 } from 'react-native';
 import Animated, {
     useSharedValue, useAnimatedStyle, withTiming, interpolate, Extrapolation,
@@ -112,7 +112,7 @@ function MCQCard({
     const answered = selectedAnswer !== undefined;
     const isCorrect = selectedAnswer === q.correct_answer;
 
-    const { colorScheme } = require('nativewind').useColorScheme();
+    const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
     const optionStyle = (opt: string) => {
@@ -158,9 +158,19 @@ function MCQCard({
             {/* Flip to Explain button */}
             {answered && q.explanation ? (
                 <TouchableOpacity onPress={() => setFlipped(true)} style={styles.explainBtn}>
-                    <View className={`rounded-xl px-3 py-1.5 flex-row items-center border ${isCorrect ? 'border-[#2EBD85] bg-[#2EBD85]/10' : 'border-red-500 bg-red-500/10'}`}>
+                    <View
+                        className="rounded-xl px-3 py-1.5 flex-row items-center border"
+                        style={[
+                            isCorrect
+                                ? { borderColor: '#2EBD85', backgroundColor: 'rgba(46, 189, 133, 0.1)' }
+                                : { borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }
+                        ]}
+                    >
                         <Ionicons name={isCorrect ? 'checkmark' : 'close'} size={14} color={isCorrect ? '#2EBD85' : '#ef4444'} />
-                        <Text className={`font-black ml-1 text-[11px] uppercase tracking-wider ${isCorrect ? 'text-[#2EBD85]' : 'text-red-500'}`}>
+                        <Text
+                            className="font-black ml-1 text-[11px] uppercase tracking-wider"
+                            style={{ color: isCorrect ? '#2EBD85' : '#ef4444' }}
+                        >
                             {isCorrect ? 'Correct' : 'Incorrect'}
                         </Text>
                     </View>
@@ -218,7 +228,7 @@ function TheoryCard({
         if (answer.trim().length < 5) return Alert.alert('Too short', 'Please write at least a few words.');
         setGrading(true);
         try {
-            const res = await api.post('/quizzes/grade-theory', {
+            const res = await api.post('quizzes/grade-theory', {
                 question_text: q.question_text,
                 student_answer: answer.trim(),
                 model_answer: q.correct_answer || q.explanation || '',
@@ -246,7 +256,14 @@ function TheoryCard({
 
                 {result ? (
                     <View style={{ marginTop: 20 }}>
-                        <View className={`flex-row items-center border-[2px] rounded-xl p-4 mb-6 ${result.passed ? 'border-[#2EBD85] bg-[#2EBD85]/10' : 'border-red-500 bg-red-500/10'}`}>
+                        <View
+                            className="flex-row items-center border-[2px] rounded-xl p-4 mb-6"
+                            style={[
+                                result.passed
+                                    ? { borderColor: '#2EBD85', backgroundColor: 'rgba(46, 189, 133, 0.1)' }
+                                    : { borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }
+                            ]}
+                        >
                             <Ionicons name={result.passed ? 'star' : 'code-outline'} size={24} color={result.passed ? '#2EBD85' : '#ef4444'} />
                             <View style={{ marginLeft: 12 }}>
                                 <Text className={`text-[19px] font-black tracking-tight ${result.passed ? 'text-[#2EBD85]' : 'text-red-500'}`}>
@@ -295,7 +312,7 @@ function TheoryCard({
 // ══════════════════════════════════════════════════════════════════════════════
 export default function GenerateQuizScreen() {
     const { updateUser } = useAuthStore();
-    const { colorScheme } = require('nativewind').useColorScheme();
+    const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const bgColor = isDark ? '#010100' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#0f172a';
@@ -447,8 +464,7 @@ export default function GenerateQuizScreen() {
     if (questions.length === 0) {
         return (
             <View className="flex-1 bg-white dark:bg-brand-dark">
-                <Stack.Screen options={{ title: 'AI Generator', headerShown: true, headerBackVisible: false, headerStyle: { backgroundColor: bgColor }, headerTintColor: tintColor, headerShadowVisible: false }} />
-                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 60, paddingTop: 100 }} showsVerticalScrollIndicator={false}>
 
                     <Text className="text-[32px] font-black tracking-tight text-slate-900 dark:text-white mb-8">Build Quiz</Text>
 
@@ -456,8 +472,20 @@ export default function GenerateQuizScreen() {
                     <View className="flex-row bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 mb-8 border-2 border-slate-100 dark:border-slate-800">
                         {(['topic', 'file'] as QuizMode[]).map(m => (
                             <TouchableOpacity key={m} onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                className={`flex-1 items-center justify-center py-3 rounded-xl ${mode === m ? 'bg-white dark:bg-brand-dark shadow-sm border border-slate-200 dark:border-slate-700' : ''}`}>
-                                <Text className={`font-black text-[14px] uppercase tracking-widest ${mode === m ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-600'}`}>{m}</Text>
+                                className="flex-1 items-center justify-center py-3 rounded-xl"
+                                style={[
+                                    mode === m ? {
+                                        backgroundColor: isDark ? '#010100' : '#ffffff',
+                                        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1,
+                                        borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0'
+                                    } : {}
+                                ]}>
+                                <Text
+                                    className="font-black text-[14px] uppercase tracking-widest"
+                                    style={{ color: mode === m ? (isDark ? '#ffffff' : '#0f172a') : (isDark ? '#475569' : '#94a3b8') }}
+                                >
+                                    {m}
+                                </Text>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -508,8 +536,19 @@ export default function GenerateQuizScreen() {
                     <View className="flex-row gap-3 mb-8">
                         {(['easy', 'medium', 'hard'] as Difficulty[]).map(d => (
                             <TouchableOpacity key={d} onPress={() => setDifficulty(d)}
-                                className={`flex-1 border-2 rounded-2xl py-4 items-center justify-center ${difficulty === d ? 'border-slate-900 bg-slate-900 dark:border-white dark:bg-white' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'}`}>
-                                <Text className={`font-black text-[13px] uppercase tracking-widest ${difficulty === d ? 'text-white dark:text-slate-900' : 'text-slate-400'}`}>{d}</Text>
+                                className="flex-1 rounded-2xl py-4 items-center justify-center"
+                                style={[
+                                    { borderWidth: 2 },
+                                    difficulty === d
+                                        ? { borderColor: isDark ? '#ffffff' : '#0f172a', backgroundColor: isDark ? '#ffffff' : '#0f172a' }
+                                        : { borderColor: isDark ? '#1e293b' : '#e2e8f0', backgroundColor: isDark ? '#0f172a' : '#ffffff' }
+                                ]}>
+                                <Text
+                                    className="font-black text-[13px] uppercase tracking-widest"
+                                    style={{ color: difficulty === d ? (isDark ? '#0f172a' : '#ffffff') : '#94a3b8' }}
+                                >
+                                    {d}
+                                </Text>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -518,8 +557,19 @@ export default function GenerateQuizScreen() {
                     <View className="flex-row gap-3 mb-8">
                         {([{ id: 'mcq', label: 'MCQ' }, { id: 'theory', label: 'Theory' }, { id: 'both', label: 'Both' }] as any[]).map(f => (
                             <TouchableOpacity key={f.id} onPress={() => setFormat(f.id)}
-                                className={`flex-1 border-2 rounded-2xl py-4 items-center justify-center ${format === f.id ? 'border-slate-900 bg-slate-900 dark:border-white dark:bg-white' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'}`}>
-                                <Text className={`font-black text-[13px] uppercase tracking-widest ${format === f.id ? 'text-white dark:text-slate-900' : 'text-slate-400'}`}>{f.label}</Text>
+                                className="flex-1 rounded-2xl py-4 items-center justify-center"
+                                style={[
+                                    { borderWidth: 2 },
+                                    format === f.id
+                                        ? { borderColor: isDark ? '#ffffff' : '#0f172a', backgroundColor: isDark ? '#ffffff' : '#0f172a' }
+                                        : { borderColor: isDark ? '#1e293b' : '#e2e8f0', backgroundColor: isDark ? '#0f172a' : '#ffffff' }
+                                ]}>
+                                <Text
+                                    className="font-black text-[13px] uppercase tracking-widest"
+                                    style={{ color: format === f.id ? (isDark ? '#0f172a' : '#ffffff') : '#94a3b8' }}
+                                >
+                                    {f.label}
+                                </Text>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -637,7 +687,7 @@ export default function GenerateQuizScreen() {
 // ─── Styles ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     cardOuter: { marginBottom: 24 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', mb: 16, paddingBottom: 16, borderBottomWidth: 2, borderBottomColor: 'rgba(148, 163, 184, 0.1)', marginBottom: 20 },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 16, borderBottomWidth: 2, borderBottomColor: 'rgba(148, 163, 184, 0.1)' },
     diffBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
     diffText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
     optionBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 18, marginBottom: 12 },

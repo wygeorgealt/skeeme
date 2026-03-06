@@ -1,43 +1,41 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-// Determine base URL based on environment. 
-// For local Android emulator testing pointing to Laravel Herd on host machine, use 10.0.2.2.
-// For iOS Simulator pointing to host, use localhost or 127.0.0.1.
-// A physical device needs the internal IP address of the computer running Herd.
-// Production URL for the Skeeme API
-const API_URL = 'https://skeeme.com/api/v1/student';
+// Direct Render URL — bypasses Cloudflare bot protection that blocks mobile POST requests
+const API_URL = 'https://skeeme-web.onrender.com/api/v1/student/';
 
 export const api = axios.create({
     baseURL: API_URL,
-    timeout: 120000,
+    timeout: 60000, // 60 seconds (needed for OCR + DeepSeek image processing)
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Bypass ngrok interstitial during local dev
     },
 });
 
-// Request interceptor to add the auth token
+// Single request interceptor: log + attach auth token
 api.interceptors.request.use(
     (config) => {
+        const fullUrl = `${config.baseURL}${config.url}`;
+        console.log(`[API] ${config.method?.toUpperCase()} ${fullUrl}`);
         const token = useAuthStore.getState().token;
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle 401 Unauthorized
+// Response interceptor: log + handle 401
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        console.log(`[API] ✅ ${response.status} from ${response.config.url}`);
+        return response;
+    },
     (error) => {
+        console.error(`[API] ❌ ${error.message} on ${error.config?.url}`);
         if (error.response?.status === 401) {
-            // Token is invalid or expired
             useAuthStore.getState().logout();
         }
         return Promise.reject(error);

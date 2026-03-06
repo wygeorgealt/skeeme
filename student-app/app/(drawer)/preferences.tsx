@@ -53,7 +53,7 @@ export default function PreferencesScreen() {
                 tone: tone || null,
             };
 
-            const res = await api.post('/preferences', payload);
+            const res = await api.post('preferences', payload);
             updateUser({ ai_preferences: res.data.ai_preferences });
             Alert.alert('Saved!', 'Your AI will now adapt to your preferences.');
         } catch (e: any) {

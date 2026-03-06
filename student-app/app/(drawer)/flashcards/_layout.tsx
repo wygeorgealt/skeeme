@@ -1,7 +1,8 @@
+import { useColorScheme } from 'react-native';
 import { Stack } from 'expo-router';
 
 export default function FlashcardsLayout() {
-    const { colorScheme } = require('nativewind').useColorScheme();
+    const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
     const bgColor = isDark ? '#010100' : '#f8fafc';

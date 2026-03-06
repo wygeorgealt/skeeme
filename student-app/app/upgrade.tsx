@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
 
 function calculateTrialEndDate() {
     const d = new Date();
@@ -13,16 +14,36 @@ function calculateTrialEndDate() {
 export default function UpgradeScreen() {
     const { user } = useAuthStore();
     const trialEndDate = calculateTrialEndDate();
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
 
-    const handleSimulatedPayment = () => {
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+
+    // Pricing Data matching old version
+    const pricing = {
+        ngn: {
+            standard: { monthly: '5,000', yearly: '29,999' },
+            elite: { monthly: '13,000', yearly: '119,000' }
+        },
+        usd: {
+            standard: { monthly: '12.99', yearly: '99.99' },
+            elite: { monthly: '29.99', yearly: '249.99' }
+        }
+    };
+
+    const currency = user?.pricing?.currency === '₦' ? 'ngn' : 'usd';
+    const symbol = user?.pricing?.currency || '$';
+
+    const handleSimulatedPayment = (plan: string) => {
         Alert.alert(
-            "Start Trial",
-            "In a production environment, this would open Native In-App Purchases (Apple/Google) for the Yearly plan with a 7-day trial."
+            `Upgrade to ${plan} (${billingCycle})`,
+            "In a production environment, this would open Native In-App Purchases (Apple/Google) or a Stripe Checkout sheet."
         );
     };
 
     return (
-        <View style={StyleSheet.absoluteFill} className="bg-white">
+        <View style={StyleSheet.absoluteFill} className="bg-white dark:bg-brand-dark">
+            <Stack.Screen options={{ headerShown: false }} />
             <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
                 {/* TOP HEADER SECTION (DARK) */}
                 <View className="bg-[#0B0F19] pt-16 px-6 pb-12">
@@ -87,21 +108,78 @@ export default function UpgradeScreen() {
                         iconBg="bg-fuchsia-100"
                     />
 
-                    <TouchableOpacity
-                        onPress={handleSimulatedPayment}
-                        className="bg-[#FCD34D] w-full py-[18px] rounded-xl items-center mt-6 shadow-sm"
-                        activeOpacity={0.9}
-                    >
-                        <Text className="text-slate-900 font-bold text-lg tracking-tight">
-                            View subscriptions
-                        </Text>
-                    </TouchableOpacity>
+                    {/* NEW: Plan Selection */}
+                    <View className="mt-12">
+                        <Text className="text-slate-900 dark:text-white font-black text-xl mb-6 tracking-tight">Select your plan</Text>
+
+                        {/* Billing Cycle Toggle */}
+                        <View className="flex-row bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl mb-8 items-center border border-slate-200 dark:border-slate-800">
+                            {(['monthly', 'yearly'] as const).map((cycle) => (
+                                <TouchableOpacity
+                                    key={cycle}
+                                    onPress={() => setBillingCycle(cycle)}
+                                    className="flex-1 py-3 rounded-xl items-center"
+                                    style={[
+                                        billingCycle === cycle ? {
+                                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 1 },
+                                            shadowOpacity: 0.05,
+                                            shadowRadius: 2,
+                                            elevation: 1
+                                        } : {}
+                                    ]}
+                                >
+                                    <View className="flex-row items-center">
+                                        <Text
+                                            className="font-bold capitalize"
+                                            style={{
+                                                color: billingCycle === cycle ? (isDark ? '#ffffff' : '#0f172a') : '#64748b'
+                                            }}
+                                        >
+                                            {cycle}
+                                        </Text>
+                                        {cycle === 'yearly' && (
+                                            <View className="ml-2 bg-emerald-500 px-2 py-0.5 rounded-full">
+                                                <Text className="text-[8px] font-black text-white">SAVE 50%</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* Plan Cards */}
+                        <View className="gap-4">
+                            <PlanOption
+                                title="Standard"
+                                price={`${symbol}${pricing[currency].standard[billingCycle]}`}
+                                cycle={billingCycle === 'monthly' ? '/mo' : '/yr'}
+                                subtitle="Essential features for regular study"
+                                icon="star"
+                                iconColor="#4f46e5"
+                                onPress={() => handleSimulatedPayment('Standard')}
+                                isDark={isDark}
+                            />
+                            <PlanOption
+                                title="Elite"
+                                price={`${symbol}${pricing[currency].elite[billingCycle]}`}
+                                cycle={billingCycle === 'monthly' ? '/mo' : '/yr'}
+                                subtitle="Full power for exam season"
+                                icon="flash"
+                                iconColor="#f59e0b"
+                                badge="Best Value"
+                                onPress={() => handleSimulatedPayment('Elite')}
+                                isDark={isDark}
+                            />
+                        </View>
+                    </View>
 
                     <TouchableOpacity
                         onPress={() => router.back()}
-                        className="mt-8 py-2 items-center"
+                        className="mt-12 py-2 items-center"
                     >
-                        <Text className="text-indigo-600 font-bold text-[17px]">
+                        <Text className="text-indigo-600 dark:text-indigo-400 font-bold text-[17px]">
                             Continue using the free version
                         </Text>
                     </TouchableOpacity>
@@ -118,13 +196,43 @@ export default function UpgradeScreen() {
 function FeatureItem({ icon, title, description, iconBg }: any) {
     return (
         <View className="flex-row items-start mb-8 pr-2">
-            <View className={`size-[64px] rounded-xl ${iconBg} items-center justify-center mr-5`}>
+            <View className={`size-[64px] rounded-xl ${iconBg} items-center justify-center mr-5 border-2 border-white/10`}>
                 {icon}
             </View>
             <View className="flex-1 justify-center min-h-[64px] pt-1.5">
-                <Text className="text-slate-900 font-black text-lg mb-1 tracking-tight">{title}</Text>
-                <Text className="text-slate-600 text-[15px] leading-snug font-medium pt-0.5">{description}</Text>
+                <Text className="text-slate-900 dark:text-white font-black text-lg mb-1 tracking-tight">{title}</Text>
+                <Text className="text-slate-600 dark:text-slate-400 text-[15px] leading-snug font-medium pt-0.5">{description}</Text>
             </View>
         </View>
+    );
+}
+
+function PlanOption({ title, price, cycle, subtitle, icon, iconColor, badge, onPress, isDark }: any) {
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 flex-row items-center justify-between"
+            activeOpacity={0.8}
+        >
+            <View className="flex-1 mr-4">
+                <View className="flex-row items-center mb-1">
+                    <Ionicons name={icon as any} size={16} color={iconColor} className="mr-2" />
+                    <Text className="text-slate-900 dark:text-white font-black text-lg">{title}</Text>
+                    {badge && (
+                        <View className="ml-3 bg-indigo-600 px-2 py-0.5 rounded-full">
+                            <Text className="text-[9px] font-black text-white uppercase">{badge}</Text>
+                        </View>
+                    )}
+                </View>
+                <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold">{subtitle}</Text>
+            </View>
+            <View className="items-end">
+                <View className="flex-row items-baseline">
+                    <Text className="text-slate-900 dark:text-white font-black text-xl">{price}</Text>
+                    <Text className="text-slate-400 dark:text-slate-500 text-xs font-bold ml-0.5">{cycle}</Text>
+                </View>
+                <Text className="text-indigo-600 dark:text-indigo-400 font-black text-[10px] uppercase tracking-widest mt-1">Select</Text>
+            </View>
+        </TouchableOpacity>
     );
 }

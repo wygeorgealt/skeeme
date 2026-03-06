@@ -44,20 +44,17 @@ export default function LoginScreen() {
         setIsLoading(true);
         try {
             console.log('[Login] Attempting sign in for:', email.trim().toLowerCase());
-            const response = await api.post('/login', {
+            const response = await api.post('login', {
                 email: email.trim().toLowerCase(),
                 password,
                 device_name: `${Platform.OS}_app`,
             });
-            console.log('[Login] Success');
+            console.log('[Login] Success!');
             const { token, user } = response.data;
             login(user, token);
             router.replace('/(drawer)');
         } catch (error: any) {
-            console.error('[Login] Error status:', error.response?.status);
-            console.error('[Login] Error data:', JSON.stringify(error.response?.data, null, 2));
-            console.error('[Login] Error message:', error.message);
-
+            console.error('[Login] Error:', error.message);
             const msg = error.response?.data?.message || 'Invalid credentials or network issue.';
             Alert.alert('Login Failed', msg);
         } finally {

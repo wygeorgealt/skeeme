@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-    View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image,
+    View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image, useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '@/lib/api';
@@ -20,7 +20,7 @@ const BASE_SCAN_COST = 2;
 const COST_PER_SOLUTION = 4;
 
 export default function ScanScreen() {
-    const { colorScheme } = require('nativewind').useColorScheme();
+    const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const bgColor = isDark ? '#010100' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#0f172a';
@@ -77,7 +77,7 @@ export default function ScanScreen() {
 
         setLoading(true);
         try {
-            const response = await api.post('/scan/solve', { image: imageBase64 });
+            const response = await api.post('scan/solve', { image: imageBase64 });
             const data = response.data;
 
             setResults(data.results || []);

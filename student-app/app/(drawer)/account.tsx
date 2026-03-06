@@ -7,11 +7,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { GradientButton } from '@/components/ui/GradientButton'; // This is now a solid V2 button
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { useColorScheme as useTailwindColorScheme } from 'nativewind';
+import { useColorScheme } from 'react-native';
+import { router } from 'expo-router';
 
 export default function AccountScreen() {
+    const colorScheme = useColorScheme();
     const { user, updateUser, theme, setTheme } = useAuthStore();
-    const { setColorScheme } = useTailwindColorScheme();
+    // NativeWind's setter is still needed for actual class changes
+    const { setColorScheme } = require('nativewind').useColorScheme();
 
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
@@ -38,7 +41,7 @@ export default function AccountScreen() {
         setIsUpdatingProfile(true);
         setProfileSuccess(false);
         try {
-            await api.patch('/profile', { name: name.trim(), email: email.trim().toLowerCase() });
+            await api.patch('profile', { name: name.trim(), email: email.trim().toLowerCase() });
             updateUser({ name: name.trim(), email: email.trim().toLowerCase() });
             setProfileSuccess(true);
             setTimeout(() => setProfileSuccess(false), 3000);
@@ -70,7 +73,7 @@ export default function AccountScreen() {
         setIsUpdatingPassword(true);
         setPasswordSuccess(false);
         try {
-            await api.post('/profile/password', {
+            await api.post('profile/password', {
                 current_password: currentPassword,
                 password: newPassword,
                 password_confirmation: confirmPassword,
@@ -141,6 +144,12 @@ export default function AccountScreen() {
                             ) : (
                                 <Text className="text-slate-500 font-bold text-[13px] uppercase tracking-widest">{user.credits} Credits Remaining</Text>
                             )}
+                            <TouchableOpacity
+                                onPress={() => router.push('/upgrade')}
+                                className="mt-4 bg-white dark:bg-slate-950 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 self-start"
+                            >
+                                <Text className="text-slate-900 dark:text-white font-black text-[11px] uppercase tracking-widest">Manage Plan</Text>
+                            </TouchableOpacity>
                         </View>
                         <View className={`size-14 rounded-full items-center justify-center border-2 ${user.is_unlimited ? 'border-[#2EBD85] bg-[#2EBD85]/10' : 'border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800'}`}>
                             <Ionicons name="flash" size={24} color={user.is_unlimited ? "#2EBD85" : "#94a3b8"} />
@@ -197,18 +206,32 @@ export default function AccountScreen() {
                                 <TouchableOpacity
                                     key={t}
                                     onPress={() => handleThemeChange(t)}
-                                    className={`flex-row items-center justify-between p-4 ${index !== 2 ? 'border-b-2 border-slate-200 dark:border-slate-800' : ''}`}
+                                    className="flex-row items-center justify-between p-4"
+                                    style={index !== 2 ? { borderBottomWidth: 2, borderBottomColor: colorScheme === 'dark' ? '#1e293b' : '#e2e8f0' } : {}}
                                 >
                                     <View className="flex-row items-center">
-                                        <View className={`size-12 rounded-xl border-2 items-center justify-center mr-4 ${isSelected ? 'border-slate-900 dark:border-white bg-slate-900 dark:bg-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-brand-dark'}`}>
+                                        <View
+                                            className="size-12 rounded-xl border-2 items-center justify-center mr-4"
+                                            style={[
+                                                isSelected
+                                                    ? { borderColor: colorScheme === 'dark' ? '#ffffff' : '#0f172a', backgroundColor: colorScheme === 'dark' ? '#ffffff' : '#0f172a' }
+                                                    : { borderColor: colorScheme === 'dark' ? '#334155' : '#cbd5e1', backgroundColor: colorScheme === 'dark' ? '#010100' : '#ffffff' }
+                                            ]}
+                                        >
                                             <Ionicons name={icons[t] as any} size={20} color={isSelected ? (t === 'dark' ? '#0f172a' : 'white') : '#64748b'} />
                                         </View>
-                                        <Text className={`font-black tracking-tight text-[16px] ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>
+                                        <Text
+                                            className="font-black tracking-tight text-[16px]"
+                                            style={{ color: isSelected ? (colorScheme === 'dark' ? '#ffffff' : '#0f172a') : '#64748b' }}
+                                        >
                                             {labels[t]}
                                         </Text>
                                     </View>
-                                    <View className={`size-6 rounded-full border-2 items-center justify-center ${isSelected ? 'border-slate-900 dark:border-white' : 'border-slate-300 dark:border-slate-600'}`}>
-                                        {isSelected && <View className="size-3 bg-slate-900 dark:bg-white rounded-full" />}
+                                    <View
+                                        className="size-6 rounded-full border-2 items-center justify-center"
+                                        style={{ borderColor: isSelected ? (colorScheme === 'dark' ? '#ffffff' : '#0f172a') : (colorScheme === 'dark' ? '#475569' : '#cbd5e1') }}
+                                    >
+                                        {isSelected && <View className="size-3 rounded-full" style={{ backgroundColor: colorScheme === 'dark' ? '#ffffff' : '#0f172a' }} />}
                                     </View>
                                 </TouchableOpacity>
                             );

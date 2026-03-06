@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl, useColorScheme } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,13 +40,13 @@ const getScoreColor = (pct: number) => {
 
 export default function QuizHistoryDashboard() {
     const [refreshing, setRefreshing] = useState(false);
-    const { colorScheme } = require('nativewind').useColorScheme();
+    const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
     const { data: sessions, isLoading, refetch } = useQuery({
         queryKey: ['quiz-history'],
         queryFn: async () => {
-            const res = await api.get('/quizzes/history');
+            const res = await api.get('quizzes/history');
             return res.data.data as QuizSession[];
         }
     });

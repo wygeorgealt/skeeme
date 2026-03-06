@@ -82,7 +82,7 @@ export default function SignupScreen() {
         console.log('[Signup] Sending payload:', JSON.stringify(payload, null, 2));
 
         try {
-            const response = await api.post('/register', payload);
+            const response = await api.post('register', payload);
             console.log('[Signup] Success');
             const { token, user } = response.data;
             login(user, token);

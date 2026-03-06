@@ -1,5 +1,5 @@
 import { Drawer } from 'expo-router/drawer';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -8,14 +8,14 @@ import { DrawerContentScrollView } from '@react-navigation/drawer';
 
 function CustomDrawerContent(props: any) {
     const { user, logout } = useAuthStore();
-    const { colorScheme } = require('nativewind').useColorScheme();
+    const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const iconColor = isDark ? '#ffffff' : '#0f172a';
     const pathname = usePathname();
 
     const handleLogout = async () => {
         try {
-            await api.post('/logout');
+            await api.post('logout');
         } catch (e) {
             console.warn('Logout API failed, forcing local logout');
         } finally {
@@ -106,7 +106,7 @@ function CustomDrawerContent(props: any) {
 }
 
 export default function DrawerLayout() {
-    const { colorScheme } = require('nativewind').useColorScheme();
+    const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
     const bgColor = isDark ? '#010100' : '#ffffff';

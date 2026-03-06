@@ -65,9 +65,9 @@ export default function GenerateFlashcardScreen() {
                 } as any);
                 fd.append('card_count', cardCount);
                 fd.append('difficulty', difficulty);
-                response = await api.post('/flashcards/generate', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                response = await api.post('flashcards/generate', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
             } else {
-                response = await api.post('/flashcards/generate', {
+                response = await api.post('flashcards/generate', {
                     topic,
                     card_count: count,
                     difficulty

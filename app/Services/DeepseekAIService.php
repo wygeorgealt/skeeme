@@ -733,9 +733,9 @@ PROMPT;
      */
     protected function ocrFromBase64(string $base64Image): string
     {
-        $ocrClient = new Client(['timeout' => 45]);
-
+        // Try Engine 2 (Math-focused) first, with a shorter strict timeout
         try {
+            $ocrClient = new Client(['timeout' => 15]);
             $response = $ocrClient->post('https://api.ocr.space/parse/image', [
                 'headers' => [
                     'apikey' => 'helloworld', // Free tier public key
@@ -765,16 +765,51 @@ PROMPT;
             if (isset($data['ParsedResults'][0]['ParsedText'])) {
                 return trim($data['ParsedResults'][0]['ParsedText']);
             }
+        } catch (\Exception $e) {
+            \Log::warning('OCR.space Engine 2 Timeout/Error, falling back to Engine 1: ' . $e->getMessage());
+        }
 
-            if (isset($data['ErrorMessage'])) {
-                \Log::error('OCR.space Error: ' . implode(', ', (array) $data['ErrorMessage']));
+        // Fallback to Engine 1 (Standard) if Engine 2 timed out or failed
+        try {
+            $fallbackClient = new Client(['timeout' => 10]);
+            $response = $fallbackClient->post('https://api.ocr.space/parse/image', [
+                'headers' => [
+                    'apikey' => 'helloworld',
+                ],
+                'multipart' => [
+                    [
+                        'name' => 'base64Image',
+                        'contents' => 'data:image/jpeg;base64,' . $base64Image,
+                    ],
+                    [
+                        'name' => 'language',
+                        'contents' => 'eng',
+                    ],
+                    [
+                        'name' => 'isOverlayRequired',
+                        'contents' => 'false',
+                    ],
+                    [
+                        'name' => 'OCREngine',
+                        'contents' => '1', // Engine 1 is faster but slightly less accurate for math
+                    ],
+                ],
+            ]);
+
+            $data = json_decode($response->getBody()->getContents(), true);
+
+            if (isset($data['ParsedResults'][0]['ParsedText'])) {
+                return trim($data['ParsedResults'][0]['ParsedText']);
             }
 
-            return '';
+            if (isset($data['ErrorMessage'])) {
+                \Log::error('OCR.space Error (Engine 1 Fallback): ' . implode(', ', (array) $data['ErrorMessage']));
+            }
         } catch (\Exception $e) {
-            \Log::error('OCR.space Request Exception: ' . $e->getMessage());
-            return '';
+            \Log::error('OCR.space Engine 1 Fallback Exception: ' . $e->getMessage());
         }
+
+        return '';
     }
 
     /**

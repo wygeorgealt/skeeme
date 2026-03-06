@@ -60,7 +60,7 @@ export default function DashboardScreen() {
     const { data: heatmapDates = [], refetch: refetchHeatmap } = useQuery({
         queryKey: ['streak-heatmap'],
         queryFn: async () => {
-            const res = await api.get('/streaks/heatmap');
+            const res = await api.get('streaks/heatmap');
             return res.data.data as string[];
         }
     });
@@ -70,7 +70,7 @@ export default function DashboardScreen() {
         useCallback(() => {
             const fetchData = async () => {
                 try {
-                    const res = await api.get('/me');
+                    const res = await api.get('me');
                     if (res.data) updateUser(res.data);
                 } catch { /* silent — stale data is fine */ }
             };
@@ -86,7 +86,7 @@ export default function DashboardScreen() {
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
         try {
-            const res = await api.get('/me');
+            const res = await api.get('me');
             if (res.data) updateUser(res.data);
         } catch { /* silent */ }
         setRefreshing(false);
