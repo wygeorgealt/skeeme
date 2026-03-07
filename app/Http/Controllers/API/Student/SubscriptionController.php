@@ -97,9 +97,7 @@ class SubscriptionController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
-                'message' => 'Failed to initialize payment.',
-                'error' => $e->getMessage(), // Surface error for war-room debugging
-                'debug' => true
+                'message' => 'Failed to initialize payment. Please check your internet connection or contact support.'
             ], 500);
         }
     }

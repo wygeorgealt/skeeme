@@ -12,6 +12,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.kantrol.skeeme",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#010100",
         "foregroundImage": "./assets/images/adaptive-icon.png"
@@ -48,6 +50,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7189d4a4-0c25-4fe4-b58a-1822e2034bd1"
+      }
     }
   }
 }
