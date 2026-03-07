@@ -376,6 +376,11 @@ Route::post('/currency', [LandingController::class, 'setCurrency'])->name('curre
 
 
 /* ------------------------------------------------------------------ */
+/* System Health (Secret)                                             */
+/* ------------------------------------------------------------------ */
+Route::get('/system/health/{key}', [\App\Http\Controllers\SystemHealthController::class, 'index'])->name('system.health');
+
+/* ------------------------------------------------------------------ */
 /* Payment Webhooks (public)                                           */
 /* ------------------------------------------------------------------ */
 Route::post('/webhooks/paystack', [\App\Http\Controllers\PaymentController::class, 'webhook'])
