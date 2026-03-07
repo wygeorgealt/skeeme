@@ -63,10 +63,12 @@ class SystemHealthController extends Controller
             // 3. Info
             $redisInfo = Redis::info();
             $data['info'] = [
+                'Status' => $data['status'],
+                'Persistence' => config('database.redis.options.persistent') ? 'Enabled' : 'Disabled',
+                'Client' => config('database.redis.client'),
                 'Memory' => $redisInfo['used_memory_human'] ?? 'N/A',
                 'Clients' => $redisInfo['connected_clients'] ?? 'N/A',
                 'Uptime' => ($redisInfo['uptime_in_days'] ?? '0') . ' days',
-                'Commands' => $redisInfo['total_commands_processed'] ?? 'N/A',
                 'Version' => $redisInfo['redis_version'] ?? 'N/A'
             ];
 
