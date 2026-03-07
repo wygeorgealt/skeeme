@@ -131,10 +131,10 @@ class PracticeQuizController extends Controller
             Cache::put("ai_job_status:{$jobId}", "pending", 1800);
 
             ProcessAIQuiz::dispatch(
-                $sourceContent, // Changed from $notes to $sourceContent
+                [$sourceContent], // Wrapped in array as required by the job constructor
                 $validated['question_count'] ?? 10,
                 $validated['difficulty'] ?? 'medium',
-                $types, // Changed from $validated['question_types'] ?? ['multiple_choice'] to $types
+                $types,
                 $validated['topic'] ?? 'General Knowledge',
                 $user->id,
                 $jobId,

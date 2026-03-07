@@ -42,9 +42,14 @@ class DeepseekAIService
             // Check cache first (24 hour TTL) - ELIMINATES REDUNDANT API CALLS
             $cacheKey = $this->generateCacheKey($notes, $numberOfQuestions, $difficulty, $questionTypes, $prompt, $includeVisuals);
             if (Cache::has($cacheKey)) {
-                \Log::info('Using cached questions - saved token cost');
+                $questions = Cache::get($cacheKey);
+                \Log::info('Redis Cache Hit: Questions retrieved from cache.', [
+                    'cache_key' => $cacheKey,
+                    'questions_count' => count($questions),
+                    'estimated_time_saved' => '15-30s (AI API Bypass)'
+                ]);
                 if ($progressCallback) $progressCallback(100);
-                return Cache::get($cacheKey);
+                return $questions;
             }
             
             if ($progressCallback) $progressCallback(30);

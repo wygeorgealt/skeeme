@@ -37,15 +37,7 @@
         }
       ],
       "expo-secure-store",
-      "expo-font",
-      [
-        "@sentry/react-native/expo",
-        {
-          "url": "https://sentry.io/",
-          "project": "react-native",
-          "organization": "kantrol"
-        }
-      ]
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,
