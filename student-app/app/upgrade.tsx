@@ -53,6 +53,7 @@ export default function UpgradeScreen() {
     const currentRates = pricing[currency][activeTab];
 
     const [isVerifying, setIsVerifying] = useState(false);
+    const [pendingReference, setPendingReference] = useState<string | null>(null);
 
     const handlePurchase = async () => {
         try {
@@ -63,46 +64,57 @@ export default function UpgradeScreen() {
             });
 
             if (response.data.authorization_url) {
+                const reference = response.data.reference;
+                setPendingReference(reference);
+
                 // Open system browser for payment
                 await Linking.openURL(response.data.authorization_url);
 
-                // Show verification message
-                Alert.alert(
-                    "Payment Started",
-                    "Please complete the payment in your browser. Tap 'Check Status' once finished.",
-                    [
-                        {
-                            text: "Check Status",
-                            onPress: () => verifyPayment(response.data.reference)
-                        }
-                    ]
-                );
+                // Start automatic polling after a short delay
+                setTimeout(() => pollPaymentStatus(reference, 0), 5000);
             }
         } catch (error) {
-            console.error('Checkout failed', error);
+            if (__DEV__) console.error('Checkout failed', error);
             Alert.alert("Checkout Failed", "Could not start the payment process. Please try again.");
         } finally {
             setIsVerifying(false);
         }
     };
 
-    const verifyPayment = async (reference: string) => {
+    const pollPaymentStatus = async (reference: string, attempt: number) => {
+        const MAX_ATTEMPTS = 24; // 24 * 5s = 2 minutes
+        if (attempt >= MAX_ATTEMPTS) {
+            Alert.alert(
+                "Payment Pending",
+                "We couldn't confirm your payment automatically. Use the 'Check Payment' button to verify manually.",
+            );
+            return;
+        }
+
         try {
             setIsVerifying(true);
             const response = await api.get(`/subscriptions/verify/${reference}`);
 
             if (response.data.status === 'success') {
-                // Sync store and go home
+                setPendingReference(null);
                 await useAuthStore.getState().checkAuth();
                 Alert.alert("Success", "Welcome to the premium club! Your subscription is active.");
                 router.replace('/(drawer)');
-            } else {
-                Alert.alert("Still Processing", "We haven't confirmed your payment yet. If you've paid, please wait 30 seconds and try again.");
+                return;
             }
-        } catch (error) {
-            Alert.alert("Verification Error", "Could not verify payment status.");
+        } catch {
+            // Network error — continue polling
         } finally {
             setIsVerifying(false);
+        }
+
+        // Schedule next poll
+        setTimeout(() => pollPaymentStatus(reference, attempt + 1), 5000);
+    };
+
+    const handleManualVerify = () => {
+        if (pendingReference) {
+            pollPaymentStatus(pendingReference, 20); // Start from attempt 20 so max 4 more tries
         }
     };
 

@@ -12,6 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { signInWithGoogle, signInWithApple } from '@/lib/socialAuth';
 import { Picker } from '@react-native-picker/picker';
 import Animated, { FadeIn, SlideInRight, SlideOutLeft } from 'react-native-reanimated';
+import { PasswordField } from '@/components/ui/PasswordField';
 
 // Small helper component that auto-advances after 2.5s using useEffect
 function SuccessAutoAdvance({ onAdvance }: { onAdvance: () => void }) {
@@ -117,6 +118,10 @@ export default function SignupScreen() {
     const handleSignupSubmit = async () => {
         setIsLoading(true);
         const age = calculateAge();
+        if (age < 13) {
+            setIsLoading(false);
+            return Alert.alert('COPPA Compliance', 'You must be at least 13 years old to use Skeeme.');
+        }
         const payload = {
             first_name: firstName.trim(),
             last_name: lastName.trim(),
@@ -312,33 +317,20 @@ export default function SignupScreen() {
                             Choose a strong password with at least 8 characters.
                         </Text>
 
-                        <View className={`${inputBgClass} ${inputBorderClass} rounded-[16px] px-4 py-1 flex-row items-center border mb-4`}>
-                            <TextInput
-                                className="flex-1 font-medium text-[17px] h-[56px]"
-                                placeholder="Password"
-                                placeholderTextColor={placeholderColor}
-                                secureTextEntry={!showPassword}
-                                value={password}
-                                onChangeText={setPassword}
-                                autoFocus
-                                style={{ color: isDark ? 'white' : 'black' }}
-                            />
-                            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={placeholderColor} />
-                            </TouchableOpacity>
-                        </View>
+                        <PasswordField
+                            value={password}
+                            onChangeText={setPassword}
+                            placeholder="Password"
+                            autoFocus
+                            containerClassName="mb-4"
+                        />
 
-                        <View className={`${inputBgClass} ${inputBorderClass} rounded-[16px] px-4 py-1 flex-row items-center border mb-12`}>
-                            <TextInput
-                                className="flex-1 font-medium text-[17px] h-[56px]"
-                                placeholder="Confirm Password"
-                                placeholderTextColor={placeholderColor}
-                                secureTextEntry={!showPassword}
-                                value={confirmPassword}
-                                onChangeText={setConfirmPassword}
-                                style={{ color: isDark ? 'white' : 'black' }}
-                            />
-                        </View>
+                        <PasswordField
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            placeholder="Confirm Password"
+                            containerClassName="mb-12"
+                        />
 
                         <TouchableOpacity
                             onPress={nextStep}

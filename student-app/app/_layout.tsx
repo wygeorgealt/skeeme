@@ -1,5 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments, ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { QueryProvider } from '@/components/QueryProvider';
 // Using platform system fonts (SF Pro on iOS, Roboto on Android) - no custom font loading needed
-import { useColorScheme as useNativeColorScheme, LogBox, View } from 'react-native';
+import { useColorScheme as useNativeColorScheme, LogBox, View, Text, TouchableOpacity } from 'react-native';
 import { cssInterop } from 'nativewind';
 import { useColorScheme as useTailwindColorScheme } from 'nativewind';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,7 +23,9 @@ cssInterop(LinearGradient, {
 cssInterop(Ionicons, { className: 'style' as any });
 
 
-LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
+if (__DEV__) {
+  LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
+}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,22 +33,21 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Sentry from '@sentry/react-native';
 
 Sentry.init({
-  dsn: 'https://601ccf3499704acaf849f097cac845a2@o4510997913927680.ingest.de.sentry.io/4510997917073488',
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || 'https://601ccf3499704acaf849f097cac845a2@o4510997913927680.ingest.de.sentry.io/4510997917073488',
 
-  // Adds more context data to events (IP address, cookies, user, etc.)
-  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  // IMPORTANT: Do NOT send PII (IP, cookies, user agent) — GDPR/POPIA compliance
+  sendDefaultPii: false,
 
   // Enable Logs
   enableLogs: true,
 
   // Configure Session Replay
-  replaysSessionSampleRate: 0.1,
+  replaysSessionSampleRate: 0.01, // 1% — reduced for data costs
   replaysOnErrorSampleRate: 1,
   integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
 
-  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
-  // spotlight: __DEV__,
+  // Only send events in production
+  enabled: !__DEV__,
 });
 
 export const unstable_settings = {
@@ -131,3 +132,28 @@ export default Sentry.wrap(function RootLayout() {
     </GestureHandlerRootView>
   );
 });
+
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
+  return (
+    <View className="flex-1 items-center justify-center p-8 bg-white dark:bg-[#010100]">
+      <Ionicons name="warning" size={48} color="#ef4444" />
+      <Text className="text-[24px] font-black tracking-tight text-slate-900 dark:text-white mt-6 mb-2 text-center">
+        Something went wrong.
+      </Text>
+      <Text className="text-[15px] font-medium leading-relaxed text-slate-500 mb-8 text-center">
+        We encountered an unexpected error. Our team has been notified.
+      </Text>
+      <TouchableOpacity
+        onPress={retry}
+        className="bg-slate-900 dark:bg-white px-8 py-4 rounded-xl flex-row items-center"
+      >
+        <Ionicons name="refresh" size={20} color={useTailwindColorScheme().colorScheme === 'dark' ? '#0f172a' : 'white'} />
+        <Text className="text-white dark:text-slate-900 font-bold ml-2">Try Again</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}

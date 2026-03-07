@@ -14,6 +14,7 @@ import { useColorScheme } from 'react-native';
 
 export function NetworkStatus() {
     const [isConnected, setIsConnected] = useState<boolean | null>(true);
+    const isConnectedRef = React.useRef<boolean | null>(true);
     const insets = useSafeAreaInsets();
     const translateY = useSharedValue(-60); // Start hidden off-screen
     const colorScheme = useColorScheme();
@@ -23,14 +24,18 @@ export function NetworkStatus() {
         const unsubscribe = NetInfo.addEventListener((state) => {
             // NetInfo returns null initially, so we check explicitly for false
             if (state.isConnected === false) {
-                setIsConnected(false);
-                translateY.value = withSpring(insets.top > 0 ? insets.top : 20, {
-                    damping: 15,
-                    stiffness: 150,
-                });
-            } else if (state.isConnected === true && isConnected === false) {
+                if (isConnectedRef.current !== false) {
+                    setIsConnected(false);
+                    isConnectedRef.current = false;
+                    translateY.value = withSpring(insets.top > 0 ? insets.top : 20, {
+                        damping: 15,
+                        stiffness: 150,
+                    });
+                }
+            } else if (state.isConnected === true && isConnectedRef.current === false) {
                 // Only show positive feedback if we are transitioning back from an offline state
                 setIsConnected(true);
+                isConnectedRef.current = true;
                 // Hide after a short delay showing it's back online
                 setTimeout(() => {
                     translateY.value = withTiming(-100, { duration: 400 });
@@ -41,7 +46,7 @@ export function NetworkStatus() {
         return () => {
             unsubscribe();
         };
-    }, [isConnected, insets.top]);
+    }, [insets.top, translateY]);
 
     const animatedStyle = useAnimatedStyle(() => {
         return {

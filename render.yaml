@@ -108,13 +108,15 @@ services:
       - key: DEEPSEEK_API_KEY
         sync: false
 
-      # System Stability (Use Database for Queues/Cache on Free Plan)
+      # System Stability (Using Redis/Valkey for scaling)
+      - key: REDIS_URL
+        sync: false
       - key: SESSION_DRIVER
-        value: file
+        value: redis
       - key: CACHE_STORE
-        value: database
+        value: redis
       - key: QUEUE_CONNECTION
-        value: database
+        value: redis
 
   - type: worker
     name: skeeme-worker

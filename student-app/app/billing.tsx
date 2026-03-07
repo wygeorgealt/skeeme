@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Linking, Alert, useColorScheme } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert, useColorScheme, Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Stack, router } from 'expo-router';
@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useAuthStore } from '@/store/authStore';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 
 interface Invoice {
     id: number;
@@ -58,13 +60,26 @@ export default function BillingHistoryScreen() {
 
     const handleDownload = async (invoiceId: number) => {
         try {
+            const token = useAuthStore.getState().token;
             const baseUrl = api.defaults.baseURL;
-            const url = `${baseUrl}/billing/invoices/${invoiceId}/download`;
-            const canOpen = await Linking.canOpenURL(url);
-            if (canOpen) {
-                await Linking.openURL(url);
+            const url = `${baseUrl}billing/invoices/${invoiceId}/download`;
+            const fileUri = `${FileSystem.documentDirectory || ''}invoice_${invoiceId}.pdf`;
+
+            const downloadResult = await FileSystem.downloadAsync(url, fileUri, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/pdf',
+                },
+            });
+
+            if (downloadResult.status === 200) {
+                if (await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(downloadResult.uri);
+                } else {
+                    Alert.alert('Downloaded', 'Invoice saved to cache.');
+                }
             } else {
-                Alert.alert('Download Error', 'Unable to open the download link on this device.');
+                Alert.alert('Download Error', 'Could not download the invoice. Please try again.');
             }
         } catch {
             Alert.alert('Download Error', 'Failed to download invoice. Please try again.');

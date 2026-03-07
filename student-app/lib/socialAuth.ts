@@ -1,22 +1,26 @@
 import { api } from '@/lib/api';
 import { Platform, Alert } from 'react-native';
 
-// Safely import GoogleSignin so it doesn't crash Expo Go
+// Lazy-loaded Google Sign-In (H5: avoid require() for tree-shaking safety)
 let GoogleSignin: any = null;
 let statusCodes: any = {};
+let googleSignInInitialized = false;
 
-try {
-    const GoogleAuthModule = require('@react-native-google-signin/google-signin');
-    GoogleSignin = GoogleAuthModule.GoogleSignin;
-    statusCodes = GoogleAuthModule.statusCodes;
+async function initGoogleSignIn() {
+    if (googleSignInInitialized) return;
+    googleSignInInitialized = true;
+    try {
+        const GoogleAuthModule = await import('@react-native-google-signin/google-signin');
+        GoogleSignin = GoogleAuthModule.GoogleSignin;
+        statusCodes = GoogleAuthModule.statusCodes;
 
-    // ─── CONFIGURATION ─────────────────────────────────────────────────────────
-    GoogleSignin?.configure({
-        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
-        offlineAccess: false,
-    });
-} catch (error) {
-    console.log("Google Sign-In native module not available (likely running in Expo Go or Web).");
+        GoogleSignin?.configure({
+            webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+            offlineAccess: false,
+        });
+    } catch (error) {
+        if (__DEV__) console.log("Google Sign-In native module not available (likely running in Expo Go or Web).");
+    }
 }
 
 // ─── GOOGLE SIGN IN ────────────────────────────────────────────────────────
@@ -35,6 +39,7 @@ export async function signInWithGoogle(): Promise<{
     }
 
     try {
+        await initGoogleSignIn();
         await GoogleSignin.hasPlayServices();
         const response = await GoogleSignin.signIn();
 

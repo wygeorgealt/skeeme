@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { Stack } from 'expo-router';
@@ -17,300 +18,11 @@ import * as Sharing from 'expo-sharing';
 import { QuizShareCard } from '@/components/QuizShareCard';
 import { RewardModal } from '@/components/RewardModal';
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
-type QuizMode = 'topic' | 'file';
-type Difficulty = 'easy' | 'medium' | 'hard';
-type FormatType = 'mcq' | 'theory' | 'both';
+import { QuizMode, Difficulty, FormatType, Question, TheoryResult } from '@/components/quiz/QuizTypes';
+import { MCQCard } from '@/components/quiz/MCQCard';
+import { TheoryCard } from '@/components/quiz/TheoryCard';
 
-type Question = {
-    question_text: string;
-    question_type: 'multiple_choice' | 'essay';
-    options: string[];
-    correct_answer: string;
-    explanation: string;
-    difficulty_level: string;
-};
 
-type TheoryResult = {
-    score: number;
-    max: number;
-    feedback: string;
-    passed: boolean;
-};
-
-// ─── Difficulty colours ─────────────────────────────────────────────────────────
-const DIFF_COLORS: Record<string, string> = {
-    easy: '#2EBD85', medium: '#FCD34D', hard: '#ef4444',
-};
-
-// ──────────────────────────────────────────────────────────────────────────────
-// 3‑D FLIP CARD
-// ──────────────────────────────────────────────────────────────────────────────
-function QuizFlipCard({
-    front, back, isFlipped
-}: {
-    front: React.ReactNode;
-    back: React.ReactNode;
-    isFlipped: boolean;
-}) {
-    const rot = useSharedValue(0);
-    const [frontHeight, setFrontHeight] = useState(0);
-    const [backHeight, setBackHeight] = useState(0);
-
-    useEffect(() => {
-        rot.value = withTiming(isFlipped ? 1 : 0, { duration: 500 });
-    }, [isFlipped]);
-
-    const frontStyle = useAnimatedStyle(() => ({
-        transform: [
-            { perspective: 1200 },
-            { rotateY: `${interpolate(rot.value, [0, 1], [0, 180], Extrapolation.CLAMP)}deg` },
-        ],
-        backfaceVisibility: 'hidden',
-        position: 'absolute',
-        top: 0, left: 0, right: 0,
-        zIndex: isFlipped ? 0 : 1,
-    }));
-
-    const backStyle = useAnimatedStyle(() => ({
-        transform: [
-            { perspective: 1200 },
-            { rotateY: `${interpolate(rot.value, [0, 1], [-180, 0], Extrapolation.CLAMP)}deg` },
-        ],
-        backfaceVisibility: 'hidden',
-        position: 'absolute',
-        top: 0, left: 0, right: 0,
-        zIndex: isFlipped ? 1 : 0,
-    }));
-
-    const containerHeight = Math.max(frontHeight, backHeight, 150);
-
-    return (
-        <View style={{ minHeight: containerHeight }}>
-            <Animated.View style={frontStyle} pointerEvents={isFlipped ? 'none' : 'auto'} onLayout={(e) => setFrontHeight(e.nativeEvent.layout.height)}>
-                {front}
-            </Animated.View>
-            <Animated.View style={backStyle} pointerEvents={isFlipped ? 'auto' : 'none'} onLayout={(e) => setBackHeight(e.nativeEvent.layout.height)}>
-                {back}
-            </Animated.View>
-        </View>
-    );
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// QUIZ CARD WRAPPER
-// ──────────────────────────────────────────────────────────────────────────────
-function MCQCard({
-    q, qi, onAnswer, selectedAnswer, quizFinished,
-}: {
-    q: Question;
-    qi: number;
-    onAnswer: (qi: number, opt: string) => void;
-    selectedAnswer: string | undefined;
-    quizFinished: boolean;
-}) {
-    const [flipped, setFlipped] = useState(false);
-    const answered = selectedAnswer !== undefined;
-    const isCorrect = selectedAnswer === q.correct_answer;
-
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
-
-    const optionStyle = (opt: string) => {
-        if (!answered) return { bg: isDark ? '#0f172a' : '#f8fafc', border: isDark ? '#334155' : '#e2e8f0', text: isDark ? '#f8fafc' : '#0f172a', iconName: null, iconColor: '' };
-        if (opt === q.correct_answer) return { bg: isDark ? 'rgba(46, 189, 133, 0.1)' : '#ecfdf5', border: '#2EBD85', text: '#2EBD85', iconName: 'checkmark-circle', iconColor: '#2EBD85' };
-        if (opt === selectedAnswer) return { bg: isDark ? 'rgba(239, 68, 68, 0.1)' : '#fef2f2', border: '#ef4444', text: '#ef4444', iconName: 'close-circle', iconColor: '#ef4444' };
-        return { bg: isDark ? '#0f172a' : '#f8fafc', border: isDark ? '#334155' : '#e2e8f0', text: isDark ? '#475569' : '#94a3b8', iconName: null, iconColor: '' };
-    };
-
-    const front = (
-        <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 border-2 border-slate-100 dark:border-slate-800">
-            {/* Header */}
-            <View style={styles.cardHeader}>
-                <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400">Q{qi + 1} · MCQ</Text>
-                <View style={[styles.diffBadge, { borderWidth: 1, borderColor: DIFF_COLORS[q.difficulty_level] ?? '#FCD34D' }]}>
-                    <Text style={[styles.diffText, { color: DIFF_COLORS[q.difficulty_level] ?? '#FCD34D' }]}>
-                        {q.difficulty_level}
-                    </Text>
-                </View>
-            </View>
-            <Text className="text-[17px] font-bold text-slate-900 dark:text-white leading-relaxed tracking-tight">{q.question_text}</Text>
-
-            {/* Options */}
-            <View style={{ marginTop: 24 }}>
-                {q.options.map((opt, oi) => {
-                    const s = optionStyle(opt);
-                    return (
-                        <TouchableOpacity
-                            key={oi}
-                            activeOpacity={answered ? 1 : 0.7}
-                            onPress={() => { if (!answered && !quizFinished) onAnswer(qi, opt); }}
-                            style={[styles.optionBtn, { backgroundColor: s.bg, borderColor: s.border }]}
-                        >
-                            <Text style={[styles.optionText, { color: s.text, flex: 1 }]}>{opt}</Text>
-                            {s.iconName && (
-                                <Ionicons name={s.iconName as any} size={20} color={s.iconColor} style={{ marginLeft: 8 }} />
-                            )}
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
-
-            {/* Flip to Explain button */}
-            {answered && q.explanation ? (
-                <TouchableOpacity
-                    onPress={() => setFlipped(true)}
-                    style={styles.explainBtn}
-                    activeOpacity={0.7}
-                >
-                    <View
-                        className="rounded-xl px-3 py-1.5 flex-row items-center border"
-                        style={[
-                            isCorrect
-                                ? { borderColor: '#2EBD85', backgroundColor: 'rgba(46, 189, 133, 0.1)' }
-                                : { borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }
-                        ]}
-                    >
-                        <Ionicons name={isCorrect ? 'checkmark' : 'close'} size={14} color={isCorrect ? '#2EBD85' : '#ef4444'} />
-                        <Text
-                            className="font-black ml-1 text-[11px] uppercase tracking-wider"
-                            style={{ color: isCorrect ? '#2EBD85' : '#ef4444' }}
-                        >
-                            {isCorrect ? 'Correct' : 'Incorrect'}
-                        </Text>
-                    </View>
-                    <View className="bg-slate-900 dark:bg-white rounded-xl px-4 py-2">
-                        <Text className="text-white dark:text-slate-900 font-bold text-[12px]">Explain</Text>
-                    </View>
-                </TouchableOpacity>
-            ) : null}
-        </View>
-    );
-
-    const back = (
-        <View className="bg-slate-50 dark:bg-slate-800 rounded-[24px] p-6 border-2 border-slate-200 dark:border-slate-700">
-            <TouchableOpacity onPress={() => setFlipped(false)} className="flex-row items-center mb-6">
-                <Ionicons name="arrow-back" size={16} color={isDark ? '#e2e8f0' : '#0f172a'} />
-                <Text className="text-slate-900 dark:text-white font-black ml-2 text-[13px] uppercase tracking-widest">Back</Text>
-            </TouchableOpacity>
-            <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400 mb-2">Explanation</Text>
-            <Text className="text-[15px] font-medium text-slate-800 dark:text-slate-200 leading-relaxed">{q.explanation}</Text>
-            {!isCorrect && (
-                <View className="mt-6 pt-6 border-t-2 border-slate-200 dark:border-slate-700">
-                    <Text className="text-[10px] font-black tracking-widest uppercase text-[#2EBD85] mb-2">Correct Answer</Text>
-                    <Text className="text-[15px] font-bold text-slate-900 dark:text-white">{q.correct_answer}</Text>
-                </View>
-            )}
-        </View>
-    );
-
-    return (
-        <View style={styles.cardOuter}>
-            <QuizFlipCard
-                front={front}
-                back={back}
-                isFlipped={flipped}
-            />
-        </View>
-    );
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// THEORY CARD
-// ──────────────────────────────────────────────────────────────────────────────
-function TheoryCard({
-    q, qi, onGraded,
-}: {
-    q: Question;
-    qi: number;
-    onGraded: (qi: number, passed: boolean) => void;
-}) {
-    const [answer, setAnswer] = useState('');
-    const [grading, setGrading] = useState(false);
-    const [result, setResult] = useState<TheoryResult | null>(null);
-
-    const handleSubmit = async () => {
-        if (answer.trim().length < 5) return Alert.alert('Too short', 'Please write at least a few words.');
-        setGrading(true);
-        try {
-            const res = await api.post('quizzes/grade-theory', {
-                question_text: q.question_text,
-                student_answer: answer.trim(),
-                model_answer: q.correct_answer || q.explanation || '',
-            });
-            const data: TheoryResult = res.data;
-            setResult(data);
-            onGraded(qi, data.passed);
-        } catch (e: any) {
-            Alert.alert('Grading Error', e.response?.data?.message || 'Could not grade answer.');
-        } finally {
-            setGrading(false);
-        }
-    };
-
-    return (
-        <View style={styles.cardOuter}>
-            <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 border-2 border-slate-100 dark:border-slate-800">
-                <View style={styles.cardHeader}>
-                    <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400">Q{qi + 1} · Theory</Text>
-                    <View style={[styles.diffBadge, { borderWidth: 1, borderColor: DIFF_COLORS[q.difficulty_level] ?? '#FCD34D' }]}>
-                        <Text style={[styles.diffText, { color: DIFF_COLORS[q.difficulty_level] ?? '#FCD34D' }]}>{q.difficulty_level}</Text>
-                    </View>
-                </View>
-                <Text className="text-[17px] font-bold text-slate-900 dark:text-white leading-relaxed tracking-tight">{q.question_text}</Text>
-
-                {result ? (
-                    <View style={{ marginTop: 20 }}>
-                        <View
-                            className="flex-row items-center border-[2px] rounded-xl p-4 mb-6"
-                            style={[
-                                result.passed
-                                    ? { borderColor: '#2EBD85', backgroundColor: 'rgba(46, 189, 133, 0.1)' }
-                                    : { borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }
-                            ]}
-                        >
-                            <Ionicons name={result.passed ? 'star' : 'code-outline'} size={24} color={result.passed ? '#2EBD85' : '#ef4444'} />
-                            <View style={{ marginLeft: 12 }}>
-                                <Text className={`text-[19px] font-black tracking-tight ${result.passed ? 'text-[#2EBD85]' : 'text-red-500'}`}>
-                                    {result.score}/{result.max} marks
-                                </Text>
-                                <Text className={`text-[12px] font-bold uppercase tracking-widest mt-0.5 ${result.passed ? 'text-[#2EBD85]/70' : 'text-red-500/70'}`}>
-                                    {result.passed ? 'Passed' : 'Below passing'}
-                                </Text>
-                            </View>
-                        </View>
-                        <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400 mb-2">AI Feedback</Text>
-                        <Text className="text-[15px] font-medium text-slate-800 dark:text-slate-200 leading-relaxed bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700">{result.feedback}</Text>
-                    </View>
-                ) : (
-                    <View style={{ marginTop: 20 }}>
-                        <TextInput
-                            multiline
-                            placeholder="Write your answer..."
-                            placeholderTextColor="#94a3b8"
-                            value={answer}
-                            onChangeText={setAnswer}
-                            className="bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-[15px] text-slate-900 dark:text-white h-[140px] mb-4 font-medium"
-                            textAlignVertical="top"
-                            editable={!grading}
-                        />
-                        <TouchableOpacity
-                            onPress={handleSubmit}
-                            disabled={grading}
-                            className={`rounded-xl py-4 flex-row items-center justify-center ${grading ? 'bg-slate-300 dark:bg-slate-700' : 'bg-slate-900 dark:bg-white'}`}
-                        >
-                            {grading ? (
-                                <ActivityIndicator color="#94a3b8" size="small" />
-                            ) : (
-                                <Text className="text-white dark:text-slate-900 font-bold text-[16px]">Mark Answer</Text>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                )}
-            </View>
-        </View>
-    );
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN SCREEN
@@ -373,7 +85,13 @@ export default function GenerateQuizScreen() {
         }
     };
 
-    useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+    useFocusEffect(
+        useCallback(() => {
+            return () => {
+                if (timerRef.current) clearInterval(timerRef.current);
+            };
+        }, [])
+    );
 
     // File picker
     const handleFileSelect = async () => {
@@ -703,13 +421,3 @@ export default function GenerateQuizScreen() {
     );
 }
 
-// ─── Styles ─────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-    cardOuter: { marginBottom: 24 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 16, borderBottomWidth: 2, borderBottomColor: 'rgba(148, 163, 184, 0.1)' },
-    diffBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-    diffText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
-    optionBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 18, marginBottom: 12 },
-    optionText: { fontSize: 15, fontWeight: '700' },
-    explainBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24, paddingTop: 20, borderTopWidth: 2, borderTopColor: 'rgba(148, 163, 184, 0.1)' },
-});

@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, ScrollView, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
+import * as WebBrowser from 'expo-web-browser';
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { signInWithGoogle, signInWithApple } from '@/lib/socialAuth';
+import { PasswordField } from '@/components/ui/PasswordField';
 
 export default function LoginScreen() {
     const colorScheme = useColorScheme();
@@ -18,6 +20,7 @@ export default function LoginScreen() {
     const [isSocialLoading, setIsSocialLoading] = useState(false);
     const router = useRouter();
     const { login } = useAuthStore();
+    const [failedAttempts, setFailedAttempts] = useState(0);
 
     const handleSocialLogin = async (provider: 'google' | 'apple') => {
         setIsSocialLoading(true);
@@ -29,7 +32,7 @@ export default function LoginScreen() {
                 router.replace('/(drawer)');
             }
         } catch (error: any) {
-            console.error('[Social Login] Error:', error);
+            if (__DEV__) console.error('[Social Login] Error:', error);
             Alert.alert('Auth Error', 'Social sign-in failed. Please try again.');
         } finally {
             setIsSocialLoading(false);
@@ -41,20 +44,26 @@ export default function LoginScreen() {
             return Alert.alert('Missing Details', 'Please provide both your email and password.');
         }
 
+        // H6: Throttle after 3 failed attempts
+        if (failedAttempts >= 3) {
+            Alert.alert('Too Many Attempts', `Please wait a moment before trying again.`);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+
         setIsLoading(true);
         try {
-            console.log('[Login] Attempting sign in for:', email.trim().toLowerCase());
             const response = await api.post('login', {
                 email: email.trim().toLowerCase(),
                 password,
                 device_name: `${Platform.OS}_app`,
             });
-            console.log('[Login] Success!');
             const { token, user } = response.data;
             login(user, token);
+            setFailedAttempts(0);
             router.replace('/(drawer)');
         } catch (error: any) {
-            console.error('[Login] Error:', error.message);
+            if (__DEV__) console.error('[Login] Error:', error.message);
+            setFailedAttempts(prev => prev + 1);
             const msg = error.response?.data?.message || 'Invalid credentials or network issue.';
             Alert.alert('Login Failed', msg);
         } finally {
@@ -121,23 +130,31 @@ export default function LoginScreen() {
                 </View>
 
                 {/* Password Input */}
-                <View className={`${inputBgClass} ${inputBorderClass} rounded-[16px] px-4 flex-row items-center border mb-8 focus:border-[#6366f1]`}>
-                    <TextInput
-                        className={`flex-1 text-${inputTextColor} font-medium text-[17px] h-[56px]`}
-                        placeholder="Password"
-                        placeholderTextColor={placeholderColor}
-                        secureTextEntry={!showPassword}
-                        value={password}
-                        onChangeText={setPassword}
-                        style={{ color: isDark ? 'white' : 'black' }}
-                    />
-                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                        <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={placeholderColor} />
+                <PasswordField value={password} onChangeText={setPassword} containerClassName="mb-1" />
+
+                {/* Forgot Password (M3) */}
+                <View className="items-end mb-8 -mt-4">
+                    <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync('https://skeeme-web.onrender.com/forgot-password')}>
+                        <Text className="text-[#6366f1] font-bold text-[14px]">Forgot password?</Text>
                     </TouchableOpacity>
                 </View>
 
+                {/* Login Button */}
+                <TouchableOpacity
+                    onPress={handleLogin}
+                    disabled={isLoading}
+                    className={`w-full bg-[#6366f1] rounded-[16px] h-[56px] items-center justify-center shadow-lg shadow-indigo-500/30 ${isLoading ? 'opacity-70' : ''}`}
+                    activeOpacity={0.8}
+                >
+                    {isLoading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text className="text-white font-black text-[17px] tracking-wide">Sign In</Text>
+                    )}
+                </TouchableOpacity>
+
                 {/* Social Auth Separator */}
-                <View className="flex-row items-center mb-8">
+                <View className="flex-row items-center mb-8 mt-8">
                     <View className={`flex-1 h-[1px] ${separatorClass}`} />
                     <Text className={`${textSubClass} font-medium px-4 text-[13px]`}>or sign in with</Text>
                     <View className={`flex-1 h-[1px] ${separatorClass}`} />
@@ -187,7 +204,7 @@ export default function LoginScreen() {
                     </Text>
                 </TouchableOpacity>
 
-            </ScrollView>
-        </KeyboardAvoidingView>
+            </ScrollView >
+        </KeyboardAvoidingView >
     );
 }

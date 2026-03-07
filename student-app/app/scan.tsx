@@ -78,6 +78,10 @@ export default function ScanScreen() {
         setLoading(true);
         try {
             const response = await api.post('scan/solve', { image: imageBase64 });
+
+            // H1: Clear base64 immediately after upload to free ~5-15MB memory
+            setImageBase64(null);
+
             const data = response.data;
 
             setResults(data.results || []);

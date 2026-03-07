@@ -14,7 +14,30 @@ function getGreeting(): string {
     return 'Good evening';
 }
 
-function HeatmapGrid({ activeDates }: { activeDates: string[] }) {
+function HeatmapGrid({ activeDates, isLoading }: { activeDates: string[], isLoading: boolean }) {
+    // Generate an array of the last 28 days for a 4x7 grid
+    const today = new Date();
+    const days = [];
+    for (let i = 27; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        days.push(d.toISOString().split('T')[0]);
+    }
+
+    if (isLoading) {
+        return (
+            <View className="flex-row flex-wrap gap-[6px] justify-start">
+                {days.map((d, i) => (
+                    <View
+                        key={`skel-${i}`}
+                        style={{ width: '12%', minWidth: 28, maxWidth: 42, aspectRatio: 1 }}
+                        className="rounded-sm bg-slate-200 dark:bg-slate-700 animate-pulse"
+                    />
+                ))}
+            </View>
+        );
+    }
+
     if (!activeDates || activeDates.length === 0) {
         return (
             <View className="py-8 items-center justify-center border border-slate-200 dark:border-slate-800 rounded-2xl">
@@ -24,15 +47,6 @@ function HeatmapGrid({ activeDates }: { activeDates: string[] }) {
                 </Text>
             </View>
         );
-    }
-
-    // Generate an array of the last 28 days for a 4x7 grid
-    const today = new Date();
-    const days = [];
-    for (let i = 27; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        days.push(d.toISOString().split('T')[0]);
     }
 
     return (
@@ -58,7 +72,7 @@ export default function DashboardScreen() {
     const isDark = colorScheme === 'dark';
     const isFreePlan = !user?.is_unlimited && (!user?.plan_name || user?.plan_name === 'free');
 
-    const { data: heatmapDates = [] } = useQuery({
+    const { data: heatmapDates = [], isLoading: isLoadingHeatmap } = useQuery({
         queryKey: ['streak-heatmap'],
         queryFn: async () => {
             const res = await api.get('streaks/heatmap');
@@ -68,7 +82,7 @@ export default function DashboardScreen() {
         staleTime: 1000 * 60 * 60 * 4, // 4 hours
     });
 
-    // Fetch user data with 30s throttling
+    // Fetch user data with 5-minute throttling (H2: reduced from 30s to avoid server overload)
     useQuery({
         queryKey: ['me'],
         queryFn: async () => {
@@ -77,8 +91,9 @@ export default function DashboardScreen() {
             return res.data;
         },
         enabled: !!user,
-        staleTime: 30000, // Keep data fresh for 30s (prevents refetch on focus within this window)
-        refetchInterval: 30000, // Background refresh every 30s
+        staleTime: 300000, // 5 minutes
+        refetchInterval: 300000, // Background refresh every 5 minutes
+        refetchOnWindowFocus: true, // Refresh when app comes to foreground
     });
 
     const onRefresh = useCallback(async () => {
@@ -257,7 +272,7 @@ export default function DashboardScreen() {
                         <Text className="text-slate-900 dark:text-white font-bold text-sm">Last 28 days</Text>
                         <Ionicons name="flame" size={16} color="#2EBD85" />
                     </View>
-                    <HeatmapGrid activeDates={heatmapDates} />
+                    <HeatmapGrid activeDates={heatmapDates} isLoading={isLoadingHeatmap} />
                 </View>
             </View>
         </ScrollView>

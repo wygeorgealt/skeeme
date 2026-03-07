@@ -33,6 +33,7 @@ interface AuthState {
     login: (user: User, token: string) => void;
     updateUser: (user: Partial<User>) => void;
     logout: () => void;
+    hydrate: () => Promise<void>;
     checkAuth: () => Promise<void>;
     theme: 'light' | 'dark' | 'system';
     setTheme: (theme: 'light' | 'dark' | 'system') => void;
@@ -111,12 +112,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             const themeStr = await storage.getItem('app_theme') as 'light' | 'dark' | 'system' | null;
 
             if (token && userStr) {
+                // Optimistically set user from cache for instant UI
                 set({ token, user: JSON.parse(userStr), theme: themeStr || 'system', isLoading: false });
+
+                // C5: Validate token in background — if expired, force logout
+                try {
+                    const { api } = await import('../lib/api');
+                    const response = await api.get('me');
+                    if (response.data) {
+                        const refreshedUser = response.data.user || response.data;
+                        const currentUser = get().user;
+                        set({ user: { ...currentUser, ...refreshedUser } });
+                        await storage.setItem('auth_user', JSON.stringify({ ...currentUser, ...refreshedUser }));
+                    }
+                } catch (validateError: any) {
+                    if (validateError?.response?.status === 401) {
+                        // Token is expired/revoked — clear silently
+                        set({ user: null, token: null });
+                        await storage.deleteItem('auth_token');
+                        await storage.deleteItem('auth_user');
+                    }
+                    // Network errors are ignored — user keeps cached data
+                }
             } else {
                 set({ theme: themeStr || 'system', isLoading: false });
             }
         } catch (e) {
-            console.error('Failed to hydrate auth state', e);
+            if (__DEV__) console.error('Failed to hydrate auth state', e);
             set({ isLoading: false });
         }
     },
