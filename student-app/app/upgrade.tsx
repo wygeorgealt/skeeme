@@ -58,7 +58,7 @@ export default function UpgradeScreen() {
     const handlePurchase = async () => {
         try {
             setIsVerifying(true);
-            const response = await api.post('/subscriptions/checkout', {
+            const response = await api.post('subscriptions/checkout', {
                 plan: activeTab,
                 cycle: billingCycle,
             });
@@ -73,9 +73,15 @@ export default function UpgradeScreen() {
                 // Start automatic polling after a short delay
                 setTimeout(() => pollPaymentStatus(reference, 0), 5000);
             }
-        } catch (error) {
-            if (__DEV__) console.error('Checkout failed', error);
-            Alert.alert("Checkout Failed", "Could not start the payment process. Please try again.");
+        } catch (error: any) {
+            if (__DEV__) {
+                console.error('Checkout failed', error);
+                if (error.response?.data) {
+                    console.error('Checkout Error Response:', JSON.stringify(error.response.data, null, 2));
+                }
+            }
+            const msg = error.response?.data?.message || "Could not start the payment process. Please try again.";
+            Alert.alert("Checkout Failed", msg);
         } finally {
             setIsVerifying(false);
         }

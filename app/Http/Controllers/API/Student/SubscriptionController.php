@@ -92,8 +92,15 @@ class SubscriptionController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Subscription Initialization Failed', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Failed to initialize payment.'], 500);
+            Log::error('Subscription Initialization Failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Failed to initialize payment.',
+                'error' => $e->getMessage(), // Surface error for war-room debugging
+                'debug' => true
+            ], 500);
         }
     }
 
