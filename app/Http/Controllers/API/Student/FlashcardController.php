@@ -151,48 +151,70 @@ class FlashcardController extends Controller
             ], 403);
         }
 
-        // 4. Dispatch Background Job
-        $jobId = (string) Str::uuid();
-        Cache::put("ai_job_status:{$jobId}", "pending", 1800);
+        // 4. Generate Synchronously (Fixing Type-Mismatch + Sync for Mobile)
+        try {
+            $cardsData = $this->aiService->generateFlashcards(
+                [$sourceContent],
+                (int) ($validated['card_count'] ?? 10),
+                $validated['difficulty'] ?? 'medium',
+                $validated['topic'] ?? 'General Topics'
+            );
 
-        ProcessAIFlashcards::dispatch(
-            $sourceContent, // Wrapped from $validated input
-            (int) ($validated['card_count'] ?? 10),
-            $validated['difficulty'] ?? 'medium',
-            $validated['topic'] ?? 'General Topics',
-            $title ?? ($validated['topic'] ?? 'New Flashcard Deck'), // Use the determined title
-            $sourceType,
-            $user->id,
-            $jobId,
-            $user->is_unlimited ? 0 : $totalCost
-        );
+            if (empty($cardsData)) {
+                throw new \Exception('AI returned no flashcards.');
+            }
 
-        // Deduct Usage immediately (Atomic)
-        if (!$user->is_unlimited) {
-            DB::transaction(function() use ($user, $totalCost, $title) { // Use $title here
-                $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
-                $lockedUser->decrement('credits', $totalCost);
-                
-                // Log billing transaction
-                try {
-                    $lockedUser->transactions()->create([
-                        'type' => 'usage',
-                        'amount' => -$totalCost,
-                        'description' => "Generating Flashcard Deck: " . $title, // Use $title here
-                    ]);
-                } catch (\Exception $e) {
-                    Log::error("Failed to log flashcard transaction: " . $e->getMessage());
+            // 5. Save to DB (Atomic Transaction)
+            $deck = DB::transaction(function() use ($cardsData, $user, $title, $sourceType, $totalCost) {
+                $deck = FlashcardDeck::create([
+                    'user_id' => $user->id,
+                    'title' => $title,
+                    'source_type' => $sourceType,
+                ]);
+
+                $cardsToInsert = [];
+                foreach ($cardsData as $index => $c) {
+                    $cardsToInsert[] = [
+                        'flashcard_deck_id' => $deck->id,
+                        'front' => $c['front'],
+                        'back' => $c['back'],
+                        'order_column' => $index,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
                 }
-            });
-        }
+                Flashcard::insert($cardsToInsert);
 
-        return response()->json([
-            'message' => 'AI flashcard generation started.',
-            'job_id' => $jobId,
-            'status' => 'pending',
-            'credits_deducted' => $user->is_unlimited ? 0 : $totalCost,
-            'remaining_credits' => $user->fresh()->credits
-        ]);
+                // Deduct Usage immediately (Atomic)
+                if (!$user->is_unlimited) {
+                    $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+                    $lockedUser->decrement('credits', $totalCost);
+                    
+                    try {
+                        $lockedUser->transactions()->create([
+                            'type' => 'usage',
+                            'amount' => -$totalCost,
+                            'description' => "Generating Flashcard Deck: " . $title,
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error("Failed to log flashcard transaction: " . $e->getMessage());
+                    }
+                }
+
+                return $deck;
+            });
+
+            return response()->json([
+                'message' => 'AI flashcard generation success.',
+                'data' => $deck->load('flashcards'),
+                'credits_deducted' => $user->is_unlimited ? 0 : $totalCost,
+                'remaining_credits' => $user->fresh()->credits
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Flashcard generation failed: " . $e->getMessage());
+            return response()->json(['message' => 'Failed to generate flashcards: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
