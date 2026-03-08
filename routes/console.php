@@ -14,26 +14,10 @@ Schedule::job(new SubscriptionRenewalJob)
     ->dailyAt('02:00')
     ->description('Process auto-renewal for subscriptions expiring within 3 days');
 
-// Schedule monthly credit refill based on user plan
-Schedule::call(function () {
-    $plans = \App\Models\IndividualSubscription::PLANS;
-    
-    // Batch process users to avoid memory issues
-    \App\Models\User::where('role', 'student')
-        ->where('is_unlimited_student', false)
-        ->with('individualSubscription')
-        ->chunk(200, function ($users) use ($plans) {
-            foreach ($users as $user) {
-                $planName = $user->individualSubscription ? $user->individualSubscription->plan_name : \App\Models\IndividualSubscription::PLAN_FREE;
-                $creditLimit = $plans[$planName]['credits_monthly'] ?? 500;
-
-                $user->update([
-                    'credits' => $creditLimit,
-                    'last_credit_refill_at' => now()
-                ]);
-            }
-        });
-})->monthlyOn(1, '00:00')->description('Refill student credits based on their subscription tier on the 1st of every month');
+// Schedule weekly credit refill based on user subscription (checks daily)
+Schedule::command('app:refill-student-credits')
+    ->dailyAt('01:00')
+    ->description('Checks for students due for their weekly credit refill');
 
 use Mailtrap\Helper\ResponseHelper;
 use Mailtrap\MailtrapClient;

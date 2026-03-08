@@ -45,7 +45,7 @@ class UpdateSubscriptionOnPayment
             $user = $payment->user;
             if ($user && $user->role === 'student') {
                 $isElite = str_contains($invoice->plan_name, 'Elite');
-                $creditsToAdd = $isElite ? 15000 : 5000;
+                $creditsToAdd = $isElite ? 12500 : 5000;
                 $planName = $isElite ? 'Elite' : 'Standard';
                 
                 // Determine billing cycle from invoice
@@ -55,6 +55,7 @@ class UpdateSubscriptionOnPayment
                 $user->update([
                     'is_unlimited_student' => true,
                     'credits' => min(999999, $user->credits + $creditsToAdd),
+                    'last_credit_refill_at' => now(), // Set initial refill date
                 ]);
 
                 // Create or update subscription record

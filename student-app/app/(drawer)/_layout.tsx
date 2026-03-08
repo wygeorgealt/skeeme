@@ -64,7 +64,7 @@ function CustomDrawerContent(props: any) {
                 <NavItem icon="scan-outline" label="Scan & Solve" route="/scan" />
                 <NavItem icon="sparkles-outline" label="AI Practice Quiz" route="/generate" />
                 <NavItem icon="albums-outline" label="Flashcards" route="/flashcards" />
-                <NavItem icon="time-outline" label="Quiz History" route="/history" />
+                <NavItem icon="book-outline" label="Study History" route="/history" />
                 <NavItem icon="settings-outline" label="Account & Settings" route="/account" />
                 <NavItem icon="color-wand-outline" label="Personalize AI" route="/preferences" />
 
@@ -150,8 +150,8 @@ export default function DrawerLayout() {
             <Drawer.Screen
                 name="history"
                 options={{
-                    title: 'Quiz History',
-                    drawerIcon: ({ color }) => <Ionicons name="time-outline" size={22} color={color} />,
+                    title: 'Study History',
+                    drawerIcon: ({ color }) => <Ionicons name="book-outline" size={22} color={color} />,
                 }}
             />
 

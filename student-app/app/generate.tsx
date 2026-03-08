@@ -56,6 +56,9 @@ export default function GenerateQuizScreen() {
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Reward Modal State
+    const [isSavingHistory, setIsSavingHistory] = useState(false);
+    const [saveError, setSaveError] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
     const [rewardData, setRewardData] = useState<any>(null);
     const [isRewardModalVisible, setIsRewardModalVisible] = useState(false);
 
@@ -103,8 +106,8 @@ export default function GenerateQuizScreen() {
             });
             if (!r.canceled && r.assets?.length) {
                 const asset = r.assets[0];
-                if (asset.size && asset.size > 2 * 1024 * 1024) {
-                    Alert.alert('File too large', 'Please upload a file smaller than 2MB. Ensure it contains extractable text.');
+                if (asset.size && asset.size > 5 * 1024 * 1024) {
+                    Alert.alert('File too large', 'Please upload a file smaller than 5MB. Ensure it contains extractable text.');
                     return;
                 }
                 setSelectedFile(asset);
@@ -157,39 +160,56 @@ export default function GenerateQuizScreen() {
     const correctCount = Object.entries(selectedAnswers).filter(([qi, ans]) => questions[+qi]?.correct_answer === ans).length
         + Object.values(theoryResults).filter(Boolean).length;
 
+    const saveHistory = useCallback(async () => {
+        if (questions.length === 0 || totalAnswered !== questions.length || isSaved || isSavingHistory) return;
+
+        setIsSavingHistory(true);
+        setSaveError(false);
+
+        const timeSpent = timerEnabled ? ((parseInt(timerMinutes) || 10) * 60) - timeLeft : null;
+        const payload = {
+            topic: mode === 'topic' ? topic : (selectedFile?.name || 'File Upload'),
+            difficulty,
+            total_questions: questions.length,
+            correct_answers: correctCount,
+            score_percentage: (correctCount / questions.length) * 100,
+            time_spent_seconds: timeSpent,
+            questions: questions.map((q, qi) => {
+                const isTheory = q.question_type === 'essay';
+                const isCorrect = isTheory ? !!theoryResults[qi] : selectedAnswers[qi] === q.correct_answer;
+                return {
+                    question: q.question_text,
+                    type: q.question_type,
+                    options: q.options,
+                    correct_answer: q.correct_answer || q.explanation || '',
+                    user_answer: isTheory ? '(Theory Answer)' : selectedAnswers[qi],
+                    is_correct: isCorrect,
+                    explanation: q.explanation,
+                };
+            }),
+        };
+
+        try {
+            const res = await api.post('/quizzes/history', payload);
+            setIsSaved(true);
+            if (res.data.reward?.earned) {
+                setRewardData(res.data.reward);
+                setIsRewardModalVisible(true);
+            }
+        } catch (err) {
+            console.warn('Failed to save quiz history', err);
+            setSaveError(true);
+        } finally {
+            setIsSavingHistory(false);
+        }
+    }, [questions, totalAnswered, isSaved, isSavingHistory, mode, topic, selectedFile, difficulty, correctCount, questions, theoryResults, selectedAnswers, timerEnabled, timerMinutes, timeLeft]);
+
     // Save quiz history
     useEffect(() => {
-        if (questions.length > 0 && totalAnswered === questions.length) {
-            const timeSpent = timerEnabled ? ((parseInt(timerMinutes) || 10) * 60) - timeLeft : null;
-            const payload = {
-                topic: mode === 'topic' ? topic : (selectedFile?.name || 'File Upload'),
-                difficulty,
-                total_questions: questions.length,
-                correct_answers: correctCount,
-                score_percentage: (correctCount / questions.length) * 100,
-                time_spent_seconds: timeSpent,
-                questions: questions.map((q, qi) => {
-                    const isTheory = q.question_type === 'essay';
-                    const isCorrect = isTheory ? !!theoryResults[qi] : selectedAnswers[qi] === q.correct_answer;
-                    return {
-                        question: q.question_text,
-                        type: q.question_type,
-                        options: q.options,
-                        correct_answer: q.correct_answer || q.explanation || '',
-                        user_answer: isTheory ? '(Theory Answer)' : selectedAnswers[qi],
-                        is_correct: isCorrect,
-                        explanation: q.explanation,
-                    };
-                }),
-            };
-            api.post('/quizzes/history', payload).then(res => {
-                if (res.data.reward?.earned) {
-                    setRewardData(res.data.reward);
-                    setIsRewardModalVisible(true);
-                }
-            }).catch(err => { console.warn('Failed to save quiz history', err); });
+        if (questions.length > 0 && totalAnswered === questions.length && !isSaved && !isSavingHistory) {
+            saveHistory();
         }
-    }, [totalAnswered]);
+    }, [totalAnswered, questions, isSaved, isSavingHistory, saveHistory]);
 
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
     if (questions.length === 0) {
@@ -248,7 +268,7 @@ export default function GenerateQuizScreen() {
                                         <>
                                             <Ionicons name="folder-open" size={40} color="#cbd5e1" />
                                             <Text className="text-[15px] font-bold text-slate-500 mt-4">Tap to select PDF/DOCX/TXT</Text>
-                                            <Text className="text-[12px] font-bold text-slate-400 mt-2">Max 2MB</Text>
+                                            <Text className="text-[12px] font-bold text-slate-400 mt-2">Max 5MB</Text>
                                         </>
                                     )}
                                 </TouchableOpacity>
@@ -337,7 +357,7 @@ export default function GenerateQuizScreen() {
                     </GradientButton>
 
                     <Text className="text-center text-slate-400 font-bold text-[11px] uppercase tracking-widest mt-6">
-                        Estimated Cost: {parseInt(questionCount) || 10} Credits
+                        Estimated Cost: {parseInt(questionCount) || 10} Credits | Max 5MB
                     </Text>
                 </ScrollView>
             </View>
@@ -345,78 +365,153 @@ export default function GenerateQuizScreen() {
     }
 
     // ── QUIZ VIEW ───────────────────────────────────────────────────────────────
-    return (
-        <View className="flex-1 bg-white dark:bg-brand-dark">
-            <Stack.Screen options={{ title: 'Quiz Active', headerShown: true, headerStyle: { backgroundColor: bgColor }, headerTintColor: tintColor, headerBackVisible: false, headerShadowVisible: false }} />
+    if (questions.length > 0 && totalAnswered < questions.length) {
+        return (
+            <View className="flex-1 bg-white dark:bg-brand-dark">
+                <Stack.Screen options={{ title: 'Quiz Active', headerShown: true, headerStyle: { backgroundColor: bgColor }, headerTintColor: tintColor, headerBackVisible: false, headerShadowVisible: false }} />
 
-            {/* Flat header bar */}
-            <View className="border-b-2 border-slate-100 dark:border-slate-900 px-6 py-4 flex-row items-center justify-between bg-white dark:bg-brand-dark z-20">
-                <Text className="text-slate-500 font-black text-[12px] uppercase tracking-widest">{totalAnswered}/{questions.length} DONE</Text>
-                {timerEnabled && timeLeft > 0 && (
-                    <View className={`border-2 px-3 py-1 rounded-full ${timeLeft < 60 ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'}`}>
-                        <Text className={`font-black text-[13px] tracking-widest ${timeLeft < 60 ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>{formatTime(timeLeft)}</Text>
-                    </View>
-                )}
-                <Text className="text-[#2EBD85] font-black text-[12px] uppercase tracking-widest">{correctCount} RIGHT</Text>
+                {/* Flat header bar */}
+                <View className="border-b-2 border-slate-100 dark:border-slate-900 px-6 py-4 flex-row items-center justify-between bg-white dark:bg-brand-dark z-20">
+                    <Text className="text-slate-500 font-black text-[12px] uppercase tracking-widest">{totalAnswered}/{questions.length} DONE</Text>
+                    {timerEnabled && timeLeft > 0 && (
+                        <View className={`border-2 px-3 py-1 rounded-full ${timeLeft < 60 ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'}`}>
+                            <Text className={`font-black text-[13px] tracking-widest ${timeLeft < 60 ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>{formatTime(timeLeft)}</Text>
+                        </View>
+                    )}
+                    <Text className="text-[#2EBD85] font-black text-[12px] uppercase tracking-widest">{correctCount} RIGHT</Text>
+                </View>
+
+                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+                    {questions.map((q, qi) =>
+                        q.question_type === 'multiple_choice' ? (
+                            <MCQCard key={qi} q={q} qi={qi} onAnswer={handleMCQAnswer} selectedAnswer={selectedAnswers[qi]} quizFinished={false} />
+                        ) : (
+                            <TheoryCard key={qi} q={q} qi={qi} onGraded={handleTheoryGraded} />
+                        )
+                    )}
+                </ScrollView>
             </View>
+        );
+    }
 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: totalAnswered === questions.length ? 140 : 60 }} showsVerticalScrollIndicator={false}>
-                {questions.map((q, qi) =>
-                    q.question_type === 'multiple_choice' ? (
-                        <MCQCard key={qi} q={q} qi={qi} onAnswer={handleMCQAnswer} selectedAnswer={selectedAnswers[qi]} quizFinished={totalAnswered === questions.length} />
-                    ) : (
-                        <TheoryCard key={qi} q={q} qi={qi} onGraded={handleTheoryGraded} />
-                    )
-                )}
+    // ── RESULTS VIEW ────────────────────────────────────────────────────────────
+    const percentage = Math.round((correctCount / questions.length) * 100);
+    const getRemark = (pct: number) => {
+        if (pct >= 90) return { title: "GENIUS!", subtitle: "You've completely mastered this topic!", icon: "trophy" };
+        if (pct >= 75) return { title: "WELL DONE!", subtitle: "Excellent performance, keep it up!", icon: "star" };
+        if (pct >= 50) return { title: "SOLID EFFORT!", subtitle: "Good job, but there's room to grow.", icon: "medal" };
+        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: "trending-up" };
+    };
+    const remark = getRemark(percentage);
+
+    return (
+        <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
+            <Stack.Screen options={{ title: 'Quiz Results', headerShown: true, headerStyle: { backgroundColor: bgColor }, headerTintColor: tintColor, headerBackVisible: false }} />
+
+            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
+                {/* Motivational Header */}
+                <View className="items-center py-8 pb-4">
+                    <View className="w-20 h-20 bg-[#2EBD85]/10 dark:bg-[#2EBD85]/20 rounded-[28px] items-center justify-center mb-6">
+                        <Ionicons name={remark.icon as any} size={42} color="#2EBD85" />
+                    </View>
+                    <Text className="text-[#2EBD85] font-black text-[14px] uppercase tracking-[4px] mb-2">{remark.title}</Text>
+                    <Text className="text-slate-900 dark:text-white font-black text-[42px] tracking-tight">{percentage}%</Text>
+                    <Text className="text-slate-500 dark:text-slate-400 font-bold text-[15px] mt-2 text-center px-8">{remark.subtitle}</Text>
+
+                    {/* Persistence Indicator */}
+                    <View className="mt-4 flex-row items-center bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full">
+                        {isSavingHistory ? (
+                            <>
+                                <ActivityIndicator size="small" color="#64748b" className="mr-2" />
+                                <Text className="text-slate-500 font-bold text-[11px] uppercase tracking-widest">Syncing Results...</Text>
+                            </>
+                        ) : saveError ? (
+                            <TouchableOpacity onPress={saveHistory} className="flex-row items-center">
+                                <Ionicons name="alert-circle" size={14} color="#ef4444" className="mr-2" />
+                                <Text className="text-red-500 font-bold text-[11px] uppercase tracking-widest">Failed to Save • Retry</Text>
+                            </TouchableOpacity>
+                        ) : isSaved ? (
+                            <>
+                                <Ionicons name="checkmark-circle" size={14} color="#2EBD85" className="mr-2" />
+                                <Text className="text-[#2EBD85] font-bold text-[11px] uppercase tracking-widest">Saved to History</Text>
+                            </>
+                        ) : null}
+                    </View>
+                </View>
+
+                {/* Score Breakdown */}
+                <View className="flex-row gap-4 mb-8">
+                    <View className="flex-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
+                        <Text className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Correct</Text>
+                        <Text className="text-slate-900 dark:text-white font-black text-2xl">{correctCount}</Text>
+                    </View>
+                    <View className="flex-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
+                        <Text className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Incorrect</Text>
+                        <Text className="text-red-500 font-black text-2xl">{questions.length - correctCount}</Text>
+                    </View>
+                </View>
+
+                {/* Question Summary */}
+                <Text className="text-slate-400 font-black text-[11px] uppercase tracking-widest mb-4 ml-2">Quick Review</Text>
+                {questions.map((q, qi) => {
+                    const isTheory = q.question_type === 'essay';
+                    const isCorrect = isTheory ? !!theoryResults[qi] : selectedAnswers[qi] === q.correct_answer;
+                    return (
+                        <View key={qi} className="bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl p-5 mb-3 flex-row items-center">
+                            <View className={`w-8 h-8 rounded-full items-center justify-center mr-4 ${isCorrect ? 'bg-[#2EBD85]/10' : 'bg-red-500/10'}`}>
+                                <Ionicons name={isCorrect ? "checkmark" : "close"} size={18} color={isCorrect ? "#2EBD85" : "#ef4444"} />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-slate-900 dark:text-white font-bold text-[14px]" numberOfLines={1}>{q.question_text}</Text>
+                                <Text className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5" numberOfLines={1}>
+                                    {isTheory ? (isCorrect ? "Mastered" : "Review Topic") : (isCorrect ? `Answer: ${q.correct_answer}` : `Correct: ${q.correct_answer}`)}
+                                </Text>
+                            </View>
+                        </View>
+                    );
+                })}
             </ScrollView>
 
-            {/* Sticky completion footer solid Stake flat style */}
-            {totalAnswered === questions.length && (
-                <>
-                    {/* Hidden capture view for sharing */}
-                    <View style={{ position: 'absolute', left: -9999, top: -9999 }}>
-                        <View ref={viewShotRef} collapsable={false}>
-                            <QuizShareCard
-                                topic={mode === 'topic' ? topic : (selectedFile?.name || 'File Upload')}
-                                percentage={Math.round((correctCount / questions.length) * 100)}
-                            />
-                        </View>
-                    </View>
+            {/* Hidden capture view for sharing */}
+            <View style={{ position: 'absolute', left: -9999, top: -9999 }}>
+                <View ref={viewShotRef} collapsable={false}>
+                    <QuizShareCard
+                        topic={mode === 'topic' ? topic : (selectedFile?.name || 'File Upload')}
+                        percentage={percentage}
+                    />
+                </View>
+            </View>
 
-                    <View className="absolute bottom-0 left-0 right-0 bg-slate-900 dark:bg-white px-6 py-6 pb-10 flex-row items-center justify-between border-t border-slate-800 dark:border-slate-200 shadow-2xl">
-                        <View className="flex-1">
-                            <Text className="text-slate-400 dark:text-slate-500 font-black text-[11px] uppercase tracking-widest mb-1">Results</Text>
-                            <Text className="text-white dark:text-slate-900 font-black text-[28px] tracking-tight">{Math.round((correctCount / questions.length) * 100)}%</Text>
-                        </View>
-                        <View className="flex-row gap-3">
-                            <TouchableOpacity
-                                onPress={handleShare}
-                                disabled={isSharing}
-                                className="bg-slate-800 dark:bg-slate-100 rounded-xl px-5 py-4 justify-center items-center flex-row"
-                            >
-                                {isSharing ? (
-                                    <ActivityIndicator size="small" color={isDark ? '#0f172a' : 'white'} />
-                                ) : (
-                                    <Text className="text-white dark:text-slate-900 font-bold text-[14px]">Share</Text>
-                                )}
-                            </TouchableOpacity>
+            {/* Footer Actions */}
+            <View className="absolute bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 py-8 px-6 border-t-2 border-slate-100 dark:border-slate-800 backdrop-blur-xl">
+                <View className="flex-row gap-3">
+                    <TouchableOpacity
+                        onPress={handleShare}
+                        disabled={isSharing}
+                        activeOpacity={0.8}
+                        className="bg-slate-900 dark:bg-white rounded-2xl px-8 py-5 flex-1 items-center justify-center flex-row"
+                    >
+                        {isSharing ? (
+                            <ActivityIndicator size="small" color={isDark ? '#0f172a' : 'white'} />
+                        ) : (
+                            <>
+                                <Ionicons name="share-outline" size={20} color={isDark ? '#0f172a' : 'white'} style={{ marginRight: 8 }} />
+                                <Text className="text-white dark:text-slate-900 font-black text-[16px]">Share</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
 
-                            <TouchableOpacity
-                                onPress={() => { setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); if (timerRef.current) clearInterval(timerRef.current); }}
-                                className="bg-white dark:bg-slate-900 rounded-xl px-6 py-4 justify-center items-center flex-row"
-                            >
-                                <Text className="text-slate-900 dark:text-white font-black text-[14px]">Done</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </>
-            )}
+                    <TouchableOpacity
+                        onPress={() => { setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); if (timerRef.current) clearInterval(timerRef.current); }}
+                        activeOpacity={0.8}
+                        className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-10 py-5 items-center justify-center"
+                    >
+                        <Text className="text-slate-900 dark:text-white font-black text-[16px]">Done</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
 
-            <RewardModal
-                isVisible={isRewardModalVisible}
-                onClose={() => setIsRewardModalVisible(false)}
-                reward={rewardData}
-            />
+            <RewardModal isVisible={isRewardModalVisible} onClose={() => setIsRewardModalVisible(false)} reward={rewardData} />
         </View>
     );
 }

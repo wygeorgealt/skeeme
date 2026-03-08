@@ -12,18 +12,18 @@ type BillingCycle = 'monthly' | 'yearly';
 
 const FEATURES = {
     standard: [
-        '5,000 Monthly Credits',
+        '5,000 Weekly Credits',
+        '20,000 Monthly Total',
         'Advanced Quiz Generation',
         'Detailed Flashcard creation',
         'Priority AI model access',
-        'Standard scan & solve limits',
     ],
     elite: [
-        '15,000 Monthly Credits',
+        '10,000+ Weekly Credits',
+        '50,000 Monthly Total',
         'Unlimited Flashcard creation',
         'Ultra-fast Elite AI model',
         'Unlimited Scan & Solve',
-        'Real-time Step-by-Step logic',
     ]
 };
 
