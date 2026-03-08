@@ -47,7 +47,9 @@ class PaystackService
             $response = Http::withHeaders([
                 'Authorization' => "Bearer {$this->secretKey}",
                 'Content-Type' => 'application/json',
-            ])->withoutVerifying() // Disable SSL verification for test environments
+            ])->when(!app()->isProduction(), function ($http) {
+                return $http->withoutVerifying();
+            }) // Only disable SSL verification for dev/test environments
             ->post(($this->baseUrl ?? 'https://api.paystack.co') . "/transaction/initialize", [
                 'email' => $email,
                 'amount' => $amountInSmallestUnit,

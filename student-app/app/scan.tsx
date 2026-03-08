@@ -129,10 +129,10 @@ export default function ScanScreen() {
                         </View>
 
                         <Text className="text-slate-900 dark:text-white font-black text-2xl text-center mb-2 tracking-tight">
-                            Scan exam paper
+                            Scan Question(s)
                         </Text>
                         <Text className="text-slate-500 dark:text-slate-400 text-center font-medium text-sm mb-10 px-4 leading-relaxed">
-                            Snap a full page. Skeeme will instantly detect and solve every sub-question (1a, 1b, etc).
+                            Snap a page or question. Skeeme will instantly detect and solve every sub-question (1a, 1b, etc).
                         </Text>
 
                         {/* Camera + Gallery buttons flat */}

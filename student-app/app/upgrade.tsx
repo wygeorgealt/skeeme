@@ -38,19 +38,30 @@ export default function UpgradeScreen() {
     const currencySymbol = user?.pricing?.currency || '$';
     const currency = user?.pricing?.currency === '₦' ? 'ngn' : 'usd';
 
+    // Promo dates (Based on current date 2026-03-08)
+    const PROMO_END = {
+        standard: new Date('2026-03-22T23:59:59Z'), // 2 weeks [Standard]
+        elite: new Date('2026-03-15T23:59:59Z'),    // 1 week [Elite]
+    };
+
+    const isPromoActive = (plan: PlanType) => {
+        return new Date() < PROMO_END[plan];
+    };
+
     // Pricing rates (Updated per user request)
     const pricing = {
         ngn: {
-            standard: { monthly: 3500, yearly: 25000, save: '10%' },
-            elite: { monthly: 5000, yearly: 50000, save: '10%' }
+            standard: { monthly: 3500, yearly: 25000, promoMonthly: 2600, save: '10%' },
+            elite: { monthly: 5000, yearly: 50000, promoMonthly: 3700, save: '10%' }
         },
         usd: {
-            standard: { monthly: 4.99, yearly: 39.99, save: '10%' },
-            elite: { monthly: 9.99, yearly: 79.99, save: '10%' }
+            standard: { monthly: 4.99, yearly: 39.99, promoMonthly: 3.4, save: '10%' },
+            elite: { monthly: 9.99, yearly: 79.99, promoMonthly: 6.99, save: '10%' }
         }
     };
 
-    const currentRates = pricing[currency][activeTab];
+    const activePricing = pricing[currency][activeTab];
+    const isPromo = isPromoActive(activeTab);
 
     const [isVerifying, setIsVerifying] = useState(false);
     const [pendingReference, setPendingReference] = useState<string | null>(null);
@@ -209,21 +220,23 @@ export default function UpgradeScreen() {
                     <View className="gap-y-4">
                         <CardOption
                             title="Yearly"
-                            price={currentRates.yearly}
+                            price={activePricing.yearly}
                             symbol={currencySymbol}
-                            subtitle={`Total ${currencySymbol}${currentRates.yearly} every 12 months`}
+                            subtitle={`Total ${currencySymbol}${activePricing.yearly.toLocaleString()} every 12 months`}
                             isSelected={billingCycle === 'yearly'}
                             onSelect={() => setBillingCycle('yearly')}
-                            badge={currentRates.save ? `SAVE ${currentRates.save}` : undefined}
+                            badge={activePricing.save ? `SAVE ${activePricing.save}` : undefined}
                             isDark={isDark}
                         />
                         <CardOption
                             title="Monthly"
-                            price={currentRates.monthly}
+                            price={isPromo ? activePricing.promoMonthly : activePricing.monthly}
+                            originalPrice={isPromo ? activePricing.monthly : undefined}
                             symbol={currencySymbol}
                             subtitle="Flat rate, cancel anytime"
                             isSelected={billingCycle === 'monthly'}
                             onSelect={() => setBillingCycle('monthly')}
+                            badge={isPromo ? 'LIMITED PROMO' : undefined}
                             isDark={isDark}
                         />
                     </View>
@@ -249,8 +262,9 @@ export default function UpgradeScreen() {
     );
 }
 
-function CardOption({ title, price, symbol, subtitle, isSelected, onSelect, badge, isDark }: any) {
+function CardOption({ title, price, originalPrice, symbol, subtitle, isSelected, onSelect, badge, isDark }: any) {
     const priceFormatted = symbol + price.toLocaleString();
+    const originalPriceFormatted = originalPrice ? symbol + originalPrice.toLocaleString() : null;
 
     return (
         <TouchableOpacity
@@ -274,10 +288,18 @@ function CardOption({ title, price, symbol, subtitle, isSelected, onSelect, badg
                     )}
                 </View>
                 <Text className="text-slate-500 dark:text-white/50 font-bold text-xs">{subtitle}</Text>
-                <Text className="text-brand-primary font-black text-[17px] mt-3">
-                    {priceFormatted}
+
+                <View className="flex-row items-baseline mt-3">
+                    <Text className="text-brand-primary dark:text-white font-black text-[19px]">
+                        {priceFormatted}
+                    </Text>
+                    {originalPriceFormatted && (
+                        <Text className="text-slate-400 line-through text-sm font-bold ml-2">
+                            {originalPriceFormatted}
+                        </Text>
+                    )}
                     <Text className="text-slate-400 dark:text-white/60 text-sm font-bold"> / {title === 'Yearly' ? 'year' : 'month'}</Text>
-                </Text>
+                </View>
             </View>
             <View
                 className="size-6 rounded-full border-2 items-center justify-center"

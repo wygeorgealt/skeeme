@@ -33,14 +33,24 @@ class SubscriptionController extends Controller
         $plan = $request->plan;
         $cycle = $request->cycle;
 
-        // Pricing logic (Sync with App/Models/IndividualSubscription)
-        // Hardcoded for simplicity in this bridge, should ideally refer to a Config/Service
+        // Base Pricing
         $pricing = [
             'standard' => ['monthly' => 3500, 'yearly' => 25000],
             'elite'    => ['monthly' => 5000, 'yearly' => 50000],
         ];
 
-        $amount = $pricing[$plan][$cycle];
+        // Promotional Pricing (Next 1-2 weeks from 2026-03-08)
+        $promos = [
+            'standard' => ['monthly' => 2600, 'until' => '2026-03-22 23:59:59'], // 2 weeks
+            'elite'    => ['monthly' => 3700, 'until' => '2026-03-15 23:59:59'], // 1 week
+        ];
+
+        if (isset($promos[$plan]) && $cycle === 'monthly' && now()->lt(\Illuminate\Support\Carbon::parse($promos[$plan]['until']))) {
+            $amount = $promos[$plan]['monthly'];
+            Log::info('Promo Price Applied', ['user_id' => $user->id, 'plan' => $plan, 'amount' => $amount]);
+        } else {
+            $amount = $pricing[$plan][$cycle];
+        }
         $currency = 'NGN'; // Default to NGN as per Paystack request for local students
 
         try {

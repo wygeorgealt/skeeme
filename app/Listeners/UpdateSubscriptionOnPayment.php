@@ -41,14 +41,40 @@ class UpdateSubscriptionOnPayment
         }
 
         // Handle Individual Student Subscriptions
-        if ($payment->user_id && $invoice->plan_name === 'Student Unlimited' || str_contains($invoice->plan_name, 'Standard') || str_contains($invoice->plan_name, 'Elite')) {
+        if ($payment->user_id && (str_contains($invoice->plan_name, 'Standard') || str_contains($invoice->plan_name, 'Elite') || str_contains($invoice->plan_name, 'Unlimited'))) {
             $user = $payment->user;
             if ($user && $user->role === 'student') {
+                $isElite = str_contains($invoice->plan_name, 'Elite');
+                $creditsToAdd = $isElite ? 15000 : 5000;
+                $planName = $isElite ? 'Elite' : 'Standard';
+                
+                // Determine billing cycle from invoice
+                $isYearly = str_contains($invoice->plan_name, 'yearly');
+                $duration = $isYearly ? 366 : 31;
+
                 $user->update([
                     'is_unlimited_student' => true,
-                    'credits' => min(999999, $user->credits + 5000), // Refill logic
+                    'credits' => min(999999, $user->credits + $creditsToAdd),
                 ]);
-                Log::info('Student Subscription Activated', ['user_id' => $user->id]);
+
+                // Create or update subscription record
+                \App\Models\IndividualSubscription::updateOrCreate(
+                    ['user_id' => $user->id, 'status' => 'active'],
+                    [
+                        'plan_name' => $planName,
+                        'billing_cycle' => $isYearly ? 'yearly' : 'monthly',
+                        'price' => $payment->amount,
+                        'start_date' => now(),
+                        'expiry_date' => now()->addDays($duration),
+                        'status' => 'active'
+                    ]
+                );
+
+                Log::info('Student Subscription Activated/Renewed', [
+                    'user_id' => $user->id, 
+                    'plan' => $planName, 
+                    'credits_added' => $creditsToAdd
+                ]);
                 return;
             }
         }

@@ -98,6 +98,14 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Get the study transactions for this user.
+     */
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    /**
      * Get the user's active individual subscription
      */
     public function activeSubscription()
