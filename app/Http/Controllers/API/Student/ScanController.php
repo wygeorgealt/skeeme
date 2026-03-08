@@ -25,6 +25,7 @@ class ScanController extends Controller
      */
     public function solve(Request $request)
     {
+        set_time_limit(180);
         $request->validate([
             'image' => 'required|string', // base64-encoded image
         ]);

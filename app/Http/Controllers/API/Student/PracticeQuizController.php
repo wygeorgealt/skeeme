@@ -29,6 +29,7 @@ class PracticeQuizController extends Controller
      */
     public function generate(Request $request)
     {
+        set_time_limit(180); // Ensure long AI generations don't timeout
         Log::info("Quiz Generation Started", $request->except(['file']));
 
         try {
@@ -108,25 +109,8 @@ class PracticeQuizController extends Controller
                 ], 403);
             }
 
-            // 4. AI Generation
-            // 4. Prepare for AI Generation (Dispatch Job)
-            Log::info("Preparing to dispatch AI quiz generation job...");
-            $types = [];
-            foreach ($validated['question_types'] as $type) {
-                if ($type === 'mcq') $types[] = 'multiple_choice';
-                if ($type === 'theory') $types[] = 'essay';
-            }
-            $difficulty = $validated['difficulty'] ?? 'medium';
-
-            // 6. Deduct Usage (Atomic)
-            if (!$user->is_unlimited_student) {
-                DB::transaction(function() use ($user, $totalCost) {
-                    \App\Models\User::where('id', $user->id)->lockForUpdate()->decrement('credits', $totalCost);
-                });
-                Log::info("Credits Deducted", ['new_total' => $user->fresh()->credits]);
-            }
-
-            // 7. Generate Synchronously (Mobile app expects immediate results)
+            // 5. Generate Synchronously (Mobile app expects immediate results)
+            Log::info("Calling Deepseek AI for quiz generation...");
             $questions = $this->aiService->generateQuestions(
                 [$sourceContent],
                 $validated['question_count'] ?? 10,
@@ -140,6 +124,25 @@ class PracticeQuizController extends Controller
 
             if (empty($questions)) {
                 throw new \Exception('AI returned no questions. Please try a different topic or document.');
+            }
+
+            // 6. Deduct Usage (Atomic) - Only AFTER successful generation
+            if (!$user->is_unlimited_student) {
+                DB::transaction(function() use ($user, $totalCost, $validated) {
+                    $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+                    $lockedUser->decrement('credits', $totalCost);
+                    
+                    try {
+                        $lockedUser->transactions()->create([
+                            'type' => 'usage',
+                            'amount' => -$totalCost,
+                            'description' => "Practice Quiz: " . ($validated['question_count'] ?? 10) . " questions on " . ($validated['topic'] ?? 'File'),
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error("Failed to log quiz transaction: " . $e->getMessage());
+                    }
+                });
+                Log::info("Credits Deducted", ['new_total' => $user->fresh()->credits]);
             }
 
             // 8. Cleanup MC formatting

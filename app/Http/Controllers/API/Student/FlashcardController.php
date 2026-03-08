@@ -57,6 +57,7 @@ class FlashcardController extends Controller
      */
     public function generate(Request $request)
     {
+        set_time_limit(180);
         Log::info("Flashcard Generation Started", $request->except(['file']));
 
         $validated = $request->validate([

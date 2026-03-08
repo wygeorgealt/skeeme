@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "student-app",
-    "slug": "student-app",
+    "name": "Skeeme",
+    "slug": "skeeme-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "studentapp",
+    "scheme": "skeeme",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
