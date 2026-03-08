@@ -111,6 +111,13 @@ class PracticeQuizController extends Controller
 
             // 5. Generate Synchronously (Mobile app expects immediate results)
             Log::info("Calling Deepseek AI for quiz generation...");
+            
+            $types = [];
+            foreach ($validated['question_types'] as $type) {
+                if ($type === 'mcq') $types[] = 'multiple_choice';
+                if ($type === 'theory') $types[] = 'essay';
+            }
+
             $questions = $this->aiService->generateQuestions(
                 [$sourceContent],
                 $validated['question_count'] ?? 10,
