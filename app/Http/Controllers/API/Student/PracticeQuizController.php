@@ -126,26 +126,37 @@ class PracticeQuizController extends Controller
                 Log::info("Credits Deducted", ['new_total' => $user->fresh()->credits]);
             }
 
-            // 7. Dispatch Background Job
-            $jobId = (string) Str::uuid();
-            Cache::put("ai_job_status:{$jobId}", "pending", 1800);
-
-            ProcessAIQuiz::dispatch(
-                [$sourceContent], // Wrapped in array as required by the job constructor
+            // 7. Generate Synchronously (Mobile app expects immediate results)
+            $questions = $this->aiService->generateQuestions(
+                [$sourceContent],
                 $validated['question_count'] ?? 10,
                 $validated['difficulty'] ?? 'medium',
                 $types,
                 $validated['topic'] ?? 'General Knowledge',
-                $user->id,
-                $jobId,
-                $user->is_unlimited_student ? 0 : $totalCost
+                false,
+                null,
+                $user->ai_preferences
             );
 
+            if (empty($questions)) {
+                throw new \Exception('AI returned no questions. Please try a different topic or document.');
+            }
+
+            // 8. Cleanup MC formatting
+            foreach ($questions as &$q) {
+                if ($q['question_type'] === 'multiple_choice' && !empty($q['options'])) {
+                    $originalCorrectKey = $q['correct_answer'];
+                    $keyMap = ['A' => 0, 'B' => 1, 'C' => 2, 'D' => 3, 'E' => 4];
+                    $correctIndex = $keyMap[strtoupper($originalCorrectKey)] ?? 0;
+                    $correctText = $q['options'][$correctIndex] ?? $q['options'][0] ?? '';
+                    shuffle($q['options']);
+                    $q['correct_answer'] = $correctText;
+                }
+            }
+
             return response()->json([
-                'message' => 'AI quiz generation started. You can check the status using the job_id.',
-                'job_id' => $jobId,
-                'status' => 'pending',
-                'credits_deducted' => $user->is_unlimited_student ? 0 : $totalCost,
+                'questions' => $questions,
+                'credits_deducted' => $totalCost,
                 'remaining_credits' => $user->fresh()->credits
             ]);
 
