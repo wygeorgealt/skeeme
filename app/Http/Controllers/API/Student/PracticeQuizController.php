@@ -152,13 +152,28 @@ class PracticeQuizController extends Controller
                 Log::info("Credits Deducted", ['new_total' => $user->fresh()->credits]);
             }
 
-            // 8. Cleanup MC formatting
+            // 8. Cleanup MCQ formatting to ensure correct answer text is preserved after shuffle
             foreach ($questions as &$q) {
                 if ($q['question_type'] === 'multiple_choice' && !empty($q['options'])) {
-                    $originalCorrectKey = $q['correct_answer'];
+                    $originalCorrectValue = trim($q['correct_answer']);
                     $keyMap = ['A' => 0, 'B' => 1, 'C' => 2, 'D' => 3, 'E' => 4];
-                    $correctIndex = $keyMap[strtoupper($originalCorrectKey)] ?? 0;
-                    $correctText = $q['options'][$correctIndex] ?? $q['options'][0] ?? '';
+                    $correctText = '';
+
+                    // Match logic: Letter Key (A) or Full Text
+                    if (isset($keyMap[strtoupper($originalCorrectValue)])) {
+                        $index = $keyMap[strtoupper($originalCorrectValue)];
+                        $correctText = $q['options'][$index] ?? $q['options'][0] ?? '';
+                    } else {
+                        // Search for the text match in options if index fails
+                        foreach ($q['options'] as $opt) {
+                            if (strtolower(trim($opt)) === strtolower($originalCorrectValue)) {
+                                $correctText = $opt;
+                                break;
+                            }
+                        }
+                        if (!$correctText) $correctText = $q['options'][0] ?? $originalCorrectValue;
+                    }
+
                     shuffle($q['options']);
                     $q['correct_answer'] = $correctText;
                 }
