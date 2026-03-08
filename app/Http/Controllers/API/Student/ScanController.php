@@ -59,39 +59,47 @@ class ScanController extends Controller
         }
 
         try {
-            // 4. Dispatch Background Job
-            $jobId = (string) Str::uuid();
-            Cache::put("ai_job_status:{$jobId}", "pending", 1800);
+            // 4. Generate Synchronously (Fixing Sync Issue for Mobile)
+            Log::info('Processing Scan & Solve Synchronously...', ['user_id' => $user->id]);
+            
+            $result = $this->aiService->solveFromImage($request->input('image'));
+            $solutions = $result['results'] ?? [];
+            $solutionsCount = count($solutions);
+            
+            // 5. Calculate Final Cost
+            $finalCost = $baseCost + ($solutionsCount * $costPerSolution);
+            if ($solutionsCount === 0) $finalCost = $baseCost;
 
-            // Deduct base + initial solution cost (Atomic)
+            // 6. Deduct Usage (Atomic)
             if (!$user->is_unlimited) {
-                DB::transaction(function() use ($user, $baseCost, $costPerSolution) {
-                    \App\Models\User::where('id', $user->id)->lockForUpdate()->first()->decrement('credits', ($baseCost + $costPerSolution));
+                DB::transaction(function() use ($user, $finalCost) {
+                    $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+                    $lockedUser->decrement('credits', $finalCost);
+                    
+                    try {
+                        $lockedUser->transactions()->create([
+                            'type' => 'usage',
+                            'amount' => -$finalCost,
+                            'description' => "Scan & Solve: " . $solutionsCount . " questions processed",
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error("Failed to log scan transaction: " . $e->getMessage());
+                    }
                 });
-                Log::info('Initial Scan Credits Deducted', ['user_id' => $user->id, 'initial' => ($baseCost + $costPerSolution)]);
             }
 
-            ProcessAIScanSolve::dispatch(
-                $request->input('image'),
-                $user->id,
-                $jobId,
-                $user->is_unlimited ? 0 : ($baseCost + $costPerSolution),
-                $baseCost,
-                $costPerSolution
-            );
-
             return response()->json([
-                'message' => 'Image processing started.',
-                'job_id' => $jobId,
-                'status' => 'pending',
-                'credits_deducted' => $user->is_unlimited ? 0 : ($baseCost + $costPerSolution),
+                'message' => 'Image processed successfully.',
+                'results' => $solutions,
+                'cost' => $finalCost,
+                'credits_deducted' => $user->is_unlimited ? 0 : $finalCost,
                 'remaining_credits' => $user->fresh()->credits
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Scan & Solve Dispatch Failed: ' . $e->getMessage());
+            Log::error('Scan & Solve Failed: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Failed to initiate the scan. Please try again.',
+                'message' => 'Failed to solve: ' . $e->getMessage(),
             ], 500);
         }
     }
