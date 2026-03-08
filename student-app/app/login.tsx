@@ -64,7 +64,19 @@ export default function LoginScreen() {
         } catch (error: any) {
             if (__DEV__) console.error('[Login] Error:', error.message);
             setFailedAttempts(prev => prev + 1);
-            const msg = error.response?.data?.message || 'Invalid credentials or network issue.';
+
+            let msg = 'Invalid credentials or network issue.';
+            const status = error.response?.status;
+            const data = error.response?.data;
+
+            if (status === 401 || status === 404) {
+                msg = 'Email not found or password incorrect.';
+            } else if (status === 422) {
+                msg = data?.message || 'Account not found or invalid details.';
+            } else if (status === 429) {
+                msg = 'Too many attempts. Please wait 1 minute.';
+            }
+
             Alert.alert('Login Failed', msg);
         } finally {
             setIsLoading(false);
@@ -132,12 +144,7 @@ export default function LoginScreen() {
                 {/* Password Input */}
                 <PasswordField value={password} onChangeText={setPassword} containerClassName="mb-1" />
 
-                {/* Forgot Password (M3) */}
-                <View className="items-end mb-8 -mt-4">
-                    <TouchableOpacity onPress={() => WebBrowser.openBrowserAsync('https://skeeme-web.onrender.com/forgot-password')}>
-                        <Text className="text-[#6366f1] font-bold text-[14px]">Forgot password?</Text>
-                    </TouchableOpacity>
-                </View>
+                <View className="mb-8" />
 
                 {/* Login Button */}
                 <TouchableOpacity
@@ -153,14 +160,13 @@ export default function LoginScreen() {
                     )}
                 </TouchableOpacity>
 
-                {/* Social Auth Separator */}
+                {/* Social Sign In (Hidden for now)
                 <View className="flex-row items-center mb-8 mt-8">
                     <View className={`flex-1 h-[1px] ${separatorClass}`} />
                     <Text className={`${textSubClass} font-medium px-4 text-[13px]`}>or sign in with</Text>
                     <View className={`flex-1 h-[1px] ${separatorClass}`} />
                 </View>
 
-                {/* Social Buttons */}
                 <TouchableOpacity
                     onPress={() => handleSocialLogin('google')}
                     disabled={isSocialLoading}
@@ -184,19 +190,9 @@ export default function LoginScreen() {
                     <Ionicons name="logo-apple" size={20} color={iconColor} />
                     <Text className={`${textTitleClass} font-medium text-[15px] ml-3`}>Continue with Apple</Text>
                 </TouchableOpacity>
+                */}
 
-                {/* Primary Action */}
-                <TouchableOpacity
-                    onPress={handleLogin}
-                    className={`w-full py-[18px] rounded-[12px] items-center justify-center flex-row ${primaryBtnClass}`}
-                    disabled={email.length <= 5 || password.length === 0 || isLoading}
-                >
-                    {isLoading ? (
-                        <ActivityIndicator color={isDark ? "black" : "white"} />
-                    ) : (
-                        <Text className={`font-bold text-[17px] tracking-tight ${email.length > 5 && password.length > 0 ? primaryBtnTextClass : primaryBtnTextDisabledClass}`}>Sign In</Text>
-                    )}
-                </TouchableOpacity>
+
 
                 <TouchableOpacity onPress={() => router.push('/signup')} className="mt-8 mb-12 items-center">
                     <Text className={`${textSubClass} font-medium`}>

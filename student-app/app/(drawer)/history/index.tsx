@@ -1,10 +1,10 @@
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl, useColorScheme, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl, useColorScheme, Platform, ActivityIndicator, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
-import { GradientButton } from '@/components/ui/GradientButton';
+import * as SecureStore from 'expo-secure-store';
 
 type QuizSession = {
     id: number;
@@ -24,20 +24,22 @@ type FlashcardDeck = {
     created_at: string;
 };
 
-// Platform-safe storage helpers (consistent with authStore)
+// Storage helpers
 const storage = {
-    getItem: async (key: string): Promise<string | null> => {
-        if (Platform.OS === 'web') return localStorage.getItem(key);
-        const SecureStore = await import('expo-secure-store');
-        return SecureStore.getItemAsync(key);
+    getItem: async (key: string) => {
+        try {
+            if (Platform.OS === 'web') return localStorage.getItem(key);
+            return await SecureStore.getItemAsync(key);
+        } catch (e) { return null; }
     },
-    setItem: async (key: string, value: string): Promise<void> => {
-        if (Platform.OS === 'web') {
-            localStorage.setItem(key, value);
-            return;
-        }
-        const SecureStore = await import('expo-secure-store');
-        await SecureStore.setItemAsync(key, value);
+    setItem: async (key: string, value: string) => {
+        try {
+            if (Platform.OS === 'web') {
+                localStorage.setItem(key, value);
+            } else {
+                await SecureStore.setItemAsync(key, value);
+            }
+        } catch (e) { /* ignore */ }
     },
 };
 
@@ -69,7 +71,8 @@ export default function StudyHistoryDashboard() {
             const data = res.data.data as QuizSession[];
             await storage.setItem('cache_quiz_history', JSON.stringify(data));
             return data;
-        }
+        },
+        enabled: true,
     });
 
     const { data: flashcardDecks, isLoading: loadingDecks, refetch: refetchDecks } = useQuery({
@@ -79,46 +82,60 @@ export default function StudyHistoryDashboard() {
             const data = res.data.data as FlashcardDeck[];
             await storage.setItem('cache_flashcard_decks', JSON.stringify(data));
             return data;
-        }
+        },
+        enabled: true,
     });
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        if (activeTab === 'quizzes') await refetchQuizzes();
-        else await refetchDecks();
+        try {
+            if (activeTab === 'quizzes') await refetchQuizzes();
+            else await refetchDecks();
+        } catch (e) { }
         setRefreshing(false);
     }, [refetchQuizzes, refetchDecks, activeTab]);
-
-    useFocusEffect(
-        useCallback(() => {
-            if (activeTab === 'quizzes') refetchQuizzes();
-            else refetchDecks();
-        }, [refetchQuizzes, refetchDecks, activeTab])
-    );
 
     const quizzes = quizSessions || cachedQuizzes;
     const decks = flashcardDecks || cachedDecks;
     const isLoading = activeTab === 'quizzes' ? loadingQuizzes : loadingDecks;
 
+    // Use standard effect for refetching on tab change
+    useEffect(() => {
+        if (activeTab === 'quizzes') refetchQuizzes();
+        else refetchDecks();
+    }, [activeTab]);
+
     return (
-        <View className="flex-1 bg-white dark:bg-brand-dark">
+        <View style={styles.container} className="flex-1 bg-white dark:bg-brand-dark">
             {/* Header */}
             <View className="px-6 py-8 pb-4">
                 <Text className="text-[32px] font-black tracking-tight text-slate-900 dark:text-white">Study History</Text>
 
-                {/* Segmented Control */}
+                {/* Segmented Control using inline styles for stability */}
                 <View className="flex-row bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl mt-6">
                     <TouchableOpacity
                         onPress={() => setActiveTab('quizzes')}
-                        className={`flex-1 py-3 rounded-xl items-center ${activeTab === 'quizzes' ? 'bg-white dark:bg-brand-primary shadow-sm' : ''}`}
+                        style={[
+                            styles.tabButton,
+                            activeTab === 'quizzes' && { backgroundColor: isDark ? '#2EBD85' : 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }
+                        ]}
                     >
-                        <Text className={`font-black text-sm ${activeTab === 'quizzes' ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>Quizzes</Text>
+                        <Text style={[
+                            styles.tabText,
+                            activeTab === 'quizzes' ? { color: isDark ? 'white' : '#0f172a', fontWeight: '900' } : { color: '#94a3b8' }
+                        ]}>Quizzes</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => setActiveTab('flashcards')}
-                        className={`flex-1 py-3 rounded-xl items-center ${activeTab === 'flashcards' ? 'bg-white dark:bg-brand-primary shadow-sm' : ''}`}
+                        style={[
+                            styles.tabButton,
+                            activeTab === 'flashcards' && { backgroundColor: isDark ? '#2EBD85' : 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }
+                        ]}
                     >
-                        <Text className={`font-black text-sm ${activeTab === 'flashcards' ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>Flashcards</Text>
+                        <Text style={[
+                            styles.tabText,
+                            activeTab === 'flashcards' ? { color: isDark ? 'white' : '#0f172a', fontWeight: '900' } : { color: '#94a3b8' }
+                        ]}>Flashcards</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -131,14 +148,25 @@ export default function StudyHistoryDashboard() {
             >
                 {isLoading && quizzes.length === 0 && decks.length === 0 ? (
                     <View className="py-12 items-center">
-                        <Text className="text-slate-400 font-bold">Loading your progress...</Text>
+                        <ActivityIndicator color={isDark ? 'white' : '#0f172a'} />
+                        <Text className="text-slate-400 font-bold mt-4">Loading your progress...</Text>
                     </View>
                 ) : activeTab === 'quizzes' ? (
-                    quizzes.length === 0 ? <NoHistory message="Complete a practice quiz to see results here." /> :
-                        quizzes.map(session => <QuizCard key={session.id} session={session} />)
+                    quizzes.length === 0 ? (
+                        <View className="items-center py-16 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] bg-slate-50 dark:bg-slate-900/50">
+                            <Text className="text-slate-500 font-bold text-[14px] text-center px-8 leading-relaxed">Complete a practice quiz to see results here.</Text>
+                        </View>
+                    ) : quizzes.map(session => (
+                        <QuizCard key={session.id} session={session} />
+                    ))
                 ) : (
-                    decks.length === 0 ? <NoHistory message="Generate some flashcards to start studying." /> :
-                        decks.map(deck => <DeckCard key={deck.id} deck={deck} isDark={isDark} />)
+                    decks.length === 0 ? (
+                        <View className="items-center py-16 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] bg-slate-50 dark:bg-slate-900/50">
+                            <Text className="text-slate-500 font-bold text-[14px] text-center px-8 leading-relaxed">Generate some flashcards to start studying.</Text>
+                        </View>
+                    ) : decks.map(deck => (
+                        <DeckCard key={deck.id} deck={deck} />
+                    ))
                 )}
                 <View className="h-10" />
             </ScrollView>
@@ -146,13 +174,22 @@ export default function StudyHistoryDashboard() {
     );
 }
 
-function NoHistory({ message }: { message: string }) {
-    return (
-        <View className="items-center py-16 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] bg-slate-50 dark:bg-slate-900/50">
-            <Text className="text-slate-500 font-bold text-[14px] text-center px-8 leading-relaxed">{message}</Text>
-        </View>
-    );
-}
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    tabButton: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tabText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+    }
+});
 
 function QuizCard({ session }: { session: QuizSession }) {
     const getScoreColor = (pct: number) => {
@@ -189,7 +226,7 @@ function QuizCard({ session }: { session: QuizSession }) {
     );
 }
 
-function DeckCard({ deck, isDark }: { deck: FlashcardDeck, isDark: boolean }) {
+function DeckCard({ deck }: { deck: FlashcardDeck }) {
     return (
         <TouchableOpacity
             onPress={() => router.push(`/(drawer)/flashcards/${deck.id}` as any)}

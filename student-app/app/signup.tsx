@@ -275,6 +275,7 @@ export default function SignupScreen() {
                             <Text className={`font-bold text-[17px] tracking-tight ${email.length > 3 ? primaryBtnTextClass : primaryBtnTextDisabledClass}`}>Continue</Text>
                         </TouchableOpacity>
 
+                        {/* Social Auth (Hidden for now)
                         <View className="flex-row items-center mb-8">
                             <View className={`flex-1 h-[1px] ${separatorClass}`} />
                             <Text className={`${textSubClass} font-medium px-4 text-[13px]`}>or sign up with</Text>
@@ -304,6 +305,7 @@ export default function SignupScreen() {
                             <Ionicons name="logo-apple" size={20} color={iconColor} />
                             <Text className={`${textTitleClass} font-medium text-[15px] ml-3`}>Sign up with Apple</Text>
                         </TouchableOpacity>
+                        */}
                     </Animated.View>
                 )}
 

@@ -25,7 +25,12 @@ class ScanController extends Controller
      */
     public function solve(Request $request)
     {
-        set_time_limit(180);
+        set_time_limit(240); // 4 minutes
+        
+        Log::info('Scan & Solve Request Received', [
+            'user_id' => $request->user()?->id,
+            'image_size' => strlen($request->input('image', '')),
+        ]);
         $request->validate([
             'image' => 'required|string', // base64-encoded image
         ]);
@@ -39,7 +44,7 @@ class ScanController extends Controller
         $baseCost = 2; // Flat fee for OCR scanning
         $costPerSolution = 4; // Fee per question solved
 
-        Log::info('Scan & Solve Started', ['user_id' => $user->id]);
+        Log::info('Scan & Solve: Credit Check Passed', ['user_id' => $user->id]);
 
         // 3. Preliminary Check & Lock Credits (Atomic)
         $canProceed = DB::transaction(function() use ($user, $baseCost, $costPerSolution) {

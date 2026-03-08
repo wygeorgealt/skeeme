@@ -33,16 +33,12 @@ export default function AccountScreen() {
 
     const handleUpdateProfile = async () => {
         if (!name.trim()) return Alert.alert('Required', 'Name cannot be empty.');
-        if (!email.trim()) return Alert.alert('Required', 'Email cannot be empty.');
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-            return Alert.alert('Invalid Email', 'Please enter a valid email address.');
-        }
 
         setIsUpdatingProfile(true);
         setProfileSuccess(false);
         try {
-            await api.patch('profile', { name: name.trim(), email: email.trim().toLowerCase() });
-            updateUser({ name: name.trim(), email: email.trim().toLowerCase() });
+            await api.patch('profile', { name: name.trim() });
+            updateUser({ name: name.trim() });
             setProfileSuccess(true);
             setTimeout(() => setProfileSuccess(false), 3000);
         } catch (error: any) {
@@ -172,16 +168,11 @@ export default function AccountScreen() {
                         />
 
                         <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-3">Email Address</Text>
-                        <TextInput
-                            className="w-full bg-white dark:bg-brand-dark border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white mb-8 focus:border-slate-900 dark:focus:border-white"
-                            placeholder="john@example.com"
-                            placeholderTextColor="#94a3b8"
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoComplete="email"
-                            value={email}
-                            onChangeText={setEmail}
-                        />
+                        <View className="w-full bg-slate-100 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 mb-8 opacity-60">
+                            <Text className="text-[16px] font-bold text-slate-500 dark:text-slate-400">
+                                {email}
+                            </Text>
+                        </View>
 
                         <GradientButton
                             onPress={handleUpdateProfile}

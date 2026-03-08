@@ -5,7 +5,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://skeeme-web.onrender.
 
 export const api = axios.create({
     baseURL: API_URL,
-    timeout: 120000, // 120 seconds (needed for heavy AI Quiz/Flashcard generation)
+    timeout: 180000, // 180 seconds (needed for heavy AI Quiz/Flashcard generation)
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
