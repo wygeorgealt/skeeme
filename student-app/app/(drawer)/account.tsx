@@ -3,6 +3,7 @@ import {
     View, Text, ScrollView, TextInput, TouchableOpacity, Alert,
     ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { GradientButton } from '@/components/ui/GradientButton'; // This is now a solid V2 button
 import { useAuthStore } from '@/store/authStore';
@@ -42,7 +43,17 @@ export default function AccountScreen() {
             setProfileSuccess(true);
             setTimeout(() => setProfileSuccess(false), 3000);
         } catch (error: any) {
-            Alert.alert('Update Failed', error.response?.data?.message || 'Something went wrong.');
+            let msg = 'Something went wrong.';
+            const data = error.response?.data;
+
+            if (data?.errors) {
+                const firstKey = Object.keys(data.errors)[0];
+                msg = data.errors[firstKey][0];
+            } else if (data?.message) {
+                msg = data.message;
+            }
+
+            Alert.alert('Update Failed', msg);
         } finally {
             setIsUpdatingProfile(false);
         }
@@ -80,7 +91,18 @@ export default function AccountScreen() {
             setPasswordSuccess(true);
             setTimeout(() => setPasswordSuccess(false), 3000);
         } catch (error: any) {
-            Alert.alert('Update Failed', error.response?.data?.message || 'Something went wrong.');
+            let msg = 'Something went wrong.';
+            const data = error.response?.data;
+
+            if (data?.errors) {
+                // Extract first validation error
+                const firstKey = Object.keys(data.errors)[0];
+                msg = data.errors[firstKey][0];
+            } else if (data?.message) {
+                msg = data.message;
+            }
+
+            Alert.alert('Update Failed', msg);
         } finally {
             setIsUpdatingPassword(false);
         }
@@ -130,7 +152,7 @@ export default function AccountScreen() {
                 {/* Subscription Overview */}
                 <View className="px-6 py-8">
                     <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Subscription</Text>
-                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[24px] p-6 border-2 border-slate-200 dark:border-slate-800 flex-row items-center justify-between">
+                    <View className="bg-slate-50 dark:bg-white/5 rounded-[24px] p-6 border border-slate-200 dark:border-slate-800 flex-row items-center justify-between shadow-sm">
                         <View>
                             <Text className="text-[20px] font-black text-slate-900 dark:text-white mb-1 tracking-tight">
                                 {user.is_unlimited ? 'Unlimited Pro' : 'Free Tier'}
@@ -156,7 +178,7 @@ export default function AccountScreen() {
                 {/* Profile Details */}
                 <View className="px-6 pb-8">
                     <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Profile Info</Text>
-                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[24px] p-6 border-2 border-slate-200 dark:border-slate-800">
+                    <View className="bg-slate-50 dark:bg-white/5 rounded-[24px] p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
                         <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-3">Full Name</Text>
                         <TextInput
                             className="w-full bg-white dark:bg-brand-dark border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white mb-6 focus:border-slate-900 dark:focus:border-white"
@@ -187,7 +209,7 @@ export default function AccountScreen() {
                 {/* Theme Preferences */}
                 <View className="px-6 pb-8">
                     <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Appearance</Text>
-                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[24px] p-2 border-2 border-slate-200 dark:border-slate-800">
+                    <View className="bg-slate-50 dark:bg-white/5 rounded-[24px] p-2 border border-slate-200 dark:border-slate-800 shadow-sm">
                         {(['system', 'light', 'dark'] as const).map((t, index) => {
                             const isSelected = theme === t;
                             const icons = { system: 'phone-portrait-outline', light: 'sunny-outline', dark: 'moon-outline' };
@@ -206,7 +228,7 @@ export default function AccountScreen() {
                                             style={[
                                                 isSelected
                                                     ? { borderColor: colorScheme === 'dark' ? '#ffffff' : '#0f172a', backgroundColor: colorScheme === 'dark' ? '#ffffff' : '#0f172a' }
-                                                    : { borderColor: colorScheme === 'dark' ? '#334155' : '#cbd5e1', backgroundColor: colorScheme === 'dark' ? '#010100' : '#ffffff' }
+                                                    : { borderColor: colorScheme === 'dark' ? '#334155' : '#cbd5e1', backgroundColor: colorScheme === 'dark' ? '#282828' : '#ffffff' }
                                             ]}
                                         >
                                             <Ionicons name={icons[t] as any} size={20} color={isSelected ? (t === 'dark' ? '#0f172a' : 'white') : '#64748b'} />
@@ -231,9 +253,9 @@ export default function AccountScreen() {
                 </View>
 
                 {/* Security */}
-                <View className="px-6 pb-12">
+                <View className="px-6 pb-8">
                     <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Security</Text>
-                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[24px] p-6 border-2 border-slate-200 dark:border-slate-800">
+                    <View className="bg-slate-50 dark:bg-white/5 rounded-[24px] p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
 
                         <PasswordField label="Current Password" value={currentPassword} onChangeText={setCurrentPassword} show={showCurrentPw} onToggle={() => setShowCurrentPw(!showCurrentPw)} />
                         <PasswordField label="New Password" value={newPassword} onChangeText={setNewPassword} show={showNewPw} onToggle={() => setShowNewPw(!showNewPw)} />
@@ -269,6 +291,40 @@ export default function AccountScreen() {
                                 <Text className="text-slate-900 dark:text-white font-black text-[15px] tracking-widest uppercase">Change Password</Text>
                             )}
                         </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Legal & About */}
+                <View className="px-6 pb-12">
+                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Legal & Support</Text>
+                    <View className="bg-slate-50 dark:bg-white/5 rounded-[24px] p-2 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <TouchableOpacity
+                            onPress={() => WebBrowser.openBrowserAsync('https://skeeme-web.onrender.com/privacy')}
+                            className="flex-row items-center justify-between p-4 border-b-2 border-slate-100 dark:border-slate-800"
+                        >
+                            <View className="flex-row items-center">
+                                <Ionicons name="shield-checkmark-outline" size={20} color={colorScheme === 'dark' ? '#94a3b8' : '#64748b'} />
+                                <Text className="ml-4 font-bold text-slate-900 dark:text-white">Privacy Policy</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => WebBrowser.openBrowserAsync('https://skeeme-web.onrender.com/terms')}
+                            className="flex-row items-center justify-between p-4"
+                        >
+                            <View className="flex-row items-center">
+                                <Ionicons name="document-text-outline" size={20} color={colorScheme === 'dark' ? '#94a3b8' : '#64748b'} />
+                                <Text className="ml-4 font-bold text-slate-900 dark:text-white">Terms of Service</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View className="mt-8 items-center">
+                        <Text className="text-slate-400 dark:text-slate-600 font-bold text-[12px] uppercase tracking-widest">
+                            Skeeme Version 1.3.0
+                        </Text>
                     </View>
                 </View>
             </ScrollView>

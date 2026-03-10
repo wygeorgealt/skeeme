@@ -19,6 +19,11 @@ Schedule::command('app:refill-student-credits')
     ->dailyAt('01:00')
     ->description('Checks for students due for their weekly credit refill');
 
+// Schedule cleanup of old student uploads daily at 3 AM
+Schedule::command('app:cleanup-old-uploads')
+    ->dailyAt('03:00')
+    ->description('Deletes student document uploads older than 14 days from Cloudflare R2');
+
 use Mailtrap\Helper\ResponseHelper;
 use Mailtrap\MailtrapClient;
 use Mailtrap\Mime\MailtrapEmail;

@@ -86,25 +86,25 @@ export default function PreferencesScreen() {
                             <TouchableOpacity
                                 key={l.key}
                                 onPress={() => setLevel(level === l.key ? '' : l.key)}
-                                className={`flex-row items-center p-4 rounded-2xl border-2 ${level === l.key
-                                    ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500'
-                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                                className={`flex-row items-center p-4 rounded-2xl border ${level === l.key
+                                    ? 'bg-brand-primary/10 border-brand-primary/50'
+                                    : 'bg-white/70 dark:bg-white/5 border-slate-100 dark:border-slate-800'
                                     }`}
                                 activeOpacity={0.7}
                             >
                                 <Ionicons
                                     name={l.icon as any}
                                     size={22}
-                                    color={level === l.key ? '#6366f1' : '#94a3b8'}
+                                    color={level === l.key ? '#2EBD85' : '#94a3b8'}
                                 />
                                 <Text className={`ml-3 font-bold text-[15px] ${level === l.key
-                                    ? 'text-indigo-600 dark:text-indigo-400'
+                                    ? 'text-brand-primary'
                                     : 'text-slate-700 dark:text-slate-300'
                                     }`}>
                                     {l.label}
                                 </Text>
                                 {level === l.key && (
-                                    <Ionicons name="checkmark-circle" size={20} color="#6366f1" style={{ marginLeft: 'auto' }} />
+                                    <Ionicons name="checkmark-circle" size={20} color="#2EBD85" style={{ marginLeft: 'auto' }} />
                                 )}
                             </TouchableOpacity>
                         ))}
@@ -121,7 +121,7 @@ export default function PreferencesScreen() {
                         onChangeText={setField}
                         placeholder="e.g. Computer Science, Nursing, Business..."
                         placeholderTextColor="#94a3b8"
-                        className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3.5 text-sm text-slate-900 dark:text-white font-medium"
+                        className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-sm text-slate-900 dark:text-white font-medium focus:border-brand-primary"
                     />
                 </View>
 
@@ -135,14 +135,14 @@ export default function PreferencesScreen() {
                             <TouchableOpacity
                                 key={s.key}
                                 onPress={() => setStyle(style === s.key ? '' : s.key)}
-                                className={`p-4 rounded-2xl border-2 ${style === s.key
-                                    ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500'
-                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                                className={`p-4 rounded-2xl border ${style === s.key
+                                    ? 'bg-brand-primary/10 border-brand-primary/50'
+                                    : 'bg-white/70 dark:bg-white/5 border-slate-100 dark:border-slate-800'
                                     }`}
                                 activeOpacity={0.7}
                             >
                                 <Text className={`font-bold text-[15px] ${style === s.key
-                                    ? 'text-indigo-600 dark:text-indigo-400'
+                                    ? 'text-brand-primary'
                                     : 'text-slate-700 dark:text-slate-300'
                                     }`}>
                                     {s.label}
@@ -165,14 +165,14 @@ export default function PreferencesScreen() {
                             <TouchableOpacity
                                 key={t.key}
                                 onPress={() => setTone(tone === t.key ? '' : t.key)}
-                                className={`p-4 rounded-2xl border-2 ${tone === t.key
-                                    ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500'
-                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                                className={`p-4 rounded-2xl border ${tone === t.key
+                                    ? 'bg-brand-primary/10 border-brand-primary/50'
+                                    : 'bg-white/70 dark:bg-white/5 border-slate-100 dark:border-slate-800'
                                     }`}
                                 activeOpacity={0.7}
                             >
                                 <Text className={`font-bold text-[15px] ${tone === t.key
-                                    ? 'text-indigo-600 dark:text-indigo-400'
+                                    ? 'text-brand-primary'
                                     : 'text-slate-700 dark:text-slate-300'
                                     }`}>
                                     {t.label}
@@ -189,7 +189,7 @@ export default function PreferencesScreen() {
                 <TouchableOpacity
                     onPress={handleSave}
                     disabled={saving}
-                    className={`bg-indigo-600 py-4 rounded-2xl items-center flex-row justify-center ${saving ? 'opacity-60' : ''}`}
+                    className={`bg-brand-primary py-4 rounded-2xl items-center flex-row justify-center ${saving ? 'opacity-60' : ''}`}
                     activeOpacity={0.8}
                 >
                     {saving ? (

@@ -201,7 +201,7 @@ export default function DashboardScreen() {
                 <View className="gap-3">
                     <TouchableOpacity
                         onPress={() => router.push('/generate')}
-                        className="bg-white dark:bg-brand-dark p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex-row items-center"
+                        className="bg-slate-50 dark:bg-white/5 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex-row items-center overflow-hidden"
                         activeOpacity={0.7}
                     >
                         <View className="size-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl items-center justify-center mr-4">
@@ -216,22 +216,25 @@ export default function DashboardScreen() {
 
                     <TouchableOpacity
                         onPress={() => router.push('/flashcards')}
-                        className="bg-white dark:bg-brand-dark p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex-row items-center"
+                        className="bg-slate-50 dark:bg-white/5 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex-row items-center overflow-hidden"
                         activeOpacity={0.7}
                     >
                         <View className="size-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl items-center justify-center mr-4">
-                            <Ionicons name="albums" size={24} color={isDark ? '#e2e8f0' : '#0f172a'} />
+                            <Ionicons name="albums" size={24} color="#2EBD85" />
                         </View>
                         <View className="flex-1">
                             <Text className="text-base font-black text-slate-900 dark:text-white tracking-tight">Flashcards</Text>
                             <Text className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Generate and study AI decks</Text>
+                        </View>
+                        <View className="bg-brand-primary/10 px-2 py-0.5 rounded-full mr-2">
+                            <Text className="text-brand-primary font-bold text-[10px]">NEW</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         onPress={() => router.push('/scan')}
-                        className="bg-white dark:bg-brand-dark p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex-row items-center"
+                        className="bg-slate-50 dark:bg-white/5 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 flex-row items-center overflow-hidden"
                         activeOpacity={0.7}
                     >
                         <View className="size-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl items-center justify-center mr-4">
@@ -251,14 +254,14 @@ export default function DashboardScreen() {
                 <Text className="text-lg font-black text-slate-900 dark:text-white mb-4 tracking-tight">Activity</Text>
 
                 <View className="flex-row gap-3 mb-3">
-                    <View className="flex-1 bg-white dark:bg-brand-dark border border-slate-200 dark:border-slate-800 rounded-3xl p-5">
+                    <View className="flex-1 bg-white/70 dark:bg-brand-dark/50 border border-white/20 dark:border-slate-800 rounded-3xl p-5">
                         <Text className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-1">Current Streak</Text>
                         <View className="flex-row items-baseline">
                             <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{user.streak?.current_streak || 0}</Text>
                             <Text className="text-xs font-bold text-slate-400 ml-1">Days</Text>
                         </View>
                     </View>
-                    <View className="flex-1 bg-white dark:bg-brand-dark border border-slate-200 dark:border-slate-800 rounded-3xl p-5">
+                    <View className="flex-1 bg-white/70 dark:bg-brand-dark/50 border border-white/20 dark:border-slate-800 rounded-3xl p-5">
                         <Text className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-1">Longest Streak</Text>
                         <View className="flex-row items-baseline">
                             <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{user.streak?.longest_streak || 0}</Text>
@@ -267,7 +270,7 @@ export default function DashboardScreen() {
                     </View>
                 </View>
 
-                <View className="bg-white dark:bg-brand-dark p-5 rounded-3xl border border-slate-200 dark:border-slate-800">
+                <View className="bg-slate-50 dark:bg-white/5 p-5 rounded-3xl border border-slate-200 dark:border-slate-800">
                     <View className="flex-row justify-between items-center mb-4">
                         <Text className="text-slate-900 dark:text-white font-bold text-sm">Last 28 days</Text>
                         <Ionicons name="flame" size={16} color="#2EBD85" />

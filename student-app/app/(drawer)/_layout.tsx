@@ -1,5 +1,5 @@
 import { Drawer } from 'expo-router/drawer';
-import { View, Text, TouchableOpacity, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, useColorScheme, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -14,14 +14,30 @@ function CustomDrawerContent(props: any) {
     const pathname = usePathname();
 
     const handleLogout = async () => {
-        try {
-            await api.post('logout');
-        } catch (e) {
-            console.warn('Logout API failed, forcing local logout');
-        } finally {
-            logout();
-            router.replace('/login');
+        const performLogout = async () => {
+            try {
+                await api.post('logout');
+            } catch (e) {
+                console.warn('Logout API failed, forcing local logout');
+            } finally {
+                logout();
+                router.replace('/login');
+            }
+        };
+
+        if (Platform.OS === 'web') {
+            await performLogout();
+            return;
         }
+
+        Alert.alert(
+            "Sign Out",
+            "Are you sure you want to sign out of Skeeme?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Sign Out", style: "destructive", onPress: performLogout }
+            ]
+        );
     };
 
     const NavItem = ({ icon, label, route }: { icon: any, label: string, route: string }) => {
@@ -43,11 +59,11 @@ function CustomDrawerContent(props: any) {
     };
 
     return (
-        <View className="flex-1 bg-white dark:bg-[#010100]">
+        <View className="flex-1 bg-white dark:bg-[#282828]">
             <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 40, paddingBottom: 20 }}>
                 {/* Profile Header section */}
                 <View className="px-6 mb-6">
-                    <View className="size-20 rounded-full bg-indigo-600 items-center justify-center mb-4 border-4 border-slate-50 dark:border-[#111111] overflow-hidden shadow-sm shadow-slate-200 dark:shadow-none">
+                    <View className="size-20 rounded-full bg-brand-primary items-center justify-center mb-4 border-4 border-slate-50 dark:border-[#111111] overflow-hidden shadow-sm shadow-slate-200 dark:shadow-none">
                         <Text className="text-white font-black text-3xl">
                             {user?.name?.charAt(0).toUpperCase() || 'S'}
                         </Text>
@@ -109,8 +125,8 @@ export default function DrawerLayout() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
-    const bgColor = isDark ? '#010100' : '#ffffff';
-    const drawerBg = isDark ? '#010100' : '#ffffff';
+    const bgColor = isDark ? '#282828' : '#ffffff';
+    const drawerBg = isDark ? '#282828' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#0f172a';
 
     return (

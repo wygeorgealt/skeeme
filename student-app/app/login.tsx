@@ -84,7 +84,7 @@ export default function LoginScreen() {
     };
 
     // Theme-based colors
-    const bgClass = isDark ? "bg-[#010100]" : "bg-white";
+    const bgClass = isDark ? "bg-[#282828]" : "bg-white";
     const textTitleClass = isDark ? "text-white" : "text-black";
     const textSubClass = isDark ? "text-slate-400" : "text-slate-500";
     const inputBgClass = isDark ? "bg-[#1c1c1e]" : "bg-slate-100";
@@ -127,7 +127,7 @@ export default function LoginScreen() {
 
                 {/* Email Input */}
                 <View className="mb-4">
-                    <View className={`${inputBgClass} ${inputBorderClass} rounded-[16px] px-4 flex-row items-center border focus:border-[#6366f1]`}>
+                    <View className={`${inputBgClass} ${inputBorderClass} rounded-[16px] px-4 flex-row items-center border focus:border-brand-primary`}>
                         <TextInput
                             className={`flex-1 text-${inputTextColor} font-medium text-[17px] h-[56px]`}
                             placeholder="Email address"
@@ -150,7 +150,7 @@ export default function LoginScreen() {
                 <TouchableOpacity
                     onPress={handleLogin}
                     disabled={isLoading}
-                    className={`w-full bg-[#6366f1] rounded-[16px] h-[56px] items-center justify-center shadow-lg shadow-indigo-500/30 ${isLoading ? 'opacity-70' : ''}`}
+                    className={`w-full bg-brand-primary rounded-[16px] h-[56px] items-center justify-center shadow-lg shadow-brand-primary/30 ${isLoading ? 'opacity-70' : ''}`}
                     activeOpacity={0.8}
                 >
                     {isLoading ? (
@@ -196,7 +196,7 @@ export default function LoginScreen() {
 
                 <TouchableOpacity onPress={() => router.push('/signup')} className="mt-8 mb-12 items-center">
                     <Text className={`${textSubClass} font-medium`}>
-                        Don't have an account? <Text className="text-[#6366f1] font-bold">Sign up</Text>
+                        Don't have an account? <Text className="text-brand-primary font-bold">Sign up</Text>
                     </Text>
                 </TouchableOpacity>
 

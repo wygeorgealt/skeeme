@@ -27,7 +27,7 @@ export function PasswordField({
 
     // Use py-1 like signup.tsx but allow overriding padding in container if needed
     return (
-        <View className={`${inputBgClass} ${inputBorderClass} rounded-[16px] px-4 py-1 flex-row items-center border focus:border-[#6366f1] ${containerClassName}`}>
+        <View className={`${inputBgClass} ${inputBorderClass} rounded-[16px] px-4 py-1 flex-row items-center border focus:border-brand-primary ${containerClassName}`}>
             <TextInput
                 className="flex-1 font-medium text-[17px] h-[56px]"
                 placeholder={placeholder}

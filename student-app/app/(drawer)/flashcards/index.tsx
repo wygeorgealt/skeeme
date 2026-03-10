@@ -3,8 +3,33 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { GradientButton } from '@/components/ui/GradientButton';
+import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
+
+// Storage helpers
+const storage = {
+    getItem: async (key: string) => {
+        try {
+            if (Platform.OS === 'web') return localStorage.getItem(key);
+            const path = `${FileSystem.documentDirectory}${key}.json`;
+            const info = await FileSystem.getInfoAsync(path);
+            if (!info.exists) return null;
+            return await FileSystem.readAsStringAsync(path);
+        } catch (e) { return null; }
+    },
+    setItem: async (key: string, value: string) => {
+        try {
+            if (Platform.OS === 'web') {
+                localStorage.setItem(key, value);
+            } else {
+                const path = `${FileSystem.documentDirectory}${key}.json`;
+                await FileSystem.writeAsStringAsync(path, value);
+            }
+        } catch (e) { /* ignore */ }
+    },
+};
 
 type FlashcardDeck = {
     id: number;
@@ -32,19 +57,36 @@ export default function FlashcardsDashboard() {
     const [refreshing, setRefreshing] = useState(false);
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const [cachedDecks, setCachedDecks] = useState<FlashcardDeck[] | null>(null);
 
-    const { data: decks, isLoading, refetch } = useQuery({
+    // Hydrate cache on mount
+    useEffect(() => {
+        const hydrate = async () => {
+            const cached = await storage.getItem('cache_flashcard_decks');
+            if (cached) setCachedDecks(JSON.parse(cached));
+        };
+        hydrate();
+    }, []);
+
+    const { data: remoteDecks, isLoading, refetch } = useQuery({
         queryKey: ['flashcard-decks'],
         queryFn: async () => {
             const res = await api.get('flashcards/decks');
-            return res.data.data as FlashcardDeck[];
+            const data = res.data.data as FlashcardDeck[];
+            await storage.setItem('cache_flashcard_decks', JSON.stringify(data));
+            return data;
         }
     });
+
+    const decks = remoteDecks || cachedDecks;
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => api.delete(`flashcards/decks/${id}`),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
+        },
+        onError: (error: any) => {
+            Alert.alert('Delete Failed', error.response?.data?.message || 'Could not delete deck. Please try again.');
         }
     });
 

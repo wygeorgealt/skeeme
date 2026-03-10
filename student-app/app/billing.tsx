@@ -39,7 +39,7 @@ export default function BillingHistoryScreen() {
     const { user } = useAuthStore();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const bgColor = isDark ? '#010100' : '#ffffff';
+    const bgColor = isDark ? '#282828' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#0f172a';
 
     const { data, isLoading, error, refetch } = useQuery({

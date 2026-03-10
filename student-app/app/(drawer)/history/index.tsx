@@ -4,7 +4,8 @@ import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import * as FileSystem from 'expo-file-system/legacy';
+import { SkeletonCard } from '@/components/ui/SkeletonLoader';
 
 type QuizSession = {
     id: number;
@@ -24,12 +25,15 @@ type FlashcardDeck = {
     created_at: string;
 };
 
-// Storage helpers
+// Storage helpers using FileSystem for larger cache data
 const storage = {
     getItem: async (key: string) => {
         try {
             if (Platform.OS === 'web') return localStorage.getItem(key);
-            return await SecureStore.getItemAsync(key);
+            const path = `${FileSystem.documentDirectory}${key}.json`;
+            const info = await FileSystem.getInfoAsync(path);
+            if (!info.exists) return null;
+            return await FileSystem.readAsStringAsync(path);
         } catch (e) { return null; }
     },
     setItem: async (key: string, value: string) => {
@@ -37,7 +41,8 @@ const storage = {
             if (Platform.OS === 'web') {
                 localStorage.setItem(key, value);
             } else {
-                await SecureStore.setItemAsync(key, value);
+                const path = `${FileSystem.documentDirectory}${key}.json`;
+                await FileSystem.writeAsStringAsync(path, value);
             }
         } catch (e) { /* ignore */ }
     },
@@ -68,7 +73,7 @@ export default function StudyHistoryDashboard() {
         queryKey: ['quiz-history'],
         queryFn: async () => {
             const res = await api.get('quizzes/history');
-            const data = res.data.data as QuizSession[];
+            const data = (res.data.data || []) as QuizSession[];
             await storage.setItem('cache_quiz_history', JSON.stringify(data));
             return data;
         },
@@ -79,7 +84,7 @@ export default function StudyHistoryDashboard() {
         queryKey: ['flashcard-history'],
         queryFn: async () => {
             const res = await api.get('flashcards/decks');
-            const data = res.data.data as FlashcardDeck[];
+            const data = (res.data.data || []) as FlashcardDeck[];
             await storage.setItem('cache_flashcard_decks', JSON.stringify(data));
             return data;
         },
@@ -108,7 +113,7 @@ export default function StudyHistoryDashboard() {
     return (
         <View style={styles.container} className="flex-1 bg-white dark:bg-brand-dark">
             {/* Header */}
-            <View className="px-6 py-8 pb-4">
+            <View className="px-6 py-8 pb-3">
                 <Text className="text-[32px] font-black tracking-tight text-slate-900 dark:text-white">Study History</Text>
 
                 {/* Segmented Control using inline styles for stability */}
@@ -147,26 +152,29 @@ export default function StudyHistoryDashboard() {
                 showsVerticalScrollIndicator={false}
             >
                 {isLoading && quizzes.length === 0 && decks.length === 0 ? (
-                    <View className="py-12 items-center">
-                        <ActivityIndicator color={isDark ? 'white' : '#0f172a'} />
-                        <Text className="text-slate-400 font-bold mt-4">Loading your progress...</Text>
+                    <View className="py-2">
+                        {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} />)}
                     </View>
                 ) : activeTab === 'quizzes' ? (
                     quizzes.length === 0 ? (
                         <View className="items-center py-16 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] bg-slate-50 dark:bg-slate-900/50">
                             <Text className="text-slate-500 font-bold text-[14px] text-center px-8 leading-relaxed">Complete a practice quiz to see results here.</Text>
                         </View>
-                    ) : quizzes.map(session => (
-                        <QuizCard key={session.id} session={session} />
-                    ))
+                    ) : (
+                        quizzes.map(session => (
+                            <QuizCard key={session.id} session={session} />
+                        ))
+                    )
                 ) : (
                     decks.length === 0 ? (
                         <View className="items-center py-16 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] bg-slate-50 dark:bg-slate-900/50">
                             <Text className="text-slate-500 font-bold text-[14px] text-center px-8 leading-relaxed">Generate some flashcards to start studying.</Text>
                         </View>
-                    ) : decks.map(deck => (
-                        <DeckCard key={deck.id} deck={deck} />
-                    ))
+                    ) : (
+                        decks.map(deck => (
+                            <DeckCard key={deck.id} deck={deck} />
+                        ))
+                    )
                 )}
                 <View className="h-10" />
             </ScrollView>
@@ -201,7 +209,7 @@ function QuizCard({ session }: { session: QuizSession }) {
     return (
         <TouchableOpacity
             onPress={() => router.push(`/(drawer)/history/${session.id}` as any)}
-            className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 mb-4"
+            className="bg-brand-primary/5 dark:bg-brand-primary/5 p-6 rounded-[24px] border border-brand-primary/20 dark:border-brand-primary/30 mb-4 overflow-hidden"
             activeOpacity={0.8}
         >
             <View className="flex-row justify-between items-start mb-6">
@@ -230,18 +238,18 @@ function DeckCard({ deck }: { deck: FlashcardDeck }) {
     return (
         <TouchableOpacity
             onPress={() => router.push(`/(drawer)/flashcards/${deck.id}` as any)}
-            className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 mb-4"
+            className="bg-brand-primary/5 dark:bg-brand-primary/5 p-6 rounded-[24px] border border-brand-primary/20 dark:border-brand-primary/30 mb-4 overflow-hidden"
             activeOpacity={0.8}
         >
             <View className="flex-row justify-between items-start mb-4">
                 <Text className="text-slate-900 dark:text-white font-black text-[19px] tracking-tight flex-1 mr-4" numberOfLines={2}>
                     {deck.title}
                 </Text>
-                <Ionicons name="albums-outline" size={24} color="#6366f1" />
+                <Ionicons name="albums-outline" size={24} color="#2EBD85" />
             </View>
             <View className="flex-row items-center">
-                <View className="bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-800 mr-3">
-                    <Text className="text-indigo-600 dark:text-indigo-400 font-bold text-[11px] lowercase tracking-widest">{deck.flashcards_count} Cards</Text>
+                <View className="bg-brand-primary/10 dark:bg-brand-primary/20 px-3 py-1 rounded-full border border-brand-primary/20 dark:border-brand-primary/30 mr-3">
+                    <Text className="text-brand-primary dark:text-brand-primary font-bold text-[11px] lowercase tracking-widest">{deck.flashcards_count} Cards</Text>
                 </View>
                 <Ionicons name="calendar-outline" size={12} color="#94a3b8" />
                 <Text className="text-slate-400 font-bold text-[11px] ml-1">

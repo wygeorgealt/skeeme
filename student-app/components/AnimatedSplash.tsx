@@ -34,10 +34,10 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
     }, [onFinish]);
 
     return (
-        <View style={[styles.container, { backgroundColor: isDark ? '#010100' : '#ffffff' }]}>
+        <View style={[styles.container, { backgroundColor: isDark ? '#282828' : '#ffffff' }]}>
             <Animated.Image
                 source={require('@/assets/images/nnn.png')}
-                style={[styles.logo, animatedStyle, { tintColor: isDark ? '#ffffff' : '#010100' }]}
+                style={[styles.logo, animatedStyle, { tintColor: '#2EBD85' }]}
                 resizeMode="contain"
             />
         </View>

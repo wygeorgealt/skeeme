@@ -26,6 +26,8 @@ export default function GenerateFlashcardScreen() {
     const [mode, setMode] = useState<QuizMode>('topic');
     const [topic, setTopic] = useState('');
     const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+    const [isProcessingFile, setIsProcessingFile] = useState(false);
+    const [loadingStage, setLoadingStage] = useState('');
     const [cardCount, setCardCount] = useState('10');
     const [difficulty, setDifficulty] = useState<Difficulty>('medium');
     const [isLoading, setIsLoading] = useState(false);
@@ -43,11 +45,18 @@ export default function GenerateFlashcardScreen() {
                 copyToCacheDirectory: false,
             });
             if (!r.canceled && r.assets?.length) {
-                setSelectedFile(r.assets[0]);
-                setMode('file');
-                setTopic('');
+                const asset = r.assets[0];
+                setIsProcessingFile(true);
+                // Simulate quick extraction check/UI feedback
+                setTimeout(() => {
+                    setSelectedFile(asset);
+                    setMode('file');
+                    setTopic('');
+                    setIsProcessingFile(false);
+                }, 800);
             }
         } catch {
+            setIsProcessingFile(false);
             Alert.alert('Error', 'Failed to pick document.');
         }
     };
@@ -60,6 +69,19 @@ export default function GenerateFlashcardScreen() {
         if (isNaN(count) || count < 5 || count > 50) return Alert.alert('Invalid Count', 'Please request 5 to 50 cards.');
 
         setIsLoading(true);
+        setLoadingStage(mode === 'file' ? 'Analyzing Document...' : 'Analyzing Topic...');
+
+        // Stage cycling logic
+        const stages = mode === 'file'
+            ? ['Reading material...', 'Identifying key concepts...', 'Creating cards...', 'Reviewing content...', 'Almost ready...']
+            : ['Analyzing Topic...', 'Researching Context...', 'Drafting cards...', 'Finalizing deck...', 'Almost ready...'];
+
+        let stageIdx = 0;
+        const stageInterval = setInterval(() => {
+            stageIdx = Math.min(stageIdx + 1, stages.length - 1);
+            setLoadingStage(stages[stageIdx]);
+        }, 2500);
+
         try {
             let response;
             if (mode === 'file' && selectedFile) {
@@ -91,17 +113,20 @@ export default function GenerateFlashcardScreen() {
                 setRewardData(response.data.reward);
                 setPendingDeckId(response.data.deck_id);
                 setIsRewardModalVisible(true);
-            } else if (response.data?.deck_id) {
-                router.replace(`/(drawer)/flashcards/${response.data.deck_id}`);
             } else {
-                router.back();
+                router.replace(`/(drawer)/flashcards/${response.data.deck_id}`);
             }
 
         } catch (e: any) {
-            if (e.response?.status === 403) Alert.alert('Insufficient Credits', e.response.data.message);
-            else Alert.alert('Failed', e.response?.data?.message || 'Something went wrong. Please try again.');
+            let msg = 'Failed to generate flashcards. Please try again.';
+            const data = e.response?.data;
+            if (data?.message) msg = data.message;
+            if (e.response?.status === 403) Alert.alert('Insufficient Credits', msg);
+            else Alert.alert('Failed', msg);
         } finally {
+            clearInterval(stageInterval);
             setIsLoading(false);
+            setLoadingStage('');
         }
     };
 
@@ -112,8 +137,8 @@ export default function GenerateFlashcardScreen() {
                 <View className="bg-white dark:bg-slate-800 rounded-3xl p-5 mb-4 shadow-sm shadow-slate-200 dark:shadow-none border border-slate-100 dark:border-slate-700">
                     <View className="flex-row justify-between items-center mb-4">
                         <View className="flex-row items-center">
-                            <View className="size-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl items-center justify-center mr-3">
-                                <Ionicons name="sparkles" size={20} color="#4f46e5" />
+                            <View className="size-10 bg-brand-primary/10 dark:bg-brand-primary/20 rounded-xl items-center justify-center mr-3">
+                                <Ionicons name="sparkles" size={20} color="#2EBD85" />
                             </View>
                             <Text className="text-base font-black text-slate-800 dark:text-white">Material</Text>
                         </View>
@@ -121,7 +146,7 @@ export default function GenerateFlashcardScreen() {
                             {(['topic', 'file'] as QuizMode[]).map(m => (
                                 <TouchableOpacity key={m} onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
                                     style={[{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10 }, mode === m ? { backgroundColor: 'white', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 } : {}]} activeOpacity={0.8}>
-                                    <Text style={{ fontSize: 13, fontWeight: '700', textTransform: 'capitalize', color: mode === m ? '#4f46e5' : '#94a3b8' }}>{m}</Text>
+                                    <Text style={{ fontSize: 13, fontWeight: '700', textTransform: 'capitalize', color: mode === m ? '#2EBD85' : '#94a3b8' }}>{m}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -141,28 +166,36 @@ export default function GenerateFlashcardScreen() {
                     ) : (
                         <>
                             <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Upload study material</Text>
-                            <TouchableOpacity onPress={handleFileSelect}
+                            <TouchableOpacity
+                                onPress={handleFileSelect}
+                                disabled={isProcessingFile}
                                 style={{
                                     borderWidth: 2,
                                     borderStyle: 'dashed',
-                                    borderColor: '#cbd5e1',
+                                    borderColor: isProcessingFile ? '#2EBD85' : '#cbd5e1',
                                     borderRadius: 16,
                                     padding: 24,
                                     alignItems: 'center',
-                                    backgroundColor: '#f8fafc'
+                                    backgroundColor: isProcessingFile ? '#F0FDF4' : '#f8fafc'
                                 }}
-                                activeOpacity={0.7}>
-                                {selectedFile ? (
+                                activeOpacity={0.7}
+                            >
+                                {isProcessingFile ? (
                                     <>
-                                        <Ionicons name="document-text" size={28} color="#4f46e5" />
-                                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#1e293b', marginTop: 10, textAlign: 'center' }}>{selectedFile.name}</Text>
-                                        <Text style={{ fontSize: 12, fontWeight: '700', color: '#4f46e5', marginTop: 4 }}>Tap to change</Text>
+                                        <ActivityIndicator size="large" color="#2EBD85" />
+                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#2EBD85', marginTop: 12 }}>Analyzing...</Text>
+                                    </>
+                                ) : selectedFile ? (
+                                    <>
+                                        <Ionicons name="document-text" size={28} color="#2EBD85" />
+                                        <Text style={{ fontSize: 14, fontWeight: '800', color: '#0f172a', marginTop: 12, textAlign: 'center' }}>{selectedFile.name}</Text>
+                                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#2EBD85', marginTop: 4, textTransform: 'uppercase' }}>Attached & Ready</Text>
                                     </>
                                 ) : (
                                     <>
                                         <Ionicons name="cloud-upload-outline" size={28} color="#94a3b8" />
-                                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#64748b', marginTop: 10 }}>Tap to browse files</Text>
-                                        <Text style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, fontWeight: '500' }}>.pdf · .docx · .txt · .md</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#64748b', marginTop: 12 }}>Tap to browse files</Text>
+                                        <Text style={{ fontSize: 11, fontWeight: '600', color: '#94a3b8', marginTop: 4 }}>.pdf · .docx · .txt · .md</Text>
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -208,14 +241,50 @@ export default function GenerateFlashcardScreen() {
                 </View>
 
                 {/* Generate button */}
-                <GradientButton
-                    onPress={handleGenerate}
-                    loading={isLoading}
-                    containerStyle="mt-2 py-1.5"
-                    icon={<Ionicons name="flash" size={18} color="white" />}
-                >
-                    {isLoading ? 'Creating Deck...' : 'Generate Flashcards'}
-                </GradientButton>
+                {isLoading ? (
+                    <View className="bg-brand-primary/5 dark:bg-brand-primary/10 rounded-[32px] p-8 border-2 border-brand-primary/20 items-center overflow-hidden">
+                        <View className="mb-6">
+                            <ActivityIndicator size="large" color="#2EBD85" />
+                        </View>
+                        <Text className="text-brand-primary font-black text-xl tracking-tight mb-2 text-center">{loadingStage}</Text>
+                        <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm text-center px-4">
+                            Our AI is processing your request. This usually takes 15-30 seconds depending on complexity.
+                        </Text>
+
+                        {/* Multi-stage Progress Indicators */}
+                        <View className="flex-row gap-2 mt-8 w-full px-4">
+                            {['Reading', 'Identifying', 'Creating', 'Reviewing'].map((s, i) => {
+                                const stages = mode === 'file'
+                                    ? ['Reading material...', 'Identifying key concepts...', 'Creating cards...', 'Reviewing content...', 'Almost ready...']
+                                    : ['Analyzing Topic...', 'Researching Context...', 'Drafting cards...', 'Finalizing deck...', 'Almost ready...'];
+
+                                const currentIdx = stages.indexOf(loadingStage);
+                                const isComplete = i < currentIdx;
+                                const isActive = i === currentIdx;
+
+                                return (
+                                    <View key={i} className="flex-1 h-1.5 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800">
+                                        {(isComplete || isActive) && (
+                                            <View
+                                                className={`h-full ${isComplete ? 'bg-brand-primary' : 'bg-brand-primary/40'}`}
+                                                style={{ width: isComplete ? '100%' : '60%' }}
+                                            />
+                                        )}
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    </View>
+                ) : (
+                    <TouchableOpacity
+                        onPress={handleGenerate}
+                        className="bg-[#2EBD85] rounded-2xl py-5 items-center flex-row justify-center shadow-lg shadow-[#2EBD85]/20"
+                        activeOpacity={0.8}
+                    >
+                        <Ionicons name="sparkles" size={20} color="#fff" />
+                        <Text className="text-white font-black ml-2 text-[17px]">Generate Flashcards</Text>
+                    </TouchableOpacity>
+                )}
                 <Text className="text-slate-400 dark:text-slate-500 text-xs text-center mt-3 font-medium">Credits scale with content length & card count.</Text>
             </ScrollView>
 

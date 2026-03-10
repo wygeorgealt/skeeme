@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '@/lib/api';
 import { Question, DIFF_COLORS, TheoryResult } from './QuizTypes';
+import { MathText } from '../ui/MathText';
 
 export function TheoryCard({
     q, qi, onGraded,
@@ -14,6 +15,8 @@ export function TheoryCard({
     const [answer, setAnswer] = useState('');
     const [grading, setGrading] = useState(false);
     const [result, setResult] = useState<TheoryResult | null>(null);
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
 
     const handleSubmit = async () => {
         if (answer.trim().length < 5) return Alert.alert('Too short', 'Please write at least a few words.');
@@ -36,14 +39,19 @@ export function TheoryCard({
 
     return (
         <View style={styles.cardOuter}>
-            <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 border-2 border-slate-100 dark:border-slate-800">
+            <View className="bg-white dark:bg-brand-dark rounded-[24px] p-6 border-2 border-brand-primary/10 dark:border-brand-primary/20">
                 <View style={styles.cardHeader}>
                     <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400">Q{qi + 1} · Theory</Text>
                     <View style={[styles.diffBadge, { borderWidth: 1, borderColor: DIFF_COLORS[q.difficulty_level] ?? '#FCD34D' }]}>
                         <Text style={[styles.diffText, { color: DIFF_COLORS[q.difficulty_level] ?? '#FCD34D' }]}>{q.difficulty_level}</Text>
                     </View>
                 </View>
-                <Text className="text-[17px] font-bold text-slate-900 dark:text-white leading-relaxed tracking-tight">{q.question_text}</Text>
+                <MathText
+                    content={q.question_text}
+                    color={isDark ? 'white' : '#0f172a'}
+                    fontSize={17}
+                    containerStyle={{ minHeight: 50, marginBottom: 8 }}
+                />
 
                 {result ? (
                     <View style={{ marginTop: 20 }}>
@@ -66,7 +74,12 @@ export function TheoryCard({
                             </View>
                         </View>
                         <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400 mb-2">AI Feedback</Text>
-                        <Text className="text-[15px] font-medium text-slate-800 dark:text-slate-200 leading-relaxed bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700">{result.feedback}</Text>
+                        <MathText
+                            content={result.feedback}
+                            color={isDark ? '#e2e8f0' : '#1e293b'}
+                            fontSize={15}
+                            containerStyle={{ backgroundColor: isDark ? '#1e293b' : '#f8fafc', padding: 16, borderRadius: 12, borderWeight: 1, borderColor: isDark ? '#334155' : '#f1f5f9' }}
+                        />
                     </View>
                 ) : (
                     <View style={{ marginTop: 20 }}>
@@ -83,7 +96,7 @@ export function TheoryCard({
                         <TouchableOpacity
                             onPress={handleSubmit}
                             disabled={grading}
-                            className={`rounded-xl py-4 flex-row items-center justify-center ${grading ? 'bg-slate-300 dark:bg-slate-700' : 'bg-slate-900 dark:bg-white'}`}
+                            className={`rounded-xl py-4 flex-row items-center justify-center ${grading ? 'bg-slate-300 dark:bg-slate-700' : 'bg-brand-primary'}`}
                         >
                             {grading ? (
                                 <ActivityIndicator color="#94a3b8" size="small" />

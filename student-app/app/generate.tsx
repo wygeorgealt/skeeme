@@ -31,13 +31,15 @@ export default function GenerateQuizScreen() {
     const { updateUser } = useAuthStore();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const bgColor = isDark ? '#010100' : '#ffffff';
+    const bgColor = isDark ? '#282828' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#0f172a';
 
     // Setup state
     const [mode, setMode] = useState<QuizMode>('topic');
     const [topic, setTopic] = useState('');
     const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+    const [isProcessingFile, setIsProcessingFile] = useState(false);
+    const [loadingStage, setLoadingStage] = useState('');
     const [questionCount, setQuestionCount] = useState('10');
     const [difficulty, setDifficulty] = useState<Difficulty>('medium');
     const [format, setFormat] = useState<FormatType>('mcq');
@@ -110,20 +112,43 @@ export default function GenerateQuizScreen() {
                     Alert.alert('File too large', 'Please upload a file smaller than 5MB. Ensure it contains extractable text.');
                     return;
                 }
-                setSelectedFile(asset);
-                setMode('file');
-                setTopic('');
+
+                setIsProcessingFile(true);
+                // Simulate quick extraction check/UI feedback
+                setTimeout(() => {
+                    setSelectedFile(asset);
+                    setMode('file');
+                    setTopic('');
+                    setIsProcessingFile(false);
+                }, 800);
             }
-        } catch { Alert.alert('Error', 'Failed to pick document.'); }
+        } catch {
+            setIsProcessingFile(false);
+            Alert.alert('Error', 'Failed to pick document.');
+        }
     };
 
     // Generate
     const handleGenerate = async () => {
         if (mode === 'topic' && !topic.trim()) return Alert.alert('Required', 'Please enter a topic.');
         if (mode === 'file' && !selectedFile) return Alert.alert('Required', 'Please select a document.');
+
         setIsLoading(true);
+        setLoadingStage(mode === 'file' ? 'Analyzing Document...' : 'Analyzing Topic...');
         setQuestions([]); setSelectedAnswers({}); setTheoryResults({});
         if (timerRef.current) clearInterval(timerRef.current);
+
+        // Stage cycling logic
+        const stages = mode === 'file'
+            ? ['Analyzing Document...', 'Extracting Context...', 'Generating Questions...', 'Finalizing Quiz...', 'Almost Ready...']
+            : ['Analyzing Topic...', 'Researching Context...', 'Generating Questions...', 'Finalizing Quiz...', 'Almost Ready...'];
+
+        let stageIdx = 0;
+        const stageInterval = setInterval(() => {
+            stageIdx = Math.min(stageIdx + 1, stages.length - 1);
+            setLoadingStage(stages[stageIdx]);
+        }, 2500);
+
         try {
             const questionTypes = format === 'both' ? ['mcq', 'theory'] : [format === 'theory' ? 'theory' : 'mcq'];
             let response;
@@ -141,9 +166,23 @@ export default function GenerateQuizScreen() {
             if (response.data.remaining_credits !== undefined) updateUser({ credits: response.data.remaining_credits });
             if (timerEnabled) startTimer(parseInt(timerMinutes) || 10);
         } catch (e: any) {
-            if (e.response?.status === 403) Alert.alert('Insufficient Credits', e.response.data.message);
-            else Alert.alert('Failed', e.response?.data?.message || 'Something went wrong. Please try again.');
-        } finally { setIsLoading(false); }
+            let msg = 'Something went wrong. Please try again.';
+            const data = e.response?.data;
+
+            if (data?.errors) {
+                const firstKey = Object.keys(data.errors)[0];
+                msg = data.errors[firstKey][0];
+            } else if (data?.message) {
+                msg = data.message;
+            }
+
+            if (e.response?.status === 403) Alert.alert('Insufficient Credits', msg);
+            else Alert.alert('Failed', msg);
+        } finally {
+            clearInterval(stageInterval);
+            setIsLoading(false);
+            setLoadingStage('');
+        }
     };
 
     const handleMCQAnswer = (qi: number, opt: string) => {
@@ -226,7 +265,7 @@ export default function GenerateQuizScreen() {
                                 className="flex-1 items-center justify-center py-3 rounded-xl"
                                 style={[
                                     mode === m ? {
-                                        backgroundColor: isDark ? '#010100' : '#ffffff',
+                                        backgroundColor: isDark ? '#282828' : '#ffffff',
                                         shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1,
                                         borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0'
                                     } : {}
@@ -257,18 +296,27 @@ export default function GenerateQuizScreen() {
                         ) : (
                             <>
                                 <Text className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Document</Text>
-                                <TouchableOpacity onPress={handleFileSelect} className="border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[24px] p-8 items-center bg-slate-50 dark:bg-slate-900/50">
-                                    {selectedFile ? (
+                                <TouchableOpacity
+                                    onPress={handleFileSelect}
+                                    disabled={isProcessingFile}
+                                    className="border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[24px] p-8 items-center bg-slate-50 dark:bg-slate-900/50"
+                                >
+                                    {isProcessingFile ? (
+                                        <View className="items-center py-2">
+                                            <ActivityIndicator size="large" color="#2EBD85" />
+                                            <Text className="text-[15px] font-bold text-brand-primary mt-4">Analyzing...</Text>
+                                        </View>
+                                    ) : selectedFile ? (
                                         <>
-                                            <Ionicons name="document-text" size={40} color={isDark ? '#e2e8f0' : '#0f172a'} />
+                                            <Ionicons name="document-text" size={40} color="#2EBD85" />
                                             <Text className="text-[15px] font-bold text-slate-900 dark:text-white mt-4 text-center">{selectedFile.name}</Text>
-                                            <Text className="text-[12px] font-bold text-slate-500 mt-2 uppercase tracking-widest">Tap to change</Text>
+                                            <Text className="text-[12px] font-bold text-[#2EBD85] mt-2 uppercase tracking-widest">Attached & Ready</Text>
                                         </>
                                     ) : (
                                         <>
-                                            <Ionicons name="folder-open" size={40} color="#cbd5e1" />
+                                            <Ionicons name="cloud-upload-outline" size={40} color={isDark ? '#475569' : '#cbd5e1'} />
                                             <Text className="text-[15px] font-bold text-slate-500 mt-4">Tap to select PDF/DOCX/TXT</Text>
-                                            <Text className="text-[12px] font-bold text-slate-400 mt-2">Max 5MB</Text>
+                                            <Text className="text-[12px] font-bold text-slate-400 mt-2 lowercase">max 5MB • extractable text only</Text>
                                         </>
                                     )}
                                 </TouchableOpacity>
@@ -349,12 +397,50 @@ export default function GenerateQuizScreen() {
 
                     <View className="h-4" />
 
-                    <GradientButton
-                        onPress={handleGenerate}
-                        loading={isLoading}
-                    >
-                        {isLoading ? 'Generating Context...' : 'Generate Quiz'}
-                    </GradientButton>
+                    {isLoading ? (
+                        <View className="bg-brand-primary/5 dark:bg-brand-primary/10 rounded-[32px] p-8 border-2 border-brand-primary/20 items-center overflow-hidden">
+                            <View className="mb-6">
+                                <ActivityIndicator size="large" color="#2EBD85" />
+                            </View>
+                            <Text className="text-brand-primary font-black text-xl tracking-tight mb-2 text-center">{loadingStage}</Text>
+                            <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm text-center px-4">
+                                Our AI is processing your request. This usually takes 15-30 seconds depending on complexity.
+                            </Text>
+
+                            {/* Multi-stage Progress Indicators */}
+                            <View className="flex-row gap-2 mt-8 w-full px-4">
+                                {['Analyzing', 'Extracting', 'Generating', 'Finalizing'].map((s, i) => {
+                                    const stages = mode === 'file'
+                                        ? ['Analyzing Document...', 'Extracting Context...', 'Generating Questions...', 'Almost Ready...']
+                                        : ['Analyzing Topic...', 'Researching Context...', 'Generating Questions...', 'Almost Ready...'];
+
+                                    const currentIdx = stages.indexOf(loadingStage);
+                                    const isComplete = i < currentIdx;
+                                    const isActive = i === currentIdx;
+
+                                    return (
+                                        <View key={i} className="flex-1 h-1.5 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800">
+                                            {(isComplete || isActive) && (
+                                                <View
+                                                    className={`h-full ${isComplete ? 'bg-brand-primary' : 'bg-brand-primary/40'}`}
+                                                    style={{ width: isComplete ? '100%' : '60%' }}
+                                                />
+                                            )}
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            onPress={handleGenerate}
+                            className="bg-[#2EBD85] rounded-2xl py-5 items-center flex-row justify-center shadow-lg shadow-[#2EBD85]/20"
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="sparkles" size={20} color="#fff" />
+                            <Text className="text-white font-black ml-2 text-[17px]">Generate Quiz</Text>
+                        </TouchableOpacity>
+                    )}
 
                     <Text className="text-center text-slate-400 font-bold text-[11px] uppercase tracking-widest mt-6">
                         Estimated Cost: {parseInt(questionCount) || 10} Credits | Max 5MB

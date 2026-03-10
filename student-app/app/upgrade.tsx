@@ -176,7 +176,7 @@ export default function UpgradeScreen() {
                                     className="flex-1 py-3 rounded-xl items-center"
                                     style={{
                                         backgroundColor: isActive
-                                            ? (isDark ? '#2EBD85' : '#FFFFFF')
+                                            ? '#2EBD85'
                                             : 'transparent',
                                         shadowOpacity: isActive && !isDark ? 0.1 : 0,
                                         elevation: isActive && !isDark ? 2 : 0,
@@ -272,10 +272,10 @@ function CardOption({ title, price, originalPrice, symbol, subtitle, isSelected,
             activeOpacity={0.8}
             className="p-6 rounded-[28px] border-2 flex-row items-center justify-between"
             style={{
-                borderColor: isSelected ? '#2EBD85' : (isDark ? '#1e293b' : '#f1f5f9'),
+                borderColor: isSelected ? '#2EBD85' : (isDark ? 'rgba(46, 189, 133, 0.2)' : '#f1f5f9'),
                 backgroundColor: isSelected
-                    ? (isDark ? 'rgba(46, 189, 133, 0.1)' : 'rgba(46, 189, 133, 0.05)')
-                    : (isDark ? 'rgba(15, 23, 42, 0.3)' : 'rgba(248, 250, 252, 0.5)')
+                    ? (isDark ? 'rgba(46, 189, 133, 0.15)' : 'rgba(46, 189, 133, 0.08)')
+                    : (isDark ? 'rgba(46, 189, 133, 0.05)' : 'rgba(248, 250, 252, 0.5)')
             }}
         >
             <View className="flex-1 pr-4">

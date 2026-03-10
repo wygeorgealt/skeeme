@@ -159,6 +159,10 @@ Route::prefix('v1')->group(function () {
 
             Route::get('streaks/heatmap', [\App\Http\Controllers\API\Student\StreakController::class, 'heatmap']);
             
+            // Export Results
+            Route::get('quizzes/history/{id}/export', [\App\Http\Controllers\API\Student\ExportController::class, 'quizExport']);
+            Route::post('scan/export', [\App\Http\Controllers\API\Student\ExportController::class, 'scanExport']);
+            
             // B2C / Independent Student Features
             Route::get('billing/history', [\App\Http\Controllers\API\Student\InvoiceController::class, 'index']);
             Route::get('billing/invoices/{invoice}/download', [\App\Http\Controllers\API\Student\InvoiceController::class, 'download']);

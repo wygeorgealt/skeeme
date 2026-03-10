@@ -194,7 +194,7 @@ export default function SignupScreen() {
     const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
 
     // Theme-based colors
-    const bgClass = isDark ? "bg-[#010100]" : "bg-white";
+    const bgClass = isDark ? "bg-[#282828]" : "bg-white";
     const textTitleClass = isDark ? "text-white" : "text-black";
     const textSubClass = isDark ? "text-slate-400" : "text-slate-500";
     const inputBgClass = isDark ? "bg-[#1c1c1e]" : "bg-slate-100";
@@ -262,7 +262,7 @@ export default function SignupScreen() {
                         </View>
 
                         <TouchableOpacity onPress={() => router.push('/login')} className="mt-6 mb-12">
-                            <Text className="text-[#6366f1] font-bold text-[15px]">
+                            <Text className="text-brand-primary font-bold text-[15px]">
                                 Already have a Skeeme account?
                             </Text>
                         </TouchableOpacity>
@@ -464,7 +464,7 @@ export default function SignupScreen() {
 
                         <TouchableOpacity
                             onPress={nextStep}
-                            className={`w-full py-[18px] rounded-[12px] items-center justify-center flex-row ${!isLoading ? 'bg-[#6366f1]' : 'bg-[#6366f1]/50'}`}
+                            className={`w-full py-[18px] rounded-[12px] items-center justify-center flex-row ${!isLoading ? 'bg-brand-primary' : 'bg-brand-primary/50'}`}
                             disabled={isLoading}
                         >
                             {isLoading ? (
@@ -564,7 +564,7 @@ export default function SignupScreen() {
 
                         <TouchableOpacity
                             onPress={handleSavePreferences}
-                            className={`w-full py-[18px] rounded-[12px] items-center justify-center flex-row mb-4 ${!isLoading ? 'bg-[#6366f1]' : 'bg-[#6366f1]/50'}`}
+                            className={`w-full py-[18px] rounded-[12px] items-center justify-center flex-row mb-4 ${!isLoading ? 'bg-brand-primary' : 'bg-brand-primary/50'}`}
                             disabled={isLoading}
                         >
                             {isLoading ? (

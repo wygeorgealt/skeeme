@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-
 import { Ionicons } from '@expo/vector-icons';
 import { QuizFlipCard } from './QuizFlipCard';
 import { Question, DIFF_COLORS } from './QuizTypes';
+import { MathText } from '../ui/MathText';
 
 export function MCQCard({
     q, qi, onAnswer, selectedAnswer, quizFinished,
@@ -28,7 +29,7 @@ export function MCQCard({
     };
 
     const front = (
-        <View className="bg-white dark:bg-slate-900 rounded-[24px] p-6 border-2 border-slate-100 dark:border-slate-800">
+        <View className="bg-white dark:bg-brand-dark rounded-[24px] p-6 border-2 border-brand-primary/10 dark:border-brand-primary/20">
             {/* Header */}
             <View style={styles.cardHeader}>
                 <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400">Q{qi + 1} · MCQ</Text>
@@ -38,7 +39,12 @@ export function MCQCard({
                     </Text>
                 </View>
             </View>
-            <Text className="text-[17px] font-bold text-slate-900 dark:text-white leading-relaxed tracking-tight">{q.question_text}</Text>
+            <MathText
+                content={q.question_text}
+                color={isDark ? 'white' : '#0f172a'}
+                fontSize={17}
+                containerStyle={{ minHeight: 60 }}
+            />
 
             {/* Options */}
             <View style={{ marginTop: 24 }}>
@@ -98,7 +104,12 @@ export function MCQCard({
                 <Text className="text-slate-900 dark:text-white font-black ml-2 text-[13px] uppercase tracking-widest">Back</Text>
             </TouchableOpacity>
             <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400 mb-2">Explanation</Text>
-            <Text className="text-[15px] font-medium text-slate-800 dark:text-slate-200 leading-relaxed">{q.explanation}</Text>
+            <MathText
+                content={q.explanation || ''}
+                color={isDark ? '#e2e8f0' : '#1e293b'}
+                fontSize={15}
+                containerStyle={{ flex: 1 }}
+            />
             {!isCorrect && (
                 <View className="mt-6 pt-6 border-t-2 border-slate-200 dark:border-slate-700">
                     <Text className="text-[10px] font-black tracking-widest uppercase text-[#2EBD85] mb-2">Correct Answer</Text>

@@ -121,7 +121,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   }, [error]);
 
   return (
-    <View className="flex-1 items-center justify-center p-8 bg-white dark:bg-[#010100]">
+    <View className="flex-1 items-center justify-center p-8 bg-white dark:bg-[#282828]">
       <Ionicons name="warning" size={48} color="#ef4444" />
       <Text className="text-[24px] font-black tracking-tight text-slate-900 dark:text-white mt-6 mb-2 text-center">
         Something went wrong.

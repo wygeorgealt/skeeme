@@ -78,7 +78,7 @@ class ScanController extends Controller
 
             // 6. Deduct Usage (Atomic)
             if (!$user->is_unlimited) {
-                DB::transaction(function() use ($user, $finalCost) {
+                DB::transaction(function() use ($user, $finalCost, $solutionsCount) {
                     $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
                     $lockedUser->decrement('credits', $finalCost);
                     

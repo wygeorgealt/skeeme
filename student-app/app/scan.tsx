@@ -7,6 +7,9 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { MathText } from '@/components/ui/MathText';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type ScanResult = {
@@ -22,7 +25,7 @@ const COST_PER_SOLUTION = 4;
 export default function ScanScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const bgColor = isDark ? '#010100' : '#ffffff';
+    const bgColor = isDark ? '#282828' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#0f172a';
 
     const { user, updateUser } = useAuthStore();
@@ -30,11 +33,11 @@ export default function ScanScreen() {
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [loadingStage, setLoadingStage] = useState('');
     const [results, setResults] = useState<ScanResult[]>([]);
     const [lastScanCost, setLastScanCost] = useState<number | null>(null);
 
     const pickImage = async (useCamera: boolean) => {
-        // Reset state for new scan
         setResults([]);
         setLastScanCost(null);
 
@@ -54,9 +57,9 @@ export default function ScanScreen() {
 
         const result = await launchMethod({
             mediaTypes: ['images'],
-            quality: 0.5,       // High quality for math recognition
+            quality: 0.5,
             base64: true,
-            allowsEditing: true, // Lets user crop to just the question
+            allowsEditing: true,
         });
 
         if (!result.canceled && result.assets[0]) {
@@ -68,7 +71,6 @@ export default function ScanScreen() {
     const handleSolve = async () => {
         if (!imageBase64) return;
 
-        // Min credit check (Base + 1 solution)
         const minCost = BASE_SCAN_COST + COST_PER_SOLUTION;
         if (!user?.is_unlimited && (user?.credits ?? 0) < minCost) {
             Alert.alert('Insufficient Credits', `You need at least ${minCost} credits to start a scan.`);
@@ -76,26 +78,58 @@ export default function ScanScreen() {
         }
 
         setLoading(true);
+        setLoadingStage('Scanning image...');
+
+        const stages = ['Scanning image...', 'Reading handwriting...', 'Detecting questions...', 'AI Solving...', 'Double checking...', 'Finalizing results...'];
+        let stageIdx = 0;
+        const stageInterval = setInterval(() => {
+            stageIdx = Math.min(stageIdx + 1, stages.length - 1);
+            setLoadingStage(stages[stageIdx]);
+        }, 2500);
+
         try {
             const response = await api.post('scan/solve', { image: imageBase64 });
-
-            // H1: Clear base64 immediately after upload to free ~5-15MB memory
             setImageBase64(null);
-
             const data = response.data;
-
             setResults(data.results || []);
             setLastScanCost(data.cost);
-
-            // Update local credit count from sync'd server total
-            if (!user?.is_unlimited && data.credits_remaining !== undefined) {
-                updateUser({ credits: data.credits_remaining });
+            if (!user?.is_unlimited && data.remaining_credits !== undefined) {
+                updateUser({ credits: data.remaining_credits });
             }
         } catch (err: any) {
-            const msg = err?.response?.data?.message || 'Failed to solve. Try a clearer photo.';
+            let msg = 'Failed to solve. Try a clearer photo.';
+            const data = err?.response?.data;
+            if (data?.message) msg = data.message;
             Alert.alert('Error', msg);
         } finally {
+            clearInterval(stageInterval);
             setLoading(false);
+            setLoadingStage('');
+        }
+    };
+
+    const handleExport = async () => {
+        if (results.length === 0) return;
+        setLoading(true);
+        setLoadingStage('Preparing PDF...');
+
+        try {
+            const response = await api.post('scan/export', { results });
+            const { base64, filename } = response.data;
+
+            const fileUri = `${FileSystem.documentDirectory}${filename}`;
+
+            await FileSystem.writeAsStringAsync(fileUri, base64, {
+                encoding: FileSystem.EncodingType.Base64,
+            });
+
+            await Sharing.shareAsync(fileUri);
+        } catch (err) {
+            console.warn('PDF Export failed', err);
+            Alert.alert('Export Failed', 'Could not generate PDF report.');
+        } finally {
+            setLoading(false);
+            setLoadingStage('');
         }
     };
 
@@ -119,88 +153,58 @@ export default function ScanScreen() {
 
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
 
-                {/* ─── No Image Yet ─── */}
                 {!imageUri && results.length === 0 && (
                     <View className="items-center mt-6">
-                        {/* Viewfinder icon flat style */}
-                        <View className="w-48 h-48 border-4 border-dashed border-slate-300 dark:border-slate-600 rounded-[32px] items-center justify-center mb-8 bg-slate-50 dark:bg-slate-800/50">
-                            <Ionicons name="scan-outline" size={72} color={isDark ? '#e2e8f0' : '#0f172a'} />
-                            <Text className="text-slate-500 dark:text-slate-400 font-bold text-xs mt-3 uppercase tracking-widest">Document Scanner</Text>
+                        <View className="w-48 h-48 border-4 border-dashed border-brand-primary/30 dark:border-brand-primary/50 rounded-[32px] items-center justify-center mb-8 bg-brand-primary/5 dark:bg-brand-primary/10">
+                            <Ionicons name="scan-outline" size={72} color="#2EBD85" />
+                            <Text className="text-brand-primary/60 dark:text-brand-primary/80 font-bold text-xs mt-3 uppercase tracking-widest">Document Scanner</Text>
                         </View>
 
-                        <Text className="text-slate-900 dark:text-white font-black text-2xl text-center mb-2 tracking-tight">
-                            Scan Question(s)
-                        </Text>
+                        <Text className="text-slate-900 dark:text-white font-black text-2xl text-center mb-2 tracking-tight">Scan Question(s)</Text>
                         <Text className="text-slate-500 dark:text-slate-400 text-center font-medium text-sm mb-10 px-4 leading-relaxed">
                             Snap a page or question. Skeeme will instantly detect and solve every sub-question (1a, 1b, etc).
                         </Text>
 
-                        {/* Camera + Gallery buttons flat */}
                         <View className="flex-row w-full gap-3">
-                            <TouchableOpacity
-                                onPress={() => pickImage(true)}
-                                className="flex-1 bg-slate-900 dark:bg-white rounded-xl py-[18px] items-center justify-center shadow-sm"
-                                activeOpacity={0.8}
-                            >
+                            <TouchableOpacity onPress={() => pickImage(true)} className="flex-1 bg-brand-primary rounded-xl py-[18px] items-center justify-center shadow-lg shadow-brand-primary/20" activeOpacity={0.8}>
                                 <View className="flex-row items-center">
-                                    <Ionicons name="camera" size={20} color={isDark ? '#0f172a' : 'white'} />
-                                    <Text className="text-white dark:text-slate-900 font-black ml-2 text-base">Camera</Text>
+                                    <Ionicons name="camera" size={20} color="white" />
+                                    <Text className="text-white font-black ml-2 text-base">Camera</Text>
                                 </View>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={() => pickImage(false)}
-                                className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl py-[18px] items-center justify-center border border-slate-200 dark:border-slate-700"
-                                activeOpacity={0.8}
-                            >
+                            <TouchableOpacity onPress={() => pickImage(false)} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl py-[18px] items-center justify-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8}>
                                 <View className="flex-row items-center">
                                     <Ionicons name="images" size={20} color={isDark ? '#e2e8f0' : '#334155'} />
                                     <Text className="text-slate-700 dark:text-slate-200 font-bold ml-2 text-base">Gallery</Text>
                                 </View>
                             </TouchableOpacity>
                         </View>
-
-                        {/* Credit cost notice */}
-                        <View className="flex-row items-center mt-8 bg-slate-50 dark:bg-slate-800/50 px-5 py-4 rounded-xl border border-slate-200 dark:border-slate-700/50 w-full justify-center">
-                            <Ionicons name="flash" size={16} color={isDark ? '#cbd5e1' : '#64748b'} />
-                            <Text className="text-slate-600 dark:text-slate-400 font-bold text-xs ml-2">
-                                {BASE_SCAN_COST} credits base + {COST_PER_SOLUTION} per question
-                            </Text>
+                        <View className="flex-row items-center mt-8 bg-brand-primary/5 dark:bg-brand-primary/10 px-5 py-4 rounded-xl border border-brand-primary/20 dark:border-brand-primary/30 w-full justify-center">
+                            <Ionicons name="flash" size={16} color="#2EBD85" />
+                            <Text className="text-brand-primary font-bold text-xs ml-2">{BASE_SCAN_COST} credits base + {COST_PER_SOLUTION} per question</Text>
                         </View>
                     </View>
                 )}
 
-                {/* ─── Image Preview (before solving) ─── */}
                 {imageUri && results.length === 0 && (
                     <View className="items-center">
                         <View className="w-full rounded-[24px] overflow-hidden border-2 border-slate-200 dark:border-slate-700 mb-6 bg-slate-100 dark:bg-slate-900">
-                            <Image
-                                source={{ uri: imageUri }}
-                                style={{ width: '100%', height: 350 }}
-                                resizeMode="cover"
-                            />
+                            <Image source={{ uri: imageUri }} style={{ width: '100%', height: 350 }} resizeMode="cover" />
                         </View>
 
                         {loading ? (
-                            <View className="items-center py-10 w-full bg-slate-50 dark:bg-slate-800 rounded-[20px] border border-slate-200 dark:border-slate-700">
-                                <ActivityIndicator size="large" color={isDark ? '#ffffff' : '#0f172a'} />
-                                <Text className="text-slate-900 dark:text-white font-black mt-5 text-[17px] tracking-tight">Extracting Questions...</Text>
-                                <Text className="text-slate-500 font-medium text-sm mt-1">Skeeme AI is reading the image</Text>
+                            <View className="items-center py-10 w-full bg-brand-primary/5 rounded-[20px] border border-brand-primary/20">
+                                <ActivityIndicator size="large" color="#2EBD85" />
+                                <Text className="text-brand-primary font-black mt-5 text-[17px] tracking-tight">{loadingStage || 'Processing...'}</Text>
+                                <Text className="text-brand-primary/60 font-medium text-sm mt-1">Skeeme AI is working hard</Text>
                             </View>
                         ) : (
                             <View className="w-full gap-3">
-                                <TouchableOpacity
-                                    onPress={handleSolve}
-                                    className="bg-[#2EBD85] rounded-xl py-4 items-center flex-row justify-center shadow-sm"
-                                    activeOpacity={0.8}
-                                >
+                                <TouchableOpacity onPress={handleSolve} className="bg-[#2EBD85] rounded-xl py-4 items-center flex-row justify-center shadow-sm" activeOpacity={0.8}>
                                     <Ionicons name="sparkles" size={20} color="#fff" />
                                     <Text className="text-white font-black ml-2 text-[17px]">Solve Everything</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={resetScan}
-                                    className="bg-slate-100 dark:bg-slate-800 rounded-xl py-4 items-center border border-slate-200 dark:border-slate-700"
-                                    activeOpacity={0.8}
-                                >
+                                <TouchableOpacity onPress={resetScan} className="bg-slate-100 dark:bg-slate-800 rounded-xl py-4 items-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8}>
                                     <Text className="text-slate-700 dark:text-slate-300 font-bold text-[15px]">Retake Photo</Text>
                                 </TouchableOpacity>
                             </View>
@@ -208,10 +212,8 @@ export default function ScanScreen() {
                     </View>
                 )}
 
-                {/* ─── Solutions Display ─── */}
                 {results.length > 0 && (
                     <View>
-                        {/* Cost summary flat */}
                         <View className="flex-row items-center justify-between mb-8 bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
                             <View>
                                 <Text className="text-slate-900 dark:text-white font-black text-lg tracking-tight">{results.length} Results</Text>
@@ -222,7 +224,6 @@ export default function ScanScreen() {
                             </View>
                         </View>
 
-                        {/* Solutions List */}
                         {results.map((item, index) => (
                             <View key={index} className="mb-10 w-full pt-4 border-t-2 border-slate-100 dark:border-slate-800">
                                 <View className="flex-row items-center justify-between mb-5">
@@ -233,47 +234,39 @@ export default function ScanScreen() {
                                         </View>
                                     )}
                                 </View>
-
-                                {/* Detected question */}
-                                <Text className="text-slate-900 dark:text-white text-[19px] leading-relaxed font-bold mb-6 tracking-tight">
-                                    {item.question}
-                                </Text>
-
-                                {/* Steps */}
+                                <MathText content={item.question} color={isDark ? 'white' : '#0f172a'} fontSize={19} containerStyle={{ marginBottom: 24 }} />
                                 {item.steps && item.steps.length > 0 && (
                                     <View className="mb-6 pl-4 border-l-2 border-slate-200 dark:border-slate-700">
                                         <Text className="text-slate-400 dark:text-slate-500 font-bold text-[11px] uppercase tracking-widest mb-3">Solution Steps</Text>
                                         {item.steps.map((step, i) => (
                                             <View key={i} className="flex-row mb-3">
                                                 <Text className="text-slate-400 dark:text-slate-500 font-black text-sm w-5">{i + 1}.</Text>
-                                                <Text className="flex-1 text-slate-700 dark:text-slate-300 text-[15px] leading-relaxed font-medium">{step}</Text>
+                                                <MathText content={step} color={isDark ? '#cbd5e1' : '#334155'} fontSize={15} containerStyle={{ flex: 1 }} />
                                             </View>
                                         ))}
                                     </View>
                                 )}
-
-                                {/* Final Answer flat block */}
                                 <View className="bg-slate-100 dark:bg-slate-800 rounded-[16px] p-5 border border-slate-200 dark:border-slate-700">
                                     <Text className="text-slate-400 dark:text-slate-500 font-bold text-[11px] uppercase tracking-widest mb-2">Final Result</Text>
-                                    <Text className="text-slate-900 dark:text-white font-black text-lg leading-snug tracking-tight">{item.solution}</Text>
+                                    <MathText content={item.solution} color={isDark ? 'white' : '#0f172a'} fontSize={18} />
                                 </View>
                             </View>
                         ))}
-
                         <View className="h-px bg-slate-200 dark:bg-slate-800 w-full mb-8" />
-
-                        {/* Scan Another */}
-                        <TouchableOpacity
-                            onPress={resetScan}
-                            className="bg-slate-900 dark:bg-white rounded-xl py-4 items-center flex-row justify-center shadow-sm"
-                            activeOpacity={0.8}
-                        >
-                            <Ionicons name="camera" size={20} color={isDark ? '#0f172a' : 'white'} />
-                            <Text className="text-white dark:text-slate-900 font-black ml-2 text-[17px]">Scan Next Page</Text>
-                        </TouchableOpacity>
+                        <View className="gap-3">
+                            <TouchableOpacity onPress={handleExport} disabled={loading} className="bg-slate-900 dark:bg-white rounded-xl py-4 items-center flex-row justify-center shadow-sm" activeOpacity={0.8}>
+                                {loading ? <ActivityIndicator size="small" color={isDark ? '#0f172a' : 'white'} /> : <>
+                                    <Ionicons name="download-outline" size={20} color={isDark ? '#0f172a' : 'white'} style={{ marginRight: 8 }} />
+                                    <Text className="text-white dark:text-slate-900 font-black text-[17px]">Save as PDF</Text>
+                                </>}
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={resetScan} className="bg-slate-100 dark:bg-slate-800 rounded-xl py-4 items-center flex-row justify-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8}>
+                                <Ionicons name="camera" size={20} color={isDark ? '#e2e8f0' : '#475569'} />
+                                <Text className="text-slate-700 dark:text-slate-300 font-bold ml-2 text-[17px]">Scan Next Page</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 )}
-
             </ScrollView>
         </View>
     );
