@@ -11,7 +11,7 @@ interface MathTextProps {
 
 export function MathText({
   content,
-  color = '#0f172a',
+  color = '#121212',
   fontSize = 16,
   containerStyle
 }: MathTextProps) {

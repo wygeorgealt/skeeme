@@ -116,12 +116,14 @@ export default function RootLayout() {
 }
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const { colorScheme } = useTailwindColorScheme();
+
   useEffect(() => {
     // Error logged to console in dev or handled by system
   }, [error]);
 
   return (
-    <View className="flex-1 items-center justify-center p-8 bg-white dark:bg-[#282828]">
+    <View className="flex-1 items-center justify-center p-8 bg-white dark:bg-[#121212]">
       <Ionicons name="warning" size={48} color="#ef4444" />
       <Text className="text-[24px] font-black tracking-tight text-slate-900 dark:text-white mt-6 mb-2 text-center">
         Something went wrong.
@@ -133,7 +135,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         onPress={retry}
         className="bg-slate-900 dark:bg-white px-8 py-4 rounded-xl flex-row items-center"
       >
-        <Ionicons name="refresh" size={20} color={useTailwindColorScheme().colorScheme === 'dark' ? '#0f172a' : 'white'} />
+        <Ionicons name="refresh" size={20} color={colorScheme === 'dark' ? '#121212' : 'white'} />
         <Text className="text-white dark:text-slate-900 font-bold ml-2">Try Again</Text>
       </TouchableOpacity>
     </View>

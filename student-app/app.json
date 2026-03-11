@@ -2,20 +2,25 @@
   "expo": {
     "name": "Skeeme",
     "slug": "student-app",
-    "version": "1.3.0",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "skeeme",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kantrol.skeeme",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Skeeme uses the camera to scan questions for AI solving.",
+        "NSPhotoLibraryUsageDescription": "Skeeme accesses your photos to select question images for scanning."
+      }
     },
     "android": {
       "package": "com.kantrol.skeeme",
       "versionCode": 2,
       "adaptiveIcon": {
-        "backgroundColor": "#282828",
+        "backgroundColor": "#121212",
         "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "edgeToEdgeEnabled": true,
@@ -33,7 +38,7 @@
           "image": "./assets/images/splash.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#282828"
+          "backgroundColor": "#121212"
         }
       ],
       "expo-secure-store",

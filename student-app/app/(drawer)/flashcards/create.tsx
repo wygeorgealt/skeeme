@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
-    ActivityIndicator, Alert, StyleSheet
+    ActivityIndicator, Alert, StyleSheet, useColorScheme
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
@@ -22,6 +24,9 @@ const DIFF_COLORS: Record<string, string> = {
 export default function GenerateFlashcardScreen() {
     const { updateUser } = useAuthStore();
     const queryClient = useQueryClient();
+    const insets = useSafeAreaInsets();
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
 
     const [mode, setMode] = useState<QuizMode>('topic');
     const [topic, setTopic] = useState('');
@@ -188,7 +193,7 @@ export default function GenerateFlashcardScreen() {
                                 ) : selectedFile ? (
                                     <>
                                         <Ionicons name="document-text" size={28} color="#2EBD85" />
-                                        <Text style={{ fontSize: 14, fontWeight: '800', color: '#0f172a', marginTop: 12, textAlign: 'center' }}>{selectedFile.name}</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '800', color: '#121212', marginTop: 12, textAlign: 'center' }}>{selectedFile.name}</Text>
                                         <Text style={{ fontSize: 11, fontWeight: '700', color: '#2EBD85', marginTop: 4, textTransform: 'uppercase' }}>Attached & Ready</Text>
                                     </>
                                 ) : (
@@ -239,36 +244,35 @@ export default function GenerateFlashcardScreen() {
                         ))}
                     </View>
                 </View>
+                <View className="h-4" />
+            </ScrollView>
 
-                {/* Generate button */}
+            <BlurView 
+                intensity={80} 
+                tint={isDark ? "dark" : "light"} 
+                style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, paddingBottom: insets.bottom || 24, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+            >
                 {isLoading ? (
-                    <View className="bg-brand-primary/5 dark:bg-brand-primary/10 rounded-[32px] p-8 border-2 border-brand-primary/20 items-center overflow-hidden">
-                        <View className="mb-6">
-                            <ActivityIndicator size="large" color="#2EBD85" />
+                    <View className="bg-brand-primary/5 dark:bg-brand-primary/10 rounded-[28px] p-6 border-2 border-brand-primary/20 items-center overflow-hidden">
+                        <View className="mb-4">
+                            <ActivityIndicator size="small" color="#2EBD85" />
                         </View>
-                        <Text className="text-brand-primary font-black text-xl tracking-tight mb-2 text-center">{loadingStage}</Text>
-                        <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm text-center px-4">
-                            Our AI is processing your request. This usually takes 15-30 seconds depending on complexity.
+                        <Text className="text-brand-primary font-black text-lg tracking-tight mb-1 text-center">{loadingStage}</Text>
+                        <Text className="text-slate-500 dark:text-slate-400 font-medium text-[11px] text-center px-2">
+                            Our AI is processing your request... Usually 15-30s.
                         </Text>
-
-                        {/* Multi-stage Progress Indicators */}
-                        <View className="flex-row gap-2 mt-8 w-full px-4">
+                        <View className="flex-row gap-1.5 mt-4 w-full px-2">
                             {['Reading', 'Identifying', 'Creating', 'Reviewing'].map((s, i) => {
                                 const stages = mode === 'file'
                                     ? ['Reading material...', 'Identifying key concepts...', 'Creating cards...', 'Reviewing content...', 'Almost ready...']
                                     : ['Analyzing Topic...', 'Researching Context...', 'Drafting cards...', 'Finalizing deck...', 'Almost ready...'];
-
                                 const currentIdx = stages.indexOf(loadingStage);
                                 const isComplete = i < currentIdx;
                                 const isActive = i === currentIdx;
-
                                 return (
                                     <View key={i} className="flex-1 h-1.5 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800">
                                         {(isComplete || isActive) && (
-                                            <View
-                                                className={`h-full ${isComplete ? 'bg-brand-primary' : 'bg-brand-primary/40'}`}
-                                                style={{ width: isComplete ? '100%' : '60%' }}
-                                            />
+                                            <View className={`h-full ${isComplete ? 'bg-brand-primary' : 'bg-brand-primary/60'}`} style={{ width: isComplete ? '100%' : '60%' }} />
                                         )}
                                     </View>
                                 );
@@ -276,17 +280,21 @@ export default function GenerateFlashcardScreen() {
                         </View>
                     </View>
                 ) : (
-                    <TouchableOpacity
-                        onPress={handleGenerate}
-                        className="bg-[#2EBD85] rounded-2xl py-5 items-center flex-row justify-center shadow-lg shadow-[#2EBD85]/20"
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="sparkles" size={20} color="#fff" />
-                        <Text className="text-white font-black ml-2 text-[17px]">Generate Flashcards</Text>
-                    </TouchableOpacity>
+                    <>
+                        <TouchableOpacity
+                            onPress={handleGenerate}
+                            className="bg-[#2EBD85] rounded-2xl py-4 items-center flex-row justify-center shadow-lg shadow-[#2EBD85]/20"
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="sparkles" size={20} color="#fff" />
+                            <Text className="text-white font-black ml-2 text-[17px]">Generate Flashcards</Text>
+                        </TouchableOpacity>
+                        <Text className="text-slate-400 dark:text-slate-500 text-xs text-center mt-3 font-medium">
+                            Credits scale with content length & card count.
+                        </Text>
+                    </>
                 )}
-                <Text className="text-slate-400 dark:text-slate-500 text-xs text-center mt-3 font-medium">Credits scale with content length & card count.</Text>
-            </ScrollView>
+            </BlurView>
 
             <RewardModal
                 isVisible={isRewardModalVisible}

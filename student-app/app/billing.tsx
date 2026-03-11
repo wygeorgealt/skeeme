@@ -39,8 +39,8 @@ export default function BillingHistoryScreen() {
     const { user } = useAuthStore();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const bgColor = isDark ? '#282828' : '#ffffff';
-    const tintColor = isDark ? '#fff' : '#0f172a';
+    const bgColor = isDark ? '#121212' : '#ffffff';
+    const tintColor = isDark ? '#fff' : '#121212';
 
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['billing-history'],
@@ -116,7 +116,7 @@ export default function BillingHistoryScreen() {
                         Could not load billing history. Check your connection and try again.
                     </Text>
                     <View className="w-full max-w-[200px]">
-                        <GradientButton onPress={() => refetch()} icon={<Ionicons name="refresh" size={20} color={isDark ? '#0f172a' : 'white'} />}>
+                        <GradientButton onPress={() => refetch()} icon={<Ionicons name="refresh" size={20} color={isDark ? '#121212' : 'white'} />}>
                             Retry
                         </GradientButton>
                     </View>
@@ -124,7 +124,7 @@ export default function BillingHistoryScreen() {
             ) : (
                 <ScrollView
                     className="flex-1 px-6 pt-6"
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? 'white' : '#0f172a'} />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? 'white' : '#121212'} />}
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Current Plan Overview */}
@@ -154,7 +154,7 @@ export default function BillingHistoryScreen() {
                     {data?.data?.length === 0 ? (
                         <View className="items-center py-16 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] bg-slate-50 dark:bg-slate-900/50 mt-4">
                             <View className="size-24 bg-white dark:bg-slate-800 rounded-[24px] border-2 border-slate-200 dark:border-slate-700 items-center justify-center mb-6">
-                                <Ionicons name="receipt" size={40} color={isDark ? 'white' : '#0f172a'} />
+                                <Ionicons name="receipt" size={40} color={isDark ? 'white' : '#121212'} />
                             </View>
                             <Text className="text-slate-900 dark:text-white font-black text-[22px] tracking-tight mb-2">No Invoices Yet</Text>
                             <Text className="text-slate-500 font-bold text-[14px] text-center px-8 leading-relaxed">
@@ -193,7 +193,7 @@ export default function BillingHistoryScreen() {
                                         activeOpacity={0.7}
                                     >
                                         <Text className="text-slate-900 dark:text-white font-black text-[12px] uppercase tracking-widest mr-1">Receipt</Text>
-                                        <Ionicons name="download" size={14} color={isDark ? 'white' : '#0f172a'} />
+                                        <Ionicons name="download" size={14} color={isDark ? 'white' : '#121212'} />
                                     </TouchableOpacity>
                                 </View>
                             </View>

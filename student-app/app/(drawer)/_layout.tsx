@@ -1,7 +1,8 @@
 import { Drawer } from 'expo-router/drawer';
-import { View, Text, TouchableOpacity, useColorScheme, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, useColorScheme, Alert, Platform, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
+import { BlurView } from 'expo-blur';
 import { api } from '@/lib/api';
 import { router, usePathname } from 'expo-router';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
@@ -10,7 +11,7 @@ function CustomDrawerContent(props: any) {
     const { user, logout } = useAuthStore();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const iconColor = isDark ? '#ffffff' : '#0f172a';
+    const iconColor = isDark ? '#ffffff' : '#121212';
     const pathname = usePathname();
 
     const handleLogout = async () => {
@@ -59,7 +60,7 @@ function CustomDrawerContent(props: any) {
     };
 
     return (
-        <View className="flex-1 bg-white dark:bg-[#282828]">
+        <View className="flex-1 bg-white dark:bg-[#121212]">
             <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 40, paddingBottom: 20 }}>
                 {/* Profile Header section */}
                 <View className="px-6 mb-6">
@@ -125,18 +126,20 @@ export default function DrawerLayout() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
-    const bgColor = isDark ? '#282828' : '#ffffff';
-    const drawerBg = isDark ? '#282828' : '#ffffff';
-    const tintColor = isDark ? '#fff' : '#0f172a';
+    const bgColor = isDark ? '#121212' : '#ffffff';
+    const drawerBg = isDark ? '#121212' : '#ffffff';
+    const tintColor = isDark ? '#fff' : '#121212';
 
     return (
         <Drawer
             drawerContent={(props) => <CustomDrawerContent {...props} />}
             screenOptions={{
                 headerTitle: '', // Keep the hamburger icon, but remove text titles
+                headerShown: true,
                 headerStyle: {
                     backgroundColor: bgColor,
-                    borderBottomWidth: 0,
+                    borderBottomWidth: 1,
+                    borderBottomColor: isDark ? '#1e293b' : '#f1f5f9',
                     elevation: 0,
                     shadowOpacity: 0,
                 },

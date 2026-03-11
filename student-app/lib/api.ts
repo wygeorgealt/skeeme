@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://skeeme-web.onrender.com/api/v1/student/';
+const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
 
 export const api = axios.create({
     baseURL: API_URL,

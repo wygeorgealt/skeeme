@@ -39,12 +39,10 @@ interface AuthState {
     setTheme: (theme: 'light' | 'dark' | 'system') => void;
 }
 
-// Platform-safe storage helpers (SecureStore is native-only, localStorage for web)
-const storage = {
+// Secure storage for sensitive data (tokens)
+const secureStorage = {
     getItem: async (key: string): Promise<string | null> => {
-        if (Platform.OS === 'web') {
-            return localStorage.getItem(key);
-        }
+        if (Platform.OS === 'web') return localStorage.getItem(key);
         const SecureStore = await import('expo-secure-store');
         return SecureStore.getItemAsync(key);
     },
@@ -66,6 +64,43 @@ const storage = {
     },
 };
 
+// Standard storage for large non-sensitive data (user profile, theme)
+const standardStorage = {
+    getItem: async (key: string): Promise<string | null> => {
+        if (Platform.OS === 'web') return localStorage.getItem(key);
+        try {
+            const { documentDirectory, getInfoAsync, readAsStringAsync } = (await import('expo-file-system')) as any;
+            const path = `${documentDirectory}${key}.json`;
+            const info = await getInfoAsync(path);
+            if (!info.exists) return null;
+            return await readAsStringAsync(path);
+        } catch (e) { return null; }
+    },
+    setItem: async (key: string, value: string): Promise<void> => {
+        if (Platform.OS === 'web') {
+            localStorage.setItem(key, value);
+            return;
+        }
+        try {
+            const { documentDirectory, writeAsStringAsync } = (await import('expo-file-system')) as any;
+            const path = `${documentDirectory}${key}.json`;
+            await writeAsStringAsync(path, value);
+        } catch (e) { /* ignore */ }
+    },
+    deleteItem: async (key: string): Promise<void> => {
+        if (Platform.OS === 'web') {
+            localStorage.removeItem(key);
+            return;
+        }
+        try {
+            const { documentDirectory, getInfoAsync, deleteAsync } = (await import('expo-file-system')) as any;
+            const path = `${documentDirectory}${key}.json`;
+            const info = await getInfoAsync(path);
+            if (info.exists) await deleteAsync(path);
+        } catch (e) { /* ignore */ }
+    },
+};
+
 export const useAuthStore = create<AuthState>((set, get) => ({
     user: null,
     token: null,
@@ -75,10 +110,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     login: async (user, token) => {
         set({ user, token });
         try {
-            await storage.setItem('auth_token', token);
-            await storage.setItem('auth_user', JSON.stringify(user));
+            await secureStorage.setItem('auth_token', token);
+            await standardStorage.setItem('auth_user', JSON.stringify(user));
         } catch (e) {
-            console.error('Failed to save auth state', e);
+            if (__DEV__) console.error('Failed to save auth state', e);
         }
     },
 
@@ -88,9 +123,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             const newUser = { ...currentUser, ...updatedFields };
             set({ user: newUser });
             try {
-                await storage.setItem('auth_user', JSON.stringify(newUser));
+                await standardStorage.setItem('auth_user', JSON.stringify(newUser));
             } catch (e) {
-                console.error('Failed to update user', e);
+                if (__DEV__) console.error('Failed to update user', e);
             }
         }
     },
@@ -98,18 +133,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     logout: async () => {
         set({ user: null, token: null });
         try {
-            await storage.deleteItem('auth_token');
-            await storage.deleteItem('auth_user');
+            await secureStorage.deleteItem('auth_token');
+            await standardStorage.deleteItem('auth_user');
         } catch (e) {
-            console.error('Failed to clear auth state', e);
+            if (__DEV__) console.error('Failed to clear auth state', e);
         }
     },
 
     hydrate: async () => {
         try {
-            const token = await storage.getItem('auth_token');
-            const userStr = await storage.getItem('auth_user');
-            const themeStr = await storage.getItem('app_theme') as 'light' | 'dark' | 'system' | null;
+            const token = await secureStorage.getItem('auth_token');
+            let userStr = await standardStorage.getItem('auth_user');
+            
+            // Migration check: If user not in standardStorage, check secureStorage
+            if (token && !userStr) {
+                userStr = await secureStorage.getItem('auth_user');
+                if (userStr) {
+                    await standardStorage.setItem('auth_user', userStr);
+                    await secureStorage.deleteItem('auth_user');
+                }
+            }
+
+            let themeStr = await standardStorage.getItem('app_theme') as 'light' | 'dark' | 'system' | null;
+            if (!themeStr) {
+                 themeStr = await secureStorage.getItem('app_theme') as any;
+                 if (themeStr) {
+                     await standardStorage.setItem('app_theme', themeStr);
+                     await secureStorage.deleteItem('app_theme');
+                 }
+            }
 
             if (token && userStr) {
                 // Optimistically set user from cache for instant UI
@@ -122,15 +174,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     if (response.data) {
                         const refreshedUser = response.data.user || response.data;
                         const currentUser = get().user;
-                        set({ user: { ...currentUser, ...refreshedUser } });
-                        await storage.setItem('auth_user', JSON.stringify({ ...currentUser, ...refreshedUser }));
+                        const mergedUser = { ...currentUser, ...refreshedUser };
+                        set({ user: mergedUser });
+                        await standardStorage.setItem('auth_user', JSON.stringify(mergedUser));
                     }
                 } catch (validateError: any) {
                     if (validateError?.response?.status === 401) {
                         // Token is expired/revoked — clear silently
                         set({ user: null, token: null });
-                        await storage.deleteItem('auth_token');
-                        await storage.deleteItem('auth_user');
+                        await secureStorage.deleteItem('auth_token');
+                        await standardStorage.deleteItem('auth_user');
                     }
                     // Network errors are ignored — user keeps cached data
                 }
@@ -153,19 +206,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 const currentUser = get().user;
                 const newUser = { ...currentUser, ...refreshedUser };
                 set({ user: newUser });
-                await storage.setItem('auth_user', JSON.stringify(newUser));
+                await standardStorage.setItem('auth_user', JSON.stringify(newUser));
             }
         } catch (e) {
-            console.error('Failed to refresh auth state', e);
+            if (__DEV__) console.error('Failed to refresh auth state', e);
         }
     },
 
     setTheme: async (theme) => {
         set({ theme });
         try {
-            await storage.setItem('app_theme', theme);
+            await standardStorage.setItem('app_theme', theme);
         } catch (e) {
-            console.error('Failed to save theme state', e);
+            if (__DEV__) console.error('Failed to save theme state', e);
         }
     },
 }));

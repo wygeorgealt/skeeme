@@ -48,7 +48,7 @@ export function TheoryCard({
                 </View>
                 <MathText
                     content={q.question_text}
-                    color={isDark ? 'white' : '#0f172a'}
+                    color={isDark ? 'white' : '#121212'}
                     fontSize={17}
                     containerStyle={{ minHeight: 50, marginBottom: 8 }}
                 />

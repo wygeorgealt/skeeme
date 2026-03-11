@@ -83,7 +83,7 @@ function FlashcardItem({ card, isActive, isDark }: { card: Card; isActive: boole
                     </View>
                     <MathText
                         content={card.front}
-                        color={isDark ? 'white' : '#0f172a'}
+                        color={isDark ? 'white' : '#121212'}
                         fontSize={24}
                         containerStyle={{ flex: 0.6 }}
                     />
@@ -163,11 +163,20 @@ export default function StudyDeckScreen() {
     );
 
     if (isLoading && !deck) {
-        const bgColor = isDark ? '#282828' : '#f8fafc';
-        const tintColor = isDark ? '#fff' : '#0f172a';
+        const bgColor = isDark ? '#121212' : '#f8fafc';
+        const tintColor = isDark ? '#fff' : '#121212';
         return (
             <View className="flex-1 bg-white dark:bg-brand-dark px-6 pt-12">
-                <Stack.Screen options={{ title: 'Loading Deck...', headerShown: true, headerStyle: { backgroundColor: bgColor }, headerTintColor: tintColor, headerBackVisible: false, headerShadowVisible: false }} />
+                <Stack.Screen options={{ 
+                    title: 'Loading Deck...', 
+                    headerShown: true, 
+                    headerStyle: { 
+                        backgroundColor: bgColor,
+                    }, 
+                    headerTintColor: tintColor, 
+                    headerBackVisible: false, 
+                    headerShadowVisible: false 
+                }} />
 
                 <View className="items-center mt-8">
                     <SkeletonLoader width={120} height={16} style={{ marginBottom: 12 }} />

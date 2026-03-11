@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import {
-    View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image, useColorScheme,
+    View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { Stack } from 'expo-router';
@@ -23,10 +26,11 @@ const BASE_SCAN_COST = 2;
 const COST_PER_SOLUTION = 4;
 
 export default function ScanScreen() {
+    const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const bgColor = isDark ? '#282828' : '#ffffff';
-    const tintColor = isDark ? '#fff' : '#0f172a';
+    const bgColor = isDark ? '#121212' : '#ffffff';
+    const tintColor = isDark ? '#fff' : '#121212';
 
     const { user, updateUser } = useAuthStore();
 
@@ -125,7 +129,7 @@ export default function ScanScreen() {
 
             await Sharing.shareAsync(fileUri);
         } catch (err) {
-            console.warn('PDF Export failed', err);
+            if (__DEV__) console.warn('PDF Export failed', err);
             Alert.alert('Export Failed', 'Could not generate PDF report.');
         } finally {
             setLoading(false);
@@ -147,7 +151,9 @@ export default function ScanScreen() {
                 headerShown: true,
                 headerBackVisible: false,
                 headerShadowVisible: false,
-                headerStyle: { backgroundColor: bgColor },
+                headerStyle: { 
+                    backgroundColor: bgColor,
+                },
                 headerTintColor: tintColor,
             }} />
 
@@ -166,13 +172,13 @@ export default function ScanScreen() {
                         </Text>
 
                         <View className="flex-row w-full gap-3">
-                            <TouchableOpacity onPress={() => pickImage(true)} className="flex-1 bg-brand-primary rounded-xl py-[18px] items-center justify-center shadow-lg shadow-brand-primary/20" activeOpacity={0.8}>
+                            <TouchableOpacity onPress={() => pickImage(true)} className="flex-1 bg-brand-primary rounded-xl py-[18px] items-center justify-center shadow-lg shadow-brand-primary/20" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Scan from Camera">
                                 <View className="flex-row items-center">
                                     <Ionicons name="camera" size={20} color="white" />
                                     <Text className="text-white font-black ml-2 text-base">Camera</Text>
                                 </View>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => pickImage(false)} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl py-[18px] items-center justify-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8}>
+                            <TouchableOpacity onPress={() => pickImage(false)} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl py-[18px] items-center justify-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Choose from Gallery">
                                 <View className="flex-row items-center">
                                     <Ionicons name="images" size={20} color={isDark ? '#e2e8f0' : '#334155'} />
                                     <Text className="text-slate-700 dark:text-slate-200 font-bold ml-2 text-base">Gallery</Text>
@@ -189,7 +195,7 @@ export default function ScanScreen() {
                 {imageUri && results.length === 0 && (
                     <View className="items-center">
                         <View className="w-full rounded-[24px] overflow-hidden border-2 border-slate-200 dark:border-slate-700 mb-6 bg-slate-100 dark:bg-slate-900">
-                            <Image source={{ uri: imageUri }} style={{ width: '100%', height: 350 }} resizeMode="cover" />
+                            <Image source={{ uri: imageUri }} style={{ width: '100%', height: 350 }} contentFit="cover" />
                         </View>
 
                         {loading ? (
@@ -200,11 +206,11 @@ export default function ScanScreen() {
                             </View>
                         ) : (
                             <View className="w-full gap-3">
-                                <TouchableOpacity onPress={handleSolve} className="bg-[#2EBD85] rounded-xl py-4 items-center flex-row justify-center shadow-sm" activeOpacity={0.8}>
+                                <TouchableOpacity onPress={handleSolve} className="bg-[#2EBD85] rounded-xl py-4 items-center flex-row justify-center shadow-sm" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Solve Everything">
                                     <Ionicons name="sparkles" size={20} color="#fff" />
                                     <Text className="text-white font-black ml-2 text-[17px]">Solve Everything</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={resetScan} className="bg-slate-100 dark:bg-slate-800 rounded-xl py-4 items-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8}>
+                                <TouchableOpacity onPress={resetScan} className="bg-slate-100 dark:bg-slate-800 rounded-xl py-4 items-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Retake Photo">
                                     <Text className="text-slate-700 dark:text-slate-300 font-bold text-[15px]">Retake Photo</Text>
                                 </TouchableOpacity>
                             </View>
@@ -234,7 +240,7 @@ export default function ScanScreen() {
                                         </View>
                                     )}
                                 </View>
-                                <MathText content={item.question} color={isDark ? 'white' : '#0f172a'} fontSize={19} containerStyle={{ marginBottom: 24 }} />
+                                <MathText content={item.question} color={isDark ? 'white' : '#121212'} fontSize={19} containerStyle={{ marginBottom: 24 }} />
                                 {item.steps && item.steps.length > 0 && (
                                     <View className="mb-6 pl-4 border-l-2 border-slate-200 dark:border-slate-700">
                                         <Text className="text-slate-400 dark:text-slate-500 font-bold text-[11px] uppercase tracking-widest mb-3">Solution Steps</Text>
@@ -248,26 +254,36 @@ export default function ScanScreen() {
                                 )}
                                 <View className="bg-slate-100 dark:bg-slate-800 rounded-[16px] p-5 border border-slate-200 dark:border-slate-700">
                                     <Text className="text-slate-400 dark:text-slate-500 font-bold text-[11px] uppercase tracking-widest mb-2">Final Result</Text>
-                                    <MathText content={item.solution} color={isDark ? 'white' : '#0f172a'} fontSize={18} />
+                                    <MathText content={item.solution} color={isDark ? 'white' : '#121212'} fontSize={18} />
                                 </View>
                             </View>
                         ))}
-                        <View className="h-px bg-slate-200 dark:bg-slate-800 w-full mb-8" />
-                        <View className="gap-3">
-                            <TouchableOpacity onPress={handleExport} disabled={loading} className="bg-slate-900 dark:bg-white rounded-xl py-4 items-center flex-row justify-center shadow-sm" activeOpacity={0.8}>
-                                {loading ? <ActivityIndicator size="small" color={isDark ? '#0f172a' : 'white'} /> : <>
-                                    <Ionicons name="download-outline" size={20} color={isDark ? '#0f172a' : 'white'} style={{ marginRight: 8 }} />
-                                    <Text className="text-white dark:text-slate-900 font-black text-[17px]">Save as PDF</Text>
-                                </>}
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={resetScan} className="bg-slate-100 dark:bg-slate-800 rounded-xl py-4 items-center flex-row justify-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8}>
-                                <Ionicons name="camera" size={20} color={isDark ? '#e2e8f0' : '#475569'} />
-                                <Text className="text-slate-700 dark:text-slate-300 font-bold ml-2 text-[17px]">Scan Next Page</Text>
-                            </TouchableOpacity>
-                        </View>
                     </View>
                 )}
+                <View className="h-6" />
             </ScrollView>
+
+            {results.length > 0 && (
+                <BlurView 
+                    intensity={80} 
+                    tint={isDark ? "dark" : "light"} 
+                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, paddingBottom: insets.bottom || 24, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                >
+                    <View className="gap-3">
+                        <TouchableOpacity onPress={handleExport} disabled={loading} className="bg-slate-900 dark:bg-white rounded-2xl py-4 items-center flex-row justify-center shadow-sm" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Save as PDF">
+                            {loading ? <ActivityIndicator size="small" color={isDark ? '#121212' : 'white'} /> : <>
+                                <Ionicons name="download-outline" size={20} color={isDark ? '#121212' : 'white'} style={{ marginRight: 8 }} />
+                                <Text className="text-white dark:text-slate-900 font-black text-[17px]">Save as PDF</Text>
+                            </>}
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={resetScan} className="bg-slate-100 dark:bg-slate-800 rounded-2xl py-4 items-center flex-row justify-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Scan Next Page">
+                            <Ionicons name="camera" size={20} color={isDark ? '#e2e8f0' : '#475569'} />
+                            <Text className="text-slate-700 dark:text-slate-300 font-bold ml-2 text-[17px]">Scan Next Page</Text>
+                        </TouchableOpacity>
+                    </View>
+                </BlurView>
+            )}
+
         </View>
     );
 }

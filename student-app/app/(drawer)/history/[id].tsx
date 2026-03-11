@@ -73,7 +73,7 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                     </Text>
                     <MathText
                         content={q.question}
-                        color={isDark ? 'white' : '#0f172a'}
+                        color={isDark ? 'white' : '#121212'}
                         fontSize={16}
                         containerStyle={{ flex: 1 }}
                     />
@@ -148,8 +148,8 @@ export default function QuizHistoryDetailScreen() {
     const { id } = useLocalSearchParams();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const bgColor = isDark ? '#282828' : '#f8fafc';
-    const tintColor = isDark ? '#fff' : '#0f172a';
+    const bgColor = isDark ? '#121212' : '#f8fafc';
+    const tintColor = isDark ? '#fff' : '#121212';
     const [isSharing, setIsSharing] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [cachedSession, setCachedSession] = useState<QuizSessionDetail | null>(null);
@@ -192,7 +192,7 @@ export default function QuizHistoryDetailScreen() {
 
             await Sharing.shareAsync(fileUri);
         } catch (err) {
-            console.warn('Quiz Export failed', err);
+            if (__DEV__) console.warn('Quiz Export failed', err);
             Alert.alert('Export Failed', 'Could not generate PDF report.');
         } finally {
             setIsExporting(false);
@@ -295,9 +295,9 @@ export default function QuizHistoryDetailScreen() {
                             disabled={isExporting}
                             className="flex-1 flex-row items-center justify-center bg-slate-900 dark:bg-white px-4 py-4 rounded-2xl active:opacity-90"
                         >
-                            {isExporting ? <ActivityIndicator size="small" color={isDark ? '#0f172a' : 'white'} /> : (
+                            {isExporting ? <ActivityIndicator size="small" color={isDark ? '#121212' : 'white'} /> : (
                                 <>
-                                    <Ionicons name="download-outline" size={18} color={isDark ? '#0f172a' : 'white'} style={{ marginRight: 8 }} />
+                                    <Ionicons name="download-outline" size={18} color={isDark ? '#121212' : 'white'} style={{ marginRight: 8 }} />
                                     <Text className="text-white dark:text-slate-900 font-black">Export PDF</Text>
                                 </>
                             )}
@@ -311,7 +311,7 @@ export default function QuizHistoryDetailScreen() {
                                     const uri = await captureRef(viewShotRef.current, { format: 'png', quality: 1.0 });
                                     await Sharing.shareAsync(uri);
                                 } catch (e) {
-                                    console.error(e);
+                                    if (__DEV__) console.error(e);
                                 } finally {
                                     setIsSharing(false);
                                 }

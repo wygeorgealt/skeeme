@@ -11,10 +11,12 @@ class DeepseekAIService
     protected $client;
     protected $apiKey;
     protected $baseUrl = 'https://api.deepseek.com/v1';
+    protected $paddleOcr;
 
-    public function __construct()
+    public function __construct(PaddleOCRService $paddleOcr)
     {
         $this->apiKey = config('services.deepseek.api_key');
+        $this->paddleOcr = $paddleOcr;
         $this->client = new Client([
             'timeout' => 300,
             'connect_timeout' => 10,
@@ -734,49 +736,28 @@ PROMPT;
     }
 
     /**
-     * OCR: Extract text from a base64-encoded image using OCR.space (Engine 2 for Math)
+     * OCR: Extract text from a base64-encoded image.
+     * Tries PaddleOCR (Self-hosted) first, then OCR.space (Fallback).
      */
     protected function ocrFromBase64(string $base64Image): string
     {
-        // Try Engine 2 (Math-focused) first, with a shorter strict timeout
+        // 1. Try PaddleOCR (Recommended for Math/Formula accuracy)
         try {
-            $ocrClient = new Client(['timeout' => 15]);
-            $response = $ocrClient->post('https://api.ocr.space/parse/image', [
-                'headers' => [
-                    'apikey' => 'helloworld', // Free tier public key
-                ],
-                'multipart' => [
-                    [
-                        'name' => 'base64Image',
-                        'contents' => 'data:image/jpeg;base64,' . $base64Image,
-                    ],
-                    [
-                        'name' => 'language',
-                        'contents' => 'eng',
-                    ],
-                    [
-                        'name' => 'isOverlayRequired',
-                        'contents' => 'false',
-                    ],
-                    [
-                        'name' => 'OCREngine',
-                        'contents' => '2', // Engine 2 is gold for math/handwriting
-                    ],
-                ],
-            ]);
-
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            if (isset($data['ParsedResults'][0]['ParsedText'])) {
-                return trim($data['ParsedResults'][0]['ParsedText']);
+            \Log::info('Attempting OCR with PaddleOCR...');
+            $paddleResult = $this->paddleOcr->ocr($base64Image);
+            
+            if ($paddleResult['success'] && !empty(trim($paddleResult['text']))) {
+                \Log::info('PaddleOCR Success.');
+                return $paddleResult['text'];
             }
+            \Log::warning('PaddleOCR returned empty results, falling back to OCR.space');
         } catch (\Exception $e) {
-            \Log::warning('OCR.space Engine 2 Timeout/Error, falling back to Engine 1: ' . $e->getMessage());
+            \Log::error('PaddleOCR failed: ' . $e->getMessage() . '. Falling back.');
         }
 
-        // Fallback to Engine 1 (Standard) if Engine 2 timed out or failed
+        // 2. Fallback to OCR.space Engine 2
         try {
-            $fallbackClient = new Client(['timeout' => 10]);
+            \Log::info('Attempting OCR with OCR.space (Fallback)...');
             $response = $fallbackClient->post('https://api.ocr.space/parse/image', [
                 'headers' => [
                     'apikey' => 'helloworld',

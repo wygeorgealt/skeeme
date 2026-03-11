@@ -225,26 +225,27 @@ export default function AccountScreen() {
                                     <View className="flex-row items-center">
                                         <View
                                             className="size-12 rounded-xl border-2 items-center justify-center mr-4"
-                                            style={[
-                                                isSelected
-                                                    ? { borderColor: colorScheme === 'dark' ? '#ffffff' : '#0f172a', backgroundColor: colorScheme === 'dark' ? '#ffffff' : '#0f172a' }
-                                                    : { borderColor: colorScheme === 'dark' ? '#334155' : '#cbd5e1', backgroundColor: colorScheme === 'dark' ? '#282828' : '#ffffff' }
-                                            ]}
-                                        >
-                                            <Ionicons name={icons[t] as any} size={20} color={isSelected ? (t === 'dark' ? '#0f172a' : 'white') : '#64748b'} />
+                                                style={[
+                                                    { borderWidth: 2 },
+                                                    colorScheme === 'dark'
+                                                        ? { borderColor: '#ffffff', backgroundColor: '#ffffff' }
+                                                        : { borderColor: '#cbd5e1', backgroundColor: '#ffffff' }
+                                                ]}
+                                            >
+                                            <Ionicons name={icons[t] as any} size={20} color={isSelected ? (t === 'dark' ? '#121212' : 'white') : '#64748b'} />
                                         </View>
                                         <Text
                                             className="font-black tracking-tight text-[16px]"
-                                            style={{ color: isSelected ? (colorScheme === 'dark' ? '#ffffff' : '#0f172a') : '#64748b' }}
+                                            style={{ color: isSelected ? (colorScheme === 'dark' ? '#ffffff' : '#121212') : '#64748b' }}
                                         >
                                             {labels[t]}
                                         </Text>
                                     </View>
                                     <View
                                         className="size-6 rounded-full border-2 items-center justify-center"
-                                        style={{ borderColor: isSelected ? (colorScheme === 'dark' ? '#ffffff' : '#0f172a') : (colorScheme === 'dark' ? '#475569' : '#cbd5e1') }}
+                                        style={{ borderColor: isSelected ? (colorScheme === 'dark' ? '#ffffff' : '#121212') : (colorScheme === 'dark' ? '#475569' : '#cbd5e1') }}
                                     >
-                                        {isSelected && <View className="size-3 rounded-full" style={{ backgroundColor: colorScheme === 'dark' ? '#ffffff' : '#0f172a' }} />}
+                                        {isSelected && <View className="size-3 rounded-full" style={{ backgroundColor: colorScheme === 'dark' ? '#ffffff' : '#121212' }} />}
                                     </View>
                                 </TouchableOpacity>
                             );
@@ -281,7 +282,7 @@ export default function AccountScreen() {
                             activeOpacity={0.8}
                         >
                             {isUpdatingPassword ? (
-                                <ActivityIndicator color="#0f172a" />
+                                <ActivityIndicator color="#121212" />
                             ) : passwordSuccess ? (
                                 <>
                                     <Ionicons name="checkmark-circle" size={18} color="white" />

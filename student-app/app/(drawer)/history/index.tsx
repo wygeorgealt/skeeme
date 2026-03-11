@@ -127,7 +127,7 @@ export default function StudyHistoryDashboard() {
                     >
                         <Text style={[
                             styles.tabText,
-                            activeTab === 'quizzes' ? { color: isDark ? 'white' : '#0f172a', fontWeight: '900' } : { color: '#94a3b8' }
+                            activeTab === 'quizzes' ? { color: isDark ? 'white' : '#121212', fontWeight: '900' } : { color: '#94a3b8' }
                         ]}>Quizzes</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -139,7 +139,7 @@ export default function StudyHistoryDashboard() {
                     >
                         <Text style={[
                             styles.tabText,
-                            activeTab === 'flashcards' ? { color: isDark ? 'white' : '#0f172a', fontWeight: '900' } : { color: '#94a3b8' }
+                            activeTab === 'flashcards' ? { color: isDark ? 'white' : '#121212', fontWeight: '900' } : { color: '#94a3b8' }
                         ]}>Flashcards</Text>
                     </TouchableOpacity>
                 </View>
@@ -148,7 +148,7 @@ export default function StudyHistoryDashboard() {
             {/* Content */}
             <ScrollView
                 className="flex-1 px-6 pt-2"
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "white" : "#0f172a"} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "white" : "#121212"} />}
                 showsVerticalScrollIndicator={false}
             >
                 {isLoading && quizzes.length === 0 && decks.length === 0 ? (

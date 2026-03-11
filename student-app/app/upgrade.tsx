@@ -86,9 +86,9 @@ export default function UpgradeScreen() {
             }
         } catch (error: any) {
             if (__DEV__) {
-                console.error('Checkout failed', error);
+                if (__DEV__) console.error('Checkout failed', error);
                 if (error.response?.data) {
-                    console.error('Checkout Error Response:', JSON.stringify(error.response.data, null, 2));
+                    if (__DEV__) console.error('Checkout Error Response:', JSON.stringify(error.response.data, null, 2));
                 }
             }
             const msg = error.response?.data?.message || "Could not start the payment process. Please try again.";
@@ -186,7 +186,7 @@ export default function UpgradeScreen() {
                                         className="font-black text-sm capitalize"
                                         style={{
                                             color: isActive
-                                                ? (isDark ? '#FFFFFF' : '#0F172A')
+                                                ? (isDark ? '#FFFFFF' : '#121212')
                                                 : (isDark ? '#94A3B8' : '#64748B')
                                         }}
                                     >

@@ -124,7 +124,7 @@ export default function DashboardScreen() {
                     </Text>
                 </View>
                 <TouchableOpacity onPress={() => router.push('/account')} className="size-11 rounded-full bg-slate-100 dark:bg-slate-800 items-center justify-center border border-slate-200 dark:border-slate-700">
-                    <Ionicons name="person" size={18} color={isDark ? '#cbd5e1' : '#0f172a'} />
+                    <Ionicons name="person" size={18} color={isDark ? '#cbd5e1' : '#121212'} />
                 </TouchableOpacity>
             </View>
 
@@ -205,7 +205,7 @@ export default function DashboardScreen() {
                         activeOpacity={0.7}
                     >
                         <View className="size-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl items-center justify-center mr-4">
-                            <Ionicons name="school" size={24} color={isDark ? '#e2e8f0' : '#0f172a'} />
+                            <Ionicons name="school" size={24} color={isDark ? '#e2e8f0' : '#121212'} />
                         </View>
                         <View className="flex-1">
                             <Text className="text-base font-black text-slate-900 dark:text-white tracking-tight">AI Practice Quiz</Text>
@@ -238,7 +238,7 @@ export default function DashboardScreen() {
                         activeOpacity={0.7}
                     >
                         <View className="size-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl items-center justify-center mr-4">
-                            <Ionicons name="scan" size={24} color={isDark ? '#e2e8f0' : '#0f172a'} />
+                            <Ionicons name="scan" size={24} color={isDark ? '#e2e8f0' : '#121212'} />
                         </View>
                         <View className="flex-1">
                             <Text className="text-base font-black text-slate-900 dark:text-white tracking-tight">Scan & Solve</Text>

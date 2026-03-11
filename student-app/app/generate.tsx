@@ -21,18 +21,19 @@ import { RewardModal } from '@/components/RewardModal';
 import { QuizMode, Difficulty, FormatType, Question, TheoryResult } from '@/components/quiz/QuizTypes';
 import { MCQCard } from '@/components/quiz/MCQCard';
 import { TheoryCard } from '@/components/quiz/TheoryCard';
-
-
+import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN SCREEN
 // ══════════════════════════════════════════════════════════════════════════════
 export default function GenerateQuizScreen() {
     const { updateUser } = useAuthStore();
+    const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const bgColor = isDark ? '#282828' : '#ffffff';
-    const tintColor = isDark ? '#fff' : '#0f172a';
+    const bgColor = isDark ? '#121212' : '#ffffff';
+    const tintColor = isDark ? '#fff' : '#121212';
 
     // Setup state
     const [mode, setMode] = useState<QuizMode>('topic');
@@ -83,7 +84,7 @@ export default function GenerateQuizScreen() {
             const uri = await captureRef(viewShotRef.current, { format: 'png', quality: 1.0 });
             await Sharing.shareAsync(uri);
         } catch (e) {
-            console.error('Sharing failed', e);
+            if (__DEV__) console.error('Sharing failed', e);
             Alert.alert('Sharing failed', 'Could not generate result image.');
         } finally {
             setIsSharing(false);
@@ -236,7 +237,7 @@ export default function GenerateQuizScreen() {
                 setIsRewardModalVisible(true);
             }
         } catch (err) {
-            console.warn('Failed to save quiz history', err);
+            if (__DEV__) console.warn('Failed to save quiz history', err);
             setSaveError(true);
         } finally {
             setIsSavingHistory(false);
@@ -265,14 +266,14 @@ export default function GenerateQuizScreen() {
                                 className="flex-1 items-center justify-center py-3 rounded-xl"
                                 style={[
                                     mode === m ? {
-                                        backgroundColor: isDark ? '#282828' : '#ffffff',
+                                        backgroundColor: isDark ? '#121212' : '#ffffff',
                                         shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1,
                                         borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0'
                                     } : {}
                                 ]}>
                                 <Text
                                     className="font-black text-[14px] uppercase tracking-widest"
-                                    style={{ color: mode === m ? (isDark ? '#ffffff' : '#0f172a') : (isDark ? '#475569' : '#94a3b8') }}
+                                    style={{ color: mode === m ? (isDark ? '#ffffff' : '#121212') : (isDark ? '#475569' : '#94a3b8') }}
                                 >
                                     {m}
                                 </Text>
@@ -339,12 +340,12 @@ export default function GenerateQuizScreen() {
                                 style={[
                                     { borderWidth: 2 },
                                     difficulty === d
-                                        ? { borderColor: isDark ? '#ffffff' : '#0f172a', backgroundColor: isDark ? '#ffffff' : '#0f172a' }
-                                        : { borderColor: isDark ? '#1e293b' : '#e2e8f0', backgroundColor: isDark ? '#0f172a' : '#ffffff' }
+                                        ? { borderColor: isDark ? '#ffffff' : '#121212', backgroundColor: isDark ? '#ffffff' : '#121212' }
+                                        : { borderColor: isDark ? '#1e293b' : '#e2e8f0', backgroundColor: isDark ? '#121212' : '#ffffff' }
                                 ]}>
                                 <Text
                                     className="font-black text-[13px] uppercase tracking-widest"
-                                    style={{ color: difficulty === d ? (isDark ? '#0f172a' : '#ffffff') : '#94a3b8' }}
+                                    style={{ color: difficulty === d ? (isDark ? '#121212' : '#ffffff') : '#94a3b8' }}
                                 >
                                     {d}
                                 </Text>
@@ -360,12 +361,12 @@ export default function GenerateQuizScreen() {
                                 style={[
                                     { borderWidth: 2 },
                                     format === f.id
-                                        ? { borderColor: isDark ? '#ffffff' : '#0f172a', backgroundColor: isDark ? '#ffffff' : '#0f172a' }
-                                        : { borderColor: isDark ? '#1e293b' : '#e2e8f0', backgroundColor: isDark ? '#0f172a' : '#ffffff' }
+                                        ? { borderColor: isDark ? '#ffffff' : '#121212', backgroundColor: isDark ? '#ffffff' : '#121212' }
+                                        : { borderColor: isDark ? '#1e293b' : '#e2e8f0', backgroundColor: isDark ? '#121212' : '#ffffff' }
                                 ]}>
                                 <Text
                                     className="font-black text-[13px] uppercase tracking-widest"
-                                    style={{ color: format === f.id ? (isDark ? '#0f172a' : '#ffffff') : '#94a3b8' }}
+                                    style={{ color: format === f.id ? (isDark ? '#121212' : '#ffffff') : '#94a3b8' }}
                                 >
                                     {f.label}
                                 </Text>
@@ -396,35 +397,35 @@ export default function GenerateQuizScreen() {
                     )}
 
                     <View className="h-4" />
+                </ScrollView>
 
+                {/* Glassmorphic Sticky Footer */}
+                <BlurView 
+                    intensity={80} 
+                    tint={isDark ? "dark" : "light"} 
+                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, paddingBottom: insets.bottom || 24, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                >
                     {isLoading ? (
-                        <View className="bg-brand-primary/5 dark:bg-brand-primary/10 rounded-[32px] p-8 border-2 border-brand-primary/20 items-center overflow-hidden">
-                            <View className="mb-6">
-                                <ActivityIndicator size="large" color="#2EBD85" />
+                        <View className="bg-brand-primary/5 dark:bg-brand-primary/10 rounded-[28px] p-6 border-2 border-brand-primary/20 items-center overflow-hidden">
+                            <View className="mb-4">
+                                <ActivityIndicator size="small" color="#2EBD85" />
                             </View>
-                            <Text className="text-brand-primary font-black text-xl tracking-tight mb-2 text-center">{loadingStage}</Text>
-                            <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm text-center px-4">
-                                Our AI is processing your request. This usually takes 15-30 seconds depending on complexity.
+                            <Text className="text-brand-primary font-black text-lg tracking-tight mb-1 text-center">{loadingStage}</Text>
+                            <Text className="text-slate-500 dark:text-slate-400 font-medium text-[11px] text-center px-2">
+                                Usually takes 15-30s.
                             </Text>
-
-                            {/* Multi-stage Progress Indicators */}
-                            <View className="flex-row gap-2 mt-8 w-full px-4">
+                            <View className="flex-row gap-1.5 mt-4 w-full px-2">
                                 {['Analyzing', 'Extracting', 'Generating', 'Finalizing'].map((s, i) => {
                                     const stages = mode === 'file'
                                         ? ['Analyzing Document...', 'Extracting Context...', 'Generating Questions...', 'Almost Ready...']
                                         : ['Analyzing Topic...', 'Researching Context...', 'Generating Questions...', 'Almost Ready...'];
-
                                     const currentIdx = stages.indexOf(loadingStage);
                                     const isComplete = i < currentIdx;
                                     const isActive = i === currentIdx;
-
                                     return (
                                         <View key={i} className="flex-1 h-1.5 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800">
                                             {(isComplete || isActive) && (
-                                                <View
-                                                    className={`h-full ${isComplete ? 'bg-brand-primary' : 'bg-brand-primary/40'}`}
-                                                    style={{ width: isComplete ? '100%' : '60%' }}
-                                                />
+                                                <View className={`h-full ${isComplete ? 'bg-brand-primary' : 'bg-brand-primary/60'}`} style={{ width: isComplete ? '100%' : '60%' }} />
                                             )}
                                         </View>
                                     );
@@ -432,20 +433,21 @@ export default function GenerateQuizScreen() {
                             </View>
                         </View>
                     ) : (
-                        <TouchableOpacity
-                            onPress={handleGenerate}
-                            className="bg-[#2EBD85] rounded-2xl py-5 items-center flex-row justify-center shadow-lg shadow-[#2EBD85]/20"
-                            activeOpacity={0.8}
-                        >
-                            <Ionicons name="sparkles" size={20} color="#fff" />
-                            <Text className="text-white font-black ml-2 text-[17px]">Generate Quiz</Text>
-                        </TouchableOpacity>
+                        <>
+                            <TouchableOpacity
+                                onPress={handleGenerate}
+                                className="bg-[#2EBD85] rounded-2xl py-4 items-center flex-row justify-center shadow-lg shadow-[#2EBD85]/20"
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="sparkles" size={20} color="#fff" />
+                                <Text className="text-white font-black ml-2 text-[17px]">Generate Quiz</Text>
+                            </TouchableOpacity>
+                            <Text className="text-center text-slate-400 font-bold text-[11px] uppercase tracking-widest mt-4">
+                                Estimated Cost: {parseInt(questionCount) || 10} Credits | Max 5MB
+                            </Text>
+                        </>
                     )}
-
-                    <Text className="text-center text-slate-400 font-bold text-[11px] uppercase tracking-widest mt-6">
-                        Estimated Cost: {parseInt(questionCount) || 10} Credits | Max 5MB
-                    </Text>
-                </ScrollView>
+                </BlurView>
             </View>
         );
     }
@@ -454,7 +456,16 @@ export default function GenerateQuizScreen() {
     if (questions.length > 0 && totalAnswered < questions.length) {
         return (
             <View className="flex-1 bg-white dark:bg-brand-dark">
-                <Stack.Screen options={{ title: 'Quiz Active', headerShown: true, headerStyle: { backgroundColor: bgColor }, headerTintColor: tintColor, headerBackVisible: false, headerShadowVisible: false }} />
+                <Stack.Screen options={{ 
+                    title: 'Quiz Active', 
+                    headerShown: true, 
+                    headerStyle: { 
+                        backgroundColor: bgColor,
+                    }, 
+                    headerTintColor: tintColor, 
+                    headerBackVisible: false, 
+                    headerShadowVisible: false 
+                }} />
 
                 {/* Flat header bar */}
                 <View className="border-b-2 border-slate-100 dark:border-slate-900 px-6 py-4 flex-row items-center justify-between bg-white dark:bg-brand-dark z-20">
@@ -492,7 +503,16 @@ export default function GenerateQuizScreen() {
 
     return (
         <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
-            <Stack.Screen options={{ title: 'Quiz Results', headerShown: true, headerStyle: { backgroundColor: bgColor }, headerTintColor: tintColor, headerBackVisible: false }} />
+            <Stack.Screen options={{ 
+                title: 'Quiz Results', 
+                headerShown: true, 
+                headerStyle: { 
+                    backgroundColor: bgColor,
+                }, 
+                headerTintColor: tintColor, 
+                headerBackVisible: false,
+                headerShadowVisible: false
+            }} />
 
             <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
                 {/* Motivational Header */}
@@ -578,10 +598,10 @@ export default function GenerateQuizScreen() {
                         className="bg-slate-900 dark:bg-white rounded-2xl px-8 py-5 flex-1 items-center justify-center flex-row"
                     >
                         {isSharing ? (
-                            <ActivityIndicator size="small" color={isDark ? '#0f172a' : 'white'} />
+                            <ActivityIndicator size="small" color={isDark ? '#121212' : 'white'} />
                         ) : (
                             <>
-                                <Ionicons name="share-outline" size={20} color={isDark ? '#0f172a' : 'white'} style={{ marginRight: 8 }} />
+                                <Ionicons name="share-outline" size={20} color={isDark ? '#121212' : 'white'} style={{ marginRight: 8 }} />
                                 <Text className="text-white dark:text-slate-900 font-black text-[16px]">Share</Text>
                             </>
                         )}

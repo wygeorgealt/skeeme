@@ -5,8 +5,8 @@ export default function FlashcardsLayout() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
-    const bgColor = isDark ? '#282828' : '#f8fafc';
-    const tintColor = isDark ? '#fff' : '#0f172a';
+    const bgColor = isDark ? '#121212' : '#f8fafc';
+    const tintColor = isDark ? '#fff' : '#121212';
 
     return (
         <Stack screenOptions={{

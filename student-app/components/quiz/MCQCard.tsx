@@ -22,10 +22,10 @@ export function MCQCard({
     const isDark = colorScheme === 'dark';
 
     const optionStyle = (opt: string) => {
-        if (!answered) return { bg: isDark ? '#0f172a' : '#f8fafc', border: isDark ? '#334155' : '#e2e8f0', text: isDark ? '#f8fafc' : '#0f172a', iconName: null, iconColor: '' };
+        if (!answered) return { bg: isDark ? '#121212' : '#f8fafc', border: isDark ? '#334155' : '#e2e8f0', text: isDark ? '#f8fafc' : '#121212', iconName: null, iconColor: '' };
         if (opt === q.correct_answer) return { bg: isDark ? 'rgba(46, 189, 133, 0.1)' : '#ecfdf5', border: '#2EBD85', text: '#2EBD85', iconName: 'checkmark-circle', iconColor: '#2EBD85' };
         if (opt === selectedAnswer) return { bg: isDark ? 'rgba(239, 68, 68, 0.1)' : '#fef2f2', border: '#ef4444', text: '#ef4444', iconName: 'close-circle', iconColor: '#ef4444' };
-        return { bg: isDark ? '#0f172a' : '#f8fafc', border: isDark ? '#334155' : '#e2e8f0', text: isDark ? '#475569' : '#94a3b8', iconName: null, iconColor: '' };
+        return { bg: isDark ? '#121212' : '#f8fafc', border: isDark ? '#334155' : '#e2e8f0', text: isDark ? '#475569' : '#94a3b8', iconName: null, iconColor: '' };
     };
 
     const front = (
@@ -41,7 +41,7 @@ export function MCQCard({
             </View>
             <MathText
                 content={q.question_text}
-                color={isDark ? 'white' : '#0f172a'}
+                color={isDark ? 'white' : '#121212'}
                 fontSize={17}
                 containerStyle={{ minHeight: 60 }}
             />
@@ -100,7 +100,7 @@ export function MCQCard({
     const back = (
         <View className="bg-slate-50 dark:bg-slate-800 rounded-[24px] p-6 border-2 border-slate-200 dark:border-slate-700">
             <TouchableOpacity onPress={() => setFlipped(false)} className="flex-row items-center mb-6">
-                <Ionicons name="arrow-back" size={16} color={isDark ? '#e2e8f0' : '#0f172a'} />
+                <Ionicons name="arrow-back" size={16} color={isDark ? '#e2e8f0' : '#121212'} />
                 <Text className="text-slate-900 dark:text-white font-black ml-2 text-[13px] uppercase tracking-widest">Back</Text>
             </TouchableOpacity>
             <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400 mb-2">Explanation</Text>

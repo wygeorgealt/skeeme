@@ -84,7 +84,7 @@ export default function LoginScreen() {
     };
 
     // Theme-based colors
-    const bgClass = isDark ? "bg-[#282828]" : "bg-white";
+    const bgClass = isDark ? "bg-[#121212]" : "bg-white";
     const textTitleClass = isDark ? "text-white" : "text-black";
     const textSubClass = isDark ? "text-slate-400" : "text-slate-500";
     const inputBgClass = isDark ? "bg-[#1c1c1e]" : "bg-slate-100";
@@ -131,6 +131,7 @@ export default function LoginScreen() {
                         <TextInput
                             className={`flex-1 text-${inputTextColor} font-medium text-[17px] h-[56px]`}
                             placeholder="Email address"
+                            accessibilityLabel="Email address"
                             placeholderTextColor={placeholderColor}
                             keyboardType="email-address"
                             autoCapitalize="none"
@@ -152,6 +153,8 @@ export default function LoginScreen() {
                     disabled={isLoading}
                     className={`w-full bg-brand-primary rounded-[16px] h-[56px] items-center justify-center shadow-lg shadow-brand-primary/30 ${isLoading ? 'opacity-70' : ''}`}
                     activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Sign In"
                 >
                     {isLoading ? (
                         <ActivityIndicator color="white" />
@@ -194,7 +197,7 @@ export default function LoginScreen() {
 
 
 
-                <TouchableOpacity onPress={() => router.push('/signup')} className="mt-8 mb-12 items-center">
+                <TouchableOpacity onPress={() => router.push('/signup')} className="mt-8 mb-12 items-center" accessibilityRole="button" accessibilityLabel="Go to Sign up">
                     <Text className={`${textSubClass} font-medium`}>
                         Don't have an account? <Text className="text-brand-primary font-bold">Sign up</Text>
                     </Text>

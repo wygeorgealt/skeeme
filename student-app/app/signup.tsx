@@ -73,7 +73,7 @@ export default function SignupScreen() {
                 }
             }
         } catch (error: any) {
-            console.error('[Social Signup] Error:', error);
+            if (__DEV__) console.error('[Social Signup] Error:', error);
             Alert.alert('Auth Error', 'Social sign-up failed. Please try again.');
         } finally {
             setIsSocialLoading(false);
@@ -141,7 +141,7 @@ export default function SignupScreen() {
             setRegisteredUser(user);
             setStep(5); // Move to success step
         } catch (error: any) {
-            console.error('[Signup] Error', error.response?.data);
+            if (__DEV__) console.error('[Signup] Error', error.response?.data);
             let errorMessage = error.response?.data?.message || 'Check your details and try again.';
             let emailError = false;
             if (error.response?.status === 422 && error.response?.data?.errors) {
@@ -177,7 +177,7 @@ export default function SignupScreen() {
             });
             router.replace('/upgrade'); // Proceed to upgrade page
         } catch (error) {
-            console.error('Failed to save preferences', error);
+            if (__DEV__) console.error('Failed to save preferences', error);
             // Even if it fails, they are registered, let them proceed
             router.replace('/upgrade');
         } finally {
@@ -194,7 +194,7 @@ export default function SignupScreen() {
     const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
 
     // Theme-based colors
-    const bgClass = isDark ? "bg-[#282828]" : "bg-white";
+    const bgClass = isDark ? "bg-[#121212]" : "bg-white";
     const textTitleClass = isDark ? "text-white" : "text-black";
     const textSubClass = isDark ? "text-slate-400" : "text-slate-500";
     const inputBgClass = isDark ? "bg-[#1c1c1e]" : "bg-slate-100";
@@ -246,6 +246,7 @@ export default function SignupScreen() {
                             <TextInput
                                 className="flex-1 font-medium text-[17px] h-[56px]"
                                 placeholder="name@example.com"
+                                accessibilityLabel="Email address"
                                 placeholderTextColor={placeholderColor}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
@@ -271,6 +272,8 @@ export default function SignupScreen() {
                             onPress={nextStep}
                             className={`w-full py-[18px] rounded-[12px] items-center justify-center mb-8 ${email.length > 3 ? primaryBtnClass : primaryBtnDisabledClass}`}
                             disabled={email.length <= 3}
+                            accessibilityRole="button"
+                            accessibilityLabel="Continue to secure account"
                         >
                             <Text className={`font-bold text-[17px] tracking-tight ${email.length > 3 ? primaryBtnTextClass : primaryBtnTextDisabledClass}`}>Continue</Text>
                         </TouchableOpacity>
@@ -338,6 +341,8 @@ export default function SignupScreen() {
                             onPress={nextStep}
                             className={`w-full py-[18px] rounded-[12px] items-center justify-center ${password.length >= 8 && confirmPassword === password ? primaryBtnClass : primaryBtnDisabledClass}`}
                             disabled={password.length < 8 || confirmPassword !== password}
+                            accessibilityRole="button"
+                            accessibilityLabel="Continue to name setup"
                         >
                             <Text className={`font-bold text-[17px] tracking-tight ${password.length >= 8 && confirmPassword === password ? primaryBtnTextClass : primaryBtnTextDisabledClass}`}>Continue</Text>
                         </TouchableOpacity>
@@ -358,6 +363,7 @@ export default function SignupScreen() {
                             <TextInput
                                 className="flex-1 font-medium text-[17px] h-[56px]"
                                 placeholder="First Name"
+                                accessibilityLabel="First Name"
                                 placeholderTextColor={placeholderColor}
                                 autoCapitalize="words"
                                 value={firstName}
@@ -376,6 +382,7 @@ export default function SignupScreen() {
                             <TextInput
                                 className="flex-1 font-medium text-[17px] h-[56px]"
                                 placeholder="Last Name"
+                                accessibilityLabel="Last Name"
                                 placeholderTextColor={placeholderColor}
                                 autoCapitalize="words"
                                 value={lastName}
@@ -393,6 +400,8 @@ export default function SignupScreen() {
                             onPress={nextStep}
                             className={`w-full py-[18px] rounded-[12px] items-center justify-center flex-row ${firstName.length > 1 && lastName.length > 1 ? primaryBtnClass : primaryBtnDisabledClass}`}
                             disabled={firstName.length <= 1 || lastName.length <= 1}
+                            accessibilityRole="button"
+                            accessibilityLabel="Continue to date of birth"
                         >
                             <Text className={`font-bold text-[17px] tracking-tight ${firstName.length > 1 && lastName.length > 1 ? primaryBtnTextClass : primaryBtnTextDisabledClass}`}>Continue</Text>
                         </TouchableOpacity>
@@ -466,6 +475,8 @@ export default function SignupScreen() {
                             onPress={nextStep}
                             className={`w-full py-[18px] rounded-[12px] items-center justify-center flex-row ${!isLoading ? 'bg-brand-primary' : 'bg-brand-primary/50'}`}
                             disabled={isLoading}
+                            accessibilityRole="button"
+                            accessibilityLabel="Create Account"
                         >
                             {isLoading ? (
                                 <ActivityIndicator color="white" />
@@ -566,6 +577,8 @@ export default function SignupScreen() {
                             onPress={handleSavePreferences}
                             className={`w-full py-[18px] rounded-[12px] items-center justify-center flex-row mb-4 ${!isLoading ? 'bg-brand-primary' : 'bg-brand-primary/50'}`}
                             disabled={isLoading}
+                            accessibilityRole="button"
+                            accessibilityLabel="Save Preferences and Enter App"
                         >
                             {isLoading ? (
                                 <ActivityIndicator color="white" />
@@ -574,7 +587,7 @@ export default function SignupScreen() {
                             )}
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={skipPreferences} className="w-full py-2 items-center">
+                        <TouchableOpacity onPress={skipPreferences} className="w-full py-2 items-center" accessibilityRole="button" accessibilityLabel="Skip Preferences">
                             <Text className={`${textSubClass} font-bold text-[15px]`}>Skip for now</Text>
                         </TouchableOpacity>
                     </Animated.View>

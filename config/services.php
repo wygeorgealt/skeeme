@@ -75,4 +75,9 @@ return [
         'api_key' => env('OPTIIC_API_KEY'),
     ],
 
+    'paddle_ocr' => [
+        'url' => env('PADDLE_OCR_URL'),
+        'timeout' => (int) env('PADDLE_OCR_TIMEOUT', 30),
+    ],
+
 ];
