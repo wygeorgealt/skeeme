@@ -123,10 +123,10 @@ class PlagiarismManager extends Component
             ])->save();
             
             $this->plagiarismService->clearCache($this->exam);
-            $this->dispatch('notify', message: 'Plagiarism settings saved successfully');
+            $this->dispatch('notify', ...['message' => 'Plagiarism settings saved successfully']);
             $this->showSettings = false;
         } catch (\Exception $e) {
-            $this->dispatch('notify-error', message: 'Failed to save settings: ' . $e->getMessage());
+            $this->dispatch('notify-error', ...['message' => 'Failed to save settings: ' . $e->getMessage()]);
         }
     }
     
@@ -157,7 +157,7 @@ class PlagiarismManager extends Component
     public function runCheck()
     {
         try {
-            $this->dispatch('notify', message: 'Running plagiarism checks...');
+            $this->dispatch('notify', ...['message' => 'Running plagiarism checks...']);
             
             // Trigger background job for all unchecked answers
             foreach ($this->exam->sessions as $session) {
@@ -178,9 +178,9 @@ class PlagiarismManager extends Component
             
             $this->loadChecks();
             $this->loadReport();
-            $this->dispatch('notify', message: 'Plagiarism checks completed');
+            $this->dispatch('notify', ...['message' => 'Plagiarism checks completed']);
         } catch (\Exception $e) {
-            $this->dispatch('notify-error', message: 'Failed to run checks: ' . $e->getMessage());
+            $this->dispatch('notify-error', ...['message' => 'Failed to run checks: ' . $e->getMessage()]);
         }
     }
     
@@ -188,7 +188,7 @@ class PlagiarismManager extends Component
     {
         $this->loadChecks();
         $this->loadReport();
-        $this->dispatch('notify', message: 'Checks refreshed');
+        $this->dispatch('notify', ...['message' => 'Checks refreshed']);
     }
     
     #[Computed]

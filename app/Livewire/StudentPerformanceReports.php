@@ -43,7 +43,7 @@ class StudentPerformanceReports extends Component
             $this->questionPerformance = $this->performanceService->getQuestionPerformance($this->exam);
             $this->performanceTrends = $this->performanceService->getPerformanceTrends($this->exam);
         } catch (\Exception $e) {
-            $this->dispatch('notify-error', message: 'Failed to load reports: ' . $e->getMessage());
+            $this->dispatch('notify-error', ...['message' => 'Failed to load reports: ' . $e->getMessage()]);
         }
     }
     
@@ -62,9 +62,9 @@ class StudentPerformanceReports extends Component
             }
             
             $this->showExportModal = false;
-            $this->dispatch('notify', message: 'Report exported successfully');
+            $this->dispatch('notify', ...['message' => 'Report exported successfully']);
         } catch (\Exception $e) {
-            $this->dispatch('notify-error', message: 'Export failed: ' . $e->getMessage());
+            $this->dispatch('notify-error', ...['message' => 'Export failed: ' . $e->getMessage()]);
         }
     }
     

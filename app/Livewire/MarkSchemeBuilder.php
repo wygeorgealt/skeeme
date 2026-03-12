@@ -82,7 +82,7 @@ class MarkSchemeBuilder extends Component
         ]);
 
         $this->scheme = $scheme;
-        $this->dispatch('notify', message: 'Mark scheme created successfully');
+        $this->dispatch('notify', ...['message' => 'Mark scheme created successfully']);
     }
 
     public function updateScheme(): void
@@ -104,7 +104,7 @@ class MarkSchemeBuilder extends Component
             'is_public' => $this->isPublic,
         ]);
 
-        $this->dispatch('notify', message: 'Mark scheme updated successfully');
+        $this->dispatch('notify', ...['message' => 'Mark scheme updated successfully']);
     }
 
     public function addItem(): void
@@ -130,7 +130,7 @@ class MarkSchemeBuilder extends Component
 
         $this->resetItemForm();
         $this->loadScheme($this->scheme);
-        $this->dispatch('notify', message: 'Item added successfully');
+        $this->dispatch('notify', ...['message' => 'Item added successfully']);
     }
 
     public function editItem($itemId): void
@@ -165,14 +165,14 @@ class MarkSchemeBuilder extends Component
 
         $this->resetItemForm();
         $this->loadScheme($this->scheme);
-        $this->dispatch('notify', message: 'Item updated successfully');
+        $this->dispatch('notify', ...['message' => 'Item updated successfully']);
     }
 
     public function deleteItem($itemId): void
     {
         MarkSchemeItem::find($itemId)->delete();
         $this->loadScheme($this->scheme);
-        $this->dispatch('notify', message: 'Item deleted successfully');
+        $this->dispatch('notify', ...['message' => 'Item deleted successfully']);
     }
 
     public function cloneScheme(): void
@@ -187,7 +187,7 @@ class MarkSchemeBuilder extends Component
         $this->loadScheme($cloned);
         $this->showCloneModal = false;
         $this->cloneName = '';
-        $this->dispatch('notify', message: 'Mark scheme cloned successfully');
+        $this->dispatch('notify', ...['message' => 'Mark scheme cloned successfully']);
     }
 
     public function assignToQuestions(): void
@@ -202,7 +202,7 @@ class MarkSchemeBuilder extends Component
 
         $this->showAssignModal = false;
         $this->selectedQuestions = [];
-        $this->dispatch('notify', message: 'Scheme assigned to questions');
+        $this->dispatch('notify', ...['message' => 'Scheme assigned to questions']);
     }
 
     public function resetItemForm(): void

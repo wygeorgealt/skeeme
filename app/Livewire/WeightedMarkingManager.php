@@ -73,7 +73,7 @@ class WeightedMarkingManager extends Component
 
         $this->resetEditingForm();
         $this->loadWeights();
-        $this->dispatch('notify', message: 'Weight updated successfully');
+        $this->dispatch('notify', ...['message' => 'Weight updated successfully']);
     }
 
     public function cancelEdit(): void
@@ -96,14 +96,14 @@ class WeightedMarkingManager extends Component
         $this->weightingService->applyUniformWeights($this->exam, $this->newTotalMarks);
         $this->loadWeights();
         $this->showSettingsModal = false;
-        $this->dispatch('notify', message: 'Uniform weights applied');
+        $this->dispatch('notify', ...['message' => 'Uniform weights applied']);
     }
 
     public function resetWeights(): void
     {
         $this->weightingService->resetWeights($this->exam);
         $this->loadWeights();
-        $this->dispatch('notify', message: 'Weights reset to defaults');
+        $this->dispatch('notify', ...['message' => 'Weights reset to defaults']);
     }
 
     public function getWeightPercentage($questionId): float

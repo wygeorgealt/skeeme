@@ -108,6 +108,8 @@ class FileExtractionService
             }
         }
         return $text;
+    }
+
     /**
      * Sanitize text to ensure it is valid UTF-8 and clean.
      */

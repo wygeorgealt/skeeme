@@ -103,7 +103,7 @@ class StudentExams extends Component
     public function refreshExams(): void
     {
         $this->loadExams();
-        $this->dispatch('notify', message: 'Exams refreshed');
+        $this->dispatch('notify', ...['message' => 'Exams refreshed']);
     }
 
     public function showExamDetails(?ExamSession $session): void

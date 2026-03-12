@@ -169,7 +169,7 @@ class StudentExamDelivery extends Component
         $answeredCount = collect($this->answers)->filter(fn($a) => !empty($a))->count();
         $this->session->update(['questions_answered' => $answeredCount]);
 
-        $this->dispatch('answer-saved', question: $index);
+        $this->dispatch('answer-saved', ...['question' => $index]);
     }
 
     /**
@@ -368,7 +368,7 @@ class StudentExamDelivery extends Component
             $this->flaggedQuestions[] = $this->currentQuestionIndex;
         }
 
-        $this->dispatch('question-flagged', index: $this->currentQuestionIndex);
+        $this->dispatch('question-flagged', ...['index' => $this->currentQuestionIndex]);
     }
 
     /**
