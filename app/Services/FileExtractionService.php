@@ -9,6 +9,12 @@ use Illuminate\Support\Facades\Storage;
 
 class FileExtractionService
 {
+    protected $visionService;
+
+    public function __construct(GoogleVisionService $visionService)
+    {
+        $this->visionService = $visionService;
+    }
     /**
      * Extract text from a file based on its extension.
      *
@@ -31,13 +37,27 @@ class FileExtractionService
         $extension = ltrim($extension, '.');
 
         try {
-            return match ($extension) {
+            $text = match ($extension) {
                 'pdf' => $this->extractFromPdf($filePath),
                 'docx' => $this->extractFromDocx($filePath),
-                'doc' => $this->extractFromDocx($filePath), // Some older docs might work but DOCX is preferred
+                'doc' => $this->extractFromDocx($filePath), 
                 'txt', 'md' => file_get_contents($filePath),
                 default => null,
             };
+
+            // OCR Fallback: If text is extremely short (scanned PDF or diagram-heavy medicine notes)
+            if ($extension === 'pdf' && (empty($text) || strlen(trim($text)) < 150)) {
+                Log::info("Sparse text detected in PDF ({$extension}), attempting Google Vision OCR fallback...");
+                $ocrResult = $this->visionService->ocrPdf($filePath);
+                if ($ocrResult['success']) {
+                    $text = $ocrResult['text'];
+                    Log::info("OCR Fallback Successful.");
+                } else {
+                    Log::warning("OCR Fallback Failed: " . ($ocrResult['error'] ?? 'Unknown error'));
+                }
+            }
+
+            return $text ? $this->sanitizeUtf8($text) : null;
         } catch (\Exception $e) {
             Log::error("FileExtractionService: Error extracting {$extension} file: " . $e->getMessage());
             return null;
@@ -88,5 +108,17 @@ class FileExtractionService
             }
         }
         return $text;
+    /**
+     * Sanitize text to ensure it is valid UTF-8 and clean.
+     */
+    private function sanitizeUtf8(string $text): string
+    {
+        // Remove invalid UTF-8 sequences
+        $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+        
+        // Remove non-printable control characters except standard whitespace
+        $text = preg_replace('/[^\x20-\x7E\t\n\r\x{00A0}-\x{FFFF}]/u', '', $text);
+        
+        return trim($text);
     }
 }

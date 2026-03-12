@@ -29,7 +29,7 @@ class PracticeQuizController extends Controller
      */
     public function generate(Request $request)
     {
-        set_time_limit(180); // Ensure long AI generations don't timeout
+        set_time_limit(600); // Massive boost for 50+ page documents
         Log::info("Quiz Generation Started", $request->except(['file']));
 
         try {
@@ -75,10 +75,10 @@ class PracticeQuizController extends Controller
             $wordCount = str_word_count($sourceContent);
 
             // Hard Word Limit Protector
-            if ($wordCount > 8000) {
+            if ($wordCount > 40000) {
                 Log::warning("Word limit exceeded", ['user_id' => $user->id, 'word_count' => $wordCount]);
                 return response()->json([
-                    'message' => "This document is too large for AI processing. Please limit it to 8,000 words (approx. 16 pages).",
+                    'message' => "This document is too large for AI processing. Please limit it to 40,000 words (approx. 80-100 pages).",
                 ], 422);
             }
 

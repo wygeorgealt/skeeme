@@ -18,8 +18,8 @@ class DeepseekAIService
         $this->apiKey = config('services.deepseek.api_key');
         $this->visionService = $visionService;
         $this->client = new Client([
-            'timeout' => 300,
-            'connect_timeout' => 10,
+            'timeout' => 600, // Increased for large document/medicine notes (50+ pages)
+            'connect_timeout' => 30,
         ]);
     }
 
@@ -56,8 +56,16 @@ class DeepseekAIService
             
             if ($progressCallback) $progressCallback(30);
 
-            // Build optimized prompt (fewer tokens = lower cost)
-            $prompt = $this->buildOptimizedPrompt($notes, $numberOfQuestions, $difficulty, $questionTypes, $prompt, $includeVisuals, $aiPreferences);
+            // Build optimized prompt
+            $prompt = $this->buildOptimizedPrompt(
+                array_map([$this, 'sanitizeUtf8'], $notes), 
+                $numberOfQuestions, 
+                $difficulty, 
+                $questionTypes, 
+                $this->sanitizeUtf8($prompt), 
+                $includeVisuals, 
+                $aiPreferences
+            );
 
             if ($progressCallback) $progressCallback(50);
             
@@ -825,5 +833,21 @@ PROMPT;
             \Log::error('Deepseek connection test failed: ' . $e->getMessage());
             return false;
         }
+    }
+    /**
+     * Sanitize text to ensure it is valid UTF-8.
+     * Prevents json_encode error: Malformed UTF-8 characters.
+     */
+    private function sanitizeUtf8(?string $text): string
+    {
+        if (empty($text)) return '';
+        
+        // Remove invalid UTF-8 sequences and convert to UTF-8
+        $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+        
+        // Remove non-printable control characters except newlines/tabs
+        $text = preg_replace('/[^\x20-\x7E\t\n\r\x{00A0}-\x{FFFF}]/u', '', $text);
+        
+        return $text;
     }
 }
