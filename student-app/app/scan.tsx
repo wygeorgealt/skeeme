@@ -13,6 +13,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { MathText } from '@/components/ui/MathText';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
+import { generateScanHTML } from '@/lib/pdfGenerator';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type ScanResult = {
@@ -118,16 +120,12 @@ export default function ScanScreen() {
         setLoadingStage('Preparing PDF...');
 
         try {
-            const response = await api.post('scan/export', { results });
-            const { base64, filename } = response.data;
-
-            const fileUri = `${FileSystem.documentDirectory}${filename}`;
-
-            await FileSystem.writeAsStringAsync(fileUri, base64, {
-                encoding: FileSystem.EncodingType.Base64,
+            const html = generateScanHTML(results);
+            const { uri } = await Print.printToFileAsync({
+                html,
+                base64: false
             });
-
-            await Sharing.shareAsync(fileUri);
+            await Sharing.shareAsync(uri);
         } catch (err) {
             if (__DEV__) console.warn('PDF Export failed', err);
             Alert.alert('Export Failed', 'Could not generate PDF report.');

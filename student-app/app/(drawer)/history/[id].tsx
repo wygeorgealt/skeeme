@@ -10,6 +10,8 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { QuizShareCard } from '@/components/QuizShareCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { MathText } from '@/components/ui/MathText';
+import * as Print from 'expo-print';
+import { generateQuizHTML } from '@/lib/pdfGenerator';
 
 // Storage helpers
 const storage = {
@@ -181,16 +183,12 @@ export default function QuizHistoryDetailScreen() {
         if (!session) return;
         setIsExporting(true);
         try {
-            const response = await api.get(`/quizzes/history/${id}/export`);
-            const { base64, filename } = response.data;
-
-            const fileUri = `${FileSystem.documentDirectory}${filename}`;
-
-            await FileSystem.writeAsStringAsync(fileUri, base64, {
-                encoding: FileSystem.EncodingType.Base64,
+            const html = generateQuizHTML(session.topic, session.score_percentage, session.questions);
+            const { uri } = await Print.printToFileAsync({
+                html,
+                base64: false
             });
-
-            await Sharing.shareAsync(fileUri);
+            await Sharing.shareAsync(uri);
         } catch (err) {
             if (__DEV__) console.warn('Quiz Export failed', err);
             Alert.alert('Export Failed', 'Could not generate PDF report.');
@@ -228,13 +226,14 @@ export default function QuizHistoryDetailScreen() {
 
     if (!session) return null;
 
-    const getScoreColor = (pct: number) => {
-        if (pct >= 80) return 'text-emerald-500 dark:text-emerald-400';
-        if (pct >= 60) return 'text-amber-500 dark:text-amber-400';
-        return 'text-red-500 dark:text-red-400';
+    const getRemark = (pct: number) => {
+        if (pct >= 90) return { title: "GENIUS!", subtitle: "Incredible work. You've mastered this topic.", icon: "star" };
+        if (pct >= 80) return { title: "GREAT JOB!", subtitle: "Solid understanding. Keep pushing forward!", icon: "trophy" };
+        if (pct >= 60) return { title: "GOOD EFFORT!", subtitle: "You're getting there. A quick review will help.", icon: "school" };
+        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: "trending-up" };
     };
 
-    const dsColor = session.score_percentage >= 80 ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/50' : (session.score_percentage >= 60 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/50' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-900/50');
+    const remark = getRemark(session.score_percentage);
 
     return (
         <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
@@ -256,76 +255,26 @@ export default function QuizHistoryDetailScreen() {
                 </View>
             </View>
 
-            <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
-                <View className={`p-6 rounded-3xl border mb-6 items-center shadow-sm shadow-slate-200 dark:shadow-none ${dsColor}`}>
-                    <Text className="text-slate-500 dark:text-slate-400 font-bold text-xs uppercase tracking-widest mb-1 text-center">Score</Text>
-                    <Text className={`text-4xl font-black mb-2 ${getScoreColor(session.score_percentage)}`}>
-                        {Math.round(session.score_percentage)}%
-                    </Text>
-                    <Text className="text-slate-700 dark:text-slate-300 font-bold mb-4 text-center">
-                        {session.topic}
-                    </Text>
-
-                    <View className="flex-row items-center justify-center space-x-4 w-full pt-4 border-t border-slate-200/50 dark:border-slate-700/50 mb-6">
-                        <View className="items-center">
-                            <Text className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase mb-1">Correct</Text>
-                            <Text className="text-slate-700 dark:text-slate-300 font-bold">{session.correct_answers}/{session.total_questions}</Text>
-                        </View>
-                        <View className="h-6 w-[1px] bg-slate-300 dark:bg-slate-600" />
-                        <View className="items-center">
-                            <Text className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase mb-1">Diff</Text>
-                            <Text className="text-slate-700 dark:text-slate-300 font-bold capitalize">{session.difficulty}</Text>
-                        </View>
-                        {session.time_spent_seconds && (
-                            <>
-                                <View className="h-6 w-[1px] bg-slate-300 dark:bg-slate-600" />
-                                <View className="items-center">
-                                    <Text className="text-slate-400 dark:text-slate-500 font-bold text-[10px] uppercase mb-1">Time</Text>
-                                    <Text className="text-slate-700 dark:text-slate-300 font-bold">
-                                        {Math.floor(session.time_spent_seconds / 60)}m {session.time_spent_seconds % 60}s
-                                    </Text>
-                                </View>
-                            </>
-                        )}
+            <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
+                {/* Motivational Header */}
+                <View className="items-center py-8 pb-4">
+                    <View className="w-20 h-20 bg-[#2EBD85]/10 dark:bg-[#2EBD85]/20 rounded-[28px] items-center justify-center mb-6">
+                        <Ionicons name={remark.icon as any} size={42} color="#2EBD85" />
                     </View>
+                    <Text className="text-[#2EBD85] font-black text-[14px] uppercase tracking-[4px] mb-2">{remark.title}</Text>
+                    <Text className="text-slate-900 dark:text-white font-black text-[42px] tracking-tight">{Math.round(session.score_percentage)}%</Text>
+                    <Text className="text-slate-500 dark:text-slate-400 font-bold text-[15px] mt-2 text-center px-8">{remark.subtitle}</Text>
+                </View>
 
-                    <View className="flex-row gap-3 w-full">
-                        <TouchableOpacity
-                            onPress={handleExport}
-                            disabled={isExporting}
-                            className="flex-1 flex-row items-center justify-center bg-slate-900 dark:bg-white px-4 py-4 rounded-2xl active:opacity-90"
-                        >
-                            {isExporting ? <ActivityIndicator size="small" color={isDark ? '#121212' : 'white'} /> : (
-                                <>
-                                    <Ionicons name="download-outline" size={18} color={isDark ? '#121212' : 'white'} style={{ marginRight: 8 }} />
-                                    <Text className="text-white dark:text-slate-900 font-black">Export PDF</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            onPress={async () => {
-                                if (!viewShotRef.current) return;
-                                setIsSharing(true);
-                                try {
-                                    const uri = await captureRef(viewShotRef.current, { format: 'png', quality: 1.0 });
-                                    await Sharing.shareAsync(uri);
-                                } catch (e) {
-                                    if (__DEV__) console.error(e);
-                                } finally {
-                                    setIsSharing(false);
-                                }
-                            }}
-                            disabled={isSharing}
-                            className="flex-1 flex-row items-center justify-center bg-brand-primary px-4 py-4 rounded-2xl active:opacity-90"
-                        >
-                            {isSharing ? <ActivityIndicator size="small" color="white" /> : (
-                                <>
-                                    <Ionicons name="share-social" size={18} color="white" style={{ marginRight: 8 }} />
-                                    <Text className="text-white font-black">Share</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
+                {/* Score Breakdown */}
+                <View className="flex-row gap-4 mb-8">
+                    <View className="flex-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
+                        <Text className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Correct</Text>
+                        <Text className="text-slate-900 dark:text-white font-black text-2xl">{session.correct_answers}</Text>
+                    </View>
+                    <View className="flex-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
+                        <Text className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Incorrect</Text>
+                        <Text className="text-red-500 font-black text-2xl">{session.total_questions - session.correct_answers}</Text>
                     </View>
                 </View>
 
@@ -337,6 +286,45 @@ export default function QuizHistoryDetailScreen() {
                 ))}
 
             </ScrollView>
+
+            {/* Sticky Action Footer */}
+            <View className="absolute bottom-0 left-0 right-0 py-8 px-6 backdrop-blur-3xl border-t border-slate-200/30 dark:border-slate-800/50" style={{ backgroundColor: isDark ? 'rgba(18, 18, 18, 0.95)' : 'rgba(255, 255, 255, 0.95)' }}>
+                <View className="flex-row gap-3">
+                    <TouchableOpacity
+                        onPress={handleExport}
+                        disabled={isExporting}
+                        className="flex-1 flex-row items-center justify-center bg-slate-900 dark:bg-white px-4 py-5 rounded-2xl active:opacity-90 shadow-sm"
+                    >
+                        {isExporting ? <ActivityIndicator size="small" color={isDark ? '#121212' : 'white'} /> : (
+                            <>
+                                <Ionicons name="download-outline" size={18} color={isDark ? '#121212' : 'white'} style={{ marginRight: 8 }} />
+                                <Text className="text-white dark:text-slate-900 font-black text-[15px]">Export PDF</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={async () => {
+                            if (!viewShotRef.current) return;
+                            setIsSharing(true);
+                            try {
+                                const uri = await captureRef(viewShotRef.current, { format: 'png', quality: 1.0 });
+                                await Sharing.shareAsync(uri);
+                            } catch (e) {
+                                if (__DEV__) console.error(e);
+                            } finally {
+                                setIsSharing(false);
+                            }
+                        }}
+                        disabled={isSharing}
+                        className="flex-none flex-row items-center justify-center bg-[#2EBD85] w-16 h-[60px] rounded-2xl active:opacity-90 shadow-sm"
+                    >
+                        {isSharing ? <ActivityIndicator size="small" color="white" /> : (
+                            <Ionicons name="share-social" size={22} color="white" />
+                        )}
+                    </TouchableOpacity>
+                </View>
+            </View>
         </View>
     );
 }

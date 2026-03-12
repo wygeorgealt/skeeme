@@ -6,6 +6,8 @@ import { BlurView } from 'expo-blur';
 import { api } from '@/lib/api';
 import { router, usePathname } from 'expo-router';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
+import { useEffect } from 'react';
+import { registerForPushNotificationsAsync } from '@/lib/notifications';
 
 function CustomDrawerContent(props: any) {
     const { user, logout } = useAuthStore();
@@ -129,6 +131,10 @@ export default function DrawerLayout() {
     const bgColor = isDark ? '#121212' : '#ffffff';
     const drawerBg = isDark ? '#121212' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#121212';
+
+    useEffect(() => {
+        registerForPushNotificationsAsync();
+    }, []);
 
     return (
         <Drawer

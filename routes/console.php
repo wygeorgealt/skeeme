@@ -24,6 +24,11 @@ Schedule::command('app:cleanup-old-uploads')
     ->dailyAt('03:00')
     ->description('Deletes student document uploads older than 14 days from Cloudflare R2');
 
+// Schedule push notifications for students who haven't studied today to keep their streak alive
+Schedule::command('app:send-streak-reminders')
+    ->dailyAt('17:00')
+    ->description('Sends push notifications reminding students to maintain their active streak');
+
 use Mailtrap\Helper\ResponseHelper;
 use Mailtrap\MailtrapClient;
 use Mailtrap\Mime\MailtrapEmail;

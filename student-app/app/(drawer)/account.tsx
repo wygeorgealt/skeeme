@@ -300,7 +300,7 @@ export default function AccountScreen() {
                     <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Legal & Support</Text>
                     <View className="bg-slate-50 dark:bg-white/5 rounded-[24px] p-2 border border-slate-200 dark:border-slate-800 shadow-sm">
                         <TouchableOpacity
-                            onPress={() => WebBrowser.openBrowserAsync('https://skeeme-web.onrender.com/privacy')}
+                            onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/privacy')}
                             className="flex-row items-center justify-between p-4 border-b-2 border-slate-100 dark:border-slate-800"
                         >
                             <View className="flex-row items-center">
@@ -311,7 +311,7 @@ export default function AccountScreen() {
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            onPress={() => WebBrowser.openBrowserAsync('https://skeeme-web.onrender.com/terms')}
+                            onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/terms')}
                             className="flex-row items-center justify-between p-4"
                         >
                             <View className="flex-row items-center">
@@ -324,7 +324,7 @@ export default function AccountScreen() {
 
                     <View className="mt-8 items-center">
                         <Text className="text-slate-400 dark:text-slate-600 font-bold text-[12px] uppercase tracking-widest">
-                            Skeeme Version 1.3.0
+                            Skeeme Version 1.5.0
                         </Text>
                     </View>
                 </View>
