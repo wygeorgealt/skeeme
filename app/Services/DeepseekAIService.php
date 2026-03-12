@@ -758,6 +758,7 @@ PROMPT;
         // 2. Fallback to OCR.space Engine 2
         try {
             \Log::info('Attempting OCR with OCR.space (Fallback)...');
+            $fallbackClient = new \GuzzleHttp\Client(['timeout' => 15]);
             $response = $fallbackClient->post('https://api.ocr.space/parse/image', [
                 'headers' => [
                     'apikey' => 'helloworld',

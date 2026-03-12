@@ -69,7 +69,7 @@ const standardStorage = {
     getItem: async (key: string): Promise<string | null> => {
         if (Platform.OS === 'web') return localStorage.getItem(key);
         try {
-            const { documentDirectory, getInfoAsync, readAsStringAsync } = (await import('expo-file-system')) as any;
+            const { documentDirectory, getInfoAsync, readAsStringAsync } = (await import('expo-file-system/legacy')) as any;
             const path = `${documentDirectory}${key}.json`;
             const info = await getInfoAsync(path);
             if (!info.exists) return null;
@@ -82,7 +82,7 @@ const standardStorage = {
             return;
         }
         try {
-            const { documentDirectory, writeAsStringAsync } = (await import('expo-file-system')) as any;
+            const { documentDirectory, writeAsStringAsync } = (await import('expo-file-system/legacy')) as any;
             const path = `${documentDirectory}${key}.json`;
             await writeAsStringAsync(path, value);
         } catch (e) { /* ignore */ }
@@ -93,7 +93,7 @@ const standardStorage = {
             return;
         }
         try {
-            const { documentDirectory, getInfoAsync, deleteAsync } = (await import('expo-file-system')) as any;
+            const { documentDirectory, getInfoAsync, deleteAsync } = (await import('expo-file-system/legacy')) as any;
             const path = `${documentDirectory}${key}.json`;
             const info = await getInfoAsync(path);
             if (info.exists) await deleteAsync(path);
