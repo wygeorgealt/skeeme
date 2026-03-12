@@ -339,3 +339,115 @@
 #66 C:/Program Files/Herd/resources/app.asar.unpacked/resources/valet/server.php(139): require('C://Users//kritex...')
 #67 {main}
 "} 
+[2026-03-12 09:15:08] local.ERROR: Type of App\Filament\Pages\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\Pages\Page) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Type of App\\Filament\\Pages\\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\\Pages\\Page) at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Type of App////F...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 09:15:37] local.ERROR: Type of App\Filament\Pages\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\Pages\Page) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Type of App\\Filament\\Pages\\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\\Pages\\Page) at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Type of App////F...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 09:16:36] local.ERROR: Type of App\Filament\Pages\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\Pages\Page) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Type of App\\Filament\\Pages\\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\\Pages\\Page) at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Type of App////F...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 09:19:14] local.ERROR: Type of App\Filament\Pages\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\Pages\Page) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Type of App\\Filament\\Pages\\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\\Pages\\Page) at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Type of App////F...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 09:23:10] local.ERROR: Type of App\Filament\Pages\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\Pages\Page) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Type of App\\Filament\\Pages\\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\\Pages\\Page) at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Type of App////F...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 09:23:26] local.ERROR: Type of App\Filament\Pages\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\Pages\Page) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Type of App\\Filament\\Pages\\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\\Pages\\Page) at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Type of App////F...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 11:36:23] local.ERROR: Type of App\Filament\Pages\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\Pages\Page) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Type of App\\Filament\\Pages\\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\\Pages\\Page) at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Type of App////F...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 11:38:06] local.ERROR: Cannot redeclare App\Filament\Pages\SendPushNotification::$view {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Filament\\Pages\\SendPushNotification::$view at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:22)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Cannot redecla...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 11:38:30] local.ERROR: Cannot redeclare App\Filament\Pages\SendPushNotification::$view {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare App\\Filament\\Pages\\SendPushNotification::$view at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:22)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Cannot redecla...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 11:42:32] local.ERROR: Type of App\Filament\Pages\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\Pages\Page) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Type of App\\Filament\\Pages\\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\\Pages\\Page) at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Type of App////F...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 11:42:55] local.ERROR: Type of App\Filament\Pages\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\Pages\Page) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Type of App\\Filament\\Pages\\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\\Pages\\Page) at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Type of App////F...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 11:43:40] local.ERROR: Type of App\Filament\Pages\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\Pages\Page) {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Type of App\\Filament\\Pages\\SendPushNotification::$navigationGroup must be UnitEnum|string|null (as in class Filament\\Pages\\Page) at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Type of App////F...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 11:46:11] local.ERROR: Cannot redeclare non static Filament\Pages\Page::$view as static App\Filament\Pages\SendPushNotification::$view {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare non static Filament\\Pages\\Page::$view as static App\\Filament\\Pages\\SendPushNotification::$view at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Cannot redecla...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-12 11:50:37] local.ERROR: Cannot redeclare non static Filament\Pages\Page::$view as static App\Filament\Pages\SendPushNotification::$view {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare non static Filament\\Pages\\Page::$view as static App\\Filament\\Pages\\SendPushNotification::$view at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/SendPushNotification.php:12)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Cannot redecla...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
