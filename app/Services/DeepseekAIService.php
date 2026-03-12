@@ -517,7 +517,7 @@ Gen EXACTLY {$numberOfQuestions} Q. Types: {$typesText}. Diff: {$diffShort}.{$fo
 INPUT (Notes or Topic): {$notesText}
 
 Format: JSON only. Expand on topic or extract from notes.
-Language: Use ultra-simple English. Avoid ALL academic jargon and complex words. Every single word must be easy for a regular person to understand.
+Language: YOU MUST detect the language of the provided material and generate the entire output in that EXACT same language. Use simple, natural language appropriate for the detected tongue.
 Math: Use proper Unicode characters for math (e.g. sec²(x), x³, √x). Do NOT use raw caret signs like sec^2.
 Schema: [{"q":"text","t":"MC|TF|SA|ES|FB","d":"E|M|H","o":["A","B"],"c":"A","x":"why"}]
 PROMPT;
@@ -834,6 +834,44 @@ PROMPT;
             return false;
         }
     }
+    /**
+     * Translate text to a target language.
+     */
+    public function translateText(string $text, string $targetLanguage): string
+    {
+        try {
+            $response = $this->client->post(
+                $this->baseUrl . '/chat/completions',
+                [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $this->apiKey,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'model' => 'deepseek-chat',
+                        'messages' => [
+                            [
+                                'role' => 'system',
+                                'content' => "You are a professional translator. Translate the following text into {$targetLanguage}. Preserve all technical terms and formatting. Return ONLY the translated text.",
+                            ],
+                            [
+                                'role' => 'user',
+                                'content' => $text,
+                            ],
+                        ],
+                        'temperature' => 0.3,
+                    ],
+                ]
+            );
+
+            $data = json_decode($response->getBody()->getContents(), true);
+            return $data['choices'][0]['message']['content'] ?? $text;
+        } catch (\Exception $e) {
+            \Log::error('Translation Error: ' . $e->getMessage());
+            return $text;
+        }
+    }
+
     /**
      * Sanitize text to ensure it is valid UTF-8.
      * Prevents json_encode error: Malformed UTF-8 characters.

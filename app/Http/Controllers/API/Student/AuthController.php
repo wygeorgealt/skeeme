@@ -259,6 +259,7 @@ class AuthController extends Controller
             'field_of_study' => 'nullable|string|max:100',
             'learning_style' => 'nullable|string|in:simple,detailed,analogies',
             'tone' => 'nullable|string|in:encouraging,strict,concise',
+            'language' => 'nullable|string|max:50',
         ]);
 
         $user = $request->user();

@@ -468,7 +468,7 @@ export default function GenerateQuizScreen() {
                 }} />
 
                 {/* Flat header bar */}
-                <View className="border-b-2 border-slate-100 dark:border-slate-900 px-6 py-4 flex-row items-center justify-between bg-white dark:bg-brand-dark z-20">
+                <View className="border-b-0 px-6 py-4 flex-row items-center justify-between bg-white dark:bg-brand-dark z-20">
                     <Text className="text-slate-500 font-black text-[12px] uppercase tracking-widest">{totalAnswered}/{questions.length} DONE</Text>
                     {timerEnabled && timeLeft > 0 && (
                         <View className={`border-2 px-3 py-1 rounded-full ${timeLeft < 60 ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'}`}>

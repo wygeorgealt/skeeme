@@ -23,6 +23,7 @@ interface User {
         field_of_study?: string;
         learning_style?: string;
         tone?: string;
+        language?: string;
     };
 }
 

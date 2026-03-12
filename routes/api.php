@@ -171,6 +171,7 @@ Route::prefix('v1')->group(function () {
             Route::post('profile/password', [\App\Http\Controllers\API\Student\ProfileController::class, 'updatePassword']);
 
             Route::post('preferences', [\App\Http\Controllers\API\Student\AuthController::class, 'updatePreferences']);
+            Route::post('translate', [\App\Http\Controllers\API\Student\TranslationController::class, 'translate']);
 
             // Scan & Solve (Camera AI) moved to throttled group above
             // Route::post('scan/solve', [\App\Http\Controllers\API\Student\ScanController::class, 'solve']);

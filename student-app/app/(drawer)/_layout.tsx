@@ -138,8 +138,7 @@ export default function DrawerLayout() {
                 headerShown: true,
                 headerStyle: {
                     backgroundColor: bgColor,
-                    borderBottomWidth: 1,
-                    borderBottomColor: isDark ? '#1e293b' : '#f1f5f9',
+                    borderBottomWidth: 0,
                     elevation: 0,
                     shadowOpacity: 0,
                 },

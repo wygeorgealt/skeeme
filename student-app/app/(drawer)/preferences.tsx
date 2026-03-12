@@ -23,6 +23,15 @@ const TONES = [
     { key: 'concise', label: '⚡ Concise', desc: 'Short and direct' },
 ] as const;
 
+const LANGUAGES = [
+    { key: 'english', label: 'English' },
+    { key: 'spanish', label: 'Spanish' },
+    { key: 'french', label: 'French' },
+    { key: 'arabic', label: 'Arabic' },
+    { key: 'portuguese', label: 'Portuguese' },
+    { key: 'german', label: 'German' },
+] as const;
+
 export default function PreferencesScreen() {
     const { user, updateUser } = useAuthStore();
     const prefs = user?.ai_preferences;
@@ -31,6 +40,7 @@ export default function PreferencesScreen() {
     const [field, setField] = useState<string>(prefs?.field_of_study || '');
     const [style, setStyle] = useState<string>(prefs?.learning_style || '');
     const [tone, setTone] = useState<string>(prefs?.tone || '');
+    const [language, setLanguage] = useState<string>(prefs?.language || 'english');
     const [saving, setSaving] = useState(false);
 
     // Sync if user data changes
@@ -40,6 +50,7 @@ export default function PreferencesScreen() {
             setField(prefs.field_of_study || '');
             setStyle(prefs.learning_style || '');
             setTone(prefs.tone || '');
+            setLanguage(prefs.language || 'english');
         }
     }, [prefs]);
 
@@ -51,6 +62,7 @@ export default function PreferencesScreen() {
                 field_of_study: field.trim() || null,
                 learning_style: style || null,
                 tone: tone || null,
+                language: language || 'english',
             };
 
             const res = await api.post('preferences', payload);
@@ -106,6 +118,33 @@ export default function PreferencesScreen() {
                                 {level === l.key && (
                                     <Ionicons name="checkmark-circle" size={20} color="#2EBD85" style={{ marginLeft: 'auto' }} />
                                 )}
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+
+                {/* Study Language */}
+                <View className="mb-6">
+                    <Text className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">
+                        Study Language
+                    </Text>
+                    <View className="flex-row flex-wrap gap-2">
+                        {LANGUAGES.map(l => (
+                            <TouchableOpacity
+                                key={l.key}
+                                onPress={() => setLanguage(l.key)}
+                                className={`px-4 py-2.5 rounded-full border ${language === l.key
+                                    ? 'bg-brand-primary border-brand-primary'
+                                    : 'bg-white/70 dark:bg-white/5 border-slate-200 dark:border-slate-800'
+                                    }`}
+                                activeOpacity={0.7}
+                            >
+                                <Text className={`font-bold text-sm ${language === l.key
+                                    ? 'text-white'
+                                    : 'text-slate-600 dark:text-slate-400'
+                                    }`}>
+                                    {l.label}
+                                </Text>
                             </TouchableOpacity>
                         ))}
                     </View>
