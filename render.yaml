@@ -107,11 +107,6 @@ services:
         sync: false
       - key: DEEPSEEK_API_KEY
         sync: false
-      - key: PADDLE_OCR_URL
-        fromService:
-          name: ocr-service
-          type: web
-          property: url
 
       # System Stability (Using Redis/Valkey for scaling)
       - key: REDIS_URL
@@ -130,20 +125,6 @@ services:
     region: ohio
     startCommand: "php artisan queue:work --queue=default"
     envVars:
-      - fromService:
-          name: skeeme-web
-          type: web
-      - key: APP_ENV
-        value: production
       - key: RUN_SCRIPTS
         value: "0" # Don't run migrations in the worker, only in the web service
-
-  - type: web
-    name: ocr-service
-    env: docker
-    plan: free
-    region: ohio
-    dockerContext: ./ocr-service
-    dockerfilePath: ./ocr-service/Dockerfile
-    healthCheckPath: /health
 

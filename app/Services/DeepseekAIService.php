@@ -11,12 +11,12 @@ class DeepseekAIService
     protected $client;
     protected $apiKey;
     protected $baseUrl = 'https://api.deepseek.com/v1';
-    protected $paddleOcr;
+    protected $visionService;
 
-    public function __construct(PaddleOCRService $paddleOcr)
+    public function __construct(GoogleVisionService $visionService)
     {
         $this->apiKey = config('services.deepseek.api_key');
-        $this->paddleOcr = $paddleOcr;
+        $this->visionService = $visionService;
         $this->client = new Client([
             'timeout' => 300,
             'connect_timeout' => 10,
@@ -737,22 +737,22 @@ PROMPT;
 
     /**
      * OCR: Extract text from a base64-encoded image.
-     * Tries PaddleOCR (Self-hosted) first, then OCR.space (Fallback).
+     * Tries Google Cloud Vision first, then OCR.space (Fallback).
      */
     protected function ocrFromBase64(string $base64Image): string
     {
-        // 1. Try PaddleOCR (Recommended for Math/Formula accuracy)
+        // 1. Try Google Cloud Vision (Managed, high-accuracy)
         try {
-            \Log::info('Attempting OCR with PaddleOCR...');
-            $paddleResult = $this->paddleOcr->ocr($base64Image);
+            \Log::info('Attempting OCR with Google Cloud Vision...');
+            $visionResult = $this->visionService->ocr($base64Image);
             
-            if ($paddleResult['success'] && !empty(trim($paddleResult['text']))) {
-                \Log::info('PaddleOCR Success.');
-                return $paddleResult['text'];
+            if ($visionResult['success'] && !empty(trim($visionResult['text']))) {
+                \Log::info('Google Cloud Vision Success.');
+                return $visionResult['text'];
             }
-            \Log::warning('PaddleOCR returned empty results, falling back to OCR.space');
+            \Log::warning('Google Vision returned empty results, falling back to OCR.space');
         } catch (\Exception $e) {
-            \Log::error('PaddleOCR failed: ' . $e->getMessage() . '. Falling back.');
+            \Log::error('Google Vision failed: ' . $e->getMessage() . '. Falling back.');
         }
 
         // 2. Fallback to OCR.space Engine 2
