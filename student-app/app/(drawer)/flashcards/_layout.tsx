@@ -23,7 +23,7 @@ export default function FlashcardsLayout() {
             }} />
             <Stack.Screen name="create" options={{
                 title: 'Generate Deck',
-                headerShown: true,
+                headerShown: false,
                 headerTitleStyle: { fontFamily: 'Inter_900Black' }
             }} />
             <Stack.Screen name="[id]" options={{

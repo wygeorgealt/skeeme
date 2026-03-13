@@ -84,40 +84,25 @@ function CustomDrawerContent(props: any) {
                 <NavItem icon="sparkles-outline" label="AI Practice Quiz" route="/generate" />
                 <NavItem icon="albums-outline" label="Flashcards" route="/flashcards" />
                 <NavItem icon="book-outline" label="Study History" route="/history" />
-                <NavItem icon="settings-outline" label="Account & Settings" route="/account" />
                 <NavItem icon="color-wand-outline" label="Personalize AI" route="/preferences" />
-
-                {/* Equivalent of "Send a Gift / $10" in the image -> Credits */}
-                <TouchableOpacity
-                    onPress={() => router.push('/upgrade')}
-                    className="px-6 py-4 flex-row items-center justify-between"
-                >
-                    <View className="flex-row items-center">
-                        <Ionicons name="wallet-outline" size={22} color={iconColor} style={{ opacity: 0.7 }} />
-                        <Text className={`ml-5 font-semibold text-[15px] ${isDark ? 'text-white' : 'text-slate-900'}`} style={{ opacity: 0.8 }}>
-                            {user?.is_unlimited ? 'Pro Plan' : 'Credits'}
-                        </Text>
-                    </View>
-                    {user?.is_unlimited ? (
-                        <View className="bg-amber-400 px-3 py-1 rounded-full">
-                            <Text className="text-amber-900 font-bold text-[11px]">∞</Text>
-                        </View>
-                    ) : (
-                        <View className="bg-amber-400 px-3 py-1 rounded-full text-center">
-                            <Text className="text-amber-900 font-extrabold text-[12px]">{user?.credits ?? 0}</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
             </DrawerContentScrollView>
 
             {/* Footer with Sign Out like image */}
-            <View className="p-6 pb-12 mt-2">
+            <View className="px-6 pb-12 pt-4">
                 <TouchableOpacity
-                    onPress={handleLogout}
-                    className="bg-[#f1f5f9] dark:bg-[#111111] rounded-full py-[14px] items-center justify-center"
+                    onPress={() => router.push('/account')}
+                    className="bg-[#f1f5f9] dark:bg-[#111111] rounded-full py-[14px] items-center justify-center mb-3 border-2 border-slate-200 dark:border-slate-800"
                     activeOpacity={0.7}
                 >
-                    <Text className="text-slate-900 dark:text-slate-300 font-bold text-[14px]">Sign out</Text>
+                    <Text className="text-slate-900 dark:text-slate-300 font-bold text-[14px]">Account & Settings</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={handleLogout}
+                    className="bg-[#f1f5f9] dark:bg-[#111111] rounded-full py-[14px] items-center justify-center border-2 border-red-100 dark:border-red-900/30"
+                    activeOpacity={0.7}
+                >
+                    <Text className="text-red-500 font-bold text-[14px]">Sign out</Text>
                 </TouchableOpacity>
             </View>
         </View>

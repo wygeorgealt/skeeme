@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityInd
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
+import { router } from 'expo-router';
 
 const LEVELS = [
     { key: 'high_school', label: 'High School', icon: 'school-outline' },

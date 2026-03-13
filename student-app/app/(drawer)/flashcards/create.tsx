@@ -135,33 +135,42 @@ export default function GenerateFlashcardScreen() {
         }
     };
 
-    return (
-        <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
-            <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-                {/* Source card */}
-                <View className="bg-white dark:bg-slate-800 rounded-3xl p-5 mb-4 shadow-sm shadow-slate-200 dark:shadow-none border border-slate-100 dark:border-slate-700">
-                    <View className="flex-row justify-between items-center mb-4">
-                        <View className="flex-row items-center">
-                            <View className="size-10 bg-brand-primary/10 dark:bg-brand-primary/20 rounded-xl items-center justify-center mr-3">
-                                <Ionicons name="sparkles" size={20} color="#2EBD85" />
-                            </View>
-                            <Text className="text-base font-black text-slate-800 dark:text-white">Material</Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', backgroundColor: '#f1f5f9', borderRadius: 12, padding: 4 }}>
-                            {(['topic', 'file'] as QuizMode[]).map(m => (
-                                <TouchableOpacity key={m} onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                    style={[{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10 }, mode === m ? { backgroundColor: 'white', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 } : {}]} activeOpacity={0.8}>
-                                    <Text style={{ fontSize: 13, fontWeight: '700', textTransform: 'capitalize', color: mode === m ? '#2EBD85' : '#94a3b8' }}>{m}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
+    const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
 
+    return (
+        <View className="flex-1 bg-white dark:bg-brand-dark">
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 60, paddingTop: 100 }} showsVerticalScrollIndicator={false}>
+                <Text className="text-[32px] font-black tracking-tight text-slate-900 dark:text-white mb-8">Build Deck</Text>
+
+                {/* Source Selector Segment Flat Style */}
+                <View className="flex-row bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 mb-8 border-2 border-slate-100 dark:border-slate-800">
+                    {(['topic', 'file'] as QuizMode[]).map(m => (
+                        <TouchableOpacity key={m} onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
+                            className="flex-1 items-center justify-center py-3 rounded-xl"
+                            style={[
+                                mode === m ? {
+                                    backgroundColor: isDark ? '#121212' : '#ffffff',
+                                    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1,
+                                    borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0'
+                                } : {}
+                            ]}>
+                            <Text
+                                className="font-black text-[14px] uppercase tracking-widest"
+                                style={{ color: mode === m ? (isDark ? '#ffffff' : '#121212') : (isDark ? '#475569' : '#94a3b8') }}
+                            >
+                                {m}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                {/* Source Input */}
+                <View className="mb-8">
                     {mode === 'topic' ? (
                         <>
-                            <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">What do you want to memorize?</Text>
+                            <Text className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Topic</Text>
                             <TextInput
-                                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-4 text-slate-900 dark:text-white font-medium mb-2"
+                                className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white focus:border-slate-900 dark:focus:border-white"
                                 placeholder="e.g. Spanish conjugation, AWS Services..."
                                 placeholderTextColor="#94a3b8"
                                 value={topic}
@@ -170,37 +179,28 @@ export default function GenerateFlashcardScreen() {
                         </>
                     ) : (
                         <>
-                            <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Upload study material</Text>
+                            <Text className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Document</Text>
                             <TouchableOpacity
                                 onPress={handleFileSelect}
                                 disabled={isProcessingFile}
-                                style={{
-                                    borderWidth: 2,
-                                    borderStyle: 'dashed',
-                                    borderColor: isProcessingFile ? '#2EBD85' : '#cbd5e1',
-                                    borderRadius: 16,
-                                    padding: 24,
-                                    alignItems: 'center',
-                                    backgroundColor: isProcessingFile ? '#F0FDF4' : '#f8fafc'
-                                }}
-                                activeOpacity={0.7}
+                                className="border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[24px] p-8 items-center bg-slate-50 dark:bg-slate-900/50"
                             >
                                 {isProcessingFile ? (
-                                    <>
+                                    <View className="items-center py-2">
                                         <ActivityIndicator size="large" color="#2EBD85" />
-                                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#2EBD85', marginTop: 12 }}>Analyzing...</Text>
-                                    </>
+                                        <Text className="text-[15px] font-bold text-brand-primary mt-4">Analyzing...</Text>
+                                    </View>
                                 ) : selectedFile ? (
                                     <>
-                                        <Ionicons name="document-text" size={28} color="#2EBD85" />
-                                        <Text style={{ fontSize: 14, fontWeight: '800', color: '#121212', marginTop: 12, textAlign: 'center' }}>{selectedFile.name}</Text>
-                                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#2EBD85', marginTop: 4, textTransform: 'uppercase' }}>Attached & Ready</Text>
+                                        <Ionicons name="document-text" size={40} color="#2EBD85" />
+                                        <Text className="text-[15px] font-bold text-slate-900 dark:text-white mt-4 text-center">{selectedFile?.name}</Text>
+                                        <Text className="text-[12px] font-bold text-[#2EBD85] mt-2 uppercase tracking-widest">Attached & Ready</Text>
                                     </>
                                 ) : (
                                     <>
-                                        <Ionicons name="cloud-upload-outline" size={28} color="#94a3b8" />
-                                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#64748b', marginTop: 12 }}>Tap to browse files</Text>
-                                        <Text style={{ fontSize: 11, fontWeight: '600', color: '#94a3b8', marginTop: 4 }}>.pdf · .docx · .txt · .md</Text>
+                                        <Ionicons name="cloud-upload-outline" size={40} color={isDark ? '#475569' : '#cbd5e1'} />
+                                        <Text className="text-[15px] font-bold text-slate-500 mt-4">Tap to select PDF/DOCX/TXT/MD</Text>
+                                        <Text className="text-[12px] font-bold text-slate-400 mt-2 lowercase">max 5MB • extractable text only</Text>
                                     </>
                                 )}
                             </TouchableOpacity>
@@ -208,45 +208,38 @@ export default function GenerateFlashcardScreen() {
                     )}
                 </View>
 
-                {/* Settings card */}
-                <View className="bg-white dark:bg-slate-800 rounded-3xl p-5 mb-4 shadow-sm shadow-slate-200 dark:shadow-none border border-slate-100 dark:border-slate-700">
-                    <Text className="text-base font-black text-slate-800 dark:text-white mb-4">Settings</Text>
+                {/* Settings Base */}
+                <Text className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Number of Cards (5-50)</Text>
+                <TextInput
+                    className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white focus:border-slate-900 dark:focus:border-white mb-8"
+                    keyboardType="number-pad" value={cardCount} onChangeText={setCardCount}
+                />
 
-                    <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Number of Cards (5–50)</Text>
-                    <TextInput
-                        className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-4 text-slate-900 dark:text-white font-medium mb-4"
-                        keyboardType="number-pad"
-                        value={cardCount}
-                        onChangeText={setCardCount}
-                    />
-
-                    <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Difficulty Depth</Text>
-                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-                        {(['easy', 'medium', 'hard'] as Difficulty[]).map(d => (
-                            <TouchableOpacity key={d} onPress={() => setDifficulty(d)} activeOpacity={0.7}
-                                style={{
-                                    flex: 1,
-                                    borderWidth: 2,
-                                    borderRadius: 16,
-                                    paddingVertical: 12,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderColor: difficulty === d ? DIFF_COLORS[d] : '#e2e8f0',
-                                    backgroundColor: difficulty === d ? DIFF_COLORS[d] + '11' : '#f8fafc'
-                                }}>
-                                <Text style={{
-                                    fontWeight: '900',
-                                    fontSize: 12,
-                                    textTransform: 'capitalize',
-                                    color: difficulty === d ? DIFF_COLORS[d] : '#94a3b8'
-                                }}>{d}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                <Text className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Difficulty</Text>
+                <View className="flex-row gap-3 mb-8">
+                    {(['easy', 'medium', 'hard'] as Difficulty[]).map(d => (
+                        <TouchableOpacity key={d} onPress={() => setDifficulty(d)}
+                            className="flex-1 rounded-2xl py-4 items-center justify-center"
+                            style={[
+                                { borderWidth: 2 },
+                                difficulty === d
+                                    ? { borderColor: isDark ? '#ffffff' : '#121212', backgroundColor: isDark ? '#ffffff' : '#121212' }
+                                    : { borderColor: isDark ? '#1e293b' : '#e2e8f0', backgroundColor: isDark ? '#121212' : '#ffffff' }
+                            ]}>
+                            <Text
+                                className="font-black text-[13px] uppercase tracking-widest"
+                                style={{ color: difficulty === d ? (isDark ? '#121212' : '#ffffff') : '#94a3b8' }}
+                            >
+                                {d}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
+
                 <View className="h-4" />
             </ScrollView>
 
+            {/* Glassmorphic Sticky Footer */}
             <BlurView 
                 intensity={80} 
                 tint={isDark ? "dark" : "light"} 
@@ -259,10 +252,10 @@ export default function GenerateFlashcardScreen() {
                         </View>
                         <Text className="text-brand-primary font-black text-lg tracking-tight mb-1 text-center">{loadingStage}</Text>
                         <Text className="text-slate-500 dark:text-slate-400 font-medium text-[11px] text-center px-2">
-                            Our AI is processing your request... Usually 15-30s.
+                            Usually takes 15-30s.
                         </Text>
                         <View className="flex-row gap-1.5 mt-4 w-full px-2">
-                            {['Reading', 'Identifying', 'Creating', 'Reviewing'].map((s, i) => {
+                            {['Analyzing', 'Extracting', 'Generating', 'Finalizing'].map((s, i) => {
                                 const stages = mode === 'file'
                                     ? ['Reading material...', 'Identifying key concepts...', 'Creating cards...', 'Reviewing content...', 'Almost ready...']
                                     : ['Analyzing Topic...', 'Researching Context...', 'Drafting cards...', 'Finalizing deck...', 'Almost ready...'];
@@ -279,7 +272,7 @@ export default function GenerateFlashcardScreen() {
                             })}
                         </View>
                     </View>
-                ) : (
+                ) : canGenerate ? (
                     <>
                         <TouchableOpacity
                             onPress={handleGenerate}
@@ -289,11 +282,11 @@ export default function GenerateFlashcardScreen() {
                             <Ionicons name="sparkles" size={20} color="#fff" />
                             <Text className="text-white font-black ml-2 text-[17px]">Generate Flashcards</Text>
                         </TouchableOpacity>
-                        <Text className="text-slate-400 dark:text-slate-500 text-xs text-center mt-3 font-medium">
-                            Credits scale with content length & card count.
+                        <Text className="text-center text-slate-400 font-bold text-[11px] uppercase tracking-widest mt-4">
+                            Estimated Cost: {parseInt(cardCount) || 10} Credits | Max 5MB
                         </Text>
                     </>
-                )}
+                ) : null}
             </BlurView>
 
             <RewardModal

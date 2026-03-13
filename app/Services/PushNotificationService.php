@@ -30,8 +30,11 @@ class PushNotificationService
             'title' => $title,
             'body' => $body,
             'sound' => 'default',
-            'data' => $data,
         ];
+
+        if (!empty($data)) {
+            $payload['data'] = (object) $data;
+        }
 
         try {
             $response = Http::withHeaders([
@@ -65,13 +68,18 @@ class PushNotificationService
 
         $payloads = [];
         foreach ($validTokens as $token) {
-            $payloads[] = [
+            $payload = [
                 'to' => $token,
                 'title' => $title,
                 'body' => $body,
                 'sound' => 'default',
-                'data' => $data,
             ];
+
+            if (!empty($data)) {
+                $payload['data'] = (object) $data;
+            }
+
+            $payloads[] = $payload;
         }
 
         try {

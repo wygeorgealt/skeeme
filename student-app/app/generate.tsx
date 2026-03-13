@@ -248,6 +248,7 @@ export default function GenerateQuizScreen() {
 
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
     if (questions.length === 0) {
+        const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
         return (
             <View className="flex-1 bg-white dark:bg-brand-dark">
                 <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 60, paddingTop: 100 }} showsVerticalScrollIndicator={false}>
@@ -427,7 +428,7 @@ export default function GenerateQuizScreen() {
                                 })}
                             </View>
                         </View>
-                    ) : (
+                    ) : canGenerate ? (
                         <>
                             <TouchableOpacity
                                 onPress={handleGenerate}
@@ -441,7 +442,7 @@ export default function GenerateQuizScreen() {
                                 Estimated Cost: {parseInt(questionCount) || 10} Credits | Max 5MB
                             </Text>
                         </>
-                    )}
+                    ) : null}
                 </BlurView>
             </View>
         );
