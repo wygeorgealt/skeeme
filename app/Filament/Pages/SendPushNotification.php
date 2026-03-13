@@ -63,7 +63,7 @@ class SendPushNotification extends Page implements Forms\Contracts\HasForms
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Recipient')
+                \Filament\Schemas\Components\Section::make('Recipient')
                     ->schema([
                         Forms\Components\TextInput::make('email')
                             ->label('User Email')
@@ -73,7 +73,7 @@ class SendPushNotification extends Page implements Forms\Contracts\HasForms
                             ->helperText('The user must have opened the app on a physical device at least once.'),
                     ]),
 
-                Forms\Components\Section::make('Quick Presets')
+                \Filament\Schemas\Components\Section::make('Quick Presets')
                     ->schema([
                         Forms\Components\Select::make('preset')
                             ->label('Use a preset')
@@ -93,7 +93,7 @@ class SendPushNotification extends Page implements Forms\Contracts\HasForms
                             }),
                     ]),
 
-                Forms\Components\Section::make('Message')
+                \Filament\Schemas\Components\Section::make('Message')
                     ->schema([
                         Forms\Components\TextInput::make('notifTitle')
                             ->label('Title')
