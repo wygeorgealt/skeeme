@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl, useColorScheme, Platform, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl, useColorScheme, Platform, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,7 +34,7 @@ const storage = {
             const info = await FileSystem.getInfoAsync(path);
             if (!info.exists) return null;
             return await FileSystem.readAsStringAsync(path);
-        } catch (e) { return null; }
+        } catch { return null; }
     },
     setItem: async (key: string, value: string) => {
         try {
@@ -44,7 +44,7 @@ const storage = {
                 const path = `${FileSystem.documentDirectory}${key}.json`;
                 await FileSystem.writeAsStringAsync(path, value);
             }
-        } catch (e) { /* ignore */ }
+        } catch { /* ignore */ }
     },
 };
 
@@ -96,7 +96,7 @@ export default function StudyHistoryDashboard() {
         try {
             if (activeTab === 'quizzes') await refetchQuizzes();
             else await refetchDecks();
-        } catch (e) { }
+        } catch { }
         setRefreshing(false);
     }, [refetchQuizzes, refetchDecks, activeTab]);
 
@@ -108,7 +108,7 @@ export default function StudyHistoryDashboard() {
     useEffect(() => {
         if (activeTab === 'quizzes') refetchQuizzes();
         else refetchDecks();
-    }, [activeTab]);
+    }, [activeTab, refetchQuizzes, refetchDecks]);
 
     return (
         <View style={styles.container} className="flex-1 bg-white dark:bg-brand-dark">

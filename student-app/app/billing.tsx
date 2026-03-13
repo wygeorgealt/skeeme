@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert, useColorScheme, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert, useColorScheme } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Stack, router } from 'expo-router';

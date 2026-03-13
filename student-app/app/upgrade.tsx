@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, useColorScheme, StyleSheet, Linking, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, useColorScheme, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { router, Stack } from 'expo-router';
@@ -63,26 +63,24 @@ export default function UpgradeScreen() {
     const activePricing = pricing[currency][activeTab];
     const isPromo = isPromoActive(activeTab);
 
-    const [isVerifying, setIsVerifying] = useState(false);
-    const [pendingReference, setPendingReference] = useState<string | null>(null);
+
 
     const handlePurchase = async () => {
         try {
-            setIsVerifying(true);
+
             const response = await api.post('subscriptions/checkout', {
                 plan: activeTab,
                 cycle: billingCycle,
             });
 
             if (response.data.authorization_url) {
-                const reference = response.data.reference;
-                setPendingReference(reference);
+
 
                 // Open system browser for payment
                 await Linking.openURL(response.data.authorization_url);
 
                 // Start automatic polling after a short delay
-                setTimeout(() => pollPaymentStatus(reference, 0), 5000);
+                setTimeout(() => pollPaymentStatus(response.data.reference, 0), 5000);
             }
         } catch (error: any) {
             if (__DEV__) {
@@ -94,7 +92,6 @@ export default function UpgradeScreen() {
             const msg = error.response?.data?.message || "Could not start the payment process. Please try again.";
             Alert.alert("Checkout Failed", msg);
         } finally {
-            setIsVerifying(false);
         }
     };
 
@@ -109,11 +106,11 @@ export default function UpgradeScreen() {
         }
 
         try {
-            setIsVerifying(true);
+
             const response = await api.get(`/subscriptions/verify/${reference}`);
 
             if (response.data.status === 'success') {
-                setPendingReference(null);
+
                 await useAuthStore.getState().checkAuth();
                 Alert.alert("Success", "Welcome to the premium club! Your subscription is active.");
                 router.replace('/(drawer)');
@@ -122,18 +119,13 @@ export default function UpgradeScreen() {
         } catch {
             // Network error — continue polling
         } finally {
-            setIsVerifying(false);
         }
 
         // Schedule next poll
         setTimeout(() => pollPaymentStatus(reference, attempt + 1), 5000);
     };
 
-    const handleManualVerify = () => {
-        if (pendingReference) {
-            pollPaymentStatus(pendingReference, 20); // Start from attempt 20 so max 4 more tries
-        }
-    };
+
 
     const bgClass = isDark ? 'bg-brand-dark' : 'bg-white';
     const textBaseClass = isDark ? 'text-white' : 'text-slate-900';

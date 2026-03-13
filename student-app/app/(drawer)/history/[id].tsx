@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, useColorScheme, Platform, Alert } from 'react-native';
-import { Stack, useLocalSearchParams, router } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +22,7 @@ const storage = {
             const info = await FileSystem.getInfoAsync(path);
             if (!info.exists) return null;
             return await FileSystem.readAsStringAsync(path);
-        } catch (e) { return null; }
+        } catch { return null; }
     },
     setItem: async (key: string, value: string) => {
         try {
@@ -32,7 +32,7 @@ const storage = {
                 const path = `${FileSystem.documentDirectory}${key}.json`;
                 await FileSystem.writeAsStringAsync(path, value);
             }
-        } catch (e) { /* ignore */ }
+        } catch { /* ignore */ }
     },
 };
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, Platform } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { MathText } from '@/components/ui/MathText';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 // Storage helpers
@@ -16,7 +15,7 @@ const storage = {
         try {
             if (Platform.OS === 'web') return localStorage.getItem(key);
             return await SecureStore.getItemAsync(key);
-        } catch (e) { return null; }
+        } catch { return null; }
     },
     setItem: async (key: string, value: string) => {
         try {
@@ -25,7 +24,7 @@ const storage = {
             } else {
                 await SecureStore.setItemAsync(key, value);
             }
-        } catch (e) { /* ignore */ }
+        } catch { /* ignore */ }
     },
 };
 
@@ -41,7 +40,7 @@ function FlashcardItem({ card, isActive, isDark }: { card: Card; isActive: boole
     useEffect(() => {
         flipAnim.value = 0;
         setFlipped(false);
-    }, [card.id]);
+    }, [card.id, flipAnim]);
 
     const handleFlip = () => {
         flipAnim.value = withSpring(flipped ? 0 : 180, { damping: 20, stiffness: 100 });
@@ -151,7 +150,7 @@ export default function StudyDeckScreen() {
             <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
             <Text className="text-slate-900 dark:text-white font-black text-xl mt-6 text-center">Deck not found</Text>
             <Text className="text-slate-500 font-medium text-center mt-2 mb-8">
-                We couldn't load this flashcard deck. It might have been deleted or there was a connection issue.
+                We couldn&apos;t load this flashcard deck. It might have been deleted or there was a connection issue.
             </Text>
             <TouchableOpacity
                 onPress={() => router.back()}

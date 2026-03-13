@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator, Alert, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl, Alert, useColorScheme, Platform } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
 import { GradientButton } from '@/components/ui/GradientButton';
 import * as FileSystem from 'expo-file-system/legacy';
-import { Platform } from 'react-native';
 
 // Storage helpers
 const storage = {
@@ -17,7 +16,7 @@ const storage = {
             const info = await FileSystem.getInfoAsync(path);
             if (!info.exists) return null;
             return await FileSystem.readAsStringAsync(path);
-        } catch (e) { return null; }
+        } catch { return null; }
     },
     setItem: async (key: string, value: string) => {
         try {
@@ -27,7 +26,7 @@ const storage = {
                 const path = `${FileSystem.documentDirectory}${key}.json`;
                 await FileSystem.writeAsStringAsync(path, value);
             }
-        } catch (e) { /* ignore */ }
+        } catch { /* ignore */ }
     },
 };
 

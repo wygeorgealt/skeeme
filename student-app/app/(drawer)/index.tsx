@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -104,7 +104,7 @@ export default function DashboardScreen() {
             if (res.data) updateUser(res.data);
         } catch { /* silent */ }
         setRefreshing(false);
-    }, [user]);
+    }, [user, updateUser]);
 
     if (!user) return null;
 

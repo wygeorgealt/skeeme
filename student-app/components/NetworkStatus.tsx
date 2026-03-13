@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withTiming,
     withSpring,
-    interpolateColor,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useColorScheme } from 'react-native';
 
 export function NetworkStatus() {
     const [isConnected, setIsConnected] = useState<boolean | null>(true);

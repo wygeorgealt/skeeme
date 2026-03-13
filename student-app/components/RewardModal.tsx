@@ -1,7 +1,6 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, Dimensions, useColorScheme } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInUp, ZoomIn, FadeOutDown } from 'react-native-reanimated';
 

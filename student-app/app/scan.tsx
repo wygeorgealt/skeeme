@@ -5,13 +5,13 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { MathText } from '@/components/ui/MathText';
-import * as FileSystem from 'expo-file-system/legacy';
+
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { generateScanHTML } from '@/lib/pdfGenerator';

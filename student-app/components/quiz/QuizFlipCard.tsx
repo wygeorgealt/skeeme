@@ -15,7 +15,7 @@ export function QuizFlipCard({
 
     useEffect(() => {
         rot.value = withTiming(isFlipped ? 1 : 0, { duration: 500 });
-    }, [isFlipped]);
+    }, [isFlipped, rot]);
 
     const frontStyle = useAnimatedStyle(() => ({
         transform: [

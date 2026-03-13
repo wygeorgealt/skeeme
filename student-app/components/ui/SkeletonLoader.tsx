@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, ViewStyle } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -33,7 +33,7 @@ export const SkeletonLoader = ({
             -1,
             true
         );
-    }, []);
+    }, [progress]);
 
     const animatedStyle = useAnimatedStyle(() => {
         const backgroundColor = interpolateColor(

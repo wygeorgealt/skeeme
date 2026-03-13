@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 interface MathTextProps {
@@ -16,7 +16,7 @@ export function MathText({
   containerStyle
 }: MathTextProps) {
   const [height, setHeight] = React.useState(40);
-  const hasMath = /[\\{}%$_^]/.test(content);
+
 
   const html = `
     <!DOCTYPE html>
@@ -87,7 +87,7 @@ export function MathText({
             if (data.height) {
               setHeight(data.height + 18); // Increased buffer for safety
             }
-          } catch (e) { }
+          } catch { }
         }}
       />
     </View>

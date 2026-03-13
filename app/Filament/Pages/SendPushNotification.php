@@ -59,7 +59,7 @@ class SendPushNotification extends Page implements Forms\Contracts\HasForms
         ],
     ];
 
-    public function form(Form $form): Form
+    public function form(Forms\Form | \Filament\Schemas\Schema $form): Forms\Form | \Filament\Schemas\Schema
     {
         return $form
             ->schema([

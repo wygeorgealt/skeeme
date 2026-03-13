@@ -31,7 +31,7 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
         // Total splash screen duration
         const timer = setTimeout(onFinish, 2200);
         return () => clearTimeout(timer);
-    }, [onFinish]);
+    }, [onFinish, translateY, opacity]);
 
     return (
         <View style={[styles.container, { backgroundColor: isDark ? '#121212' : '#ffffff' }]}>

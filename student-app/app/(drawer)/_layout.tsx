@@ -1,8 +1,8 @@
 import { Drawer } from 'expo-router/drawer';
-import { View, Text, TouchableOpacity, useColorScheme, Alert, Platform, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, useColorScheme, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
-import { BlurView } from 'expo-blur';
+
 import { api } from '@/lib/api';
 import { router, usePathname } from 'expo-router';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
@@ -20,7 +20,7 @@ function CustomDrawerContent(props: any) {
         const performLogout = async () => {
             try {
                 await api.post('logout');
-            } catch (e) {
+            } catch {
                 console.warn('Logout API failed, forcing local logout');
             } finally {
                 logout();

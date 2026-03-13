@@ -13,7 +13,7 @@ export default function NotFoundScreen() {
 
             <Text className="text-3xl font-black text-white mb-2">404</Text>
             <Text className="text-slate-400 font-medium text-center text-base mb-8">
-                This page doesn't exist. You may have followed a broken link.
+                This page doesn&apos;t exist. You may have followed a broken link.
             </Text>
 
             <TouchableOpacity

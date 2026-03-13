@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
-    ActivityIndicator, Alert, StyleSheet, useColorScheme
+    ActivityIndicator, Alert, useColorScheme
 } from 'react-native';
-import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
@@ -11,7 +11,7 @@ import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useQueryClient } from '@tanstack/react-query';
-import { GradientButton } from '@/components/ui/GradientButton';
+
 import { RewardModal } from '@/components/RewardModal';
 
 type QuizMode = 'topic' | 'file';
@@ -312,27 +312,4 @@ export default function GenerateFlashcardScreen() {
     );
 }
 
-const styles = StyleSheet.create({
-    settingsCard: { backgroundColor: 'white', borderRadius: 24, padding: 18, marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-    cardTitle: { fontSize: 16, fontWeight: '800', color: '#1e293b', marginBottom: 14 },
-    label: { fontSize: 13, fontWeight: '700', color: '#64748b', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-    inputField: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: '#1e293b', marginBottom: 16, fontWeight: '500' },
-    fileDropzone: { borderWidth: 2, borderColor: '#cbd5e1', borderStyle: 'dashed', borderRadius: 16, padding: 24, alignItems: 'center', backgroundColor: '#f8fafc' },
-    fileNameText: { fontSize: 14, fontWeight: '700', color: '#1e293b', marginTop: 10, textAlign: 'center' },
-    fileChangeText: { fontSize: 12, fontWeight: '700', color: '#4f46e5', marginTop: 4 },
-    fileHintText: { fontSize: 14, fontWeight: '600', color: '#64748b', marginTop: 10 },
-    fileTypeText: { fontSize: 12, color: '#94a3b8', marginTop: 4, fontWeight: '500' },
-    optionRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-    filterBtn: { flex: 1, borderWidth: 2, borderRadius: 14, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
-    filterBtnText: { fontWeight: '800', fontSize: 13, textTransform: 'capitalize' },
-    rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-    rowCenter: { flexDirection: 'row', alignItems: 'center' },
-    iconBubble: {
-        width: 40, height: 40, backgroundColor: '#eef2ff', borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12
-    },
-    toggleRow: { flexDirection: 'row', backgroundColor: '#f1f5f9', borderRadius: 12, padding: 4 },
-    toggleItem: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10 },
-    toggleItemActive: { backgroundColor: 'white', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 1 },
-    toggleText: { fontWeight: '700', fontSize: 12, color: '#94a3b8', textTransform: 'capitalize' },
-    toggleTextActive: { color: '#4f46e5' },
-});
+

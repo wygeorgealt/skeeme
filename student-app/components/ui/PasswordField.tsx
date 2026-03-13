@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, useColorScheme, Platform } from 'react-native';
+import { View, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface PasswordFieldProps {

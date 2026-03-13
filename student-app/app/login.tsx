@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, ScrollView, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
-import * as WebBrowser from 'expo-web-browser';
+
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { signInWithGoogle, signInWithApple } from '@/lib/socialAuth';
+
 import { PasswordField } from '@/components/ui/PasswordField';
 
 export default function LoginScreen() {
@@ -15,29 +15,12 @@ export default function LoginScreen() {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [isSocialLoading, setIsSocialLoading] = useState(false);
     const router = useRouter();
     const { login } = useAuthStore();
     const [failedAttempts, setFailedAttempts] = useState(0);
 
-    const handleSocialLogin = async (provider: 'google' | 'apple') => {
-        setIsSocialLoading(true);
-        try {
-            const signInFn = provider === 'google' ? signInWithGoogle : signInWithApple;
-            const result = await signInFn();
-            if (result) {
-                login(result.user, result.token);
-                router.replace('/(drawer)');
-            }
-        } catch (error: any) {
-            if (__DEV__) console.error('[Social Login] Error:', error);
-            Alert.alert('Auth Error', 'Social sign-in failed. Please try again.');
-        } finally {
-            setIsSocialLoading(false);
-        }
-    };
+
 
     const handleLogin = async () => {
         if (!email.trim() || !password) {
@@ -92,13 +75,7 @@ export default function LoginScreen() {
     const inputTextColor = isDark ? "white" : "black";
     const placeholderColor = isDark ? "#8e8e93" : "#94a3b8";
     const iconColor = isDark ? "white" : "black";
-    const socialBtnBg = isDark ? "bg-[#1c1c1e]" : "bg-white";
-    const separatorClass = isDark ? "bg-[#3a3a3c]" : "bg-slate-200";
-    const primaryBtnClass = (email.length > 5 && password.length > 0 && !isLoading)
-        ? (isDark ? 'bg-white' : 'bg-black')
-        : (isDark ? 'bg-white/30' : 'bg-black/30');
-    const primaryBtnTextClass = isDark ? 'text-black' : 'text-white';
-    const primaryBtnTextDisabledClass = isDark ? 'text-black/50' : 'text-white/50';
+
 
     return (
         <KeyboardAvoidingView
@@ -199,7 +176,7 @@ export default function LoginScreen() {
 
                 <TouchableOpacity onPress={() => router.push('/signup')} className="mt-8 mb-12 items-center" accessibilityRole="button" accessibilityLabel="Go to Sign up">
                     <Text className={`${textSubClass} font-medium`}>
-                        Don't have an account? <Text className="text-brand-primary font-bold">Sign up</Text>
+                        Don&apos;t have an account? <Text className="text-brand-primary font-bold">Sign up</Text>
                     </Text>
                 </TouchableOpacity>
 

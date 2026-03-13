@@ -2,20 +2,19 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack, useRouter, useSegments, ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import 'react-native-reanimated';
 import '../global.css';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { QueryProvider } from '@/components/QueryProvider';
 // Using platform system fonts (SF Pro on iOS, Roboto on Android) - no custom font loading needed
 import { useColorScheme as useNativeColorScheme, LogBox, View, Text, TouchableOpacity } from 'react-native';
-import { cssInterop } from 'nativewind';
-import { useColorScheme as useTailwindColorScheme } from 'nativewind';
+import { cssInterop, useColorScheme as useTailwindColorScheme } from 'nativewind';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AnimatedSplash from '@/components/AnimatedSplash';
 import Animated, { FadeOut } from 'react-native-reanimated';
 import { NetworkStatus } from '@/components/NetworkStatus';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 cssInterop(LinearGradient, {
   className: 'style',
@@ -28,8 +27,6 @@ if (__DEV__) {
 }
 
 SplashScreen.preventAutoHideAsync();
-
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 
 export const unstable_settings = {
@@ -80,7 +77,7 @@ export default function RootLayout() {
     } else {
       setTailwindScheme(storeTheme as 'light' | 'dark');
     }
-  }, [systemTheme]);
+  }, [systemTheme, setTailwindScheme]);
 
   if (!fontsLoaded || isLoading) {
     return null;

@@ -1,24 +1,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
-    ActivityIndicator, Alert, StyleSheet, useColorScheme
+    ActivityIndicator, Alert, useColorScheme
 } from 'react-native';
-import Animated, {
-    useSharedValue, useAnimatedStyle, withTiming, interpolate, Extrapolation,
-} from 'react-native-reanimated';
-import { GradientButton } from '@/components/ui/GradientButton';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, Stack } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { Stack } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { QuizShareCard } from '@/components/QuizShareCard';
 import { RewardModal } from '@/components/RewardModal';
 
-import { QuizMode, Difficulty, FormatType, Question, TheoryResult } from '@/components/quiz/QuizTypes';
+import { QuizMode, Difficulty, FormatType, Question } from '@/components/quiz/QuizTypes';
 import { MCQCard } from '@/components/quiz/MCQCard';
 import { TheoryCard } from '@/components/quiz/TheoryCard';
 import { BlurView } from 'expo-blur';
@@ -242,7 +237,7 @@ export default function GenerateQuizScreen() {
         } finally {
             setIsSavingHistory(false);
         }
-    }, [questions, totalAnswered, isSaved, isSavingHistory, mode, topic, selectedFile, difficulty, correctCount, questions, theoryResults, selectedAnswers, timerEnabled, timerMinutes, timeLeft]);
+    }, [questions, totalAnswered, isSaved, isSavingHistory, mode, topic, selectedFile, difficulty, correctCount, theoryResults, selectedAnswers, timerEnabled, timerMinutes, timeLeft]);
 
     // Save quiz history
     useEffect(() => {

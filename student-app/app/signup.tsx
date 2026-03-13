@@ -1,15 +1,15 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity,
     KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
-    ScrollView, useColorScheme, Animated as RNAnimated
+    ScrollView, useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { signInWithGoogle, signInWithApple } from '@/lib/socialAuth';
+
 import { Picker } from '@react-native-picker/picker';
 import Animated, { FadeIn, SlideInRight, SlideOutLeft } from 'react-native-reanimated';
 import { PasswordField } from '@/components/ui/PasswordField';
@@ -19,7 +19,7 @@ function SuccessAutoAdvance({ onAdvance }: { onAdvance: () => void }) {
     useEffect(() => {
         const timer = setTimeout(onAdvance, 2500);
         return () => clearTimeout(timer);
-    }, []);
+    }, [onAdvance]);
     return null;
 }
 
@@ -52,33 +52,10 @@ export default function SignupScreen() {
     const [learningStyle, setLearningStyle] = useState('simple');
     const [tone, setTone] = useState('encouraging');
 
-    const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [isSocialLoading, setIsSocialLoading] = useState(false);
     const [registeredUser, setRegisteredUser] = useState<any>(null); // To store user during success animation
 
-    const handleSocialLogin = async (provider: 'google' | 'apple') => {
-        setIsSocialLoading(true);
-        try {
-            const signInFn = provider === 'google' ? signInWithGoogle : signInWithApple;
-            const result = await signInFn();
-            if (result) {
-                login(result.user, result.token);
-                if (result.isNewUser) {
-                    // For social, jump straight to Success -> Personalization since name/email are known
-                    setRegisteredUser(result.user);
-                    setStep(5);
-                } else {
-                    router.replace('/(drawer)');
-                }
-            }
-        } catch (error: any) {
-            if (__DEV__) console.error('[Social Signup] Error:', error);
-            Alert.alert('Auth Error', 'Social sign-up failed. Please try again.');
-        } finally {
-            setIsSocialLoading(false);
-        }
-    };
+
 
     const calculateAge = () => {
         const today = new Date();
@@ -201,8 +178,7 @@ export default function SignupScreen() {
     const inputBorderClass = isDark ? "border-[#2c2c2e]" : "border-slate-200";
     const placeholderColor = isDark ? "#8e8e93" : "#94a3b8";
     const iconColor = isDark ? "white" : "black";
-    const socialBtnBg = isDark ? "bg-[#1c1c1e]" : "bg-white";
-    const separatorClass = isDark ? "bg-[#3a3a3c]" : "bg-slate-200";
+
 
     const primaryBtnClass = isDark ? 'bg-white' : 'bg-black';
     const primaryBtnDisabledClass = isDark ? 'bg-white/30' : 'bg-black/30';
@@ -353,7 +329,7 @@ export default function SignupScreen() {
                 {step === 3 && (
                     <Animated.View entering={SlideInRight} exiting={SlideOutLeft} className="flex-1">
                         <Text className={`${textTitleClass} text-[34px] font-black tracking-tight leading-[40px] mb-2 mt-4`}>
-                            What's your name?
+                            What&apos;s your name?
                         </Text>
                         <Text className={`${textSubClass} text-[15px] font-medium leading-relaxed mb-8`}>
                             This is how you will appear inside Skeeme.
@@ -499,7 +475,7 @@ export default function SignupScreen() {
                             Welcome, {registeredUser?.first_name || 'Student'}!
                         </Text>
                         <Text className={`${textSubClass} text-[15px] font-medium leading-relaxed mb-6 text-center px-4`}>
-                            Your account is locked in. Let's make Skeeme yours.
+                            Your account is locked in. Let&apos;s make Skeeme yours.
                         </Text>
 
                         {/* Auto-advance to personalization after 2.5s */}

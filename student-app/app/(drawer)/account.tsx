@@ -1,24 +1,24 @@
 import { useState } from 'react';
 import {
     View, Text, ScrollView, TextInput, TouchableOpacity, Alert,
-    ActivityIndicator, KeyboardAvoidingView, Platform,
+    ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { GradientButton } from '@/components/ui/GradientButton'; // This is now a solid V2 button
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
+import { useColorScheme as useNativeWindColorScheme } from 'nativewind';
 
 export default function AccountScreen() {
     const colorScheme = useColorScheme();
     const { user, updateUser, theme, setTheme } = useAuthStore();
     // NativeWind's setter is still needed for actual class changes
-    const { setColorScheme } = require('nativewind').useColorScheme();
+    const { setColorScheme } = useNativeWindColorScheme();
 
     const [name, setName] = useState(user?.name || '');
-    const [email, setEmail] = useState(user?.email || '');
+
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -192,7 +192,7 @@ export default function AccountScreen() {
                         <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-3">Email Address</Text>
                         <View className="w-full bg-slate-100 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 mb-8 opacity-60">
                             <Text className="text-[16px] font-bold text-slate-500 dark:text-slate-400">
-                                {email}
+                                {user?.email}
                             </Text>
                         </View>
 
