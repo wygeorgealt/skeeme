@@ -7,7 +7,7 @@ use App\Models\IndividualSubscription;
 
 class SubscriptionBreakdown extends ChartWidget
 {
-    protected static ?string $heading = 'Subscription Breakdown';
+    protected ?string $heading = 'Subscription Breakdown';
     protected static ?int $sort = 6;
 
     protected function getData(): array

@@ -8,7 +8,7 @@ use Carbon\Carbon;
 
 class ErrorsChart extends ChartWidget
 {
-    protected static ?string $heading = 'System Errors (Last 14 Days)';
+    protected ?string $heading = 'System Errors (Last 14 Days)';
     protected static ?int $sort = 5;
 
     protected function getData(): array

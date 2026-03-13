@@ -8,7 +8,7 @@ use Carbon\Carbon;
 
 class UserGrowthChart extends ChartWidget
 {
-    protected static ?string $heading = 'User Growth (Last 30 Days)';
+    protected ?string $heading = 'User Growth (Last 30 Days)';
     protected static ?int $sort = 3;
 
     protected function getData(): array

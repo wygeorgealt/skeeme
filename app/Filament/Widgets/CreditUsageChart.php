@@ -8,7 +8,7 @@ use Carbon\Carbon;
 
 class CreditUsageChart extends ChartWidget
 {
-    protected static ?string $heading = 'Daily Credit Usage (Last 14 Days)';
+    protected ?string $heading = 'Daily Credit Usage (Last 14 Days)';
     protected static ?int $sort = 4;
 
     protected function getData(): array

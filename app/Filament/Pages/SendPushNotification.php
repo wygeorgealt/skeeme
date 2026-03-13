@@ -13,7 +13,7 @@ class SendPushNotification extends Page implements Forms\Contracts\HasForms
 {
     use Forms\Concerns\InteractsWithForms;
 
-    protected static string $view = 'filament.pages.send-push-notification';
+    protected string $view = 'filament.pages.send-push-notification';
 
     public static function getNavigationIcon(): ?string
     {
