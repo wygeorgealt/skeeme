@@ -324,7 +324,7 @@ class LecturerExamQuestions extends Component
 
         try {
             $notesContent = array_merge($this->notes, $this->uploadedNotes);
-            $service = new DeepseekAIService();
+            $service = app(DeepseekAIService::class);
             
             $progressCallback = function($progress) {
                 if ($progress <= 25) {

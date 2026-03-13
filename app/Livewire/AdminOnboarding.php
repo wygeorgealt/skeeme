@@ -16,8 +16,6 @@ use Illuminate\Support\Facades\Http;
 #[Layout('layouts.blank')]
 class AdminOnboarding extends Component
 {
-    use \Livewire\WithFileUploads;
-
     public $step = 1;
     public $schoolName = '';
     public $firstName = '';
