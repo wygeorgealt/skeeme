@@ -3,155 +3,146 @@
 @section('title', 'Skeeme for Students | AI Study Assistant')
 
 @section('content')
-<div class="relative bg-white min-h-screen pt-24 pb-12">
+<div class="relative bg-white min-h-screen pt-24 pb-12 overflow-hidden">
     <!-- Background Decor -->
-    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] pointer-events-none z-0 overflow-hidden">
-        <div class="absolute -top-[10%] left-[20%] w-[30%] h-[30%] rounded-full bg-indigo-50/50 blur-[80px]"></div>
-        <div class="absolute top-[10%] right-[10%] w-[40%] h-[40%] rounded-full bg-blue-50/50 blur-[80px]"></div>
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] pointer-events-none z-0">
+        <div class="absolute -top-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-indigo-50/60 blur-[100px]"></div>
+        <div class="absolute top-[10%] right-[10%] w-[50%] h-[50%] rounded-full bg-blue-50/60 blur-[100px]"></div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-6 relative z-10">
-        
-        <!-- Hero Section -->
-        <div class="text-center max-w-3xl mx-auto mb-16" data-aos="fade-up">
-            <br><br>
-            <h1 class="text-5xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6">
-                Ace your exams <br> <span class="text-gradient">with AI.</span>
-            </h1>
-            <p class="text-lg text-slate-500 font-medium leading-relaxed">
-                Turn your messy notes into practice quizzes instantly. <br class="hidden md:block">
-                The smart study companion that never sleeps.
-            </p>
-        </div>
-
-        <!-- Interactive Demo / Tool -->
-        <livewire:landing.student-ai-product />
-
-        <!-- Pricing / Access Section -->
-        <div class="max-w-4xl mx-auto border-t border-slate-100 pt-24" id="pricing">
-            <div class="text-center mb-16">
-                 <h2 class="text-3xl font-extrabold text-slate-900 mb-4">{{ Auth::check() ? 'Your Subscription Plan' : 'Simple Student Pricing' }}</h2>
-                 <p class="text-slate-500 max-w-lg mx-auto">
-                    @if(Auth::check() && Auth::user()->is_unlimited_student)
-                        You have full access to all features. Stay unstoppable!
-                    @else
-                        Get enough credits to ace your midterms, or go unlimited for finals week.
-                    @endif
-                 </p>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-8">
-                <!-- Free -->
-                <div class="p-8 rounded-[32px] {{ (Auth::check() && !Auth::user()->is_unlimited_student) ? 'bg-indigo-50/50 ring-2 ring-indigo-100' : 'bg-slate-50' }} border border-slate-100 relative">
-                    @if(Auth::check() && !Auth::user()->is_unlimited_student)
-                        <div class="absolute top-4 right-4 px-3 py-1 bg-indigo-600 text-[10px] font-black text-white uppercase tracking-widest rounded-full">Active Plan</div>
-                    @endif
-                    <h3 class="text-lg font-black text-slate-900 mb-2">Free Plan</h3>
-                    <div class="text-4xl font-extrabold text-slate-900 mb-6">$0<span class="text-base text-slate-400 font-medium">/mo</span></div>
-                    
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-center gap-3 text-sm font-bold text-slate-600">
-                            <flux:icon.check class="text-indigo-600 size-4" /> 
-                            @if(Auth::check() && !Auth::user()->is_unlimited_student)
-                                <span class="text-indigo-600">{{ number_format(Auth::user()->credits) }} Credits Remaining</span>
-                            @else
-                                500 Credits / Month
-                            @endif
-                        </li>
-                        <li class="flex items-center gap-3 text-sm font-bold text-slate-600">
-                            <flux:icon.check class="text-indigo-600 size-4" /> ~10 Generated Quizzes
-                        </li>
-                        <li class="flex items-center gap-3 text-sm font-bold text-slate-600">
-                            <flux:icon.check class="text-indigo-600 size-4" /> Basic History
-                        </li>
-                    </ul>
-
-                    @guest
-                        <flux:button href="{{ route('register') }}" variant="outline" class="w-full bg-white !border-slate-200 !text-slate-900 font-bold hover:!border-indigo-200 hover:!text-indigo-600">
-                            Create Free Account
-                        </flux:button>
-                    @else
-                        <div class="w-full h-12 flex items-center justify-center text-slate-400 font-bold text-sm tracking-tight italic">
-                            Included in your account
-                        </div>
-                    @endguest
+    <div class="max-w-7xl mx-auto px-6 relative z-10 lg:pl-12">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center min-h-[70vh]">
+            
+            <!-- Left Content: Hero Text -->
+            <div data-aos="fade-right" data-aos-duration="800">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 mb-6">
+                    <span class="flex h-2 w-2 rounded-full bg-indigo-600 animate-pulse"></span>
+                    <span class="text-xs font-bold text-indigo-900 tracking-wide uppercase">Launching Soon</span>
                 </div>
+                
+                <h1 class="text-5xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6">
+                    Ace your exams <br> <span class="text-gradient">with AI.</span>
+                </h1>
+                
+                <p class="text-lg text-slate-500 font-medium leading-relaxed mb-8 max-w-lg">
+                    Turn your messy notes into practice quizzes, instantly solve complex questions with your camera, and master any subject with the ultimate study companion.
+                </p>
 
-                <!-- Pro -->
-                <div class="p-8 rounded-[32px] {{ (Auth::check() && Auth::user()->is_unlimited_student) ? 'bg-slate-900 ring-4 ring-indigo-500/20 shadow-indigo-200 shadow-2xl' : 'bg-slate-900' }} text-white shadow-2xl shadow-indigo-100 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-[60%] h-[60%] bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none"></div>
+                <!-- Features List -->
+                <ul class="space-y-4 mb-10 max-w-md">
+                    <li class="flex items-start gap-3">
+                        <div class="mt-1 bg-indigo-100 p-1 rounded-full"><flux:icon.camera class="size-4 text-indigo-600"/></div>
+                        <div>
+                            <strong class="text-slate-900 block">Snap to Solve</strong>
+                            <span class="text-slate-500 text-sm">Scan any math or accounting problem for step-by-step AI solutions.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <div class="mt-1 bg-indigo-100 p-1 rounded-full"><flux:icon.document-text class="size-4 text-indigo-600"/></div>
+                        <div>
+                            <strong class="text-slate-900 block">PDF to Quizzes</strong>
+                            <span class="text-slate-500 text-sm">Upload handouts and instantly generate mock exams to test yourself.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <div class="mt-1 bg-indigo-100 p-1 rounded-full"><flux:icon.bolt class="size-4 text-indigo-600"/></div>
+                        <div>
+                            <strong class="text-slate-900 block">Smart Flashcards</strong>
+                            <span class="text-slate-500 text-sm">Spaced repetition to make sure you never forget definitions before finals.</span>
+                        </div>
+                    </li>
+                </ul>
+                
+                <!-- Store Badges -->
+                <div class="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
+                    <!-- Apple App Store Badge Mock -->
+                    <div class="flex items-center justify-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-xl border border-slate-800 opacity-60 cursor-not-allowed hover:opacity-75 transition-opacity w-fit select-none shadow-lg">
+                        <flux:icon.apple class="size-7" />
+                        <div class="text-left">
+                            <div class="text-[10px] leading-tight text-slate-300">Coming soon to the</div>
+                            <div class="text-lg font-semibold leading-tight tracking-tight">App Store</div>
+                        </div>
+                    </div>
                     
-                    @if(Auth::check() && Auth::user()->is_unlimited_student)
-                        <div class="absolute top-4 right-4 px-3 py-1 bg-white text-[10px] font-black text-indigo-900 uppercase tracking-widest rounded-full z-20 shadow-sm">Current Plan</div>
-                    @endif
-
-                    <div class="relative z-10">
-                        <h3 class="text-lg font-black text-white mb-2">Unlimited</h3>
-                        <div class="text-4xl font-extrabold text-white mb-6"><span id="student-price-value">₦5,000</span><span class="text-base text-slate-400 font-medium">/mo</span></div>
-                        
-                        <ul class="space-y-4 mb-8">
-                            <li class="flex items-center gap-3 text-sm font-bold text-slate-200">
-                                <div class="size-4 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[10px]"><i class="fas fa-infinity"></i></div>
-                                Unlimited Credits
-                            </li>
-                            <li class="flex items-center gap-3 text-sm font-bold text-slate-200">
-                                <flux:icon.check class="text-indigo-400 size-4" /> Priority Generation
-                            </li>
-                            <li class="flex items-center gap-3 text-sm font-bold text-slate-200">
-                                <flux:icon.check class="text-indigo-400 size-4" /> Advanced File Inputs
-                            </li>
-                        </ul>
-
-                        @if(Auth::check() && Auth::user()->is_unlimited_student)
-                            <div class="w-full h-12 flex items-center justify-center text-indigo-400 font-bold text-sm tracking-tight italic">
-                                Plan active & ready
-                            </div>
-                        @else
-                            <flux:button href="{{ route('students.subscribe') }}" variant="primary" class="w-full !border-0 !bg-white !text-indigo-900 font-extrabold hover:!bg-indigo-50">
-                                Get Unlimited
-                            </flux:button>
-                        @endif
+                    <!-- Google Play Badge Mock -->
+                    <div class="flex items-center justify-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-xl border border-slate-800 opacity-60 cursor-not-allowed hover:opacity-75 transition-opacity w-fit select-none shadow-lg whitespace-nowrap">
+                        <svg class="size-7" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.5 1.5L14.5 12L2.5 22.5V1.5Z" fill="#3BCAE6"/>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M14.5 12L21.5 16L18 19L14.5 12Z" fill="#D5163D"/>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M22 15.5L14.5 12L18 9L22 15.5Z" fill="#F4B400"/>
+                            <path d="M14.5 12L2.5 1.5L12.5 7L14.5 12Z" fill="#25A054"/>
+                        </svg>
+                        <div class="text-left">
+                            <div class="text-[10px] leading-tight text-slate-300">Coming soon to</div>
+                            <div class="text-lg font-semibold leading-tight tracking-tight">Google Play</div>
+                        </div>
                     </div>
                 </div>
+
+            </div>
+
+            <!-- Right Content: Mobile Phone Mockup -->
+            <div class="relative lg:h-[700px] flex justify-center items-center" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                <!-- Decorative rings around phone -->
+                <div class="absolute w-[120%] h-[120%] bg-indigo-50 rounded-full blur-3xl opacity-50 z-0"></div>
+                
+                <!-- Phone Silhouette Frame -->
+                <div class="relative z-10 w-[300px] lg:w-[340px] aspect-[9/19] bg-slate-900 rounded-[3rem] p-3 shadow-2xl shadow-indigo-500/20 border-4 border-slate-800 rotate-[-2deg] hover:rotate-0 transition-transform duration-700">
+                    <!-- Notch -->
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-900 rounded-b-3xl z-30"></div>
+                    
+                    <!-- Screen Container inside Phone -->
+                    <div class="w-full h-full bg-slate-50 rounded-[2.25rem] overflow-hidden relative border border-slate-800/50 flex flex-col items-center justify-center p-6 text-center">
+                        <img src="{{ asset('assets/images/logo.png') }}" class="w-20 h-20 mb-6 drop-shadow-lg opacity-90" onerror="this.src=''" alt="Skeeme Logo" />
+                        
+                        <div class="w-full space-y-4">
+                            <!-- Mock UI Elements -->
+                            <div class="h-28 w-full bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center flex-col animate-pulse">
+                                <flux:icon.camera class="size-8 text-indigo-400 mb-2" />
+                                <div class="w-24 h-2 bg-slate-200 rounded-full"></div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="h-24 w-full bg-indigo-600 rounded-2xl shadow-md flex items-center justify-center flex-col">
+                                    <div class="w-12 h-2 bg-indigo-300 rounded-full mb-2"></div>
+                                    <div class="w-16 h-2 bg-indigo-400 rounded-full"></div>
+                                </div>
+                                <div class="h-24 w-full bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center">
+                                    <div class="w-16 h-16 rounded-full border-4 border-slate-100 border-t-indigo-500"></div>
+                                </div>
+                            </div>
+
+                            <div class="h-16 w-full bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center px-4 gap-3">
+                                <div class="w-8 h-8 rounded-full border border-slate-100 bg-slate-50 flex items-center justify-center"><flux:icon.check class="size-4 text-emerald-500"/></div>
+                                <div class="flex-1 h-2 bg-slate-100 rounded-full"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Floating Badge 1 -->
+                <div class="absolute -left-6 lg:-left-12 top-1/4 bg-white p-4 rounded-2xl shadow-xl border border-slate-100 z-20 animate-bounce" style="animation-duration: 3s;">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-green-100 bg-opacity-50 p-2 rounded-full"><flux:icon.check-circle class="size-5 text-green-600"/></div>
+                        <div>
+                            <div class="text-sm font-bold text-slate-900">A+ Scored</div>
+                            <div class="text-xs text-slate-500">Physics Midterm</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating Badge 2 -->
+                <div class="absolute -right-4 lg:-right-8 bottom-1/3 bg-slate-900 p-4 rounded-2xl shadow-2xl shadow-indigo-500/30 border border-slate-800 z-20 animate-bounce" style="animation-duration: 4s; animation-delay: 1s;">
+                    <div class="flex items-center gap-3">
+                        <div class="text-indigo-400 font-extrabold text-xl">15</div>
+                        <div class="text-xs font-medium text-white max-w-[80px] leading-tight">Day Study Streak</div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
 @endsection
 
-@push('scripts')
-<script>
-    const currencyMap = {
-        'NG': { code: 'NGN', symbol: '₦', rate: 5000 / 39, basePrice: 39 }, // Adjusting to the $39 base if needed, or just hardcoding the 5000
-        'GH': { code: 'GHS', symbol: '₵', rate: 40 / 2.99, basePrice: 2.99 },
-        'KE': { code: 'KES', symbol: 'Ks', rate: 400 / 2.99, basePrice: 2.99 },
-        'ZA': { code: 'ZAR', symbol: 'R', rate: 60 / 2.99, basePrice: 2.99 },
-        'US': { code: 'USD', symbol: '$', rate: 1, basePrice: 2.99 },
-        'default': { code: 'USD', symbol: '$', rate: 1, basePrice: 2.99 }
-    };
-
-    // Special case for Student Unlimited: USD 2.99 vs NGN 5000
-    function updateStudentPricing(countryCode) {
-        const display = document.getElementById('student-price-value');
-        if (!display) return;
-
-        if (countryCode === 'NG') {
-            display.textContent = '₦5,000';
-        } else {
-            // For other countries, maybe stick to 2.99 or convert
-            display.textContent = '$2.99';
-        }
-    }
-
-    // Auto-detect on load
-    document.addEventListener('DOMContentLoaded', async () => {
-        try {
-            const response = await fetch('https://ipapi.co/json/');
-            const data = await response.json();
-            updateStudentPricing(data.country_code);
-        } catch (e) {
-            updateStudentPricing('US');
-        }
-    });
-</script>
-@endpush

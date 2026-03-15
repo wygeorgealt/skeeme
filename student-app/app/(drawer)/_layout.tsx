@@ -118,7 +118,7 @@ export default function DrawerLayout() {
     const tintColor = isDark ? '#fff' : '#121212';
 
     useEffect(() => {
-        registerForPushNotificationsAsync();
+        registerForPushNotificationsAsync(useAuthStore.getState().token);
     }, []);
 
     return (

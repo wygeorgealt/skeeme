@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Skeeme",
-    "slug": "student-app",
+    "slug": "skeeme",
     "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -24,7 +24,16 @@
         "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "splash": {
+        "image": "./assets/images/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#121212",
+        "dark": {
+          "image": "./assets/images/splash.png",
+          "backgroundColor": "#121212"
+        }
+      }
     },
     "web": {
       "output": "static",
@@ -51,8 +60,15 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "7189d4a4-0c25-4fe4-b58a-1822e2034bd1"
+        "projectId": "299bfccb-a625-4a0c-885d-f9e6c4369396"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "owner": "yeezykng_dom",
+    "updates": {
+      "url": "https://u.expo.dev/299bfccb-a625-4a0c-885d-f9e6c4369396"
     }
   }
 }

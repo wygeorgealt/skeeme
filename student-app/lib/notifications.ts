@@ -18,7 +18,7 @@ Notifications.setNotificationHandler({
 /**
  * Register for push notifications and sync with the backend.
  */
-export async function registerForPushNotificationsAsync() {
+export async function registerForPushNotificationsAsync(authToken?: string | null) {
     let token;
 
     if (Platform.OS === 'android') {
@@ -54,9 +54,15 @@ export async function registerForPushNotificationsAsync() {
             })).data;
             
             // Sync with backend
-            if (token) {
-                await api.post('/device-token', { expo_push_token: token });
+            if (token && authToken) {
+                await api.post('device-token', { expo_push_token: token }, {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`
+                    }
+                });
                 console.log('Successfully synced push token to backend:', token);
+            } else if (token) {
+                console.log('Got push token but user not logged in. Will sync later:', token);
             }
         } catch (e) {
             console.error('Push Token Error:', e);
