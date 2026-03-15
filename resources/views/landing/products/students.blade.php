@@ -3,7 +3,7 @@
 @section('title', 'Skeeme for Students | AI Study Assistant')
 
 @section('content')
-<div class="relative bg-white min-h-screen pt-24 pb-12 overflow-hidden">
+<div class="relative bg-white min-h-screen pt-32 lg:pt-40 pb-12 overflow-hidden">
     <!-- Background Decor -->
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] pointer-events-none z-0">
         <div class="absolute -top-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-indigo-50/60 blur-[100px]"></div>
@@ -95,7 +95,7 @@
                     
                     <!-- Screen Container inside Phone -->
                     <div class="w-full h-full bg-slate-50 rounded-[2.25rem] overflow-hidden relative border border-slate-800/50 flex flex-col items-center justify-center p-6 text-center">
-                        <img src="{{ asset('assets/images/logo.png') }}" class="w-20 h-20 mb-6 drop-shadow-lg opacity-90" onerror="this.src=''" alt="Skeeme Logo" />
+                        <img src="{{ asset('logo.svg') }}" class="w-24 h-auto mb-6 drop-shadow-md opacity-90" onerror="this.src='{{ asset('images/logo.png') }}'" alt="Skeeme Logo" />
                         
                         <div class="w-full space-y-4">
                             <!-- Mock UI Elements -->
