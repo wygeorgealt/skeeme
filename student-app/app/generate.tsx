@@ -4,14 +4,16 @@ import {
     ActivityIndicator, Alert, useColorScheme
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, Stack } from 'expo-router';
+import { useFocusEffect, Stack, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import * as DocumentPicker from 'expo-document-picker';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
 import { QuizShareCard } from '@/components/QuizShareCard';
 import { RewardModal } from '@/components/RewardModal';
+import { generateQuizHTML } from '@/lib/pdfGenerator';
 
 import { QuizMode, Difficulty, FormatType, Question } from '@/components/quiz/QuizTypes';
 import { MCQCard } from '@/components/quiz/MCQCard';
@@ -59,6 +61,16 @@ export default function GenerateQuizScreen() {
     const [isSaved, setIsSaved] = useState(false);
     const [rewardData, setRewardData] = useState<any>(null);
     const [isRewardModalVisible, setIsRewardModalVisible] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+
+    // Read topic from scan route param
+    const params = useLocalSearchParams<{ topic?: string }>();
+    useEffect(() => {
+        if (params.topic && questions.length === 0) {
+            setTopic(params.topic);
+            setMode('topic');
+        }
+    }, [params.topic]);
 
     const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
@@ -83,6 +95,37 @@ export default function GenerateQuizScreen() {
             Alert.alert('Sharing failed', 'Could not generate result image.');
         } finally {
             setIsSharing(false);
+        }
+    };
+
+    const handleExportPDF = async () => {
+        if (questions.length === 0) return;
+        setIsExporting(true);
+        try {
+            const quizTitle = mode === 'topic' ? topic : (selectedFile?.name || 'Quiz');
+            const questionsForExport = questions.map((q, qi) => {
+                const isTheory = q.question_type === 'essay';
+                const isCorrect = isTheory ? !!theoryResults[qi] : selectedAnswers[qi] === q.correct_answer;
+                return {
+                    question: q.question_text,
+                    question_text: q.question_text,
+                    type: q.question_type,
+                    question_type: q.question_type,
+                    options: q.options,
+                    correct_answer: q.correct_answer || q.explanation || '',
+                    user_answer: isTheory ? '(Theory Answer)' : selectedAnswers[qi],
+                    is_correct: isCorrect,
+                    explanation: q.explanation,
+                };
+            });
+            const html = generateQuizHTML(quizTitle, percentage, questionsForExport);
+            const { uri } = await Print.printToFileAsync({ html, base64: false });
+            await Sharing.shareAsync(uri);
+        } catch (e) {
+            if (__DEV__) console.error('PDF Export failed', e);
+            Alert.alert('Export Failed', 'Could not generate PDF report.');
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -586,7 +629,7 @@ export default function GenerateQuizScreen() {
 
             {/* Footer Actions */}
             <View className="absolute bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 py-8 px-6 border-t-2 border-slate-100 dark:border-slate-800 backdrop-blur-xl">
-                <View className="flex-row gap-3">
+                <View className="flex-row gap-3 mb-3">
                     <TouchableOpacity
                         onPress={handleShare}
                         disabled={isSharing}
@@ -604,13 +647,29 @@ export default function GenerateQuizScreen() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        onPress={() => { setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); if (timerRef.current) clearInterval(timerRef.current); }}
+                        onPress={handleExportPDF}
+                        disabled={isExporting}
                         activeOpacity={0.8}
-                        className="bg-slate-100 dark:bg-slate-800 rounded-2xl px-10 py-5 items-center justify-center"
+                        className="bg-brand-primary rounded-2xl px-8 py-5 flex-1 items-center justify-center flex-row shadow-lg shadow-brand-primary/20"
                     >
-                        <Text className="text-slate-900 dark:text-white font-black text-[16px]">Done</Text>
+                        {isExporting ? (
+                            <ActivityIndicator size="small" color="white" />
+                        ) : (
+                            <>
+                                <Ionicons name="document-text-outline" size={20} color="white" style={{ marginRight: 8 }} />
+                                <Text className="text-white font-black text-[16px]">Export PDF</Text>
+                            </>
+                        )}
                     </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity
+                    onPress={() => { setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); if (timerRef.current) clearInterval(timerRef.current); }}
+                    activeOpacity={0.8}
+                    className="bg-slate-100 dark:bg-slate-800 rounded-2xl py-5 items-center justify-center"
+                >
+                    <Text className="text-slate-900 dark:text-white font-black text-[16px]">Done</Text>
+                </TouchableOpacity>
             </View>
 
             <RewardModal isVisible={isRewardModalVisible} onClose={() => setIsRewardModalVisible(false)} reward={rewardData} />

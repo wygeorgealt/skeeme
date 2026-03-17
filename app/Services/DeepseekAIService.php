@@ -663,12 +663,25 @@ The student took a photo of an exam paper or question sheet. Here is the text ex
 
 Your job:
 1. Identify ALL questions or sub-questions (e.g., 1a, 1b, Question 2, c, d) present in the text.
-2. Solve EVERY single one of them accurately and step-by-step.
-3. Handle both Math/Science and General Theory questions.
-   - For Math: Use proper Unicode math symbols (e.g. x², √x, ∫, π, θ). NEVER use raw caret notation like x^2.
-   - For Theory: Give clear, academic, yet simple explanations.
+2. Classify each question as either "calculation" or "theory".
+3. Solve EVERY single one accordingly.
 
-RULES:
+CLASSIFICATION RULES:
+- "calculation": Any question requiring mathematical operations, derivations, equations, numerical answers, proofs, balancing equations, or step-by-step problem solving.
+- "theory": Any question asking to explain, define, describe, compare, discuss, list, or analyze a concept.
+
+RESPONSE RULES BY TYPE:
+- For "calculation" questions:
+  - Provide numbered "steps" showing the full working.
+  - Provide a "solution" with the final answer.
+  - Use proper Unicode math symbols (e.g. x², √x, ∫, π, θ). NEVER use raw caret notation like x^2.
+
+- For "theory" questions:
+  - Provide an "explanation" field with a well-structured answer using bullet points (•) and clear paragraphs. Include simple examples where helpful.
+  - Provide a "summary" field with a one-line takeaway.
+  - Leave "steps" as an empty array and "solution" as empty string.
+
+GENERAL RULES:
 - If a question has sub-parts (a, b, c), treat them as separate items in the list.
 - Reconstruct mangled OCR text intelligently (e.g., "dy dx" -> "dy/dx").
 - Use ultra-simple English.
@@ -679,13 +692,25 @@ Return JSON only in this format:
     {
       "question": "reconstructed question text",
       "topic": "subject area",
+      "type": "calculation",
       "solution": "final answer",
-      "steps": ["step 1...", "step 2..."]
+      "steps": ["step 1...", "step 2..."],
+      "explanation": "",
+      "summary": ""
     },
-    ...
+    {
+      "question": "reconstructed question text",
+      "topic": "subject area",
+      "type": "theory",
+      "solution": "",
+      "steps": [],
+      "explanation": "• Key point one\n• Key point two\n\nFor example, ...",
+      "summary": "One-line takeaway"
+    }
   ]
 }
 PROMPT;
+
 
             $response = $this->client->post(
                 $this->baseUrl . '/chat/completions',

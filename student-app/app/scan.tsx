@@ -8,7 +8,7 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { MathText } from '@/components/ui/MathText';
 
@@ -20,8 +20,11 @@ import { generateScanHTML } from '@/lib/pdfGenerator';
 type ScanResult = {
     question: string;
     topic: string;
+    type: 'calculation' | 'theory';
     solution: string;
     steps: string[];
+    explanation: string;
+    summary: string;
 };
 
 const BASE_SCAN_COST = 2;
@@ -33,6 +36,7 @@ export default function ScanScreen() {
     const isDark = colorScheme === 'dark';
     const bgColor = isDark ? '#121212' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#121212';
+    const router = useRouter();
 
     const { user, updateUser } = useAuthStore();
 
@@ -231,7 +235,12 @@ export default function ScanScreen() {
                         {results.map((item, index) => (
                             <View key={index} className="mb-10 w-full pt-4 border-t-2 border-slate-100 dark:border-slate-800">
                                 <View className="flex-row items-center justify-between mb-5">
-                                    <Text className="text-slate-400 dark:text-slate-500 font-black text-[13px] uppercase tracking-widest">Question {index + 1}</Text>
+                                    <View className="flex-row items-center gap-2">
+                                        <Text className="text-slate-400 dark:text-slate-500 font-black text-[13px] uppercase tracking-widest">Question {index + 1}</Text>
+                                        <View className={`px-2 py-0.5 rounded-full ${item.type === 'theory' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'}`}>
+                                            <Text className={`font-black text-[9px] uppercase tracking-widest ${item.type === 'theory' ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{item.type === 'theory' ? 'Theory' : 'Calc'}</Text>
+                                        </View>
+                                    </View>
                                     {item.topic && (
                                         <View className="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
                                             <Text className="text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest">{item.topic}</Text>
@@ -239,21 +248,45 @@ export default function ScanScreen() {
                                     )}
                                 </View>
                                 <MathText content={item.question} color={isDark ? 'white' : '#121212'} fontSize={19} containerStyle={{ marginBottom: 24 }} />
-                                {item.steps && item.steps.length > 0 && (
-                                    <View className="mb-6 pl-4 border-l-2 border-slate-200 dark:border-slate-700">
-                                        <Text className="text-slate-400 dark:text-slate-500 font-bold text-[11px] uppercase tracking-widest mb-3">Solution Steps</Text>
-                                        {item.steps.map((step, i) => (
-                                            <View key={i} className="flex-row mb-3">
-                                                <Text className="text-slate-400 dark:text-slate-500 font-black text-sm w-5">{i + 1}.</Text>
-                                                <MathText content={step} color={isDark ? '#cbd5e1' : '#334155'} fontSize={15} containerStyle={{ flex: 1 }} />
+
+                                {/* ── Calculation: Step-by-step + Final Answer ── */}
+                                {(item.type !== 'theory') && (
+                                    <>
+                                        {item.steps && item.steps.length > 0 && (
+                                            <View className="mb-6 pl-4 border-l-2 border-emerald-300 dark:border-emerald-700">
+                                                <Text className="text-slate-400 dark:text-slate-500 font-bold text-[11px] uppercase tracking-widest mb-3">Solution Steps</Text>
+                                                {item.steps.map((step, i) => (
+                                                    <View key={i} className="flex-row mb-3">
+                                                        <Text className="text-emerald-500 dark:text-emerald-400 font-black text-sm w-5">{i + 1}.</Text>
+                                                        <MathText content={step} color={isDark ? '#cbd5e1' : '#334155'} fontSize={15} containerStyle={{ flex: 1 }} />
+                                                    </View>
+                                                ))}
                                             </View>
-                                        ))}
-                                    </View>
+                                        )}
+                                        <View className="bg-emerald-50 dark:bg-emerald-900/20 rounded-[16px] p-5 border border-emerald-200 dark:border-emerald-800">
+                                            <Text className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px] uppercase tracking-widest mb-2">Final Answer</Text>
+                                            <MathText content={item.solution} color={isDark ? 'white' : '#121212'} fontSize={18} />
+                                        </View>
+                                    </>
                                 )}
-                                <View className="bg-slate-100 dark:bg-slate-800 rounded-[16px] p-5 border border-slate-200 dark:border-slate-700">
-                                    <Text className="text-slate-400 dark:text-slate-500 font-bold text-[11px] uppercase tracking-widest mb-2">Final Result</Text>
-                                    <MathText content={item.solution} color={isDark ? 'white' : '#121212'} fontSize={18} />
-                                </View>
+
+                                {/* ── Theory: Structured Explanation + Summary ── */}
+                                {item.type === 'theory' && (
+                                    <>
+                                        {item.explanation ? (
+                                            <View className="mb-6 pl-4 border-l-2 border-blue-300 dark:border-blue-700">
+                                                <Text className="text-slate-400 dark:text-slate-500 font-bold text-[11px] uppercase tracking-widest mb-3">Explanation</Text>
+                                                <MathText content={item.explanation} color={isDark ? '#cbd5e1' : '#334155'} fontSize={15} containerStyle={{ flex: 1 }} />
+                                            </View>
+                                        ) : null}
+                                        {item.summary ? (
+                                            <View className="bg-blue-50 dark:bg-blue-900/20 rounded-[16px] p-5 border border-blue-200 dark:border-blue-800">
+                                                <Text className="text-blue-600 dark:text-blue-400 font-bold text-[11px] uppercase tracking-widest mb-2">Key Takeaway</Text>
+                                                <Text className="text-slate-900 dark:text-white font-bold text-[16px] leading-relaxed">{item.summary}</Text>
+                                            </View>
+                                        ) : null}
+                                    </>
+                                )}
                             </View>
                         ))}
                     </View>
@@ -268,6 +301,23 @@ export default function ScanScreen() {
                     style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, paddingBottom: insets.bottom || 24, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
                 >
                     <View className="gap-3">
+                        {/* Practice Similar Questions */}
+                        <TouchableOpacity
+                            onPress={() => {
+                                const topics = results.map(r => r.topic).filter(Boolean);
+                                const uniqueTopics = [...new Set(topics)];
+                                const combinedTopic = uniqueTopics.join(', ') || 'General';
+                                router.push({ pathname: '/generate', params: { topic: combinedTopic } });
+                            }}
+                            className="bg-brand-primary rounded-2xl py-4 items-center flex-row justify-center shadow-lg shadow-brand-primary/20"
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Practice Similar Questions"
+                        >
+                            <Ionicons name="sparkles" size={20} color="white" style={{ marginRight: 8 }} />
+                            <Text className="text-white font-black text-[17px]">Practice Similar Questions</Text>
+                        </TouchableOpacity>
+
                         <TouchableOpacity onPress={handleExport} disabled={loading} className="bg-slate-900 dark:bg-white rounded-2xl py-4 items-center flex-row justify-center shadow-sm" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Save as PDF">
                             {loading ? <ActivityIndicator size="small" color={isDark ? '#121212' : 'white'} /> : <>
                                 <Ionicons name="download-outline" size={20} color={isDark ? '#121212' : 'white'} style={{ marginRight: 8 }} />

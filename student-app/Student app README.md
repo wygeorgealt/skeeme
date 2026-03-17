@@ -1,8 +1,7 @@
 # 📚 Skeeme — Student App
 
-**Stop re-reading your notes. Start testing yourself.**
 
-Skeeme is an AI study app for students. Upload your lecture slides, type in a topic, and Skeeme turns it into hands-on study material — quizzes, flashcards, timed sessions — in seconds.
+Skeeme is the lazy way to study. Upload lecture slides or type a topic and Skeeme instantly turns them into quizzes, flashcards, and timed practice sessions.
 
 ---
 
@@ -33,6 +32,19 @@ Turn any topic or document into a set of flashcards you can study on the go.
 - Cards flip with a smooth 3D animation
 - Build as many decks as you need
 - Control the number of cards and difficulty
+
+---
+
+### 🎨 AI Personalization
+Skeeme adapts to **you**. During setup, our AI analyzes your learning goals, current academic level, and preferred study style to customize the personality and complexity of the quizzes it generates. Whether you're a high-schooler cramming for SATs or a medical student masterng complex anatomy, the AI scales its depth to match your needs.
+
+---
+
+### 📡 Offline Study History
+Never lose your progress, even in a dead zone. All your quiz sessions and flashcard decks are stored locally on your device first.
+- **Review your work offline:** Browse through past quiz results and re-read explanations without an internet connection.
+- **Auto-Sync:** Once you're back online, your local progress and study streaks are seamlessly synced to the cloud.
+- **Instant Access:** Fast, local-first performance for a lag-free study experience.
 
 ---
 
