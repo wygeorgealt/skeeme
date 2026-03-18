@@ -14,6 +14,8 @@ import * as Print from 'expo-print';
 import { QuizShareCard } from '@/components/QuizShareCard';
 import { RewardModal } from '@/components/RewardModal';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
+import CreditStatusBar from '@/components/CreditStatusBar';
+import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 
 import { QuizMode, Difficulty, FormatType, Question } from '@/components/quiz/QuizTypes';
 import { MCQCard } from '@/components/quiz/MCQCard';
@@ -62,6 +64,8 @@ export default function GenerateQuizScreen() {
     const [rewardData, setRewardData] = useState<any>(null);
     const [isRewardModalVisible, setIsRewardModalVisible] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [showOutOfCredits, setShowOutOfCredits] = useState(false);
+    const [creditRefreshKey, setCreditRefreshKey] = useState(0);
 
     // Read topic from scan route param
     const params = useLocalSearchParams<{ topic?: string }>();
@@ -197,12 +201,15 @@ export default function GenerateQuizScreen() {
                 fd.append('question_count', questionCount);
                 fd.append('difficulty', difficulty);
                 questionTypes.forEach((t, i) => fd.append(`question_types[${i}]`, t));
-                response = await api.post('/quizzes/generate', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                response = await api.post('quizzes/generate', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
             } else {
-                response = await api.post('/quizzes/generate', { topic, question_count: parseInt(questionCount), question_types: questionTypes, difficulty });
+                response = await api.post('quizzes/generate', { topic, question_count: parseInt(questionCount), question_types: questionTypes, difficulty });
             }
             setQuestions(response.data.questions);
-            if (response.data.remaining_credits !== undefined) updateUser({ credits: response.data.remaining_credits });
+            if (response.data.remaining_credits !== undefined) {
+                updateUser({ credits: response.data.remaining_credits });
+                setCreditRefreshKey(k => k + 1);
+            }
             if (timerEnabled) startTimer(parseInt(timerMinutes) || 10);
         } catch (e: any) {
             let msg = 'Something went wrong. Please try again.';
@@ -215,8 +222,11 @@ export default function GenerateQuizScreen() {
                 msg = data.message;
             }
 
-            if (e.response?.status === 403) Alert.alert('Insufficient Credits', msg);
-            else Alert.alert('Failed', msg);
+            if (e.response?.status === 403) {
+                setShowOutOfCredits(true);
+            } else {
+                Alert.alert('Failed', msg);
+            }
         } finally {
             clearInterval(stageInterval);
             setIsLoading(false);
@@ -268,7 +278,7 @@ export default function GenerateQuizScreen() {
         };
 
         try {
-            const res = await api.post('/quizzes/history', payload);
+            const res = await api.post('quizzes/history', payload);
             setIsSaved(true);
             if (res.data.reward?.earned) {
                 setRewardData(res.data.reward);
@@ -673,6 +683,11 @@ export default function GenerateQuizScreen() {
             </View>
 
             <RewardModal isVisible={isRewardModalVisible} onClose={() => setIsRewardModalVisible(false)} reward={rewardData} />
+            <OutOfCreditsModal
+                visible={showOutOfCredits}
+                onDismiss={() => setShowOutOfCredits(false)}
+                featureAttempted="quiz"
+            />
         </View>
     );
 }

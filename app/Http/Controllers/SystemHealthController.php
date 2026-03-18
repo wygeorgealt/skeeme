@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class SystemHealthController extends Controller
 {
@@ -35,7 +38,8 @@ class SystemHealthController extends Controller
             'read_latency' => 0,
             'info' => [],
             'verdict' => 'Pending',
-            'verdict_class' => 'text-gray-500'
+            'verdict_class' => 'text-gray-500',
+            'queue_size' => 0
         ];
 
         try {
@@ -59,6 +63,9 @@ class SystemHealthController extends Controller
             if ($value !== "health_check_payload") {
                 $data['status'] = 'Degraded (Integrity Failure)';
             }
+
+            // Queue Check
+            $data['queue_size'] = Queue::size('default');
 
             // 3. Info
             $redisInfo = Redis::info();

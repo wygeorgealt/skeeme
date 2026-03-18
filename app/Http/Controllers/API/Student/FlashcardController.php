@@ -200,6 +200,9 @@ class FlashcardController extends Controller
                     } catch (\Exception $e) {
                         Log::error("Failed to log flashcard transaction: " . $e->getMessage());
                     }
+
+                    // Check if user is running low on credits (dispatched after transaction)
+                    \App\Jobs\CheckLowCredits::dispatch($user->id);
                 }
 
                 return $deck;

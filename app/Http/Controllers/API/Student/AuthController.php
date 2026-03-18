@@ -125,7 +125,17 @@ class AuthController extends Controller
                 'provider' => $provider,
                 'provider_id' => $socialUser->getId(),
                 'avatar' => $socialUser->getAvatar(),
+                'referral_code' => strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8)),
             ]);
+
+            // Log initial credits
+            $user->transactions()->create([
+                'type' => 'reward',
+                'amount' => 500,
+                'description' => 'Welcome bonus: Free tier signup credits',
+                'metadata' => json_encode(['source' => 'signup']),
+            ]);
+
             $isNewUser = true;
         }
 
@@ -185,6 +195,15 @@ class AuthController extends Controller
             'status' => 'active',
             'approved_at' => now(),
             'credits' => 500, // Initial credits for Free tier
+            'referral_code' => strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8)),
+        ]);
+
+        // Log initial credits
+        $user->transactions()->create([
+            'type' => 'reward',
+            'amount' => 500,
+            'description' => 'Welcome bonus: Free tier signup credits',
+            'metadata' => json_encode(['source' => 'signup']),
         ]);
 
         $deviceName = $request->input('device_name', 'mobile_app');

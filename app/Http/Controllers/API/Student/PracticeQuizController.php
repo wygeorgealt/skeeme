@@ -150,6 +150,9 @@ class PracticeQuizController extends Controller
                     }
                 });
                 Log::info("Credits Deducted", ['new_total' => $user->fresh()->credits]);
+
+                // Check if user is running low on credits
+                \App\Jobs\CheckLowCredits::dispatch($user->id);
             }
 
             // 8. Cleanup MCQ formatting to ensure correct answer text is preserved after shuffle

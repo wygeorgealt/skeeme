@@ -92,6 +92,9 @@ class ScanController extends Controller
                         Log::error("Failed to log scan transaction: " . $e->getMessage());
                     }
                 });
+
+                // Check if user is running low on credits
+                \App\Jobs\CheckLowCredits::dispatch($user->id);
             }
 
             return response()->json([

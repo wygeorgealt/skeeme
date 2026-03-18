@@ -32,7 +32,7 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <!-- Connection Status -->
             <div class="p-8 rounded-[2rem] glass">
                 <p class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">Connection</p>
@@ -45,6 +45,15 @@
                 <p class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">Verdict</p>
                 <p class="text-3xl font-extrabold {{ $stats['verdict_class'] }} mb-2">{{ $stats['verdict'] }}</p>
                 <p class="text-sm font-medium text-slate-500">Infrastructure health rating</p>
+            </div>
+
+            <!-- Queue Status -->
+            <div class="p-8 rounded-[2rem] glass">
+                <p class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">Queue Status</p>
+                <p class="text-3xl font-extrabold {{ $stats['queue_size'] > 50 ? 'text-rose-500' : ($stats['queue_size'] > 10 ? 'text-amber-500' : 'text-emerald-500') }} mb-2">
+                    {{ $stats['queue_size'] }}
+                </p>
+                <p class="text-sm font-medium text-slate-500">Pending jobs (Healthy if near 0)</p>
             </div>
         </div>
 

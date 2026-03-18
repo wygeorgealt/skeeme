@@ -174,6 +174,15 @@ Route::prefix('v1')->group(function () {
             Route::post('device-token', [\App\Http\Controllers\API\Student\DeviceTokenController::class, 'store']);
             Route::post('translate', [\App\Http\Controllers\API\Student\TranslationController::class, 'translate']);
 
+            // Credit Awareness
+            Route::get('credits/summary', [\App\Http\Controllers\API\Student\CreditController::class, 'summary']);
+            Route::post('credits/out-of-credits', [\App\Http\Controllers\API\Student\CreditController::class, 'logOutOfCredits']);
+
+            // Referral System
+            Route::get('referral/my-code', [\App\Http\Controllers\API\Student\ReferralController::class, 'myCode']);
+            Route::get('referral/stats', [\App\Http\Controllers\API\Student\ReferralController::class, 'stats']);
+            Route::post('referral/redeem', [\App\Http\Controllers\API\Student\ReferralController::class, 'redeem']);
+
             // Scan & Solve (Camera AI) moved to throttled group above
             // Route::post('scan/solve', [\App\Http\Controllers\API\Student\ScanController::class, 'solve']);
         });

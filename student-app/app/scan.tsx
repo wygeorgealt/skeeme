@@ -15,6 +15,8 @@ import { MathText } from '@/components/ui/MathText';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { generateScanHTML } from '@/lib/pdfGenerator';
+import CreditStatusBar from '@/components/CreditStatusBar';
+import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type ScanResult = {
@@ -46,6 +48,8 @@ export default function ScanScreen() {
     const [loadingStage, setLoadingStage] = useState('');
     const [results, setResults] = useState<ScanResult[]>([]);
     const [lastScanCost, setLastScanCost] = useState<number | null>(null);
+    const [showOutOfCredits, setShowOutOfCredits] = useState(false);
+    const [creditRefreshKey, setCreditRefreshKey] = useState(0);
 
     const pickImage = async (useCamera: boolean) => {
         setResults([]);
@@ -83,7 +87,7 @@ export default function ScanScreen() {
 
         const minCost = BASE_SCAN_COST + COST_PER_SOLUTION;
         if (!user?.is_unlimited && (user?.credits ?? 0) < minCost) {
-            Alert.alert('Insufficient Credits', `You need at least ${minCost} credits to start a scan.`);
+            setShowOutOfCredits(true);
             return;
         }
 
@@ -105,6 +109,7 @@ export default function ScanScreen() {
             setLastScanCost(data.cost);
             if (!user?.is_unlimited && data.remaining_credits !== undefined) {
                 updateUser({ credits: data.remaining_credits });
+                setCreditRefreshKey(k => k + 1);
             }
         } catch (err: any) {
             let msg = 'Failed to solve. Try a clearer photo.';
@@ -158,6 +163,8 @@ export default function ScanScreen() {
                 },
                 headerTintColor: tintColor,
             }} />
+
+            <CreditStatusBar activeAction="scan" refreshKey={creditRefreshKey} />
 
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
 
@@ -331,6 +338,11 @@ export default function ScanScreen() {
                     </View>
                 </BlurView>
             )}
+            <OutOfCreditsModal
+                visible={showOutOfCredits}
+                onDismiss={() => setShowOutOfCredits(false)}
+                featureAttempted="scan"
+            />
 
         </View>
     );

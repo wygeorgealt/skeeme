@@ -123,4 +123,11 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cron Secret (for external cron triggers on Render free plan)
+    |--------------------------------------------------------------------------
+    */
+    'cron_secret' => env('CRON_SECRET', 'change-me-in-production'),
+
 ];

@@ -381,6 +381,45 @@ Route::post('/currency', [LandingController::class, 'setCurrency'])->name('curre
 Route::get('/system/health/{key}', [\App\Http\Controllers\SystemHealthController::class, 'index'])->name('system.health');
 
 /* ------------------------------------------------------------------ */
+/* Cron Triggers (for Render free plan — use cron-job.org to ping)     */
+/* ------------------------------------------------------------------ */
+Route::get('/cron/{key}/streak-integrity', function (string $key) {
+    if ($key !== config('app.cron_secret')) {
+        abort(403);
+    }
+    \Illuminate\Support\Facades\Artisan::call('check:streak-integrity');
+    return response()->json([
+        'status' => 'ok',
+        'command' => 'check:streak-integrity',
+        'output' => \Illuminate\Support\Facades\Artisan::output(),
+    ]);
+});
+
+Route::get('/cron/{key}/streak-notifications', function (string $key) {
+    if ($key !== config('app.cron_secret')) {
+        abort(403);
+    }
+    \Illuminate\Support\Facades\Artisan::call('send:streak-notifications');
+    return response()->json([
+        'status' => 'ok',
+        'command' => 'send:streak-notifications',
+        'output' => \Illuminate\Support\Facades\Artisan::output(),
+    ]);
+});
+
+Route::get('/cron/{key}/refill-credits', function (string $key) {
+    if ($key !== config('app.cron_secret')) {
+        abort(403);
+    }
+    \Illuminate\Support\Facades\Artisan::call('app:refill-student-credits');
+    return response()->json([
+        'status' => 'ok',
+        'command' => 'app:refill-student-credits',
+        'output' => \Illuminate\Support\Facades\Artisan::output(),
+    ]);
+});
+
+/* ------------------------------------------------------------------ */
 /* Payment Webhooks (public)                                           */
 /* ------------------------------------------------------------------ */
 Route::post('/webhooks/paystack', [\App\Http\Controllers\PaymentController::class, 'webhook'])

@@ -29,6 +29,16 @@ Schedule::command('app:send-streak-reminders')
     ->dailyAt('17:00')
     ->description('Sends push notifications reminding students to maintain their active streak');
 
+// Nightly streak integrity check (freeze or reset)
+Schedule::command('check:streak-integrity')
+    ->dailyAt('00:05')
+    ->description('Consumes streak freezes for Elite users or resets streaks for missed days');
+
+// Streak milestone countdown notifications
+Schedule::command('send:streak-notifications')
+    ->dailyAt('07:00')
+    ->description('Sends countdown notifications for upcoming streak milestones');
+
 use Mailtrap\Helper\ResponseHelper;
 use Mailtrap\MailtrapClient;
 use Mailtrap\Mime\MailtrapEmail;

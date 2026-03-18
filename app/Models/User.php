@@ -46,6 +46,9 @@ class User extends Authenticatable implements FilamentUser
         'provider',
         'provider_id',
         'avatar',
+        'notifications_enabled',
+        'referral_code',
+        'last_credit_alert_at',
     ];
 
     /**
@@ -74,6 +77,8 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
             'is_unlimited_student' => 'boolean',
             'ai_preferences' => 'array',
+            'notifications_enabled' => 'boolean',
+            'last_credit_alert_at' => 'datetime',
         ];
     }
 
@@ -103,6 +108,41 @@ class User extends Authenticatable implements FilamentUser
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    public function studyStreak()
+    {
+        return $this->hasOne(StudyStreak::class);
+    }
+
+    public function streakFreezes()
+    {
+        return $this->hasMany(StreakFreeze::class);
+    }
+
+    public function referrals()
+    {
+        return $this->hasMany(Referral::class, 'referrer_user_id');
+    }
+
+    /**
+     * Get the student's current plan name (Free, Standard, Elite).
+     */
+    public function getStudentPlan(): string
+    {
+        if ($this->is_unlimited_student) {
+            return 'elite';
+        }
+
+        $sub = \App\Models\IndividualSubscription::where('user_id', $this->id)
+            ->where('status', 'active')
+            ->where(fn ($q) => $q->whereNull('expiry_date')->orWhere('expiry_date', '>', now()))
+            ->latest()
+            ->first();
+
+        if (!$sub) return 'free';
+
+        return strtolower($sub->plan_name) === 'elite' ? 'elite' : 'standard';
     }
 
     /**
