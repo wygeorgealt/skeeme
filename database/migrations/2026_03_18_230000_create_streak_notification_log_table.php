@@ -8,6 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        Schema::dropIfExists('streak_notification_log');
+
         Schema::create('streak_notification_log', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
@@ -17,7 +19,7 @@ return new class extends Migration
             $table->boolean('delivered')->default(false);
             $table->timestamps();
 
-            $table->index(['user_id', 'milestone_target', 'notification_type']);
+            $table->index(['user_id', 'milestone_target', 'notification_type'], 'streak_notif_log_idx');
         });
     }
 

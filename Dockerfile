@@ -20,10 +20,18 @@ RUN apt-get update && \
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy project files
+# Copy dependency files first to leverage Docker layer caching
+COPY --chown=www-data:www-data composer.json composer.lock ./
+# Install PHP dependencies (without autoloader/scripts since code isn't copied yet)
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+
+COPY --chown=www-data:www-data package.json package-lock.json* ./
+RUN npm ci || npm install
+
+# Copy the rest of the application files
 COPY --chown=www-data:www-data . .
 
-# Create necessary directories and set permissions BEFORE composer install
+# Create necessary directories and set permissions
 RUN mkdir -p storage/framework/sessions \
     storage/framework/views \
     storage/framework/cache \
@@ -32,11 +40,11 @@ RUN mkdir -p storage/framework/sessions \
     chown -R www-data:www-data storage bootstrap/cache && \
     chmod -R 775 storage bootstrap/cache
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Generate optimized autoloader now that files are present
+RUN composer dump-autoload --optimize
 
-# Install Node dependencies and build assets
-RUN npm install && npm run build
+# Build frontend assets
+RUN npm run build
 
 # Optimize Laravel (Runtime only - do NOT run config:cache here as env vars are missing at build time)
 # We can enable these later via a startup script if needed
