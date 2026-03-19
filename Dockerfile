@@ -46,9 +46,8 @@ RUN composer dump-autoload --optimize
 # Build frontend assets
 RUN npm run build
 
-# Optimize Laravel (Runtime only - do NOT run config:cache here as env vars are missing at build time)
-# We can enable these later via a startup script if needed
-RUN php artisan view:cache
+# Note: view:cache is skipped — Filament panel components require runtime registration
+# Views are compiled and cached automatically on first request
 
 # Set permissions for Laravel
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache

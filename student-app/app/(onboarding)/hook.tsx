@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, useColorScheme, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';
@@ -22,9 +22,11 @@ export default function HookScreen() {
 
             <Animated.View entering={FadeInDown.duration(600).delay(200)} className="items-center">
                 {/* Logo / Brand Mark */}
-                <View className="bg-brand-primary w-20 h-20 rounded-3xl items-center justify-center mb-8 shadow-lg shadow-brand-primary/30">
-                    <Ionicons name="sparkles" size={36} color="#fff" />
-                </View>
+                <Image
+                    source={require('@/assets/images/icon.png')}
+                    className="w-20 h-20 rounded-3xl mb-8"
+                    resizeMode="contain"
+                />
 
                 <Text className={`text-[36px] font-black tracking-tight text-center leading-[42px] mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     The AI that studies{'\n'}the way you think.

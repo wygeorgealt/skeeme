@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, useColorScheme, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';
@@ -6,25 +6,14 @@ import { useState, useEffect } from 'react';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
-// Pre-generated sample questions mapped to each field
-const SAMPLE_QUESTIONS: Record<string, { question: string; topic: string }> = {
-    sciences: { question: 'Explain the relationship between entropy and the second law of thermodynamics.', topic: 'Thermodynamics' },
-    engineering: { question: 'What is the difference between stress and strain in materials science?', topic: 'Materials Engineering' },
-    humanities: { question: 'Analyse the impact of the Renaissance on modern Western thought.', topic: 'History of Ideas' },
-    business: { question: 'Explain the concept of opportunity cost with a real-world example.', topic: 'Microeconomics' },
-    law: { question: 'What is the doctrine of judicial precedent and how does it work?', topic: 'Legal Systems' },
-    medicine: { question: 'Describe the Frank-Starling mechanism of the heart.', topic: 'Cardiovascular Physiology' },
-    other: { question: 'How does compound interest differ from simple interest?', topic: 'Mathematics' },
-};
-
 // Pre-generated sample result to show during onboarding (no auth needed)
 const SAMPLE_RESULT = {
     explanation: 'This is a fundamental concept that connects energy, disorder, and the direction of natural processes.',
     steps: [
-        '**Definition:** Entropy is a measure of the disorder or randomness in a system. The more ways particles can be arranged, the higher the entropy.',
-        '**The Second Law:** States that the total entropy of an isolated system can only increase over time. Natural processes tend to move toward maximum disorder.',
-        '**Real-World Example:** When you drop an ice cube into hot water, heat flows from the water to the ice (never the reverse spontaneously). This increases the overall entropy of the system.',
-        '**Key Implication:** This law explains why perpetual motion machines are impossible and why time appears to flow in one direction.',
+        'Entropy is a measure of the disorder or randomness in a system. The more ways particles can be arranged, the higher the entropy.',
+        'The Second Law states that the total entropy of an isolated system can only increase over time. Natural processes tend to move toward maximum disorder.',
+        'When you drop an ice cube into hot water, heat flows from the water to the ice (never the reverse spontaneously). This increases the overall entropy of the system.',
+        'This law explains why perpetual motion machines are impossible and why time appears to flow in one direction.',
     ],
     summary: 'Entropy measures disorder. The second law guarantees that disorder always increases in isolated systems, defining the "arrow of time."',
 };
@@ -33,20 +22,18 @@ export default function DemoScreen() {
     const router = useRouter();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const { setOnboardingStep, onboardingData } = useAuthStore();
+    const { setOnboardingStep } = useAuthStore();
     const [showResult, setShowResult] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-
-    const field = onboardingData?.field_of_study || 'sciences';
-    const sample = SAMPLE_QUESTIONS[field] || SAMPLE_QUESTIONS.sciences;
+    const [topic, setTopic] = useState('');
 
     useEffect(() => {
         setOnboardingStep(5);
     }, []);
 
-    const handleTryQuestion = () => {
+    const handleGenerate = () => {
+        if (!topic.trim()) return;
         setIsLoading(true);
-        // Simulate AI processing with a realistic delay
         setTimeout(() => {
             setIsLoading(false);
             setShowResult(true);
@@ -78,17 +65,8 @@ export default function DemoScreen() {
                 <StatusBar style={isDark ? 'light' : 'dark'} />
                 <ScrollView className="flex-1 px-6 pt-16" showsVerticalScrollIndicator={false}>
                     <Animated.View entering={FadeInDown.duration(500)}>
-                        <View className="flex-row items-center mb-4">
-                            <View className="bg-brand-primary w-8 h-8 rounded-lg items-center justify-center mr-3">
-                                <Ionicons name="sparkles" size={16} color="#fff" />
-                            </View>
-                            <Text className={`font-black text-[13px] uppercase tracking-widest ${isDark ? 'text-brand-primary' : 'text-brand-primary'}`}>
-                                AI Explanation
-                            </Text>
-                        </View>
-
                         <Text className={`text-[17px] font-bold mb-6 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                            {sample.question}
+                            {topic}
                         </Text>
 
                         <Text className={`text-[15px] font-medium leading-relaxed mb-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -140,54 +118,41 @@ export default function DemoScreen() {
                     Try it right now.
                 </Text>
                 <Text className={`text-[15px] font-medium mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    See how Skeeme breaks down a real question for you.
+                    Type any topic and see how Skeeme breaks it down for you.
                 </Text>
             </Animated.View>
 
-            <View className="gap-4">
-                {/* Sample Question Option */}
-                <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+            <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+                <View className={`p-5 rounded-2xl border-2 ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-50'}`}>
+                    <Text className={`font-black text-[15px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        What do you want to learn about?
+                    </Text>
+                    <View className={`rounded-xl border px-4 mb-3 ${isDark ? 'border-slate-700 bg-[#1c1c1e]' : 'border-slate-300 bg-white'}`}>
+                        <TextInput
+                            className="font-medium text-[15px] h-[48px]"
+                            placeholder="e.g. Photosynthesis, Newton's 3rd law..."
+                            placeholderTextColor={isDark ? '#555' : '#94a3b8'}
+                            value={topic}
+                            onChangeText={setTopic}
+                            style={{ color: isDark ? 'white' : 'black' }}
+                            autoCapitalize="sentences"
+                            returnKeyType="go"
+                            onSubmitEditing={handleGenerate}
+                        />
+                    </View>
                     <TouchableOpacity
-                        onPress={handleTryQuestion}
+                        onPress={handleGenerate}
+                        disabled={!topic.trim()}
                         activeOpacity={0.8}
-                        className={`p-6 rounded-2xl border-2 ${isDark ? 'border-brand-primary/50 bg-brand-primary/5' : 'border-brand-primary/30 bg-brand-primary/5'}`}
+                        className={`h-12 rounded-xl items-center justify-center flex-row ${topic.trim() ? 'bg-brand-primary' : isDark ? 'bg-slate-800' : 'bg-slate-200'}`}
                     >
-                        <View className="flex-row items-center mb-3">
-                            <View className="bg-brand-primary w-11 h-11 rounded-xl items-center justify-center mr-3">
-                                <Ionicons name="document-text" size={22} color="#fff" />
-                            </View>
-                            <View className="flex-1">
-                                <Text className={`font-black text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Try a sample question</Text>
-                                <Text className="text-brand-primary font-bold text-[12px] mt-0.5">{sample.topic}</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color="#2EBD85" />
-                        </View>
-                        <Text className={`text-[14px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                            "{sample.question}"
+                        <Ionicons name="sparkles" size={18} color={topic.trim() ? '#fff' : isDark ? '#555' : '#94a3b8'} />
+                        <Text className={`font-bold text-[14px] ml-2 ${topic.trim() ? 'text-white' : isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+                            Generate
                         </Text>
                     </TouchableOpacity>
-                </Animated.View>
-
-                {/* Camera Scan Option */}
-                <Animated.View entering={FadeInDown.duration(400).delay(350)}>
-                    <TouchableOpacity
-                        onPress={handleTryQuestion}
-                        activeOpacity={0.8}
-                        className={`p-6 rounded-2xl border-2 ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-50'}`}
-                    >
-                        <View className="flex-row items-center">
-                            <View className={`w-11 h-11 rounded-xl items-center justify-center mr-3 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                                <Ionicons name="camera" size={22} color={isDark ? '#94a3b8' : '#64748b'} />
-                            </View>
-                            <View className="flex-1">
-                                <Text className={`font-black text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Scan with camera</Text>
-                                <Text className={`font-medium text-[12px] mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Point at any question or problem</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={isDark ? '#475569' : '#94a3b8'} />
-                        </View>
-                    </TouchableOpacity>
-                </Animated.View>
-            </View>
+                </View>
+            </Animated.View>
         </View>
     );
 }

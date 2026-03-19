@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, useColorScheme } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, useColorScheme, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -97,9 +97,11 @@ export default function LoginScreen() {
 
             <ScrollView className="flex-1 px-8 pt-4" keyboardShouldPersistTaps="handled">
                 {/* Logo */}
-                <View className="bg-brand-primary w-14 h-14 rounded-2xl items-center justify-center mb-6">
-                    <Ionicons name="sparkles" size={24} color="#fff" />
-                </View>
+                <Image
+                    source={require('@/assets/images/icon.png')}
+                    className="w-14 h-14 rounded-2xl mb-6"
+                    resizeMode="contain"
+                />
 
                 <Text className={`${textClass} text-[32px] font-black tracking-tight leading-[38px] mb-2`}>
                     Welcome back.
