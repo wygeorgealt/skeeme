@@ -10,11 +10,17 @@ use Filament\Notifications\Notification;
 
 class PricingSettings extends Page implements Forms\Contracts\HasForms
 {
-    use Forms\Concerns\InteractsWithForms;
-
-    protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
-    protected static ?string $navigationGroup = 'Settings';
     protected static string $view = 'filament.pages.pricing-settings';
+
+    public static function getNavigationIcon(): ?string
+    {
+        return 'heroicon-o-currency-dollar';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Settings';
+    }
 
     public ?array $data = [];
 
