@@ -30,31 +30,43 @@ class RefillStudentCredits extends Command
     {
         $this->info('Starting student credit refill process...');
 
-        // Find users with active individual subscriptions whose last refill was > 7 days ago
-        $users = User::where('role', 'student')
-            ->whereHas('activeSubscription')
-            ->where(function ($query) {
-                $query->whereNull('last_credit_refill_at')
-                      ->orWhere('last_credit_refill_at', '<=', now()->subDays(7));
-            })
-            ->get();
+        // Get all students
+        $users = clone User::where('role', 'student')->get();
 
         $count = 0;
         foreach ($users as $user) {
             $subscription = $user->activeSubscription;
-            if (!$subscription) continue;
-
-            $plan = strtolower($subscription->plan_name);
+            $plan = $subscription ? strtolower($subscription->plan_name) : 'free';
             $refillAmount = 0;
+            $desc = '';
 
-            if (str_contains($plan, 'elite')) {
-                // Elite: 10k/week (Targets 50k/month via slightly higher weekly or 12.5k)
-                // User explicitly asked for 10k/week but mentioned 50k/month.
-                // 50,000 / 4 = 12,500. Let's provide 12,500 to hit the 50k goal.
-                $refillAmount = 12500;
-            } elseif (str_contains($plan, 'standard')) {
-                // Standard: 5k/week (20k/month)
-                $refillAmount = 5000;
+            if ($plan === 'free') {
+                // Free tier gets 150 credits every 30 days. Don't refill if they just signed up (they get 500 bonus)
+                $lastRefill = $user->last_credit_refill_at;
+                if (!$lastRefill) {
+                    if ($user->created_at > now()->subDays(30)) {
+                        continue; // Still within their first 30 days of the free 500
+                    }
+                } else {
+                    if (\Carbon\Carbon::parse($lastRefill) > now()->subDays(30)) {
+                        continue;
+                    }
+                }
+                $refillAmount = 150;
+                $desc = "Monthly Free plan credit refill";
+            } else {
+                // Subscribed gets weekly 1500/5000 refills
+                $lastRefill = $user->last_credit_refill_at;
+                if ($lastRefill && \Carbon\Carbon::parse($lastRefill) > now()->subDays(7)) {
+                    continue; 
+                }
+
+                if (str_contains($plan, 'elite')) {
+                    $refillAmount = 5000;
+                } elseif (str_contains($plan, 'standard')) {
+                    $refillAmount = 1500;
+                }
+                $desc = "Weekly " . ucfirst($plan) . " plan credit refill";
             }
 
             if ($refillAmount > 0) {
@@ -66,7 +78,7 @@ class RefillStudentCredits extends Command
                     'user_id' => $user->id,
                     'type' => 'credit_refill',
                     'amount' => $refillAmount,
-                    'description' => "Weekly " . ucfirst($plan) . " plan credit refill",
+                    'description' => $desc,
                     'metadata' => json_encode(['plan' => $plan])
                 ]);
 

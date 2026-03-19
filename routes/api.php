@@ -138,9 +138,15 @@ Route::prefix('v1')->group(function () {
 
             Route::get('ai-jobs/status/{job_id}', [\App\Http\Controllers\API\Student\AIJobStatusController::class, 'show']);
 
-            // Subscriptions (Web-to-App flow)
+            // Checkouts & Subscriptions
             Route::post('subscriptions/checkout', [StudentSubscriptionController::class, 'checkout']);
             Route::get('subscriptions/verify/{reference}', [StudentSubscriptionController::class, 'verify']);
+            
+            Route::post('credits/checkout', [\App\Http\Controllers\API\Student\SubscriptionController::class, 'checkoutCredits']);
+            Route::get('credits/verify/{reference}', [\App\Http\Controllers\API\Student\SubscriptionController::class, 'verifyCredits']);
+            
+            // System Health & Config
+            Route::get('system/pricing', [\App\Http\Controllers\API\SystemController::class, 'getPricing']);
             Route::get('diag/system', [StudentSubscriptionController::class, 'debug']); // Performance diag
             
             Route::post('quizzes/grade-theory', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'gradeTheory']);
@@ -158,6 +164,7 @@ Route::prefix('v1')->group(function () {
             });
 
             Route::get('streaks/heatmap', [\App\Http\Controllers\API\Student\StreakController::class, 'heatmap']);
+            Route::get('streaks/freezes', [\App\Http\Controllers\API\Student\StreakController::class, 'freezes']);
             
             // Export Results
             Route::get('quizzes/history/{id}/export', [\App\Http\Controllers\API\Student\ExportController::class, 'quizExport']);

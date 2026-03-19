@@ -33,23 +33,14 @@ class SubscriptionController extends Controller
         $plan = $request->plan;
         $cycle = $request->cycle;
 
-        // Base Pricing
-        $pricing = [
-            'standard' => ['monthly' => 3500, 'yearly' => 25000],
-            'elite'    => ['monthly' => 5000, 'yearly' => 50000],
-        ];
+        // Dynamic Pricing
+        $pricing = \App\Models\SystemSetting::getPricingConfig();
 
-        // Promotional Pricing (Next 1-2 weeks from 2026-03-08)
-        $promos = [
-            'standard' => ['monthly' => 2600, 'until' => '2026-03-22 23:59:59'], // 2 weeks
-            'elite'    => ['monthly' => 3700, 'until' => '2026-03-15 23:59:59'], // 1 week
-        ];
-
-        if (isset($promos[$plan]) && $cycle === 'monthly' && now()->lt(\Illuminate\Support\Carbon::parse($promos[$plan]['until']))) {
-            $amount = $promos[$plan]['monthly'];
+        if (isset($pricing['promos'][$plan . '_end']) && $cycle === 'monthly' && now()->lt(\Illuminate\Support\Carbon::parse($pricing['promos'][$plan . '_end']))) {
+            $amount = $pricing['ngn'][$plan]['promoMonthly'];
             Log::info('Promo Price Applied', ['user_id' => $user->id, 'plan' => $plan, 'amount' => $amount]);
         } else {
-            $amount = $pricing[$plan][$cycle];
+            $amount = $pricing['ngn'][$plan][$cycle];
         }
         $currency = 'NGN'; // Default to NGN as per Paystack request for local students
 
@@ -173,6 +164,130 @@ class SubscriptionController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Initialize a single credit pack checkout.
+     */
+    public function checkoutCredits(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|in:200,500,1000,5000',
+        ]);
+
+        $user = $request->user();
+        $amountCredits = (int) $request->amount;
+
+        $pricing = \App\Models\SystemSetting::getPricingConfig();
+        $pack = collect($pricing['credit_packs']['ngn'])->firstWhere('amount', $amountCredits);
+
+        if (!$pack) {
+            return response()->json(['message' => 'Invalid credit pack disabled by admin.'], 400);
+        }
+        
+        $price = $pack['price'];
+        $currency = 'NGN'; 
+
+        try {
+            // 1. Create Invoice
+            $invoice = Invoice::create([
+                'user_id' => $user->id,
+                'invoice_number' => Invoice::generateInvoiceNumber(),
+                'plan_name' => "Skeeme Credit Pack ($amountCredits)",
+                'amount' => $price,
+                'currency' => $currency,
+                'invoice_date' => now(),
+                'due_date' => now()->addDays(1),
+                'status' => 'pending',
+                'description' => "Purchase of $amountCredits Skeeme Credits",
+            ]);
+
+            // 2. Initialize Paystack
+            $paymentData = $this->paystack->initializePayment(
+                $invoice,
+                $user->email,
+                json_encode([
+                    'type' => 'credit_pack',
+                    'user_id' => $user->id,
+                    'credits' => $amountCredits
+                ])
+            );
+
+            // 3. Create Payment Record (Pending)
+            Payment::create([
+                'user_id' => $user->id,
+                'invoice_id' => $invoice->id,
+                'transaction_id' => $paymentData['reference'],
+                'payment_method' => 'paystack',
+                'amount' => $price,
+                'currency' => $currency,
+                'status' => Payment::STATUS_PENDING,
+                'metadata' => json_encode([
+                    'authorization_url' => $paymentData['authorization_url'],
+                    'credits' => $amountCredits
+                ])
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'authorization_url' => $paymentData['authorization_url'],
+                'reference' => $paymentData['reference']
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Credit Pack Initialization Failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Failed to initialize payment.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify payment status for credit packs via polling.
+     */
+    public function verifyCredits(Request $request, $reference)
+    {
+        $payment = Payment::where('transaction_id', $reference)->first();
+
+        if (!$payment) {
+            return response()->json(['message' => 'Payment record not found.'], 404);
+        }
+
+        // If already completed by webhook, just return success
+        if ($payment->isCompleted()) {
+            return response()->json([
+                'status' => 'success',
+                'user' => $request->user()->fresh()
+            ]);
+        }
+
+        try {
+            $verification = $this->paystack->verifyPayment($reference);
+
+            if ($verification['status'] && $verification['data']['status'] === 'success') {
+                $payment->markAsCompleted($reference);
+                
+                $meta = json_decode($payment->metadata, true);
+                if (isset($meta['credits'])) {
+                    $request->user()->increment('credits', (int) $meta['credits']);
+                }
+                
+                return response()->json([
+                    'status' => 'success',
+                    'user' => $request->user()->fresh()
+                ]);
+            }
+
+            return response()->json([
+                'status' => 'pending',
+                'message' => 'Payment is still processing.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
         }
     }
 }

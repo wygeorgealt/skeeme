@@ -42,4 +42,18 @@ class StreakController extends Controller
 
         return response()->json(['data' => $activeDates]);
     }
+
+    /**
+     * Get the user's streak freeze status for the current month.
+     */
+    public function freezes(Request $request)
+    {
+        $user = $request->user();
+        $record = \App\Models\StreakFreeze::currentMonth($user->id);
+
+        return response()->json([
+            'total_allowed' => $record->freezes_allocated,
+            'used_this_month' => $record->freezes_used,
+        ]);
+    }
 }

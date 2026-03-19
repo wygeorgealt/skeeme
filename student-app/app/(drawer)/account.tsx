@@ -175,6 +175,24 @@ export default function AccountScreen() {
                     </View>
                 </View>
 
+                {/* Referrals */}
+                <View className="px-6 pb-8">
+                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Invite & Earn</Text>
+                    <TouchableOpacity
+                        onPress={() => router.push('/referral')}
+                        className="bg-brand-primary rounded-[24px] p-6 border border-brand-primary/20 flex-row items-center justify-between shadow-lg shadow-brand-primary/20"
+                        activeOpacity={0.9}
+                    >
+                        <View className="flex-1 pr-4">
+                            <Text className="text-[18px] font-black text-white mb-1 tracking-tight">Referrals & Rewards</Text>
+                            <Text className="text-white/80 font-bold text-[13px] leading-relaxed">Redeem codes or invite friends for free credits.</Text>
+                        </View>
+                        <View className="size-12 rounded-full items-center justify-center bg-white/20">
+                            <Ionicons name="gift" size={22} color="#ffffff" />
+                        </View>
+                    </TouchableOpacity>
+                </View>
+
                 {/* Profile Details */}
                 <View className="px-6 pb-8">
                     <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Profile Info</Text>

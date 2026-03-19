@@ -42,7 +42,37 @@ export default function CreditStatusBar({ activeAction, onSummaryLoaded, refresh
         fetchSummary();
     }, [refreshKey, fetchSummary]);
 
-    if (!summary) return null;
+    if (!summary) {
+        return (
+            <View
+                style={{
+                    backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(241, 245, 249, 0.9)',
+                    borderRadius: 16,
+                    padding: 14,
+                    marginHorizontal: 16,
+                    marginBottom: 12,
+                    borderWidth: 1,
+                    borderColor: isDark ? `rgba(255,255,255,0.05)` : `rgba(0,0,0,0.05)`,
+                }}
+            >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: isDark ? '#334155' : '#CBD5E1' }} />
+                        <View style={{ backgroundColor: isDark ? '#334155' : '#E2E8F0', height: 16, width: 90, borderRadius: 4 }} />
+                    </View>
+                    <View style={{ backgroundColor: isDark ? '#334155' : '#E2E8F0', height: 14, width: 60, borderRadius: 4 }} />
+                </View>
+                <View style={{ height: 4, backgroundColor: isDark ? '#334155' : '#E2E8F0', borderRadius: 2, marginTop: 10 }} />
+                
+                {activeAction && (
+                    <View style={{ marginTop: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <View style={{ backgroundColor: isDark ? '#334155' : '#E2E8F0', height: 14, width: 110, borderRadius: 4 }} />
+                        <View style={{ backgroundColor: isDark ? '#334155' : '#E2E8F0', height: 14, width: 80, borderRadius: 4 }} />
+                    </View>
+                )}
+            </View>
+        );
+    }
 
     const { current_credits, credit_percentage, estimated_actions_remaining, weekly_refresh_in_days } = summary;
 

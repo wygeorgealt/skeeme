@@ -38,6 +38,8 @@ interface AuthState {
     checkAuth: () => Promise<void>;
     theme: 'light' | 'dark' | 'system';
     setTheme: (theme: 'light' | 'dark' | 'system') => void;
+    pricingConfig: any;
+    fetchPricingConfig: () => Promise<void>;
 }
 
 // Secure storage for sensitive data (tokens)
@@ -107,6 +109,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     token: null,
     isLoading: true,
     theme: 'system',
+    pricingConfig: null,
+
+    fetchPricingConfig: async () => {
+        try {
+            const { api } = await import('@/lib/api');
+            const response = await api.get('system/pricing');
+            set({ pricingConfig: response.data });
+        } catch (e) {
+            if (__DEV__) console.error('Failed to fetch pricing config', e);
+        }
+    },
 
     login: async (user, token) => {
         set({ user, token });

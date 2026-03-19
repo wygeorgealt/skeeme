@@ -14,8 +14,6 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
-    if (!visible) return null;
-
     // Log the event to backend
     const logEvent = async () => {
         try {
@@ -28,6 +26,8 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
     React.useEffect(() => {
         if (visible) logEvent();
     }, [visible]);
+
+    if (!visible) return null;
 
     const handleUpgrade = () => {
         onDismiss();

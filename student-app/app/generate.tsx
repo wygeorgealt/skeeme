@@ -27,7 +27,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // MAIN SCREEN
 // ══════════════════════════════════════════════════════════════════════════════
 export default function GenerateQuizScreen() {
-    const { updateUser } = useAuthStore();
+    const { user, updateUser } = useAuthStore();
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -175,6 +175,13 @@ export default function GenerateQuizScreen() {
     const handleGenerate = async () => {
         if (mode === 'topic' && !topic.trim()) return Alert.alert('Required', 'Please enter a topic.');
         if (mode === 'file' && !selectedFile) return Alert.alert('Required', 'Please select a document.');
+        
+        // Pre-flight check
+        const estimatedCost = parseInt(questionCount) || 10;
+        if (!user?.is_unlimited && (user?.credits ?? 0) < estimatedCost) {
+            setShowOutOfCredits(true);
+            return;
+        }
 
         setIsLoading(true);
         setLoadingStage(mode === 'file' ? 'Analyzing Document...' : 'Analyzing Topic...');
@@ -304,7 +311,7 @@ export default function GenerateQuizScreen() {
         const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
         return (
             <View className="flex-1 bg-white dark:bg-brand-dark">
-                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 60, paddingTop: 100 }} showsVerticalScrollIndicator={false}>
+                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 120, paddingTop: 100 }} showsVerticalScrollIndicator={false}>
 
                     <Text className="text-[32px] font-black tracking-tight text-slate-900 dark:text-white mb-8">Build Quiz</Text>
 

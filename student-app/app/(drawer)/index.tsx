@@ -14,51 +14,56 @@ function getGreeting(): string {
     return 'Good evening';
 }
 
-function HeatmapGrid({ activeDates, isLoading }: { activeDates: string[], isLoading: boolean }) {
-    // Generate an array of the last 28 days for a 4x7 grid
+function StreakCalendar({ activeDates, isLoading }: { activeDates: string[], isLoading: boolean }) {
     const today = new Date();
-    const days = [];
-    for (let i = 27; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        days.push(d.toISOString().split('T')[0]);
-    }
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const currentDay = today.getDate();
+
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
     if (isLoading) {
         return (
-            <View className="flex-row flex-wrap gap-[6px] justify-start">
-                {days.map((d, i) => (
+            <View className="flex-row flex-wrap gap-2 justify-start">
+                {days.map((d) => (
                     <View
-                        key={`skel-${i}`}
-                        style={{ width: '12%', minWidth: 28, maxWidth: 42, aspectRatio: 1 }}
-                        className="rounded-sm bg-slate-200 dark:bg-slate-700 animate-pulse"
+                        key={`skel-${d}`}
+                        style={{ width: '12%', minWidth: 32, aspectRatio: 1 }}
+                        className="rounded-xl bg-slate-200 dark:bg-slate-800 animate-pulse"
                     />
                 ))}
             </View>
         );
     }
 
-    if (!activeDates || activeDates.length === 0) {
-        return (
-            <View className="py-8 items-center justify-center border border-slate-200 dark:border-slate-800 rounded-2xl">
-                <Ionicons name="calendar-outline" size={32} color="#94a3b8" />
-                <Text className="text-slate-500 dark:text-slate-400 font-medium mt-3 text-sm text-center">
-                    No recent activity.{'\n'}Complete a quiz to start your streak!
-                </Text>
-            </View>
-        );
+    if (!activeDates) {
+        activeDates = [];
     }
 
     return (
-        <View className="flex-row flex-wrap gap-[6px] justify-start">
+        <View className="flex-row flex-wrap gap-2 justify-start">
             {days.map(d => {
-                const isActive = activeDates.includes(d);
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const isActive = activeDates.includes(dateStr);
+                const isFuture = d > currentDay;
+
                 return (
                     <View
                         key={d}
-                        style={{ width: '12%', minWidth: 28, maxWidth: 42, aspectRatio: 1 }}
-                        className={`rounded-sm border ${isActive ? 'bg-[#2EBD85] border-[#2EBD85]' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}
-                    />
+                        style={{ width: '12%', minWidth: 32, aspectRatio: 1 }}
+                        className={`rounded-xl items-center justify-center border-2 ${
+                            isActive 
+                                ? 'bg-[#2EBD85] border-[#2EBD85]' 
+                                : isFuture 
+                                    ? 'bg-transparent border-slate-200 dark:border-slate-800 opacity-50' 
+                                    : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
+                        }`}
+                    >
+                        <Text className={`font-black text-[12px] ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`}>
+                            {d}
+                        </Text>
+                    </View>
                 );
             })}
         </View>
@@ -254,29 +259,40 @@ export default function DashboardScreen() {
                 <Text className="text-lg font-black text-slate-900 dark:text-white mb-4 tracking-tight">Activity</Text>
 
                 <View className="flex-row gap-3 mb-3">
-                    <View className="flex-1 bg-white/70 dark:bg-brand-dark/50 border border-white/20 dark:border-slate-800 rounded-3xl p-5">
-                        <Text className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-1">Current Streak</Text>
+                    <TouchableOpacity onPress={() => router.push('/streak')} activeOpacity={0.7} className="flex-1 bg-white/70 dark:bg-brand-dark/50 border border-white/20 dark:border-slate-800 rounded-3xl p-5">
+                        <View className="flex-row justify-between items-start mb-1">
+                            <Text className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px]">Current Streak</Text>
+                            <Ionicons name="chevron-forward" size={14} color="#94a3b8" />
+                        </View>
                         <View className="flex-row items-baseline">
                             <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{user.streak?.current_streak || 0}</Text>
                             <Text className="text-xs font-bold text-slate-400 ml-1">Days</Text>
                         </View>
-                    </View>
-                    <View className="flex-1 bg-white/70 dark:bg-brand-dark/50 border border-white/20 dark:border-slate-800 rounded-3xl p-5">
-                        <Text className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-1">Longest Streak</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => router.push('/streak')} activeOpacity={0.7} className="flex-1 bg-white/70 dark:bg-brand-dark/50 border border-white/20 dark:border-slate-800 rounded-3xl p-5">
+                        <View className="flex-row justify-between items-start mb-1">
+                            <Text className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px]">Longest Streak</Text>
+                            <Ionicons name="chevron-forward" size={14} color="#94a3b8" />
+                        </View>
                         <View className="flex-row items-baseline">
                             <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{user.streak?.longest_streak || 0}</Text>
                             <Text className="text-xs font-bold text-slate-400 ml-1">Days</Text>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 </View>
 
-                <View className="bg-slate-50 dark:bg-white/5 p-5 rounded-3xl border border-slate-200 dark:border-slate-800">
+                <TouchableOpacity onPress={() => router.push('/streak')} activeOpacity={0.9} className="bg-slate-50 dark:bg-white/5 p-5 rounded-3xl border border-slate-200 dark:border-slate-800">
                     <View className="flex-row justify-between items-center mb-4">
-                        <Text className="text-slate-900 dark:text-white font-bold text-sm">Last 28 days</Text>
-                        <Ionicons name="flame" size={16} color="#2EBD85" />
+                        <Text className="text-slate-900 dark:text-white font-bold text-sm">
+                            {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+                        </Text>
+                        <View className="flex-row items-center gap-1 bg-brand-primary/10 px-2 py-1 rounded-md">
+                            <Ionicons name="flame" size={14} color="#2EBD85" />
+                            <Text className="text-brand-primary font-bold text-[10px] uppercase">Milestones & Freezes</Text>
+                        </View>
                     </View>
-                    <HeatmapGrid activeDates={heatmapDates} isLoading={isLoadingHeatmap} />
-                </View>
+                    <StreakCalendar activeDates={heatmapDates} isLoading={isLoadingHeatmap} />
+                </TouchableOpacity>
             </View>
         </ScrollView>
     );

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, useColorScheme, Linking, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, useColorScheme, Linking, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { router, Stack } from 'expo-router';
@@ -12,15 +12,15 @@ type BillingCycle = 'monthly' | 'yearly';
 
 const FEATURES = {
     standard: [
-        '5,000 Weekly Credits',
-        '20,000 Monthly Total',
+        '1,500 Weekly Credits',
+        '6,000 Monthly Total',
         'Advanced Quiz Generation',
         'Detailed Flashcard creation',
         'Priority AI model access',
     ],
     elite: [
-        '10,000+ Weekly Credits',
-        '50,000 Monthly Total',
+        '5,000 Weekly Credits',
+        '20,000 Monthly Total',
         'Unlimited Flashcard creation',
         'Ultra-fast Elite AI model',
         'Unlimited Scan & Solve',
@@ -28,44 +28,44 @@ const FEATURES = {
 };
 
 export default function UpgradeScreen() {
-    const { user } = useAuthStore();
+    const { user, pricingConfig, fetchPricingConfig } = useAuthStore();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
     const [activeTab, setActiveTab] = useState<PlanType>('standard');
     const [billingCycle, setBillingCycle] = useState<BillingCycle>('yearly');
+    const [isPurchasing, setIsPurchasing] = useState(false);
+    const [purchasingPack, setPurchasingPack] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!pricingConfig) {
+            fetchPricingConfig();
+        }
+    }, []);
 
     const currencySymbol = user?.pricing?.currency || '$';
     const currency = user?.pricing?.currency === '₦' ? 'ngn' : 'usd';
 
-    // Promo dates (Based on current date 2026-03-08)
-    const PROMO_END = {
-        standard: new Date('2026-03-22T23:59:59Z'), // 2 weeks [Standard]
-        elite: new Date('2026-03-15T23:59:59Z'),    // 1 week [Elite]
-    };
+    if (!pricingConfig) {
+        return (
+            <View className={`flex-1 items-center justify-center ${isDark ? 'bg-brand-dark' : 'bg-white'}`}>
+                <ActivityIndicator size="large" color="#2EBD85" />
+            </View>
+        );
+    }
 
     const isPromoActive = (plan: PlanType) => {
-        return new Date() < PROMO_END[plan];
+        if (!pricingConfig.promos || !pricingConfig.promos[`${plan}_end`]) return false;
+        return new Date() < new Date(pricingConfig.promos[`${plan}_end`]);
     };
 
-    // Pricing rates (Updated per user request)
-    const pricing = {
-        ngn: {
-            standard: { monthly: 3500, yearly: 25000, promoMonthly: 2600, save: '10%' },
-            elite: { monthly: 5000, yearly: 50000, promoMonthly: 3700, save: '10%' }
-        },
-        usd: {
-            standard: { monthly: 4.99, yearly: 39.99, promoMonthly: 3.4, save: '10%' },
-            elite: { monthly: 9.99, yearly: 79.99, promoMonthly: 6.99, save: '10%' }
-        }
-    };
-
-    const activePricing = pricing[currency][activeTab];
+    const activePricing = pricingConfig[currency][activeTab];
     const isPromo = isPromoActive(activeTab);
 
 
 
     const handlePurchase = async () => {
+        setIsPurchasing(true);
         try {
 
             const response = await api.post('subscriptions/checkout', {
@@ -92,10 +92,11 @@ export default function UpgradeScreen() {
             const msg = error.response?.data?.message || "Could not start the payment process. Please try again.";
             Alert.alert("Checkout Failed", msg);
         } finally {
+            setIsPurchasing(false);
         }
     };
 
-    const pollPaymentStatus = async (reference: string, attempt: number) => {
+    const pollPaymentStatus = async (reference: string, attempt: number, isCreditPack: boolean = false) => {
         const MAX_ATTEMPTS = 24; // 24 * 5s = 2 minutes
         if (attempt >= MAX_ATTEMPTS) {
             Alert.alert(
@@ -107,7 +108,8 @@ export default function UpgradeScreen() {
 
         try {
 
-            const response = await api.get(`/subscriptions/verify/${reference}`);
+            const endpoint = isCreditPack ? `/credits/verify/${reference}` : `/subscriptions/verify/${reference}`;
+            const response = await api.get(endpoint);
 
             if (response.data.status === 'success') {
 
@@ -122,7 +124,7 @@ export default function UpgradeScreen() {
         }
 
         // Schedule next poll
-        setTimeout(() => pollPaymentStatus(reference, attempt + 1), 5000);
+        setTimeout(() => pollPaymentStatus(reference, attempt + 1, isCreditPack), 5000);
     };
 
 
@@ -232,6 +234,64 @@ export default function UpgradeScreen() {
                             isDark={isDark}
                         />
                     </View>
+
+                    {/* One-Time Top-Up Section */}
+                    <View className="mt-12 mb-6">
+                        <Text className="text-xs font-black text-brand-primary tracking-widest uppercase mb-4">
+                            One-Time Top-Ups
+                        </Text>
+                        <Text className={`${subtextClass} font-medium text-[15px] leading-snug mb-6`}>
+                            Need a quick boost? Buy credits a-la-carte without a subscription.
+                        </Text>
+                        
+                        <View className="flex-row flex-wrap justify-between">
+                            {[
+                                { amount: 200, usd: 2.00, ngn: 1500 },
+                                { amount: 500, usd: 3.70, ngn: 2800 },
+                                { amount: 1000, usd: 6.00, ngn: 4000 },
+                                { amount: 5000, usd: 15.00, ngn: 9500 },
+                            ].map((pack) => (
+                                <TouchableOpacity 
+                                    key={pack.amount}
+                                    onPress={async () => {
+                                        setPurchasingPack(pack.amount);
+                                        try {
+                                            const response = await api.post('credits/checkout', { amount: pack.amount });
+                                            if (response.data.authorization_url) {
+                                                await Linking.openURL(response.data.authorization_url);
+                                                setTimeout(() => pollPaymentStatus(response.data.reference, 0, true), 5000);
+                                            }
+                                        } catch (error: any) {
+                                            const msg = error.response?.data?.message || "Could not start checkout.";
+                                            Alert.alert("Checkout Failed", msg);
+                                        } finally {
+                                            setPurchasingPack(null);
+                                        }
+                                    }}
+                                    activeOpacity={0.8}
+                                    disabled={purchasingPack !== null || isPurchasing}
+                                    className={`w-[48%] mb-4 p-4 rounded-[28px] border-2 flex-col items-center justify-center bg-slate-50 dark:bg-white/5 ${isDark ? 'border-slate-800' : 'border-slate-200'} ${(purchasingPack !== null || isPurchasing) ? 'opacity-50' : ''}`}
+                                >
+                                    {purchasingPack === pack.amount ? (
+                                        <ActivityIndicator size="small" color="#2EBD85" className="mb-3 mt-1 h-12 justify-center" />
+                                    ) : (
+                                        <View className="bg-brand-primary/10 size-12 rounded-full items-center justify-center mb-3">
+                                            <Ionicons name="flash" size={20} color="#2EBD85" />
+                                        </View>
+                                    )}
+                                    <Text className={`${textBaseClass} font-black text-[22px] tracking-tight mb-0.5`}>{pack.amount.toLocaleString()}</Text>
+                                    <Text className={`${subtextClass} font-bold text-[10px] uppercase tracking-widest mb-4`}>Credits</Text>
+                                    
+                                    <View className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-1.5">
+                                        <Text className={`${textBaseClass} font-black text-sm`}>
+                                            {currencySymbol}{(currency === 'ngn' ? pack.ngn : pack.usd).toLocaleString(undefined, { minimumFractionDigits: currency === 'usd' ? 2 : 0 })}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
                 </View>
             </ScrollView>
 
@@ -239,12 +299,17 @@ export default function UpgradeScreen() {
             <View className={`px-6 pb-12 pt-4 border-t ${isDark ? 'bg-brand-dark border-slate-800' : 'bg-white border-slate-100'}`}>
                 <TouchableOpacity
                     onPress={handlePurchase}
+                    disabled={isPurchasing || purchasingPack !== null}
                     activeOpacity={0.9}
-                    className="bg-brand-primary h-16 rounded-3xl items-center justify-center shadow-lg shadow-brand-primary/30"
+                    className={`bg-brand-primary h-16 rounded-3xl items-center justify-center shadow-lg shadow-brand-primary/30 ${(isPurchasing || purchasingPack !== null) ? 'opacity-75' : ''}`}
                 >
-                    <Text className="text-white font-black text-lg">
-                        {billingCycle === 'yearly' ? 'Start 7-day Free Trial' : 'Get Started Now'}
-                    </Text>
+                    {isPurchasing ? (
+                        <ActivityIndicator size="small" color="#ffffff" />
+                    ) : (
+                        <Text className="text-white font-black text-lg">
+                            {billingCycle === 'yearly' ? 'Start 7-day Free Trial' : 'Get Started Now'}
+                        </Text>
+                    )}
                 </TouchableOpacity>
                 <Text className="text-center text-slate-400 dark:text-slate-500 text-xs font-medium mt-4 px-8">
                     By subscribing, you agree to our Terms of Service and Privacy Policy.
