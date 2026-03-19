@@ -15,10 +15,10 @@ const SLIDES = [
         title: 'Your Pocket\nTutor',
         description: 'Skeeme turns your notes, slides, and textbooks into ready-to-study quizzes — in seconds.',
         image: require('@/assets/images/slide1.png'),
-        bgColor: '#2EBD85',
+        bgColor: '#D2B48C',
         textColor: '#ffffff',
         accentBg: '#ffffff',
-        accentIcon: '#2EBD85',
+        accentIcon: '#D2B48C',
     },
     {
         id: 2,
@@ -29,7 +29,7 @@ const SLIDES = [
         bgColorDark: '#1a1a2e',
         textColor: '#000000',
         textColorDark: '#ffffff',
-        accentBg: '#2EBD85',
+        accentBg: '#D2B48C',
         accentIcon: '#ffffff',
     },
     {

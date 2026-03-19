@@ -60,7 +60,7 @@ export default function ReferralScreen() {
                 {/* Redeem Section */}
                 <View className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[24px] p-6 mb-8">
                     <View className="bg-brand-primary/10 w-12 h-12 rounded-2xl items-center justify-center mb-4">
-                        <Ionicons name="gift" size={24} color="#2EBD85" />
+                        <Ionicons name="gift" size={24} color="#D2B48C" />
                     </View>
                     <Text className="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Redeem a Code</Text>
                     <Text className="text-slate-500 dark:text-slate-400 font-medium text-[13px] leading-relaxed mb-6">

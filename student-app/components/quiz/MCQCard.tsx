@@ -23,7 +23,7 @@ export function MCQCard({
 
     const optionStyle = (opt: string) => {
         if (!answered) return { bg: isDark ? '#121212' : '#f8fafc', border: isDark ? '#334155' : '#e2e8f0', text: isDark ? '#f8fafc' : '#121212', iconName: null, iconColor: '' };
-        if (opt === q.correct_answer) return { bg: isDark ? 'rgba(46, 189, 133, 0.1)' : '#ecfdf5', border: '#2EBD85', text: '#2EBD85', iconName: 'checkmark-circle', iconColor: '#2EBD85' };
+        if (opt === q.correct_answer) return { bg: isDark ? 'rgba(46, 189, 133, 0.1)' : '#ecfdf5', border: '#D2B48C', text: '#D2B48C', iconName: 'checkmark-circle', iconColor: '#D2B48C' };
         if (opt === selectedAnswer) return { bg: isDark ? 'rgba(239, 68, 68, 0.1)' : '#fef2f2', border: '#ef4444', text: '#ef4444', iconName: 'close-circle', iconColor: '#ef4444' };
         return { bg: isDark ? '#121212' : '#f8fafc', border: isDark ? '#334155' : '#e2e8f0', text: isDark ? '#475569' : '#94a3b8', iconName: null, iconColor: '' };
     };
@@ -77,14 +77,14 @@ export function MCQCard({
                         className="rounded-xl px-3 py-1.5 flex-row items-center border"
                         style={[
                             isCorrect
-                                ? { borderColor: '#2EBD85', backgroundColor: 'rgba(46, 189, 133, 0.1)' }
+                                ? { borderColor: '#D2B48C', backgroundColor: 'rgba(46, 189, 133, 0.1)' }
                                 : { borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }
                         ]}
                     >
-                        <Ionicons name={isCorrect ? 'checkmark' : 'close'} size={14} color={isCorrect ? '#2EBD85' : '#ef4444'} />
+                        <Ionicons name={isCorrect ? 'checkmark' : 'close'} size={14} color={isCorrect ? '#D2B48C' : '#ef4444'} />
                         <Text
                             className="font-black ml-1 text-[11px] uppercase tracking-wider"
-                            style={{ color: isCorrect ? '#2EBD85' : '#ef4444' }}
+                            style={{ color: isCorrect ? '#D2B48C' : '#ef4444' }}
                         >
                             {isCorrect ? 'Correct' : 'Incorrect'}
                         </Text>
@@ -112,7 +112,7 @@ export function MCQCard({
             />
             {!isCorrect && (
                 <View className="mt-6 pt-6 border-t-2 border-slate-200 dark:border-slate-700">
-                    <Text className="text-[10px] font-black tracking-widest uppercase text-[#2EBD85] mb-2">Correct Answer</Text>
+                    <Text className="text-[10px] font-black tracking-widest uppercase text-[#D2B48C] mb-2">Correct Answer</Text>
                     <Text className="text-[15px] font-bold text-slate-900 dark:text-white">{q.correct_answer}</Text>
                 </View>
             )}

@@ -108,7 +108,7 @@ export default function PreferencesScreen() {
                                 <Ionicons
                                     name={l.icon as any}
                                     size={22}
-                                    color={level === l.key ? '#2EBD85' : '#94a3b8'}
+                                    color={level === l.key ? '#D2B48C' : '#94a3b8'}
                                 />
                                 <Text className={`ml-3 font-bold text-[15px] ${level === l.key
                                     ? 'text-brand-primary'
@@ -117,7 +117,7 @@ export default function PreferencesScreen() {
                                     {l.label}
                                 </Text>
                                 {level === l.key && (
-                                    <Ionicons name="checkmark-circle" size={20} color="#2EBD85" style={{ marginLeft: 'auto' }} />
+                                    <Ionicons name="checkmark-circle" size={20} color="#D2B48C" style={{ marginLeft: 'auto' }} />
                                 )}
                             </TouchableOpacity>
                         ))}
@@ -229,7 +229,7 @@ export default function PreferencesScreen() {
                 <TouchableOpacity
                     onPress={handleSave}
                     disabled={saving}
-                    className={`bg-brand-primary py-4 rounded-2xl items-center flex-row justify-center ${saving ? 'opacity-60' : ''}`}
+                    className={`h-[56px] bg-brand-primary rounded-2xl items-center justify-center flex-row shadow-sm ${saving ? 'opacity-60' : ''}`}
                     activeOpacity={0.8}
                 >
                     {saving ? (
@@ -237,7 +237,7 @@ export default function PreferencesScreen() {
                     ) : (
                         <>
                             <Ionicons name="save-outline" size={20} color="white" />
-                            <Text className="text-white font-black text-base ml-2">Save Preferences</Text>
+                            <Text className="font-bold text-[16px] text-white ml-2">Save Preferences</Text>
                         </>
                     )}
                 </TouchableOpacity>

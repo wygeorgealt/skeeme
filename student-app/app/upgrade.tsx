@@ -49,7 +49,7 @@ export default function UpgradeScreen() {
     if (!pricingConfig) {
         return (
             <View className={`flex-1 items-center justify-center ${isDark ? 'bg-brand-dark' : 'bg-white'}`}>
-                <ActivityIndicator size="large" color="#2EBD85" />
+                <ActivityIndicator size="large" color="#D2B48C" />
             </View>
         );
     }
@@ -170,7 +170,7 @@ export default function UpgradeScreen() {
                                     className="flex-1 py-3 rounded-xl items-center"
                                     style={{
                                         backgroundColor: isActive
-                                            ? '#2EBD85'
+                                            ? '#D2B48C'
                                             : 'transparent',
                                         shadowOpacity: isActive && !isDark ? 0.1 : 0,
                                         elevation: isActive && !isDark ? 2 : 0,
@@ -200,7 +200,7 @@ export default function UpgradeScreen() {
                             {FEATURES[activeTab as keyof typeof FEATURES].map((feature: string, idx: number) => (
                                 <View key={idx} className="flex-row items-center">
                                     <View className="size-6 bg-brand-primary/10 rounded-full items-center justify-center mr-3">
-                                        <Ionicons name="checkmark" size={14} color="#2EBD85" />
+                                        <Ionicons name="checkmark" size={14} color="#D2B48C" />
                                     </View>
                                     <Text className="text-slate-700 dark:text-slate-200 font-bold text-[15px]">
                                         {feature}
@@ -273,10 +273,10 @@ export default function UpgradeScreen() {
                                     className={`w-[48%] mb-4 p-4 rounded-[28px] border-2 flex-col items-center justify-center bg-slate-50 dark:bg-white/5 ${isDark ? 'border-slate-800' : 'border-slate-200'} ${(purchasingPack !== null || isPurchasing) ? 'opacity-50' : ''}`}
                                 >
                                     {purchasingPack === pack.amount ? (
-                                        <ActivityIndicator size="small" color="#2EBD85" className="mb-3 mt-1 h-12 justify-center" />
+                                        <ActivityIndicator size="small" color="#D2B48C" className="mb-3 mt-1 h-12 justify-center" />
                                     ) : (
                                         <View className="bg-brand-primary/10 size-12 rounded-full items-center justify-center mb-3">
-                                            <Ionicons name="flash" size={20} color="#2EBD85" />
+                                            <Ionicons name="flash" size={20} color="#D2B48C" />
                                         </View>
                                     )}
                                     <Text className={`${textBaseClass} font-black text-[22px] tracking-tight mb-0.5`}>{pack.amount.toLocaleString()}</Text>
@@ -301,12 +301,12 @@ export default function UpgradeScreen() {
                     onPress={handlePurchase}
                     disabled={isPurchasing || purchasingPack !== null}
                     activeOpacity={0.9}
-                    className={`bg-brand-primary h-16 rounded-3xl items-center justify-center shadow-lg shadow-brand-primary/30 ${(isPurchasing || purchasingPack !== null) ? 'opacity-75' : ''}`}
+                    className={`h-[56px] bg-brand-primary rounded-2xl items-center justify-center shadow-sm ${(isPurchasing || purchasingPack !== null) ? 'opacity-75' : ''}`}
                 >
                     {isPurchasing ? (
                         <ActivityIndicator size="small" color="#ffffff" />
                     ) : (
-                        <Text className="text-white font-black text-lg">
+                        <Text className="text-white font-bold text-[16px]">
                             {billingCycle === 'yearly' ? 'Start 7-day Free Trial' : 'Get Started Now'}
                         </Text>
                     )}
@@ -329,7 +329,7 @@ function CardOption({ title, price, originalPrice, symbol, subtitle, isSelected,
             activeOpacity={0.8}
             className="p-6 rounded-[28px] border-2 flex-row items-center justify-between"
             style={{
-                borderColor: isSelected ? '#2EBD85' : (isDark ? 'rgba(46, 189, 133, 0.2)' : '#f1f5f9'),
+                borderColor: isSelected ? '#D2B48C' : (isDark ? 'rgba(46, 189, 133, 0.2)' : '#f1f5f9'),
                 backgroundColor: isSelected
                     ? (isDark ? 'rgba(46, 189, 133, 0.15)' : 'rgba(46, 189, 133, 0.08)')
                     : (isDark ? 'rgba(46, 189, 133, 0.05)' : 'rgba(248, 250, 252, 0.5)')
@@ -361,7 +361,7 @@ function CardOption({ title, price, originalPrice, symbol, subtitle, isSelected,
             <View
                 className="size-6 rounded-full border-2 items-center justify-center"
                 style={{
-                    borderColor: isSelected ? '#2EBD85' : (isDark ? '#475569' : '#cbd5e1')
+                    borderColor: isSelected ? '#D2B48C' : (isDark ? '#475569' : '#cbd5e1')
                 }}
             >
                 {isSelected && <View className="size-3 rounded-full bg-brand-primary" />}

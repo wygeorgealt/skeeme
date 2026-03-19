@@ -360,14 +360,14 @@ export default function GenerateQuizScreen() {
                                 >
                                     {isProcessingFile ? (
                                         <View className="items-center py-2">
-                                            <ActivityIndicator size="large" color="#2EBD85" />
+                                            <ActivityIndicator size="large" color="#D2B48C" />
                                             <Text className="text-[15px] font-bold text-brand-primary mt-4">Analyzing...</Text>
                                         </View>
                                     ) : selectedFile ? (
                                         <>
-                                            <Ionicons name="document-text" size={40} color="#2EBD85" />
+                                            <Ionicons name="document-text" size={40} color="#D2B48C" />
                                             <Text className="text-[15px] font-bold text-slate-900 dark:text-white mt-4 text-center">{selectedFile.name}</Text>
-                                            <Text className="text-[12px] font-bold text-[#2EBD85] mt-2 uppercase tracking-widest">Attached & Ready</Text>
+                                            <Text className="text-[12px] font-bold text-[#D2B48C] mt-2 uppercase tracking-widest">Attached & Ready</Text>
                                         </>
                                     ) : (
                                         <>
@@ -437,7 +437,7 @@ export default function GenerateQuizScreen() {
                             <Text className="text-[12px] font-medium text-slate-500 mt-1">Force submission when time ends</Text>
                         </View>
                         <TouchableOpacity onPress={() => setTimerEnabled(!timerEnabled)}
-                            className={`w-14 h-8 rounded-full justify-center p-1 px-1.5 transition-colors ${timerEnabled ? 'bg-[#2EBD85]' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                            className={`w-14 h-8 rounded-full justify-center p-1 px-1.5 transition-colors ${timerEnabled ? 'bg-[#D2B48C]' : 'bg-slate-300 dark:bg-slate-700'}`}>
                             <View className={`w-6 h-6 rounded-full bg-white shadow-sm`} style={{ transform: [{ translateX: timerEnabled ? 24 : 0 }] }} />
                         </TouchableOpacity>
                     </View>
@@ -464,7 +464,7 @@ export default function GenerateQuizScreen() {
                     {isLoading ? (
                         <View className="bg-brand-primary/5 dark:bg-brand-primary/10 rounded-[28px] p-6 border-2 border-brand-primary/20 items-center overflow-hidden">
                             <View className="mb-4">
-                                <ActivityIndicator size="small" color="#2EBD85" />
+                                <ActivityIndicator size="small" color="#D2B48C" />
                             </View>
                             <Text className="text-brand-primary font-black text-lg tracking-tight mb-1 text-center">{loadingStage}</Text>
                             <Text className="text-slate-500 dark:text-slate-400 font-medium text-[11px] text-center px-2">
@@ -492,7 +492,7 @@ export default function GenerateQuizScreen() {
                         <>
                             <TouchableOpacity
                                 onPress={handleGenerate}
-                                className="bg-[#2EBD85] rounded-2xl py-4 items-center flex-row justify-center shadow-lg shadow-[#2EBD85]/20"
+                                className="bg-[#D2B48C] rounded-2xl py-4 items-center flex-row justify-center shadow-lg shadow-[#D2B48C]/20"
                                 activeOpacity={0.8}
                             >
                                 <Ionicons name="sparkles" size={20} color="#fff" />
@@ -531,7 +531,7 @@ export default function GenerateQuizScreen() {
                             <Text className={`font-black text-[13px] tracking-widest ${timeLeft < 60 ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>{formatTime(timeLeft)}</Text>
                         </View>
                     )}
-                    <Text className="text-[#2EBD85] font-black text-[12px] uppercase tracking-widest">{correctCount} RIGHT</Text>
+                    <Text className="text-[#D2B48C] font-black text-[12px] uppercase tracking-widest">{correctCount} RIGHT</Text>
                 </View>
 
                 <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
@@ -573,10 +573,10 @@ export default function GenerateQuizScreen() {
             <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
                 {/* Motivational Header */}
                 <View className="items-center py-8 pb-4">
-                    <View className="w-20 h-20 bg-[#2EBD85]/10 dark:bg-[#2EBD85]/20 rounded-[28px] items-center justify-center mb-6">
-                        <Ionicons name={remark.icon as any} size={42} color="#2EBD85" />
+                    <View className="w-20 h-20 bg-[#D2B48C]/10 dark:bg-[#D2B48C]/20 rounded-[28px] items-center justify-center mb-6">
+                        <Ionicons name={remark.icon as any} size={42} color="#D2B48C" />
                     </View>
-                    <Text className="text-[#2EBD85] font-black text-[14px] uppercase tracking-[4px] mb-2">{remark.title}</Text>
+                    <Text className="text-[#D2B48C] font-black text-[14px] uppercase tracking-[4px] mb-2">{remark.title}</Text>
                     <Text className="text-slate-900 dark:text-white font-black text-[42px] tracking-tight">{percentage}%</Text>
                     <Text className="text-slate-500 dark:text-slate-400 font-bold text-[15px] mt-2 text-center px-8">{remark.subtitle}</Text>
 
@@ -594,8 +594,8 @@ export default function GenerateQuizScreen() {
                             </TouchableOpacity>
                         ) : isSaved ? (
                             <>
-                                <Ionicons name="checkmark-circle" size={14} color="#2EBD85" className="mr-2" />
-                                <Text className="text-[#2EBD85] font-bold text-[11px] uppercase tracking-widest">Saved to History</Text>
+                                <Ionicons name="checkmark-circle" size={14} color="#D2B48C" className="mr-2" />
+                                <Text className="text-[#D2B48C] font-bold text-[11px] uppercase tracking-widest">Saved to History</Text>
                             </>
                         ) : null}
                     </View>
@@ -620,8 +620,8 @@ export default function GenerateQuizScreen() {
                     const isCorrect = isTheory ? !!theoryResults[qi] : selectedAnswers[qi] === q.correct_answer;
                     return (
                         <View key={qi} className="bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl p-5 mb-3 flex-row items-center">
-                            <View className={`w-8 h-8 rounded-full items-center justify-center mr-4 ${isCorrect ? 'bg-[#2EBD85]/10' : 'bg-red-500/10'}`}>
-                                <Ionicons name={isCorrect ? "checkmark" : "close"} size={18} color={isCorrect ? "#2EBD85" : "#ef4444"} />
+                            <View className={`w-8 h-8 rounded-full items-center justify-center mr-4 ${isCorrect ? 'bg-[#D2B48C]/10' : 'bg-red-500/10'}`}>
+                                <Ionicons name={isCorrect ? "checkmark" : "close"} size={18} color={isCorrect ? "#D2B48C" : "#ef4444"} />
                             </View>
                             <View className="flex-1">
                                 <Text className="text-slate-900 dark:text-white font-bold text-[14px]" numberOfLines={1}>{q.question_text}</Text>
@@ -651,14 +651,14 @@ export default function GenerateQuizScreen() {
                         onPress={handleShare}
                         disabled={isSharing}
                         activeOpacity={0.8}
-                        className="bg-slate-900 dark:bg-white rounded-2xl px-8 py-5 flex-1 items-center justify-center flex-row"
+                        className={`h-[56px] rounded-2xl flex-1 items-center justify-center flex-row border shadow-sm ${isDark ? 'border-slate-800 bg-[#1c1c1e]' : 'border-slate-200 bg-white'}`}
                     >
                         {isSharing ? (
-                            <ActivityIndicator size="small" color={isDark ? '#121212' : 'white'} />
+                            <ActivityIndicator size="small" color={isDark ? '#fff' : '#000'} />
                         ) : (
                             <>
-                                <Ionicons name="share-outline" size={20} color={isDark ? '#121212' : 'white'} style={{ marginRight: 8 }} />
-                                <Text className="text-white dark:text-slate-900 font-black text-[16px]">Share</Text>
+                                <Ionicons name="share-outline" size={20} color={isDark ? '#fff' : '#000'} style={{ marginRight: 8 }} />
+                                <Text className={`font-bold text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Share</Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -667,14 +667,14 @@ export default function GenerateQuizScreen() {
                         onPress={handleExportPDF}
                         disabled={isExporting}
                         activeOpacity={0.8}
-                        className="bg-brand-primary rounded-2xl px-8 py-5 flex-1 items-center justify-center flex-row shadow-lg shadow-brand-primary/20"
+                        className="h-[56px] bg-brand-primary rounded-2xl flex-1 items-center justify-center flex-row shadow-sm"
                     >
                         {isExporting ? (
                             <ActivityIndicator size="small" color="white" />
                         ) : (
                             <>
                                 <Ionicons name="document-text-outline" size={20} color="white" style={{ marginRight: 8 }} />
-                                <Text className="text-white font-black text-[16px]">Export PDF</Text>
+                                <Text className="text-white font-bold text-[16px]">Export PDF</Text>
                             </>
                         )}
                     </TouchableOpacity>

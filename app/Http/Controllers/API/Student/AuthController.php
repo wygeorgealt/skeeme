@@ -360,4 +360,61 @@ class AuthController extends Controller
             'period' => '/ month',
         ];
     }
+
+    /**
+     * Mark student email as verified using OTP token
+     */
+    public function verifyAccount(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'token' => 'required|string',
+        ]);
+
+        $cachedEmail = Cache::get('otp_token_' . $request->token);
+
+        if (!$cachedEmail || $cachedEmail !== $request->email) {
+            return response()->json(['message' => 'Invalid or expired verification session.'], 400);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        if ($user) {
+            $user->email_verified_at = now();
+            $user->save();
+        }
+
+        Cache::forget('otp_token_' . $request->token);
+
+        return response()->json(['message' => 'Account verified successfully.']);
+    }
+
+    /**
+     * Handle password reset securely using Token
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'token' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $cachedEmail = Cache::get('otp_token_' . $request->token);
+
+        if (!$cachedEmail || $cachedEmail !== $request->email) {
+            return response()->json(['message' => 'Invalid or expired reset session. Please verify your email again.'], 400);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+        $user->save();
+
+        Cache::forget('otp_token_' . $request->token); // Invalidate token immediately
+
+        return response()->json(['message' => 'Password reset successfully.', 'success' => true]);
+    }
 }

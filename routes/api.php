@@ -125,6 +125,13 @@ Route::prefix('v1')->group(function () {
         Route::post('register', [\App\Http\Controllers\API\Student\AuthController::class, 'register']);
         Route::post('oauth/{provider}', [\App\Http\Controllers\API\Student\AuthController::class, 'handleOAuthLogin']);
 
+        // OTP & Auth Flow
+        Route::post('otp/send', [\App\Http\Controllers\Api\OtpController::class, 'send']);
+        Route::post('otp/verify', [\App\Http\Controllers\Api\OtpController::class, 'verify']);
+        Route::post('otp/resend', [\App\Http\Controllers\Api\OtpController::class, 'resend']);
+        Route::post('auth/reset-password', [\App\Http\Controllers\API\Student\AuthController::class, 'resetPassword']);
+        Route::post('auth/verify-account', [\App\Http\Controllers\API\Student\AuthController::class, 'verifyAccount']);
+
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('logout', [\App\Http\Controllers\API\Student\AuthController::class, 'logout']);
             Route::get('me', [\App\Http\Controllers\API\Student\AuthController::class, 'me']);

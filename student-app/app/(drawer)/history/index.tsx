@@ -122,7 +122,7 @@ export default function StudyHistoryDashboard() {
                         onPress={() => setActiveTab('quizzes')}
                         style={[
                             styles.tabButton,
-                            activeTab === 'quizzes' && { backgroundColor: isDark ? '#2EBD85' : 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }
+                            activeTab === 'quizzes' && { backgroundColor: isDark ? '#D2B48C' : 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }
                         ]}
                     >
                         <Text style={[
@@ -134,7 +134,7 @@ export default function StudyHistoryDashboard() {
                         onPress={() => setActiveTab('flashcards')}
                         style={[
                             styles.tabButton,
-                            activeTab === 'flashcards' && { backgroundColor: isDark ? '#2EBD85' : 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }
+                            activeTab === 'flashcards' && { backgroundColor: isDark ? '#D2B48C' : 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }
                         ]}
                     >
                         <Text style={[
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
 
 function QuizCard({ session }: { session: QuizSession }) {
     const getScoreColor = (pct: number) => {
-        if (pct >= 80) return '#2EBD85';
+        if (pct >= 80) return '#D2B48C';
         if (pct >= 60) return '#FCD34D';
         return '#ef4444';
     };
@@ -245,7 +245,7 @@ function DeckCard({ deck }: { deck: FlashcardDeck }) {
                 <Text className="text-slate-900 dark:text-white font-black text-[19px] tracking-tight flex-1 mr-4" numberOfLines={2}>
                     {deck.title}
                 </Text>
-                <Ionicons name="albums-outline" size={24} color="#2EBD85" />
+                <Ionicons name="albums-outline" size={24} color="#D2B48C" />
             </View>
             <View className="flex-row items-center">
                 <View className="bg-brand-primary/10 dark:bg-brand-primary/20 px-3 py-1 rounded-full border border-brand-primary/20 dark:border-brand-primary/30 mr-3">

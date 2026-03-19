@@ -258,10 +258,10 @@ export default function QuizHistoryDetailScreen() {
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
                 {/* Motivational Header */}
                 <View className="items-center py-8 pb-4">
-                    <View className="w-20 h-20 bg-[#2EBD85]/10 dark:bg-[#2EBD85]/20 rounded-[28px] items-center justify-center mb-6">
-                        <Ionicons name={remark.icon as any} size={42} color="#2EBD85" />
+                    <View className="w-20 h-20 bg-[#D2B48C]/10 dark:bg-[#D2B48C]/20 rounded-[28px] items-center justify-center mb-6">
+                        <Ionicons name={remark.icon as any} size={42} color="#D2B48C" />
                     </View>
-                    <Text className="text-[#2EBD85] font-black text-[14px] uppercase tracking-[4px] mb-2">{remark.title}</Text>
+                    <Text className="text-[#D2B48C] font-black text-[14px] uppercase tracking-[4px] mb-2">{remark.title}</Text>
                     <Text className="text-slate-900 dark:text-white font-black text-[42px] tracking-tight">{Math.round(session.score_percentage)}%</Text>
                     <Text className="text-slate-500 dark:text-slate-400 font-bold text-[15px] mt-2 text-center px-8">{remark.subtitle}</Text>
                 </View>
@@ -317,7 +317,7 @@ export default function QuizHistoryDetailScreen() {
                             }
                         }}
                         disabled={isSharing}
-                        className="flex-none flex-row items-center justify-center bg-[#2EBD85] w-16 h-[60px] rounded-2xl active:opacity-90 shadow-sm"
+                        className="flex-none flex-row items-center justify-center bg-[#D2B48C] w-16 h-[60px] rounded-2xl active:opacity-90 shadow-sm"
                     >
                         {isSharing ? <ActivityIndicator size="small" color="white" /> : (
                             <Ionicons name="share-social" size={22} color="white" />

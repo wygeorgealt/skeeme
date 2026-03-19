@@ -59,16 +59,16 @@ export function TheoryCard({
                             className="flex-row items-center border-[2px] rounded-xl p-4 mb-6"
                             style={[
                                 result.passed
-                                    ? { borderColor: '#2EBD85', backgroundColor: 'rgba(46, 189, 133, 0.1)' }
+                                    ? { borderColor: '#D2B48C', backgroundColor: 'rgba(46, 189, 133, 0.1)' }
                                     : { borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }
                             ]}
                         >
-                            <Ionicons name={result.passed ? 'star' : 'code-outline'} size={24} color={result.passed ? '#2EBD85' : '#ef4444'} />
+                            <Ionicons name={result.passed ? 'star' : 'code-outline'} size={24} color={result.passed ? '#D2B48C' : '#ef4444'} />
                             <View style={{ marginLeft: 12 }}>
-                                <Text className={`text-[19px] font-black tracking-tight ${result.passed ? 'text-[#2EBD85]' : 'text-red-500'}`}>
+                                <Text className={`text-[19px] font-black tracking-tight ${result.passed ? 'text-[#D2B48C]' : 'text-red-500'}`}>
                                     {result.score}/{result.max} marks
                                 </Text>
-                                <Text className={`text-[12px] font-bold uppercase tracking-widest mt-0.5 ${result.passed ? 'text-[#2EBD85]/70' : 'text-red-500/70'}`}>
+                                <Text className={`text-[12px] font-bold uppercase tracking-widest mt-0.5 ${result.passed ? 'text-[#D2B48C]/70' : 'text-red-500/70'}`}>
                                     {result.passed ? 'Passed' : 'Below passing'}
                                 </Text>
                             </View>

@@ -158,7 +158,7 @@ export default function AccountScreen() {
                                 {user.is_unlimited ? 'Unlimited Pro' : 'Free Tier'}
                             </Text>
                             {user.is_unlimited ? (
-                                <Text className="text-[#2EBD85] font-bold text-[13px] uppercase tracking-widest">Active Subscription</Text>
+                                <Text className="text-[#D2B48C] font-bold text-[13px] uppercase tracking-widest">Active Subscription</Text>
                             ) : (
                                 <Text className="text-slate-500 font-bold text-[13px] uppercase tracking-widest">{user.credits} Credits Remaining</Text>
                             )}
@@ -169,8 +169,8 @@ export default function AccountScreen() {
                                 <Text className="text-slate-900 dark:text-white font-black text-[11px] uppercase tracking-widest">Manage Plan</Text>
                             </TouchableOpacity>
                         </View>
-                        <View className={`size-14 rounded-full items-center justify-center border-2 ${user.is_unlimited ? 'border-[#2EBD85] bg-[#2EBD85]/10' : 'border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800'}`}>
-                            <Ionicons name="flash" size={24} color={user.is_unlimited ? "#2EBD85" : "#94a3b8"} />
+                        <View className={`size-14 rounded-full items-center justify-center border-2 ${user.is_unlimited ? 'border-[#D2B48C] bg-[#D2B48C]/10' : 'border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800'}`}>
+                            <Ionicons name="flash" size={24} color={user.is_unlimited ? "#D2B48C" : "#94a3b8"} />
                         </View>
                     </View>
                 </View>
@@ -296,7 +296,7 @@ export default function AccountScreen() {
                         <TouchableOpacity
                             onPress={handleUpdatePassword}
                             disabled={isUpdatingPassword}
-                            className={`w-full h-[56px] rounded-xl items-center flex-row justify-center mt-4 border-2 ${passwordSuccess ? 'bg-[#2EBD85] border-[#2EBD85]' : 'bg-white dark:bg-brand-dark border-slate-200 dark:border-slate-700'} ${isUpdatingPassword ? 'opacity-70' : ''}`}
+                            className={`w-full h-[56px] rounded-xl items-center flex-row justify-center mt-4 border-2 ${passwordSuccess ? 'bg-[#D2B48C] border-[#D2B48C]' : 'bg-white dark:bg-brand-dark border-slate-200 dark:border-slate-700'} ${isUpdatingPassword ? 'opacity-70' : ''}`}
                             activeOpacity={0.8}
                         >
                             {isUpdatingPassword ? (

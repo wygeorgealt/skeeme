@@ -171,7 +171,7 @@ export default function ScanScreen() {
                 {!imageUri && results.length === 0 && (
                     <View className="items-center mt-6">
                         <View className="w-48 h-48 border-4 border-dashed border-brand-primary/30 dark:border-brand-primary/50 rounded-[32px] items-center justify-center mb-8 bg-brand-primary/5 dark:bg-brand-primary/10">
-                            <Ionicons name="scan-outline" size={72} color="#2EBD85" />
+                            <Ionicons name="scan-outline" size={72} color="#D2B48C" />
                             <Text className="text-brand-primary/60 dark:text-brand-primary/80 font-bold text-xs mt-3 uppercase tracking-widest">Document Scanner</Text>
                         </View>
 
@@ -195,7 +195,7 @@ export default function ScanScreen() {
                             </TouchableOpacity>
                         </View>
                         <View className="flex-row items-center mt-8 bg-brand-primary/5 dark:bg-brand-primary/10 px-5 py-4 rounded-xl border border-brand-primary/20 dark:border-brand-primary/30 w-full justify-center">
-                            <Ionicons name="flash" size={16} color="#2EBD85" />
+                            <Ionicons name="flash" size={16} color="#D2B48C" />
                             <Text className="text-brand-primary font-bold text-xs ml-2">{BASE_SCAN_COST} credits base + {COST_PER_SOLUTION} per question</Text>
                         </View>
                     </View>
@@ -209,13 +209,13 @@ export default function ScanScreen() {
 
                         {loading ? (
                             <View className="items-center py-10 w-full bg-brand-primary/5 rounded-[20px] border border-brand-primary/20">
-                                <ActivityIndicator size="large" color="#2EBD85" />
+                                <ActivityIndicator size="large" color="#D2B48C" />
                                 <Text className="text-brand-primary font-black mt-5 text-[17px] tracking-tight">{loadingStage || 'Processing...'}</Text>
                                 <Text className="text-brand-primary/60 font-medium text-sm mt-1">Skeeme AI is working hard</Text>
                             </View>
                         ) : (
                             <View className="w-full gap-3">
-                                <TouchableOpacity onPress={handleSolve} className="bg-[#2EBD85] rounded-xl py-4 items-center flex-row justify-center shadow-sm" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Solve Everything">
+                                <TouchableOpacity onPress={handleSolve} className="bg-[#D2B48C] rounded-xl py-4 items-center flex-row justify-center shadow-sm" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Solve Everything">
                                     <Ionicons name="sparkles" size={20} color="#fff" />
                                     <Text className="text-white font-black ml-2 text-[17px]">Solve Everything</Text>
                                 </TouchableOpacity>
@@ -316,19 +316,19 @@ export default function ScanScreen() {
                                 const combinedTopic = uniqueTopics.join(', ') || 'General';
                                 router.push({ pathname: '/generate', params: { topic: combinedTopic } });
                             }}
-                            className="bg-brand-primary rounded-2xl py-4 items-center flex-row justify-center shadow-lg shadow-brand-primary/20"
+                            className="h-[56px] bg-brand-primary rounded-2xl items-center flex-row justify-center shadow-sm"
                             activeOpacity={0.8}
                             accessibilityRole="button"
                             accessibilityLabel="Practice Similar Questions"
                         >
                             <Ionicons name="sparkles" size={20} color="white" style={{ marginRight: 8 }} />
-                            <Text className="text-white font-black text-[17px]">Practice Similar Questions</Text>
+                            <Text className="text-white font-bold text-[16px]">Practice Similar Questions</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={handleExport} disabled={loading} className="bg-slate-900 dark:bg-white rounded-2xl py-4 items-center flex-row justify-center shadow-sm" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Save as PDF">
-                            {loading ? <ActivityIndicator size="small" color={isDark ? '#121212' : 'white'} /> : <>
-                                <Ionicons name="download-outline" size={20} color={isDark ? '#121212' : 'white'} style={{ marginRight: 8 }} />
-                                <Text className="text-white dark:text-slate-900 font-black text-[17px]">Save as PDF</Text>
+                        <TouchableOpacity onPress={handleExport} disabled={loading} className={`h-[56px] rounded-2xl items-center flex-row justify-center border shadow-sm ${isDark ? 'border-slate-800 bg-[#1c1c1e]' : 'border-slate-200 bg-white'}`} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Save as PDF">
+                            {loading ? <ActivityIndicator size="small" color={isDark ? '#fff' : '#000'} /> : <>
+                                <Ionicons name="download-outline" size={20} color={isDark ? '#fff' : '#000'} style={{ marginRight: 8 }} />
+                                <Text className={`font-bold text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Save as PDF</Text>
                             </>}
                         </TouchableOpacity>
                         <TouchableOpacity onPress={resetScan} className="bg-slate-100 dark:bg-slate-800 rounded-2xl py-4 items-center flex-row justify-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Scan Next Page">

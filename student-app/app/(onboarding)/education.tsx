@@ -75,7 +75,7 @@ export default function EducationScreen() {
                             </View>
                             {selected === level.key && (
                                 <Animated.View entering={FadeIn.duration(200)}>
-                                    <Ionicons name="checkmark-circle" size={24} color="#2EBD85" />
+                                    <Ionicons name="checkmark-circle" size={24} color="#D2B48C" />
                                 </Animated.View>
                             )}
                         </TouchableOpacity>

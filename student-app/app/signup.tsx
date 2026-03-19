@@ -38,7 +38,7 @@ export default function SignupScreen() {
         const hasSpecial = /[^A-Za-z0-9]/.test(password);
         const score = [hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
 
-        if (score >= 2 && password.length >= 10) return { label: 'Strong', color: '#2EBD85', width: '100%' };
+        if (score >= 2 && password.length >= 10) return { label: 'Strong', color: '#D2B48C', width: '100%' };
         if (score >= 1) return { label: 'Good', color: '#eab308', width: '70%' };
         return { label: 'Fair', color: '#f97316', width: '50%' };
     };
@@ -70,12 +70,14 @@ export default function SignupScreen() {
             const { token, user } = response.data;
             await login(user, token);
 
-            // If from onboarding, continue to streak intro (Screen 7)
-            if (isFromOnboarding) {
-                router.replace('/(onboarding)/streak-intro');
-            } else {
-                router.replace('/(drawer)');
-            }
+            // Navigate to OTP verification screen instead of direct entry
+            router.replace({
+                pathname: '/otp',
+                params: {
+                    email: email.trim().toLowerCase(),
+                    type: 'verification'
+                }
+            });
         } catch (error: any) {
             const status = error.response?.status;
             const data = error.response?.data;
@@ -204,12 +206,12 @@ export default function SignupScreen() {
                     onPress={handleSignup}
                     disabled={isLoading}
                     activeOpacity={0.8}
-                    className={`w-full bg-brand-primary rounded-2xl h-[56px] items-center justify-center shadow-lg shadow-brand-primary/30 ${isLoading ? 'opacity-70' : ''}`}
+                    className={`w-full h-[56px] bg-brand-primary rounded-2xl items-center justify-center shadow-sm ${isLoading ? 'opacity-70' : ''}`}
                 >
                     {isLoading ? (
-                        <ActivityIndicator color="white" />
+                        <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text className="text-white font-black text-[17px]">Create Account</Text>
+                        <Text className="font-bold text-[16px] text-white">Create Account</Text>
                     )}
                 </TouchableOpacity>
 

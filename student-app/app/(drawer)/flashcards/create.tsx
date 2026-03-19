@@ -187,14 +187,14 @@ export default function GenerateFlashcardScreen() {
                             >
                                 {isProcessingFile ? (
                                     <View className="items-center py-2">
-                                        <ActivityIndicator size="large" color="#2EBD85" />
+                                        <ActivityIndicator size="large" color="#D2B48C" />
                                         <Text className="text-[15px] font-bold text-brand-primary mt-4">Analyzing...</Text>
                                     </View>
                                 ) : selectedFile ? (
                                     <>
-                                        <Ionicons name="document-text" size={40} color="#2EBD85" />
+                                        <Ionicons name="document-text" size={40} color="#D2B48C" />
                                         <Text className="text-[15px] font-bold text-slate-900 dark:text-white mt-4 text-center">{selectedFile?.name}</Text>
-                                        <Text className="text-[12px] font-bold text-[#2EBD85] mt-2 uppercase tracking-widest">Attached & Ready</Text>
+                                        <Text className="text-[12px] font-bold text-[#D2B48C] mt-2 uppercase tracking-widest">Attached & Ready</Text>
                                     </>
                                 ) : (
                                     <>
@@ -248,7 +248,7 @@ export default function GenerateFlashcardScreen() {
                 {isLoading ? (
                     <View className="bg-brand-primary/5 dark:bg-brand-primary/10 rounded-[28px] p-6 border-2 border-brand-primary/20 items-center overflow-hidden">
                         <View className="mb-4">
-                            <ActivityIndicator size="small" color="#2EBD85" />
+                            <ActivityIndicator size="small" color="#D2B48C" />
                         </View>
                         <Text className="text-brand-primary font-black text-lg tracking-tight mb-1 text-center">{loadingStage}</Text>
                         <Text className="text-slate-500 dark:text-slate-400 font-medium text-[11px] text-center px-2">
@@ -276,7 +276,7 @@ export default function GenerateFlashcardScreen() {
                     <>
                         <TouchableOpacity
                             onPress={handleGenerate}
-                            className="bg-[#2EBD85] rounded-2xl py-4 items-center flex-row justify-center shadow-lg shadow-[#2EBD85]/20"
+                            className="bg-[#D2B48C] rounded-2xl py-4 items-center flex-row justify-center shadow-lg shadow-[#D2B48C]/20"
                             activeOpacity={0.8}
                         >
                             <Ionicons name="sparkles" size={20} color="#fff" />

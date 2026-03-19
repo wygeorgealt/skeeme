@@ -48,6 +48,7 @@ interface AuthState {
     setOnboardingStep: (step: number) => Promise<void>;
     setOnboardingData: (data: Record<string, any>) => Promise<void>;
     completeOnboarding: () => Promise<void>;
+    devReset: () => Promise<void>;
 }
 
 // Secure storage for sensitive data (tokens)
@@ -155,6 +156,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             await standardStorage.setItem('onboarding_complete', 'true');
             await standardStorage.deleteItem('onboarding_step');
             await standardStorage.deleteItem('onboarding_data');
+        } catch (e) {}
+    },
+
+    devReset: async () => {
+        set({
+            user: null,
+            token: null,
+            onboardingComplete: false,
+            onboardingStep: 0,
+            onboardingData: {},
+            storedEmail: null,
+        });
+        try {
+            await standardStorage.deleteItem('onboarding_complete');
+            await standardStorage.deleteItem('onboarding_step');
+            await standardStorage.deleteItem('onboarding_data');
+            await standardStorage.deleteItem('stored_email');
+            await standardStorage.deleteItem('auth_user');
+            await secureStorage.deleteItem('auth_token');
         } catch (e) {}
     },
 

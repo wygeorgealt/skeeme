@@ -175,11 +175,11 @@ export default function BillingHistoryScreen() {
                                 </View>
 
                                 <View className="items-end">
-                                    <View className={`px-4 py-1.5 rounded-xl border-2 ${invoice.status === 'paid' ? 'border-[#2EBD85] bg-[#2EBD85]/10' :
+                                    <View className={`px-4 py-1.5 rounded-xl border-2 ${invoice.status === 'paid' ? 'border-[#D2B48C] bg-[#D2B48C]/10' :
                                         invoice.status === 'pending' ? 'border-[#FCD34D] bg-[#FCD34D]/10' :
                                             'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
                                         }`}>
-                                        <Text className={`text-[11px] uppercase tracking-widest font-black ${invoice.status === 'paid' ? 'text-[#2EBD85]' :
+                                        <Text className={`text-[11px] uppercase tracking-widest font-black ${invoice.status === 'paid' ? 'text-[#D2B48C]' :
                                             invoice.status === 'pending' ? 'text-[#eab308]' :
                                                 'text-slate-500'
                                             }`}>

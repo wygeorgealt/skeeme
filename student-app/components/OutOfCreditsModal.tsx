@@ -82,8 +82,8 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                 <View style={{ width: 40, height: 4, backgroundColor: isDark ? '#475569' : '#CBD5E1', borderRadius: 2, alignSelf: 'center', marginBottom: 24 }} />
 
                 {/* Icon */}
-                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#2EBD8520', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
-                    <Ionicons name="flash" size={28} color="#2EBD85" />
+                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#D2B48C20', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
+                    <Ionicons name="flash" size={28} color="#D2B48C" />
                 </View>
 
                 {/* Copy */}
@@ -99,7 +99,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                     onPress={handleUpgrade}
                     activeOpacity={0.9}
                     style={{
-                        backgroundColor: '#2EBD85',
+                        backgroundColor: '#D2B48C',
                         height: 56,
                         borderRadius: 20,
                         alignItems: 'center',

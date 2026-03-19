@@ -54,7 +54,7 @@ function StreakCalendar({ activeDates, isLoading }: { activeDates: string[], isL
                         style={{ width: '12%', minWidth: 32, aspectRatio: 1 }}
                         className={`rounded-xl items-center justify-center border-2 ${
                             isActive 
-                                ? 'bg-[#2EBD85] border-[#2EBD85]' 
+                                ? 'bg-[#D2B48C] border-[#D2B48C]' 
                                 : isFuture 
                                     ? 'bg-transparent border-slate-200 dark:border-slate-800 opacity-50' 
                                     : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700'
@@ -116,7 +116,7 @@ export default function DashboardScreen() {
     return (
         <ScrollView
             className="flex-1 bg-white dark:bg-brand-dark"
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2EBD85" />}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D2B48C" />}
         >
             {/* Header */}
             <View className="px-6 py-8 pb-6 flex-row justify-between items-center">
@@ -156,7 +156,7 @@ export default function DashboardScreen() {
                     {isFreePlan && (
                         <TouchableOpacity
                             onPress={() => router.push('/upgrade')}
-                            className="bg-[#2EBD85] px-5 py-3 rounded-full flex-row items-center"
+                            className="bg-[#D2B48C] px-5 py-3 rounded-full flex-row items-center"
                             activeOpacity={0.8}
                         >
                             <Ionicons name="add" size={18} color="white" />
@@ -166,8 +166,8 @@ export default function DashboardScreen() {
                 </View>
                 {isFreePlan && (
                     <View className="flex-row items-center mt-2">
-                        <Ionicons name="trending-up" size={14} color="#2EBD85" />
-                        <Text className="text-[#2EBD85] font-bold text-xs ml-1">Top up today</Text>
+                        <Ionicons name="trending-up" size={14} color="#D2B48C" />
+                        <Text className="text-[#D2B48C] font-bold text-xs ml-1">Top up today</Text>
                     </View>
                 )}
             </View>
@@ -225,7 +225,7 @@ export default function DashboardScreen() {
                         activeOpacity={0.7}
                     >
                         <View className="size-12 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl items-center justify-center mr-4">
-                            <Ionicons name="albums" size={24} color="#2EBD85" />
+                            <Ionicons name="albums" size={24} color="#D2B48C" />
                         </View>
                         <View className="flex-1">
                             <Text className="text-base font-black text-slate-900 dark:text-white tracking-tight">Flashcards</Text>
@@ -287,7 +287,7 @@ export default function DashboardScreen() {
                             {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
                         </Text>
                         <View className="flex-row items-center gap-1 bg-brand-primary/10 px-2 py-1 rounded-md">
-                            <Ionicons name="flame" size={14} color="#2EBD85" />
+                            <Ionicons name="flame" size={14} color="#D2B48C" />
                             <Text className="text-brand-primary font-bold text-[10px] uppercase">Milestones & Freezes</Text>
                         </View>
                     </View>

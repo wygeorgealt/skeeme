@@ -40,51 +40,51 @@ export default function NotificationsScreen() {
     };
 
     return (
-        <View className={`flex-1 px-6 pt-16 ${isDark ? 'bg-[#121212]' : 'bg-white'}`}>
+        <View className={`flex-1 px-8 pt-16 pb-8 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            <Animated.View entering={FadeInDown.duration(500).delay(100)} className="items-center mb-8">
-                <View className="bg-amber-500/10 w-20 h-20 rounded-full items-center justify-center mb-6">
-                    <Ionicons name="notifications" size={36} color="#f59e0b" />
+            <Animated.View entering={FadeInDown.duration(500).delay(100)} className="items-center mb-10">
+                <View className={`w-14 h-14 rounded-2xl items-center justify-center mb-6 shadow-sm ${isDark ? 'bg-[#1c1c1e] border border-slate-800' : 'bg-white border border-slate-100'}`}>
+                    <Ionicons name="notifications-outline" size={24} color={isDark ? '#fff' : '#0f172a'} />
                 </View>
-                <Text className={`text-[28px] font-black tracking-tight text-center mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    Don't break{'\n'}your streak.
+                <Text className={`text-[28px] font-semibold tracking-tight text-center leading-[34px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    Don't break your streak.
                 </Text>
-                <Text className={`text-[15px] font-medium text-center leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <Text className={`text-[16px] font-normal text-center leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     Skeeme will remind you before your streak resets so you never lose progress.
                 </Text>
             </Animated.View>
 
             {/* Notification reasons */}
-            <View className="gap-3 mb-8">
+            <View className="gap-3 mb-10">
                 {REASONS.map((reason, i) => (
                     <Animated.View key={i} entering={FadeInDown.duration(400).delay(300 + i * 100)}>
-                        <View className={`flex-row items-center p-4 rounded-2xl ${isDark ? 'bg-slate-900/80' : 'bg-slate-50'}`}>
-                            <View className={`w-10 h-10 rounded-xl items-center justify-center mr-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                        <View className={`flex-row items-center p-4 rounded-2xl border ${isDark ? 'border-slate-800 bg-[#1c1c1e]' : 'border-slate-200 bg-white shadow-sm'}`}>
+                            <View className={`w-10 h-10 rounded-xl items-center justify-center mr-4 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
                                 <Ionicons name={reason.icon} size={20} color={isDark ? '#94a3b8' : '#64748b'} />
                             </View>
-                            <Text className={`flex-1 font-medium text-[14px] ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{reason.text}</Text>
+                            <Text className={`flex-1 font-medium text-[15px] ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{reason.text}</Text>
                         </View>
                     </Animated.View>
                 ))}
             </View>
 
             {/* Buttons */}
-            <Animated.View entering={FadeInUp.duration(500).delay(700)} className="mt-auto pb-12 gap-3">
+            <Animated.View entering={FadeInUp.duration(500).delay(700)} className="mt-auto gap-3">
                 <TouchableOpacity
                     onPress={handleEnable}
-                    activeOpacity={0.9}
-                    className="bg-brand-primary h-16 rounded-2xl items-center justify-center shadow-lg shadow-brand-primary/30"
+                    activeOpacity={0.8}
+                    className="h-[56px] bg-brand-primary rounded-2xl items-center justify-center shadow-sm"
                 >
-                    <Text className="text-white font-black text-[17px]">Turn on reminders</Text>
+                    <Text className="font-bold text-[16px] text-white">Turn on reminders</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     onPress={handleSkip}
                     activeOpacity={0.8}
-                    className="h-14 rounded-2xl items-center justify-center"
+                    className="h-[50px] items-center justify-center rounded-2xl"
                 >
-                    <Text className={`font-bold text-[15px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Maybe later</Text>
+                    <Text className={`font-medium text-[15px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Maybe later</Text>
                 </TouchableOpacity>
             </Animated.View>
         </View>

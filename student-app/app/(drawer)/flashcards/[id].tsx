@@ -74,11 +74,11 @@ function FlashcardItem({ card, isActive, isDark }: { card: Card; isActive: boole
                 <Animated.View style={[frontAnimatedStyle, {
                     flex: 1, borderRadius: 32, padding: 32,
                     justifyContent: 'center', alignItems: 'center',
-                    shadowColor: '#2EBD85', shadowOpacity: 0.1, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 10,
+                    shadowColor: '#D2B48C', shadowOpacity: 0.1, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 10,
                     borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0'
                 }]} className="bg-white dark:bg-slate-800">
                     <View style={{ position: 'absolute', top: 24, right: 24 }}>
-                        <Ionicons name="sparkles" size={24} color="#2EBD85" style={{ opacity: 0.3 }} />
+                        <Ionicons name="sparkles" size={24} color="#D2B48C" style={{ opacity: 0.3 }} />
                     </View>
                     <MathText
                         content={card.front}
@@ -93,9 +93,9 @@ function FlashcardItem({ card, isActive, isDark }: { card: Card; isActive: boole
 
                 {/* BACK */}
                 <Animated.View style={[backAnimatedStyle, {
-                    flex: 1, backgroundColor: '#2EBD85', borderRadius: 32, padding: 32,
+                    flex: 1, backgroundColor: '#D2B48C', borderRadius: 32, padding: 32,
                     justifyContent: 'center', alignItems: 'center',
-                    shadowColor: '#2EBD85', shadowOpacity: 0.3, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 10,
+                    shadowColor: '#D2B48C', shadowOpacity: 0.3, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 10,
                 }]}>
                     <View style={{ position: 'absolute', top: 24, right: 24 }}>
                         <Ionicons name="checkmark-circle" size={24} color="rgba(255,255,255,0.4)" />

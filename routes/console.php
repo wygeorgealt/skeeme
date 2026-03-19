@@ -39,6 +39,11 @@ Schedule::command('send:streak-notifications')
     ->dailyAt('07:00')
     ->description('Sends countdown notifications for upcoming streak milestones');
 
+// Purge expired OTPs daily
+Schedule::command('otp:purge')
+    ->dailyAt('00:00')
+    ->description('Purge expired and fully used email OTPs');
+
 use Mailtrap\Helper\ResponseHelper;
 use Mailtrap\MailtrapClient;
 use Mailtrap\Mime\MailtrapEmail;

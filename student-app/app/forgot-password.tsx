@@ -12,19 +12,25 @@ export default function ForgotPasswordScreen() {
 
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [sent, setSent] = useState(false);
 
     const handleSend = async () => {
         if (!email.trim()) return;
 
         setIsLoading(true);
         try {
-            await api.post('forgot-password', { email: email.trim().toLowerCase() });
-        } catch (e) {
-            // Silently ignore — always show same message
+            await api.post('otp/send', { email: email.trim().toLowerCase(), type: 'password_reset' });
+        } catch (e: any) {
+            // Silently proceed to prevent enumeration. 
+            // If they are on cooldown, the OTP screen handles it anyway.
         } finally {
             setIsLoading(false);
-            setSent(true);
+            router.push({
+                pathname: '/otp',
+                params: {
+                    email: email.trim().toLowerCase(),
+                    type: 'password_reset'
+                }
+            });
         }
     };
 
@@ -56,52 +62,34 @@ export default function ForgotPasswordScreen() {
                     Reset password.
                 </Text>
                 <Text className={`${subtextClass} text-[15px] font-medium leading-relaxed mb-8`}>
-                    Enter the email address linked to your account and we'll send you a reset link.
+                    Enter the email address linked to your account and we'll send you a 6-digit reset code.
                 </Text>
 
-                {sent ? (
-                    <View className="bg-brand-primary/10 border-2 border-brand-primary/30 rounded-2xl p-5">
-                        <View className="flex-row items-center mb-2">
-                            <Ionicons name="checkmark-circle" size={22} color="#2EBD85" />
-                            <Text className="text-brand-primary font-black text-[15px] ml-2">Check your inbox</Text>
-                        </View>
-                        <Text className={`${subtextClass} text-[14px] font-medium leading-relaxed`}>
-                            If that email is registered, a reset link is on its way. Check your email and follow the instructions.
-                        </Text>
+                <View className={`${inputBg} ${inputBorder} rounded-2xl px-4 flex-row items-center border mb-6`}>
+                    <TextInput
+                        className="flex-1 font-medium text-[17px] h-[56px]"
+                        placeholder="Email address"
+                        placeholderTextColor={placeholderColor}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        value={email}
+                        onChangeText={setEmail}
+                        style={{ color: isDark ? 'white' : 'black' }}
+                    />
+                </View>
 
-                        <TouchableOpacity onPress={() => router.push('/login')} className="mt-5">
-                            <Text className="text-brand-primary font-bold text-[14px]">← Back to login</Text>
-                        </TouchableOpacity>
-                    </View>
-                ) : (
-                    <>
-                        <View className={`${inputBg} ${inputBorder} rounded-2xl px-4 flex-row items-center border mb-6`}>
-                            <TextInput
-                                className="flex-1 font-medium text-[17px] h-[56px]"
-                                placeholder="Email address"
-                                placeholderTextColor={placeholderColor}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                value={email}
-                                onChangeText={setEmail}
-                                style={{ color: isDark ? 'white' : 'black' }}
-                            />
-                        </View>
-
-                        <TouchableOpacity
-                            onPress={handleSend}
-                            disabled={isLoading || !email.trim()}
-                            activeOpacity={0.8}
-                            className={`w-full bg-brand-primary rounded-2xl h-[56px] items-center justify-center shadow-lg shadow-brand-primary/30 ${(isLoading || !email.trim()) ? 'opacity-70' : ''}`}
-                        >
-                            {isLoading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <Text className="text-white font-black text-[17px]">Send Reset Link</Text>
-                            )}
-                        </TouchableOpacity>
-                    </>
-                )}
+                <TouchableOpacity
+                    onPress={handleSend}
+                    disabled={isLoading || !email.trim()}
+                    activeOpacity={0.8}
+                    className={`w-full h-[56px] bg-brand-primary rounded-2xl items-center justify-center shadow-sm ${(isLoading || !email.trim()) ? 'opacity-70' : ''}`}
+                >
+                    {isLoading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text className="font-bold text-[16px] text-white">Send Reset Code</Text>
+                    )}
+                </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>
     );

@@ -118,7 +118,14 @@ export default function DrawerLayout() {
     const tintColor = isDark ? '#fff' : '#121212';
 
     useEffect(() => {
-        registerForPushNotificationsAsync(useAuthStore.getState().token);
+        // Defer push token registration to avoid triggering during navigation mount
+        const timer = setTimeout(() => {
+            const token = useAuthStore.getState().token;
+            if (token) {
+                registerForPushNotificationsAsync(token).catch(() => {});
+            }
+        }, 500);
+        return () => clearTimeout(timer);
     }, []);
 
     return (

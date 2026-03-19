@@ -135,7 +135,7 @@ export default function StreakScreen() {
                                 </View>
                                 <View className="h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                                     <View 
-                                        className={`h-full rounded-full ${isUnlocked ? 'bg-brand-primary' : 'bg-[#2EBD85]/40'}`} 
+                                        className={`h-full rounded-full ${isUnlocked ? 'bg-brand-primary' : 'bg-[#D2B48C]/40'}`} 
                                         style={{ width: `${progress}%` }} 
                                     />
                                 </View>

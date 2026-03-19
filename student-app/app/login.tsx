@@ -113,20 +113,20 @@ export default function LoginScreen() {
                 {/* Google Sign In */}
                 <TouchableOpacity
                     activeOpacity={0.8}
-                    className={`h-14 rounded-2xl flex-row items-center justify-center border-2 mb-3 ${inputBorder} ${isDark ? 'bg-slate-900/50' : 'bg-white'}`}
+                    className={`h-[56px] rounded-2xl items-center justify-center flex-row shadow-sm mb-3 ${isDark ? 'bg-[#1c1c1e] border border-slate-800' : 'bg-white border border-slate-200'}`}
                 >
                     <Ionicons name="logo-google" size={20} color={isDark ? '#fff' : '#000'} />
-                    <Text className={`font-bold text-[15px] ml-3 ${textClass}`}>Continue with Google</Text>
+                    <Text className={`font-medium text-[16px] ml-3 ${textClass}`}>Continue with Google</Text>
                 </TouchableOpacity>
 
                 {/* Apple Sign In — iOS only */}
                 {Platform.OS === 'ios' && (
                     <TouchableOpacity
                         activeOpacity={0.8}
-                        className={`h-14 rounded-2xl flex-row items-center justify-center mb-3 ${isDark ? 'bg-white' : 'bg-black'}`}
+                        className={`h-[56px] rounded-2xl items-center justify-center flex-row shadow-sm mb-3 ${isDark ? 'bg-white' : 'bg-slate-900'}`}
                     >
                         <Ionicons name="logo-apple" size={22} color={isDark ? '#000' : '#fff'} />
-                        <Text className={`font-bold text-[15px] ml-3 ${isDark ? 'text-black' : 'text-white'}`}>Continue with Apple</Text>
+                        <Text className={`font-medium text-[16px] ml-3 ${isDark ? 'text-black' : 'text-white'}`}>Continue with Apple</Text>
                     </TouchableOpacity>
                 )}
 
@@ -178,20 +178,26 @@ export default function LoginScreen() {
                     onPress={handleLogin}
                     disabled={isLoading}
                     activeOpacity={0.8}
-                    className={`w-full bg-brand-primary rounded-2xl h-[56px] items-center justify-center shadow-lg shadow-brand-primary/30 ${isLoading ? 'opacity-70' : ''}`}
+                    className={`w-full h-[56px] bg-brand-primary rounded-2xl items-center justify-center shadow-sm ${isLoading ? 'opacity-70' : ''}`}
                 >
                     {isLoading ? (
-                        <ActivityIndicator color="white" />
+                        <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text className="text-white font-black text-[17px]">Sign In</Text>
+                        <Text className="font-bold text-[16px] text-white">Sign In</Text>
                     )}
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => router.push('/(onboarding)/hook')} className="mt-8 mb-12 items-center">
+                <TouchableOpacity onPress={() => router.push('/(onboarding)/hook')} className="mt-8 mb-4 items-center">
                     <Text className={`${subtextClass} font-medium`}>
                         Don't have an account? <Text className="text-brand-primary font-bold">Get started</Text>
                     </Text>
                 </TouchableOpacity>
+
+                {__DEV__ && (
+                    <TouchableOpacity onPress={() => { useAuthStore.getState().devReset(); router.replace('/(onboarding)/hook'); }} className="mb-12 items-center">
+                        <Text className="text-red-500 text-xs font-bold">DEV ONLY: Reset Storage</Text>
+                    </TouchableOpacity>
+                )}
             </ScrollView>
         </KeyboardAvoidingView>
     );

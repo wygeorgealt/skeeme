@@ -21,6 +21,11 @@ cssInterop(LinearGradient, {
 });
 cssInterop(Ionicons, { className: 'style' as any });
 
+// Fix NativeWind v4 crash on Animated components
+cssInterop(Animated.View, { className: 'style' });
+cssInterop(Animated.Text, { className: 'style' });
+cssInterop(Animated.ScrollView, { className: 'style' });
+
 
 if (__DEV__) {
   LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
@@ -53,7 +58,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (isLoading) return;
 
-    const publicRoutes = ['login', 'signup', '(onboarding)', 'forgot-password'];
+    const publicRoutes = ['login', 'signup', '(onboarding)', 'forgot-password', 'otp', 'new-password'];
     const currentSegment = segments[0] as string;
     const isPublicRoute = publicRoutes.includes(currentSegment);
 
@@ -126,6 +131,8 @@ export default function RootLayout() {
             <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="signup" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="forgot-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
+            <Stack.Screen name="otp" options={{ headerShown: false, animation: 'slide_from_right' }} />
+            <Stack.Screen name="new-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
             <Stack.Screen name="(drawer)" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="upgrade" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', headerShown: false }} />
             <Stack.Screen name="+not-found" />
