@@ -309,28 +309,41 @@ export default function GenerateQuizScreen() {
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
     if (questions.length === 0) {
         const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
+        
+        const difficultyOptions = [
+            { key: 'easy', label: 'Easy', icon: 'leaf-outline', desc: 'Focus on fundamentals' },
+            { key: 'medium', label: 'Medium', icon: 'bulb-outline', desc: 'Comprehensive coverage' },
+            { key: 'hard', label: 'Hard', icon: 'rocket-outline', desc: 'Deep analytical questions' },
+        ];
+
+        const formatOptions = [
+            { key: 'mcq', label: 'MCQ', icon: 'list-circle-outline', desc: 'Multiple choice questions' },
+            { key: 'theory', label: 'Theory', icon: 'create-outline', desc: 'Essay & analysis' },
+            { key: 'both', label: 'Mixed', icon: 'shapes-outline', desc: 'Combination of both' },
+        ];
+
         return (
-            <View className="flex-1 bg-white dark:bg-brand-dark">
-                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 120, paddingTop: 100 }} showsVerticalScrollIndicator={false}>
+            <View className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
+                <Stack.Screen options={{ headerShown: false }} />
+                
+                <ScrollView 
+                    style={{ flex: 1 }} 
+                    contentContainerStyle={{ padding: 24, paddingBottom: 160, paddingTop: insets.top + 20 }} 
+                    showsVerticalScrollIndicator={false}
+                >
+                    <Text className={`text-[32px] font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} mb-8`}>
+                        Build Quiz
+                    </Text>
 
-                    <Text className="text-[32px] font-black tracking-tight text-slate-900 dark:text-white mb-8">Build Quiz</Text>
-
-                    {/* Source Selector Segment Flat Style */}
-                    <View className="flex-row bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 mb-8 border-2 border-slate-100 dark:border-slate-800">
+                    {/* Source Selector */}
+                    <View className={`flex-row ${isDark ? 'bg-[#161618]' : 'bg-slate-100'} rounded-2xl p-1 mb-8 border ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                         {(['topic', 'file'] as QuizMode[]).map(m => (
-                            <TouchableOpacity key={m} onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                className="flex-1 items-center justify-center py-3 rounded-xl"
-                                style={[
-                                    mode === m ? {
-                                        backgroundColor: isDark ? '#121212' : '#ffffff',
-                                        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1,
-                                        borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0'
-                                    } : {}
-                                ]}>
-                                <Text
-                                    className="font-black text-[14px] uppercase tracking-widest"
-                                    style={{ color: mode === m ? (isDark ? '#ffffff' : '#121212') : (isDark ? '#475569' : '#94a3b8') }}
-                                >
+                            <TouchableOpacity 
+                                key={m} 
+                                onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
+                                className={`flex-1 items-center justify-center py-3 rounded-xl ${mode === m ? (isDark ? 'bg-slate-800' : 'bg-white shadow-sm') : ''}`}
+                            >
+                                <Text className={`font-semibold text-[14px] capitalize ${mode === m ? (isDark ? 'text-white' : 'text-slate-900') : 'text-slate-400'}`}>
                                     {m}
                                 </Text>
                             </TouchableOpacity>
@@ -341,9 +354,9 @@ export default function GenerateQuizScreen() {
                     <View className="mb-8">
                         {mode === 'topic' ? (
                             <>
-                                <Text className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Topic</Text>
+                                <Text className="text-[12px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">Topic</Text>
                                 <TextInput
-                                    className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white focus:border-slate-900 dark:focus:border-white"
+                                    className={`h-[60px] ${isDark ? 'bg-[#161618] border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900'} border-[1.5px] rounded-2xl px-5 text-[16px] font-medium`}
                                     placeholder="e.g. Nigerian History, Algebra..."
                                     placeholderTextColor="#94a3b8"
                                     value={topic}
@@ -352,28 +365,33 @@ export default function GenerateQuizScreen() {
                             </>
                         ) : (
                             <>
-                                <Text className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Document</Text>
+                                <Text className="text-[12px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">Document</Text>
                                 <TouchableOpacity
                                     onPress={handleFileSelect}
                                     disabled={isProcessingFile}
-                                    className="border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[24px] p-8 items-center bg-slate-50 dark:bg-slate-900/50"
+                                    activeOpacity={0.7}
+                                    className={`border-2 border-dashed ${isDark ? 'border-slate-800 bg-[#161618]' : 'border-slate-200 bg-white'} rounded-2xl p-8 items-center`}
                                 >
                                     {isProcessingFile ? (
                                         <View className="items-center py-2">
-                                            <ActivityIndicator size="large" color="#D2B48C" />
-                                            <Text className="text-[15px] font-bold text-brand-primary mt-4">Analyzing...</Text>
+                                            <ActivityIndicator size="small" color="#D2B48C" />
+                                            <Text className="text-[14px] font-medium text-brand-primary mt-4">Analyzing document...</Text>
                                         </View>
                                     ) : selectedFile ? (
                                         <>
-                                            <Ionicons name="document-text" size={40} color="#D2B48C" />
-                                            <Text className="text-[15px] font-bold text-slate-900 dark:text-white mt-4 text-center">{selectedFile.name}</Text>
-                                            <Text className="text-[12px] font-bold text-[#D2B48C] mt-2 uppercase tracking-widest">Attached & Ready</Text>
+                                            <View className="bg-brand-primary/10 w-12 h-12 rounded-xl items-center justify-center mb-4">
+                                                <Ionicons name="document-text" size={24} color="#D2B48C" />
+                                            </View>
+                                            <Text className={`text-[15px] font-semibold ${isDark ? 'text-white' : 'text-slate-900'} text-center mb-1`}>{selectedFile.name}</Text>
+                                            <Text className="text-[12px] font-medium text-brand-primary uppercase tracking-wider">Ready to generate</Text>
                                         </>
                                     ) : (
                                         <>
-                                            <Ionicons name="cloud-upload-outline" size={40} color={isDark ? '#475569' : '#cbd5e1'} />
-                                            <Text className="text-[15px] font-bold text-slate-500 mt-4">Tap to select PDF/DOCX/TXT</Text>
-                                            <Text className="text-[12px] font-bold text-slate-400 mt-2 lowercase">max 5MB • extractable text only</Text>
+                                            <View className={`w-12 h-12 rounded-xl items-center justify-center mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                                                <Ionicons name="cloud-upload-outline" size={24} color={isDark ? '#475569' : '#94a3b8'} />
+                                            </View>
+                                            <Text className={`text-[15px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1`}>Tap to upload PDF/DOCX</Text>
+                                            <Text className="text-[12px] font-medium text-slate-400">max 5MB • extractable text</Text>
                                         </>
                                     )}
                                 </TouchableOpacity>
@@ -381,78 +399,100 @@ export default function GenerateQuizScreen() {
                         )}
                     </View>
 
-                    {/* Settings Base */}
-                    <Text className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Questions</Text>
+                    {/* Question Count */}
+                    <Text className="text-[12px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">Total Questions</Text>
                     <TextInput
-                        className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white focus:border-slate-900 dark:focus:border-white mb-8"
-                        keyboardType="number-pad" value={questionCount} onChangeText={setQuestionCount}
+                        className={`h-[60px] ${isDark ? 'bg-[#161618] border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900'} border-[1.5px] rounded-2xl px-5 text-[16px] font-medium mb-8`}
+                        keyboardType="number-pad" 
+                        value={questionCount} 
+                        onChangeText={setQuestionCount}
                     />
 
-                    <Text className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Difficulty</Text>
-                    <View className="flex-row gap-3 mb-8">
-                        {(['easy', 'medium', 'hard'] as Difficulty[]).map(d => (
-                            <TouchableOpacity key={d} onPress={() => setDifficulty(d)}
-                                className="flex-1 rounded-2xl py-4 items-center justify-center"
-                                style={[
-                                    { borderWidth: 2 },
-                                    difficulty === d
-                                        ? { borderColor: isDark ? '#ffffff' : '#121212', backgroundColor: isDark ? '#ffffff' : '#121212' }
-                                        : { borderColor: isDark ? '#1e293b' : '#e2e8f0', backgroundColor: isDark ? '#121212' : '#ffffff' }
-                                ]}>
-                                <Text
-                                    className="font-black text-[13px] uppercase tracking-widest"
-                                    style={{ color: difficulty === d ? (isDark ? '#121212' : '#ffffff') : '#94a3b8' }}
-                                >
-                                    {d}
-                                </Text>
+                    {/* Difficulty Selection */}
+                    <Text className="text-[12px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">Difficulty</Text>
+                    <View className="gap-3 mb-8">
+                        {difficultyOptions.map((opt) => (
+                            <TouchableOpacity
+                                key={opt.key}
+                                onPress={() => setDifficulty(opt.key as Difficulty)}
+                                activeOpacity={0.8}
+                                className={`flex-row items-center p-4 rounded-2xl border-[1.5px] ${
+                                    difficulty === opt.key
+                                        ? 'border-brand-primary bg-brand-primary/5'
+                                        : isDark ? 'border-slate-800 bg-[#161618]' : 'border-slate-100 bg-white'
+                                }`}
+                            >
+                                <View className={`w-10 h-10 rounded-xl items-center justify-center mr-4 ${
+                                    difficulty === opt.key ? 'bg-brand-primary' : isDark ? 'bg-slate-800' : 'bg-slate-50'
+                                }`}>
+                                    <Ionicons name={opt.icon as any} size={20} color={difficulty === opt.key ? '#fff' : '#D2B48C'} />
+                                </View>
+                                <View className="flex-1">
+                                    <Text className={`font-semibold text-[15px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{opt.label}</Text>
+                                    <Text className="text-[12px] font-medium text-slate-400">{opt.desc}</Text>
+                                </View>
+                                {difficulty === opt.key && (
+                                    <Ionicons name="checkmark-circle" size={22} color="#D2B48C" />
+                                )}
                             </TouchableOpacity>
                         ))}
                     </View>
 
-                    <Text className="text-[12px] font-black uppercase tracking-widest text-slate-400 mb-3">Format</Text>
-                    <View className="flex-row gap-3 mb-8">
-                        {([{ id: 'mcq', label: 'MCQ' }, { id: 'theory', label: 'Theory' }, { id: 'both', label: 'Both' }] as any[]).map(f => (
-                            <TouchableOpacity key={f.id} onPress={() => setFormat(f.id)}
-                                className="flex-1 rounded-2xl py-4 items-center justify-center"
-                                style={[
-                                    { borderWidth: 2 },
-                                    format === f.id
-                                        ? { borderColor: isDark ? '#ffffff' : '#121212', backgroundColor: isDark ? '#ffffff' : '#121212' }
-                                        : { borderColor: isDark ? '#1e293b' : '#e2e8f0', backgroundColor: isDark ? '#121212' : '#ffffff' }
-                                ]}>
-                                <Text
-                                    className="font-black text-[13px] uppercase tracking-widest"
-                                    style={{ color: format === f.id ? (isDark ? '#121212' : '#ffffff') : '#94a3b8' }}
-                                >
-                                    {f.label}
-                                </Text>
+                    {/* Format Selection */}
+                    <Text className="text-[12px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">Format</Text>
+                    <View className="gap-3 mb-8">
+                        {formatOptions.map((opt) => (
+                            <TouchableOpacity
+                                key={opt.key}
+                                onPress={() => setFormat(opt.key as FormatType)}
+                                activeOpacity={0.8}
+                                className={`flex-row items-center p-4 rounded-2xl border-[1.5px] ${
+                                    format === opt.key
+                                        ? 'border-brand-primary bg-brand-primary/5'
+                                        : isDark ? 'border-slate-800 bg-[#161618]' : 'border-slate-100 bg-white'
+                                }`}
+                            >
+                                <View className={`w-10 h-10 rounded-xl items-center justify-center mr-4 ${
+                                    format === opt.key ? 'bg-brand-primary' : isDark ? 'bg-slate-800' : 'bg-slate-50'
+                                }`}>
+                                    <Ionicons name={opt.icon as any} size={20} color={format === opt.key ? '#fff' : '#D2B48C'} />
+                                </View>
+                                <View className="flex-1">
+                                    <Text className={`font-semibold text-[15px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{opt.label}</Text>
+                                    <Text className="text-[12px] font-medium text-slate-400">{opt.desc}</Text>
+                                </View>
+                                {format === opt.key && (
+                                    <Ionicons name="checkmark-circle" size={22} color="#D2B48C" />
+                                )}
                             </TouchableOpacity>
                         ))}
                     </View>
 
-                    {/* Timer */}
-                    <View className="flex-row justify-between items-center mb-4 bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border-2 border-slate-100 dark:border-slate-800">
-                        <View>
-                            <Text className="text-[14px] font-bold text-slate-900 dark:text-white">Strict Timer</Text>
-                            <Text className="text-[12px] font-medium text-slate-500 mt-1">Force submission when time ends</Text>
+                    {/* Timer Toggle */}
+                    <View className={`flex-row justify-between items-center p-5 rounded-2xl border-[1.5px] ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100'} mb-4`}>
+                        <View className="flex-1 mr-4">
+                            <Text className={`text-[15px] font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Strict Timer</Text>
+                            <Text className="text-[12px] font-medium text-slate-400 mt-0.5">Auto-submit when time expires</Text>
                         </View>
                         <TouchableOpacity onPress={() => setTimerEnabled(!timerEnabled)}
-                            className={`w-14 h-8 rounded-full justify-center p-1 px-1.5 transition-colors ${timerEnabled ? 'bg-[#D2B48C]' : 'bg-slate-300 dark:bg-slate-700'}`}>
-                            <View className={`w-6 h-6 rounded-full bg-white shadow-sm`} style={{ transform: [{ translateX: timerEnabled ? 24 : 0 }] }} />
+                            className={`w-12 h-7 rounded-full justify-center p-1 transition-colors ${timerEnabled ? 'bg-brand-primary' : (isDark ? 'bg-slate-800' : 'bg-slate-200')}`}>
+                            <Animated.View className="w-5 h-5 rounded-full bg-white shadow-sm" style={{ transform: [{ translateX: timerEnabled ? 20 : 0 }] }} />
                         </TouchableOpacity>
                     </View>
 
                     {timerEnabled && (
                         <View className="flex-row items-center mb-8 gap-3">
                             <TextInput
-                                className="flex-1 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white"
-                                keyboardType="number-pad" value={timerMinutes} onChangeText={setTimerMinutes} placeholder="10" placeholderTextColor="#94a3b8"
+                                className={`flex-1 h-[60px] ${isDark ? 'bg-[#161618] border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900'} border-[1.5px] rounded-2xl px-5 text-[16px] font-medium`}
+                                keyboardType="number-pad" 
+                                value={timerMinutes} 
+                                onChangeText={setTimerMinutes} 
+                                placeholder="10" 
+                                placeholderTextColor="#94a3b8"
                             />
-                            <Text className="font-black text-[14px] text-slate-400 uppercase tracking-widest w-16">Mins</Text>
+                            <Text className="font-semibold text-slate-400 text-[14px] w-12 text-center">mins</Text>
                         </View>
                     )}
-
-                    <View className="h-4" />
                 </ScrollView>
 
                 {/* Glassmorphic Sticky Footer */}
@@ -511,27 +551,33 @@ export default function GenerateQuizScreen() {
     // ── QUIZ VIEW ───────────────────────────────────────────────────────────────
     if (questions.length > 0 && totalAnswered < questions.length) {
         return (
-            <View className="flex-1 bg-white dark:bg-brand-dark">
+            <View className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
                 <Stack.Screen options={{ 
-                    title: 'Quiz Active', 
+                    title: 'Quiz', 
                     headerShown: true, 
-                    headerStyle: { 
-                        backgroundColor: bgColor,
-                    }, 
+                    headerStyle: { backgroundColor: bgColor }, 
+                    headerTitleStyle: { fontWeight: '600' },
                     headerTintColor: tintColor, 
                     headerBackVisible: false, 
                     headerShadowVisible: false 
                 }} />
 
-                {/* Flat header bar */}
-                <View className="border-b-0 px-6 py-4 flex-row items-center justify-between bg-white dark:bg-brand-dark z-20">
-                    <Text className="text-slate-500 font-black text-[12px] uppercase tracking-widest">{totalAnswered}/{questions.length} DONE</Text>
+                {/* Progress Header */}
+                <View className={`px-6 py-4 flex-row items-center justify-between border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <View className="flex-row items-center">
+                        <View className={`w-8 h-8 rounded-lg items-center justify-center mr-3 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                            <Text className={`font-semibold text-[13px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{totalAnswered + 1}</Text>
+                        </View>
+                        <Text className="text-slate-400 font-medium text-[13px] uppercase tracking-wider">Question of {questions.length}</Text>
+                    </View>
+                    
                     {timerEnabled && timeLeft > 0 && (
-                        <View className={`border-2 px-3 py-1 rounded-full ${timeLeft < 60 ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'}`}>
-                            <Text className={`font-black text-[13px] tracking-widest ${timeLeft < 60 ? 'text-red-500' : 'text-slate-900 dark:text-white'}`}>{formatTime(timeLeft)}</Text>
+                        <View className={`px-3 py-1.5 rounded-xl border ${timeLeft < 60 ? 'border-red-500 bg-red-500/5' : (isDark ? 'border-slate-800 bg-[#161618]' : 'border-slate-100 bg-white')}`}>
+                            <Text className={`font-semibold text-[13px] ${timeLeft < 60 ? 'text-red-500' : (isDark ? 'text-slate-400' : 'text-slate-500')}`}>
+                                {formatTime(timeLeft)}
+                            </Text>
                         </View>
                     )}
-                    <Text className="text-[#D2B48C] font-black text-[12px] uppercase tracking-widest">{correctCount} RIGHT</Text>
                 </View>
 
                 <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
@@ -550,83 +596,64 @@ export default function GenerateQuizScreen() {
     // ── RESULTS VIEW ────────────────────────────────────────────────────────────
     const percentage = Math.round((correctCount / questions.length) * 100);
     const getRemark = (pct: number) => {
-        if (pct >= 90) return { title: "GENIUS!", subtitle: "You've completely mastered this topic!", icon: "trophy" };
-        if (pct >= 75) return { title: "WELL DONE!", subtitle: "Excellent performance, keep it up!", icon: "star" };
-        if (pct >= 50) return { title: "SOLID EFFORT!", subtitle: "Good job, but there's room to grow.", icon: "medal" };
-        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: "trending-up" };
+        if (pct >= 90) return { title: "GENIUS!", subtitle: "You've completely mastered this topic!", icon: "trophy-outline" };
+        if (pct >= 75) return { title: "WELL DONE!", subtitle: "Excellent performance, keep it up!", icon: "star-outline" };
+        if (pct >= 50) return { title: "SOLID EFFORT!", subtitle: "Good job, but there's room to grow.", icon: "medal-outline" };
+        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: "trending-up-outline" };
     };
     const remark = getRemark(percentage);
 
     return (
-        <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
+        <View className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
             <Stack.Screen options={{ 
-                title: 'Quiz Results', 
+                title: 'Results', 
                 headerShown: true, 
-                headerStyle: { 
-                    backgroundColor: bgColor,
-                }, 
+                headerStyle: { backgroundColor: bgColor }, 
+                headerTitleStyle: { fontWeight: '600' },
                 headerTintColor: tintColor, 
                 headerBackVisible: false,
                 headerShadowVisible: false
             }} />
 
-            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
-                {/* Motivational Header */}
-                <View className="items-center py-8 pb-4">
-                    <View className="w-20 h-20 bg-[#D2B48C]/10 dark:bg-[#D2B48C]/20 rounded-[28px] items-center justify-center mb-6">
-                        <Ionicons name={remark.icon as any} size={42} color="#D2B48C" />
+            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 150 }}>
+                {/* Score Header */}
+                <View className="items-center py-10">
+                    <View className="w-20 h-20 bg-brand-primary/10 rounded-2xl items-center justify-center mb-6">
+                        <Ionicons name={remark.icon as any} size={40} color="#D2B48C" />
                     </View>
-                    <Text className="text-[#D2B48C] font-black text-[14px] uppercase tracking-[4px] mb-2">{remark.title}</Text>
-                    <Text className="text-slate-900 dark:text-white font-black text-[42px] tracking-tight">{percentage}%</Text>
-                    <Text className="text-slate-500 dark:text-slate-400 font-bold text-[15px] mt-2 text-center px-8">{remark.subtitle}</Text>
+                    <Text className="text-brand-primary font-bold text-[13px] uppercase tracking-[0.2em] mb-2">{remark.title}</Text>
+                    <Text className={`text-[48px] font-semibold tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>{percentage}%</Text>
+                    <Text className="text-slate-500 font-medium text-[15px] mt-2 text-center px-4">{remark.subtitle}</Text>
 
-                    {/* Persistence Indicator */}
-                    <View className="mt-4 flex-row items-center bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full">
-                        {isSavingHistory ? (
-                            <>
-                                <ActivityIndicator size="small" color="#64748b" className="mr-2" />
-                                <Text className="text-slate-500 font-bold text-[11px] uppercase tracking-widest">Syncing Results...</Text>
-                            </>
-                        ) : saveError ? (
-                            <TouchableOpacity onPress={saveHistory} className="flex-row items-center">
-                                <Ionicons name="alert-circle" size={14} color="#ef4444" className="mr-2" />
-                                <Text className="text-red-500 font-bold text-[11px] uppercase tracking-widest">Failed to Save • Retry</Text>
-                            </TouchableOpacity>
-                        ) : isSaved ? (
-                            <>
-                                <Ionicons name="checkmark-circle" size={14} color="#D2B48C" className="mr-2" />
-                                <Text className="text-[#D2B48C] font-bold text-[11px] uppercase tracking-widest">Saved to History</Text>
-                            </>
-                        ) : null}
+                    {/* Meta Info */}
+                    <View className="flex-row mt-8 gap-3">
+                        <View className={`px-4 py-2 rounded-xl flex-row items-center border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100'}`}>
+                            <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+                            <Text className={`font-semibold text-[13px] ml-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{correctCount} Correct</Text>
+                        </View>
+                        <View className={`px-4 py-2 rounded-xl flex-row items-center border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100'}`}>
+                            <Ionicons name="time-outline" size={16} color="#6366f1" />
+                            <Text className={`font-semibold text-[13px] ml-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                {timerEnabled ? formatTime(((parseInt(timerMinutes) || 10) * 60) - timeLeft) : 'No Timer'}
+                            </Text>
+                        </View>
                     </View>
                 </View>
 
-                {/* Score Breakdown */}
-                <View className="flex-row gap-4 mb-8">
-                    <View className="flex-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
-                        <Text className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Correct</Text>
-                        <Text className="text-slate-900 dark:text-white font-black text-2xl">{correctCount}</Text>
-                    </View>
-                    <View className="flex-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
-                        <Text className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Incorrect</Text>
-                        <Text className="text-red-500 font-black text-2xl">{questions.length - correctCount}</Text>
-                    </View>
-                </View>
-
-                {/* Question Summary */}
-                <Text className="text-slate-400 font-black text-[11px] uppercase tracking-widest mb-4 ml-2">Quick Review</Text>
+                {/* Review List */}
+                <Text className={`text-[12px] font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1`}>Review Questions</Text>
                 {questions.map((q, qi) => {
                     const isTheory = q.question_type === 'essay';
                     const isCorrect = isTheory ? !!theoryResults[qi] : selectedAnswers[qi] === q.correct_answer;
                     return (
-                        <View key={qi} className="bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-3xl p-5 mb-3 flex-row items-center">
-                            <View className={`w-8 h-8 rounded-full items-center justify-center mr-4 ${isCorrect ? 'bg-[#D2B48C]/10' : 'bg-red-500/10'}`}>
-                                <Ionicons name={isCorrect ? "checkmark" : "close"} size={18} color={isCorrect ? "#D2B48C" : "#ef4444"} />
+                        <View key={qi} className={`p-4 rounded-2xl border mb-3 flex-row items-center ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100'}`}>
+                            <View className={`w-8 h-8 rounded-lg items-center justify-center mr-4 ${isCorrect ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                                <Ionicons name={isCorrect ? "checkmark" : "close"} size={18} color={isCorrect ? "#10b981" : "#ef4444"} />
                             </View>
                             <View className="flex-1">
-                                <Text className="text-slate-900 dark:text-white font-bold text-[14px]" numberOfLines={1}>{q.question_text}</Text>
-                                <Text className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5" numberOfLines={1}>
-                                    {isTheory ? (isCorrect ? "Mastered" : "Review Topic") : (isCorrect ? `Answer: ${q.correct_answer}` : `Correct: ${q.correct_answer}`)}
+                                <Text className={`font-semibold text-[14px] ${isDark ? 'text-white' : 'text-slate-900'}`} numberOfLines={1}>{q.question_text}</Text>
+                                <Text className="text-slate-400 text-[11px] mt-0.5" numberOfLines={1}>
+                                    {isTheory ? (isCorrect ? "Mastered" : "Review Topic") : (isCorrect ? `Correct Answer` : `Missed Question`)}
                                 </Text>
                             </View>
                         </View>
@@ -644,21 +671,21 @@ export default function GenerateQuizScreen() {
                 </View>
             </View>
 
-            {/* Footer Actions */}
-            <View className="absolute bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 py-8 px-6 border-t-2 border-slate-100 dark:border-slate-800 backdrop-blur-xl">
-                <View className="flex-row gap-3 mb-3">
+            {/* Actions Footer */}
+            <View className={`absolute bottom-0 left-0 right-0 p-6 pb-10 border-t ${isDark ? 'bg-[#0f0f11]/95 border-slate-800' : 'bg-white/95 border-slate-100'}`}>
+                <View className="flex-row gap-3 mb-4">
                     <TouchableOpacity
                         onPress={handleShare}
                         disabled={isSharing}
                         activeOpacity={0.8}
-                        className={`h-[56px] rounded-2xl flex-1 items-center justify-center flex-row border shadow-sm ${isDark ? 'border-slate-800 bg-[#1c1c1e]' : 'border-slate-200 bg-white'}`}
+                        className={`h-[56px] rounded-2xl flex-1 items-center justify-center flex-row border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100'}`}
                     >
                         {isSharing ? (
-                            <ActivityIndicator size="small" color={isDark ? '#fff' : '#000'} />
+                            <ActivityIndicator size="small" color="#D2B48C" />
                         ) : (
                             <>
-                                <Ionicons name="share-outline" size={20} color={isDark ? '#fff' : '#000'} style={{ marginRight: 8 }} />
-                                <Text className={`font-bold text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Share</Text>
+                                <Ionicons name="share-outline" size={20} color={isDark ? '#fff' : '#0f172a'} />
+                                <Text className={`font-bold text-[16px] ml-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Share</Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -667,14 +694,14 @@ export default function GenerateQuizScreen() {
                         onPress={handleExportPDF}
                         disabled={isExporting}
                         activeOpacity={0.8}
-                        className="h-[56px] bg-brand-primary rounded-2xl flex-1 items-center justify-center flex-row shadow-sm"
+                        className="h-[56px] bg-brand-primary rounded-2xl flex-1 items-center justify-center flex-row"
                     >
                         {isExporting ? (
                             <ActivityIndicator size="small" color="white" />
                         ) : (
                             <>
-                                <Ionicons name="document-text-outline" size={20} color="white" style={{ marginRight: 8 }} />
-                                <Text className="text-white font-bold text-[16px]">Export PDF</Text>
+                                <Ionicons name="document-text-outline" size={20} color="white" />
+                                <Text className="text-white font-bold text-[16px] ml-2">Export</Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -683,18 +710,14 @@ export default function GenerateQuizScreen() {
                 <TouchableOpacity
                     onPress={() => { setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); if (timerRef.current) clearInterval(timerRef.current); }}
                     activeOpacity={0.8}
-                    className="bg-slate-100 dark:bg-slate-800 rounded-2xl py-5 items-center justify-center"
+                    className={`h-[56px] rounded-2xl items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}
                 >
-                    <Text className="text-slate-900 dark:text-white font-black text-[16px]">Done</Text>
+                    <Text className={`font-bold text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Return Home</Text>
                 </TouchableOpacity>
             </View>
 
             <RewardModal isVisible={isRewardModalVisible} onClose={() => setIsRewardModalVisible(false)} reward={rewardData} />
-            <OutOfCreditsModal
-                visible={showOutOfCredits}
-                onDismiss={() => setShowOutOfCredits(false)}
-                featureAttempted="quiz"
-            />
+            <OutOfCreditsModal visible={showOutOfCredits} onDismiss={() => setShowOutOfCredits(false)} featureAttempted="quiz" />
         </View>
     );
 }

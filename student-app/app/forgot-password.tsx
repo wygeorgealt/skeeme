@@ -34,12 +34,12 @@ export default function ForgotPasswordScreen() {
         }
     };
 
-    const bgClass = isDark ? "bg-[#121212]" : "bg-white";
+    const bgClass = isDark ? "bg-[#0f0f11]" : "bg-[#fafafa]";
     const textClass = isDark ? "text-white" : "text-slate-900";
     const subtextClass = isDark ? "text-slate-400" : "text-slate-500";
-    const inputBg = isDark ? "bg-[#1c1c1e]" : "bg-slate-100";
-    const inputBorder = isDark ? "border-[#2c2c2e]" : "border-slate-200";
-    const placeholderColor = isDark ? "#8e8e93" : "#94a3b8";
+    const inputBg = isDark ? "bg-[#0f0f11]" : "bg-transparent";
+    const inputBorder = isDark ? "border-slate-800" : "border-slate-200";
+    const placeholderColor = isDark ? "#475569" : "#94a3b8";
 
     return (
         <KeyboardAvoidingView
@@ -57,39 +57,45 @@ export default function ForgotPasswordScreen() {
                 </TouchableOpacity>
             </View>
 
-            <View className="flex-1 px-8 pt-8">
-                <Text className={`${textClass} text-[32px] font-black tracking-tight leading-[38px] mb-2`}>
-                    Reset password.
-                </Text>
-                <Text className={`${subtextClass} text-[15px] font-medium leading-relaxed mb-8`}>
-                    Enter the email address linked to your account and we'll send you a 6-digit reset code.
-                </Text>
-
-                <View className={`${inputBg} ${inputBorder} rounded-2xl px-4 flex-row items-center border mb-6`}>
-                    <TextInput
-                        className="flex-1 font-medium text-[17px] h-[56px]"
-                        placeholder="Email address"
-                        placeholderTextColor={placeholderColor}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        value={email}
-                        onChangeText={setEmail}
-                        style={{ color: isDark ? 'white' : 'black' }}
-                    />
+            <View className="flex-1 px-10 pt-10">
+                <View className="mb-12">
+                    <Text className={`${textClass} text-[40px] font-bold tracking-tight leading-[46px] mb-3`}>
+                        Reset.
+                    </Text>
+                    <Text className={`${subtextClass} text-[16px] font-medium leading-relaxed`}>
+                        Enter your email and we'll send you a 6-digit reset code.
+                    </Text>
                 </View>
 
-                <TouchableOpacity
-                    onPress={handleSend}
-                    disabled={isLoading || !email.trim()}
-                    activeOpacity={0.8}
-                    className={`w-full h-[56px] bg-brand-primary rounded-2xl items-center justify-center shadow-sm ${(isLoading || !email.trim()) ? 'opacity-70' : ''}`}
-                >
-                    {isLoading ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text className="font-bold text-[16px] text-white">Send Reset Code</Text>
-                    )}
-                </TouchableOpacity>
+                <View className="mb-8">
+                    <View className={`${inputBg} ${inputBorder} rounded-[24px] px-5 flex-row items-center border focus:border-slate-900 dark:focus:border-white`}>
+                        <TextInput
+                            className="flex-1 font-medium text-[17px] h-[64px]"
+                            placeholder="Email address"
+                            placeholderTextColor={placeholderColor}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            value={email}
+                            onChangeText={setEmail}
+                            style={{ color: isDark ? 'white' : 'black' }}
+                        />
+                    </View>
+                </View>
+
+                <View className="mt-4">
+                    <TouchableOpacity
+                        onPress={handleSend}
+                        disabled={isLoading || !email.trim()}
+                        activeOpacity={0.9}
+                        className={`w-full h-[64px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${(isLoading || !email.trim()) ? 'opacity-70' : ''}`}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text className="font-bold text-[16px] text-white tracking-wide">Send Reset Code</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
             </View>
         </KeyboardAvoidingView>
     );

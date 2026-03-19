@@ -43,14 +43,14 @@ function FlashcardItem({ card, isActive, isDark }: { card: Card; isActive: boole
     }, [card.id, flipAnim]);
 
     const handleFlip = () => {
-        flipAnim.value = withSpring(flipped ? 0 : 180, { damping: 20, stiffness: 100 });
+        flipAnim.value = withSpring(flipped ? 0 : 180, { damping: 20, stiffness: 80 });
         setFlipped(!flipped);
     };
 
     const frontAnimatedStyle = useAnimatedStyle(() => {
         const rotateY = interpolate(flipAnim.value, [0, 180], [0, 180]);
         return {
-            transform: [{ perspective: 1000 }, { rotateY: `${rotateY}deg` }],
+            transform: [{ perspective: 1200 }, { rotateY: `${rotateY}deg` }],
             backfaceVisibility: 'hidden',
             zIndex: flipped ? 0 : 1,
         };
@@ -59,7 +59,7 @@ function FlashcardItem({ card, isActive, isDark }: { card: Card; isActive: boole
     const backAnimatedStyle = useAnimatedStyle(() => {
         const rotateY = interpolate(flipAnim.value, [0, 180], [180, 360]);
         return {
-            transform: [{ perspective: 1000 }, { rotateY: `${rotateY}deg` }],
+            transform: [{ perspective: 1200 }, { rotateY: `${rotateY}deg` }],
             backfaceVisibility: 'hidden',
             position: 'absolute',
             top: 0, left: 0, right: 0, bottom: 0,
@@ -68,47 +68,48 @@ function FlashcardItem({ card, isActive, isDark }: { card: Card; isActive: boole
     });
 
     return (
-        <View style={{ flex: 1, padding: 24, justifyContent: 'center' }}>
-            <TouchableOpacity activeOpacity={0.9} onPress={handleFlip} style={{ flex: 0.8 }}>
+        <View className="flex-1 p-6 justify-center">
+            <TouchableOpacity 
+                activeOpacity={0.95} 
+                onPress={handleFlip} 
+                className="flex-[0.85]"
+            >
                 {/* FRONT */}
-                <Animated.View style={[frontAnimatedStyle, {
-                    flex: 1, borderRadius: 32, padding: 32,
-                    justifyContent: 'center', alignItems: 'center',
-                    shadowColor: '#D2B48C', shadowOpacity: 0.1, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 10,
-                    borderWidth: 1, borderColor: isDark ? '#334155' : '#e2e8f0'
-                }]} className="bg-white dark:bg-slate-800">
-                    <View style={{ position: 'absolute', top: 24, right: 24 }}>
-                        <Ionicons name="sparkles" size={24} color="#D2B48C" style={{ opacity: 0.3 }} />
+                <Animated.View 
+                    style={[frontAnimatedStyle]} 
+                    className={`flex-1 rounded-[40px] p-10 justify-center items-center border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-xl shadow-slate-200'}`}
+                >
+                    <View className="absolute top-10 right-10">
+                        <Ionicons name="sparkles" size={24} color="#D2B48C" style={{ opacity: 0.2 }} />
                     </View>
                     <MathText
                         content={card.front}
-                        color={isDark ? 'white' : '#121212'}
-                        fontSize={24}
-                        containerStyle={{ flex: 0.6 }}
+                        color={isDark ? 'white' : '#0f172a'}
+                        fontSize={26}
+                        containerStyle={{ width: '100%', alignItems: 'center' }}
                     />
-                    <Text style={{ position: 'absolute', bottom: 24, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }} className="text-slate-400 dark:text-slate-500">
-                        Tap to flip
-                    </Text>
+                    <View className="absolute bottom-10 items-center">
+                        <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-[0.2em]">Tap to reveal answer</Text>
+                    </View>
                 </Animated.View>
 
                 {/* BACK */}
-                <Animated.View style={[backAnimatedStyle, {
-                    flex: 1, backgroundColor: '#D2B48C', borderRadius: 32, padding: 32,
-                    justifyContent: 'center', alignItems: 'center',
-                    shadowColor: '#D2B48C', shadowOpacity: 0.3, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 10,
-                }]}>
-                    <View style={{ position: 'absolute', top: 24, right: 24 }}>
-                        <Ionicons name="checkmark-circle" size={24} color="rgba(255,255,255,0.4)" />
+                <Animated.View 
+                    style={[backAnimatedStyle]} 
+                    className="flex-1 bg-brand-primary rounded-[40px] p-10 justify-center items-center"
+                >
+                    <View className="absolute top-10 right-10">
+                        <Ionicons name="checkmark-circle" size={24} color="rgba(255,255,255,0.3)" />
                     </View>
                     <MathText
                         content={card.back}
                         color="white"
-                        fontSize={20}
-                        containerStyle={{ flex: 0.6 }}
+                        fontSize={22}
+                        containerStyle={{ width: '100%', alignItems: 'center' }}
                     />
-                    <Text style={{ position: 'absolute', bottom: 24, fontSize: 13, fontWeight: '700', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 1 }}>
-                        Tap to flip back
-                    </Text>
+                    <View className="absolute bottom-10 items-center">
+                        <Text className="text-white/60 font-bold text-[11px] uppercase tracking-[0.2em]">Tap to view question</Text>
+                    </View>
                 </Animated.View>
             </TouchableOpacity>
         </View>
@@ -232,16 +233,24 @@ export default function StudyDeckScreen() {
     };
 
     return (
-        <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
-            <Stack.Screen options={{ title: deck.title || 'Study Deck' }} />
+        <View className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
+            <Stack.Screen options={{ 
+                title: deck.title || 'Study Deck',
+                headerShown: true,
+                headerStyle: { backgroundColor: isDark ? '#0f0f11' : '#fafafa' },
+                headerTintColor: isDark ? 'white' : '#0f172a',
+                headerShadowVisible: false
+            }} />
 
-            {/* Progress Bar */}
-            <View className="px-6 pt-6 pb-2">
-                <View className="flex-row justify-between items-center mb-2">
-                    <Text className="text-slate-500 dark:text-slate-400 font-bold text-xs uppercase tracking-widest">Progress</Text>
-                    <Text className="text-brand-primary font-black text-sm">{currentIndex + 1} / {cards.length}</Text>
+            {/* Progress Bar Area */}
+            <View className="px-8 pt-8 pb-4">
+                <View className="flex-row justify-between items-center mb-4">
+                    <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-[0.2em]">Learning Session</Text>
+                    <View className={`px-3 py-1 rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                        <Text className={`font-bold text-[12px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{currentIndex + 1} of {cards.length}</Text>
+                    </View>
                 </View>
-                <View className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <View className={`h-1.5 w-full rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
                     <Animated.View
                         className="h-full bg-brand-primary rounded-full"
                         style={{ width: `${progress}%` }}
@@ -254,9 +263,10 @@ export default function StudyDeckScreen() {
                 ref={scrollRef}
                 horizontal
                 pagingEnabled
+                scrollEnabled={true}
                 showsHorizontalScrollIndicator={false}
                 onMomentumScrollEnd={handleScroll}
-                style={{ flex: 1 }}
+                className="flex-1"
                 contentContainerStyle={{ flexGrow: 1 }}
             >
                 {cards.map((card, index) => (
@@ -267,23 +277,30 @@ export default function StudyDeckScreen() {
             </ScrollView>
 
             {/* Controls */}
-            <View className="px-6 pb-12 pt-4 flex-row justify-between items-center gap-4">
+            <View className={`px-8 pb-12 pt-6 flex-row items-center gap-4`}>
                 <TouchableOpacity
                     onPress={prevCard}
                     disabled={currentIndex === 0}
-                    className={`size-14 rounded-full items-center justify-center border-2 border-slate-200 dark:border-slate-700 ${currentIndex === 0 ? 'opacity-30' : 'bg-white dark:bg-slate-800'}`}
+                    activeOpacity={0.8}
+                    className={`h-[60px] w-[60px] rounded-full items-center justify-center border-2 ${currentIndex === 0 ? 'opacity-20 border-slate-200 dark:border-slate-800' : (isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm')}`}
                 >
-                    <Ionicons name="arrow-back" size={24} color="#64748b" />
+                    <Ionicons name="arrow-back" size={24} color={isDark ? 'white' : '#0f172a'} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     onPress={currentIndex === cards.length - 1 ? () => router.back() : nextCard}
-                    className={`flex-1 rounded-full py-4 items-center justify-center ${currentIndex === cards.length - 1 ? 'bg-brand-primary' : 'bg-slate-900 border-2 border-slate-900'}`}
                     activeOpacity={0.8}
+                    className={`flex-1 h-[60px] rounded-2xl items-center justify-center flex-row ${currentIndex === cards.length - 1 ? 'bg-brand-primary' : (isDark ? 'bg-white' : 'bg-slate-900 shadow-sm')}`}
                 >
-                    <Text className="text-white font-black text-base">
-                        {currentIndex === cards.length - 1 ? 'Finish Deck' : 'Next Card'}
+                    <Text className={`font-bold text-[16px] ${currentIndex === cards.length - 1 ? 'text-white' : (isDark ? 'text-slate-900' : 'text-white')}`}>
+                        {currentIndex === cards.length - 1 ? 'Complete Session' : 'Next Card'}
                     </Text>
+                    <Ionicons 
+                        name={currentIndex === cards.length - 1 ? "checkmark-done" : "arrow-forward"} 
+                        size={20} 
+                        color={currentIndex === cards.length - 1 ? 'white' : (isDark ? '#0f172a' : 'white')} 
+                        style={{ marginLeft: 8 }}
+                    />
                 </TouchableOpacity>
             </View>
         </View>

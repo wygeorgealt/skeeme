@@ -38,14 +38,18 @@ export function TheoryCard({
     };
 
     return (
-        <View style={styles.cardOuter}>
-            <View className="bg-white dark:bg-brand-dark rounded-[24px] p-6 border-2 border-brand-primary/10 dark:border-brand-primary/20">
-                <View style={styles.cardHeader}>
-                    <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400">Q{qi + 1} · Theory</Text>
-                    <View style={[styles.diffBadge, { borderWidth: 1, borderColor: DIFF_COLORS[q.difficulty_level] ?? '#FCD34D' }]}>
-                        <Text style={[styles.diffText, { color: DIFF_COLORS[q.difficulty_level] ?? '#FCD34D' }]}>{q.difficulty_level}</Text>
+        <View className="mb-8">
+            <View className={`rounded-[32px] p-6 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                {/* Header */}
+                <View className="flex-row justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/50">
+                    <Text className="text-[12px] font-bold tracking-widest uppercase text-slate-400">Question {qi + 1}</Text>
+                    <View className={`px-2.5 py-1 rounded-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                        <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            {q.difficulty_level}
+                        </Text>
                     </View>
                 </View>
+
                 <MathText
                     content={q.question_text}
                     color={isDark ? 'white' : '#121212'}
@@ -54,54 +58,56 @@ export function TheoryCard({
                 />
 
                 {result ? (
-                    <View style={{ marginTop: 20 }}>
-                        <View
-                            className="flex-row items-center border-[2px] rounded-xl p-4 mb-6"
-                            style={[
-                                result.passed
-                                    ? { borderColor: '#D2B48C', backgroundColor: 'rgba(46, 189, 133, 0.1)' }
-                                    : { borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }
-                            ]}
-                        >
-                            <Ionicons name={result.passed ? 'star' : 'code-outline'} size={24} color={result.passed ? '#D2B48C' : '#ef4444'} />
-                            <View style={{ marginLeft: 12 }}>
-                                <Text className={`text-[19px] font-black tracking-tight ${result.passed ? 'text-[#D2B48C]' : 'text-red-500'}`}>
+                    <View className="mt-8">
+                        <View className={`p-5 rounded-2xl border-2 flex-row items-center mb-6 ${result.passed ? 'border-brand-primary bg-brand-primary/5' : 'border-red-500 bg-red-500/5'}`}>
+                            <View className={`w-12 h-12 rounded-xl items-center justify-center mr-4 ${result.passed ? 'bg-brand-primary' : 'bg-red-500'}`}>
+                                <Ionicons name={result.passed ? "star" : "alert-circle"} size={24} color="#fff" />
+                            </View>
+                            <View>
+                                <Text className={`text-[20px] font-bold tracking-tight ${result.passed ? 'text-brand-primary' : 'text-red-500'}`}>
                                     {result.score}/{result.max} marks
                                 </Text>
-                                <Text className={`text-[12px] font-bold uppercase tracking-widest mt-0.5 ${result.passed ? 'text-[#D2B48C]/70' : 'text-red-500/70'}`}>
-                                    {result.passed ? 'Passed' : 'Below passing'}
+                                <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-widest mt-0.5">
+                                    {result.passed ? "Success" : "Needs Review"}
                                 </Text>
                             </View>
                         </View>
-                        <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400 mb-2">AI Feedback</Text>
-                        <MathText
-                            content={result.feedback}
-                            color={isDark ? '#e2e8f0' : '#1e293b'}
-                            fontSize={15}
-                            containerStyle={{ backgroundColor: isDark ? '#1e293b' : '#f8fafc', padding: 16, borderRadius: 12, borderWeight: 1, borderColor: isDark ? '#334155' : '#f1f5f9' }}
-                        />
+
+                        <Text className="text-[12px] font-bold tracking-widest uppercase text-slate-400 mb-3 ml-1">AI Feedback</Text>
+                        <View className={`p-5 rounded-2xl border ${isDark ? 'bg-[#0f0f11] border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                            <MathText
+                                content={result.feedback}
+                                color={isDark ? '#CBD5E1' : '#475569'}
+                                fontSize={15}
+                            />
+                        </View>
                     </View>
                 ) : (
-                    <View style={{ marginTop: 20 }}>
+                    <View className="mt-8">
                         <TextInput
                             multiline
                             placeholder="Write your answer..."
                             placeholderTextColor="#94a3b8"
                             value={answer}
                             onChangeText={setAnswer}
-                            className="bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-[15px] text-slate-900 dark:text-white h-[140px] mb-4 font-medium"
+                            className={`p-5 rounded-2xl border-2 ${isDark ? 'bg-[#0f0f11] border-slate-800 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'} h-[160px] mb-6 text-[15px] font-medium`}
                             textAlignVertical="top"
                             editable={!grading}
                         />
+
                         <TouchableOpacity
                             onPress={handleSubmit}
-                            disabled={grading}
-                            className={`rounded-xl py-4 flex-row items-center justify-center ${grading ? 'bg-slate-300 dark:bg-slate-700' : 'bg-brand-primary'}`}
+                            disabled={grading || answer.trim().length === 0}
+                            activeOpacity={0.8}
+                            className={`h-[56px] rounded-2xl items-center justify-center flex-row ${grading ? 'bg-slate-200 dark:bg-slate-800' : 'bg-brand-primary shadow-sm'}`}
                         >
                             {grading ? (
                                 <ActivityIndicator color="#94a3b8" size="small" />
                             ) : (
-                                <Text className="text-white dark:text-slate-900 font-bold text-[16px]">Mark Answer</Text>
+                                <>
+                                    <Ionicons name="sparkles" size={18} color="#fff" />
+                                    <Text className="text-white font-bold text-[16px] ml-2">Mark Answer</Text>
+                                </>
                             )}
                         </TouchableOpacity>
                     </View>

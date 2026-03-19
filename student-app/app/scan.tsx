@@ -152,15 +152,14 @@ export default function ScanScreen() {
     };
 
     return (
-        <View className="flex-1 bg-white dark:bg-brand-dark">
+        <View className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
             <Stack.Screen options={{
                 title: 'Scan & Solve',
                 headerShown: true,
                 headerBackVisible: false,
                 headerShadowVisible: false,
-                headerStyle: { 
-                    backgroundColor: bgColor,
-                },
+                headerStyle: { backgroundColor: isDark ? '#0f0f11' : '#fafafa' },
+                headerTitleStyle: { fontWeight: '600' },
                 headerTintColor: tintColor,
             }} />
 
@@ -170,57 +169,56 @@ export default function ScanScreen() {
 
                 {!imageUri && results.length === 0 && (
                     <View className="items-center mt-6">
-                        <View className="w-48 h-48 border-4 border-dashed border-brand-primary/30 dark:border-brand-primary/50 rounded-[32px] items-center justify-center mb-8 bg-brand-primary/5 dark:bg-brand-primary/10">
+                        <View className={`w-48 h-48 rounded-[40px] border-2 border-dashed items-center justify-center mb-10 ${isDark ? 'bg-[#161618] border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
                             <Ionicons name="scan-outline" size={72} color="#D2B48C" />
-                            <Text className="text-brand-primary/60 dark:text-brand-primary/80 font-bold text-xs mt-3 uppercase tracking-widest">Document Scanner</Text>
+                            <Text className="text-slate-400 font-bold text-[10px] mt-4 uppercase tracking-[0.2em]">Document Scanner</Text>
                         </View>
 
-                        <Text className="text-slate-900 dark:text-white font-black text-2xl text-center mb-2 tracking-tight">Scan Question(s)</Text>
-                        <Text className="text-slate-500 dark:text-slate-400 text-center font-medium text-sm mb-10 px-4 leading-relaxed">
+                        <Text className={`font-semibold text-[26px] text-center mb-3 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Scan Question(s)</Text>
+                        <Text className="text-slate-500 text-center font-medium text-[15px] mb-12 px-6 leading-relaxed">
                             Snap a page or question. Skeeme will instantly detect and solve every sub-question (1a, 1b, etc).
                         </Text>
 
                         <View className="flex-row w-full gap-3">
-                            <TouchableOpacity onPress={() => pickImage(true)} className="flex-1 bg-brand-primary rounded-xl py-[18px] items-center justify-center shadow-lg shadow-brand-primary/20" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Scan from Camera">
-                                <View className="flex-row items-center">
-                                    <Ionicons name="camera" size={20} color="white" />
-                                    <Text className="text-white font-black ml-2 text-base">Camera</Text>
-                                </View>
+                            <TouchableOpacity onPress={() => pickImage(true)} activeOpacity={0.8} className="flex-1 h-[56px] bg-brand-primary rounded-2xl items-center justify-center flex-row shadow-sm">
+                                <Ionicons name="camera" size={20} color="white" />
+                                <Text className="text-white font-bold ml-2 text-[16px]">Camera</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => pickImage(false)} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl py-[18px] items-center justify-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Choose from Gallery">
-                                <View className="flex-row items-center">
-                                    <Ionicons name="images" size={20} color={isDark ? '#e2e8f0' : '#334155'} />
-                                    <Text className="text-slate-700 dark:text-slate-200 font-bold ml-2 text-base">Gallery</Text>
-                                </View>
+                            <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} className={`flex-1 h-[56px] rounded-2xl items-center justify-center flex-row border shadow-sm ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100'}`}>
+                                <Ionicons name="images" size={20} color={isDark ? '#fff' : '#0f172a'} />
+                                <Text className={`font-bold ml-2 text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Gallery</Text>
                             </TouchableOpacity>
                         </View>
-                        <View className="flex-row items-center mt-8 bg-brand-primary/5 dark:bg-brand-primary/10 px-5 py-4 rounded-xl border border-brand-primary/20 dark:border-brand-primary/30 w-full justify-center">
-                            <Ionicons name="flash" size={16} color="#D2B48C" />
-                            <Text className="text-brand-primary font-bold text-xs ml-2">{BASE_SCAN_COST} credits base + {COST_PER_SOLUTION} per question</Text>
+                        
+                        <View className={`mt-10 px-5 py-4 rounded-2xl border flex-row items-center w-full justify-center ${isDark ? 'bg-[#161618]/50 border-slate-800' : 'bg-white border-slate-100'}`}>
+                            <Ionicons name="flash-outline" size={16} color="#D2B48C" />
+                            <Text className="text-slate-500 font-semibold text-[13px] ml-2">
+                                <Text className="text-[#D2B48C]">{BASE_SCAN_COST} cr</Text> base + <Text className="text-[#D2B48C]">{COST_PER_SOLUTION} cr</Text> per question
+                            </Text>
                         </View>
                     </View>
                 )}
 
                 {imageUri && results.length === 0 && (
                     <View className="items-center">
-                        <View className="w-full rounded-[24px] overflow-hidden border-2 border-slate-200 dark:border-slate-700 mb-6 bg-slate-100 dark:bg-slate-900">
+                        <View className={`w-full rounded-[32px] overflow-hidden border mb-8 ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-200'}`}>
                             <Image source={{ uri: imageUri }} style={{ width: '100%', height: 350 }} contentFit="cover" />
                         </View>
 
                         {loading ? (
-                            <View className="items-center py-10 w-full bg-brand-primary/5 rounded-[20px] border border-brand-primary/20">
+                            <View className={`items-center py-10 w-full rounded-[32px] border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100'}`}>
                                 <ActivityIndicator size="large" color="#D2B48C" />
-                                <Text className="text-brand-primary font-black mt-5 text-[17px] tracking-tight">{loadingStage || 'Processing...'}</Text>
-                                <Text className="text-brand-primary/60 font-medium text-sm mt-1">Skeeme AI is working hard</Text>
+                                <Text className={`font-bold mt-5 text-[17px] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{loadingStage || 'Processing...'}</Text>
+                                <Text className="text-slate-500 font-medium text-sm mt-1">Skeeme AI is working hard</Text>
                             </View>
                         ) : (
                             <View className="w-full gap-3">
-                                <TouchableOpacity onPress={handleSolve} className="bg-[#D2B48C] rounded-xl py-4 items-center flex-row justify-center shadow-sm" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Solve Everything">
+                                <TouchableOpacity onPress={handleSolve} activeOpacity={0.8} className="h-[56px] bg-brand-primary rounded-2xl items-center flex-row justify-center shadow-sm">
                                     <Ionicons name="sparkles" size={20} color="#fff" />
-                                    <Text className="text-white font-black ml-2 text-[17px]">Solve Everything</Text>
+                                    <Text className="text-white font-bold ml-2 text-[17px]">Solve Everything</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={resetScan} className="bg-slate-100 dark:bg-slate-800 rounded-xl py-4 items-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Retake Photo">
-                                    <Text className="text-slate-700 dark:text-slate-300 font-bold text-[15px]">Retake Photo</Text>
+                                <TouchableOpacity onPress={resetScan} activeOpacity={0.8} className={`h-[56px] rounded-2xl items-center justify-center border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
+                                    <Text className={`font-bold text-[15px] ${isDark ? 'text-white' : 'text-slate-600'}`}>Retake Photo</Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -229,70 +227,70 @@ export default function ScanScreen() {
 
                 {results.length > 0 && (
                     <View>
-                        <View className="flex-row items-center justify-between mb-8 bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <View className={`flex-row items-center justify-between mb-10 p-5 rounded-3xl border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
                             <View>
-                                <Text className="text-slate-900 dark:text-white font-black text-lg tracking-tight">{results.length} Results</Text>
-                                <Text className="text-slate-500 font-medium text-xs mt-0.5">Deep extraction complete</Text>
+                                <Text className={`font-bold text-[18px] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{results.length} Extracted Questions</Text>
+                                <Text className="text-slate-500 font-medium text-[13px] mt-0.5">Deep extraction complete</Text>
                             </View>
-                            <View className="bg-slate-900 dark:bg-white px-3 py-1.5 rounded-full">
-                                <Text className="text-white dark:text-slate-900 font-black text-[11px] uppercase tracking-widest">-{lastScanCost} cr</Text>
+                            <View className="bg-brand-primary px-3 py-1.5 rounded-xl">
+                                <Text className="text-white font-bold text-[11px] uppercase tracking-wider">-{lastScanCost} cr</Text>
                             </View>
                         </View>
 
                         {results.map((item, index) => (
-                            <View key={index} className="mb-10 w-full pt-4 border-t-2 border-slate-100 dark:border-slate-800">
-                                <View className="flex-row items-center justify-between mb-5">
+                            <View key={index} className={`mb-10 w-full p-6 rounded-[32px] border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                                <View className="flex-row items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/50">
                                     <View className="flex-row items-center gap-2">
-                                        <Text className="text-slate-400 dark:text-slate-500 font-black text-[13px] uppercase tracking-widest">Question {index + 1}</Text>
-                                        <View className={`px-2 py-0.5 rounded-full ${item.type === 'theory' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-emerald-100 dark:bg-emerald-900/30'}`}>
-                                            <Text className={`font-black text-[9px] uppercase tracking-widest ${item.type === 'theory' ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{item.type === 'theory' ? 'Theory' : 'Calc'}</Text>
+                                        <Text className="text-slate-400 font-bold text-[12px] uppercase tracking-widest">Question {index + 1}</Text>
+                                        <View className={`px-2 py-0.5 rounded-lg border ${item.type === 'theory' ? 'border-blue-500/20 bg-blue-500/5' : 'border-emerald-500/20 bg-emerald-500/5'}`}>
+                                            <Text className={`font-bold text-[9px] uppercase tracking-widest ${item.type === 'theory' ? 'text-blue-500' : 'text-emerald-500'}`}>{item.type === 'theory' ? 'Theory' : 'Calc'}</Text>
                                         </View>
                                     </View>
                                     {item.topic && (
-                                        <View className="bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
-                                            <Text className="text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest">{item.topic}</Text>
+                                        <View className={`px-3 py-1 rounded-full border ${isDark ? 'bg-[#0f0f11] border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                                            <Text className="text-slate-500 font-bold text-[10px] uppercase tracking-widest">{item.topic}</Text>
                                         </View>
                                     )}
                                 </View>
-                                <MathText content={item.question} color={isDark ? 'white' : '#121212'} fontSize={19} containerStyle={{ marginBottom: 24 }} />
+                                <MathText content={item.question} color={isDark ? 'white' : '#121212'} fontSize={18} containerStyle={{ marginBottom: 24 }} />
 
-                                {/* ── Calculation: Step-by-step + Final Answer ── */}
                                 {(item.type !== 'theory') && (
-                                    <>
+                                    <View className="gap-6">
                                         {item.steps && item.steps.length > 0 && (
-                                            <View className="mb-6 pl-4 border-l-2 border-emerald-300 dark:border-emerald-700">
-                                                <Text className="text-slate-400 dark:text-slate-500 font-bold text-[11px] uppercase tracking-widest mb-3">Solution Steps</Text>
+                                            <View className={`p-5 rounded-2xl border ${isDark ? 'bg-[#0f0f11] border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                                                <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-widest mb-4">Solution Steps</Text>
                                                 {item.steps.map((step, i) => (
                                                     <View key={i} className="flex-row mb-3">
-                                                        <Text className="text-emerald-500 dark:text-emerald-400 font-black text-sm w-5">{i + 1}.</Text>
-                                                        <MathText content={step} color={isDark ? '#cbd5e1' : '#334155'} fontSize={15} containerStyle={{ flex: 1 }} />
+                                                        <View className="w-6 h-6 rounded-full bg-emerald-500/10 items-center justify-center mr-3 mt-0.5">
+                                                            <Text className="text-emerald-500 font-bold text-[12px]">{i + 1}</Text>
+                                                        </View>
+                                                        <MathText content={step} color={isDark ? '#cbd5e1' : '#475569'} fontSize={15} containerStyle={{ flex: 1 }} />
                                                     </View>
                                                 ))}
                                             </View>
                                         )}
-                                        <View className="bg-emerald-50 dark:bg-emerald-900/20 rounded-[16px] p-5 border border-emerald-200 dark:border-emerald-800">
-                                            <Text className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px] uppercase tracking-widest mb-2">Final Answer</Text>
+                                        <View className="bg-brand-primary/10 rounded-2xl p-5 border border-brand-primary/20">
+                                            <Text className="text-brand-primary font-bold text-[11px] uppercase tracking-widest mb-2">Final Answer</Text>
                                             <MathText content={item.solution} color={isDark ? 'white' : '#121212'} fontSize={18} />
                                         </View>
-                                    </>
+                                    </View>
                                 )}
 
-                                {/* ── Theory: Structured Explanation + Summary ── */}
                                 {item.type === 'theory' && (
-                                    <>
+                                    <View className="gap-6">
                                         {item.explanation ? (
-                                            <View className="mb-6 pl-4 border-l-2 border-blue-300 dark:border-blue-700">
-                                                <Text className="text-slate-400 dark:text-slate-500 font-bold text-[11px] uppercase tracking-widest mb-3">Explanation</Text>
-                                                <MathText content={item.explanation} color={isDark ? '#cbd5e1' : '#334155'} fontSize={15} containerStyle={{ flex: 1 }} />
+                                            <View className={`p-5 rounded-2xl border ${isDark ? 'bg-[#0f0f11] border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                                                <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-widest mb-3">Explanation</Text>
+                                                <MathText content={item.explanation} color={isDark ? '#cbd5e1' : '#475569'} fontSize={15} containerStyle={{ flex: 1 }} />
                                             </View>
                                         ) : null}
                                         {item.summary ? (
-                                            <View className="bg-blue-50 dark:bg-blue-900/20 rounded-[16px] p-5 border border-blue-200 dark:border-blue-800">
-                                                <Text className="text-blue-600 dark:text-blue-400 font-bold text-[11px] uppercase tracking-widest mb-2">Key Takeaway</Text>
-                                                <Text className="text-slate-900 dark:text-white font-bold text-[16px] leading-relaxed">{item.summary}</Text>
+                                            <View className="bg-brand-primary/10 rounded-2xl p-5 border border-brand-primary/20">
+                                                <Text className="text-brand-primary font-bold text-[11px] uppercase tracking-widest mb-2">Key Takeaway</Text>
+                                                <Text className={`font-semibold text-[16px] leading-relaxed ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.summary}</Text>
                                             </View>
                                         ) : null}
-                                    </>
+                                    </View>
                                 )}
                             </View>
                         ))}
@@ -303,12 +301,11 @@ export default function ScanScreen() {
 
             {results.length > 0 && (
                 <BlurView 
-                    intensity={80} 
+                    intensity={isDark ? 40 : 80} 
                     tint={isDark ? "dark" : "light"} 
-                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, paddingBottom: insets.bottom || 24, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                    className={`absolute bottom-0 left-0 right-0 p-6 pb-10 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}
                 >
                     <View className="gap-3">
-                        {/* Practice Similar Questions */}
                         <TouchableOpacity
                             onPress={() => {
                                 const topics = results.map(r => r.topic).filter(Boolean);
@@ -316,25 +313,39 @@ export default function ScanScreen() {
                                 const combinedTopic = uniqueTopics.join(', ') || 'General';
                                 router.push({ pathname: '/generate', params: { topic: combinedTopic } });
                             }}
-                            className="h-[56px] bg-brand-primary rounded-2xl items-center flex-row justify-center shadow-sm"
                             activeOpacity={0.8}
-                            accessibilityRole="button"
-                            accessibilityLabel="Practice Similar Questions"
+                            className="h-[56px] bg-brand-primary rounded-2xl items-center flex-row justify-center shadow-sm"
                         >
-                            <Ionicons name="sparkles" size={20} color="white" style={{ marginRight: 8 }} />
-                            <Text className="text-white font-bold text-[16px]">Practice Similar Questions</Text>
+                            <Ionicons name="sparkles" size={20} color="white" />
+                            <Text className="text-white font-bold text-[16px] ml-2">Practice Similar Quiz</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={handleExport} disabled={loading} className={`h-[56px] rounded-2xl items-center flex-row justify-center border shadow-sm ${isDark ? 'border-slate-800 bg-[#1c1c1e]' : 'border-slate-200 bg-white'}`} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Save as PDF">
-                            {loading ? <ActivityIndicator size="small" color={isDark ? '#fff' : '#000'} /> : <>
-                                <Ionicons name="download-outline" size={20} color={isDark ? '#fff' : '#000'} style={{ marginRight: 8 }} />
-                                <Text className={`font-bold text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Save as PDF</Text>
-                            </>}
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={resetScan} className="bg-slate-100 dark:bg-slate-800 rounded-2xl py-4 items-center flex-row justify-center border border-slate-200 dark:border-slate-700" activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Scan Next Page">
-                            <Ionicons name="camera" size={20} color={isDark ? '#e2e8f0' : '#475569'} />
-                            <Text className="text-slate-700 dark:text-slate-300 font-bold ml-2 text-[17px]">Scan Next Page</Text>
-                        </TouchableOpacity>
+                        <View className="flex-row gap-3">
+                            <TouchableOpacity
+                                onPress={handleExport}
+                                disabled={loading}
+                                activeOpacity={0.8}
+                                className={`h-[56px] rounded-2xl flex-1 items-center flex-row justify-center border shadow-sm ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100'}`}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator size="small" color="#D2B48C" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="share-outline" size={20} color={isDark ? '#fff' : '#0f172a'} />
+                                        <Text className={`font-bold text-[16px] ml-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Share</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={resetScan}
+                                activeOpacity={0.8}
+                                className={`h-[56px] rounded-2xl flex-1 items-center flex-row justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}
+                            >
+                                <Ionicons name="camera-outline" size={20} color={isDark ? '#fff' : '#0f172a'} />
+                                <Text className={`font-bold text-[16px] ml-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Next Scan</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </BlurView>
             )}

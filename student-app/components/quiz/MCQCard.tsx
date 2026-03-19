@@ -21,24 +21,57 @@ export function MCQCard({
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
-    const optionStyle = (opt: string) => {
-        if (!answered) return { bg: isDark ? '#121212' : '#f8fafc', border: isDark ? '#334155' : '#e2e8f0', text: isDark ? '#f8fafc' : '#121212', iconName: null, iconColor: '' };
-        if (opt === q.correct_answer) return { bg: isDark ? 'rgba(46, 189, 133, 0.1)' : '#ecfdf5', border: '#D2B48C', text: '#D2B48C', iconName: 'checkmark-circle', iconColor: '#D2B48C' };
-        if (opt === selectedAnswer) return { bg: isDark ? 'rgba(239, 68, 68, 0.1)' : '#fef2f2', border: '#ef4444', text: '#ef4444', iconName: 'close-circle', iconColor: '#ef4444' };
-        return { bg: isDark ? '#121212' : '#f8fafc', border: isDark ? '#334155' : '#e2e8f0', text: isDark ? '#475569' : '#94a3b8', iconName: null, iconColor: '' };
+    const getOptionStyles = (opt: string) => {
+        const isSelected = selectedAnswer === opt;
+        const isCorrectOpt = opt === q.correct_answer;
+        
+        if (!answered) {
+            return {
+                container: isDark ? 'border-slate-800 bg-[#161618]/50' : 'border-slate-100 bg-slate-50',
+                text: isDark ? 'text-white' : 'text-slate-900',
+                icon: null,
+                iconColor: ''
+            };
+        }
+
+        if (isCorrectOpt) {
+            return {
+                container: 'border-brand-primary bg-brand-primary/10',
+                text: 'text-brand-primary',
+                icon: 'checkmark-circle' as const,
+                iconColor: '#D2B48C'
+            };
+        }
+
+        if (isSelected && !isCorrectOpt) {
+            return {
+                container: 'border-red-500 bg-red-500/10',
+                text: 'text-red-500',
+                icon: 'close-circle' as const,
+                iconColor: '#ef4444'
+            };
+        }
+
+        return {
+            container: isDark ? 'border-slate-800 bg-transparent' : 'border-slate-100 bg-transparent',
+            text: isDark ? 'text-slate-500' : 'text-slate-400',
+            icon: null,
+            iconColor: ''
+        };
     };
 
     const front = (
-        <View className="bg-white dark:bg-brand-dark rounded-[24px] p-6 border-2 border-brand-primary/10 dark:border-brand-primary/20">
+        <View className={`rounded-[32px] p-6 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
             {/* Header */}
-            <View style={styles.cardHeader}>
-                <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400">Q{qi + 1} · MCQ</Text>
-                <View style={[styles.diffBadge, { borderWidth: 1, borderColor: DIFF_COLORS[q.difficulty_level] ?? '#FCD34D' }]}>
-                    <Text style={[styles.diffText, { color: DIFF_COLORS[q.difficulty_level] ?? '#FCD34D' }]}>
+            <View className="flex-row justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/50">
+                <Text className="text-[12px] font-bold tracking-widest uppercase text-slate-400">Question {qi + 1}</Text>
+                <View className={`px-2.5 py-1 rounded-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                    <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                         {q.difficulty_level}
                     </Text>
                 </View>
             </View>
+
             <MathText
                 content={q.question_text}
                 color={isDark ? 'white' : '#121212'}
@@ -47,19 +80,19 @@ export function MCQCard({
             />
 
             {/* Options */}
-            <View style={{ marginTop: 24 }}>
+            <View className="mt-8 gap-3">
                 {q.options.map((opt, oi) => {
-                    const s = optionStyle(opt);
+                    const styles = getOptionStyles(opt);
                     return (
                         <TouchableOpacity
                             key={oi}
-                            activeOpacity={answered ? 1 : 0.7}
+                            activeOpacity={answered ? 1 : 0.8}
                             onPress={() => { if (!answered && !quizFinished) onAnswer(qi, opt); }}
-                            style={[styles.optionBtn, { backgroundColor: s.bg, borderColor: s.border }]}
+                            className={`flex-row items-center p-5 rounded-2xl border-2 ${styles.container}`}
                         >
-                            <Text style={[styles.optionText, { color: s.text, flex: 1 }]}>{opt}</Text>
-                            {s.iconName && (
-                                <Ionicons name={s.iconName as any} size={20} color={s.iconColor} style={{ marginLeft: 8 }} />
+                            <Text className={`flex-1 font-semibold text-[15px] ${styles.text}`}>{opt}</Text>
+                            {styles.icon && (
+                                <Ionicons name={styles.icon} size={22} color={styles.iconColor} />
                             )}
                         </TouchableOpacity>
                     );
@@ -68,59 +101,55 @@ export function MCQCard({
 
             {/* Flip to Explain button */}
             {answered && q.explanation ? (
-                <TouchableOpacity
-                    onPress={() => setFlipped(true)}
-                    style={styles.explainBtn}
-                    activeOpacity={0.7}
-                >
-                    <View
-                        className="rounded-xl px-3 py-1.5 flex-row items-center border"
-                        style={[
-                            isCorrect
-                                ? { borderColor: '#D2B48C', backgroundColor: 'rgba(46, 189, 133, 0.1)' }
-                                : { borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)' }
-                        ]}
-                    >
+                <View className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800/50 flex-row items-center justify-between">
+                    <View className={`px-3 py-1.5 rounded-xl flex-row items-center border ${isCorrect ? 'border-brand-primary bg-brand-primary/5' : 'border-red-500 bg-red-500/5'}`}>
                         <Ionicons name={isCorrect ? 'checkmark' : 'close'} size={14} color={isCorrect ? '#D2B48C' : '#ef4444'} />
-                        <Text
-                            className="font-black ml-1 text-[11px] uppercase tracking-wider"
-                            style={{ color: isCorrect ? '#D2B48C' : '#ef4444' }}
-                        >
+                        <Text className={`font-bold ml-1.5 text-[11px] uppercase tracking-wider ${isCorrect ? 'text-brand-primary' : 'text-red-500'}`}>
                             {isCorrect ? 'Correct' : 'Incorrect'}
                         </Text>
                     </View>
-                    <View className="bg-slate-900 dark:bg-white rounded-xl px-4 py-2">
-                        <Text className="text-white dark:text-slate-900 font-bold text-[12px]">Explain</Text>
-                    </View>
-                </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                        onPress={() => setFlipped(true)}
+                        activeOpacity={0.8}
+                        className={`h-10 px-5 rounded-xl items-center justify-center ${isDark ? 'bg-white' : 'bg-slate-900'}`}
+                    >
+                        <Text className={`font-bold text-[13px] ${isDark ? 'text-slate-900' : 'text-white'}`}>See Explanation</Text>
+                    </TouchableOpacity>
+                </View>
             ) : null}
         </View>
     );
 
     const back = (
-        <View className="bg-slate-50 dark:bg-slate-800 rounded-[24px] p-6 border-2 border-slate-200 dark:border-slate-700">
+        <View className={`rounded-[32px] p-6 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
             <TouchableOpacity onPress={() => setFlipped(false)} className="flex-row items-center mb-6">
-                <Ionicons name="arrow-back" size={16} color={isDark ? '#e2e8f0' : '#121212'} />
-                <Text className="text-slate-900 dark:text-white font-black ml-2 text-[13px] uppercase tracking-widest">Back</Text>
+                <Ionicons name="arrow-back" size={18} color={isDark ? '#fff' : '#0f172a'} />
+                <Text className={`font-bold ml-2 text-[14px] uppercase tracking-widest ${isDark ? 'text-white' : 'text-slate-900'}`}>Back</Text>
             </TouchableOpacity>
-            <Text className="text-[12px] font-black tracking-widest uppercase text-slate-400 mb-2">Explanation</Text>
-            <MathText
-                content={q.explanation || ''}
-                color={isDark ? '#e2e8f0' : '#1e293b'}
-                fontSize={15}
-                containerStyle={{ flex: 1 }}
-            />
+            
+            <Text className="text-[12px] font-bold tracking-widest uppercase text-slate-400 mb-3 ml-1">Explanation</Text>
+            <View className={`p-5 rounded-2xl border ${isDark ? 'bg-[#0f0f11] border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                <MathText
+                    content={q.explanation || ''}
+                    color={isDark ? '#CBD5E1' : '#475569'}
+                    fontSize={15}
+                />
+            </View>
+            
             {!isCorrect && (
-                <View className="mt-6 pt-6 border-t-2 border-slate-200 dark:border-slate-700">
-                    <Text className="text-[10px] font-black tracking-widest uppercase text-[#D2B48C] mb-2">Correct Answer</Text>
-                    <Text className="text-[15px] font-bold text-slate-900 dark:text-white">{q.correct_answer}</Text>
+                <View className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/50">
+                    <Text className="text-[10px] font-bold tracking-widest uppercase text-brand-primary mb-2 ml-1">Correct Answer</Text>
+                    <View className={`p-4 rounded-xl border border-brand-primary/20 bg-brand-primary/5`}>
+                        <Text className={`font-semibold text-[15px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{q.correct_answer}</Text>
+                    </View>
                 </View>
             )}
         </View>
     );
 
     return (
-        <View style={styles.cardOuter}>
+        <View className="mb-8">
             <QuizFlipCard
                 front={front}
                 back={back}
@@ -129,13 +158,3 @@ export function MCQCard({
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    cardOuter: { marginBottom: 24 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 16, borderBottomWidth: 2, borderBottomColor: 'rgba(148, 163, 184, 0.1)' },
-    diffBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-    diffText: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 },
-    optionBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 18, marginBottom: 12 },
-    optionText: { fontSize: 15, fontWeight: '700' },
-    explainBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24, paddingTop: 20, borderTopWidth: 2, borderTopColor: 'rgba(148, 163, 184, 0.1)' },
-});

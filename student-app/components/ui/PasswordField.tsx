@@ -21,13 +21,13 @@ export function PasswordField({
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
-    const inputBgClass = isDark ? "bg-[#1c1c1e]" : "bg-slate-100";
-    const inputBorderClass = isDark ? "border-[#2c2c2e]" : "border-slate-200";
-    const placeholderColor = isDark ? "#8e8e93" : "#94a3b8";
+    const inputBgClass = isDark ? "bg-[#0f0f11]" : "bg-transparent";
+    const inputBorderClass = isDark ? "border-slate-800" : "border-slate-200";
+    const placeholderColor = isDark ? "#475569" : "#94a3b8";
 
     // Use py-1 like signup.tsx but allow overriding padding in container if needed
     return (
-        <View className={`${inputBgClass} ${inputBorderClass} rounded-[16px] px-4 py-1 flex-row items-center border focus:border-brand-primary ${containerClassName}`}>
+        <View className={`${inputBgClass} ${inputBorderClass} rounded-2xl px-4 flex-row items-center border focus:border-slate-900 dark:focus:border-white ${containerClassName}`}>
             <TextInput
                 className="flex-1 font-medium text-[17px] h-[56px]"
                 placeholder={placeholder}

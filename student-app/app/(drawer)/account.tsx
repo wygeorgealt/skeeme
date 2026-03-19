@@ -111,160 +111,151 @@ export default function AccountScreen() {
     if (!user) return null;
 
     const PasswordField = ({
-        label, value, onChangeText, show, onToggle, placeholder = '••••••••', autoComplete,
+        label, value, onChangeText, show, onToggle, placeholder = '••••••••',
     }: {
         label: string; value: string; onChangeText: (v: string) => void;
-        show: boolean; onToggle: () => void; placeholder?: string; autoComplete?: string;
+        show: boolean; onToggle: () => void; placeholder?: string;
     }) => (
         <View className="mb-6">
-            <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-3">{label}</Text>
+            <Text className="text-[11px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-3 ml-1">{label}</Text>
             <View className="relative">
                 <TextInput
-                    className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white pr-14 focus:border-slate-900 dark:focus:border-white"
+                    className={`w-full h-[64px] rounded-2xl px-6 text-[16px] font-bold pr-14 border ${isDark ? 'bg-[#161618] border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-sm'}`}
                     placeholder={placeholder}
-                    placeholderTextColor="#94a3b8"
+                    placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
                     secureTextEntry={!show}
                     value={value}
                     onChangeText={onChangeText}
                 />
                 <TouchableOpacity
                     onPress={onToggle}
-                    className="absolute right-4 top-0 bottom-0 justify-center"
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    className="absolute right-4 top-0 bottom-0 justify-center w-12 items-center"
                 >
-                    <Ionicons name={show ? 'eye-off' : 'eye'} size={20} color="#94a3b8" />
+                    <Ionicons name={show ? 'eye-off-outline' : 'eye-outline'} size={20} color="#94a3b8" />
                 </TouchableOpacity>
             </View>
         </View>
     );
 
+    const isDark = colorScheme === 'dark';
+
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1 bg-white dark:bg-brand-dark"
+            className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}
         >
             <ScrollView
                 className="flex-1"
-                contentContainerStyle={{ paddingBottom: 60 }}
+                contentContainerStyle={{ paddingBottom: 100, paddingTop: 20 }}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
+                {/* Profile Header */}
+                <View className="px-8 mb-10 items-center justify-center">
+                    <View className={`w-24 h-24 rounded-[32px] items-center justify-center border-2 mb-4 ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                        <Text className="text-[32px] font-black text-brand-primary">{user.name.charAt(0)}</Text>
+                    </View>
+                    <Text className={`text-[28px] font-bold tracking-tight mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{user.name}</Text>
+                    <Text className="text-slate-500 font-medium">{user.email}</Text>
+                </View>
+
                 {/* Subscription Overview */}
-                <View className="px-6 py-8">
-                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Subscription</Text>
-                    <View className="bg-slate-50 dark:bg-white/5 rounded-[24px] p-6 border border-slate-200 dark:border-slate-800 flex-row items-center justify-between shadow-sm">
-                        <View>
-                            <Text className="text-[20px] font-black text-slate-900 dark:text-white mb-1 tracking-tight">
-                                {user.is_unlimited ? 'Unlimited Pro' : 'Free Tier'}
-                            </Text>
-                            {user.is_unlimited ? (
-                                <Text className="text-[#D2B48C] font-bold text-[13px] uppercase tracking-widest">Active Subscription</Text>
-                            ) : (
-                                <Text className="text-slate-500 font-bold text-[13px] uppercase tracking-widest">{user.credits} Credits Remaining</Text>
-                            )}
+                <View className="px-8 pb-10">
+                    <Text className="text-[12px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-5 ml-1">Plan Details</Text>
+                    <View className={`rounded-[32px] p-8 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                        <View className="flex-row items-center justify-between mb-6">
+                            <View className={`w-14 h-14 rounded-2xl items-center justify-center ${user.is_unlimited ? 'bg-[#D2B48C]/20' : (isDark ? 'bg-slate-800' : 'bg-slate-50')}`}>
+                                <Ionicons name="sparkles" size={24} color={user.is_unlimited ? "#D2B48C" : "#94a3b8"} />
+                            </View>
                             <TouchableOpacity
                                 onPress={() => router.push('/upgrade')}
-                                className="mt-4 bg-white dark:bg-slate-950 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 self-start"
+                                className={`px-5 py-2.5 rounded-xl border ${isDark ? 'bg-white border-white' : 'bg-slate-950 border-slate-950'}`}
                             >
-                                <Text className="text-slate-900 dark:text-white font-black text-[11px] uppercase tracking-widest">Manage Plan</Text>
+                                <Text className={`font-bold text-[11px] uppercase tracking-widest ${isDark ? 'text-slate-900' : 'text-white'}`}>Manage</Text>
                             </TouchableOpacity>
                         </View>
-                        <View className={`size-14 rounded-full items-center justify-center border-2 ${user.is_unlimited ? 'border-[#D2B48C] bg-[#D2B48C]/10' : 'border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800'}`}>
-                            <Ionicons name="flash" size={24} color={user.is_unlimited ? "#D2B48C" : "#94a3b8"} />
-                        </View>
+                        
+                        <Text className={`text-[22px] font-bold mb-1 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            {user.is_unlimited ? 'Unlimited Pro' : 'Free Academic'}
+                        </Text>
+                        {user.is_unlimited ? (
+                            <Text className="text-[#D2B48C] font-bold text-[13px] uppercase tracking-[0.1em]">Full AI Access Enabled</Text>
+                        ) : (
+                            <Text className="text-slate-500 font-bold text-[13px] uppercase tracking-[0.1em]">{user.credits} Learning Credits Left</Text>
+                        )}
                     </View>
                 </View>
 
                 {/* Referrals */}
-                <View className="px-6 pb-8">
-                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Invite & Earn</Text>
+                <View className="px-8 pb-10">
                     <TouchableOpacity
                         onPress={() => router.push('/referral')}
-                        className="bg-brand-primary rounded-[24px] p-6 border border-brand-primary/20 flex-row items-center justify-between shadow-lg shadow-brand-primary/20"
                         activeOpacity={0.9}
+                        className="bg-brand-primary rounded-[32px] p-8 flex-row items-center justify-between shadow-xl shadow-brand-primary/20"
                     >
                         <View className="flex-1 pr-4">
-                            <Text className="text-[18px] font-black text-white mb-1 tracking-tight">Referrals & Rewards</Text>
-                            <Text className="text-white/80 font-bold text-[13px] leading-relaxed">Redeem codes or invite friends for free credits.</Text>
+                            <Text className="text-[20px] font-bold text-white mb-2 tracking-tight">Earn Credits</Text>
+                            <Text className="text-white/80 font-medium text-[14px] leading-relaxed">Invite classmates and get free unlimited access for a week.</Text>
                         </View>
-                        <View className="size-12 rounded-full items-center justify-center bg-white/20">
-                            <Ionicons name="gift" size={22} color="#ffffff" />
+                        <View className="w-14 h-14 rounded-2xl items-center justify-center bg-white/20">
+                            <Ionicons name="gift-outline" size={28} color="#ffffff" />
                         </View>
                     </TouchableOpacity>
                 </View>
 
                 {/* Profile Details */}
-                <View className="px-6 pb-8">
-                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Profile Info</Text>
-                    <View className="bg-slate-50 dark:bg-white/5 rounded-[24px] p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-3">Full Name</Text>
+                <View className="px-8 pb-10">
+                    <Text className="text-[12px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-5 ml-1">General Settings</Text>
+                    <View className={`rounded-[32px] p-8 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                        <Text className="text-[11px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-3 ml-1">Display Name</Text>
                         <TextInput
-                            className="w-full bg-white dark:bg-brand-dark border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 text-[16px] font-bold text-slate-900 dark:text-white mb-6 focus:border-slate-900 dark:focus:border-white"
-                            placeholder="John Doe"
-                            placeholderTextColor="#94a3b8"
+                            className={`h-[64px] px-6 rounded-2xl border font-bold text-[16px] mb-8 ${isDark ? 'bg-[#0f0f11] border-slate-800 text-white' : 'bg-slate-50 border-slate-100 text-slate-900'}`}
+                            placeholder="Your Name"
+                            placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
                             value={name}
                             onChangeText={setName}
-                            autoComplete="name"
                         />
 
-                        <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-3">Email Address</Text>
-                        <View className="w-full bg-slate-100 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 mb-8 opacity-60">
-                            <Text className="text-[16px] font-bold text-slate-500 dark:text-slate-400">
-                                {user?.email}
-                            </Text>
-                        </View>
-
-                        <GradientButton
+                        <TouchableOpacity
                             onPress={handleUpdateProfile}
-                            loading={isUpdatingProfile}
-                            containerStyle="w-full"
+                            disabled={isUpdatingProfile}
+                            activeOpacity={0.8}
+                            className={`h-[60px] rounded-2xl items-center justify-center bg-brand-primary shadow-sm ${isUpdatingProfile ? 'opacity-60' : ''}`}
                         >
-                            {profileSuccess ? 'Updated Successfully' : 'Save Changes'}
-                        </GradientButton>
+                            {isUpdatingProfile ? (
+                                <ActivityIndicator color="white" size="small" />
+                            ) : (
+                                <Text className="font-bold text-[16px] text-white">
+                                    {profileSuccess ? 'Profile Updated' : 'Save Changes'}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
                     </View>
                 </View>
 
                 {/* Theme Preferences */}
-                <View className="px-6 pb-8">
-                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Appearance</Text>
-                    <View className="bg-slate-50 dark:bg-white/5 rounded-[24px] p-2 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <View className="px-8 pb-10">
+                    <Text className="text-[12px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-5 ml-1">Appearance</Text>
+                    <View className={`rounded-[32px] p-3 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
                         {(['system', 'light', 'dark'] as const).map((t, index) => {
                             const isSelected = theme === t;
                             const icons = { system: 'phone-portrait-outline', light: 'sunny-outline', dark: 'moon-outline' };
-                            const labels = { system: 'System Default', light: 'Light Mode', dark: 'Dark Mode' };
+                            const labels = { system: 'System', light: 'Light', dark: 'Dark' };
 
                             return (
                                 <TouchableOpacity
                                     key={t}
                                     onPress={() => handleThemeChange(t)}
-                                    className="flex-row items-center justify-between p-4"
-                                    style={index !== 2 ? { borderBottomWidth: 2, borderBottomColor: colorScheme === 'dark' ? '#1e293b' : '#e2e8f0' } : {}}
+                                    activeOpacity={0.7}
+                                    className={`flex-row items-center p-5 rounded-2xl mb-1 ${isSelected ? (isDark ? 'bg-white/5' : 'bg-slate-50') : ''}`}
                                 >
-                                    <View className="flex-row items-center">
-                                        <View
-                                            className="size-12 rounded-xl border-2 items-center justify-center mr-4"
-                                                style={[
-                                                    { borderWidth: 2 },
-                                                    colorScheme === 'dark'
-                                                        ? { borderColor: '#ffffff', backgroundColor: '#ffffff' }
-                                                        : { borderColor: '#cbd5e1', backgroundColor: '#ffffff' }
-                                                ]}
-                                            >
-                                            <Ionicons name={icons[t] as any} size={20} color={isSelected ? (t === 'dark' ? '#121212' : 'white') : '#64748b'} />
-                                        </View>
-                                        <Text
-                                            className="font-black tracking-tight text-[16px]"
-                                            style={{ color: isSelected ? (colorScheme === 'dark' ? '#ffffff' : '#121212') : '#64748b' }}
-                                        >
-                                            {labels[t]}
-                                        </Text>
+                                    <View className={`w-10 h-10 rounded-xl items-center justify-center mr-4 ${isSelected ? 'bg-brand-primary' : (isDark ? 'bg-slate-800' : 'bg-slate-100')}`}>
+                                        <Ionicons name={icons[t] as any} size={18} color={isSelected ? 'white' : '#94a3b8'} />
                                     </View>
-                                    <View
-                                        className="size-6 rounded-full border-2 items-center justify-center"
-                                        style={{ borderColor: isSelected ? (colorScheme === 'dark' ? '#ffffff' : '#121212') : (colorScheme === 'dark' ? '#475569' : '#cbd5e1') }}
-                                    >
-                                        {isSelected && <View className="size-3 rounded-full" style={{ backgroundColor: colorScheme === 'dark' ? '#ffffff' : '#121212' }} />}
-                                    </View>
+                                    <Text className={`flex-1 font-bold text-[16px] ${isSelected ? (isDark ? 'text-white' : 'text-slate-900') : 'text-slate-500'}`}>
+                                        {labels[t]}
+                                    </Text>
+                                    {isSelected && <Ionicons name="checkmark" size={20} color={isDark ? 'white' : '#0f172a'} />}
                                 </TouchableOpacity>
                             );
                         })}
@@ -272,79 +263,56 @@ export default function AccountScreen() {
                 </View>
 
                 {/* Security */}
-                <View className="px-6 pb-8">
-                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Security</Text>
-                    <View className="bg-slate-50 dark:bg-white/5 rounded-[24px] p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-
-                        <PasswordField label="Current Password" value={currentPassword} onChangeText={setCurrentPassword} show={showCurrentPw} onToggle={() => setShowCurrentPw(!showCurrentPw)} />
+                <View className="px-8 pb-10">
+                    <Text className="text-[12px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-5 ml-1">Security</Text>
+                    <View className={`rounded-[32px] p-8 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                        <PasswordField label="Current" value={currentPassword} onChangeText={setCurrentPassword} show={showCurrentPw} onToggle={() => setShowCurrentPw(!showCurrentPw)} />
                         <PasswordField label="New Password" value={newPassword} onChangeText={setNewPassword} show={showNewPw} onToggle={() => setShowNewPw(!showNewPw)} />
-
-                        {newPassword.length > 0 && newPassword.length < 8 && (
-                            <Text className="text-red-500 text-[12px] font-bold uppercase tracking-widest -mt-4 mb-5 ml-1">
-                                Must be at least 8 characters
-                            </Text>
-                        )}
-
-                        <PasswordField label="Confirm Password" value={confirmPassword} onChangeText={setConfirmPassword} show={showConfirmPw} onToggle={() => setShowConfirmPw(!showConfirmPw)} />
-
-                        {confirmPassword.length > 0 && newPassword !== confirmPassword && (
-                            <Text className="text-red-500 text-[12px] font-bold uppercase tracking-widest -mt-4 mb-5 ml-1">
-                                Passwords do not match
-                            </Text>
-                        )}
+                        <PasswordField label="Confirm" value={confirmPassword} onChangeText={setConfirmPassword} show={showConfirmPw} onToggle={() => setShowConfirmPw(!showConfirmPw)} />
 
                         <TouchableOpacity
                             onPress={handleUpdatePassword}
                             disabled={isUpdatingPassword}
-                            className={`w-full h-[56px] rounded-xl items-center flex-row justify-center mt-4 border-2 ${passwordSuccess ? 'bg-[#D2B48C] border-[#D2B48C]' : 'bg-white dark:bg-brand-dark border-slate-200 dark:border-slate-700'} ${isUpdatingPassword ? 'opacity-70' : ''}`}
                             activeOpacity={0.8}
+                            className={`h-[60px] rounded-2xl items-center justify-center mt-4 border ${passwordSuccess ? 'bg-emerald-500 border-emerald-500' : (isDark ? 'bg-white border-white' : 'bg-slate-900 border-slate-900')} ${isUpdatingPassword ? 'opacity-70' : ''}`}
                         >
                             {isUpdatingPassword ? (
-                                <ActivityIndicator color="#121212" />
-                            ) : passwordSuccess ? (
-                                <>
-                                    <Ionicons name="checkmark-circle" size={18} color="white" />
-                                    <Text className="text-white font-black ml-2 text-[15px] tracking-widest uppercase">Secured</Text>
-                                </>
+                                <ActivityIndicator color={isDark ? '#0f0f11' : 'white'} />
                             ) : (
-                                <Text className="text-slate-900 dark:text-white font-black text-[15px] tracking-widest uppercase">Change Password</Text>
+                                <Text className={`font-bold text-[16px] ${passwordSuccess ? 'text-white' : (isDark ? 'text-slate-900' : 'text-white')}`}>
+                                    {passwordSuccess ? 'Password Secured' : 'Update Password'}
+                                </Text>
                             )}
                         </TouchableOpacity>
                     </View>
                 </View>
 
                 {/* Legal & About */}
-                <View className="px-6 pb-12">
-                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Legal & Support</Text>
-                    <View className="bg-slate-50 dark:bg-white/5 rounded-[24px] p-2 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <View className="px-8 pb-12">
+                    <Text className="text-[12px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-5 ml-1">Support & Legal</Text>
+                    <View className={`rounded-[32px] p-3 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
                         <TouchableOpacity
                             onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/privacy')}
-                            className="flex-row items-center justify-between p-4 border-b-2 border-slate-100 dark:border-slate-800"
+                            className="flex-row items-center p-5 rounded-2xl border-b border-slate-50 dark:border-slate-800"
                         >
-                            <View className="flex-row items-center">
-                                <Ionicons name="shield-checkmark-outline" size={20} color={colorScheme === 'dark' ? '#94a3b8' : '#64748b'} />
-                                <Text className="ml-4 font-bold text-slate-900 dark:text-white">Privacy Policy</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+                            <Ionicons name="shield-checkmark-outline" size={20} color="#94a3b8" />
+                            <Text className={`ml-4 flex-1 font-bold text-[15px] ${isDark ? 'text-white' : 'text-slate-700'}`}>Privacy Policy</Text>
+                            <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/terms')}
-                            className="flex-row items-center justify-between p-4"
+                            className="flex-row items-center p-5 rounded-2xl"
                         >
-                            <View className="flex-row items-center">
-                                <Ionicons name="document-text-outline" size={20} color={colorScheme === 'dark' ? '#94a3b8' : '#64748b'} />
-                                <Text className="ml-4 font-bold text-slate-900 dark:text-white">Terms of Service</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+                            <Ionicons name="document-text-outline" size={20} color="#94a3b8" />
+                            <Text className={`ml-4 flex-1 font-bold text-[15px] ${isDark ? 'text-white' : 'text-slate-700'}`}>Terms of Service</Text>
+                            <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
                         </TouchableOpacity>
                     </View>
 
-                    <View className="mt-8 items-center">
-                        <Text className="text-slate-400 dark:text-slate-600 font-bold text-[12px] uppercase tracking-widest">
-                            Skeeme Version 1.5.0
-                        </Text>
-                    </View>
+                    <Text className="text-center text-slate-400 font-bold text-[11px] uppercase tracking-[0.3em] mt-10">
+                        Skeeme v1.5.0
+                    </Text>
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>

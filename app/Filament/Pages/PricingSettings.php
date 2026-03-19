@@ -5,6 +5,12 @@ namespace App\Filament\Pages;
 use App\Models\SystemSetting;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Section;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Pages\Page;
 use Filament\Notifications\Notification;
 
@@ -60,67 +66,67 @@ class PricingSettings extends Page implements Forms\Contracts\HasForms
         $this->form->fill($settings);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         return $form
             ->schema([
-                Forms\Components\Tabs::make('Pricing')
+                Tabs::make('Pricing')
                     ->tabs([
-                        Forms\Components\Tabs\Tab::make('NGN Pricing')
+                        Tabs\Tab::make('NGN Pricing')
                             ->schema([
-                                Forms\Components\Section::make('Standard Plan')
+                                Section::make('Standard Plan')
                                     ->schema([
-                                        Forms\Components\TextInput::make('ngn.standard.monthly')->numeric()->required()->label('Monthly (NGN)'),
-                                        Forms\Components\TextInput::make('ngn.standard.promoMonthly')->numeric()->required()->label('Promo Monthly (NGN)'),
-                                        Forms\Components\TextInput::make('ngn.standard.yearly')->numeric()->required()->label('Yearly (NGN)'),
-                                    ])->columns(3),
-                                Forms\Components\Section::make('Elite Plan')
+                                        TextInput::make('ngn.standard.monthly')->numeric()->required()->label('Monthly (NGN)'),
+                                        TextInput::make('ngn.standard.promoMonthly')->numeric()->required()->label('Promo Monthly (NGN)'),
+                                        TextInput::make('ngn.standard.yearly')->numeric()->required()->label('Yearly (NGN)'),
+                                    ])->columns(['default' => 3]),
+                                Section::make('Elite Plan')
                                     ->schema([
-                                        Forms\Components\TextInput::make('ngn.elite.monthly')->numeric()->required()->label('Monthly (NGN)'),
-                                        Forms\Components\TextInput::make('ngn.elite.promoMonthly')->numeric()->required()->label('Promo Monthly (NGN)'),
-                                        Forms\Components\TextInput::make('ngn.elite.yearly')->numeric()->required()->label('Yearly (NGN)'),
-                                    ])->columns(3),
-                                Forms\Components\Section::make('Credit Packs (NGN)')
+                                        TextInput::make('ngn.elite.monthly')->numeric()->required()->label('Monthly (NGN)'),
+                                        TextInput::make('ngn.elite.promoMonthly')->numeric()->required()->label('Promo Monthly (NGN)'),
+                                        TextInput::make('ngn.elite.yearly')->numeric()->required()->label('Yearly (NGN)'),
+                                    ])->columns(['default' => 3]),
+                                Section::make('Credit Packs (NGN)')
                                     ->schema([
-                                        Forms\Components\Repeater::make('credit_packs.ngn')
+                                        Repeater::make('credit_packs.ngn')
                                             ->schema([
-                                                Forms\Components\TextInput::make('amount')->numeric()->required()->label('Credits Amount'),
-                                                Forms\Components\TextInput::make('price')->numeric()->required()->label('Price (NGN)'),
-                                            ])->columns(2)->defaultItems(4)
+                                                TextInput::make('amount')->numeric()->required()->label('Credits Amount'),
+                                                TextInput::make('price')->numeric()->required()->label('Price (NGN)'),
+                                            ])->columns(['default' => 2])->defaultItems(4)
                                     ])
                             ]),
-                        Forms\Components\Tabs\Tab::make('USD Pricing')
+                        Tabs\Tab::make('USD Pricing')
                             ->schema([
-                                Forms\Components\Section::make('Standard Plan')
+                                Section::make('Standard Plan')
                                     ->schema([
-                                        Forms\Components\TextInput::make('usd.standard.monthly')->numeric()->required()->label('Monthly (USD)'),
-                                        Forms\Components\TextInput::make('usd.standard.promoMonthly')->numeric()->required()->label('Promo Monthly (USD)'),
-                                        Forms\Components\TextInput::make('usd.standard.yearly')->numeric()->required()->label('Yearly (USD)'),
-                                    ])->columns(3),
-                                Forms\Components\Section::make('Elite Plan')
+                                        TextInput::make('usd.standard.monthly')->numeric()->required()->label('Monthly (USD)'),
+                                        TextInput::make('usd.standard.promoMonthly')->numeric()->required()->label('Promo Monthly (USD)'),
+                                        TextInput::make('usd.standard.yearly')->numeric()->required()->label('Yearly (USD)'),
+                                    ])->columns(['default' => 3]),
+                                Section::make('Elite Plan')
                                     ->schema([
-                                        Forms\Components\TextInput::make('usd.elite.monthly')->numeric()->required()->label('Monthly (USD)'),
-                                        Forms\Components\TextInput::make('usd.elite.promoMonthly')->numeric()->required()->label('Promo Monthly (USD)'),
-                                        Forms\Components\TextInput::make('usd.elite.yearly')->numeric()->required()->label('Yearly (USD)'),
-                                    ])->columns(3),
-                                Forms\Components\Section::make('Credit Packs (USD)')
+                                        TextInput::make('usd.elite.monthly')->numeric()->required()->label('Monthly (USD)'),
+                                        TextInput::make('usd.elite.promoMonthly')->numeric()->required()->label('Promo Monthly (USD)'),
+                                        TextInput::make('usd.elite.yearly')->numeric()->required()->label('Yearly (USD)'),
+                                    ])->columns(['default' => 3]),
+                                Section::make('Credit Packs (USD)')
                                     ->schema([
-                                        Forms\Components\Repeater::make('credit_packs.usd')
+                                        Repeater::make('credit_packs.usd')
                                             ->schema([
-                                                Forms\Components\TextInput::make('amount')->numeric()->required()->label('Credits Amount'),
-                                                Forms\Components\TextInput::make('price')->numeric()->required()->label('Price (USD)'),
-                                            ])->columns(2)->defaultItems(4)
+                                                TextInput::make('amount')->numeric()->required()->label('Credits Amount'),
+                                                TextInput::make('price')->numeric()->required()->label('Price (USD)'),
+                                            ])->columns(['default' => 2])->defaultItems(4)
                                     ])
                             ]),
-                        Forms\Components\Tabs\Tab::make('Promo Dates')
+                        Tabs\Tab::make('Promo Dates')
                             ->schema([
-                                Forms\Components\DateTimePicker::make('promos.standard_end')
+                                DateTimePicker::make('promos.standard_end')
                                     ->label('Standard Promo Ends At')
                                     ->required(),
-                                Forms\Components\DateTimePicker::make('promos.elite_end')
+                                DateTimePicker::make('promos.elite_end')
                                     ->label('Elite Promo Ends At')
                                     ->required(),
-                            ])->columns(2)
+                            ])->columns(['default' => 2])
                     ])
             ])
             ->statePath('data');

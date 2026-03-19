@@ -18,18 +18,17 @@ interface Invoice {
     invoice_date: string;
 }
 
-// Skeleton loading placeholder
-function SkeletonCard() {
+function SkeletonCard({ isDark }: { isDark: boolean }) {
     return (
-        <View className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 mb-4 flex-row justify-between">
+        <View className={`p-8 rounded-[32px] border mb-4 flex-row justify-between ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
             <View>
-                <View className="bg-slate-200 dark:bg-slate-800 h-3 w-24 rounded-full mb-3" />
-                <View className="bg-slate-200 dark:bg-slate-800 h-5 w-32 rounded-full mb-3" />
-                <View className="bg-slate-200 dark:bg-slate-800 h-3 w-20 rounded-full" />
+                <View className={`h-3 w-24 rounded-full mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+                <View className={`h-6 w-32 rounded-full mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+                <View className={`h-3 w-20 rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
             </View>
             <View className="items-end">
-                <View className="bg-slate-200 dark:bg-slate-800 h-6 w-16 rounded-full mb-4" />
-                <View className="bg-slate-200 dark:bg-slate-800 h-4 w-16 rounded-full" />
+                <View className={`h-8 w-20 rounded-xl mb-6 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+                <View className={`h-4 w-12 rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
             </View>
         </View>
     );
@@ -87,115 +86,116 @@ export default function BillingHistoryScreen() {
     };
 
     return (
-        <View className="flex-1 bg-white dark:bg-brand-dark">
+        <View className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
             <Stack.Screen
                 options={{
                     title: 'Billing History',
                     headerShown: true,
-                    headerBackVisible: false,
                     headerShadowVisible: false,
-                    headerStyle: { backgroundColor: bgColor },
-                    headerTintColor: tintColor,
+                    headerStyle: { backgroundColor: isDark ? '#0f0f11' : '#fafafa' },
+                    headerTintColor: isDark ? '#ffffff' : '#0f172a',
                 }}
             />
 
             {isLoading ? (
-                <View className="flex-1 px-6 pt-6">
-                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-6">Past Invoices</Text>
-                    <SkeletonCard />
-                    <SkeletonCard />
-                    <SkeletonCard />
+                <View className="flex-1 px-8 pt-8">
+                    <Text className="text-[12px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-8 ml-1">Loading History</Text>
+                    <SkeletonCard isDark={isDark} />
+                    <SkeletonCard isDark={isDark} />
                 </View>
             ) : error ? (
-                <View className="flex-1 justify-center items-center p-6">
-                    <View className="size-24 bg-red-500/10 rounded-[24px] items-center justify-center mb-6">
-                        <Ionicons name="cloud-offline" size={40} color="#ef4444" />
+                <View className="flex-1 justify-center items-center p-8">
+                    <View className={`size-24 rounded-[32px] items-center justify-center mb-8 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                        <Ionicons name="alert-circle-outline" size={40} color="#ef4444" />
                     </View>
-                    <Text className="text-red-500 font-black mb-2 text-[22px] tracking-tight">Connection Error</Text>
-                    <Text className="text-slate-500 text-center mb-8 font-bold text-[14px]">
-                        Could not load billing history. Check your connection and try again.
+                    <Text className={`font-bold mb-3 text-[24px] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Unable to load</Text>
+                    <Text className="text-slate-500 text-center mb-10 font-medium text-[15px] leading-relaxed">
+                        We couldn't retrieve your billing history. Please check your connection.
                     </Text>
-                    <View className="w-full max-w-[200px]">
-                        <GradientButton onPress={() => refetch()} icon={<Ionicons name="refresh" size={20} color={isDark ? '#121212' : 'white'} />}>
-                            Retry
-                        </GradientButton>
-                    </View>
+                    <TouchableOpacity 
+                        onPress={() => refetch()}
+                        className="h-[60px] w-full max-w-[240px] rounded-[20px] bg-brand-primary items-center justify-center flex-row"
+                    >
+                        <Ionicons name="refresh" size={20} color="white" className="mr-2" />
+                        <Text className="text-white font-bold text-[16px]">Try Again</Text>
+                    </TouchableOpacity>
                 </View>
             ) : (
                 <ScrollView
-                    className="flex-1 px-6 pt-6"
+                    className="flex-1 pt-6"
+                    contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 60 }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? 'white' : '#121212'} />}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Current Plan Overview */}
-                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Your Subscription</Text>
-                    <View className="bg-slate-50 dark:bg-slate-900 rounded-[28px] p-6 border-2 border-slate-200 dark:border-slate-800 mb-10">
-                        <View className="flex-row items-center justify-between mb-6">
-                            <View className="size-14 rounded-full bg-indigo-600 items-center justify-center">
-                                <Ionicons name="sparkles" size={24} color="white" />
-                            </View>
-                            <TouchableOpacity
-                                onPress={() => router.push('/upgrade')}
-                                className="bg-white dark:bg-slate-800 px-5 py-2.5 rounded-full border-2 border-slate-200 dark:border-slate-700 shadow-sm"
-                            >
-                                <Text className="text-slate-900 dark:text-white font-black text-[12px] uppercase">Manage Plans</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <Text className="text-slate-900 dark:text-white font-black text-2xl tracking-tighter mb-1">
-                            {user?.is_unlimited ? 'Unlimited Pro' : 'Free Tier'}
-                        </Text>
-                        <Text className="text-slate-500 font-bold text-[14px]">
-                            {user?.is_unlimited ? 'Fully unlocked experience' : `${user?.credits ?? 0} Credits remaining`}
+                    {/* Page Header */}
+                    <View className="mb-10 mt-2 px-2">
+                        <Text className={`text-[36px] font-bold tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Billing</Text>
+                        <Text className="text-slate-500 font-medium text-[16px]">
+                            Manage your subscription and view past receipts.
                         </Text>
                     </View>
 
-                    <Text className="text-[12px] uppercase tracking-widest font-black text-slate-400 mb-4">Past Invoices</Text>
+                    {/* Current Plan Overview */}
+                    <Text className="text-[12px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-6 ml-1">Subscription Status</Text>
+                    <View className={`rounded-[32px] p-8 border mb-12 ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                        <View className="flex-row items-center justify-between mb-8">
+                            <View className={`size-14 rounded-2xl items-center justify-center ${user?.is_unlimited ? 'bg-brand-primary/20' : (isDark ? 'bg-slate-800' : 'bg-slate-100')}`}>
+                                <Ionicons name="sparkles" size={24} color={user?.is_unlimited ? "#D2B48C" : "#94a3b8"} />
+                            </View>
+                            <TouchableOpacity
+                                onPress={() => router.push('/upgrade')}
+                                className={`px-5 py-2.5 rounded-xl border ${isDark ? 'bg-white border-white' : 'bg-slate-950 border-slate-950'}`}
+                            >
+                                <Text className={`font-bold text-[11px] uppercase tracking-widest ${isDark ? 'text-slate-900' : 'text-white'}`}>Plans</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <Text className={`font-bold text-[26px] tracking-tight mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            {user?.is_unlimited ? 'Unlimited Pro' : 'Free Academic'}
+                        </Text>
+                        <Text className="text-slate-500 font-bold text-[14px]">
+                            {user?.is_unlimited ? 'Fully unlocked learning companion' : `${user?.credits ?? 0} Credits remaining`}
+                        </Text>
+                    </View>
+
+                    <Text className="text-[12px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-6 ml-1">Payment History</Text>
 
                     {data?.data?.length === 0 ? (
-                        <View className="items-center py-16 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] bg-slate-50 dark:bg-slate-900/50 mt-4">
-                            <View className="size-24 bg-white dark:bg-slate-800 rounded-[24px] border-2 border-slate-200 dark:border-slate-700 items-center justify-center mb-6">
-                                <Ionicons name="receipt" size={40} color={isDark ? 'white' : '#121212'} />
+                        <View className={`items-center py-20 rounded-[32px] border-2 border-dashed ${isDark ? 'bg-[#161618]/30 border-slate-800' : 'bg-white border-slate-100'}`}>
+                            <View className={`size-20 rounded-[28px] items-center justify-center mb-6 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                                <Ionicons name="receipt-outline" size={32} color={isDark ? '#cbd5e1' : '#64748b'} />
                             </View>
-                            <Text className="text-slate-900 dark:text-white font-black text-[22px] tracking-tight mb-2">No Invoices Yet</Text>
-                            <Text className="text-slate-500 font-bold text-[14px] text-center px-8 leading-relaxed">
-                                Your billing history will appear here once you make a payment.
+                            <Text className={`font-bold text-[20px] tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>No Invoices</Text>
+                            <Text className="text-slate-500 font-medium text-[14px] text-center px-12 leading-relaxed">
+                                Once you start a subscription or buy credits, your receipts will appear here.
                             </Text>
                         </View>
                     ) : (
                         data?.data?.map((invoice: Invoice) => (
-                            <View key={invoice.id} className="bg-slate-50 dark:bg-slate-900 p-6 rounded-[24px] border-2 border-slate-200 dark:border-slate-800 mb-4 flex-row items-center justify-between">
-                                <View>
-                                    <Text className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{invoice.invoice_number}</Text>
-                                    <Text className="text-[20px] font-black text-slate-900 dark:text-white mb-1 tracking-tight">
-                                        {invoice.currency} {Number(invoice.amount).toFixed(2)}
-                                    </Text>
-                                    <Text className="text-slate-500 font-bold text-[12px] uppercase tracking-widest">
-                                        {new Date(invoice.invoice_date).toLocaleDateString()}
-                                    </Text>
-                                </View>
-
-                                <View className="items-end">
-                                    <View className={`px-4 py-1.5 rounded-xl border-2 ${invoice.status === 'paid' ? 'border-[#D2B48C] bg-[#D2B48C]/10' :
-                                        invoice.status === 'pending' ? 'border-[#FCD34D] bg-[#FCD34D]/10' :
-                                            'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
-                                        }`}>
-                                        <Text className={`text-[11px] uppercase tracking-widest font-black ${invoice.status === 'paid' ? 'text-[#D2B48C]' :
-                                            invoice.status === 'pending' ? 'text-[#eab308]' :
-                                                'text-slate-500'
-                                            }`}>
-                                            {invoice.status}
+                            <View key={invoice.id} className={`p-8 rounded-[32px] border mb-6 flex-row items-center justify-between ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                                <View className="flex-1 pr-4">
+                                    <View className="flex-row items-center mb-1">
+                                        <Text className={`font-bold text-[18px] tracking-tight mr-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                            {invoice.currency} {Number(invoice.amount).toLocaleString()}
                                         </Text>
+                                        <View className={`px-2 py-0.5 rounded-lg border ${invoice.status === 'paid' ? 'border-emerald-500/20 bg-emerald-500/10' : 'border-slate-800 bg-slate-800/20'}`}>
+                                            <Text className={`text-[9px] font-bold uppercase tracking-widest ${invoice.status === 'paid' ? 'text-emerald-500' : 'text-slate-500'}`}>
+                                                {invoice.status}
+                                            </Text>
+                                        </View>
                                     </View>
-
-                                    <TouchableOpacity
-                                        onPress={() => handleDownload(invoice.id)}
-                                        className="mt-4 flex-row items-center border-b-2 border-slate-900 dark:border-white pb-0.5"
-                                        activeOpacity={0.7}
-                                    >
-                                        <Text className="text-slate-900 dark:text-white font-black text-[12px] uppercase tracking-widest mr-1">Receipt</Text>
-                                        <Ionicons name="download" size={14} color={isDark ? 'white' : '#121212'} />
-                                    </TouchableOpacity>
+                                    <Text className="text-slate-500 font-bold text-[12px] uppercase tracking-[0.1em] mb-4">
+                                        {new Date(invoice.invoice_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </Text>
+                                    <Text className="text-[10px] font-bold text-slate-400/60 uppercase tracking-widest">#{invoice.invoice_number}</Text>
                                 </View>
+
+                                <TouchableOpacity
+                                    onPress={() => handleDownload(invoice.id)}
+                                    activeOpacity={0.7}
+                                    className={`size-14 rounded-2xl items-center justify-center border ${isDark ? 'bg-[#0f0f11] border-slate-700' : 'bg-slate-50 border-slate-200'}`}
+                                >
+                                    <Ionicons name="download-outline" size={20} color={isDark ? 'white' : '#121212'} />
+                                </TouchableOpacity>
                             </View>
                         ))
                     )}

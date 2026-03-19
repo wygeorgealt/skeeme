@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, useColorScheme, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, useColorScheme, ActivityIndicator, Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
@@ -10,9 +10,11 @@ export default function StreakScreen() {
     const { user } = useAuthStore();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const bgColor = isDark ? '#121212' : '#ffffff';
-    const tintColor = isDark ? '#ffffff' : '#121212';
-    
+    const bgColor = isDark ? "#0f0f11" : "#fafafa";
+    const tintColor = isDark ? '#ffffff' : '#0f172a';
+    const cardBg = isDark ? "#161618" : "#ffffff";
+    const borderColor = isDark ? "border-slate-800" : "border-slate-200";
+
     // Milestones
     const current = user?.streak?.current_streak || 0;
     const longest = user?.streak?.longest_streak || 0;
@@ -31,13 +33,11 @@ export default function StreakScreen() {
     useEffect(() => {
         const fetchFreezes = async () => {
             try {
-                // If the backend doesn't have an endpoint specifically for this yet, we fallback.
                 const res = await api.get('streaks/freezes');
                 if (res.data) {
                     setFreezes(res.data);
                 }
             } catch (err) {
-                // Feature backend handles freezes silently, so we provide cosmetic fallback unless implemented.
                 setFreezes({ total_allowed: 2, used_this_month: 0 });
             } finally {
                 setLoadingFreezes(false);
@@ -48,94 +48,93 @@ export default function StreakScreen() {
 
     const freezesLeft = freezes.total_allowed - freezes.used_this_month;
 
+    const cardBgClass = isDark ? 'bg-[#161618]' : 'bg-white';
+    const borderColorClass = isDark ? 'border-slate-800' : 'border-slate-100 shadow-sm';
+
     return (
-        <View className="flex-1 bg-white dark:bg-brand-dark">
+        <View className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
             <Stack.Screen options={{ 
-                title: 'Streak & Milestones',
+                title: 'Streak',
                 headerShown: true,
-                headerStyle: { backgroundColor: bgColor },
+                headerStyle: { backgroundColor: isDark ? '#0f0f11' : '#fafafa' },
+                headerTitleStyle: { fontWeight: '700' },
                 headerTintColor: tintColor,
                 headerShadowVisible: false,
             }} />
 
-            <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+            <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 28, paddingTop: 24, paddingBottom: 100 }}>
                 {/* Stats */}
-                <View className="flex-row gap-3 mb-8">
-                    <View className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[24px] p-5">
-                        <Text className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mb-1">Current Streak</Text>
+                <View className="flex-row gap-4 mb-10">
+                    <View className={`flex-1 ${cardBgClass} border ${borderColorClass} rounded-[32px] p-8`}>
+                        <Text className="text-slate-500 font-bold uppercase tracking-[0.1em] text-[10px] mb-3">Current</Text>
                         <View className="flex-row items-baseline">
-                            <Text className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{current}</Text>
-                            <Text className="text-sm font-bold text-slate-400 ml-1">Days</Text>
+                            <Text className={`text-[36px] font-bold tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>{current}</Text>
+                            <Text className="text-[12px] font-bold text-slate-400 ml-1.5 uppercase">Days</Text>
                         </View>
                     </View>
-                    <View className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[24px] p-5">
-                        <Text className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mb-1">Longest Streak</Text>
+                    <View className={`flex-1 ${cardBgClass} border ${borderColorClass} rounded-[32px] p-8`}>
+                        <Text className="text-slate-500 font-bold uppercase tracking-[0.1em] text-[10px] mb-3">Longest</Text>
                         <View className="flex-row items-baseline">
-                            <Text className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{longest}</Text>
-                            <Text className="text-sm font-bold text-slate-400 ml-1">Days</Text>
+                            <Text className={`text-[36px] font-bold tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>{longest}</Text>
+                            <Text className="text-[12px] font-bold text-slate-400 ml-1.5 uppercase">Days</Text>
                         </View>
                     </View>
                 </View>
 
                 {/* Freezes */}
-                <Text className="text-lg font-black text-slate-900 dark:text-white mb-3 tracking-tight">Streak Freezes</Text>
-                <View className="bg-blue-50 dark:bg-blue-900/20 rounded-[24px] p-5 border border-blue-200 dark:border-blue-800 mb-8">
-                    <View className="flex-row justify-between items-start mb-3">
-                        <View className="bg-blue-100 dark:bg-blue-900/40 w-12 h-12 rounded-2xl items-center justify-center">
-                            <Ionicons name="snow" size={24} color="#3B82F6" />
+                <Text className={`text-[12px] font-bold uppercase tracking-[0.2em] mb-6 ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Streak Protection</Text>
+                <View className={`p-8 rounded-[32px] border mb-10 ${isElite ? (isDark ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-indigo-50 border-indigo-100') : (isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm')}`}>
+                    <View className="flex-row justify-between items-center mb-10">
+                        <View className={`size-14 rounded-2xl items-center justify-center ${isDark ? 'bg-indigo-500/20' : 'bg-indigo-100'}`}>
+                            <Ionicons name="snow" size={24} color="#6366f1" />
                         </View>
                         {!isElite ? (
-                            <View className="bg-blue-600 px-3 py-1 rounded-full">
-                                <Text className="text-white font-black text-[10px] uppercase">Elite Only</Text>
+                            <View className="bg-slate-900 dark:bg-white px-3 py-1.5 rounded-lg">
+                                <Text className="text-white dark:text-slate-950 font-bold text-[10px] uppercase tracking-wider">Elite Feature</Text>
                             </View>
                         ) : loadingFreezes ? (
-                            <View className="bg-blue-100 dark:bg-blue-900/40 px-5 py-1 rounded-full">
-                                <ActivityIndicator size="small" color="#3B82F6" />
-                            </View>
+                            <ActivityIndicator size="small" color="#6366f1" />
                         ) : (
-                            <View className="bg-blue-100 dark:bg-blue-900/40 px-3 py-1 rounded-full">
-                                <Text className="text-blue-600 dark:text-blue-400 font-black text-[10px] uppercase">{freezesLeft} Available</Text>
+                            <View className="bg-emerald-500/10 px-4 py-1.5 rounded-full border border-emerald-500/20">
+                                <Text className="text-emerald-500 font-bold text-[11px] uppercase tracking-widest">{freezesLeft} Available</Text>
                             </View>
                         )}
                     </View>
-                    <Text className="text-slate-900 dark:text-white font-black text-base mb-1">Missed a day? No problem.</Text>
-                    <Text className="text-slate-500 dark:text-slate-400 font-medium text-[13px] leading-relaxed mb-4">
-                        Elite members receive 2 automatic streak freezes every month. If you forget to study, your streak won't reset.
+                    <Text className={`font-bold text-[24px] tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Peace of mind.</Text>
+                    <Text className="text-slate-500 font-medium text-[15px] leading-relaxed mb-8">
+                        Streak freezes automatically protect your progress if you ever miss a day. 
                     </Text>
                     
-                    {isElite ? (
-                        <View className="bg-blue-100 dark:bg-blue-900/40 rounded-xl p-3 flex-row items-center">
-                            <Ionicons name="information-circle" size={18} color="#3B82F6" />
-                            <Text className="text-blue-600 dark:text-blue-400 font-bold pl-2 text-xs flex-1">
-                                You have {freezesLeft} freezes remaining this month. Applied automatically.
-                            </Text>
-                        </View>
-                    ) : (
-                        <TouchableOpacity onPress={() => router.push('/upgrade')} className="bg-blue-600 rounded-xl py-3 items-center" activeOpacity={0.8}>
-                            <Text className="text-white font-black text-[13px]">Upgrade to Elite</Text>
+                    {!isElite && (
+                        <TouchableOpacity 
+                            onPress={() => router.push('/upgrade')} 
+                            className="bg-brand-primary h-[56px] rounded-[20px] items-center justify-center shadow-lg shadow-brand-primary/20" 
+                            activeOpacity={0.9}
+                        >
+                            <Text className="text-white font-bold text-[16px]">Get Streak Protection</Text>
                         </TouchableOpacity>
                     )}
                 </View>
 
                 {/* Milestones */}
-                <Text className="text-lg font-black text-slate-900 dark:text-white mb-4 tracking-tight">Milestones</Text>
-                <View className="bg-slate-50 dark:bg-slate-900 rounded-[24px] p-5 border border-slate-200 dark:border-slate-800">
+                <Text className={`text-[12px] font-bold uppercase tracking-[0.2em] mb-6 ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Achievements</Text>
+                <View className={`${cardBgClass} rounded-[32px] p-8 border ${borderColorClass}`}>
                     {milestones.map((m, i) => {
                         const progress = Math.min(100, (current / m.target) * 100);
                         const isUnlocked = current >= m.target;
                         
                         return (
-                            <View key={i} className={`mb-5 ${i === milestones.length - 1 ? 'mb-0' : ''}`}>
-                                <View className="flex-row justify-between items-end mb-2">
+                            <View key={i} className={`mb-10 ${i === milestones.length - 1 ? 'mb-2' : ''}`}>
+                                <View className="flex-row justify-between items-start mb-4">
                                     <View>
-                                        <Text className="text-slate-900 dark:text-white font-black text-[15px]">{m.title}</Text>
-                                        <Text className="text-brand-primary font-bold text-[11px] mt-0.5">{m.reward}</Text>
+                                        <Text className={`font-bold text-[17px] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{m.title}</Text>
+                                        <Text className="text-brand-primary font-bold text-[12px] uppercase tracking-widest mt-1">{m.reward}</Text>
                                     </View>
-                                    <Text className="text-slate-400 dark:text-slate-500 font-black text-[11px]">{current} / {m.target}</Text>
+                                    <Text className="text-slate-400 font-bold text-[12px] tracking-tighter mt-1">{current} / {m.target}</Text>
                                 </View>
-                                <View className="h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <View className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
                                     <View 
-                                        className={`h-full rounded-full ${isUnlocked ? 'bg-brand-primary' : 'bg-[#D2B48C]/40'}`} 
+                                        className={`h-full rounded-full ${isUnlocked ? 'bg-brand-primary' : (isDark ? 'bg-brand-primary/20' : 'bg-[#D2B48C]/30')}`} 
                                         style={{ width: `${progress}%` }} 
                                     />
                                 </View>

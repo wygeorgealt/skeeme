@@ -111,68 +111,64 @@ export default function StudyHistoryDashboard() {
     }, [activeTab, refetchQuizzes, refetchDecks]);
 
     return (
-        <View style={styles.container} className="flex-1 bg-white dark:bg-brand-dark">
+        <View className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
             {/* Header */}
             <View className="px-6 py-8 pb-3">
-                <Text className="text-[32px] font-black tracking-tight text-slate-900 dark:text-white">Study History</Text>
+                <Text className={`text-[32px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Study History</Text>
 
-                {/* Segmented Control using inline styles for stability */}
-                <View className="flex-row bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl mt-6">
-                    <TouchableOpacity
-                        onPress={() => setActiveTab('quizzes')}
-                        style={[
-                            styles.tabButton,
-                            activeTab === 'quizzes' && { backgroundColor: isDark ? '#D2B48C' : 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }
-                        ]}
-                    >
-                        <Text style={[
-                            styles.tabText,
-                            activeTab === 'quizzes' ? { color: isDark ? 'white' : '#121212', fontWeight: '900' } : { color: '#94a3b8' }
-                        ]}>Quizzes</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => setActiveTab('flashcards')}
-                        style={[
-                            styles.tabButton,
-                            activeTab === 'flashcards' && { backgroundColor: isDark ? '#D2B48C' : 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }
-                        ]}
-                    >
-                        <Text style={[
-                            styles.tabText,
-                            activeTab === 'flashcards' ? { color: isDark ? 'white' : '#121212', fontWeight: '900' } : { color: '#94a3b8' }
-                        ]}>Flashcards</Text>
-                    </TouchableOpacity>
+                {/* Segmented Control */}
+                <View className={`flex-row p-1.5 mt-8 rounded-[24px] border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                    {(['quizzes', 'flashcards'] as const).map(tab => (
+                        <TouchableOpacity
+                            key={tab}
+                            onPress={() => setActiveTab(tab)}
+                            activeOpacity={0.8}
+                            className={`flex-1 items-center justify-center py-3.5 rounded-[18px] ${activeTab === tab ? (isDark ? 'bg-slate-800' : 'bg-slate-900') : ''}`}
+                        >
+                            <Text className={`font-bold text-[13px] uppercase tracking-widest ${activeTab === tab ? 'text-white' : (isDark ? 'text-slate-500' : 'text-slate-400')}`}>
+                                {tab}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </View>
 
             {/* Content */}
             <ScrollView
-                className="flex-1 px-6 pt-2"
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? "white" : "#121212"} />}
+                className="flex-1 px-6 pt-4"
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D2B48C" />}
                 showsVerticalScrollIndicator={false}
             >
                 {isLoading && quizzes.length === 0 && decks.length === 0 ? (
-                    <View className="py-2">
-                        {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} />)}
+                    <View>
+                        <SkeletonCard />
+                        <SkeletonCard />
+                        <SkeletonCard />
                     </View>
                 ) : activeTab === 'quizzes' ? (
                     quizzes.length === 0 ? (
-                        <View className="items-center py-16 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] bg-slate-50 dark:bg-slate-900/50">
-                            <Text className="text-slate-500 font-bold text-[14px] text-center px-8 leading-relaxed">Complete a practice quiz to see results here.</Text>
+                        <View className={`items-center py-20 border-2 border-dashed rounded-[40px] ${isDark ? 'bg-[#161618]/50 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                            <Ionicons name="time-outline" size={40} color="#D2B48C" style={{ opacity: 0.5 }} />
+                            <Text className="text-slate-500 font-medium text-[14px] text-center px-10 leading-relaxed mt-4">
+                                Complete a practice quiz to see results here.
+                            </Text>
                         </View>
                     ) : (
                         quizzes.map(session => (
-                            <QuizCard key={session.id} session={session} />
+                            <QuizCard key={session.id} session={session} isDark={isDark} />
                         ))
                     )
                 ) : (
                     decks.length === 0 ? (
-                        <View className="items-center py-16 border-4 border-dashed border-slate-200 dark:border-slate-800 rounded-[32px] bg-slate-50 dark:bg-slate-900/50">
-                            <Text className="text-slate-500 font-bold text-[14px] text-center px-8 leading-relaxed">Generate some flashcards to start studying.</Text>
+                        <View className={`items-center py-20 border-2 border-dashed rounded-[40px] ${isDark ? 'bg-[#161618]/50 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                            <Ionicons name="layers-outline" size={40} color="#D2B48C" style={{ opacity: 0.5 }} />
+                            <Text className="text-slate-500 font-medium text-[14px] text-center px-10 leading-relaxed mt-4">
+                                Generate some flashcards to start studying.
+                            </Text>
                         </View>
                     ) : (
                         decks.map(deck => (
-                            <DeckCard key={deck.id} deck={deck} />
+                            <DeckCard key={deck.id} deck={deck} isDark={isDark} />
                         ))
                     )
                 )}
@@ -182,24 +178,7 @@ export default function StudyHistoryDashboard() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    tabButton: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    tabText: {
-        fontSize: 14,
-        fontWeight: 'bold',
-    }
-});
-
-function QuizCard({ session }: { session: QuizSession }) {
+function QuizCard({ session, isDark }: { session: QuizSession; isDark: boolean }) {
     const getScoreColor = (pct: number) => {
         if (pct >= 80) return '#D2B48C';
         if (pct >= 60) return '#FCD34D';
@@ -209,52 +188,66 @@ function QuizCard({ session }: { session: QuizSession }) {
     return (
         <TouchableOpacity
             onPress={() => router.push(`/(drawer)/history/${session.id}` as any)}
-            className="bg-brand-primary/5 dark:bg-brand-primary/5 p-6 rounded-[24px] border border-brand-primary/20 dark:border-brand-primary/30 mb-4 overflow-hidden"
             activeOpacity={0.8}
+            className={`p-6 rounded-[32px] border mb-6 ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
         >
             <View className="flex-row justify-between items-start mb-6">
-                <Text className="text-slate-900 dark:text-white font-black text-[19px] tracking-tight flex-1 mr-4" numberOfLines={2}>
+                <Text className={`font-bold text-[19px] tracking-tight flex-1 mr-4 ${isDark ? 'text-white' : 'text-slate-900'}`} numberOfLines={2}>
                     {session.topic}
                 </Text>
-                <View className={`items-end border-2 px-3 py-1.5 rounded-xl`} style={{ borderColor: getScoreColor(session.score_percentage) }}>
-                    <Text className="font-black text-[15px]" style={{ color: getScoreColor(session.score_percentage) }}>
+                <View className={`px-4 py-2 rounded-2xl border-2`} style={{ borderColor: getScoreColor(session.score_percentage) + '40', backgroundColor: getScoreColor(session.score_percentage) + '10' }}>
+                    <Text className="font-bold text-[16px]" style={{ color: getScoreColor(session.score_percentage) }}>
                         {Math.round(session.score_percentage)}%
                     </Text>
                 </View>
             </View>
-            <View className="flex-row items-center">
-                <Ionicons name="calendar-outline" size={12} color="#94a3b8" />
-                <Text className="text-slate-400 font-bold text-[11px] ml-1">
-                    {new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                </Text>
-                <View className="mx-3 w-1 h-1 bg-slate-300 rounded-full" />
-                <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-widest">{session.difficulty}</Text>
+
+            <View className="flex-row items-center border-t border-slate-50 dark:border-slate-800/50 pt-5">
+                <View className={`flex-row items-center px-3 py-1.5 rounded-xl border mr-4 ${isDark ? 'bg-[#0f0f11] border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                    <Ionicons name="flash-outline" size={14} color="#D2B48C" />
+                    <Text className={`font-bold text-[11px] ml-1.5 uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                        {session.difficulty}
+                    </Text>
+                </View>
+                <View className="flex-row items-center">
+                    <Ionicons name="calendar-outline" size={14} color="#94a3b8" />
+                    <Text className="text-slate-400 font-bold text-[11px] ml-1.5 uppercase tracking-widest">
+                        {new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </Text>
+                </View>
             </View>
         </TouchableOpacity>
     );
 }
 
-function DeckCard({ deck }: { deck: FlashcardDeck }) {
+function DeckCard({ deck, isDark }: { deck: FlashcardDeck; isDark: boolean }) {
     return (
         <TouchableOpacity
             onPress={() => router.push(`/(drawer)/flashcards/${deck.id}` as any)}
-            className="bg-brand-primary/5 dark:bg-brand-primary/5 p-6 rounded-[24px] border border-brand-primary/20 dark:border-brand-primary/30 mb-4 overflow-hidden"
             activeOpacity={0.8}
+            className={`p-6 rounded-[32px] border mb-6 ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
         >
-            <View className="flex-row justify-between items-start mb-4">
-                <Text className="text-slate-900 dark:text-white font-black text-[19px] tracking-tight flex-1 mr-4" numberOfLines={2}>
+            <View className="flex-row justify-between items-start mb-6">
+                <Text className={`font-bold text-[19px] tracking-tight flex-1 mr-4 ${isDark ? 'text-white' : 'text-slate-900'}`} numberOfLines={2}>
                     {deck.title}
                 </Text>
-                <Ionicons name="albums-outline" size={24} color="#D2B48C" />
-            </View>
-            <View className="flex-row items-center">
-                <View className="bg-brand-primary/10 dark:bg-brand-primary/20 px-3 py-1 rounded-full border border-brand-primary/20 dark:border-brand-primary/30 mr-3">
-                    <Text className="text-brand-primary dark:text-brand-primary font-bold text-[11px] lowercase tracking-widest">{deck.flashcards_count} Cards</Text>
+                <View className={`p-2 rounded-xl ${isDark ? 'bg-brand-primary/10' : 'bg-slate-50'}`}>
+                    <Ionicons name="layers-outline" size={20} color="#D2B48C" />
                 </View>
-                <Ionicons name="calendar-outline" size={12} color="#94a3b8" />
-                <Text className="text-slate-400 font-bold text-[11px] ml-1">
-                    {new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                </Text>
+            </View>
+
+            <View className="flex-row items-center border-t border-slate-50 dark:border-slate-800/50 pt-5">
+                <View className={`flex-row items-center px-3 py-1.5 rounded-xl border mr-4 ${isDark ? 'bg-[#0f0f11] border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                    <Text className={`font-bold text-[11px] uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                        {deck.flashcards_count} Cards
+                    </Text>
+                </View>
+                <View className="flex-row items-center">
+                    <Ionicons name="calendar-outline" size={14} color="#94a3b8" />
+                    <Text className="text-slate-400 font-bold text-[11px] ml-1.5 uppercase tracking-widest">
+                        {new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </Text>
+                </View>
             </View>
         </TouchableOpacity>
     );

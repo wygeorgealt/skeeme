@@ -44,19 +44,19 @@ export default function StyleScreen() {
         <View className={`flex-1 px-8 pt-16 pb-8 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            {/* Step indicator */}
-            <View className="flex-row items-center mb-8 gap-1.5">
+            {/* Progress */}
+            <View className="flex-row gap-1.5 mb-10">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <View key={i} className={`h-1 flex-1 rounded-full ${i <= 3 ? (isDark ? 'bg-white' : 'bg-slate-900') : (isDark ? 'bg-slate-800' : 'bg-slate-200')}`} />
+                    <View key={i} className={`h-1 flex-1 rounded-full ${i <= 4 ? (isDark ? 'bg-white' : 'bg-slate-900') : (isDark ? 'bg-slate-800' : 'bg-slate-100')}`} />
                 ))}
             </View>
 
-            <Animated.View entering={FadeInDown.duration(500).delay(100)}>
-                <Text className={`text-[28px] font-semibold tracking-tight leading-[34px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    How do you like things explained?
+            <Animated.View entering={FadeInDown.duration(800).delay(100)} className="mb-12">
+                <Text className={`text-[40px] font-bold tracking-tight leading-[46px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    Learning Style.
                 </Text>
-                <Text className={`text-[16px] font-normal leading-relaxed mb-10 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Choose your preferred explanation style. You can change this anytime.
+                <Text className={`text-[16px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    How do you like things explained? You can change this anytime.
                 </Text>
             </Animated.View>
 
@@ -67,32 +67,39 @@ export default function StyleScreen() {
                         <Animated.View key={style.key} entering={FadeInDown.duration(400).delay(200 + index * 100)}>
                             <TouchableOpacity
                                 onPress={() => handleSelect(style.key)}
-                                activeOpacity={0.7}
-                                className={`p-6 rounded-2xl border ${
+                                activeOpacity={0.9}
+                                className={`p-8 rounded-[24px] border-2 shadow-sm ${
                                     isSelected
-                                        ? isDark ? 'border-white bg-[#1c1c1e]' : 'border-slate-900 bg-white shadow-sm'
-                                        : isDark ? 'border-slate-800 bg-[#0f0f11]' : 'border-slate-200 bg-[#fafafa]'
+                                        ? isDark ? 'border-white bg-slate-900' : 'border-slate-900 bg-white'
+                                        : isDark ? 'border-slate-800 bg-transparent' : 'border-slate-100 bg-white'
                                 }`}
                             >
-                                <View className="flex-row items-center mb-3">
-                                    <Ionicons 
-                                        name={style.icon} 
-                                        size={24} 
-                                        color={isSelected ? (isDark ? '#fff' : '#0f172a') : (isDark ? '#64748b' : '#94a3b8')} 
-                                        className="mr-4"
-                                    />
+                                <View className="flex-row items-center mb-4">
+                                    <View className={`w-14 h-14 rounded-[18px] items-center justify-center mr-5 ${
+                                        isSelected 
+                                            ? isDark ? 'bg-white' : 'bg-slate-900' 
+                                            : isDark ? 'bg-slate-800' : 'bg-slate-50'
+                                    }`}>
+                                        <Ionicons 
+                                            name={style.icon} 
+                                            size={24} 
+                                            color={isSelected ? (isDark ? '#000' : '#fff') : (isDark ? '#64748b' : '#94a3b8')} 
+                                        />
+                                    </View>
                                     <View className="flex-1">
-                                        <Text className={`font-medium text-[17px] ${isSelected ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-slate-300' : 'text-slate-700')}`}>
+                                        <Text className={`font-bold text-[18px] ${isSelected ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-slate-400' : 'text-slate-600')}`}>
                                             {style.label}
                                         </Text>
                                     </View>
                                     {isSelected && (
                                         <Animated.View entering={FadeIn.duration(200)}>
-                                            <Ionicons name="checkmark" size={20} color={isDark ? '#fff' : '#0f172a'} />
+                                            <View className="w-8 h-8 rounded-full bg-brand-primary items-center justify-center shadow-lg shadow-brand-primary/20">
+                                                <Ionicons name="checkmark" size={18} color="#fff" />
+                                            </View>
                                         </Animated.View>
                                     )}
                                 </View>
-                                <Text className={`font-normal text-[15px] leading-relaxed ml-10 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                                <Text className={`font-medium text-[15px] leading-relaxed ml-[76px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                     {style.desc}
                                 </Text>
                             </TouchableOpacity>

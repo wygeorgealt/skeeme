@@ -39,19 +39,19 @@ export default function FieldScreen() {
         <View className={`flex-1 px-8 pt-16 pb-8 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            {/* Step indicator */}
-            <View className="flex-row items-center mb-8 gap-1.5">
+            {/* Progress */}
+            <View className="flex-row gap-1.5 mb-10">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <View key={i} className={`h-1 flex-1 rounded-full ${i <= 2 ? (isDark ? 'bg-white' : 'bg-slate-900') : (isDark ? 'bg-slate-800' : 'bg-slate-200')}`} />
+                    <View key={i} className={`h-1 flex-1 rounded-full ${i <= 3 ? (isDark ? 'bg-white' : 'bg-slate-900') : (isDark ? 'bg-slate-800' : 'bg-slate-100')}`} />
                 ))}
             </View>
 
-            <Animated.View entering={FadeInDown.duration(500).delay(100)}>
-                <Text className={`text-[28px] font-semibold tracking-tight leading-[34px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    What's your main subject area?
+            <Animated.View entering={FadeInDown.duration(800).delay(100)} className="mb-12">
+                <Text className={`text-[40px] font-bold tracking-tight leading-[46px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    Focus Area.
                 </Text>
-                <Text className={`text-[16px] font-normal leading-relaxed mb-10 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    We'll tailor examples and content to your discipline.
+                <Text className={`text-[16px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    We'll tailor Skeeme's content to your specific discipline.
                 </Text>
             </Animated.View>
 
@@ -66,20 +66,25 @@ export default function FieldScreen() {
                         >
                             <TouchableOpacity
                                 onPress={() => handleSelect(field.key)}
-                                activeOpacity={0.7}
-                                className={`items-center py-5 px-3 rounded-2xl border ${
+                                activeOpacity={0.9}
+                                className={`items-center justify-center p-6 rounded-[24px] border-2 shadow-sm ${
                                     isSelected
-                                        ? isDark ? 'border-white bg-[#1c1c1e]' : 'border-slate-900 bg-white shadow-sm'
-                                        : isDark ? 'border-slate-800 bg-[#0f0f11]' : 'border-slate-200 bg-[#fafafa]'
+                                        ? isDark ? 'border-white bg-slate-900' : 'border-slate-900 bg-white'
+                                        : isDark ? 'border-slate-800 bg-transparent' : 'border-slate-100 bg-white'
                                 }`}
                             >
-                                <Ionicons 
-                                    name={field.icon} 
-                                    size={24} 
-                                    color={isSelected ? (isDark ? '#fff' : '#0f172a') : (isDark ? '#64748b' : '#94a3b8')} 
-                                    className="mb-3"
-                                />
-                                <Text className={`font-medium text-[15px] ${isSelected ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-slate-400' : 'text-slate-600')}`}>
+                                <View className={`w-12 h-12 rounded-[16px] items-center justify-center mb-3 ${
+                                    isSelected 
+                                        ? isDark ? 'bg-white' : 'bg-slate-900' 
+                                        : isDark ? 'bg-slate-800' : 'bg-slate-50'
+                                }`}>
+                                    <Ionicons 
+                                        name={field.icon} 
+                                        size={22} 
+                                        color={isSelected ? (isDark ? '#000' : '#fff') : (isDark ? '#64748b' : '#94a3b8')} 
+                                    />
+                                </View>
+                                <Text className={`font-bold text-[15px] text-center ${isSelected ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-slate-400' : 'text-slate-600')}`}>
                                     {field.label}
                                 </Text>
                             </TouchableOpacity>

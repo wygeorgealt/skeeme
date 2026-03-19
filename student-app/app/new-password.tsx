@@ -72,7 +72,7 @@ export default function NewPasswordScreen() {
         }
     };
 
-    const bgClass = isDark ? "bg-[#121212]" : "bg-white";
+    const bgClass = isDark ? "bg-[#0f0f11]" : "bg-[#fafafa]";
     const textClass = isDark ? "text-white" : "text-slate-900";
     const subtextClass = isDark ? "text-slate-400" : "text-slate-500";
 
@@ -92,13 +92,19 @@ export default function NewPasswordScreen() {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView className="flex-1 px-8 pt-2" keyboardShouldPersistTaps="handled">
-                <Text className={`${textClass} text-[32px] font-black tracking-tight leading-[38px] mb-2`}>
-                    New password.
-                </Text>
-                <Text className={`${subtextClass} text-[15px] font-medium leading-relaxed mb-8`}>
-                    Your new password must be different from previously used passwords.
-                </Text>
+            <ScrollView 
+                className="flex-1 px-10 pt-4" 
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                <View className="mb-12">
+                    <Text className={`${textClass} text-[40px] font-bold tracking-tight leading-[46px] mb-3`}>
+                        Security.
+                    </Text>
+                    <Text className={`${subtextClass} text-[16px] font-medium leading-relaxed`}>
+                        Create a strong password to protect your account.
+                    </Text>
+                </View>
 
                 {/* Password */}
                 <View className="mb-4">
@@ -112,11 +118,11 @@ export default function NewPasswordScreen() {
 
                 {/* Password Strength */}
                 {password.length > 0 && (
-                    <View className="mb-6 ml-1">
-                        <View className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                    <View className="mb-8 ml-1">
+                        <View className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
                             <View style={{ width: strength.width as any, backgroundColor: strength.color, height: '100%', borderRadius: 4 }} />
                         </View>
-                        <Text style={{ color: strength.color }} className="text-[12px] font-bold mt-1">{strength.label}</Text>
+                        <Text style={{ color: strength.color }} className="text-[10px] font-bold mt-2 uppercase tracking-widest">{strength.label}</Text>
                     </View>
                 )}
 
@@ -131,24 +137,26 @@ export default function NewPasswordScreen() {
                 </View>
 
                 {errorMsg ? (
-                    <Text className="text-red-500 text-[14px] font-medium mt-2">{errorMsg}</Text>
+                    <Text className="text-red-500 text-[14px] font-medium mt-3 ml-1">{errorMsg}</Text>
                 ) : null}
 
                 <View className="mt-8" />
 
                 {/* Submit Button */}
-                <TouchableOpacity
-                    onPress={handleReset}
-                    disabled={isLoading}
-                    activeOpacity={0.8}
-                    className={`w-full h-[56px] bg-brand-primary rounded-2xl items-center justify-center shadow-sm ${isLoading ? 'opacity-70' : ''}`}
-                >
-                    {isLoading ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text className="font-bold text-[16px] text-white">Reset Password</Text>
-                    )}
-                </TouchableOpacity>
+                <View className="mt-8">
+                    <TouchableOpacity
+                        onPress={handleReset}
+                        disabled={isLoading}
+                        activeOpacity={0.9}
+                        className={`w-full h-[64px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${isLoading ? 'opacity-70' : ''}`}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text className="font-bold text-[16px] text-white tracking-wide">Reset Password</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
         </KeyboardAvoidingView>
     );

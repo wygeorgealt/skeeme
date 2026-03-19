@@ -148,8 +148,8 @@ export default function WelcomeScreen() {
                                 styles.dot,
                                 {
                                     backgroundColor: getSlideText(currentSlide),
-                                    width: i === currentIndex ? 24 : 8,
-                                    opacity: i === currentIndex ? 1 : 0.35,
+                                    width: i === currentIndex ? 32 : 8,
+                                    opacity: i === currentIndex ? 1 : 0.2,
                                 }
                             ]}
                         />
@@ -160,12 +160,12 @@ export default function WelcomeScreen() {
                 <TouchableOpacity
                     onPress={goNext}
                     style={[styles.fab, { backgroundColor: currentSlide.accentBg }]}
-                    activeOpacity={0.8}
+                    activeOpacity={0.9}
                 >
                     {currentIndex === SLIDES.length - 1 ? (
-                        <Ionicons name="checkmark" size={28} color={currentSlide.accentIcon} />
+                        <Ionicons name="checkmark" size={32} color={currentSlide.accentIcon} />
                     ) : (
-                        <Ionicons name="chevron-forward" size={28} color={currentSlide.accentIcon} />
+                        <Ionicons name="chevron-forward" size={32} color={currentSlide.accentIcon} />
                     )}
                 </TouchableOpacity>
             </View>
@@ -193,54 +193,61 @@ const styles = StyleSheet.create({
         paddingBottom: 120,
     },
     title: {
-        fontSize: 40,
+        fontSize: 48,
         fontWeight: '900',
-        letterSpacing: -0.5,
-        lineHeight: 46,
-        marginBottom: 12,
+        letterSpacing: -1.5,
+        lineHeight: 52,
+        marginBottom: 16,
     },
     description: {
-        fontSize: 16,
-        fontWeight: '500',
-        lineHeight: 24,
-        paddingRight: 24,
+        fontSize: 17,
+        fontWeight: '600',
+        lineHeight: 26,
+        paddingRight: 12,
     },
     footer: {
         position: 'absolute',
-        bottom: 48,
+        bottom: 60,
         left: 0,
         right: 0,
-        paddingHorizontal: 32,
+        paddingHorizontal: 40,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
     },
     skipBtn: {
-        paddingVertical: 8,
-        paddingRight: 8,
+        paddingVertical: 12,
+        paddingRight: 12,
     },
     skipText: {
-        fontSize: 16,
-        fontWeight: '700',
+        fontSize: 15,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     dotsContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 8,
         position: 'absolute',
         left: 0,
         right: 0,
         justifyContent: 'center',
     },
     dot: {
-        height: 4,
-        borderRadius: 2,
+        height: 6,
+        borderRadius: 3,
     },
     fab: {
-        width: 64,
-        height: 64,
-        borderRadius: 20,
+        width: 72,
+        height: 72,
+        borderRadius: 24,
         alignItems: 'center',
         justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 5,
     },
 });

@@ -37,18 +37,18 @@ export default function EducationScreen() {
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
             {/* Progress */}
-            <View className="flex-row gap-1.5 mb-3">
-                {[1,2,3,4].map(i => (
-                    <View key={i} className={`flex-1 h-1 rounded-full ${i <= 2 ? 'bg-brand-primary' : isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+            <View className="flex-row gap-1.5 mb-10">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                    <View key={i} className={`flex-1 h-1 rounded-full ${i <= 2 ? (isDark ? 'bg-white' : 'bg-slate-900') : (isDark ? 'bg-slate-800' : 'bg-slate-100')}`} />
                 ))}
             </View>
 
-            <Animated.View entering={FadeInDown.duration(500).delay(100)}>
-                <Text className={`text-[28px] font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    What level are you{'\n'}studying at?
+            <Animated.View entering={FadeInDown.duration(800).delay(100)} className="mb-12">
+                <Text className={`text-[40px] font-bold tracking-tight leading-[46px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    Academic Level.
                 </Text>
-                <Text className={`text-[15px] font-medium mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    This helps us calibrate the AI to your level.
+                <Text className={`text-[16px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    This helps us calibrate the AI to your specific learning stage.
                 </Text>
             </Animated.View>
 
@@ -57,25 +57,33 @@ export default function EducationScreen() {
                     <Animated.View key={level.key} entering={FadeInDown.duration(400).delay(200 + index * 80)}>
                         <TouchableOpacity
                             onPress={() => handleSelect(level.key)}
-                            activeOpacity={0.8}
-                            className={`flex-row items-center p-5 rounded-2xl border-2 ${
+                            activeOpacity={0.9}
+                            className={`flex-row items-center p-6 rounded-[24px] border-2 shadow-sm ${
                                 selected === level.key
-                                    ? 'border-brand-primary bg-brand-primary/10'
-                                    : isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-50'
+                                    ? isDark ? 'border-white bg-slate-900' : 'border-slate-900 bg-white'
+                                    : isDark ? 'border-slate-800 bg-transparent' : 'border-slate-100 bg-white'
                             }`}
                         >
-                            <View className={`w-12 h-12 rounded-xl items-center justify-center mr-4 ${
-                                selected === level.key ? 'bg-brand-primary' : isDark ? 'bg-slate-800' : 'bg-slate-200'
+                            <View className={`w-14 h-14 rounded-[18px] items-center justify-center mr-5 ${
+                                selected === level.key 
+                                    ? isDark ? 'bg-white' : 'bg-slate-900' 
+                                    : isDark ? 'bg-slate-800' : 'bg-slate-50'
                             }`}>
-                                <Ionicons name={level.icon} size={22} color={selected === level.key ? '#fff' : isDark ? '#94a3b8' : '#64748b'} />
+                                <Ionicons 
+                                    name={level.icon} 
+                                    size={24} 
+                                    color={selected === level.key ? (isDark ? '#000' : '#fff') : (isDark ? '#94a3b8' : '#64748b')} 
+                                />
                             </View>
                             <View className="flex-1">
-                                <Text className={`font-black text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{level.label}</Text>
-                                <Text className={`font-medium text-[13px] mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{level.desc}</Text>
+                                <Text className={`font-bold text-[17px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{level.label}</Text>
+                                <Text className={`font-medium text-[14px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{level.desc}</Text>
                             </View>
                             {selected === level.key && (
                                 <Animated.View entering={FadeIn.duration(200)}>
-                                    <Ionicons name="checkmark-circle" size={24} color="#D2B48C" />
+                                    <View className="w-8 h-8 rounded-full bg-brand-primary items-center justify-center shadow-lg shadow-brand-primary/20">
+                                        <Ionicons name="checkmark" size={18} color="#fff" />
+                                    </View>
                                 </Animated.View>
                             )}
                         </TouchableOpacity>

@@ -36,8 +36,12 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
     return (
         <View style={[styles.container, { backgroundColor: isDark ? '#121212' : '#ffffff' }]}>
             <Animated.Image
-                source={require('@/assets/images/nnn.png')}
-                style={[styles.logo, animatedStyle, { tintColor: '#D2B48C' }]}
+                source={require('@/assets/images/Skeeme.png')}
+                style={[
+                    styles.logo, 
+                    animatedStyle, 
+                    { tintColor: isDark ? '#D2B48C' : '#000000' }
+                ]}
                 resizeMode="contain"
             />
         </View>
@@ -52,7 +56,7 @@ const styles = StyleSheet.create({
         zIndex: 99999,
     },
     logo: {
-        width: 120,
-        height: 120,
+        width: 200,
+        height: 200,
     },
 });

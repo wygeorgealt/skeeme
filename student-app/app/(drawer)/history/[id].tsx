@@ -66,80 +66,94 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
     const parsedOptions: string[] = q.options ? JSON.parse(q.options) : [];
 
     return (
-        <View className="bg-white dark:bg-slate-800 rounded-3xl p-5 shadow-sm shadow-slate-200 dark:shadow-none border border-slate-100 dark:border-slate-700 mb-4">
+        <View className={`rounded-[32px] p-8 border mb-6 ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
             {/* Header */}
-            <View className="flex-row justify-between items-start mb-3">
+            <View className="flex-row justify-between items-start mb-6">
                 <View className="flex-1">
-                    <Text className="text-xs font-bold text-brand-primary dark:text-brand-primary uppercase tracking-widest mb-1">
+                    <Text className="text-[11px] font-bold text-brand-primary uppercase tracking-[0.2em] mb-3">
                         Question {index + 1}
                     </Text>
                     <MathText
                         content={q.question}
-                        color={isDark ? 'white' : '#121212'}
-                        fontSize={16}
-                        containerStyle={{ flex: 1 }}
+                        color={isDark ? 'white' : '#0f172a'}
+                        fontSize={18}
+                        containerStyle={{ width: '100%' }}
                     />
                 </View>
-                <View className={`ml-3 px-2 py-1 rounded-full flex-row items-center ${q.is_correct ? 'bg-emerald-50 dark:bg-emerald-900/30' : 'bg-red-50 dark:bg-red-900/30'}`}>
-                    <Ionicons name={q.is_correct ? 'checkmark-circle' : 'close-circle'} size={14} color={q.is_correct ? '#10b981' : '#ef4444'} />
+                <View className={`ml-4 h-10 w-10 rounded-full items-center justify-center ${q.is_correct ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                    <Ionicons name={q.is_correct ? 'checkmark' : 'close'} size={20} color={q.is_correct ? '#10b981' : '#ef4444'} />
                 </View>
             </View>
 
             {/* Answer Display */}
             {isTheory ? (
-                <View className="mt-2 space-y-3">
-                    <View className="bg-slate-50 dark:bg-brand-dark/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Model Answer</Text>
+                <View className="space-y-4">
+                    <View className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0f0f11] border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
+                        <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Model Answer</Text>
                         <MathText
                             content={q.correct_answer}
                             color={isDark ? '#cbd5e1' : '#334155'}
-                            fontSize={14}
+                            fontSize={15}
                         />
                     </View>
                     {q.explanation && (
-                        <View className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
-                            <Text className="text-xs font-bold text-brand-primary dark:text-brand-primary uppercase tracking-wider mb-2">AI Feedback</Text>
+                        <View className={`p-6 rounded-2xl border ${isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'}`}>
+                            <View className="flex-row items-center mb-3">
+                                <Ionicons name="sparkles" size={14} color="#10b981" />
+                                <Text className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest ml-2">AI Feedback</Text>
+                            </View>
                             <MathText
                                 content={q.explanation}
                                 color={isDark ? '#bef264' : '#064e3b'}
-                                fontSize={14}
+                                fontSize={15}
                             />
                         </View>
                     )}
                 </View>
             ) : (
-                <View className="mt-2 space-y-2">
+                <View className="space-y-3">
                     {parsedOptions.map((opt, i) => {
                         const isSelected = q.user_answer === opt;
                         const isCorrectOpt = q.correct_answer === opt;
 
-                        let bg = 'bg-slate-50 dark:bg-brand-dark/50', border = 'border-slate-100 dark:border-slate-700', text = 'text-slate-500 dark:text-slate-400', icon = null;
+                        let bg = isDark ? 'bg-[#0f0f11]' : 'bg-slate-50', 
+                            border = isDark ? 'border-slate-800' : 'border-slate-100', 
+                            text = isDark ? 'text-slate-400' : 'text-slate-500', 
+                            icon = null;
 
                         if (isCorrectOpt) {
-                            bg = 'bg-emerald-50 dark:bg-emerald-900/30'; border = 'border-emerald-200 dark:border-emerald-800/50'; text = 'text-emerald-700 dark:text-emerald-400'; icon = 'checkmark-circle';
+                            bg = isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'; 
+                            border = isDark ? 'border-emerald-500/20' : 'border-emerald-200'; 
+                            text = isDark ? 'text-emerald-400' : 'text-emerald-700'; 
+                            icon = 'checkmark-circle';
                         } else if (isSelected && !isCorrectOpt) {
-                            bg = 'bg-red-50 dark:bg-red-900/30'; border = 'border-red-200 dark:border-red-800/50'; text = 'text-red-700 dark:text-red-400'; icon = 'close-circle';
+                            bg = isDark ? 'bg-red-500/10' : 'bg-red-50'; 
+                            border = isDark ? 'border-red-500/20' : 'border-red-200'; 
+                            text = isDark ? 'text-red-400' : 'text-red-700'; 
+                            icon = 'close-circle';
                         }
 
                         return (
-                            <View key={i} className={`flex-row items-center p-3 rounded-xl border ${bg} ${border}`}>
-                                <Text className={`flex-1 font-medium ${text}`}>{opt}</Text>
-                                {icon && <Ionicons name={icon as any} size={18} color={isCorrectOpt ? '#10b981' : '#ef4444'} />}
+                            <View key={i} className={`flex-row items-center p-4 rounded-xl border ${bg} ${border}`}>
+                                <Text className={`flex-1 font-medium text-[15px] ${text}`}>{opt}</Text>
+                                {icon && <Ionicons name={icon as any} size={20} color={isCorrectOpt ? '#10b981' : '#ef4444'} />}
                             </View>
                         );
                     })}
-                </View>
-            )}
-
-            {/* MCQ Explanation */}
-            {!isTheory && q.explanation && (
-                <View className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
-                    <Text className="text-xs font-bold text-brand-primary dark:text-brand-primary uppercase tracking-wider mb-1">Explanation</Text>
-                    <MathText
-                        content={q.explanation || ''}
-                        color={isDark ? '#bef264' : '#064e3b'}
-                        fontSize={14}
-                    />
+                    
+                    {q.explanation && (
+                        <View className={`mt-4 p-6 rounded-2xl border ${isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'}`}>
+                            <View className="flex-row items-center mb-3">
+                                <Ionicons name="bulb-outline" size={14} color="#10b981" />
+                                <Text className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest ml-2">Explanation</Text>
+                            </View>
+                            <MathText
+                                content={q.explanation}
+                                color={isDark ? '#bef264' : '#064e3b'}
+                                fontSize={15}
+                            />
+                        </View>
+                    )}
                 </View>
             )}
         </View>
@@ -236,14 +250,13 @@ export default function QuizHistoryDetailScreen() {
     const remark = getRemark(session.score_percentage);
 
     return (
-        <View className="flex-1 bg-slate-50 dark:bg-brand-dark">
+        <View className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
             <Stack.Screen options={{
                 title: 'Quiz Results',
                 headerShown: true,
-                headerBackVisible: false,
                 headerShadowVisible: false,
-                headerStyle: { backgroundColor: bgColor },
-                headerTintColor: tintColor
+                headerStyle: { backgroundColor: isDark ? '#0f0f11' : '#fafafa' },
+                headerTintColor: isDark ? 'white' : '#0f172a'
             }} />
 
             <View style={{ position: 'absolute', left: -9999, top: -9999 }}>
@@ -255,31 +268,41 @@ export default function QuizHistoryDetailScreen() {
                 </View>
             </View>
 
-            <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
+            <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 140 }}>
                 {/* Motivational Header */}
-                <View className="items-center py-8 pb-4">
-                    <View className="w-20 h-20 bg-[#D2B48C]/10 dark:bg-[#D2B48C]/20 rounded-[28px] items-center justify-center mb-6">
-                        <Ionicons name={remark.icon as any} size={42} color="#D2B48C" />
+                <View className="items-center py-10 pb-6">
+                    <View className={`w-24 h-24 rounded-[32px] items-center justify-center mb-8 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-xl shadow-slate-200'}`}>
+                        <Ionicons name={remark.icon as any} size={48} color="#D2B48C" />
                     </View>
-                    <Text className="text-[#D2B48C] font-black text-[14px] uppercase tracking-[4px] mb-2">{remark.title}</Text>
-                    <Text className="text-slate-900 dark:text-white font-black text-[42px] tracking-tight">{Math.round(session.score_percentage)}%</Text>
-                    <Text className="text-slate-500 dark:text-slate-400 font-bold text-[15px] mt-2 text-center px-8">{remark.subtitle}</Text>
+                    <Text className="text-brand-primary font-bold text-[13px] uppercase tracking-[0.3em] mb-3">{remark.title}</Text>
+                    <Text className={`font-black text-[56px] tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>{Math.round(session.score_percentage)}%</Text>
+                    <Text className="text-slate-500 font-medium text-[16px] mt-4 text-center px-8 leading-relaxed">{remark.subtitle}</Text>
                 </View>
 
-                {/* Score Breakdown */}
-                <View className="flex-row gap-4 mb-8">
-                    <View className="flex-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
-                        <Text className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Correct</Text>
-                        <Text className="text-slate-900 dark:text-white font-black text-2xl">{session.correct_answers}</Text>
+                {/* Score Breakdown Area */}
+                <View className="flex-row gap-4 mb-10">
+                    <View className={`flex-1 rounded-[32px] p-8 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                        <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-[0.2em] mb-2">Topic</Text>
+                        <Text className={`font-bold text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`} numberOfLines={1}>{session.topic}</Text>
                     </View>
-                    <View className="flex-1 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
-                        <Text className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Incorrect</Text>
-                        <Text className="text-red-500 font-black text-2xl">{session.total_questions - session.correct_answers}</Text>
+                </View>
+
+                <View className="flex-row gap-4 mb-12">
+                    <View className={`flex-1 rounded-[32px] p-8 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                        <Text className="text-emerald-500 font-bold text-[11px] uppercase tracking-[0.2em] mb-2">Correct</Text>
+                        <Text className={`font-black text-3xl ${isDark ? 'text-white' : 'text-slate-900'}`}>{session.correct_answers}</Text>
+                    </View>
+                    <View className={`flex-1 rounded-[32px] p-8 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                        <Text className="text-red-500 font-bold text-[11px] uppercase tracking-[0.2em] mb-2">Missed</Text>
+                        <Text className={`font-black text-3xl ${isDark ? 'text-white' : 'text-slate-900'}`}>{session.total_questions - session.correct_answers}</Text>
                     </View>
                 </View>
 
                 {/* Questions List */}
-                <Text className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4 ml-1">Review Answers</Text>
+                <View className="flex-row items-center mb-6 ml-1">
+                    <View className="w-1.5 h-1.5 rounded-full bg-brand-primary mr-3" />
+                    <Text className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.2em]">Detailed Review</Text>
+                </View>
 
                 {session.questions.map((q, i) => (
                     <HistoryQuestionCard key={q.id} q={q} index={i} />
@@ -288,17 +311,18 @@ export default function QuizHistoryDetailScreen() {
             </ScrollView>
 
             {/* Sticky Action Footer */}
-            <View className="absolute bottom-0 left-0 right-0 py-8 px-6 backdrop-blur-3xl border-t border-slate-200/30 dark:border-slate-800/50" style={{ backgroundColor: isDark ? 'rgba(18, 18, 18, 0.95)' : 'rgba(255, 255, 255, 0.95)' }}>
-                <View className="flex-row gap-3">
+            <View className="absolute bottom-0 left-0 right-0 py-8 px-6 border-t border-slate-200/20 dark:border-slate-800/30" style={{ backgroundColor: isDark ? 'rgba(15, 15, 17, 0.95)' : 'rgba(250, 250, 250, 0.95)' }}>
+                <View className="flex-row gap-4">
                     <TouchableOpacity
                         onPress={handleExport}
                         disabled={isExporting}
-                        className="flex-1 flex-row items-center justify-center bg-slate-900 dark:bg-white px-4 py-5 rounded-2xl active:opacity-90 shadow-sm"
+                        activeOpacity={0.8}
+                        className={`flex-1 flex-row items-center justify-center h-[60px] rounded-2xl border ${isDark ? 'bg-white border-white' : 'bg-slate-900 border-slate-900'} shadow-sm`}
                     >
-                        {isExporting ? <ActivityIndicator size="small" color={isDark ? '#121212' : 'white'} /> : (
+                        {isExporting ? <ActivityIndicator size="small" color={isDark ? '#0f0f11' : 'white'} /> : (
                             <>
-                                <Ionicons name="download-outline" size={18} color={isDark ? '#121212' : 'white'} style={{ marginRight: 8 }} />
-                                <Text className="text-white dark:text-slate-900 font-black text-[15px]">Export PDF</Text>
+                                <Ionicons name="document-text-outline" size={20} color={isDark ? '#0f0f11' : 'white'} style={{ marginRight: 10 }} />
+                                <Text className={`font-bold text-[16px] ${isDark ? 'text-slate-900' : 'text-white'}`}>Save Report</Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -316,11 +340,12 @@ export default function QuizHistoryDetailScreen() {
                                 setIsSharing(false);
                             }
                         }}
+                        activeOpacity={0.8}
                         disabled={isSharing}
-                        className="flex-none flex-row items-center justify-center bg-[#D2B48C] w-16 h-[60px] rounded-2xl active:opacity-90 shadow-sm"
+                        className="w-[60px] h-[60px] rounded-2xl items-center justify-center bg-brand-primary shadow-sm"
                     >
                         {isSharing ? <ActivityIndicator size="small" color="white" /> : (
-                            <Ionicons name="share-social" size={22} color="white" />
+                            <Ionicons name="share-social" size={24} color="white" />
                         )}
                     </TouchableOpacity>
                 </View>
