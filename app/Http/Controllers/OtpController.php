@@ -25,7 +25,7 @@ class OtpController extends Controller
      */
     private function sendOtp(string $email, string $otp): void
     {
-        Mail::to($email)->send(new OtpMail($otp));
+        Mail::mailer('resend')->to($email)->send(new OtpMail($otp));
     }
 
     /**

@@ -140,7 +140,7 @@ class TestEmailPreview extends Component
         \Log::info('Sending invoice email', ['to' => $this->testEmail, 'invoice' => $invoice->id]);
         
         try {
-            Mail::to($this->testEmail)->send(new InvoiceEmail($invoice, $this->testEmail));
+            Mail::mailer('resend')->to($this->testEmail)->send(new InvoiceEmail($invoice, $this->testEmail));
             \Log::info('Invoice email sent successfully');
         } catch (\Exception $e) {
             \Log::error('Failed to send invoice email', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
@@ -155,7 +155,7 @@ class TestEmailPreview extends Component
         \Log::info('Sending welcome email', ['to' => $this->testEmail, 'user' => $user->id]);
         
         try {
-            Mail::to($this->testEmail)->send(new WelcomeEmail($user, $schoolName));
+            Mail::mailer('resend')->to($this->testEmail)->send(new WelcomeEmail($user, $schoolName));
             \Log::info('Welcome email sent successfully');
         } catch (\Exception $e) {
             \Log::error('Failed to send welcome email', ['error' => $e->getMessage()]);
@@ -171,7 +171,7 @@ class TestEmailPreview extends Component
         \Log::info('Sending upgrade email', ['to' => $this->testEmail, 'subscription' => $subscription->id]);
         
         try {
-            Mail::to($this->testEmail)->send(new UpgradeConfirmationEmail($subscription, $planName, $billingPeriod));
+            Mail::mailer('resend')->to($this->testEmail)->send(new UpgradeConfirmationEmail($subscription, $planName, $billingPeriod));
             \Log::info('Upgrade email sent successfully');
         } catch (\Exception $e) {
             \Log::error('Failed to send upgrade email', ['error' => $e->getMessage()]);

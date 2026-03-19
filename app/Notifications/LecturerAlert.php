@@ -39,7 +39,7 @@ class LecturerAlert extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return (new MailMessage)->mailer('resend')
                     ->subject($this->title)
                     ->line($this->message)
                     ->action('View Details', $this->url)

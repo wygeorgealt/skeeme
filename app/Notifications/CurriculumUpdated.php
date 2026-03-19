@@ -39,7 +39,7 @@ class CurriculumUpdated extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return (new MailMessage)->mailer('resend')
                     ->line('The curriculum for your course has been updated.')
                     ->action('View Curriculum', url('/student/curriculum'))
                     ->line('Thank you for using our application!');

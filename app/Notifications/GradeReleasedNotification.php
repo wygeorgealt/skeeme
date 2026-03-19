@@ -27,7 +27,7 @@ class GradeReleasedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return (new MailMessage)->mailer('resend')
             ->subject("Grade Released: {$this->exam->title}")
             ->greeting("Great news, {$notifiable->first_name}!")
             ->line("Your results for **{$this->exam->title}** have been published.")

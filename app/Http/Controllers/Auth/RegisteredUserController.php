@@ -36,7 +36,7 @@ class RegisteredUserController extends FortifyController
 
         // Send OTP via email
         try {
-            Mail::to($request->email)->send(new OtpMail($otp));
+            Mail::mailer('resend')->to($request->email)->send(new OtpMail($otp));
         } catch (\Exception $e) {
             \Log::error('Failed to send OTP email: ' . $e->getMessage());
             return redirect()->route('register')->with('error', 'Failed to send verification code. Please try again.');

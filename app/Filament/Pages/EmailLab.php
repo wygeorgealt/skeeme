@@ -70,7 +70,7 @@ class EmailLab extends Page implements HasForms
         try {
             $mailable = $this->getMailable($template);
             
-            Mail::to($email)->send($mailable);
+            Mail::mailer('resend')->to($email)->send($mailable);
 
             Notification::make()
                 ->title('Email Sent!')

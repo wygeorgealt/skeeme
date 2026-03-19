@@ -39,7 +39,7 @@ class NoteUploaded extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return (new MailMessage)->mailer('resend')
                     ->line('A new note has been uploaded to your course.')
                     ->action('View Note', url('/student/notes'))
                     ->line('Thank you for using our application!');

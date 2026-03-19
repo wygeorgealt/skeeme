@@ -36,7 +36,7 @@ class BookDemoController extends Controller
         ]));
 
         // TODO: Send email
-        // Mail::to(config('mail.from.address'))->send(new DemoRequest($validated));
+        // Mail::mailer('resend')->to(config('mail.from.address'))->send(new DemoRequest($validated));
 
         return redirect()->back()->with('success', 'Thank you for your interest. We will contact you shortly to schedule your demo.');
     }

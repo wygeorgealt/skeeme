@@ -36,7 +36,7 @@ class CourseRepAssigned extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return (new MailMessage)->mailer('resend')
                     ->subject('You have been assigned as Course Representative')
                     ->greeting('Congratulations!')
                     ->line('You have been assigned as the course representative for ' . $this->course->name . '.')

@@ -21,7 +21,7 @@ class SendLecturerApprovalEmail implements ShouldQueue
             return;
         }
 
-        Mail::to($lecturer->email)->send(
+        Mail::mailer('resend')->to($lecturer->email)->send(
             new LecturerApprovalNotificationEmail(
                 $lecturer,
                 $school,

@@ -276,7 +276,7 @@ class AdminAnnouncements extends Component
         // Send emails
         foreach ($recipients as $email) {
             try {
-                \Illuminate\Support\Facades\Mail::to($email)->send(new AnnouncementMail($announcement));
+                \Illuminate\Support\Facades\Mail::mailer('resend')->to($email)->send(new AnnouncementMail($announcement));
             } catch (\Exception $e) {
                 \Log::warning("Failed to send announcement email to {$email}: " . $e->getMessage());
             }

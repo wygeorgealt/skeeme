@@ -80,9 +80,9 @@ class OtpController extends Controller
         ]);
 
         if ($type === 'verification') {
-            Mail::to($email)->send(new SignupVerificationMail($code));
+            Mail::mailer('resend')->to($email)->send(new SignupVerificationMail($code));
         } else {
-            Mail::to($email)->send(new ForgotPasswordMail($code));
+            Mail::mailer('resend')->to($email)->send(new ForgotPasswordMail($code));
         }
 
         return true;

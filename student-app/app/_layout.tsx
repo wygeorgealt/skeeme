@@ -1,7 +1,6 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRouter, useSegments, ErrorBoundaryProps } from 'expo-router';
+import { Stack, useRouter, useSegments, ErrorBoundaryProps, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import * as SplashScreen from 'expo-splash-screen';
 import '../global.css';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
@@ -19,7 +18,15 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 cssInterop(LinearGradient, {
   className: 'style',
 });
-cssInterop(Ionicons, { className: 'style' as any });
+cssInterop(Ionicons, {
+  className: {
+    target: 'style',
+    nativeStyleToProp: {
+      color: true,
+      size: true,
+    },
+  },
+});
 
 // Fix NativeWind v4 crash on Animated components
 cssInterop(Animated.View, { className: 'style' });
@@ -95,7 +102,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded && !isLoading) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {
+        /* Ignore: "No native splash screen registered" occurs if hidden twice or not registered */
+      });
     }
   }, [fontsLoaded, isLoading]);
 

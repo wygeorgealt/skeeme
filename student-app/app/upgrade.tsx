@@ -137,7 +137,6 @@ export default function UpgradeScreen() {
     return (
         <View className={`flex-1 ${bgClass}`}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
-            <Stack.Screen options={{ headerShown: false }} />
 
             {/* Header */}
             <View className="pt-14 px-8 flex-row justify-between items-center">

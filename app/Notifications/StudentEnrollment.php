@@ -36,7 +36,7 @@ class StudentEnrollment extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return (new MailMessage)->mailer('resend')
                     ->subject('Enrollment Confirmation: ' . $this->course->name)
                     ->line('You have been successfully enrolled in the course: ' . $this->course->name)
                     ->action('View Course', url('/student/courses/' . $this->course->id))

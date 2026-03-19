@@ -28,7 +28,7 @@ class LiveClassStarted extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return (new MailMessage)->mailer('resend')
             ->subject("Live Class Started: {$this->course->name}")
             ->greeting("Hello, {$notifiable->name}!")
             ->line("Your lecturer has just started a live class for **{$this->course->name}**.")
