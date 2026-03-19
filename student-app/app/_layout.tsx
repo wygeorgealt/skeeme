@@ -34,7 +34,7 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const { hydrate, isLoading, user } = useAuthStore();
+  const { hydrate, isLoading, user, onboardingComplete, onboardingStep, storedEmail } = useAuthStore();
   const [isAnimationFinished, setIsAnimationFinished] = useState(false);
 
   // System fonts: SF Pro (iOS) / Roboto (Android) — no loading needed
@@ -53,16 +53,40 @@ export default function RootLayout() {
   useEffect(() => {
     if (isLoading) return;
 
-    const publicRoutes = ['login', 'signup', 'welcome'];
+    const publicRoutes = ['login', 'signup', '(onboarding)', 'forgot-password'];
     const currentSegment = segments[0] as string;
     const isPublicRoute = publicRoutes.includes(currentSegment);
 
-    if (!user && !isPublicRoute) {
-      router.replace('/welcome');
-    } else if (user && isPublicRoute) {
+    if (user && isPublicRoute) {
+      // Logged in user on a public route → send home
       router.replace('/(drawer)');
+    } else if (!user && !isPublicRoute) {
+      // Not logged in → decide where to send them
+      if (storedEmail) {
+        // Had a previous session → login with pre-filled email
+        router.replace('/login');
+      } else if (!onboardingComplete && onboardingStep > 0) {
+        // Started onboarding but didn't finish → resume
+        const stepRoutes: Record<number, string> = {
+          1: '/(onboarding)/hook',
+          2: '/(onboarding)/education',
+          3: '/(onboarding)/field',
+          4: '/(onboarding)/style',
+          5: '/(onboarding)/demo',
+          6: '/(onboarding)/create-account',
+          7: '/(onboarding)/streak-intro',
+          8: '/(onboarding)/notifications',
+        };
+        router.replace((stepRoutes[onboardingStep] || '/(onboarding)/hook') as any);
+      } else if (!onboardingComplete) {
+        // Fresh install → start onboarding
+        router.replace('/(onboarding)/hook');
+      } else {
+        // Completed onboarding but no user (logged out) → login
+        router.replace('/login');
+      }
     }
-  }, [user, isLoading, segments, router]);
+  }, [user, isLoading, segments, router, onboardingComplete, onboardingStep, storedEmail]);
 
   useEffect(() => {
     if (fontsLoaded && !isLoading) {
@@ -98,9 +122,10 @@ export default function RootLayout() {
           <NetworkStatus />
 
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="welcome" options={{ headerShown: false, animation: 'fade' }} />
+            <Stack.Screen name="(onboarding)" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="signup" options={{ headerShown: false, animation: 'fade' }} />
+            <Stack.Screen name="forgot-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
             <Stack.Screen name="(drawer)" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="upgrade" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', headerShown: false }} />
             <Stack.Screen name="+not-found" />

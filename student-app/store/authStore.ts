@@ -40,6 +40,14 @@ interface AuthState {
     setTheme: (theme: 'light' | 'dark' | 'system') => void;
     pricingConfig: any;
     fetchPricingConfig: () => Promise<void>;
+    // Onboarding
+    onboardingStep: number;
+    onboardingData: Record<string, any>;
+    storedEmail: string | null;
+    onboardingComplete: boolean;
+    setOnboardingStep: (step: number) => Promise<void>;
+    setOnboardingData: (data: Record<string, any>) => Promise<void>;
+    completeOnboarding: () => Promise<void>;
 }
 
 // Secure storage for sensitive data (tokens)
@@ -110,6 +118,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     isLoading: true,
     theme: 'system',
     pricingConfig: null,
+    onboardingStep: 0,
+    onboardingData: {},
+    storedEmail: null,
+    onboardingComplete: false,
 
     fetchPricingConfig: async () => {
         try {
@@ -119,6 +131,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         } catch (e) {
             if (__DEV__) console.error('Failed to fetch pricing config', e);
         }
+    },
+
+    setOnboardingStep: async (step) => {
+        set({ onboardingStep: step });
+        try {
+            await standardStorage.setItem('onboarding_step', String(step));
+        } catch (e) {}
+    },
+
+    setOnboardingData: async (data) => {
+        const current = get().onboardingData;
+        const merged = { ...current, ...data };
+        set({ onboardingData: merged });
+        try {
+            await standardStorage.setItem('onboarding_data', JSON.stringify(merged));
+        } catch (e) {}
+    },
+
+    completeOnboarding: async () => {
+        set({ onboardingComplete: true, onboardingStep: 0 });
+        try {
+            await standardStorage.setItem('onboarding_complete', 'true');
+            await standardStorage.deleteItem('onboarding_step');
+            await standardStorage.deleteItem('onboarding_data');
+        } catch (e) {}
     },
 
     login: async (user, token) => {
@@ -179,7 +216,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
             if (token && userStr) {
                 // Optimistically set user from cache for instant UI
-                set({ token, user: JSON.parse(userStr), theme: themeStr || 'system', isLoading: false });
+                set({ token, user: JSON.parse(userStr), theme: themeStr || 'system', onboardingComplete: true, isLoading: false });
 
                 // C5: Validate token in background — if expired, force logout
                 try {
@@ -194,7 +231,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     }
                 } catch (validateError: any) {
                     if (validateError?.response?.status === 401) {
-                        // Token is expired/revoked — clear silently
+                        // Token is expired/revoked — save email for pre-fill, clear session
+                        const cachedUser = get().user;
+                        if (cachedUser?.email) {
+                            set({ storedEmail: cachedUser.email });
+                            await standardStorage.setItem('stored_email', cachedUser.email);
+                        }
                         set({ user: null, token: null });
                         await secureStorage.deleteItem('auth_token');
                         await standardStorage.deleteItem('auth_user');
@@ -202,7 +244,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     // Network errors are ignored — user keeps cached data
                 }
             } else {
-                set({ theme: themeStr || 'system', isLoading: false });
+                // No session — check onboarding state
+                const obComplete = await standardStorage.getItem('onboarding_complete');
+                const obStep = await standardStorage.getItem('onboarding_step');
+                const obData = await standardStorage.getItem('onboarding_data');
+                const savedEmail = await standardStorage.getItem('stored_email');
+
+                set({
+                    theme: themeStr || 'system',
+                    onboardingComplete: obComplete === 'true',
+                    onboardingStep: obStep ? parseInt(obStep, 10) : 0,
+                    onboardingData: obData ? JSON.parse(obData) : {},
+                    storedEmail: savedEmail || null,
+                    isLoading: false,
+                });
             }
         } catch (e) {
             if (__DEV__) console.error('Failed to hydrate auth state', e);

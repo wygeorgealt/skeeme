@@ -46,3 +46,35 @@
 #3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
 #4 {main}
 "} 
+[2026-03-19 00:34:32] local.ERROR: Cannot redeclare non static Filament\Pages\Page::$view as static App\Filament\Pages\PricingSettings::$view {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare non static Filament\\Pages\\Page::$view as static App\\Filament\\Pages\\PricingSettings::$view at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/PricingSettings.php:11)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Cannot redecla...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-19 00:34:34] local.ERROR: Cannot redeclare non static Filament\Pages\Page::$view as static App\Filament\Pages\PricingSettings::$view {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare non static Filament\\Pages\\Page::$view as static App\\Filament\\Pages\\PricingSettings::$view at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/PricingSettings.php:11)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Cannot redecla...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-19 00:37:02] local.ERROR: Cannot redeclare non static Filament\Pages\Page::$view as static App\Filament\Pages\PricingSettings::$view {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare non static Filament\\Pages\\Page::$view as static App\\Filament\\Pages\\PricingSettings::$view at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/PricingSettings.php:11)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Cannot redecla...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 
+[2026-03-19 00:40:15] local.ERROR: Cannot redeclare non static Filament\Pages\Page::$view as static App\Filament\Pages\PricingSettings::$view {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Cannot redeclare non static Filament\\Pages\\Page::$view as static App\\Filament\\Pages\\PricingSettings::$view at C:/Users/kritex/Herd/skeeme/app/Filament/Pages/PricingSettings.php:14)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(247): Symfony/Component/ErrorHandler/Error/FatalError->__construct(message: ''Cannot redecla...', code: '0', error: '['type' => 64, ...', traceOffset: '0', traceArgs: '???', trace: '???')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(234): Illuminate/Foundation/Bootstrap/HandleExceptions->fatalErrorFromPhpError(error: '['type' => 64, ...', traceOffset: '0')
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate/Foundation/Bootstrap/HandleExceptions->handleShutdown()
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(0): Illuminate/Foundation/Bootstrap/HandleExceptions->Illuminate/Foundation/Bootstrap/{closure:C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php:257-259}()
+#4 {main}
+"} 

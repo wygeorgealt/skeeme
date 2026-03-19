@@ -10,7 +10,9 @@ use Filament\Notifications\Notification;
 
 class PricingSettings extends Page implements Forms\Contracts\HasForms
 {
-    protected static string $view = 'filament.pages.pricing-settings';
+    use Forms\Concerns\InteractsWithForms;
+
+    protected string $view = 'filament.pages.pricing-settings';
 
     public static function getNavigationIcon(): ?string
     {
