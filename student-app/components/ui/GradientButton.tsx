@@ -30,7 +30,7 @@ export function GradientButton({
             onPress={onPress}
             disabled={disabled || loading}
             activeOpacity={0.8}
-            className={`w-full h-[56px] bg-slate-900 dark:bg-white rounded-xl items-center justify-center flex-row shadow-sm ${containerStyle} ${className} ${disabled ? 'opacity-50' : ''}`}
+            className={`w-full h-[48px] bg-slate-900 dark:bg-white rounded-lg items-center justify-center flex-row shadow-sm ${containerStyle} ${className} ${disabled ? 'opacity-50' : ''}`}
             style={style}
         >
             {loading ? (
@@ -44,7 +44,7 @@ export function GradientButton({
                     )}
                     <Text
                         style={textStyle}
-                        className="text-white dark:text-slate-900 font-bold text-[17px]"
+                        className="text-white dark:text-slate-900 font-bold text-[15px]"
                     >
                         {children}
                     </Text>

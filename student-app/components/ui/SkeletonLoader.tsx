@@ -61,7 +61,7 @@ export const SkeletonLoader = ({
 };
 
 export const SkeletonCard = () => (
-    <View className="bg-slate-50 dark:bg-slate-900/50 p-6 rounded-[24px] border-2 border-slate-100 dark:border-slate-800 mb-4 overflow-hidden">
+    <View className="bg-slate-50 dark:bg-slate-900/50 p-5 rounded-[24px] border-2 border-slate-100 dark:border-slate-800 mb-4 overflow-hidden">
         <SkeletonLoader width="70%" height={24} borderRadius={8} style={{ marginBottom: 16 }} />
         <View className="flex-row items-center">
             <SkeletonLoader width={80} height={16} borderRadius={4} style={{ marginRight: 12 }} />

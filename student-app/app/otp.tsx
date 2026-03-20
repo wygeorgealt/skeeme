@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, useColorScheme } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
-import { Ionicons } from '@expo/vector-icons';
+import { NavArrowLeft, Mail } from 'iconoir-react-native';
 import { StatusBar } from 'expo-status-bar';
 
 export default function OtpScreen() {
@@ -136,27 +136,27 @@ export default function OtpScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className={`flex-1 ${bgClass}`}>
             <StatusBar style={isDark ? "light" : "dark"} />
 
-            <View className="px-6 pt-16 pb-2 flex-row items-center">
+            <View className="px-5 pt-16 pb-2 flex-row items-center">
                 <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
-                    <Ionicons name="arrow-back" size={28} color={isDark ? '#fff' : '#000'} />
+                    <NavArrowLeft width={28} height={28} color={isDark ? '#fff' : '#000'} />
                 </TouchableOpacity>
             </View>
 
             <View className="flex-1 px-10 pt-10">
-                <View className="w-16 h-16 rounded-[22px] bg-brand-primary/10 items-center justify-center mb-8">
-                    <Ionicons name="mail-open" size={32} color="#D2B48C" />
+                <View className="w-16 h-16 rounded-[22px] bg-brand-primary/10 items-center justify-center mb-6">
+                    <Mail width={32} height={32} color="#8B5CF6" />
                 </View>
 
-                <View className="mb-10">
+                <View className="mb-8">
                     <Text className={`${textClass} text-[40px] font-bold tracking-tight leading-[46px] mb-3`}>
                         {headline}.
                     </Text>
-                    <Text className={`${subtextClass} text-[16px] font-medium leading-relaxed`}>
+                    <Text className={`${subtextClass} text-[15px] font-medium leading-relaxed`}>
                         We sent a 6-digit code to <Text className={`${textClass} font-bold`}>{email}</Text>.
                     </Text>
                 </View>
 
-                <View className="flex-row justify-between mb-10">
+                <View className="flex-row justify-between mb-8">
                     {code.map((digit, index) => {
                         const hasValue = digit !== '';
                         const isFocused = inputs.current[index]?.isFocused();
@@ -170,7 +170,7 @@ export default function OtpScreen() {
                                 keyboardType="number-pad"
                                 maxLength={6}
                                 selectTextOnFocus
-                                className={`w-[48px] h-[64px] text-center text-[24px] font-bold rounded-[18px] border
+                                className={`w-[48px] h-[56px] text-center text-[20px] font-bold rounded-[18px] border
                                     ${textClass}
                                 `}
                                 style={{
@@ -184,27 +184,27 @@ export default function OtpScreen() {
                 </View>
 
                 {isLoading && (
-                    <View className="items-center mb-6">
-                        <ActivityIndicator color="#D2B48C" />
+                    <View className="items-center mb-5">
+                        <ActivityIndicator color="#8B5CF6" />
                     </View>
                 )}
 
                 {errorMsg ? (
-                    <View className="bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 p-4 rounded-2xl mb-6">
-                        <Text className="text-red-600 dark:text-red-400 text-[14px] font-medium text-center">{errorMsg}</Text>
+                    <View className="bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 p-4 rounded-xl mb-5">
+                        <Text className="text-red-600 dark:text-red-400 text-[13px] font-medium text-center">{errorMsg}</Text>
                     </View>
                 ) : null}
 
                 {resendSuccess ? (
-                    <View className="bg-brand-primary/10 border border-brand-primary/20 p-4 rounded-2xl mb-6">
-                        <Text className="text-brand-primary text-[14px] font-medium text-center">{resendSuccess}</Text>
+                    <View className="bg-brand-primary/10 border border-brand-primary/20 p-4 rounded-xl mb-5">
+                        <Text className="text-brand-primary text-[13px] font-medium text-center">{resendSuccess}</Text>
                     </View>
                 ) : null}
 
-                <View className="flex-row items-center justify-center mt-6">
-                    <Text className={`${subtextClass} font-bold text-[13px] mr-2`}>Didn't get it?</Text>
+                <View className="flex-row items-center justify-center mt-5">
+                    <Text className={`${subtextClass} font-bold text-[12px] mr-2`}>Didn't get it?</Text>
                     <TouchableOpacity onPress={handleResend} disabled={countdown > 0 || isLoading}>
-                        <Text className={`font-black text-[13px] ${countdown > 0 ? 'text-slate-400' : 'text-brand-primary'}`}>
+                        <Text className={`font-black text-[12px] ${countdown > 0 ? 'text-slate-400' : 'text-brand-primary'}`}>
                             {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
                         </Text>
                     </TouchableOpacity>

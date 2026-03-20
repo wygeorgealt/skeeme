@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Image, ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { Apple, Google } from 'iconoir-react-native';
 
 interface QuizShareCardProps {
     topic: string;
@@ -119,8 +119,8 @@ export const QuizShareCard = ({ topic, percentage, strength, focusArea }: QuizSh
                     <View style={styles.footerTop}>
                         <Text style={styles.availableText}>Available on iOS & Android</Text>
                         <View style={styles.storeIcons}>
-                            <Ionicons name="logo-apple" size={24} color="white" style={styles.storeIcon} />
-                            <Ionicons name="logo-google-playstore" size={20} color="white" style={styles.storeIcon} />
+                            <Apple width={18} height={18} color="white" />
+                            <Google width={18} height={18} color="white" />
                         </View>
                     </View>
                     <View style={styles.footerBottomPill}>

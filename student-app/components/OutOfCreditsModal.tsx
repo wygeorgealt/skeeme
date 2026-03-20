@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, useColorScheme, Share, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { FireFlame, ShareAndroid } from 'iconoir-react-native';
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
 
@@ -82,8 +82,8 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                 <View style={{ width: 40, height: 4, backgroundColor: isDark ? '#475569' : '#CBD5E1', borderRadius: 2, alignSelf: 'center', marginBottom: 24 }} />
 
                 {/* Icon */}
-                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#D2B48C20', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
-                    <Ionicons name="flash" size={28} color="#D2B48C" />
+                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#A1C4FD20', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
+                    <FireFlame width={28} height={28} color="#A1C4FD" />
                 </View>
 
                 {/* Copy */}
@@ -99,7 +99,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                     onPress={handleUpgrade}
                     activeOpacity={0.9}
                     style={{
-                        backgroundColor: '#D2B48C',
+                        backgroundColor: '#A1C4FD',
                         height: 56,
                         borderRadius: 20,
                         alignItems: 'center',
@@ -145,7 +145,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                             gap: 6,
                         }}
                     >
-                        <Ionicons name="share-outline" size={16} color={isDark ? '#CBD5E1' : '#475569'} />
+                        <ShareAndroid width={16} height={16} color={isDark ? '#CBD5E1' : '#475569'} />
                         <Text style={{ color: isDark ? '#CBD5E1' : '#475569', fontSize: 13, fontWeight: '700' }}>
                             Refer a friend
                         </Text>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
-import { Ionicons } from '@expo/vector-icons';
+import { NavArrowLeft } from 'iconoir-react-native';
 import { StatusBar } from 'expo-status-bar';
 
 export default function ForgotPasswordScreen() {
@@ -48,29 +48,29 @@ export default function ForgotPasswordScreen() {
         >
             <StatusBar style={isDark ? "light" : "dark"} />
 
-            <View className="px-6 pt-16 pb-2 flex-row items-center">
+            <View className="px-5 pt-16 pb-2 flex-row items-center">
                 <TouchableOpacity
                     onPress={() => router.back()}
                     hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                 >
-                    <Ionicons name="arrow-back" size={28} color={isDark ? '#fff' : '#000'} />
+                    <NavArrowLeft width={28} height={28} color={isDark ? '#fff' : '#000'} />
                 </TouchableOpacity>
             </View>
 
             <View className="flex-1 px-10 pt-10">
-                <View className="mb-12">
+                <View className="mb-10">
                     <Text className={`${textClass} text-[40px] font-bold tracking-tight leading-[46px] mb-3`}>
                         Reset.
                     </Text>
-                    <Text className={`${subtextClass} text-[16px] font-medium leading-relaxed`}>
+                    <Text className={`${subtextClass} text-[15px] font-medium leading-relaxed`}>
                         Enter your email and we'll send you a 6-digit reset code.
                     </Text>
                 </View>
 
-                <View className="mb-8">
+                <View className="mb-6">
                     <View className={`${inputBg} ${inputBorder} rounded-[24px] px-5 flex-row items-center border focus:border-slate-900 dark:focus:border-white`}>
                         <TextInput
-                            className="flex-1 font-medium text-[17px] h-[64px]"
+                            className="flex-1 font-medium text-[15px] h-[56px]"
                             placeholder="Email address"
                             placeholderTextColor={placeholderColor}
                             keyboardType="email-address"
@@ -87,12 +87,12 @@ export default function ForgotPasswordScreen() {
                         onPress={handleSend}
                         disabled={isLoading || !email.trim()}
                         activeOpacity={0.9}
-                        className={`w-full h-[64px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${(isLoading || !email.trim()) ? 'opacity-70' : ''}`}
+                        className={`w-full h-[56px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${(isLoading || !email.trim()) ? 'opacity-70' : ''}`}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text className="font-bold text-[16px] text-white tracking-wide">Send Reset Code</Text>
+                            <Text className="font-bold text-[15px] text-white tracking-wide">Send Reset Code</Text>
                         )}
                     </TouchableOpacity>
                 </View>

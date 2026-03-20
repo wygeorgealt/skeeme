@@ -78,7 +78,7 @@ export default function CreditStatusBar({ activeAction, onSummaryLoaded, refresh
 
     // Color coding based on percentage
     const getColor = () => {
-        if (credit_percentage > 30) return '#D2B48C'; // Green
+        if (credit_percentage > 30) return '#A1C4FD'; // Green
         if (credit_percentage > 10) return '#F59E0B'; // Amber
         return '#EF4444'; // Red
     };

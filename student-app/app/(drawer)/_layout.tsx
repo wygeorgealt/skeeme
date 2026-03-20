@@ -1,20 +1,53 @@
 import { Drawer } from 'expo-router/drawer';
-import { View, Text, TouchableOpacity, useColorScheme, Alert, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, useColorScheme, Alert, Platform, Animated } from 'react-native';
+import { 
+    Rocket, NavArrowRight, Menu, Sparks, Flash,
+    Home, Scanning, MultiplePages, Page, MagicWand, User, LogOut
+} from 'iconoir-react-native';
+import { BlurView } from 'expo-blur';
 import { useAuthStore } from '@/store/authStore';
 
 import { api } from '@/lib/api';
 import { router, usePathname } from 'expo-router';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { registerForPushNotificationsAsync } from '@/lib/notifications';
+
+const NAV_ITEMS = [
+    { icon: Home, label: 'Dashboard', route: '/' },
+    { icon: Scanning, label: 'Scan & Solve', route: '/scan' },
+    { icon: Sparks, label: 'AI Quiz', route: '/generate' },
+    { icon: MultiplePages, label: 'Flashcards', route: '/flashcards' },
+    { icon: Page, label: 'History', route: '/history' },
+    { icon: MagicWand, label: 'Personalize', route: '/preferences' },
+    { icon: User, label: 'Account', route: '/account' },
+];
 
 function CustomDrawerContent(props: any) {
     const { user, logout } = useAuthStore();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const iconColor = isDark ? '#ffffff' : '#121212';
     const pathname = usePathname();
+
+    // Stagger animations for each row
+    const anims = useRef(NAV_ITEMS.map(() => new Animated.Value(0))).current;
+    const logoutAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        // Reset
+        anims.forEach(a => a.setValue(0));
+        logoutAnim.setValue(0);
+
+        // Stagger entrance
+        const animations = [
+            ...anims.map((a, i) =>
+                Animated.spring(a, { toValue: 1, useNativeDriver: true, delay: i * 50, tension: 80, friction: 12 })
+            ),
+            Animated.spring(logoutAnim, { toValue: 1, useNativeDriver: true, delay: NAV_ITEMS.length * 50, tension: 80, friction: 12 })
+        ];
+
+        Animated.parallel(animations).start();
+    }, []);
 
     const handleLogout = async () => {
         const performLogout = async () => {
@@ -43,78 +76,110 @@ function CustomDrawerContent(props: any) {
         );
     };
 
-    const NavItem = ({ icon, label, route }: { icon: any, label: string, route: string }) => {
-        const isActive = pathname === route || (pathname.startsWith(route + '/') && route !== '/');
-        const isRootActive = pathname === '/' && route === '/';
-        const active = isActive || isRootActive;
-
-        return (
-            <TouchableOpacity
-                onPress={() => router.push(route as any)}
-                className="px-6 py-4 flex-row items-center"
-            >
-                <Ionicons name={icon} size={22} color={iconColor} style={{ opacity: active ? 1 : 0.7 }} />
-                <Text className={`ml-5 font-semibold text-[15px] ${isDark ? 'text-white' : 'text-slate-900'}`} style={{ opacity: active ? 1 : 0.8 }}>
-                    {label}
-                </Text>
-            </TouchableOpacity>
-        );
+    const iconColors: Record<number, string> = {
+        0: '#6B7280', // Home
+        1: '#92400E', // Scan
+        2: '#3B82F6', // Quiz
+        3: '#10B981', // Flashcards
+        4: '#8B5CF6', // History
+        5: '#EC4899', // Personalize
+        6: '#64748B', // Account
     };
 
     return (
-        <View className="flex-1 bg-white dark:bg-[#121212]">
-            <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 40, paddingBottom: 20 }}>
-                {/* Profile Header section */}
-                <View className="px-6 mb-6">
-                    <View className="size-20 rounded-full bg-brand-primary items-center justify-center mb-4 border-4 border-slate-50 dark:border-[#111111] overflow-hidden shadow-sm shadow-slate-200 dark:shadow-none">
-                        <Text className="text-white font-black text-3xl">
-                            {user?.name?.charAt(0).toUpperCase() || 'S'}
-                        </Text>
-                    </View>
-                    <Text className="text-slate-900 dark:text-white font-bold text-2xl mb-1" numberOfLines={1}>{user?.name}</Text>
-                    <Text className="text-slate-500 dark:text-slate-400 font-medium text-sm" numberOfLines={1}>{user?.email}</Text>
+        <View className="flex-1 overflow-hidden" style={{ backgroundColor: 'transparent' }}>
+            <BlurView
+                intensity={isDark ? 80 : 40}
+                tint={isDark ? 'dark' : 'light'}
+                style={{ flex: 1, justifyContent: 'center' }}
+            >
+                {/* Vertically centered nav items - Jobber FAB style */}
+                <View className="flex-1 justify-center items-end pr-6 pb-20">
+                    {NAV_ITEMS.map((item, index) => {
+                        const isActive = pathname === item.route || (pathname.startsWith(item.route + '/') && item.route !== '/');
+                        const isRootActive = pathname === '/' && item.route === '/';
+                        const active = isActive || isRootActive;
+
+                        return (
+                            <Animated.View
+                                key={item.route}
+                                style={{
+                                    opacity: anims[index],
+                                    transform: [{ translateX: anims[index].interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }],
+                                    marginBottom: 8,
+                                }}
+                            >
+                                <TouchableOpacity
+                                    onPress={() => router.push(item.route as any)}
+                                    activeOpacity={0.7}
+                                    className="flex-row items-center"
+                                >
+                                    <Text className={`font-bold text-[14px] mr-4 ${active ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-white/60' : 'text-slate-500')}`}>
+                                        {item.label}
+                                    </Text>
+
+                                    <View
+                                        style={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 24,
+                                            backgroundColor: active ? (iconColors[index] || '#6B7280') : (isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9'),
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                    >
+                                        <item.icon
+                                            width={22}
+                                            height={22}
+                                            color={active ? '#FFFFFF' : (isDark ? '#9CA3AF' : '#64748B')}
+                                            strokeWidth={active ? 2 : 1.5}
+                                        />
+                                    </View>
+                                </TouchableOpacity>
+                            </Animated.View>
+                        );
+                    })}
+
+                    <Animated.View
+                        style={{
+                            opacity: logoutAnim,
+                            transform: [{ translateX: logoutAnim.interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }],
+                            marginTop: 16,
+                        }}
+                    >
+                        <TouchableOpacity
+                            onPress={handleLogout}
+                            activeOpacity={0.7}
+                            className="flex-row items-center"
+                        >
+                            <Text className="font-bold text-[14px] mr-4 text-red-400">Sign out</Text>
+                            <View
+                                style={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: 24,
+                                    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <LogOut width={22} height={22} color="#F87171" strokeWidth={2} />
+                            </View>
+                        </TouchableOpacity>
+                    </Animated.View>
                 </View>
-
-                {/* Divider exactly like image */}
-                <View className="h-[1px] bg-slate-100 dark:bg-white/10 mx-6 mb-4" />
-
-                {/* Nav Items */}
-                <NavItem icon="home-outline" label="Dashboard" route="/" />
-                <NavItem icon="scan-outline" label="Scan & Solve" route="/scan" />
-                <NavItem icon="sparkles-outline" label="AI Practice Quiz" route="/generate" />
-                <NavItem icon="albums-outline" label="Flashcards" route="/flashcards" />
-                <NavItem icon="book-outline" label="Study History" route="/history" />
-                <NavItem icon="color-wand-outline" label="Personalize AI" route="/preferences" />
-            </DrawerContentScrollView>
-
-            {/* Footer with Sign Out like image */}
-            <View className="px-6 pb-12 pt-4">
-                <TouchableOpacity
-                    onPress={() => router.push('/account')}
-                    className="bg-[#f1f5f9] dark:bg-[#111111] rounded-full py-[14px] items-center justify-center mb-3 border-2 border-slate-200 dark:border-slate-800"
-                    activeOpacity={0.7}
-                >
-                    <Text className="text-slate-900 dark:text-slate-300 font-bold text-[14px]">Account & Settings</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    onPress={handleLogout}
-                    className="bg-[#f1f5f9] dark:bg-[#111111] rounded-full py-[14px] items-center justify-center border-2 border-red-100 dark:border-red-900/30"
-                    activeOpacity={0.7}
-                >
-                    <Text className="text-red-500 font-bold text-[14px]">Sign out</Text>
-                </TouchableOpacity>
-            </View>
+            </BlurView>
         </View>
     );
 }
+
 
 export default function DrawerLayout() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
-    const bgColor = isDark ? '#121212' : '#ffffff';
-    const drawerBg = isDark ? '#121212' : '#ffffff';
+    const bgColor = isDark ? '#100921' : '#fafafa';
+    const drawerBg = isDark ? '#100921' : '#fafafa';
     const tintColor = isDark ? '#fff' : '#121212';
 
     useEffect(() => {
@@ -132,26 +197,25 @@ export default function DrawerLayout() {
         <Drawer
             drawerContent={(props) => <CustomDrawerContent {...props} />}
             screenOptions={{
-                headerTitle: '', // Keep the hamburger icon, but remove text titles
-                headerShown: true,
-                headerStyle: {
-                    backgroundColor: bgColor,
-                    borderBottomWidth: 0,
+                headerShown: false,
+                drawerPosition: 'right',
+                drawerType: 'front',
+                overlayColor: 'rgba(0,0,0,0.7)',
+                sceneStyle: {
+                    backgroundColor: 'transparent'
+                },
+                drawerStyle: {
+                    backgroundColor: 'transparent',
+                    width: '55%',
                     elevation: 0,
                     shadowOpacity: 0,
-                },
-                headerTintColor: tintColor,
-                drawerStyle: {
-                    backgroundColor: drawerBg,
-                    width: '85%',
-                },
+                }
             }}>
 
             <Drawer.Screen
                 name="index"
                 options={{
                     title: 'Dashboard',
-                    drawerIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={color} />,
                 }}
             />
 
@@ -164,10 +228,25 @@ export default function DrawerLayout() {
             />
 
             <Drawer.Screen
+                name="scan"
+                options={{
+                    title: 'Scan',
+                    drawerItemStyle: { display: 'none' },
+                }}
+            />
+
+            <Drawer.Screen
+                name="generate"
+                options={{
+                    title: 'Generate',
+                    drawerItemStyle: { display: 'none' },
+                }}
+            />
+
+            <Drawer.Screen
                 name="history"
                 options={{
                     title: 'Study History',
-                    drawerIcon: ({ color }) => <Ionicons name="book-outline" size={22} color={color} />,
                 }}
             />
 
@@ -175,7 +254,6 @@ export default function DrawerLayout() {
                 name="account"
                 options={{
                     title: 'Account & Settings',
-                    drawerIcon: ({ color }) => <Ionicons name="settings-outline" size={22} color={color} />,
                 }}
             />
 
@@ -183,7 +261,6 @@ export default function DrawerLayout() {
                 name="preferences"
                 options={{
                     title: 'Personalize AI',
-                    drawerIcon: ({ color }) => <Ionicons name="color-wand-outline" size={22} color={color} />,
                 }}
             />
         </Drawer >

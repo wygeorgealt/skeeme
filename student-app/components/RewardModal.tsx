@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Dimensions, useColorScheme } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Ionicons } from '@expo/vector-icons';
+import { Trophy } from 'iconoir-react-native';
 import Animated, { FadeInUp, ZoomIn, FadeOutDown } from 'react-native-reanimated';
 
 interface RewardModalProps {
@@ -42,7 +42,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({ isVisible, onClose, re
                 >
                     <Animated.View entering={ZoomIn.delay(300).springify()} style={styles.iconContainer}>
                         <View style={styles.iconCircle}>
-                            <Ionicons name="trophy" size={50} color="#FFD700" />
+                            <Trophy width={50} height={50} color="#FFD700" />
                         </View>
                     </Animated.View>
 

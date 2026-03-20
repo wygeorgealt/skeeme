@@ -8,7 +8,7 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { CloudCheck, CloudXmark } from 'iconoir-react-native';
 
 export function NetworkStatus() {
     const [isConnected, setIsConnected] = useState<boolean | null>(true);
@@ -58,11 +58,11 @@ export function NetworkStatus() {
     return (
         <Animated.View style={[styles.container, animatedStyle, { paddingHorizontal: 16 }]}>
             <View style={styles.content}>
-                <Ionicons
-                    name={isConnected ? "cloud-done" : "cloud-offline"}
-                    size={20}
-                    color="white"
-                />
+                {isConnected ? (
+                    <CloudCheck width={18} height={18} color="white" />
+                ) : (
+                    <CloudXmark width={18} height={18} color="white" />
+                )}
                 <Text style={styles.text}>
                     {isConnected ? "Back Online" : "No Internet Connection"}
                 </Text>

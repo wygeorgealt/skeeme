@@ -20,7 +20,7 @@
       "package": "com.kantrol.skeeme",
       "versionCode": 2,
       "adaptiveIcon": {
-        "backgroundColor": "#121212",
+        "backgroundColor": "#100921",
         "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "edgeToEdgeEnabled": true,
@@ -28,10 +28,10 @@
       "splash": {
         "image": "./assets/images/splash.png",
         "resizeMode": "contain",
-        "backgroundColor": "#121212",
+        "backgroundColor": "#100921",
         "dark": {
           "image": "./assets/images/splash.png",
-          "backgroundColor": "#121212"
+          "backgroundColor": "#100921"
         }
       }
     },
@@ -47,7 +47,7 @@
           "image": "./assets/images/splash.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#121212"
+          "backgroundColor": "#100921"
         }
       ],
       "expo-secure-store",

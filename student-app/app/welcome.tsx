@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions, useColorScheme, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
+import { Check, NavArrowRight } from 'iconoir-react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -15,10 +15,10 @@ const SLIDES = [
         title: 'Your Pocket\nTutor',
         description: 'Skeeme turns your notes, slides, and textbooks into ready-to-study quizzes — in seconds.',
         image: require('@/assets/images/slide1.png'),
-        bgColor: '#D2B48C',
+        bgColor: '#8B5CF6',
         textColor: '#ffffff',
         accentBg: '#ffffff',
-        accentIcon: '#D2B48C',
+        accentIcon: '#8B5CF6',
     },
     {
         id: 2,
@@ -29,7 +29,7 @@ const SLIDES = [
         bgColorDark: '#1a1a2e',
         textColor: '#000000',
         textColorDark: '#ffffff',
-        accentBg: '#D2B48C',
+        accentBg: '#8B5CF6',
         accentIcon: '#ffffff',
     },
     {
@@ -163,9 +163,9 @@ export default function WelcomeScreen() {
                     activeOpacity={0.9}
                 >
                     {currentIndex === SLIDES.length - 1 ? (
-                        <Ionicons name="checkmark" size={32} color={currentSlide.accentIcon} />
+                        <Check width={32} height={32} color={currentSlide.accentIcon} />
                     ) : (
-                        <Ionicons name="chevron-forward" size={32} color={currentSlide.accentIcon} />
+                        <NavArrowRight width={32} height={32} color={currentSlide.accentIcon} />
                     )}
                 </TouchableOpacity>
             </View>

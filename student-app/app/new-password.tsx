@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, useColorScheme } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
-import { Ionicons } from '@expo/vector-icons';
+import { Xmark } from 'iconoir-react-native';
 import { StatusBar } from 'expo-status-bar';
 import { PasswordField } from '@/components/ui/PasswordField';
 
@@ -35,7 +35,7 @@ export default function NewPasswordScreen() {
         const hasSpecial = /[^A-Za-z0-9]/.test(password);
         const score = [hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
 
-        if (score >= 2 && password.length >= 10) return { label: 'Strong', color: '#D2B48C', width: '100%' };
+        if (score >= 2 && password.length >= 10) return { label: 'Strong', color: '#8B5CF6', width: '100%' };
         if (score >= 1) return { label: 'Good', color: '#eab308', width: '70%' };
         return { label: 'Fair', color: '#f97316', width: '50%' };
     };
@@ -83,12 +83,12 @@ export default function NewPasswordScreen() {
         >
             <StatusBar style={isDark ? "light" : "dark"} />
 
-            <View className="px-6 pt-16 pb-2 flex-row items-center">
+            <View className="px-5 pt-16 pb-2 flex-row items-center">
                 <TouchableOpacity
                     onPress={() => router.replace('/login')}
                     hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                 >
-                    <Ionicons name="close" size={28} color={isDark ? '#fff' : '#000'} />
+                    <Xmark width={28} height={28} color={isDark ? '#fff' : '#000'} />
                 </TouchableOpacity>
             </View>
 
@@ -97,11 +97,11 @@ export default function NewPasswordScreen() {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <View className="mb-12">
+                <View className="mb-10">
                     <Text className={`${textClass} text-[40px] font-bold tracking-tight leading-[46px] mb-3`}>
                         Security.
                     </Text>
-                    <Text className={`${subtextClass} text-[16px] font-medium leading-relaxed`}>
+                    <Text className={`${subtextClass} text-[15px] font-medium leading-relaxed`}>
                         Create a strong password to protect your account.
                     </Text>
                 </View>
@@ -118,7 +118,7 @@ export default function NewPasswordScreen() {
 
                 {/* Password Strength */}
                 {password.length > 0 && (
-                    <View className="mb-8 ml-1">
+                    <View className="mb-6 ml-1">
                         <View className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
                             <View style={{ width: strength.width as any, backgroundColor: strength.color, height: '100%', borderRadius: 4 }} />
                         </View>
@@ -137,23 +137,23 @@ export default function NewPasswordScreen() {
                 </View>
 
                 {errorMsg ? (
-                    <Text className="text-red-500 text-[14px] font-medium mt-3 ml-1">{errorMsg}</Text>
+                    <Text className="text-red-500 text-[13px] font-medium mt-3 ml-1">{errorMsg}</Text>
                 ) : null}
 
-                <View className="mt-8" />
+                <View className="mt-6" />
 
                 {/* Submit Button */}
-                <View className="mt-8">
+                <View className="mt-6">
                     <TouchableOpacity
                         onPress={handleReset}
                         disabled={isLoading}
                         activeOpacity={0.9}
-                        className={`w-full h-[64px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${isLoading ? 'opacity-70' : ''}`}
+                        className={`w-full h-[56px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${isLoading ? 'opacity-70' : ''}`}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text className="font-bold text-[16px] text-white tracking-wide">Reset Password</Text>
+                            <Text className="font-bold text-[15px] text-white tracking-wide">Reset Password</Text>
                         )}
                     </TouchableOpacity>
                 </View>

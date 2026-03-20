@@ -1,16 +1,16 @@
 import { View, Text, TouchableOpacity, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { GraduationCap, Book, Flask, Medal, Check } from 'iconoir-react-native';
+import { GlowBackground } from '@/components/ui/GlowBackground';
 
 const LEVELS = [
-    { key: 'high_school', label: 'High School', icon: 'school-outline' as const, desc: 'Secondary / A-Levels' },
-    { key: 'undergraduate', label: 'Undergraduate', icon: 'book-outline' as const, desc: 'Bachelor\'s degree' },
-    { key: 'masters_phd', label: 'Masters / PhD', icon: 'flask-outline' as const, desc: 'Postgraduate research' },
-    { key: 'professional', label: 'Professional Cert', icon: 'ribbon-outline' as const, desc: 'ICAN, ACCA, PMP, etc.' },
+    { key: 'high_school', label: 'High School', icon: GraduationCap, desc: 'Secondary / A-Levels' },
+    { key: 'undergraduate', label: 'Undergraduate', icon: Book, desc: 'Bachelor\'s degree' },
+    { key: 'masters_phd', label: 'Masters / PhD', icon: Flask, desc: 'Postgraduate research' },
+    { key: 'professional', label: 'Professional Cert', icon: Medal, desc: 'ICAN, ACCA, PMP, etc.' },
 ];
 
 export default function EducationScreen() {
@@ -33,21 +33,20 @@ export default function EducationScreen() {
     };
 
     return (
-        <View className={`flex-1 px-6 pt-16 ${isDark ? 'bg-[#121212]' : 'bg-white'}`}>
-            <StatusBar style={isDark ? 'light' : 'dark'} />
-
-            {/* Progress */}
-            <View className="flex-row gap-1.5 mb-10">
+        <GlowBackground useSafeArea>
+            <View className="flex-1 px-5 pt-4">
+                {/* Progress */}
+            <View className="flex-row gap-1.5 mb-8">
                 {[1, 2, 3, 4, 5, 6].map(i => (
                     <View key={i} className={`flex-1 h-1 rounded-full ${i <= 2 ? (isDark ? 'bg-white' : 'bg-slate-900') : (isDark ? 'bg-slate-800' : 'bg-slate-100')}`} />
                 ))}
             </View>
 
-            <Animated.View entering={FadeInDown.duration(800).delay(100)} className="mb-12">
+            <Animated.View entering={FadeInDown.duration(800).delay(100)} className="mb-10">
                 <Text className={`text-[40px] font-bold tracking-tight leading-[46px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     Academic Level.
                 </Text>
-                <Text className={`text-[16px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <Text className={`text-[15px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     This helps us calibrate the AI to your specific learning stage.
                 </Text>
             </Animated.View>
@@ -58,7 +57,7 @@ export default function EducationScreen() {
                         <TouchableOpacity
                             onPress={() => handleSelect(level.key)}
                             activeOpacity={0.9}
-                            className={`flex-row items-center p-6 rounded-[24px] border-2 shadow-sm ${
+                            className={`flex-row items-center p-5 rounded-[24px] border-2 shadow-sm ${
                                 selected === level.key
                                     ? isDark ? 'border-white bg-slate-900' : 'border-slate-900 bg-white'
                                     : isDark ? 'border-slate-800 bg-transparent' : 'border-slate-100 bg-white'
@@ -69,20 +68,16 @@ export default function EducationScreen() {
                                     ? isDark ? 'bg-white' : 'bg-slate-900' 
                                     : isDark ? 'bg-slate-800' : 'bg-slate-50'
                             }`}>
-                                <Ionicons 
-                                    name={level.icon} 
-                                    size={24} 
-                                    color={selected === level.key ? (isDark ? '#000' : '#fff') : (isDark ? '#94a3b8' : '#64748b')} 
-                                />
+                                <level.icon width={18} height={18} color={selected === level.key ? (isDark ? '#000' : '#fff') : (isDark ? '#94a3b8' : '#64748b')} />
                             </View>
                             <View className="flex-1">
-                                <Text className={`font-bold text-[17px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{level.label}</Text>
-                                <Text className={`font-medium text-[14px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{level.desc}</Text>
+                                <Text className={`font-bold text-[15px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{level.label}</Text>
+                                <Text className={`font-medium text-[13px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{level.desc}</Text>
                             </View>
                             {selected === level.key && (
                                 <Animated.View entering={FadeIn.duration(200)}>
                                     <View className="w-8 h-8 rounded-full bg-brand-primary items-center justify-center shadow-lg shadow-brand-primary/20">
-                                        <Ionicons name="checkmark" size={18} color="#fff" />
+                                        <Check width={18} height={18} color="#fff" />
                                     </View>
                                 </Animated.View>
                             )}
@@ -90,6 +85,7 @@ export default function EducationScreen() {
                     </Animated.View>
                 ))}
             </View>
-        </View>
+            </View>
+        </GlowBackground>
     );
 }

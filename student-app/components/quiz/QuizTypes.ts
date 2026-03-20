@@ -19,5 +19,5 @@ export type TheoryResult = {
 };
 
 export const DIFF_COLORS: Record<string, string> = {
-    easy: '#D2B48C', medium: '#FCD34D', hard: '#ef4444',
+    easy: '#A1C4FD', medium: '#FCD34D', hard: '#ef4444',
 };

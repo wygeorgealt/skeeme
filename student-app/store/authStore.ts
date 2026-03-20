@@ -25,6 +25,8 @@ interface User {
         tone?: string;
         language?: string;
     };
+    avatar?: string;
+    avatar_url?: string;
 }
 
 interface AuthState {

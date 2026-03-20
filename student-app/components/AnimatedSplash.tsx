@@ -34,13 +34,13 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
     }, [onFinish, translateY, opacity]);
 
     return (
-        <View style={[styles.container, { backgroundColor: isDark ? '#121212' : '#ffffff' }]}>
+        <View style={[styles.container, { backgroundColor: isDark ? '#100921' : '#ffffff' }]}>
             <Animated.Image
-                source={require('@/assets/images/Skeeme.png')}
+                source={require('@/assets/images/skeemeword.png')}
                 style={[
                     styles.logo, 
                     animatedStyle, 
-                    { tintColor: isDark ? '#D2B48C' : '#000000' }
+                    { tintColor: isDark ? '#FFFFFF' : '#0F172A' }
                 ]}
                 resizeMode="contain"
             />

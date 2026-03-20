@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { NavArrowLeft, Sparks, Camera, NavArrowRight } from 'iconoir-react-native';
 import * as ImagePicker from 'expo-image-picker';
 
 // Pre-generated sample result to show during onboarding (no auth needed)
@@ -76,27 +76,27 @@ export default function DemoScreen() {
     // Generate mode — show text input
     if (mode === 'generate') {
         return (
-            <View className={`flex-1 px-8 pt-16 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
+            <View className={`flex-1 px-6 pt-16 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
                 <StatusBar style={isDark ? 'light' : 'dark'} />
 
                 {/* Back button */}
-                <TouchableOpacity onPress={() => setMode('choose')} className="mb-6" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
-                    <Ionicons name="arrow-back" size={24} color={isDark ? '#fff' : '#000'} />
+                <TouchableOpacity onPress={() => setMode('choose')} className="mb-5" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                    <NavArrowLeft width={18} height={18} color={isDark ? '#fff' : '#000'} />
                 </TouchableOpacity>
 
                 <Animated.View entering={FadeInDown.duration(600)}>
-                    <View className="mb-10">
+                    <View className="mb-8">
                         <Text className={`text-[40px] font-bold tracking-tight leading-[46px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                             Type any topic.
                         </Text>
-                        <Text className={`text-[16px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        <Text className={`text-[15px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                             Skeeme will break it down step by step using your personalized context.
                         </Text>
                     </View>
 
-                    <View className={`rounded-[24px] border-2 px-6 mb-6 ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white shadow-sm'}`}>
+                    <View className={`rounded-[24px] border-2 px-5 mb-5 ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white shadow-sm'}`}>
                         <TextInput
-                            className="font-bold text-[18px] h-[72px]"
+                            className="font-bold text-[16px] h-[72px]"
                             placeholder="e.g. Photosynthesis, Newton's 3rd law..."
                             placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
                             value={topic}
@@ -113,10 +113,10 @@ export default function DemoScreen() {
                         onPress={handleGenerate}
                         disabled={!topic.trim()}
                         activeOpacity={0.9}
-                        className={`h-[64px] rounded-[24px] items-center justify-center flex-row shadow-lg ${topic.trim() ? 'bg-brand-primary shadow-brand-primary/25' : isDark ? 'bg-slate-800' : 'bg-slate-100'}`}
+                        className={`h-[56px] rounded-[24px] items-center justify-center flex-row shadow-lg ${topic.trim() ? 'bg-brand-primary shadow-brand-primary/25' : isDark ? 'bg-slate-800' : 'bg-slate-100'}`}
                     >
-                        <Ionicons name="sparkles" size={20} color={topic.trim() ? '#fff' : isDark ? '#52525b' : '#a1a1aa'} />
-                        <Text className={`font-bold text-[17px] ml-2 tracking-wide ${topic.trim() ? 'text-white' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        <Sparks width={18} height={18} color={topic.trim() ? '#fff' : isDark ? '#52525b' : '#a1a1aa'} />
+                        <Text className={`font-bold text-[15px] ml-2 tracking-wide ${topic.trim() ? 'text-white' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                             Generate Explanation
                         </Text>
                     </TouchableOpacity>
@@ -127,14 +127,14 @@ export default function DemoScreen() {
 
     // Choose mode — pick between Scan & Solve or Generate
     return (
-        <View className={`flex-1 px-8 pt-16 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
+        <View className={`flex-1 px-6 pt-16 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            <Animated.View entering={FadeInDown.duration(800).delay(100)} className="mb-12">
+            <Animated.View entering={FadeInDown.duration(800).delay(100)} className="mb-10">
                 <Text className={`text-[40px] font-bold tracking-tight leading-[46px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     Experience it.
                 </Text>
-                <Text className={`text-[16px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <Text className={`text-[15px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     Pick any topic or scan a question. See how Skeeme transforms your learning.
                 </Text>
             </Animated.View>
@@ -145,17 +145,17 @@ export default function DemoScreen() {
                     <TouchableOpacity
                         onPress={handleScanAndSolve}
                         activeOpacity={0.9}
-                        className={`p-8 rounded-[24px] border-2 shadow-sm ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white'}`}
+                        className={`p-6 rounded-[24px] border-2 shadow-sm ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white'}`}
                     >
                         <View className="flex-row items-center">
                             <View className={`w-14 h-14 rounded-[18px] items-center justify-center mr-5 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
-                                <Ionicons name="camera" size={26} color={isDark ? '#fff' : '#0f172a'} />
+                                <Camera width={26} height={26} color={isDark ? '#fff' : '#0f172a'} />
                             </View>
                             <View className="flex-1">
-                                <Text className={`font-bold text-[18px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Scan & Solve</Text>
-                                <Text className={`font-medium text-[14px] leading-relaxed mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Point your camera at any question</Text>
+                                <Text className={`font-bold text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Scan & Solve</Text>
+                                <Text className={`font-medium text-[13px] leading-relaxed mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Point your camera at any question</Text>
                             </View>
-                            <Ionicons name="chevron-forward" size={20} color={isDark ? '#3f3f46' : '#d1d5db'} />
+                            <NavArrowRight width={18} height={18} color={isDark ? '#3f3f46' : '#d1d5db'} />
                         </View>
                     </TouchableOpacity>
                 </Animated.View>
@@ -163,7 +163,7 @@ export default function DemoScreen() {
                 {/* Divider */}
                 <View className="flex-row items-center py-4">
                     <View className={`flex-1 h-0.5 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
-                    <Text className={`px-6 font-bold text-[12px] uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>or</Text>
+                    <Text className={`px-5 font-bold text-[11px] uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>or</Text>
                     <View className={`flex-1 h-0.5 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
                 </View>
 
@@ -172,17 +172,17 @@ export default function DemoScreen() {
                     <TouchableOpacity
                         onPress={() => setMode('generate')}
                         activeOpacity={0.9}
-                        className={`p-8 rounded-[24px] border-2 shadow-sm ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white'}`}
+                        className={`p-6 rounded-[24px] border-2 shadow-sm ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white'}`}
                     >
                         <View className="flex-row items-center">
                             <View className={`w-14 h-14 rounded-[18px] items-center justify-center mr-5 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
-                                <Ionicons name="sparkles" size={26} color={isDark ? '#fff' : '#0f172a'} />
+                                <Sparks width={26} height={26} color={isDark ? '#fff' : '#0f172a'} />
                             </View>
                             <View className="flex-1">
-                                <Text className={`font-bold text-[18px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Type a Topic</Text>
-                                <Text className={`font-medium text-[14px] leading-relaxed mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Generate an AI instant lesson</Text>
+                                <Text className={`font-bold text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Type a Topic</Text>
+                                <Text className={`font-medium text-[13px] leading-relaxed mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Generate an AI instant lesson</Text>
                             </View>
-                            <Ionicons name="chevron-forward" size={20} color={isDark ? '#3f3f46' : '#d1d5db'} />
+                            <NavArrowRight width={18} height={18} color={isDark ? '#3f3f46' : '#d1d5db'} />
                         </View>
                     </TouchableOpacity>
                 </Animated.View>

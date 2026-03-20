@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Eye, EyeClosed } from 'iconoir-react-native';
 
 interface PasswordFieldProps {
     value: string;
@@ -27,9 +27,9 @@ export function PasswordField({
 
     // Use py-1 like signup.tsx but allow overriding padding in container if needed
     return (
-        <View className={`${inputBgClass} ${inputBorderClass} rounded-2xl px-4 flex-row items-center border focus:border-slate-900 dark:focus:border-white ${containerClassName}`}>
+        <View className={`${inputBgClass} ${inputBorderClass} rounded-xl px-4 flex-row items-center border focus:border-slate-900 dark:focus:border-white ${containerClassName}`}>
             <TextInput
-                className="flex-1 font-medium text-[17px] h-[56px]"
+                className="flex-1 font-medium text-[15px] h-[48px]"
                 placeholder={placeholder}
                 placeholderTextColor={placeholderColor}
                 secureTextEntry={!showPassword}
@@ -39,7 +39,11 @@ export function PasswordField({
                 style={{ color: isDark ? 'white' : 'black' }}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={24} color={placeholderColor} />
+                {showPassword ? (
+                    <EyeClosed width={18} height={18} color={placeholderColor} />
+                ) : (
+                    <Eye width={18} height={18} color={placeholderColor} />
+                )}
             </TouchableOpacity>
         </View>
     );

@@ -3,9 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
+import { Xmark, Google, Apple } from 'iconoir-react-native';
 import { PasswordField } from '@/components/ui/PasswordField';
+import { GlowBackground } from '@/components/ui/GlowBackground';
 
 export default function LoginScreen() {
     const colorScheme = useColorScheme();
@@ -82,16 +82,15 @@ export default function LoginScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className={`flex-1 ${bgClass}`}
+            className="flex-1"
         >
-            <StatusBar style={isDark ? "light" : "dark"} />
-
-            <View className="px-6 pt-16 pb-2 flex-row items-center">
+            <GlowBackground useSafeArea>
+                <View className="px-5 pt-4 pb-2 flex-row items-center">
                 <TouchableOpacity
                     onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
                     hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                 >
-                    <Ionicons name="close" size={28} color={isDark ? '#fff' : '#000'} />
+                    <Xmark width={28} height={28} color={isDark ? '#fff' : '#000'} />
                 </TouchableOpacity>
             </View>
 
@@ -100,48 +99,48 @@ export default function LoginScreen() {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <View className="mb-12">
+                <View className="mb-10">
                     <Text className={`${textClass} text-[40px] font-bold tracking-tight leading-[46px] mb-3`}>
                         Log in.
                     </Text>
-                    <Text className={`${subtextClass} text-[16px] font-medium leading-relaxed`}>
+                    <Text className={`${subtextClass} text-[15px] font-medium leading-relaxed`}>
                         Enter your details to access your dashboard.
                     </Text>
                 </View>
 
                 {/* Social Login */}
-                <View className="gap-3 mb-10">
+                <View className="gap-3 mb-8">
                     <TouchableOpacity
                         activeOpacity={0.9}
-                        className={`h-[60px] rounded-[24px] items-center justify-center flex-row border ${isDark ? 'bg-transparent border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+                        className={`h-[52px] rounded-[24px] items-center justify-center flex-row border ${isDark ? 'bg-transparent border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
                     >
-                        <Ionicons name="logo-google" size={20} color={isDark ? '#fff' : '#000'} />
-                        <Text className={`font-bold text-[15px] ml-3 ${textClass}`}>Continue with Google</Text>
+                        <Google width={18} height={18} color={isDark ? '#fff' : '#000'} />
+                        <Text className={`font-bold text-[14px] ml-3 ${textClass}`}>Continue with Google</Text>
                     </TouchableOpacity>
 
                     {Platform.OS === 'ios' && (
                         <TouchableOpacity
                             activeOpacity={0.9}
-                            className={`h-[60px] rounded-[24px] items-center justify-center flex-row ${isDark ? 'bg-white' : 'bg-slate-900'}`}
+                            className={`h-[52px] rounded-[24px] items-center justify-center flex-row ${isDark ? 'bg-white' : 'bg-slate-900'}`}
                         >
-                            <Ionicons name="logo-apple" size={22} color={isDark ? '#000' : '#fff'} />
-                            <Text className={`font-bold text-[15px] ml-3 ${isDark ? 'text-black' : 'text-white'}`}>Continue with Apple</Text>
+                            <Apple width={18} height={18} color={isDark ? '#000' : '#fff'} />
+                            <Text className={`font-bold text-[14px] ml-3 ${isDark ? 'text-black' : 'text-white'}`}>Continue with Apple</Text>
                         </TouchableOpacity>
                     )}
                 </View>
 
                 {/* Divider */}
-                <View className="flex-row items-center mb-10">
+                <View className="flex-row items-center mb-8">
                     <View className={`flex-1 h-[0.5px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
-                    <Text className={`px-6 font-bold text-[10px] uppercase tracking-[0.2em] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>or use email</Text>
+                    <Text className={`px-5 font-bold text-[10px] uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>or use email</Text>
                     <View className={`flex-1 h-[0.5px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
                 </View>
 
                 {/* Email */}
                 <View className="mb-1">
-                    <View className={`${inputBg} ${inputBorder} rounded-2xl px-4 flex-row items-center border ${emailError ? 'border-red-500' : 'focus:border-slate-900 dark:focus:border-white'}`}>
+                    <View className={`${inputBg} ${inputBorder} rounded-xl px-4 flex-row items-center border ${emailError ? 'border-red-500' : 'focus:border-slate-900 dark:focus:border-white'}`}>
                         <TextInput
-                            className="flex-1 font-medium text-[17px] h-[56px]"
+                            className="flex-1 font-medium text-[15px] h-[48px]"
                             placeholder="Email address"
                             placeholderTextColor={placeholderColor}
                             keyboardType="email-address"
@@ -151,7 +150,7 @@ export default function LoginScreen() {
                             style={{ color: isDark ? 'white' : 'black' }}
                         />
                     </View>
-                    {emailError ? <Text className="text-red-500 text-[13px] font-medium mt-1.5 ml-1">{emailError}</Text> : null}
+                    {emailError ? <Text className="text-red-500 text-[12px] font-medium mt-1.5 ml-1">{emailError}</Text> : null}
                 </View>
 
                 {/* Password */}
@@ -163,44 +162,45 @@ export default function LoginScreen() {
                     />
                     <View className="flex-row justify-between items-center mt-2 px-1">
                         {passwordError ? (
-                            <Text className="text-red-500 text-[13px] font-medium flex-1">{passwordError}</Text>
+                            <Text className="text-red-500 text-[12px] font-medium flex-1">{passwordError}</Text>
                         ) : <View />}
                         <TouchableOpacity onPress={() => router.push('/forgot-password')}>
-                            <Text className="text-brand-primary font-bold text-[13px]">Forgot password?</Text>
+                            <Text className="text-brand-primary font-bold text-[12px]">Forgot password?</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                <View className="mt-8" />
+                <View className="mt-6" />
 
                 {/* Login Button */}
-                <View className="mt-6">
+                <View className="mt-5">
                     <TouchableOpacity
                         onPress={handleLogin}
                         disabled={isLoading}
                         activeOpacity={0.9}
-                        className={`w-full h-[60px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${isLoading ? 'opacity-70' : ''}`}
+                        className={`w-full h-[52px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${isLoading ? 'opacity-70' : ''}`}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text className="font-bold text-[16px] text-white tracking-wide">Sign In</Text>
+                            <Text className="font-bold text-[15px] text-white tracking-wide">Sign In</Text>
                         )}
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity onPress={() => router.push('/signup')} className="mt-12 mb-10 items-center">
-                    <Text className={`${subtextClass} font-bold text-[14px]`}>
+                <TouchableOpacity onPress={() => router.push('/signup')} className="mt-10 mb-8 items-center">
+                    <Text className={`${subtextClass} font-bold text-[13px]`}>
                         New to Skeeme? <Text className="text-brand-primary">Create account</Text>
                     </Text>
                 </TouchableOpacity>
 
                 {__DEV__ && (
-                    <TouchableOpacity onPress={() => { useAuthStore.getState().devReset(); router.replace('/(onboarding)/hook'); }} className="mb-12 items-center">
+                    <TouchableOpacity onPress={() => { useAuthStore.getState().devReset(); router.replace('/(onboarding)/hook'); }} className="mb-10 items-center">
                         <Text className="text-red-500 text-xs font-bold">DEV ONLY: Reset Storage</Text>
                     </TouchableOpacity>
                 )}
             </ScrollView>
+            </GlowBackground>
         </KeyboardAvoidingView>
     );
 }

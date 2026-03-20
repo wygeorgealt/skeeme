@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, useColorScheme, Linking, Alert, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Xmark, Sparks, FireFlame, Check } from 'iconoir-react-native';
 import { useAuthStore } from '@/store/authStore';
-import { router, Stack } from 'expo-router';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import { router } from 'expo-router';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import { api } from '@/lib/api';
+import { GlowBackground } from '@/components/ui/GlowBackground';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type PlanType = 'standard' | 'elite';
 type BillingCycle = 'monthly' | 'yearly';
@@ -41,16 +43,16 @@ export default function UpgradeScreen() {
         if (!pricingConfig) {
             fetchPricingConfig();
         }
-    }, []);
+    }, [pricingConfig]);
 
     const currencySymbol = user?.pricing?.currency || '$';
     const currency = user?.pricing?.currency === '₦' ? 'ngn' : 'usd';
 
     if (!pricingConfig) {
         return (
-            <View className={`flex-1 items-center justify-center ${isDark ? 'bg-brand-dark' : 'bg-white'}`}>
-                <ActivityIndicator size="large" color="#D2B48C" />
-            </View>
+            <GlowBackground isRoot className="flex-1 items-center justify-center">
+                <ActivityIndicator size="large" color="#8B5CF6" />
+            </GlowBackground>
         );
     }
 
@@ -62,33 +64,19 @@ export default function UpgradeScreen() {
     const activePricing = pricingConfig[currency][activeTab];
     const isPromo = isPromoActive(activeTab);
 
-
-
     const handlePurchase = async () => {
         setIsPurchasing(true);
         try {
-
             const response = await api.post('subscriptions/checkout', {
                 plan: activeTab,
                 cycle: billingCycle,
             });
 
             if (response.data.authorization_url) {
-
-
-                // Open system browser for payment
                 await Linking.openURL(response.data.authorization_url);
-
-                // Start automatic polling after a short delay
                 setTimeout(() => pollPaymentStatus(response.data.reference, 0), 5000);
             }
         } catch (error: any) {
-            if (__DEV__) {
-                if (__DEV__) console.error('Checkout failed', error);
-                if (error.response?.data) {
-                    if (__DEV__) console.error('Checkout Error Response:', JSON.stringify(error.response.data, null, 2));
-                }
-            }
             const msg = error.response?.data?.message || "Could not start the payment process. Please try again.";
             Alert.alert("Checkout Failed", msg);
         } finally {
@@ -97,7 +85,7 @@ export default function UpgradeScreen() {
     };
 
     const pollPaymentStatus = async (reference: string, attempt: number, isCreditPack: boolean = false) => {
-        const MAX_ATTEMPTS = 24; // 24 * 5s = 2 minutes
+        const MAX_ATTEMPTS = 24;
         if (attempt >= MAX_ATTEMPTS) {
             Alert.alert(
                 "Payment Pending",
@@ -107,60 +95,51 @@ export default function UpgradeScreen() {
         }
 
         try {
-
             const endpoint = isCreditPack ? `/credits/verify/${reference}` : `/subscriptions/verify/${reference}`;
             const response = await api.get(endpoint);
 
             if (response.data.status === 'success') {
-
                 await useAuthStore.getState().checkAuth();
                 Alert.alert("Success", "Welcome to the premium club! Your subscription is active.");
                 router.replace('/(drawer)');
                 return;
             }
         } catch {
-            // Network error — continue polling
-        } finally {
         }
-
-        // Schedule next poll
         setTimeout(() => pollPaymentStatus(reference, attempt + 1, isCreditPack), 5000);
     };
 
-
-
-    const bgClass = isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]';
-    const cardBgClass = isDark ? 'bg-[#161618]' : 'bg-white';
     const textBaseClass = isDark ? 'text-white' : 'text-slate-900';
-    const subtextClass = isDark ? 'text-slate-500' : 'text-slate-500';
+    const subtextClass = isDark ? 'text-indigo-200' : 'text-slate-500';
+    const cardBgClass = isDark ? 'bg-indigo-950/20 border-indigo-500/20' : 'bg-white border-slate-200 shadow-sm';
 
     return (
-        <View className={`flex-1 ${bgClass}`}>
-            <StatusBar style={isDark ? 'light' : 'dark'} />
+        <GlowBackground isRoot className="flex-1">
+            <StatusBar style={isDark ? 'light' : 'dark'} translucent />
 
             {/* Header */}
-            <View className="pt-14 px-8 flex-row justify-between items-center">
+            <View className="pt-14 px-6 flex-row justify-between items-center z-10">
                 <TouchableOpacity
                     onPress={() => router.back()}
-                    className={`size-12 items-center justify-center rounded-2xl border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+                    className={`size-10 items-center justify-center rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm'}`}
                 >
-                    <Ionicons name="close" size={24} color={isDark ? '#cbd5e1' : '#0f172a'} />
+                    <Xmark width={18} height={18} color={isDark ? '#cbd5e1' : '#0f172a'} />
                 </TouchableOpacity>
                 <Text className={`${textBaseClass} font-bold text-lg tracking-tight`}>Subscription</Text>
-                <View className="size-12" />
+                <View className="size-10" />
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-                <View className="px-8 pt-8 pb-10">
-                    <Text className={`${textBaseClass} text-[36px] font-bold tracking-tight mb-2 leading-tight`}>
+                <Animated.View entering={FadeInDown.delay(100).duration(500)} className="px-6 pt-8 pb-8">
+                    <Text className={`${textBaseClass} text-[38px] font-black tracking-tight mb-3 leading-tight`}>
                         Ready for <Text className="text-brand-primary">Skeeme Elite?</Text>
                     </Text>
-                    <Text className={`${subtextClass} font-medium text-[16px] leading-relaxed mb-10`}>
+                    <Text className={`${subtextClass} font-medium text-[16px] leading-relaxed mb-8 opacity-80`}>
                         Select a plan to unlock advanced AI models and priority processing.
                     </Text>
 
                     {/* Tab Switcher */}
-                    <View className={`flex-row p-1.5 rounded-[20px] border mb-10 ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-slate-100/50 border-slate-200'}`}>
+                    <View className={`flex-row p-1.5 rounded-[22px] border mb-8 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100/80 border-slate-200'}`}>
                         {(['standard', 'elite'] as PlanType[]).map((tab) => {
                             const isActive = activeTab === tab;
                             return (
@@ -168,10 +147,10 @@ export default function UpgradeScreen() {
                                     key={tab}
                                     onPress={() => setActiveTab(tab)}
                                     activeOpacity={0.7}
-                                    className={`flex-1 py-3.5 rounded-[16px] items-center ${isActive ? 'bg-brand-primary shadow-sm' : ''}`}
+                                    className={`flex-1 py-4 rounded-[18px] items-center ${isActive ? 'bg-brand-primary shadow-lg shadow-brand-primary/30' : ''}`}
                                 >
                                     <Text
-                                        className={`font-bold text-[14px] capitalize ${isActive ? 'text-white' : (isDark ? 'text-slate-500' : 'text-slate-500')}`}
+                                        className={`font-bold text-[14px] capitalize tracking-wide ${isActive ? 'text-white' : (isDark ? 'text-indigo-300' : 'text-slate-500')}`}
                                     >
                                         {tab}
                                     </Text>
@@ -181,17 +160,23 @@ export default function UpgradeScreen() {
                     </View>
 
                     {/* Benefits Section */}
-                    <Animated.View key={activeTab} entering={FadeIn} className={`rounded-[32px] p-8 border mb-10 ${cardBgClass} ${isDark ? 'border-slate-800' : 'border-slate-100 shadow-sm'}`}>
-                        <Text className="text-[11px] font-bold text-brand-primary tracking-[0.2em] uppercase mb-6">
+                    <Animated.View key={activeTab} entering={FadeIn} className={`rounded-[28px] p-7 border mb-8 ${cardBgClass} overflow-hidden`}>
+                        {isDark && (
+                            <LinearGradient
+                                colors={['rgba(139,92,246,0.1)', 'transparent']}
+                                style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 100 }}
+                            />
+                        )}
+                        <Text className="text-[12px] font-bold text-brand-primary tracking-[0.2em] uppercase mb-6 drop-shadow-sm">
                             {activeTab} Features
                         </Text>
                         <View className="gap-y-5">
                             {FEATURES[activeTab as keyof typeof FEATURES].map((feature: string, idx: number) => (
                                 <View key={idx} className="flex-row items-center">
-                                    <View className="size-6 bg-brand-primary/10 rounded-full items-center justify-center mr-4">
-                                        <Ionicons name="sparkles-outline" size={14} color="#D2B48C" />
+                                    <View className="size-7 bg-brand-primary/10 rounded-full items-center justify-center mr-4">
+                                        <Sparks width={14} height={14} color="#8B5CF6" />
                                     </View>
-                                    <Text className={`font-bold text-[15px] ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                                    <Text className={`font-semibold text-[15px] ${isDark ? 'text-indigo-100' : 'text-slate-700'}`}>
                                         {feature}
                                     </Text>
                                 </View>
@@ -225,8 +210,8 @@ export default function UpgradeScreen() {
                     </View>
 
                     {/* One-Time Top-Up Section */}
-                    <View className="mt-14 mb-6">
-                        <Text className="text-[12px] font-bold text-brand-primary tracking-[0.2em] uppercase mb-6 ml-1">
+                    <View className="mt-14 mb-5">
+                        <Text className="text-[12px] font-bold text-brand-primary tracking-[0.2em] uppercase mb-6 ml-2">
                             Instant Top-Ups
                         </Text>
                         
@@ -256,20 +241,20 @@ export default function UpgradeScreen() {
                                     }}
                                     activeOpacity={0.8}
                                     disabled={purchasingPack !== null || isPurchasing}
-                                    className={`w-[48%] mb-4 p-6 rounded-[32px] border flex-col items-center justify-center ${cardBgClass} ${isDark ? 'border-slate-800' : 'border-slate-100 shadow-sm'} ${(purchasingPack !== null || isPurchasing) ? 'opacity-50' : ''}`}
+                                    className={`w-[48%] mb-4 p-5 rounded-[24px] border flex-col items-center justify-center ${cardBgClass} ${(purchasingPack !== null || isPurchasing) ? 'opacity-50' : ''}`}
                                 >
                                     {purchasingPack === pack.amount ? (
-                                        <ActivityIndicator size="small" color="#D2B48C" className="mb-4 h-12 justify-center" />
+                                        <ActivityIndicator size="small" color="#8B5CF6" className="mb-4 h-11 justify-center" />
                                     ) : (
-                                        <View className="bg-brand-primary/10 size-12 rounded-2xl items-center justify-center mb-4">
-                                            <Ionicons name="flash-outline" size={24} color="#D2B48C" />
+                                        <View className="bg-brand-primary/10 size-11 rounded-2xl items-center justify-center mb-4 border border-brand-primary/20">
+                                            <FireFlame width={20} height={20} color="#8B5CF6" />
                                         </View>
                                     )}
-                                    <Text className={`${textBaseClass} font-bold text-[24px] tracking-tight mb-1`}>{pack.amount.toLocaleString()}</Text>
-                                    <Text className={`font-bold text-[10px] uppercase tracking-[0.2em] mb-6 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Credits</Text>
+                                    <Text className={`${textBaseClass} font-black text-[22px] tracking-tight mb-1`}>{pack.amount.toLocaleString()}</Text>
+                                    <Text className={`font-bold text-[10px] uppercase tracking-[0.2em] mb-5 ${isDark ? 'text-indigo-400' : 'text-slate-400'}`}>Credits</Text>
                                     
-                                    <View className={`px-4 py-2 rounded-xl ${isDark ? 'bg-white' : 'bg-slate-900'}`}>
-                                        <Text className={`font-bold text-[13px] ${isDark ? 'text-slate-900' : 'text-white'}`}>
+                                    <View className={`px-4 py-2.5 rounded-xl border ${isDark ? 'bg-white/10 border-white/10' : 'bg-slate-900 border-slate-900'}`}>
+                                        <Text className={`font-bold text-[13px] ${isDark ? 'text-white' : 'text-white'}`}>
                                             {currencySymbol}{(currency === 'ngn' ? pack.ngn : pack.usd).toLocaleString(undefined, { minimumFractionDigits: currency === 'usd' ? 2 : 0 })}
                                         </Text>
                                     </View>
@@ -278,30 +263,30 @@ export default function UpgradeScreen() {
                         </View>
                     </View>
 
-                </View>
+                </Animated.View>
             </ScrollView>
 
             {/* Bottom Button */}
-            <View className={`px-8 pb-12 pt-6 border-t ${isDark ? 'bg-[#0f0f11] border-slate-800' : 'bg-white border-slate-50'}`}>
+            <View className={`px-6 pb-12 pt-6 border-t ${isDark ? 'bg-black/20 border-white/5' : 'bg-white border-slate-100'}`}>
                 <TouchableOpacity
                     onPress={handlePurchase}
                     disabled={isPurchasing || purchasingPack !== null}
                     activeOpacity={0.9}
-                    className={`h-[64px] bg-brand-primary rounded-[20px] items-center justify-center shadow-lg shadow-brand-primary/20 ${(isPurchasing || purchasingPack !== null) ? 'opacity-75' : ''}`}
+                    className={`h-[60px] bg-brand-primary rounded-[22px] items-center justify-center shadow-xl shadow-brand-primary/30 ${(isPurchasing || purchasingPack !== null) ? 'opacity-70' : ''}`}
                 >
                     {isPurchasing ? (
                         <ActivityIndicator size="small" color="#ffffff" />
                     ) : (
-                        <Text className="text-white font-bold text-[17px] tracking-tight">
+                        <Text className="text-white font-bold text-[16px] tracking-wide">
                             {billingCycle === 'yearly' ? 'Start Free Trial' : 'Continue to Checkout'}
                         </Text>
                     )}
                 </TouchableOpacity>
-                <Text className="text-center text-slate-400 font-medium text-[12px] mt-6 px-4 leading-relaxed">
+                <Text className={`text-center font-medium text-[11px] mt-5 px-4 leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     By continuing, you agree to our Terms of Service & Privacy Policy.
                 </Text>
             </View>
-        </View>
+        </GlowBackground>
     );
 }
 
@@ -313,35 +298,35 @@ function CardOption({ title, price, originalPrice, symbol, subtitle, isSelected,
         <TouchableOpacity
             onPress={onSelect}
             activeOpacity={0.8}
-            className={`p-8 rounded-[32px] border-2 flex-row items-center justify-between ${isSelected ? (isDark ? 'bg-brand-primary/10 border-brand-primary' : 'bg-brand-primary/5 border-brand-primary') : (isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm')}`}
+            className={`p-6 rounded-[24px] border-2 flex-row items-center justify-between transition-all ${isSelected ? (isDark ? 'bg-brand-primary/10 border-brand-primary' : 'bg-brand-primary/5 border-brand-primary') : (isDark ? 'bg-indigo-950/20 border-indigo-500/20' : 'bg-white border-slate-200 shadow-sm')}`}
         >
             <View className="flex-1 pr-4">
                 <View className="flex-row items-center mb-2">
-                    <Text className={`font-bold text-[22px] tracking-tight mr-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{title}</Text>
+                    <Text className={`font-black text-[24px] tracking-tight mr-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{title}</Text>
                     {badge && (
-                        <View className="bg-emerald-500 px-3 py-1 rounded-full">
-                            <Text className="text-[10px] font-bold text-white uppercase tracking-wider">{badge}</Text>
+                        <View className="bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-full">
+                            <Text className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{badge}</Text>
                         </View>
                     )}
                 </View>
-                <Text className={`font-medium text-[13px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{subtitle}</Text>
+                <Text className={`font-semibold text-[13px] ${isDark ? 'text-indigo-300/80' : 'text-slate-500'}`}>{subtitle}</Text>
 
                 <View className="flex-row items-baseline mt-5">
-                    <Text className={`font-bold text-[24px] tracking-tight ${isDark ? 'text-white' : 'text-brand-primary'}`}>
+                    <Text className={`font-black text-[26px] tracking-tight ${isDark ? 'text-white' : 'text-brand-primary'}`}>
                         {priceFormatted}
                     </Text>
                     {originalPriceFormatted && (
-                        <Text className="text-slate-400 line-through text-[15px] font-medium ml-3">
+                        <Text className="text-slate-400 line-through text-[15px] font-bold ml-3">
                             {originalPriceFormatted}
                         </Text>
                     )}
-                    <Text className={`text-[14px] font-medium ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ {title === 'Yearly' ? 'year' : 'month'}</Text>
+                    <Text className={`text-[14px] font-bold ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ {title === 'Yearly' ? 'year' : 'month'}</Text>
                 </View>
             </View>
             <View
-                className={`size-7 rounded-full border-2 items-center justify-center ${isSelected ? 'border-brand-primary bg-brand-primary' : (isDark ? 'border-slate-800' : 'border-slate-200')}`}
+                className={`size-8 rounded-full border-2 items-center justify-center ${isSelected ? 'border-brand-primary bg-brand-primary' : (isDark ? 'border-indigo-500/30 bg-transparent' : 'border-slate-300 bg-slate-50')}`}
             >
-                {isSelected && <Ionicons name="checkmark" size={16} color="white" />}
+                {isSelected && <Check width={18} height={18} color="white" />}
             </View>
         </TouchableOpacity>
     );

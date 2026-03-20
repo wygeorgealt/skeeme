@@ -9,24 +9,17 @@ import { QueryProvider } from '@/components/QueryProvider';
 import { useColorScheme as useNativeColorScheme, LogBox, View, Text, TouchableOpacity } from 'react-native';
 import { cssInterop, useColorScheme as useTailwindColorScheme } from 'nativewind';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { WarningTriangle, Refresh } from 'iconoir-react-native';
 import AnimatedSplash from '@/components/AnimatedSplash';
 import Animated, { FadeOut } from 'react-native-reanimated';
 import { NetworkStatus } from '@/components/NetworkStatus';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GlowBackground } from '@/components/ui/GlowBackground';
 
 cssInterop(LinearGradient, {
   className: 'style',
 });
-cssInterop(Ionicons, {
-  className: {
-    target: 'style',
-    nativeStyleToProp: {
-      color: true,
-      size: true,
-    },
-  },
-});
+
 
 // Fix NativeWind v4 crash on Animated components
 cssInterop(Animated.View, { className: 'style' });
@@ -122,9 +115,18 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: tailwindScheme === 'dark' ? '#100921' : '#fafafa' }}>
+      <GlowBackground isRoot={true}>
+      <View style={{ flex: 1, backgroundColor: 'transparent' }}>
       <QueryProvider>
-        <ThemeProvider value={tailwindScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <ThemeProvider value={{
+          ...(tailwindScheme === 'dark' ? DarkTheme : DefaultTheme),
+          colors: {
+            ...(tailwindScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+            background: 'transparent',
+            card: 'transparent',
+          }
+        }}>
 
           {/* High-Fidelity Animated Splash Overlay */}
           {!isAnimationFinished && (
@@ -135,46 +137,45 @@ export default function RootLayout() {
 
           <NetworkStatus />
 
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack screenOptions={{ headerShown: false, headerTransparent: true, contentStyle: { backgroundColor: 'transparent' } }}>
             <Stack.Screen name="(onboarding)" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="signup" options={{ headerShown: false, animation: 'fade' }} />
             <Stack.Screen name="forgot-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
             <Stack.Screen name="otp" options={{ headerShown: false, animation: 'slide_from_right' }} />
             <Stack.Screen name="new-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
-            <Stack.Screen name="(drawer)" options={{ headerShown: false, animation: 'fade' }} />
+            <Stack.Screen name="(drawer)" options={{ headerShown: false, animation: 'fade', headerTransparent: true }} />
             <Stack.Screen name="upgrade" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', headerShown: false }} />
             <Stack.Screen name="+not-found" />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
         </ThemeProvider>
       </QueryProvider>
+      </View>
+      </GlowBackground>
     </GestureHandlerRootView>
   );
 }
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
-  const { colorScheme } = useTailwindColorScheme();
-
-  useEffect(() => {
-    // Error logged to console in dev or handled by system
-  }, [error]);
+  const colorScheme = useNativeColorScheme();
+  const isDark = colorScheme === 'dark';
 
   return (
-    <View className="flex-1 items-center justify-center p-8 bg-[#fafafa] dark:bg-[#0f0f11]">
-      <Ionicons name="warning" size={48} color="#ef4444" />
-      <Text className="text-[24px] font-black tracking-tight text-slate-900 dark:text-white mt-6 mb-2 text-center">
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: isDark ? '#0f0f11' : '#fafafa' }}>
+      <WarningTriangle width={48} height={48} color="#ef4444" />
+      <Text style={{ fontSize: 20, fontWeight: '900', color: isDark ? 'white' : '#0f172a', marginTop: 20, marginBottom: 8, textAlign: 'center' }}>
         Something went wrong.
       </Text>
-      <Text className="text-[15px] font-medium leading-relaxed text-slate-500 mb-8 text-center">
-        We encountered an unexpected error. Our team has been notified.
+      <Text style={{ fontSize: 14, color: '#64748b', marginBottom: 24, textAlign: 'center' }}>
+        {error?.message || "We encountered an unexpected error. Our team has been notified."}
       </Text>
       <TouchableOpacity
         onPress={retry}
-        className="bg-slate-900 dark:bg-white px-8 py-4 rounded-xl flex-row items-center"
+        style={{ backgroundColor: isDark ? 'white' : '#0f172a', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}
       >
-        <Ionicons name="refresh" size={20} color={colorScheme === 'dark' ? '#121212' : 'white'} />
-        <Text className="text-white dark:text-slate-900 font-bold ml-2">Try Again</Text>
+        <Refresh width={18} height={18} color={isDark ? '#121212' : 'white'} />
+        <Text style={{ color: isDark ? '#0f172a' : 'white', fontWeight: 'bold', marginLeft: 8 }}>Try Again</Text>
       </TouchableOpacity>
     </View>
   );

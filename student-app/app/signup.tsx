@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { Ionicons } from '@expo/vector-icons';
+import { NavArrowLeft } from 'iconoir-react-native';
 import { StatusBar } from 'expo-status-bar';
 import { PasswordField } from '@/components/ui/PasswordField';
 
@@ -38,7 +38,7 @@ export default function SignupScreen() {
         const hasSpecial = /[^A-Za-z0-9]/.test(password);
         const score = [hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
 
-        if (score >= 2 && password.length >= 10) return { label: 'Strong', color: '#D2B48C', width: '100%' };
+        if (score >= 2 && password.length >= 10) return { label: 'Strong', color: '#8B5CF6', width: '100%' };
         if (score >= 1) return { label: 'Good', color: '#eab308', width: '70%' };
         return { label: 'Fair', color: '#f97316', width: '50%' };
     };
@@ -118,12 +118,12 @@ export default function SignupScreen() {
         >
             <StatusBar style={isDark ? "light" : "dark"} />
 
-            <View className="px-6 pt-16 pb-2 flex-row items-center">
+            <View className="px-5 pt-16 pb-2 flex-row items-center">
                 <TouchableOpacity
                     onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
                     hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                 >
-                    <Ionicons name="arrow-back" size={28} color={isDark ? '#fff' : '#000'} />
+                    <NavArrowLeft width={28} height={28} color={isDark ? '#fff' : '#000'} />
                 </TouchableOpacity>
             </View>
 
@@ -132,20 +132,20 @@ export default function SignupScreen() {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <View className="mb-12">
+                <View className="mb-10">
                     <Text className={`${textClass} text-[40px] font-bold tracking-tight leading-[46px] mb-3`}>
                         Join Skeeme.
                     </Text>
-                    <Text className={`${subtextClass} text-[16px] font-medium leading-relaxed`}>
+                    <Text className={`${subtextClass} text-[15px] font-medium leading-relaxed`}>
                         Create an account to start studying 5x faster.
                     </Text>
                 </View>
 
                 {/* Full Name */}
                 <View className="mb-4">
-                    <View className={`${inputBg} ${inputBorder} rounded-2xl px-4 flex-row items-center border ${nameError ? 'border-red-500' : 'focus:border-slate-900 dark:focus:border-white'}`}>
+                    <View className={`${inputBg} ${inputBorder} rounded-xl px-4 flex-row items-center border ${nameError ? 'border-red-500' : 'focus:border-slate-900 dark:focus:border-white'}`}>
                         <TextInput
-                            className="flex-1 font-medium text-[17px] h-[56px]"
+                            className="flex-1 font-medium text-[15px] h-[48px]"
                             placeholder="Full name"
                             placeholderTextColor={placeholderColor}
                             autoCapitalize="words"
@@ -154,14 +154,14 @@ export default function SignupScreen() {
                             style={{ color: isDark ? 'white' : 'black' }}
                         />
                     </View>
-                    {nameError ? <Text className="text-red-500 text-[13px] font-medium mt-1.5 ml-1">{nameError}</Text> : null}
+                    {nameError ? <Text className="text-red-500 text-[12px] font-medium mt-1.5 ml-1">{nameError}</Text> : null}
                 </View>
 
                 {/* Email */}
                 <View className="mb-4">
-                    <View className={`${inputBg} ${inputBorder} rounded-2xl px-4 flex-row items-center border ${emailError ? 'border-red-500' : 'focus:border-slate-900 dark:focus:border-white'}`}>
+                    <View className={`${inputBg} ${inputBorder} rounded-xl px-4 flex-row items-center border ${emailError ? 'border-red-500' : 'focus:border-slate-900 dark:focus:border-white'}`}>
                         <TextInput
-                            className="flex-1 font-medium text-[17px] h-[56px]"
+                            className="flex-1 font-medium text-[15px] h-[48px]"
                             placeholder="Email address"
                             placeholderTextColor={placeholderColor}
                             keyboardType="email-address"
@@ -173,13 +173,13 @@ export default function SignupScreen() {
                     </View>
                     {emailError === 'exists' ? (
                         <View className="flex-row items-center mt-2 ml-1">
-                            <Text className="text-red-500 text-[13px] font-medium">An account with this email already exists. </Text>
+                            <Text className="text-red-500 text-[12px] font-medium">An account with this email already exists. </Text>
                             <TouchableOpacity onPress={() => router.push('/login')}>
-                                <Text className="text-brand-primary font-bold text-[13px]">Log in →</Text>
+                                <Text className="text-brand-primary font-bold text-[12px]">Log in →</Text>
                             </TouchableOpacity>
                         </View>
                     ) : emailError ? (
-                        <Text className="text-red-500 text-[13px] font-medium mt-1.5 ml-1">{emailError}</Text>
+                        <Text className="text-red-500 text-[12px] font-medium mt-1.5 ml-1">{emailError}</Text>
                     ) : null}
                 </View>
 
@@ -191,13 +191,13 @@ export default function SignupScreen() {
                         containerClassName=""
                     />
                     {passwordError ? (
-                        <Text className="text-red-500 text-[13px] font-medium mt-1.5 ml-1">{passwordError}</Text>
+                        <Text className="text-red-500 text-[12px] font-medium mt-1.5 ml-1">{passwordError}</Text>
                     ) : null}
                 </View>
 
                 {/* Password Strength */}
                 {password.length > 0 && (
-                    <View className="mb-6 ml-1">
+                    <View className="mb-5 ml-1">
                         <View className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
                             <View style={{ width: strength.width as any, backgroundColor: strength.color, height: '100%', borderRadius: 4 }} />
                         </View>
@@ -208,23 +208,23 @@ export default function SignupScreen() {
                 <View className="mt-4" />
 
                 {/* Signup Button */}
-                <View className="mt-8">
+                <View className="mt-6">
                     <TouchableOpacity
                         onPress={handleSignup}
                         disabled={isLoading}
                         activeOpacity={0.9}
-                        className={`w-full h-[60px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${isLoading ? 'opacity-70' : ''}`}
+                        className={`w-full h-[52px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${isLoading ? 'opacity-70' : ''}`}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text className="font-bold text-[16px] text-white tracking-wide">Create Account</Text>
+                            <Text className="font-bold text-[15px] text-white tracking-wide">Create Account</Text>
                         )}
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity onPress={() => router.push('/login')} className="mt-12 mb-10 items-center">
-                    <Text className={`${subtextClass} font-bold text-[14px]`}>
+                <TouchableOpacity onPress={() => router.push('/login')} className="mt-10 mb-8 items-center">
+                    <Text className={`${subtextClass} font-bold text-[13px]`}>
                         Already have an account? <Text className="text-brand-primary">Log in</Text>
                     </Text>
                 </TouchableOpacity>

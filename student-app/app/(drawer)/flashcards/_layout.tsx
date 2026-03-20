@@ -1,36 +1,14 @@
-import { useColorScheme } from 'react-native';
 import { Stack } from 'expo-router';
 
 export default function FlashcardsLayout() {
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
-
-    const bgColor = isDark ? '#121212' : '#f8fafc';
-    const tintColor = isDark ? '#fff' : '#121212';
-
     return (
         <Stack screenOptions={{
             headerShown: false,
-            headerStyle: { backgroundColor: bgColor },
-            headerTintColor: tintColor,
-            headerBackTitle: '', // Removes the "Back" text
-            headerBackVisible: false,
-            headerShadowVisible: false,
+            contentStyle: { backgroundColor: 'transparent' },
         }}>
-            <Stack.Screen name="index" options={{
-                title: 'Flashcards',
-                headerShown: false
-            }} />
-            <Stack.Screen name="create" options={{
-                title: 'Generate Deck',
-                headerShown: false,
-                headerTitleStyle: { fontFamily: 'Inter_900Black' }
-            }} />
-            <Stack.Screen name="[id]" options={{
-                title: 'Study Deck',
-                headerShown: true,
-                headerTitleStyle: { fontFamily: 'Inter_900Black' }
-            }} />
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="create" options={{ headerShown: false }} />
+            <Stack.Screen name="[id]" options={{ headerShown: false }} />
         </Stack>
     );
 }
