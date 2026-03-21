@@ -67,8 +67,9 @@ export default function SignupScreen() {
                 ...(onboardingData?.learning_style && { learning_style: onboardingData.learning_style }),
             });
 
-            const { token, user } = response.data;
-            await login(user, token);
+            // registration successful, but token not yet returned
+            // const { token, user } = response.data;
+            // await login(user, token);
 
             // Navigate to OTP verification screen instead of direct entry
             router.replace({
@@ -284,7 +285,6 @@ const s = StyleSheet.create({
     textSlate50: { color: '#f8fafc' },
     textSlate500: { color: '#64748b' },
     textSlate600: { color: '#475569' },
-    textSlate400: { color: '#94a3b8' },
     
     inputContainer: { marginBottom: 16 },
     inputWrapper: { borderRadius: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },

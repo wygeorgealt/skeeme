@@ -37,10 +37,20 @@ class OtpService
             'expires_at' => now()->addMinutes(10),
         ]);
 
-        if ($type === 'verification') {
-            Mail::mailer('resend')->to($email)->send(new SignupVerificationMail($code));
-        } else {
-            Mail::mailer('resend')->to($email)->send(new ForgotPasswordMail($code));
+        try {
+            if ($type === 'verification') {
+                Mail::mailer('resend')->to($email)->send(new SignupVerificationMail($code));
+            } else {
+                Mail::mailer('resend')->to($email)->send(new ForgotPasswordMail($code));
+            }
+            \Illuminate\Support\Facades\Log::info("OTP email sent successfully to {$email}", ['type' => $type]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to send OTP email to {$email}", [
+                'type' => $type,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            // Re-throw or handle as needed, but for now we want to see the error in logs
         }
 
         return true;

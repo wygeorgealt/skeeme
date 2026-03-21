@@ -213,8 +213,8 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
             'role' => 'student',
-            'status' => 'active',
-            'approved_at' => now(),
+            'status' => 'pending', // Verification required
+            'approved_at' => null,   // Will be set on verification
             'credits' => 500, // Initial credits for Free tier
             'referral_code' => strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8)),
         ]);
@@ -228,27 +228,14 @@ class AuthController extends Controller
         ]);
 
         $deviceName = $request->input('device_name', 'mobile_app');
-        $token = $user->createToken($deviceName)->plainTextToken;
-
-        Log::info('New student registered via API', ['user_id' => $user->id, 'device' => $deviceName]);
-
+        Log::info('New student registered (Pending Verification)', ['user_id' => $user->id, 'device' => $deviceName]);
+ 
         // Send OTP Verification Email
         $this->otpService->sendOtp($user->email, 'verification');
-
-        $pricing = $this->getLocalizedPrice($request);
-
+ 
         return response()->json([
-            'user' => [
-                'name' => $user->name,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'email' => $user->email,
-                'credits' => $user->credits,
-                'is_unlimited' => false,
-                'ai_preferences' => null,
-            ],
-            'token' => $token,
-            'pricing' => $pricing,
+            'message' => 'Registration successful. Please verify your email.',
+            'email' => $user->email
         ], 201);
     }
 
@@ -423,12 +410,33 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
         if ($user) {
             $user->email_verified_at = now();
+            $user->status = 'active'; // Mark as active now
+            $user->approved_at = now();
             $user->save();
+
+            $deviceName = $request->input('device_name', 'mobile_app');
+            $authToken = $user->createToken($deviceName)->plainTextToken;
+            $pricing = $this->getLocalizedPrice($request);
+
+            Cache::forget('otp_token_' . $request->token);
+
+            return response()->json([
+                'message' => 'Account verified successfully.',
+                'user' => [
+                    'name' => $user->name,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email,
+                    'credits' => $user->credits,
+                    'is_unlimited' => (bool) $user->is_unlimited_student,
+                    'ai_preferences' => $user->ai_preferences,
+                ],
+                'token' => $authToken,
+                'pricing' => $pricing,
+            ]);
         }
 
-        Cache::forget('otp_token_' . $request->token);
-
-        return response()->json(['message' => 'Account verified successfully.']);
+        return response()->json(['message' => 'User not found.'], 404);
     }
 
     /**

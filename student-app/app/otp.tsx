@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, useColorScheme, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 import { NavArrowLeft, Mail } from 'iconoir-react-native';
 import { StatusBar } from 'expo-status-bar';
 
@@ -80,7 +81,16 @@ export default function OtpScreen() {
             const token = res.data.token;
             
             if (type === 'verification') {
-                await api.post('auth/verify-account', { email, token });
+                const verifyRes = await api.post('auth/verify-account', { 
+                    email, 
+                    token,
+                    device_name: `${Platform.OS}_app` 
+                });
+                
+                const { user: authedUser, token: authToken } = verifyRes.data;
+                const { login } = useAuthStore.getState();
+                await login(authedUser, authToken);
+
                 router.replace('/(onboarding)/streak-intro');
             } else {
                 router.replace(`/new-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`);
