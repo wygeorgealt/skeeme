@@ -186,6 +186,10 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'device_name' => 'nullable|string',
+            // Onboarding AI Preferences
+            'education_level' => 'nullable|string|in:high_school,undergraduate,masters,professional',
+            'field_of_study' => 'nullable|string|max:100',
+            'learning_style' => 'nullable|string|in:simple,detailed,analogies',
         ]);
 
         // Logic to extract first/last name from fullName if not provided explicitly
@@ -217,6 +221,13 @@ class AuthController extends Controller
             'approved_at' => null,   // Will be set on verification
             'credits' => 500, // Initial credits for Free tier
             'referral_code' => strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8)),
+            'ai_preferences' => [
+                'education_level' => $validated['education_level'] ?? null,
+                'field_of_study' => $validated['field_of_study'] ?? null,
+                'learning_style' => $validated['learning_style'] ?? null,
+                'tone' => 'encouraging', // Default
+                'language' => 'english', // Default
+            ],
         ]);
 
         // Log initial credits

@@ -182,16 +182,26 @@ export default function DrawerLayout() {
     const drawerBg = isDark ? '#100921' : '#fafafa';
     const tintColor = isDark ? '#fff' : '#121212';
 
+    const { user, token } = useAuthStore();
+    const pathname = usePathname();
+
     useEffect(() => {
+        // AI Personalization Guard
+        // If logged in but academic level is missing, force them to preferences
+        if (token && user && !user.ai_preferences?.education_level) {
+            if (pathname !== '/preferences') {
+                router.replace('/preferences');
+            }
+        }
+
         // Defer push token registration to avoid triggering during navigation mount
         const timer = setTimeout(() => {
-            const token = useAuthStore.getState().token;
             if (token) {
                 registerForPushNotificationsAsync(token).catch(() => {});
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, []);
+    }, [token, user, pathname]);
 
     return (
         <Drawer
