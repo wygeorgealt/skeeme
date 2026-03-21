@@ -8,12 +8,12 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\Action as PageAction;
-use Filament\Actions\EditAction as PageEditAction;
-use Filament\Actions\DeleteAction as PageDeleteAction;
-use Filament\Actions\BulkAction as PageBulkAction;
-use Filament\Actions\BulkActionGroup as PageBulkActionGroup;
-use Filament\Actions\DeleteBulkAction as PageDeleteBulkAction;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\BulkAction;
+use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -79,7 +79,7 @@ class UsersTable
                     ]),
             ])
             ->actions([
-                PageAction::make('resetCredits')
+                Action::make('resetCredits')
                     ->label('Reset Credits')
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
@@ -91,7 +91,7 @@ class UsersTable
                             ->success()
                             ->send();
                     }),
-                PageAction::make('togglePro')
+                Action::make('togglePro')
                     ->label(fn (User $record) => $record->is_unlimited_student ? 'Revoke Pro' : 'Make Pro')
                     ->icon('heroicon-o-sparkles')
                     ->color('info')
@@ -102,7 +102,7 @@ class UsersTable
                             ->success()
                             ->send();
                     }),
-                PageAction::make('sendEmail')
+                Action::make('sendEmail')
                     ->label('Send Email')
                     ->icon('heroicon-o-paper-airplane')
                     ->color('info')
@@ -148,12 +148,12 @@ class UsersTable
                                 ->send();
                         }
                     }),
-                PageEditAction::make(),
-                PageDeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
-                PageBulkActionGroup::make([
-                    PageBulkAction::make('sendBulkEmail')
+                BulkActionGroup::make([
+                    BulkAction::make('sendBulkEmail')
                         ->label('Send Bulk Email')
                         ->icon('heroicon-o-paper-airplane')
                         ->form([
@@ -193,7 +193,7 @@ class UsersTable
                                 ->success()
                                 ->send();
                         }),
-                    PageDeleteBulkAction::make(),
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
