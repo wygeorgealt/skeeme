@@ -171,8 +171,9 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'first_name' => 'required|string|max:127',
-            'last_name' => 'required|string|max:127',
+            'name' => 'required_without_all:first_name,last_name|string|max:255',
+            'first_name' => 'required_without:name|string|max:127',
+            'last_name' => 'required_without:name|string|max:127',
             'dob_month' => 'nullable|integer|between:1,12',
             'dob_year' => 'nullable|integer|min:1900',
             'age' => 'nullable|integer|min:0',
@@ -181,15 +182,26 @@ class AuthController extends Controller
             'device_name' => 'nullable|string',
         ]);
 
+        // Logic to extract first/last name from fullName if not provided explicitly
+        $firstName = $validated['first_name'] ?? '';
+        $lastName = $validated['last_name'] ?? '';
+        $fullName = $validated['name'] ?? trim($firstName . ' ' . $lastName);
+
+        if (empty($firstName) && !empty($validated['name'])) {
+            $parts = explode(' ', trim($validated['name']));
+            $firstName = $parts[0] ?? '';
+            $lastName = count($parts) > 1 ? implode(' ', array_slice($parts, 1)) : '';
+        }
+
         $dob = null;
         if (isset($validated['dob_year']) && isset($validated['dob_month'])) {
             $dob = $validated['dob_year'] . '-' . str_pad($validated['dob_month'], 2, '0', STR_PAD_LEFT) . '-01';
         }
 
         $user = User::create([
-            'name' => trim($validated['first_name'] . ' ' . $validated['last_name']),
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
+            'name' => $fullName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'dob' => $dob,
             'age' => $validated['age'] ?? null,
             'email' => $validated['email'],
