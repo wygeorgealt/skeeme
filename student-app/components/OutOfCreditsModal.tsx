@@ -82,8 +82,8 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                 <View style={{ width: 40, height: 4, backgroundColor: isDark ? '#475569' : '#CBD5E1', borderRadius: 2, alignSelf: 'center', marginBottom: 24 }} />
 
                 {/* Icon */}
-                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#A1C4FD20', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
-                    <FireFlame width={28} height={28} color="#A1C4FD" />
+                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF620', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
+                    <FireFlame width={28} height={28} color="#8B5CF6" />
                 </View>
 
                 {/* Copy */}
@@ -99,7 +99,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                     onPress={handleUpgrade}
                     activeOpacity={0.9}
                     style={{
-                        backgroundColor: '#A1C4FD',
+                        backgroundColor: '#8B5CF6',
                         height: 56,
                         borderRadius: 20,
                         alignItems: 'center',

@@ -26,6 +26,7 @@ import Animated, {
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { ActivityIndicator } from 'react-native';
+import { Flashcard as Card, FlashcardDeck } from '@/types';
 
 // Storage helpers
 const storage = {
@@ -48,7 +49,6 @@ const storage = {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-type Card = { id: number; front: string; back: string; order_column: number };
 
 const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: boolean; isDark: boolean }) => {
     const flipAnim = useSharedValue(0);

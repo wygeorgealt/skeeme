@@ -9,7 +9,7 @@ import { api } from '@/lib/api';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { LinearGradient } from 'expo-linear-gradient';
 
-type PlanType = 'standard' | 'elite';
+import { PlanType, CurrencyType } from '@/types';
 type BillingCycle = 'monthly' | 'yearly';
 
 export default function UpgradeScreen() {
@@ -17,7 +17,7 @@ export default function UpgradeScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
-    const [activeTab, setActiveTab] = useState<PlanType>('standard');
+    const [activeTab, setActiveTab] = useState<Exclude<PlanType, 'free'>>('standard');
     const [billingCycle, setBillingCycle] = useState<BillingCycle>('yearly');
     const [isPurchasing, setIsPurchasing] = useState(false);
     const [purchasingPack, setPurchasingPack] = useState<number | null>(null);
@@ -29,7 +29,7 @@ export default function UpgradeScreen() {
     }, [pricingConfig]);
 
     const currencySymbol = user?.pricing?.currency || '$';
-    const currency = user?.pricing?.currency === '₦' ? 'ngn' : 'usd';
+    const currency: CurrencyType = user?.pricing?.currency === '₦' ? 'ngn' : 'usd';
 
     if (!pricingConfig) {
         return (
@@ -59,8 +59,9 @@ export default function UpgradeScreen() {
     };
 
     const isPromoActive = (plan: PlanType) => {
-        if (!pricingConfig.promos || !pricingConfig.promos[`${plan}_end`]) return false;
-        return new Date() < new Date(pricingConfig.promos[`${plan}_end`]);
+        const promoEnd = pricingConfig.promos[`${plan}_end`];
+        if (!promoEnd) return false;
+        return new Date() < new Date(promoEnd);
     };
 
     const activePricing = pricingConfig[currency][activeTab];
@@ -138,7 +139,7 @@ export default function UpgradeScreen() {
 
                     {/* Tab Switcher */}
                     <View style={[s.tabSwitcher, isDark ? s.tabSwitcherDark : s.tabSwitcherLight]}>
-                        {(['standard', 'elite'] as PlanType[]).map((tab) => {
+                        {(['standard', 'elite'] as Exclude<PlanType, 'free'>[]).map((tab) => {
                             const isActive = activeTab === tab;
                             return (
                                 <TouchableOpacity

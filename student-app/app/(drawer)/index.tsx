@@ -375,8 +375,8 @@ export default function DashboardScreen() {
                     
                     {/* Stats */}
                     <View style={s.statsGrid}>
-                        <StatCard label="Credits Spent" value={(user as any).credits_spent_this_week || 0} icon={Flash} color="#f59e0b" isDark={isDark} />
-                        <StatCard label="Study Sessions" value={(user as any).study_sessions_this_week || 0} icon={GraduationCap} color="#8B5CF6" isDark={isDark} />
+                        <StatCard label="Credits Spent" value={user.credits_spent_this_week || 0} icon={Flash} color="#f59e0b" isDark={isDark} />
+                        <StatCard label="Study Sessions" value={user.study_sessions_this_week || 0} icon={GraduationCap} color="#8B5CF6" isDark={isDark} />
                     </View>
 
                     {/* Weekly Activity */}
@@ -388,7 +388,7 @@ export default function DashboardScreen() {
                             </View>
                             <Activity width={18} height={18} color="#8B5CF6" />
                         </View>
-                        <WeeklyActivity data={(user as any).weekly_activity_points || []} isDark={isDark} />
+                        <WeeklyActivity data={user.weekly_activity_points || []} isDark={isDark} />
                     </View>
 
                     {/* Streaks */}

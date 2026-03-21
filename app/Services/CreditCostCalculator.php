@@ -22,7 +22,8 @@ class CreditCostCalculator
     {
         $path = $request->path();
 
-        $rates = \App\Models\SystemSetting::getPricingConfig()['rates'];
+        $config = \App\Models\SystemSetting::getPricingConfig();
+        $rates = $config['rates'] ?? [];
 
         // Scan & Solve
         if (Str::contains($path, 'scan/solve')) {

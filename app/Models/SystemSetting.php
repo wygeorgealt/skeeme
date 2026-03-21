@@ -17,7 +17,7 @@ class SystemSetting extends Model
 
     public static function getPricingConfig()
     {
-        return self::get('pricing', [
+        $defaults = [
             'ngn' => [
                 'standard' => ['monthly' => 3500, 'yearly' => 25000, 'promoMonthly' => 2600, 'credits' => 6000, 'weekly' => 1500],
                 'elite' => ['monthly' => 5000, 'yearly' => 50000, 'promoMonthly' => 3700, 'credits' => 20000, 'weekly' => 5000]
@@ -52,7 +52,11 @@ class SystemSetting extends Model
                 'flashcard_weight' => 5, // per 500 words
                 'theory_grading' => 2,
             ]
-        ]);
+        ];
+
+        $dbValue = self::get('pricing', []);
+        
+        return array_replace_recursive($defaults, $dbValue);
     }
 
     /**

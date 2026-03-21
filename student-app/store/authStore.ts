@@ -1,33 +1,7 @@
 import { create } from 'zustand';
 import { Platform } from 'react-native';
 
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    credits: number;
-    is_unlimited: boolean;
-    plan_name?: string; // 'free', 'standard', 'elite', etc.
-    streak?: {
-        current_streak: number;
-        longest_streak: number;
-        last_study_date: string | null;
-    };
-    pricing?: {
-        amount: string;
-        currency: string;
-        period: string;
-    };
-    ai_preferences?: {
-        education_level?: string;
-        field_of_study?: string;
-        learning_style?: string;
-        tone?: string;
-        language?: string;
-    };
-    avatar?: string;
-    avatar_url?: string;
-}
+import { User, PricingConfig } from '@/types';
 
 interface AuthState {
     user: User | null;
@@ -40,7 +14,7 @@ interface AuthState {
     checkAuth: () => Promise<void>;
     theme: 'light' | 'dark' | 'system';
     setTheme: (theme: 'light' | 'dark' | 'system') => void;
-    pricingConfig: any;
+    pricingConfig: PricingConfig | null;
     fetchPricingConfig: () => Promise<void>;
     // Onboarding
     onboardingStep: number;

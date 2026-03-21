@@ -1,22 +1,12 @@
-export type QuizMode = 'topic' | 'file';
-export type Difficulty = 'easy' | 'medium' | 'hard';
-export type FormatType = 'mcq' | 'theory' | 'both';
+import { 
+    QuizMode, 
+    Difficulty, 
+    FormatType, 
+    QuizQuestion as Question, 
+    TheoryResult 
+} from '@/types';
 
-export type Question = {
-    question_text: string;
-    question_type: 'multiple_choice' | 'essay';
-    options: string[];
-    correct_answer: string;
-    explanation: string;
-    difficulty_level: string;
-};
-
-export type TheoryResult = {
-    score: number;
-    max: number;
-    feedback: string;
-    passed: boolean;
-};
+export { QuizMode, Difficulty, FormatType, Question, TheoryResult };
 
 export const DIFF_COLORS: Record<string, string> = {
     easy: '#A1C4FD', medium: '#FCD34D', hard: '#ef4444',

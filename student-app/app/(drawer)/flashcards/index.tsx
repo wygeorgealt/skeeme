@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl, Alert, useColorScheme, Platform, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl, Alert, useColorScheme, Platform, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -14,6 +14,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import { FlashcardDeck } from '@/types';
 
 // Storage helpers
 const storage = {
@@ -38,14 +39,6 @@ const storage = {
     },
 };
 
-type FlashcardDeck = {
-    id: number;
-    title: string;
-    description: string | null;
-    source_type: string;
-    flashcards_count: number;
-    created_at: string;
-};
 
 function SkeletonDeck({ isDark }: { isDark: boolean }) {
     return (
