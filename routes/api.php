@@ -126,9 +126,9 @@ Route::prefix('v1')->group(function () {
         Route::post('oauth/{provider}', [\App\Http\Controllers\API\Student\AuthController::class, 'handleOAuthLogin']);
 
         // OTP & Auth Flow
-        Route::post('otp/send', [\App\Http\Controllers\Api\OtpController::class, 'send']);
-        Route::post('otp/verify', [\App\Http\Controllers\Api\OtpController::class, 'verify']);
-        Route::post('otp/resend', [\App\Http\Controllers\Api\OtpController::class, 'resend']);
+        Route::post('otp/send', [\App\Http\Controllers\API\OtpController::class, 'send']);
+        Route::post('otp/verify', [\App\Http\Controllers\API\OtpController::class, 'verify']);
+        Route::post('otp/resend', [\App\Http\Controllers\API\OtpController::class, 'resend']);
         Route::post('auth/reset-password', [\App\Http\Controllers\API\Student\AuthController::class, 'resetPassword']);
         Route::post('auth/verify-account', [\App\Http\Controllers\API\Student\AuthController::class, 'verifyAccount']);
 
