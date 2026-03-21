@@ -5,12 +5,16 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
 
 export const api = axios.create({
     baseURL: API_URL,
-    timeout: 180000, // 180 seconds (needed for heavy AI Quiz/Flashcard generation)
+    timeout: 180000, 
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     },
 });
+
+// Retry configuration
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1s
 
 // Single request interceptor: attach auth token
 api.interceptors.request.use(
@@ -28,19 +32,23 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Response interceptor: handle 401
+// Response interceptor: handle 401 and Retries
 api.interceptors.response.use(
     (response) => {
         if (__DEV__) {
             console.log(`[API] ✅ ${response.status} from ${response.config.url}`);
         }
+        // Consistent data extraction helper:
+        // Returns response.data.data if it exists, otherwise response.data
         return response;
     },
-    (error) => {
-        const url = error.config?.url;
+    async (error) => {
+        const { config, response } = error;
+        const url = config?.url;
         const { user, logout } = useAuthStore.getState();
 
-        if (error.response?.status === 401) {
+        // 1. Handle 401 Unauthorized
+        if (response?.status === 401) {
             if (user && !url?.includes('logout')) {
                 if (__DEV__) console.warn(`[API] 401 Unauthorized on ${url} - triggering logout`);
                 logout();
@@ -48,7 +56,48 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        if (__DEV__) console.error(`[API] ❌ ${error.message} on ${url}`);
+        // 2. Handle Network Retries (Beginner mistake: no retries)
+        config.retryCount = config.retryCount || 0;
+        
+        const isNetworkError = !response;
+        const isIdempotent = config.method === 'get'; // Safest to retry GETs
+        
+        if (isNetworkError && isIdempotent && config.retryCount < MAX_RETRIES) {
+            config.retryCount += 1;
+            if (__DEV__) console.warn(`[API] Network error on ${url}. Retrying (${config.retryCount}/${MAX_RETRIES})...`);
+            
+            // Backoff delay
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * config.retryCount));
+            return api(config);
+        }
+
+        if (__DEV__) {
+            const errorMsg = response?.data?.message || error.message;
+            console.error(`[API] ❌ ${errorMsg} on ${url}`);
+        }
+        
         return Promise.reject(error);
     }
 );
+
+/**
+ * Enhanced API wrappers to address "Return inconsistent response shapes"
+ */
+export const apiStandard = {
+    get: async <T = any>(url: string, config?: any): Promise<T> => {
+        const res = await api.get(url, config);
+        return res.data.data !== undefined ? res.data.data : res.data;
+    },
+    post: async <T = any>(url: string, data?: any, config?: any): Promise<T> => {
+        const res = await api.post(url, data, config);
+        return res.data.data !== undefined ? res.data.data : res.data;
+    },
+    put: async <T = any>(url: string, data?: any, config?: any): Promise<T> => {
+        const res = await api.put(url, data, config);
+        return res.data.data !== undefined ? res.data.data : res.data;
+    },
+    delete: async <T = any>(url: string, config?: any): Promise<T> => {
+        const res = await api.delete(url, config);
+        return res.data.data !== undefined ? res.data.data : res.data;
+    }
+};

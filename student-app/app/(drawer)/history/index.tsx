@@ -120,28 +120,28 @@ export default function StudyHistoryDashboard() {
     return (
         <GlowBackground>
             {/* Header with drawer toggle */}
-            <View style={{ paddingTop: Math.max(insets.top, 16) }} className="px-6 pb-6 flex-row items-center justify-between">
-                <Text className={`text-[32px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>History</Text>
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
+                <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>History</Text>
                 <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     activeOpacity={0.7}
-                    className={`size-12 rounded-full items-center justify-center ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}
+                    style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                 >
                     <Menu width={22} height={22} color={isDark ? 'white' : 'black'} />
                 </TouchableOpacity>
             </View>
 
             {/* Segmented Control - Minimalist */}
-            <View className="px-6 mb-8">
-                <View className={`flex-row p-1 rounded-full ${isDark ? 'bg-[#13151B]' : 'bg-slate-100'}`}>
+            <View style={s.tabContainer}>
+                <View style={[s.tabRow, isDark ? s.tabRowDark : s.tabRowLight]}>
                     {(['quizzes', 'flashcards'] as const).map(tab => (
                         <TouchableOpacity
                             key={tab}
                             onPress={() => setActiveTab(tab)}
                             activeOpacity={0.8}
-                            className={`flex-1 items-center justify-center py-2.5 rounded-full ${activeTab === tab ? (isDark ? 'bg-white/10' : 'bg-white shadow-sm') : ''}`}
+                            style={[s.tabButton, activeTab === tab && (isDark ? s.tabActiveDark : s.tabActiveLight)]}
                         >
-                            <Text className={`font-bold text-[12px] capitalize ${activeTab === tab ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-white/40' : 'text-slate-400')}`}>
+                            <Text style={[s.tabText, activeTab === tab ? (isDark ? s.textWhite : s.textSlate900) : (isDark ? s.textWhite40 : s.textSlate400)]}>
                                 {tab}
                             </Text>
                         </TouchableOpacity>
@@ -150,24 +150,24 @@ export default function StudyHistoryDashboard() {
             </View>
 
             {/* Bottom Half Container Content */}
-            <View className={`flex-1 rounded-t-[40px] px-6 pt-8 ${isDark ? 'bg-[#090A0F]' : 'bg-white'}`}>
+            <View style={[s.contentContainer, isDark ? s.bgDark : s.bgWhite]}>
                 <ScrollView
-                    className="flex-1"
+                    style={s.scrollView}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
                     showsVerticalScrollIndicator={false}
                 >
                 {isLoading && quizzes.length === 0 && decks.length === 0 ? (
-                    <View className="space-y-6">
-                        <View className="flex-row items-center">
+                    <View>
+                        <View style={s.skeletonRow}>
                             <SkeletonLoader width={48} height={48} borderRadius={24} style={{ marginRight: 16 }} />
-                            <View className="flex-1">
+                            <View style={s.flex1}>
                                 <SkeletonLoader width="60%" height={16} style={{ marginBottom: 8 }} />
                                 <SkeletonLoader width="30%" height={12} />
                             </View>
                         </View>
-                        <View className="flex-row items-center">
+                        <View style={s.skeletonRow}>
                             <SkeletonLoader width={48} height={48} borderRadius={24} style={{ marginRight: 16 }} />
-                            <View className="flex-1">
+                            <View style={s.flex1}>
                                 <SkeletonLoader width="70%" height={16} style={{ marginBottom: 8 }} />
                                 <SkeletonLoader width="40%" height={12} />
                             </View>
@@ -175,9 +175,9 @@ export default function StudyHistoryDashboard() {
                     </View>
                 ) : activeTab === 'quizzes' ? (
                     quizzes.length === 0 ? (
-                        <View className={`items-center py-20 border-2 border-dashed rounded-[28px] ${isDark ? 'bg-[#13151B]/50 border-transparent' : 'bg-white border-slate-200 shadow-sm'}`}>
+                        <View style={[s.emptyState, isDark ? s.emptyStateDark : s.emptyStateLight]}>
                             <Calendar width={40} height={40} color="#8B5CF6" style={{ opacity: 0.5 }} />
-                            <Text className="text-slate-500 font-medium text-[13px] text-center px-10 leading-relaxed mt-4">
+                            <Text style={s.emptyStateText}>
                                 Complete a practice quiz to see results here.
                             </Text>
                         </View>
@@ -188,9 +188,9 @@ export default function StudyHistoryDashboard() {
                     )
                 ) : (
                     decks.length === 0 ? (
-                        <View className={`items-center py-20 border-2 border-dashed rounded-[28px] ${isDark ? 'bg-[#13151B]/50 border-transparent' : 'bg-white border-slate-200 shadow-sm'}`}>
+                        <View style={[s.emptyState, isDark ? s.emptyStateDark : s.emptyStateLight]}>
                             <MultiplePages width={40} height={40} color="#8B5CF6" style={{ opacity: 0.5 }} />
-                            <Text className="text-slate-500 font-medium text-[13px] text-center px-10 leading-relaxed mt-4">
+                            <Text style={s.emptyStateText}>
                                 Generate some flashcards to start studying.
                             </Text>
                         </View>
@@ -200,7 +200,7 @@ export default function StudyHistoryDashboard() {
                         ))
                     )
                 )}
-                <View className="h-10" />
+                <View style={s.spacer} />
                 </ScrollView>
             </View>
         </GlowBackground>
@@ -218,26 +218,26 @@ function QuizCard({ session, isDark }: { session: QuizSession; isDark: boolean }
         <TouchableOpacity
             onPress={() => router.push(`/(drawer)/history/${session.id}` as any)}
             activeOpacity={0.7}
-            className="flex-row items-center justify-between mb-8"
+            style={s.card}
         >
-            <View className="flex-row items-center flex-1 pr-4">
-                <View className={`size-12 rounded-full items-center justify-center mr-4 ${isDark ? 'bg-[#13151B]' : 'bg-slate-50'}`}>
+            <View style={s.cardLeft}>
+                <View style={[s.iconBox, isDark ? s.iconBoxDark : s.iconBoxLight]}>
                     <Calendar width={20} height={20} color={getScoreColor(session.score_percentage)} />
                 </View>
-                <View className="flex-1">
-                    <Text className={`text-[16px] font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`} numberOfLines={1}>
+                <View style={s.flex1}>
+                    <Text style={[s.topicText, isDark ? s.textWhite : s.textSlate900]} numberOfLines={1}>
                         {session.topic}
                     </Text>
-                    <Text className={`text-[13px] ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                    <Text style={[s.metaText, isDark ? s.textWhite40 : s.textSlate500]}>
                         {new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • {session.difficulty}
                     </Text>
                 </View>
             </View>
-            <View className="items-end">
-                <Text className={`text-[16px] font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <View style={s.cardRight}>
+                <Text style={[s.topicText, isDark ? s.textWhite : s.textSlate900]}>
                     {Math.round(session.score_percentage)}%
                 </Text>
-                <Text className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/30' : 'text-slate-400'}`}>
+                <Text style={[s.progressText, isDark ? s.textWhite30 : s.textSlate400]}>
                     {session.correct_answers}/{session.total_questions}
                 </Text>
             </View>
@@ -250,29 +250,77 @@ function DeckCard({ deck, isDark }: { deck: FlashcardDeck; isDark: boolean }) {
         <TouchableOpacity
             onPress={() => router.push(`/(drawer)/flashcards/${deck.id}` as any)}
             activeOpacity={0.7}
-            className="flex-row items-center justify-between mb-8"
+            style={s.card}
         >
-            <View className="flex-row items-center flex-1 pr-4">
-                <View className={`size-12 rounded-full items-center justify-center mr-4 ${isDark ? 'bg-[#13151B]' : 'bg-slate-50'}`}>
+            <View style={s.cardLeft}>
+                <View style={[s.iconBox, isDark ? s.iconBoxDark : s.iconBoxLight]}>
                     <MultiplePages width={20} height={20} color="#8B5CF6" />
                 </View>
-                <View className="flex-1 ml-4 justify-center">
-                    <Text className={`text-[16px] font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`} numberOfLines={1}>
+                <View style={[s.flex1, { marginLeft: 16, justifyContent: 'center' }]}>
+                    <Text style={[s.topicText, isDark ? s.textWhite : s.textSlate900]} numberOfLines={1}>
                         {deck.title}
                     </Text>
-                    <Text className={`text-[13px] ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                    <Text style={[s.metaText, isDark ? s.textWhite40 : s.textSlate500]}>
                         {new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </Text>
                 </View>
             </View>
-            <View className="items-end">
-                <Text className={`text-[16px] font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <View style={s.cardRight}>
+                <Text style={[s.topicText, isDark ? s.textWhite : s.textSlate900]}>
                     {deck.flashcards_count}
                 </Text>
-                <Text className={`text-[11px] font-medium mt-0.5 ${isDark ? 'text-white/30' : 'text-slate-400'}`}>
+                <Text style={[s.progressText, isDark ? s.textWhite30 : s.textSlate400]}>
                     Cards
                 </Text>
             </View>
         </TouchableOpacity>
     );
 }
+
+const s = StyleSheet.create({
+    header: { paddingHorizontal: 24, paddingBottom: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerTitle: { fontSize: 32, fontWeight: '700', letterSpacing: -1 },
+    menuBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+    menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    menuBtnLight: { backgroundColor: '#F1F5F9' },
+
+    tabContainer: { paddingHorizontal: 24, marginBottom: 32 },
+    tabRow: { flexDirection: 'row', padding: 4, borderRadius: 999 },
+    tabRowDark: { backgroundColor: '#13151B' },
+    tabRowLight: { backgroundColor: '#F1F5F9' },
+    tabButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 999 },
+    tabActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    tabActiveLight: { backgroundColor: 'white', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+    tabText: { fontWeight: '700', fontSize: 12, textTransform: 'capitalize' },
+
+    contentContainer: { flex: 1, borderTopLeftRadius: 40, borderTopRightRadius: 40, paddingHorizontal: 24, paddingTop: 32 },
+    bgDark: { backgroundColor: '#090A0F' },
+    bgWhite: { backgroundColor: 'white' },
+    scrollView: { flex: 1 },
+
+    skeletonRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
+    flex1: { flex: 1 },
+
+    emptyState: { alignItems: 'center', paddingVertical: 80, borderStyle: 'dashed', borderWidth: 2, borderRadius: 28 },
+    emptyStateDark: { backgroundColor: 'rgba(19,21,27,0.5)', borderColor: 'transparent' },
+    emptyStateLight: { backgroundColor: 'white', borderColor: '#E2E8F0' },
+    emptyStateText: { color: '#64748b', fontWeight: '500', fontSize: 13, textAlign: 'center', paddingHorizontal: 40, lineHeight: 20, marginTop: 16 },
+
+    card: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 },
+    cardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 16 },
+    cardRight: { alignItems: 'flex-end' },
+    iconBox: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    iconBoxDark: { backgroundColor: '#13151B' },
+    iconBoxLight: { backgroundColor: '#F8FAFC' },
+    topicText: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+    metaText: { fontSize: 13 },
+    progressText: { fontSize: 11, fontWeight: '500', marginTop: 2 },
+
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textWhite40: { color: 'rgba(255,255,255,0.4)' },
+    textWhite30: { color: 'rgba(255,255,255,0.3)' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate500: { color: '#64748b' },
+    spacer: { height: 40 },
+});

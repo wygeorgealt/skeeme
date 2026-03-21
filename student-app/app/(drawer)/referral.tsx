@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, useColorScheme } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, useColorScheme, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { router, useNavigation } from 'expo-router';
 import { Menu, Gift } from 'iconoir-react-native';
@@ -50,39 +50,39 @@ export default function ReferralScreen() {
     };
 
     return (
-        <GlowBackground useSafeArea>
+        <GlowBackground isRoot={true}>
             <Stack.Screen options={{ headerShown: false }} />
 
             {/* Header with drawer toggle */}
-            <View className="px-5 pt-2 pb-4 flex-row items-center justify-between">
-                <View className="flex-1 pr-4">
-                    <Text className={`text-[26px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Rewards</Text>
-                    <Text className="text-slate-500 font-medium text-[13px] mt-1">Redeem codes or invite classmates to earn learning credits.</Text>
+            <View style={s.header}>
+                <View style={s.headerTextContainer}>
+                    <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>Rewards</Text>
+                    <Text style={s.headerSubtitle}>Redeem codes or invite classmates to earn learning credits.</Text>
                 </View>
                 <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     activeOpacity={0.7}
-                    className={`size-10 rounded-xl items-center justify-center ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}
+                    style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                 >
                     <Menu width={20} height={20} color={isDark ? 'white' : 'black'} />
                 </TouchableOpacity>
             </View>
 
-            <ScrollView className="flex-1 px-5 pt-2" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={s.scrollView} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
 
                 {/* Redeem Section */}
-                <View className={`rounded-[24px] p-6 border mb-8 ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-100 shadow-sm'}`}>
-                    <View className="bg-brand-primary/10 w-12 h-12 rounded-xl items-center justify-center mb-5">
+                <View style={[s.sectionCard, isDark ? s.sectionCardDark : s.sectionCardLight]}>
+                    <View style={s.iconBox}>
                         <Gift width={18} height={18} color="#8B5CF6" />
                     </View>
-                    <Text className={`text-[22px] font-bold mb-3 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Redeem an Invitation</Text>
-                    <Text className="text-slate-500 font-medium text-[13px] leading-relaxed mb-6">
+                    <Text style={[s.sectionTitle, isDark ? s.textWhite : s.textSlate900]}>Redeem an Invitation</Text>
+                    <Text style={s.sectionDesc}>
                         Enter a friend's referral code to instantly claim 100 bonus credits.
                     </Text>
                     
-                    <View className="flex-row gap-3">
+                    <View style={s.inputRow}>
                         <TextInput
-                            className={`flex-1 h-[52px] px-5 rounded-xl border font-bold text-[15px] ${isDark ? 'bg-transparent border-transparent text-white' : 'bg-slate-50 border-slate-100 text-slate-900'}`}
+                            style={[s.textInput, isDark ? s.textInputDark : s.textInputLight]}
                             placeholder="SK-A1B2C3"
                             placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
                             autoCapitalize="characters"
@@ -93,41 +93,41 @@ export default function ReferralScreen() {
                             onPress={handleRedeem}
                             disabled={loading || !code.trim()}
                             activeOpacity={0.8}
-                            className={`w-[80px] h-[52px] rounded-xl justify-center items-center ${code.trim() && !loading ? 'bg-brand-primary' : 'bg-slate-300 dark:bg-slate-700'}`}
+                            style={[s.claimBtn, code.trim() && !loading ? s.claimBtnActive : (isDark ? s.claimBtnDark : s.claimBtnLight)]}
                         >
-                            {loading ? <ActivityIndicator color="#fff" /> : <Text className="text-white font-bold">Claim</Text>}
+                            {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.claimBtnText}>Claim</Text>}
                         </TouchableOpacity>
                     </View>
                 </View>
 
                 {/* My Code Section */}
-                <View className="mb-8">
-                    <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-5 ml-1">Your Network</Text>
-                    <View className="bg-brand-primary rounded-[24px] p-8 shadow-2xl shadow-brand-primary/30">
-                        <View className="items-center mb-8">
-                            <Text className="text-white/60 font-bold uppercase tracking-widest text-[11px] mb-4">Referral Code</Text>
+                <View style={s.statsSection}>
+                    <Text style={s.sectionLabel}>Your Network</Text>
+                    <View style={s.codeCard}>
+                        <View style={s.codeHeader}>
+                            <Text style={s.codeLabel}>Referral Code</Text>
                             {loadingStats ? (
                                 <ActivityIndicator color="rgba(255,255,255,0.7)" />
                             ) : (
-                                <Text className="text-white font-black text-[32px] tracking-widest">{stats.code || '...'}</Text>
+                                <Text style={s.codeValue}>{stats.code || '...'}</Text>
                             )}
                         </View>
                         
-                        <View className="flex-row gap-4 border-t border-white/10 pt-10">
-                            <View className="flex-1 items-center">
-                                <Text className="text-white/60 font-bold uppercase tracking-[0.1em] text-[10px] mb-2 text-center">Friends Joined</Text>
+                        <View style={s.statsGrid}>
+                            <View style={s.statBox}>
+                                <Text style={s.statLabel}>Friends Joined</Text>
                                 {loadingStats ? (
                                     <ActivityIndicator size="small" color="rgba(255,255,255,0.7)" />
                                 ) : (
-                                    <Text className="text-white font-black text-xl tracking-tighter">{stats.total_referred}</Text>
+                                    <Text style={s.statValue}>{stats.total_referred}</Text>
                                 )}
                             </View>
-                            <View className="flex-1 items-center">
-                                <Text className="text-white/60 font-bold uppercase tracking-[0.1em] text-[10px] mb-2 text-center">Rewards Earned</Text>
+                            <View style={s.statBox}>
+                                <Text style={s.statLabel}>Rewards Earned</Text>
                                 {loadingStats ? (
                                     <ActivityIndicator size="small" color="rgba(255,255,255,0.7)" />
                                 ) : (
-                                    <Text className="text-white font-black text-xl tracking-tighter">{stats.credits_earned}</Text>
+                                    <Text style={s.statValue}>{stats.credits_earned}</Text>
                                 )}
                             </View>
                         </View>
@@ -138,3 +138,50 @@ export default function ReferralScreen() {
         </GlowBackground>
     );
 }
+
+const s = StyleSheet.create({
+    header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerTextContainer: { flex: 1, paddingRight: 16 },
+    headerTitle: { fontSize: 26, fontWeight: '700', letterSpacing: -1 },
+    headerSubtitle: { color: '#64748b', fontWeight: '500', fontSize: 13, marginTop: 4 },
+    menuBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    menuBtnLight: { backgroundColor: '#F1F5F9' },
+
+    scrollView: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
+    
+    sectionCard: { borderRadius: 24, padding: 24, borderWidth: 1, marginBottom: 32 },
+    sectionCardDark: { backgroundColor: '#13151B', borderColor: 'transparent' },
+    sectionCardLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
+    
+    iconBox: { backgroundColor: 'rgba(139,92,246,0.1)', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    sectionTitle: { fontSize: 22, fontWeight: '700', marginBottom: 12, letterSpacing: -0.5 },
+    sectionDesc: { color: '#64748b', fontWeight: '500', fontSize: 13, lineHeight: 20, marginBottom: 24 },
+    
+    inputRow: { flexDirection: 'row', gap: 12 },
+    textInput: { flex: 1, height: 52, paddingHorizontal: 20, borderRadius: 12, borderWidth: 1, fontWeight: '700', fontSize: 15 },
+    textInputDark: { backgroundColor: 'transparent', borderColor: 'transparent', color: 'white' },
+    textInputLight: { backgroundColor: '#F8FAFC', borderColor: '#F1F5F9', color: '#0f172a' },
+    
+    claimBtn: { width: 80, height: 52, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+    claimBtnActive: { backgroundColor: '#8B5CF6' },
+    claimBtnLight: { backgroundColor: '#CBD5E1' },
+    claimBtnDark: { backgroundColor: '#334155' },
+    claimBtnText: { color: 'white', fontWeight: '700' },
+
+    statsSection: { marginBottom: 32 },
+    sectionLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 20, marginLeft: 4 },
+    
+    codeCard: { backgroundColor: '#8B5CF6', borderRadius: 24, padding: 32 },
+    codeHeader: { alignItems: 'center', marginBottom: 32 },
+    codeLabel: { color: 'rgba(255,255,255,0.6)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2, fontSize: 11, marginBottom: 16 },
+    codeValue: { color: 'white', fontWeight: '900', fontSize: 32, letterSpacing: 4 },
+    
+    statsGrid: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 40 },
+    statBox: { flex: 1, alignItems: 'center' },
+    statLabel: { color: 'rgba(255,255,255,0.6)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, fontSize: 10, marginBottom: 8, textAlign: 'center' },
+    statValue: { color: 'white', fontWeight: '900', fontSize: 20, letterSpacing: -1 },
+
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+});

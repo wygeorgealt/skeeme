@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
-    ActivityIndicator, Alert, useColorScheme
+    ActivityIndicator, Alert, useColorScheme, StyleSheet
 } from 'react-native';
 import { 
     Page, Upload, Sparks, NavArrowLeft
@@ -135,36 +135,36 @@ export default function GenerateFlashcardScreen() {
     const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
 
     return (
-        <GlowBackground>
+        <GlowBackground isRoot={true}>
             {/* Custom Header */}
-            <View style={{ paddingTop: Math.max(insets.top, 8) }} className="px-5 pb-3 flex-row items-center justify-between">
-                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} className={`size-10 rounded-full items-center justify-center ${isDark ? 'bg-white/10' : 'bg-white/60'}`}>
+            <View style={[s.headerRow, { paddingTop: Math.max(insets.top, 8) }]}>
+                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.bgWhite10 : s.bgWhite60]}>
                     <NavArrowLeft width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
-                <Text className={`text-[18px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Create Deck</Text>
-                <View className="size-10" />
+                <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>Create Deck</Text>
+                <View style={s.size10} />
             </View>
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 180, paddingTop: 10 }} showsVerticalScrollIndicator={false}>
                 {/* Source Selector */}
-                <View className={`flex-row p-1.5 mb-8 rounded-[20px] ${isDark ? 'bg-[#13151B]' : 'bg-white/80 border border-white/50'}`}>
+                <View style={[s.selectorWrapper, isDark ? s.bgGrayDark : s.selectorWrapperLight]}>
                     {(['topic', 'file'] as QuizMode[]).map(m => (
                         <TouchableOpacity 
                             key={m} 
                             onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
                             activeOpacity={0.8}
-                            style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 16, overflow: 'hidden' }}
+                            style={s.selectorBtn}
                         >
                             {mode === m ? (
                                 <LinearGradient
                                     colors={['#8B5CF6', '#6366F1']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
-                                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 }}
+                                    style={s.selectorGradient}
                                 />
                             ) : null}
                             <Text
-                                className={`font-bold text-[12px] uppercase tracking-widest ${mode === m ? 'text-white' : 'text-slate-400'}`}
+                                style={[s.selectorText, mode === m ? s.textWhite : s.textSlate400]}
                             >
                                 {m}
                             </Text>
@@ -173,12 +173,12 @@ export default function GenerateFlashcardScreen() {
                 </View>
 
                 {/* Source Input */}
-                <View className="mb-8">
+                <View style={s.mb8}>
                     {mode === 'topic' ? (
                         <>
-                            <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">Deck Topic</Text>
+                            <Text style={s.label}>Deck Topic</Text>
                             <TextInput
-                                className={`h-[56px] rounded-2xl px-5 text-[15px] font-bold ${isDark ? 'bg-[#13151B] text-white' : 'bg-white/80 text-slate-900 border border-white/50'}`}
+                                style={[s.input, isDark ? s.bgGrayDark : s.inputLight, { color: isDark ? 'white' : '#0f172a' }]}
                                 placeholder="e.g. Spanish conjugation, AWS Services..."
                                 placeholderTextColor="#94a3b8"
                                 value={topic}
@@ -187,17 +187,17 @@ export default function GenerateFlashcardScreen() {
                         </>
                     ) : (
                         <>
-                            <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">Document Source</Text>
+                            <Text style={s.label}>Document Source</Text>
                             <TouchableOpacity
                                 onPress={handleFileSelect}
                                 disabled={isProcessingFile}
                                 activeOpacity={0.7}
-                                className={`border-2 border-dashed rounded-[28px] p-8 items-center ${isDark ? 'bg-[#13151B]/50 border-slate-700' : 'bg-white/60 border-slate-200'}`}
+                                style={[s.uploadCard, isDark ? s.uploadCardDark : s.uploadCardLight]}
                             >
                                 {isProcessingFile ? (
-                                    <View className="items-center py-2">
+                                    <View style={s.analyzingWrapper}>
                                         <ActivityIndicator size="large" color="#8B5CF6" />
-                                        <Text className="text-[14px] font-bold text-[#8B5CF6] mt-5">Analyzing...</Text>
+                                        <Text style={s.analyzingText}>Analyzing...</Text>
                                     </View>
                                 ) : selectedFile ? (
                                     <>
@@ -205,20 +205,20 @@ export default function GenerateFlashcardScreen() {
                                             colors={['#8B5CF6', '#6366F1']}
                                             start={{ x: 0, y: 0 }}
                                             end={{ x: 1, y: 1 }}
-                                            style={{ width: 80, height: 80, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}
+                                            style={s.fileIconBox}
                                         >
                                             <Page width={32} height={32} color="white" />
                                         </LinearGradient>
-                                        <Text className={`text-[15px] font-bold text-center mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`} numberOfLines={1}>{selectedFile?.name}</Text>
-                                        <Text className="text-[11px] font-black text-[#8B5CF6] uppercase tracking-widest">Tap to change</Text>
+                                        <Text style={[s.fileNameText, isDark ? s.textWhite : s.textSlate900]} numberOfLines={1}>{selectedFile?.name}</Text>
+                                        <Text style={s.changeFileText}>Tap to change</Text>
                                     </>
                                 ) : (
                                     <>
-                                        <View className={`w-20 h-20 rounded-[32px] items-center justify-center mb-5 ${isDark ? 'bg-white/5' : 'bg-indigo-50'}`}>
+                                        <View style={[s.uploadIconBox, isDark ? s.bgWhite5 : s.bgIndigo50]}>
                                             <Upload width={32} height={32} color="#8B5CF6" strokeWidth={1.5} />
                                         </View>
-                                        <Text className={`text-[15px] font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Select a document</Text>
-                                        <Text className="text-[11px] font-medium text-slate-500 text-center px-5">
+                                        <Text style={[s.selectDocTitle, isDark ? s.textWhite : s.textSlate900]}>Select a document</Text>
+                                        <Text style={s.uploadHint}>
                                             PDF, DOCX, TXT or MD (Max 5MB)
                                         </Text>
                                     </>
@@ -229,37 +229,37 @@ export default function GenerateFlashcardScreen() {
                 </View>
 
                 {/* Settings */}
-                <View className="mb-8">
-                    <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">Card Count (5-50)</Text>
+                <View style={s.mb8}>
+                    <Text style={s.label}>Card Count (5-50)</Text>
                     <TextInput
-                        className={`h-[56px] rounded-2xl px-5 text-[15px] font-bold ${isDark ? 'bg-[#13151B] text-white' : 'bg-white/80 text-slate-900 border border-white/50'}`}
+                        style={[s.input, isDark ? s.bgGrayDark : s.inputLight, { color: isDark ? 'white' : '#0f172a' }]}
                         keyboardType="number-pad" 
                         value={cardCount} 
                         onChangeText={setCardCount}
                     />
                 </View>
 
-                <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1">Difficulty Level</Text>
-                <View className="flex-row gap-3 mb-10">
+                <Text style={s.label}>Difficulty Level</Text>
+                <View style={s.difficultyRow}>
                     {(['easy', 'medium', 'hard'] as Difficulty[]).map(d => (
                         <TouchableOpacity 
                             key={d} 
                             onPress={() => setDifficulty(d)}
                             activeOpacity={0.8}
-                            style={{ flex: 1, height: 48, borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}
+                            style={s.diffBtn}
                         >
                             {difficulty === d ? (
                                 <LinearGradient
                                     colors={['#8B5CF6', '#6366F1']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
-                                    style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                                    style={s.diffGradient}
                                 />
                             ) : (
-                                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: isDark ? '#13151B' : 'rgba(255,255,255,0.8)', borderWidth: 1, borderColor: isDark ? 'transparent' : 'rgba(255,255,255,0.5)', borderRadius: 16 }} />
+                                <View style={[s.diffInactive, isDark ? s.bgGrayDark : s.diffInactiveLight]} />
                             )}
                             <Text
-                                className={`font-bold text-[11px] uppercase tracking-widest ${difficulty === d ? 'text-white' : 'text-slate-400'}`}
+                                style={[s.diffText, difficulty === d ? s.textWhite : s.textSlate400]}
                             >
                                 {d}
                             </Text>
@@ -275,13 +275,13 @@ export default function GenerateFlashcardScreen() {
                 style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: Math.max(insets.bottom, 20) + 8, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
             >
                 {isLoading ? (
-                    <View className={`rounded-[24px] p-5 ${isDark ? 'bg-[#13151B]' : 'bg-white/80'}`}>
-                        <View className="items-center mb-4">
+                    <View style={[s.loadingBox, isDark ? s.bgGrayDark : s.bgWhite]}>
+                        <View style={s.loadingCenter}>
                             <ActivityIndicator size="small" color="#8B5CF6" />
-                            <Text className={`font-bold text-lg mt-3 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{loadingStage}</Text>
-                            <Text className="text-slate-400 font-medium text-[11px] uppercase tracking-widest mt-1">Skeeme AI at work</Text>
+                            <Text style={[s.loadingTitle, isDark ? s.textWhite : s.textSlate900]}>{loadingStage}</Text>
+                            <Text style={s.loadingSubtitle}>Skeeme AI at work</Text>
                         </View>
-                        <View className="flex-row gap-2 mt-1">
+                        <View style={s.progressStepsRow}>
                             {[0, 1, 2, 3].map((step) => {
                                 const stages = mode === 'file'
                                     ? ['Reading material...', 'Identifying key concepts...', 'Creating cards...', 'Reviewing content...', 'Almost ready...']
@@ -290,16 +290,16 @@ export default function GenerateFlashcardScreen() {
                                 const isComplete = step < currentIdx;
                                 const isActive = step === currentIdx;
                                 return (
-                                    <View key={step} style={{ flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' }}>
+                                    <View key={step} style={s.stepBarWrapper}>
                                         {(isComplete || isActive) ? (
                                             <LinearGradient
                                                 colors={['#8B5CF6', '#6366F1']}
                                                 start={{ x: 0, y: 0 }}
                                                 end={{ x: 1, y: 0 }}
-                                                style={{ flex: 1, opacity: isActive ? 0.5 : 1 }}
+                                                style={[s.flex1, { opacity: isActive ? 0.5 : 1 }]}
                                             />
                                         ) : (
-                                            <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9' }} />
+                                            <View style={[s.flex1, isDark ? s.bgWhite5 : s.bgSlate100]} />
                                         )}
                                     </View>
                                 );
@@ -311,19 +311,19 @@ export default function GenerateFlashcardScreen() {
                         <TouchableOpacity
                             onPress={handleGenerate}
                             activeOpacity={0.8}
-                            style={{ height: 56, borderRadius: 20, overflow: 'hidden' }}
+                            style={s.generateBtn}
                         >
                             <LinearGradient
                                 colors={['#8B5CF6', '#6366F1']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
-                                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+                                style={s.generateBtnGradient}
                             >
                                 <Sparks width={20} height={20} color="#fff" strokeWidth={2} />
-                                <Text className="text-white font-bold ml-2.5 text-[16px]">Generate Set</Text>
+                                <Text style={s.generateBtnText}>Generate Set</Text>
                             </LinearGradient>
                         </TouchableOpacity>
-                        <Text className="text-center text-slate-400 font-bold text-[11px] uppercase tracking-widest mt-4">
+                        <Text style={s.costText}>
                             Cost: {parseInt(cardCount) || 10} Credits per Set
                         </Text>
                     </View>
@@ -345,3 +345,65 @@ export default function GenerateFlashcardScreen() {
         </GlowBackground>
     );
 }
+
+const s = StyleSheet.create({
+    flex1: { flex: 1 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12 },
+    headerTitle: { fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
+    menuBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    bgWhite60: { backgroundColor: 'rgba(255,255,255,0.6)' },
+    size10: { width: 40 },
+
+    selectorWrapper: { flexDirection: 'row', padding: 6, marginBottom: 32, borderRadius: 20 },
+    selectorWrapperLight: { backgroundColor: 'rgba(255,255,255,0.8)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' },
+    selectorBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 16, overflow: 'hidden' },
+    selectorGradient: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 },
+    selectorText: { fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.5 },
+
+    label: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, color: '#94a3b8', marginBottom: 16, marginLeft: 4 },
+    input: { height: 56, borderRadius: 16, fontSize: 15, fontWeight: '700', paddingHorizontal: 20 },
+    inputLight: { backgroundColor: 'rgba(255,255,255,0.8)', color: '#0f172a', borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' },
+    bgGrayDark: { backgroundColor: '#13151B' },
+
+    uploadCard: { borderStyle: 'dotted', borderWidth: 2, borderRadius: 28, padding: 32, alignItems: 'center' },
+    uploadCardDark: { backgroundColor: 'rgba(19, 21, 27, 0.5)', borderColor: '#334155' },
+    uploadCardLight: { backgroundColor: 'rgba(255, 255, 255, 0.6)', borderColor: '#e2e8f0' },
+    analyzingWrapper: { alignItems: 'center', paddingVertical: 8 },
+    analyzingText: { fontSize: 14, fontWeight: '700', color: '#8B5CF6', marginTop: 20 },
+    fileIconBox: { width: 80, height: 80, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    fileNameText: { fontSize: 15, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
+    changeFileText: { fontSize: 11, fontWeight: '900', color: '#8B5CF6', textTransform: 'uppercase', letterSpacing: 1.5 },
+    uploadIconBox: { width: 80, height: 80, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    bgWhite5: { backgroundColor: 'rgba(255,255,255,0.05)' },
+    bgIndigo50: { backgroundColor: '#EEF2FF' },
+    selectDocTitle: { fontSize: 15, fontWeight: '700', marginBottom: 8 },
+    uploadHint: { fontSize: 11, fontWeight: '500', color: '#64748b', textAlign: 'center', paddingHorizontal: 20 },
+
+    mb8: { marginBottom: 32 },
+    difficultyRow: { flexDirection: 'row', gap: 12, marginBottom: 40 },
+    diffBtn: { flex: 1, height: 48, borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+    diffGradient: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+    diffInactive: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 16 },
+    diffInactiveLight: { backgroundColor: 'rgba(255,255,255,0.8)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' },
+    diffText: { fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5 },
+
+    loadingBox: { borderRadius: 24, padding: 20 },
+    bgWhite: { backgroundColor: 'rgba(255,255,255,0.8)' },
+    loadingCenter: { alignItems: 'center', marginBottom: 16 },
+    loadingTitle: { fontWeight: '700', fontSize: 18, marginTop: 12, letterSpacing: -0.3 },
+    loadingSubtitle: { color: '#94a3b8', fontWeight: '500', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 },
+    progressStepsRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+    stepBarWrapper: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
+
+    generateBtn: { height: 56, borderRadius: 20, overflow: 'hidden' },
+    generateBtnGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+    generateBtnText: { color: 'white', fontWeight: '700', marginLeft: 10, fontSize: 16 },
+    costText: { textAlign: 'center', color: '#94a3b8', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 16 },
+
+    bgSlate100: { backgroundColor: '#f1f5f9' },
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate500: { color: '#64748b' },
+});

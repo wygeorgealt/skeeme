@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, useColorScheme, Linking, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, useColorScheme, Linking, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import { Xmark, Sparks, FireFlame, Check } from 'iconoir-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
@@ -50,7 +50,7 @@ export default function UpgradeScreen() {
 
     if (!pricingConfig) {
         return (
-            <GlowBackground isRoot className="flex-1 items-center justify-center">
+            <GlowBackground isRoot style={s.loadingContainer}>
                 <ActivityIndicator size="large" color="#8B5CF6" />
             </GlowBackground>
         );
@@ -109,37 +109,33 @@ export default function UpgradeScreen() {
         setTimeout(() => pollPaymentStatus(reference, attempt + 1, isCreditPack), 5000);
     };
 
-    const textBaseClass = isDark ? 'text-white' : 'text-slate-900';
-    const subtextClass = isDark ? 'text-indigo-200' : 'text-slate-500';
-    const cardBgClass = isDark ? 'bg-indigo-950/20 border-indigo-500/20' : 'bg-white border-slate-200 shadow-sm';
-
     return (
-        <GlowBackground isRoot className="flex-1">
+        <GlowBackground isRoot style={s.flex1}>
             <StatusBar style={isDark ? 'light' : 'dark'} translucent />
 
             {/* Header */}
-            <View className="pt-14 px-6 flex-row justify-between items-center z-10">
+            <View style={s.header}>
                 <TouchableOpacity
                     onPress={() => router.back()}
-                    className={`size-10 items-center justify-center rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm'}`}
+                    style={[s.backBtn, isDark ? s.backBtnDark : s.backBtnLight]}
                 >
                     <Xmark width={18} height={18} color={isDark ? '#cbd5e1' : '#0f172a'} />
                 </TouchableOpacity>
-                <Text className={`${textBaseClass} font-bold text-lg tracking-tight`}>Subscription</Text>
-                <View className="size-10" />
+                <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>Subscription</Text>
+                <View style={s.headerSpacer} />
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-                <Animated.View entering={FadeInDown.delay(100).duration(500)} className="px-6 pt-8 pb-8">
-                    <Text className={`${textBaseClass} text-[38px] font-black tracking-tight mb-3 leading-tight`}>
-                        Ready for <Text className="text-brand-primary">Skeeme Elite?</Text>
+            <ScrollView showsVerticalScrollIndicator={false} style={s.flex1}>
+                <Animated.View entering={FadeInDown.delay(100).duration(500)} style={s.contentPadding}>
+                    <Text style={[isDark ? s.textWhite : s.textSlate900, s.heroTitle]}>
+                        Ready for <Text style={s.textBrandPrimary}>Skeeme Elite?</Text>
                     </Text>
-                    <Text className={`${subtextClass} font-medium text-[16px] leading-relaxed mb-8 opacity-80`}>
+                    <Text style={[isDark ? s.textIndigo200 : s.textSlate500, s.heroSubtitle]}>
                         Select a plan to unlock advanced AI models and priority processing.
                     </Text>
 
                     {/* Tab Switcher */}
-                    <View className={`flex-row p-1.5 rounded-[22px] border mb-8 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-100/80 border-slate-200'}`}>
+                    <View style={[s.tabSwitcher, isDark ? s.tabSwitcherDark : s.tabSwitcherLight]}>
                         {(['standard', 'elite'] as PlanType[]).map((tab) => {
                             const isActive = activeTab === tab;
                             return (
@@ -147,10 +143,10 @@ export default function UpgradeScreen() {
                                     key={tab}
                                     onPress={() => setActiveTab(tab)}
                                     activeOpacity={0.7}
-                                    className={`flex-1 py-4 rounded-[18px] items-center ${isActive ? 'bg-brand-primary shadow-lg shadow-brand-primary/30' : ''}`}
+                                    style={[s.tabButton, isActive && s.tabButtonActive]}
                                 >
                                     <Text
-                                        className={`font-bold text-[14px] capitalize tracking-wide ${isActive ? 'text-white' : (isDark ? 'text-indigo-300' : 'text-slate-500')}`}
+                                        style={[s.tabText, isActive ? s.textWhite : (isDark ? s.textIndigo300 : s.textSlate500)]}
                                     >
                                         {tab}
                                     </Text>
@@ -160,23 +156,23 @@ export default function UpgradeScreen() {
                     </View>
 
                     {/* Benefits Section */}
-                    <Animated.View key={activeTab} entering={FadeIn} className={`rounded-[28px] p-7 border mb-8 ${cardBgClass} overflow-hidden`}>
+                    <Animated.View key={activeTab} entering={FadeIn} style={[s.benefitsCard, isDark ? s.benefitsCardDark : s.benefitsCardLight]}>
                         {isDark && (
                             <LinearGradient
                                 colors={['rgba(139,92,246,0.1)', 'transparent']}
-                                style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 100 }}
+                                style={s.benefitsGradient}
                             />
                         )}
-                        <Text className="text-[12px] font-bold text-brand-primary tracking-[0.2em] uppercase mb-6 drop-shadow-sm">
+                        <Text style={s.benefitsLabel}>
                             {activeTab} Features
                         </Text>
-                        <View className="gap-y-5">
+                        <View style={s.benefitsList}>
                             {FEATURES[activeTab as keyof typeof FEATURES].map((feature: string, idx: number) => (
-                                <View key={idx} className="flex-row items-center">
-                                    <View className="size-7 bg-brand-primary/10 rounded-full items-center justify-center mr-4">
+                                <View key={idx} style={s.benefitItem}>
+                                    <View style={s.benefitIconBox}>
                                         <Sparks width={14} height={14} color="#8B5CF6" />
                                     </View>
-                                    <Text className={`font-semibold text-[15px] ${isDark ? 'text-indigo-100' : 'text-slate-700'}`}>
+                                    <Text style={[s.benefitText, isDark ? s.textIndigo100 : s.textSlate700]}>
                                         {feature}
                                     </Text>
                                 </View>
@@ -185,7 +181,7 @@ export default function UpgradeScreen() {
                     </Animated.View>
 
                     {/* Billing Cards */}
-                    <View className="gap-y-4">
+                    <View style={s.billingRow}>
                         <CardOption
                             title="Yearly"
                             price={activePricing.yearly}
@@ -210,12 +206,12 @@ export default function UpgradeScreen() {
                     </View>
 
                     {/* One-Time Top-Up Section */}
-                    <View className="mt-14 mb-5">
-                        <Text className="text-[12px] font-bold text-brand-primary tracking-[0.2em] uppercase mb-6 ml-2">
+                    <View style={s.topUpSection}>
+                        <Text style={s.topUpLabel}>
                             Instant Top-Ups
                         </Text>
                         
-                        <View className="flex-row flex-wrap justify-between">
+                        <View style={s.topUpGrid}>
                             {[
                                 { amount: 200, usd: 2.00, ngn: 1500 },
                                 { amount: 500, usd: 3.70, ngn: 2800 },
@@ -241,20 +237,24 @@ export default function UpgradeScreen() {
                                     }}
                                     activeOpacity={0.8}
                                     disabled={purchasingPack !== null || isPurchasing}
-                                    className={`w-[48%] mb-4 p-5 rounded-[24px] border flex-col items-center justify-center ${cardBgClass} ${(purchasingPack !== null || isPurchasing) ? 'opacity-50' : ''}`}
+                                    style={[
+                                        s.topUpCard, 
+                                        isDark ? s.benefitsCardDark : s.benefitsCardLight,
+                                        (purchasingPack !== null || isPurchasing) && s.opacity50
+                                    ]}
                                 >
                                     {purchasingPack === pack.amount ? (
-                                        <ActivityIndicator size="small" color="#8B5CF6" className="mb-4 h-11 justify-center" />
+                                        <ActivityIndicator size="small" color="#8B5CF6" style={s.topUpLoading} />
                                     ) : (
-                                        <View className="bg-brand-primary/10 size-11 rounded-2xl items-center justify-center mb-4 border border-brand-primary/20">
+                                        <View style={s.topUpIconBox}>
                                             <FireFlame width={20} height={20} color="#8B5CF6" />
                                         </View>
                                     )}
-                                    <Text className={`${textBaseClass} font-black text-[22px] tracking-tight mb-1`}>{pack.amount.toLocaleString()}</Text>
-                                    <Text className={`font-bold text-[10px] uppercase tracking-[0.2em] mb-5 ${isDark ? 'text-indigo-400' : 'text-slate-400'}`}>Credits</Text>
+                                    <Text style={[isDark ? s.textWhite : s.textSlate900, s.topUpAmount]}>{pack.amount.toLocaleString()}</Text>
+                                    <Text style={[s.topUpUnit, isDark ? s.textIndigo400 : s.textSlate400]}>Credits</Text>
                                     
-                                    <View className={`px-4 py-2.5 rounded-xl border ${isDark ? 'bg-white/10 border-white/10' : 'bg-slate-900 border-slate-900'}`}>
-                                        <Text className={`font-bold text-[13px] ${isDark ? 'text-white' : 'text-white'}`}>
+                                    <View style={[s.topUpPriceBox, isDark ? s.bgWhite10 : s.bgSlate900]}>
+                                        <Text style={s.textWhiteBold}>
                                             {currencySymbol}{(currency === 'ngn' ? pack.ngn : pack.usd).toLocaleString(undefined, { minimumFractionDigits: currency === 'usd' ? 2 : 0 })}
                                         </Text>
                                     </View>
@@ -267,22 +267,22 @@ export default function UpgradeScreen() {
             </ScrollView>
 
             {/* Bottom Button */}
-            <View className={`px-6 pb-12 pt-6 border-t ${isDark ? 'bg-black/20 border-white/5' : 'bg-white border-slate-100'}`}>
+            <View style={[s.footer, isDark ? s.footerDark : s.footerLight]}>
                 <TouchableOpacity
                     onPress={handlePurchase}
                     disabled={isPurchasing || purchasingPack !== null}
                     activeOpacity={0.9}
-                    className={`h-[60px] bg-brand-primary rounded-[22px] items-center justify-center shadow-xl shadow-brand-primary/30 ${(isPurchasing || purchasingPack !== null) ? 'opacity-70' : ''}`}
+                    style={[s.mainBtn, (isPurchasing || purchasingPack !== null) && s.opacity70]}
                 >
                     {isPurchasing ? (
                         <ActivityIndicator size="small" color="#ffffff" />
                     ) : (
-                        <Text className="text-white font-bold text-[16px] tracking-wide">
+                        <Text style={s.mainBtnText}>
                             {billingCycle === 'yearly' ? 'Start Free Trial' : 'Continue to Checkout'}
                         </Text>
                     )}
                 </TouchableOpacity>
-                <Text className={`text-center font-medium text-[11px] mt-5 px-4 leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <Text style={[s.termsText, isDark ? s.textSlate500 : s.textSlate400]}>
                     By continuing, you agree to our Terms of Service & Privacy Policy.
                 </Text>
             </View>
@@ -298,36 +298,127 @@ function CardOption({ title, price, originalPrice, symbol, subtitle, isSelected,
         <TouchableOpacity
             onPress={onSelect}
             activeOpacity={0.8}
-            className={`p-6 rounded-[24px] border-2 flex-row items-center justify-between transition-all ${isSelected ? (isDark ? 'bg-brand-primary/10 border-brand-primary' : 'bg-brand-primary/5 border-brand-primary') : (isDark ? 'bg-indigo-950/20 border-indigo-500/20' : 'bg-white border-slate-200 shadow-sm')}`}
+            style={[
+                s.optionCard,
+                isDark ? s.benefitsCardDark : s.benefitsCardLight,
+                isSelected && (isDark ? s.optionCardActiveDark : s.optionCardActiveLight)
+            ]}
         >
-            <View className="flex-1 pr-4">
-                <View className="flex-row items-center mb-2">
-                    <Text className={`font-black text-[24px] tracking-tight mr-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{title}</Text>
+            <View style={s.flex1}>
+                <View style={s.optionHeader}>
+                    <Text style={[s.optionTitle, isDark ? s.textWhite : s.textSlate900]}>{title}</Text>
                     {badge && (
-                        <View className="bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-full">
-                            <Text className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{badge}</Text>
+                        <View style={s.badge}>
+                            <Text style={s.badgeText}>{badge}</Text>
                         </View>
                     )}
                 </View>
-                <Text className={`font-semibold text-[13px] ${isDark ? 'text-indigo-300/80' : 'text-slate-500'}`}>{subtitle}</Text>
+                <Text style={[s.optionSubtitle, isDark ? s.textIndigo30080 : s.textSlate500]}>{subtitle}</Text>
 
-                <View className="flex-row items-baseline mt-5">
-                    <Text className={`font-black text-[26px] tracking-tight ${isDark ? 'text-white' : 'text-brand-primary'}`}>
+                <View style={s.priceRow}>
+                    <Text style={[s.priceValue, isDark ? s.textWhite : s.textBrandPrimary]}>
                         {priceFormatted}
                     </Text>
                     {originalPriceFormatted && (
-                        <Text className="text-slate-400 line-through text-[15px] font-bold ml-3">
+                        <Text style={s.originalPrice}>
                             {originalPriceFormatted}
                         </Text>
                     )}
-                    <Text className={`text-[14px] font-bold ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ {title === 'Yearly' ? 'year' : 'month'}</Text>
+                    <Text style={[s.priceUnit, isDark ? s.textSlate500 : s.textSlate400]}>/ {title === 'Yearly' ? 'year' : 'month'}</Text>
                 </View>
             </View>
             <View
-                className={`size-8 rounded-full border-2 items-center justify-center ${isSelected ? 'border-brand-primary bg-brand-primary' : (isDark ? 'border-indigo-500/30 bg-transparent' : 'border-slate-300 bg-slate-50')}`}
+                style={[
+                    s.radio, 
+                    isSelected ? s.radioActive : (isDark ? s.radioInactiveDark : s.radioInactiveLight)
+                ]}
             >
                 {isSelected && <Check width={18} height={18} color="white" />}
             </View>
         </TouchableOpacity>
     );
 }
+
+const s = StyleSheet.create({
+    flex1: { flex: 1 },
+    loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    header: { paddingTop: 56, paddingHorizontal: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 },
+    backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1 },
+    backBtnDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+    backBtnLight: { backgroundColor: 'white', borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+    headerTitle: { fontWeight: '700', fontSize: 18, letterSpacing: -0.5 },
+    headerSpacer: { width: 40 },
+    
+    contentPadding: { paddingHorizontal: 24, paddingTop: 32, paddingBottom: 32 },
+    heroTitle: { fontSize: 38, fontWeight: '900', letterSpacing: -0.5, marginBottom: 12, lineHeight: 40 },
+    heroSubtitle: { fontWeight: '500', fontSize: 16, lineHeight: 24, marginBottom: 32, opacity: 0.8 },
+    
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textBrandPrimary: { color: '#8B5CF6' },
+    textIndigo100: { color: '#e0e7ff' },
+    textIndigo200: { color: '#c7d2fe' },
+    textIndigo300: { color: '#a5b4fc' },
+    textIndigo30080: { color: 'rgba(165,180,252,0.8)' },
+    textIndigo400: { color: '#818cf8' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate500: { color: '#64748b' },
+    textSlate700: { color: '#334155' },
+    textWhiteBold: { color: 'white', fontWeight: '700', fontSize: 13 },
+
+    tabSwitcher: { flexDirection: 'row', padding: 6, borderRadius: 22, borderWidth: 1, marginBottom: 32 },
+    tabSwitcherDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+    tabSwitcherLight: { backgroundColor: 'rgba(241,245,249,0.8)', borderColor: '#e2e8f0' },
+    tabButton: { flex: 1, paddingVertical: 16, borderRadius: 18, alignItems: 'center' },
+    tabButtonActive: { backgroundColor: '#8B5CF6', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
+    tabText: { fontWeight: '700', fontSize: 14, textTransform: 'capitalize', letterSpacing: 0.5 },
+
+    benefitsCard: { borderRadius: 28, padding: 28, borderWidth: 1, marginBottom: 32, overflow: 'hidden' },
+    benefitsCardDark: { backgroundColor: 'rgba(49, 46, 129, 0.2)', borderColor: 'rgba(99, 102, 241, 0.2)' },
+    benefitsCardLight: { backgroundColor: 'white', borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+    benefitsGradient: { position: 'absolute', top: 0, left: 0, right: 0, height: 100 },
+    benefitsLabel: { fontSize: 12, fontWeight: '700', color: '#8B5CF6', letterSpacing: 2.4, textTransform: 'uppercase', marginBottom: 24 },
+    benefitsList: { gap: 20 },
+    benefitItem: { flexDirection: 'row', alignItems: 'center' },
+    benefitIconBox: { width: 28, height: 28, backgroundColor: 'rgba(139,92,246,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    benefitText: { fontWeight: '600', fontSize: 15 },
+
+    billingRow: { gap: 16 },
+    optionCard: { padding: 24, borderRadius: 24, borderWidth: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    optionCardActiveDark: { backgroundColor: 'rgba(139,92,246,0.1)', borderColor: '#8B5CF6' },
+    optionCardActiveLight: { backgroundColor: 'rgba(139,92,246,0.05)', borderColor: '#8B5CF6' },
+    optionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+    optionTitle: { fontWeight: '900', fontSize: 24, letterSpacing: -0.5, marginRight: 12 },
+    optionSubtitle: { fontWeight: '600', fontSize: 13 },
+    badge: { backgroundColor: 'rgba(16, 185, 129, 0.2)', borderColor: 'rgba(16, 185, 129, 0.3)', borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+    badgeText: { fontSize: 10, fontWeight: '700', color: '#10b981', textTransform: 'uppercase', letterSpacing: 1.2 },
+    priceRow: { flexDirection: 'row', alignItems: 'baseline', marginTop: 20 },
+    priceValue: { fontWeight: '900', fontSize: 26, letterSpacing: -0.5 },
+    originalPrice: { color: '#94a3b8', textDecorationLine: 'line-through', fontSize: 15, fontWeight: '700', marginLeft: 12 },
+    priceUnit: { fontSize: 14, fontWeight: '700', marginLeft: 4 },
+    radio: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+    radioActive: { borderColor: '#8B5CF6', backgroundColor: '#8B5CF6' },
+    radioInactiveDark: { borderColor: 'rgba(99, 102, 241, 0.3)', backgroundColor: 'transparent' },
+    radioInactiveLight: { borderColor: '#cbd5e1', backgroundColor: '#f8fafc' },
+
+    topUpSection: { marginTop: 56, marginBottom: 20 },
+    topUpLabel: { fontSize: 12, fontWeight: '700', color: '#8B5CF6', letterSpacing: 2.4, textTransform: 'uppercase', marginBottom: 24, marginLeft: 8 },
+    topUpGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+    topUpCard: { width: '48%', marginBottom: 16, padding: 20, borderRadius: 24, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+    topUpIconBox: { backgroundColor: 'rgba(139,92,246,0.1)', width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)' },
+    topUpAmount: { fontWeight: '900', fontSize: 22, letterSpacing: -0.5, marginBottom: 4 },
+    topUpUnit: { fontWeight: '700', fontSize: 10, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 },
+    topUpPriceBox: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
+    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)' },
+    bgSlate900: { backgroundColor: '#0f172a', borderColor: '#0f172a' },
+    topUpLoading: { marginBottom: 16, height: 44, justifyContent: 'center' },
+    opacity50: { opacity: 0.5 },
+    opacity70: { opacity: 0.7 },
+
+    footer: { paddingHorizontal: 24, paddingBottom: 48, paddingTop: 24, borderTopWidth: 1 },
+    footerDark: { backgroundColor: 'rgba(0,0,0,0.2)', borderTopColor: 'rgba(255,255,255,0.05)' },
+    footerLight: { backgroundColor: 'white', borderTopColor: '#f1f5f9' },
+    mainBtn: { height: 60, backgroundColor: '#8B5CF6', borderRadius: 22, alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
+    mainBtnText: { color: 'white', fontWeight: '700', fontSize: 16, letterSpacing: 0.5 },
+    termsText: { textAlign: 'center', fontWeight: '500', fontSize: 11, marginTop: 20, paddingHorizontal: 16, lineHeight: 18 },
+});

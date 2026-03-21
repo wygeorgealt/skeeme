@@ -1,29 +1,38 @@
-import { View, Text, TouchableOpacity, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Compass, Home } from 'iconoir-react-native';
 
 export default function NotFoundScreen() {
     return (
-        <View className="flex-1 bg-slate-900 justify-center items-center px-5">
+        <View style={s.container}>
             <Stack.Screen options={{ title: 'Not Found', headerShown: false }} />
 
-            <View className="size-16 bg-slate-800 rounded-full items-center justify-center mb-5">
+            <View style={s.iconBox}>
                 <Compass width={40} height={40} color="#6366f1" />
             </View>
 
-            <Text className="text-2xl font-black text-white mb-2">404</Text>
-            <Text className="text-slate-400 font-medium text-center text-base mb-6">
+            <Text style={s.title}>404</Text>
+            <Text style={s.subtitle}>
                 This page doesn&apos;t exist. You may have followed a broken link.
             </Text>
 
             <TouchableOpacity
                 onPress={() => router.replace('/(drawer)')}
-                className="bg-indigo-600 px-6 py-4 rounded-xl flex-row items-center"
+                style={s.button}
                 activeOpacity={0.8}
             >
                 <Home width={18} height={18} color="white" />
-                <Text className="text-white font-black text-base ml-2">Go Home</Text>
+                <Text style={s.buttonText}>Go Home</Text>
             </TouchableOpacity>
         </View>
     );
 }
+
+const s = StyleSheet.create({
+    container: { flex: 1, backgroundColor: '#0f172a', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
+    iconBox: { width: 64, height: 64, backgroundColor: '#1e293b', borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    title: { fontSize: 24, fontWeight: '900', color: 'white', marginBottom: 8 },
+    subtitle: { color: '#94a3b8', fontWeight: '500', textAlign: 'center', fontSize: 16, marginBottom: 24 },
+    button: { backgroundColor: '#4f46e5', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center' },
+    buttonText: { color: 'white', fontWeight: '900', fontSize: 16, marginLeft: 8 },
+});

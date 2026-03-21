@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, useColorScheme, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, useColorScheme, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -72,131 +72,125 @@ export default function LoginScreen() {
         }
     };
 
-    const bgClass = isDark ? "bg-[#0f0f11]" : "bg-[#fafafa]";
-    const textClass = isDark ? "text-white" : "text-slate-900";
-    const subtextClass = isDark ? "text-slate-400" : "text-slate-500";
-    const inputBg = isDark ? "bg-[#0f0f11]" : "bg-transparent";
-    const inputBorder = isDark ? "border-slate-800" : "border-slate-200";
     const placeholderColor = isDark ? "#475569" : "#94a3b8";
 
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1"
+            style={s.flex1}
         >
             <GlowBackground useSafeArea>
-                <View className="px-5 pt-4 pb-2 flex-row items-center">
-                <TouchableOpacity
-                    onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
-                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-                >
-                    <Xmark width={28} height={28} color={isDark ? '#fff' : '#000'} />
-                </TouchableOpacity>
-            </View>
-
-            <ScrollView 
-                className="flex-1 px-10 pt-4" 
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-            >
-                <View className="mb-10">
-                    <Text className={`${textClass} text-[40px] font-bold tracking-tight leading-[46px] mb-3`}>
-                        Log in.
-                    </Text>
-                    <Text className={`${subtextClass} text-[15px] font-medium leading-relaxed`}>
-                        Enter your details to access your dashboard.
-                    </Text>
+                <View style={s.header}>
+                    <TouchableOpacity
+                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
+                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                    >
+                        <Xmark width={28} height={28} color={isDark ? '#fff' : '#000'} />
+                    </TouchableOpacity>
                 </View>
 
+                <ScrollView 
+                    style={s.flex1}
+                    contentContainerStyle={s.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={s.heroSection}>
+                        <Text style={[isDark ? s.textWhite : s.textSlate900, s.heroTitle]}>
+                            Log in.
+                        </Text>
+                        <Text style={[isDark ? s.textSlate400 : s.textSlate500, s.heroSubtitle]}>
+                            Enter your details to access your dashboard.
+                        </Text>
+                    </View>
+
                 {/* Social Login */}
-                <View className="gap-3 mb-8">
+                <View style={s.socialRow}>
                     <TouchableOpacity
                         activeOpacity={0.9}
-                        className={`h-[52px] rounded-[24px] items-center justify-center flex-row border ${isDark ? 'bg-transparent border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}
+                        style={[s.socialBtn, isDark ? s.socialBtnDark : s.socialBtnLight]}
                     >
                         <Google width={18} height={18} color={isDark ? '#fff' : '#000'} />
-                        <Text className={`font-bold text-[14px] ml-3 ${textClass}`}>Continue with Google</Text>
+                        <Text style={[s.fontBold, s.textSmall, isDark ? s.textWhite : s.textSlate900, { marginLeft: 12 }]}>Continue with Google</Text>
                     </TouchableOpacity>
 
                     {Platform.OS === 'ios' && (
                         <TouchableOpacity
                             activeOpacity={0.9}
-                            className={`h-[52px] rounded-[24px] items-center justify-center flex-row ${isDark ? 'bg-white' : 'bg-slate-900'}`}
+                            style={[s.socialBtn, isDark ? s.bgWhite : s.bgSlate900]}
                         >
                             <Apple width={18} height={18} color={isDark ? '#000' : '#fff'} />
-                            <Text className={`font-bold text-[14px] ml-3 ${isDark ? 'text-black' : 'text-white'}`}>Continue with Apple</Text>
+                            <Text style={[s.fontBold, s.textSmall, { marginLeft: 12 }, isDark ? s.textBlack : s.textWhite]}>Continue with Apple</Text>
                         </TouchableOpacity>
                     )}
                 </View>
 
                 {/* Divider */}
-                <View className="flex-row items-center mb-8">
-                    <View className={`flex-1 h-[0.5px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
-                    <Text className={`px-5 font-bold text-[10px] uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>or use email</Text>
-                    <View className={`flex-1 h-[0.5px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+                <View style={s.dividerContainer}>
+                    <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
+                    <Text style={[s.dividerText, isDark ? s.textSlate600 : s.textSlate400]}>or use email</Text>
+                    <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
                 </View>
 
                 {/* Email */}
-                <View className="mb-1">
-                    <View className={`${inputBg} ${inputBorder} rounded-xl px-4 flex-row items-center border ${emailError ? 'border-red-500' : 'focus:border-slate-900 dark:focus:border-white'}`}>
+                <View style={s.inputContainer}>
+                    <View style={[s.inputWrapper, isDark ? s.bgSlate900 : s.bgTransparent, isDark ? s.borderSlate800 : s.borderSlate200, emailError ? s.borderRed500 : null]}>
                         <TextInput
-                            className="flex-1 font-medium text-[15px] h-[48px]"
+                            style={[s.flex1, s.fontMedium, s.textSmall, s.inputHeight, { color: isDark ? 'white' : 'black' }]}
                             placeholder="Email address"
                             placeholderTextColor={placeholderColor}
                             keyboardType="email-address"
                             autoCapitalize="none"
                             value={email}
                             onChangeText={(t) => { setEmail(t); setEmailError(''); }}
-                            style={{ color: isDark ? 'white' : 'black' }}
                         />
                     </View>
-                    {emailError ? <Text className="text-red-500 text-[12px] font-medium mt-1.5 ml-1">{emailError}</Text> : null}
+                    {emailError ? <Text style={s.errorText}>{emailError}</Text> : null}
                 </View>
 
                 {/* Password */}
-                <View className="mb-1 mt-3">
+                <View style={s.passwordContainer}>
                     <PasswordField
                         value={password}
                         onChangeText={(t: string) => { setPassword(t); setPasswordError(''); }}
-                        containerClassName=""
                     />
-                    <View className="flex-row justify-between items-center mt-2 px-1">
+                    <View style={s.passwordFooter}>
                         {passwordError ? (
-                            <Text className="text-red-500 text-[12px] font-medium flex-1">{passwordError}</Text>
+                            <Text style={s.errorTextSmall}>{passwordError}</Text>
                         ) : <View />}
                         <TouchableOpacity onPress={() => router.push('/forgot-password')}>
-                            <Text className="text-brand-primary font-bold text-[12px]">Forgot password?</Text>
+                            <Text style={s.forgotPasswordText}>Forgot password?</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                <View className="mt-6" />
+                <View style={s.spacer} />
 
                 {/* Login Button */}
-                <View className="mt-5">
+                <View style={s.btnContainer}>
                     <TouchableOpacity
                         onPress={handleLogin}
                         disabled={isLoading}
                         activeOpacity={0.9}
-                        className={`w-full h-[52px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${isLoading ? 'opacity-70' : ''}`}
+                        style={[s.mainBtn, isLoading && s.opacity70]}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text className="font-bold text-[15px] text-white tracking-wide">Sign In</Text>
+                            <Text style={s.mainBtnText}>Sign In</Text>
                         )}
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity onPress={() => router.push('/signup')} className="mt-10 mb-8 items-center">
-                    <Text className={`${subtextClass} font-bold text-[13px]`}>
-                        New to Skeeme? <Text className="text-brand-primary">Create account</Text>
+                <TouchableOpacity onPress={() => router.push('/signup')} style={s.signupLink}>
+                    <Text style={[isDark ? s.textSlate400 : s.textSlate500, s.fontBold, s.textSmall]}>
+                        New to Skeeme? <Text style={s.textBrandPrimary}>Create account</Text>
                     </Text>
                 </TouchableOpacity>
 
                 {__DEV__ && (
-                    <TouchableOpacity onPress={() => { useAuthStore.getState().devReset(); router.replace('/(onboarding)/hook'); }} className="mb-10 items-center">
-                        <Text className="text-red-500 text-xs font-bold">DEV ONLY: Reset Storage</Text>
+                    <TouchableOpacity onPress={() => { useAuthStore.getState().devReset(); router.replace('/(onboarding)/hook'); }} style={s.devReset}>
+                        <Text style={s.devResetText}>DEV ONLY: Reset Storage</Text>
                     </TouchableOpacity>
                 )}
             </ScrollView>
@@ -204,3 +198,63 @@ export default function LoginScreen() {
         </KeyboardAvoidingView>
     );
 }
+
+const s = StyleSheet.create({
+    flex1: { flex: 1 },
+    header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, flexDirection: 'row', alignItems: 'center' },
+    scrollContent: { paddingHorizontal: 40, paddingTop: 16 },
+    heroSection: { marginBottom: 40 },
+    heroTitle: { fontSize: 40, fontWeight: '700', letterSpacing: -1, lineHeight: 46, marginBottom: 12 },
+    heroSubtitle: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
+    
+    socialRow: { gap: 12, marginBottom: 32 },
+    socialBtn: { height: 52, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', borderWidth: 1 },
+    socialBtnDark: { backgroundColor: 'transparent', borderColor: '#1e293b' },
+    socialBtnLight: { backgroundColor: 'white', borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+    
+    bgWhite: { backgroundColor: 'white' },
+    bgSlate900: { backgroundColor: '#0f172a' },
+    bgSlate800: { backgroundColor: '#1e293b' },
+    bgSlate100: { backgroundColor: '#f1f5f9' },
+    bgTransparent: { backgroundColor: 'transparent' },
+    
+    textWhite: { color: 'white' },
+    textBlack: { color: 'black' },
+    textSlate900: { color: '#0f172a' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate500: { color: '#64748b' },
+    textSlate600: { color: '#475569' },
+    textBrandPrimary: { color: '#8B5CF6' },
+    
+    fontBold: { fontWeight: '700' },
+    fontMedium: { fontWeight: '500' },
+    textSmall: { fontSize: 14 },
+    textTiny: { fontSize: 10 },
+    
+    dividerContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 32 },
+    dividerLine: { flex: 1, height: 0.5 },
+    dividerText: { paddingHorizontal: 20, fontWeight: '700', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5 },
+    
+    inputContainer: { marginBottom: 4 },
+    inputWrapper: { borderRadius: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
+    inputHeight: { height: 48 },
+    borderSlate800: { borderColor: '#1e293b' },
+    borderSlate200: { borderColor: '#e2e8f0' },
+    borderRed500: { borderColor: '#ef4444' },
+    errorText: { color: '#ef4444', fontSize: 12, fontWeight: '500', marginTop: 6, marginLeft: 4 },
+    
+    passwordContainer: { marginBottom: 4, marginTop: 12 },
+    passwordFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingHorizontal: 4 },
+    errorTextSmall: { color: '#ef4444', fontSize: 12, fontWeight: '500', flex: 1 },
+    forgotPasswordText: { color: '#8B5CF6', fontWeight: '700', fontSize: 12 },
+    
+    spacer: { marginTop: 24 },
+    btnContainer: { marginTop: 20 },
+    mainBtn: { width: '100%', height: 52, backgroundColor: '#8B5CF6', borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 5 },
+    mainBtnText: { fontWeight: '700', fontSize: 15, color: 'white', letterSpacing: 0.5 },
+    opacity70: { opacity: 0.7 },
+    
+    signupLink: { marginTop: 40, marginBottom: 32, alignItems: 'center' },
+    devReset: { marginBottom: 40, alignItems: 'center' },
+    devResetText: { color: '#ef4444', fontSize: 12, fontWeight: '700' },
+});

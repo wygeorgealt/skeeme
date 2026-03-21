@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, useColorScheme, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, useColorScheme, ActivityIndicator, Platform, StyleSheet } from 'react-native';
 import { Stack, router, useNavigation } from 'expo-router';
 import { Menu, Snow, NavArrowLeft, Sparks, CheckCircle, GraduationCap, Book, Medal, Suitcase } from 'iconoir-react-native';
 import { useAuthStore } from '@/store/authStore';
@@ -59,91 +59,97 @@ export default function StreakScreen() {
             <Stack.Screen options={{ headerShown: false }} />
 
             {/* Header with drawer toggle */}
-            <View style={{ paddingTop: Math.max(insets.top, 8) }} className="px-5 pb-4 flex-row items-center justify-between">
-                <Text className={`text-[26px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Streak</Text>
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
+                <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>Streak</Text>
                 <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     activeOpacity={0.7}
-                    className={`size-10 rounded-xl items-center justify-center ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}
+                    style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                 >
                     <Menu width={20} height={20} color={isDark ? 'white' : 'black'} />
                 </TouchableOpacity>
             </View>
 
-            <ScrollView className="flex-1 px-5 pt-4" contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={s.scrollView} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
                 {/* Stats */}
-                <View className="flex-row gap-4 mb-8">
-                    <View className={`flex-1 ${cardBgClass} border ${borderColorClass} rounded-[24px] p-6`}>
-                        <Text className="text-slate-500 font-bold uppercase tracking-[0.1em] text-[10px] mb-3">Current</Text>
-                        <View className="flex-row items-baseline">
-                            <Text className={`text-[36px] font-bold tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>{current}</Text>
-                            <Text className="text-[11px] font-bold text-slate-400 ml-1.5 uppercase">Days</Text>
+                <View style={s.statsRow}>
+                    <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
+                        <Text style={s.statLabel}>Current</Text>
+                        <View style={s.statValueRow}>
+                            <Text style={[s.statValue, isDark ? s.textWhite : s.textSlate900]}>{current}</Text>
+                            <Text style={s.statUnit}>Days</Text>
                         </View>
                     </View>
-                    <View className={`flex-1 ${cardBgClass} border ${borderColorClass} rounded-[24px] p-6`}>
-                        <Text className="text-slate-500 font-bold uppercase tracking-[0.1em] text-[10px] mb-3">Longest</Text>
-                        <View className="flex-row items-baseline">
-                            <Text className={`text-[36px] font-bold tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>{longest}</Text>
-                            <Text className="text-[11px] font-bold text-slate-400 ml-1.5 uppercase">Days</Text>
+                    <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
+                        <Text style={s.statLabel}>Longest</Text>
+                        <View style={s.statValueRow}>
+                            <Text style={[s.statValue, isDark ? s.textWhite : s.textSlate900]}>{longest}</Text>
+                            <Text style={s.statUnit}>Days</Text>
                         </View>
                     </View>
                 </View>
 
                 {/* Freezes */}
-                <Text className={`text-[11px] font-bold uppercase tracking-widest mb-5 ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Streak Protection</Text>
-                <View className={`p-6 rounded-[24px] border mb-8 ${isElite ? (isDark ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-indigo-50 border-indigo-100') : (isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-100 shadow-sm')}`}>
-                    <View className="flex-row justify-between items-center mb-8">
-                        <View className={`size-12 rounded-xl items-center justify-center ${isDark ? 'bg-indigo-500/20' : 'bg-indigo-100'}`}>
+                <Text style={[s.sectionLabel, isDark ? s.textSlate500 : s.textSlate400]}>Streak Protection</Text>
+                <View style={[
+                    s.protectionCard,
+                    isElite ? (isDark ? s.protectionEliteDark : s.protectionEliteLight) : (isDark ? s.protectionBasicDark : s.protectionBasicLight)
+                ]}>
+                    <View style={s.protectionHeader}>
+                        <View style={[s.protectionIconBox, isDark ? s.protectionIconBoxDark : s.protectionIconBoxLight]}>
                             <Snow width={18} height={18} color="#6366f1" />
                         </View>
                         {!isElite ? (
-                            <View className="bg-slate-900 dark:bg-white px-3 py-1.5 rounded-lg">
-                                <Text className="text-white dark:text-slate-950 font-bold text-[10px] uppercase tracking-wider">Elite Feature</Text>
+                            <View style={[s.badge, isDark ? s.badgeDark : s.badgeLight]}>
+                                <Text style={[s.badgeText, isDark ? s.textSlate950 : s.textWhite]}>Elite Feature</Text>
                             </View>
                         ) : loadingFreezes ? (
                             <ActivityIndicator size="small" color="#6366f1" />
                         ) : (
-                            <View className="bg-emerald-500/10 px-4 py-1.5 rounded-full border border-emerald-500/20">
-                                <Text className="text-emerald-500 font-bold text-[11px] uppercase tracking-widest">{freezesLeft} Available</Text>
+                            <View style={s.freezeAvailableBadge}>
+                                <Text style={s.freezeAvailableText}>{freezesLeft} Available</Text>
                             </View>
                         )}
                     </View>
-                    <Text className={`font-bold text-[20px] tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Peace of mind.</Text>
-                    <Text className="text-slate-500 font-medium text-[14px] leading-relaxed mb-6">
+                    <Text style={[s.protectionTitle, isDark ? s.textWhite : s.textSlate900]}>Peace of mind.</Text>
+                    <Text style={s.protectionDesc}>
                         Streak freezes automatically protect your progress if you ever miss a day. 
                     </Text>
                     
                     {!isElite && (
                         <TouchableOpacity 
                             onPress={() => router.push('/upgrade')} 
-                            className="bg-brand-primary h-[48px] rounded-[20px] items-center justify-center shadow-lg shadow-brand-primary/20" 
+                            style={s.upgradeBtn} 
                             activeOpacity={0.9}
                         >
-                            <Text className="text-white font-bold text-[15px]">Get Streak Protection</Text>
+                            <Text style={s.upgradeBtnText}>Get Streak Protection</Text>
                         </TouchableOpacity>
                     )}
                 </View>
 
                 {/* Milestones */}
-                <Text className={`text-[11px] font-bold uppercase tracking-widest mb-5 ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Achievements</Text>
-                <View className={`${cardBgClass} rounded-[24px] p-6 border ${borderColorClass}`}>
+                <Text style={[s.sectionLabel, isDark ? s.textSlate500 : s.textSlate400]}>Achievements</Text>
+                <View style={[s.achievementCard, isDark ? s.statCardDark : s.statCardLight]}>
                     {milestones.map((m, i) => {
                         const progress = Math.min(100, (current / m.target) * 100);
                         const isUnlocked = current >= m.target;
                         
                         return (
-                            <View key={i} className={`mb-8 ${i === milestones.length - 1 ? 'mb-2' : ''}`}>
-                                <View className="flex-row justify-between items-start mb-4">
+                            <View key={i} style={[s.milestoneRow, i === milestones.length - 1 ? s.lastMilestone : null]}>
+                                <View style={s.milestoneHeader}>
                                     <View>
-                                        <Text className={`font-bold text-[15px] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{m.title}</Text>
-                                        <Text className="text-brand-primary font-bold text-[11px] uppercase tracking-widest mt-1">{m.reward}</Text>
+                                        <Text style={[s.milestoneTitle, isDark ? s.textWhite : s.textSlate900]}>{m.title}</Text>
+                                        <Text style={s.milestoneReward}>{m.reward}</Text>
                                     </View>
-                                    <Text className="text-slate-400 font-bold text-[11px] tracking-tighter mt-1">{current} / {m.target}</Text>
+                                    <Text style={s.milestoneProgressText}>{current} / {m.target}</Text>
                                 </View>
-                                <View className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}>
+                                <View style={[s.progressBarBg, isDark ? s.progressBarBgDark : s.progressBarBgLight]}>
                                     <View 
-                                        className={`h-full rounded-full ${isUnlocked ? 'bg-brand-primary' : (isDark ? 'bg-brand-primary/20' : 'bg-[#8B5CF6]/30')}`} 
-                                        style={{ width: `${progress}%` }} 
+                                        style={[
+                                            s.progressBarFill, 
+                                            isUnlocked ? s.progressBarFilled : (isDark ? s.progressBarEmptyDark : s.progressBarEmptyLight), 
+                                            { width: `${progress}%` }
+                                        ]} 
                                     />
                                 </View>
                             </View>
@@ -154,3 +160,63 @@ export default function StreakScreen() {
         </GlowBackground>
     );
 }
+
+const s = StyleSheet.create({
+    header: { paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerTitle: { fontSize: 26, fontWeight: '700', letterSpacing: -0.5 },
+    menuBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    menuBtnLight: { backgroundColor: '#F1F5F9' },
+
+    scrollView: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
+    statsRow: { flexDirection: 'row', gap: 16, marginBottom: 32 },
+    statCard: { flex: 1, borderRadius: 24, padding: 24, borderWidth: 1 },
+    statCardDark: { backgroundColor: '#13151B', borderColor: 'transparent' },
+    statCardLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
+    statLabel: { color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, fontSize: 10, marginBottom: 12 },
+    statValueRow: { flexDirection: 'row', alignItems: 'baseline' },
+    statValue: { fontSize: 36, fontWeight: '700', letterSpacing: -1.5 },
+    statUnit: { fontSize: 11, fontWeight: '700', color: '#94a3b8', marginLeft: 6, textTransform: 'uppercase' },
+
+    sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 20, marginLeft: 4 },
+    textSlate400: { color: '#94a3b8' },
+    textSlate500: { color: '#64748b' },
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+
+    protectionCard: { padding: 24, borderRadius: 24, borderWidth: 1, marginBottom: 32 },
+    protectionEliteDark: { backgroundColor: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)' },
+    protectionEliteLight: { backgroundColor: '#F5F3FF', borderColor: '#E0E7FF' },
+    protectionBasicDark: { backgroundColor: '#13151B', borderColor: 'transparent' },
+    protectionBasicLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
+    protectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
+    protectionIconBox: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    protectionIconBoxDark: { backgroundColor: 'rgba(99,102,241,0.2)' },
+    protectionIconBoxLight: { backgroundColor: '#EEF2FF' },
+    badge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+    badgeDark: { backgroundColor: 'white' },
+    badgeLight: { backgroundColor: '#0f172a' },
+    badgeText: { fontWeight: '700', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 },
+    textSlate950: { color: '#020617' },
+    freezeAvailableBadge: { backgroundColor: 'rgba(16,185,129,0.1)', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 99, borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)' },
+    freezeAvailableText: { color: '#10B981', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5 },
+    protectionTitle: { fontSize: 20, fontWeight: '700', letterSpacing: -0.5, marginBottom: 8 },
+    protectionDesc: { color: '#64748b', fontWeight: '500', fontSize: 14, lineHeight: 22, marginBottom: 24 },
+    upgradeBtn: { height: 48, backgroundColor: '#8B5CF6', borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    upgradeBtnText: { color: 'white', fontWeight: '700', fontSize: 15 },
+
+    achievementCard: { borderRadius: 24, padding: 24, borderWidth: 1 },
+    milestoneRow: { marginBottom: 32 },
+    lastMilestone: { marginBottom: 8 },
+    milestoneHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+    milestoneTitle: { fontSize: 15, fontWeight: '700', letterSpacing: -0.3 },
+    milestoneReward: { color: '#8B5CF6', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 },
+    milestoneProgressText: { color: '#94a3b8', fontWeight: '700', fontSize: 11, letterSpacing: -0.5, marginTop: 4 },
+    progressBarBg: { height: 6, borderRadius: 999, overflow: 'hidden' },
+    progressBarBgDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    progressBarBgLight: { backgroundColor: '#F1F5F9' },
+    progressBarFill: { height: '100%', borderRadius: 999 },
+    progressBarFilled: { backgroundColor: '#8B5CF6' },
+    progressBarEmptyDark: { backgroundColor: 'rgba(139,92,246,0.2)' },
+    progressBarEmptyLight: { backgroundColor: 'rgba(139,92,246,0.3)' },
+});

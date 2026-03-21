@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
     View, Text, ScrollView, TextInput, TouchableOpacity, Alert,
-    ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme, Image
+    ActivityIndicator, KeyboardAvoidingView, Platform, useColorScheme, Image, StyleSheet
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { 
@@ -139,11 +139,11 @@ export default function AccountScreen() {
         label: string; value: string; onChangeText: (v: string) => void;
         show: boolean; onToggle: () => void; placeholder?: string;
     }) => (
-        <View className="mb-5">
-            <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-3 ml-1">{label}</Text>
-            <View className="relative">
+        <View style={s.inputContainer}>
+            <Text style={s.inputLabel}>{label}</Text>
+            <View style={{ position: 'relative' }}>
                 <TextInput
-                    className={`w-full h-[56px] rounded-xl px-5 text-[15px] font-bold pr-14 border ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-100 text-slate-900 shadow-sm'}`}
+                    style={[s.input, isDark ? s.inputDark : s.inputLight]}
                     placeholder={placeholder}
                     placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
                     secureTextEntry={!show}
@@ -152,7 +152,7 @@ export default function AccountScreen() {
                 />
                 <TouchableOpacity
                     onPress={onToggle}
-                    className="absolute right-4 top-0 bottom-0 justify-center w-12 items-center"
+                    style={s.pwToggle}
                 >
                     {show ? (
                         <EyeClosed width={18} height={18} color="#94a3b8" />
@@ -171,108 +171,119 @@ export default function AccountScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1"
+            style={{ flex: 1 }}
         >
             <GlowBackground>
                 {/* Header with drawer toggle */}
-            <View style={{ paddingTop: Math.max(insets.top, 8) }} className="px-5 pb-4 flex-row items-center justify-between">
-                <Text className={`text-[26px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Account</Text>
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
+                <Text style={[s.headerTitle, { color: isDark ? '#fff' : '#0f172a' }]}>Account</Text>
                 <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     activeOpacity={0.7}
-                    className={`size-10 rounded-xl items-center justify-center border ${isDark ? 'bg-white/10 border-transparent' : 'bg-white border-slate-200 shadow-sm'}`}
+                    style={[s.drawerBtn, isDark ? s.drawerBtnDark : s.drawerBtnLight]}
                 >
                     <Menu width={20} height={20} color={isDark ? 'white' : 'black'} />
                 </TouchableOpacity>
             </View>
 
             <ScrollView
-                className="flex-1 px-5 pt-2"
-                contentContainerStyle={{ paddingBottom: 100 }}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 }}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
                 {/* Profile Header */}
-                <View className="mb-8 items-center justify-center">
-                    <View className={`w-28 h-28 rounded-[32px] overflow-hidden items-center justify-center border-4 mb-4 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200 shadow-sm'}`}>
+                <View style={[s.profileHeader, { marginTop: 20 }]}>
+                    <View style={[s.avatarLarge, isDark ? s.avatarLargeDark : s.avatarLargeLight]}>
                         {user.avatar || user.avatar_url ? (
-                            <Image source={{ uri: user.avatar || user.avatar_url }} style={{ width: '100%', height: '100%' }} />
+                            <Image 
+                                source={{ uri: user.avatar || user.avatar_url }} 
+                                style={{ width: '100%', height: '100%', borderRadius: 56 }} 
+                                resizeMode="cover"
+                            />
                         ) : (
-                            <Text className="text-[32px] font-black text-[#8B5CF6]">{user.name.charAt(0)}</Text>
+                            <Text style={s.avatarInitial}>{user.name.charAt(0)}</Text>
                         )}
                     </View>
-                    <Text className={`text-[28px] font-bold tracking-tight mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{user.name}</Text>
-                    <Text className="text-slate-500 font-medium">{user.email}</Text>
+                    <Text style={[s.profileName, { color: isDark ? '#fff' : '#0f172a' }]}>{user.name}</Text>
+                    <Text style={s.profileEmail}>{user.email}</Text>
                 </View>
 
                 {/* Subscription Overview */}
-                <View className="pb-8">
-                    <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-5 ml-1">Plan Details</Text>
-                    <View className={`rounded-[24px] p-6 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm'}`}>
-                        <View className="flex-row items-center justify-between mb-5">
-                            <View className={`w-14 h-14 rounded-xl items-center justify-center ${user.is_unlimited ? 'bg-[#8B5CF6]/20' : (isDark ? 'bg-white/5' : 'bg-slate-50')}`}>
+                <View style={{ marginBottom: 32 }}>
+                    <Text style={s.sectionLabel}>Plan Details</Text>
+                    <View style={[s.card, isDark ? s.cardDark : s.cardLight]}>
+                        <View style={s.cardHeader}>
+                            <View style={[s.planIcon, user.is_unlimited ? s.planIconActive : (isDark ? s.planIconDark : s.planIconLight)]}>
                                 <Sparks width={18} height={18} color={user.is_unlimited ? "#8B5CF6" : "#94a3b8"} />
                             </View>
                             <TouchableOpacity
                                 onPress={() => router.push('/upgrade')}
-                                className={`px-5 py-2.5 rounded-lg border ${isDark ? 'bg-white border-white' : 'bg-slate-950 border-slate-950'}`}
+                                style={[s.manageBtn, isDark ? s.manageBtnDark : s.manageBtnLight]}
                             >
-                                <Text className={`font-bold text-[11px] uppercase tracking-widest ${isDark ? 'text-slate-900' : 'text-white'}`}>Manage</Text>
+                                <Text style={[s.manageBtnText, { color: isDark ? '#0f172a' : '#fff' }]}>Manage</Text>
                             </TouchableOpacity>
                         </View>
                         
-                        <Text className={`text-[22px] font-bold mb-1 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        <Text style={[s.planTitle, { color: isDark ? '#fff' : '#0f172a' }]}>
                             {user.is_unlimited ? 'Unlimited Pro' : 'Free Academic'}
                         </Text>
                         {user.is_unlimited ? (
-                            <Text className="text-[#8B5CF6] font-bold text-[12px] uppercase tracking-[0.1em]">Full AI Access Enabled</Text>
+                            <Text style={s.planSubtitleActive}>Full AI Access Enabled</Text>
                         ) : (
-                            <Text className="text-slate-500 font-bold text-[12px] uppercase tracking-[0.1em]">{user.credits} Learning Credits Left</Text>
+                            <Text style={s.planSubtitleFree}>{user.credits} Learning Credits Left</Text>
                         )}
                     </View>
                 </View>
 
                 {/* Referrals */}
-                <View className="px-6 pb-8">
+                <View style={{ marginBottom: 32 }}>
                     <TouchableOpacity
                         onPress={() => router.push('/referral')}
                         activeOpacity={0.9}
-                        className="bg-brand-primary rounded-[24px] p-6 flex-row items-center justify-between shadow-xl shadow-brand-primary/20"
+                        style={s.referralCard}
                     >
-                        <View className="flex-1 pr-4">
-                            <Text className="text-[18px] font-bold text-white mb-2 tracking-tight">Earn Credits</Text>
-                            <Text className="text-white/80 font-medium text-[13px] leading-relaxed">Invite classmates and get free unlimited access for a week.</Text>
+                        <View style={{ flex: 1, paddingRight: 16 }}>
+                            <Text style={s.referralTitle}>Earn Credits</Text>
+                            <Text style={s.referralText}>Invite classmates and get free unlimited access for a week.</Text>
                         </View>
-                        <View className="w-14 h-14 rounded-xl items-center justify-center bg-white/20">
+                        <View style={s.referralIconBox}>
                             <Gift width={28} height={28} color="#ffffff" />
                         </View>
                     </TouchableOpacity>
                 </View>
 
                 {/* Profile Details */}
-                <View className="px-6 pb-8">
-                    <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-5 ml-1">General Settings</Text>
-                    <View className={`rounded-[24px] p-6 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm'}`}>
-                        <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-3 ml-1">Display Name</Text>
+                <View style={{ marginBottom: 32 }}>
+                    <Text style={s.sectionLabel}>General Settings</Text>
+                    <View style={[s.card, isDark ? s.cardDark : s.cardLight]}>
+                        <Text style={s.inputLabel}>Display Name</Text>
                         <TextInput
-                            className={`h-[56px] px-5 rounded-xl border font-bold text-[15px] mb-6 ${isDark ? 'bg-transparent border-transparent text-white' : 'bg-slate-50 border-slate-100 text-slate-900'}`}
+                            style={[s.input, s.inputField, isDark ? s.inputFieldDark : s.inputFieldLight]}
                             placeholder="Your Name"
                             placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
                             value={name}
                             onChangeText={setName}
                         />
 
-                        <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-4 ml-1">Choose Avatar</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8 overflow-visible">
-                            <View className="flex-row gap-3 pr-6">
+                        <Text style={s.inputLabel}>Choose Avatar</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.avatarScroll}>
+                            <View style={s.avatarRow}>
                                 {BUILT_IN_AVATARS.map((url, idx) => (
                                     <TouchableOpacity
                                         key={idx}
                                         onPress={() => setAvatarUrl(url)}
                                         activeOpacity={0.8}
-                                        className={`w-16 h-16 rounded-2xl overflow-hidden border-2 items-center justify-center ${avatarUrl === url ? 'border-brand-primary shadow-lg shadow-brand-primary/20' : (isDark ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-slate-50')}`}
+                                        style={[
+                                            s.avatarItem,
+                                            avatarUrl === url ? s.avatarItemActive : (isDark ? s.avatarItemDark : s.avatarItemLight)
+                                        ]}
                                     >
-                                        <Image source={{ uri: url }} style={{ width: 56, height: 56 }} />
+                                        <Image 
+                                            source={{ uri: url }} 
+                                            style={{ width: 64, height: 64, borderRadius: 32 }} 
+                                            resizeMode="cover"
+                                        />
                                     </TouchableOpacity>
                                 ))}
                             </View>
@@ -282,12 +293,12 @@ export default function AccountScreen() {
                             onPress={handleUpdateProfile}
                             disabled={isUpdatingProfile}
                             activeOpacity={0.8}
-                            className={`h-[52px] rounded-xl items-center justify-center bg-brand-primary shadow-sm ${isUpdatingProfile ? 'opacity-60' : ''}`}
+                            style={[s.saveBtn, isUpdatingProfile && { opacity: 0.6 }]}
                         >
                             {isUpdatingProfile ? (
                                 <ActivityIndicator color="white" size="small" />
                             ) : (
-                                <Text className="font-bold text-[15px] text-white">
+                                <Text style={s.saveBtnText}>
                                     {profileSuccess ? 'Profile Updated' : 'Save Changes'}
                                 </Text>
                             )}
@@ -295,10 +306,10 @@ export default function AccountScreen() {
                     </View>
                 </View>
 
-                {/* Theme Preferences */}
-                <View className="px-6 pb-8">
-                    <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-5 ml-1">Appearance</Text>
-                    <View className={`rounded-[24px] p-3 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm'}`}>
+                {/* Appearance */}
+                <View style={{ marginBottom: 32 }}>
+                    <Text style={s.sectionLabel}>Appearance</Text>
+                    <View style={[s.listContainer, isDark ? s.cardDark : s.cardLight]}>
                         {(['system', 'light', 'dark'] as const).map((t) => {
                             const isSelected = theme === t;
                             const icons = { system: SmartphoneDevice, light: SunLight, dark: HalfMoon };
@@ -310,12 +321,12 @@ export default function AccountScreen() {
                                     key={t}
                                     onPress={() => handleThemeChange(t)}
                                     activeOpacity={0.7}
-                                    className={`flex-row items-center p-4 rounded-xl mb-1 ${isSelected ? (isDark ? 'bg-white/5' : 'bg-slate-50') : ''}`}
+                                    style={[s.listItem, isSelected && (isDark ? s.listItemActiveDark : s.listItemActiveLight)]}
                                 >
-                                    <View className={`w-10 h-10 rounded-lg items-center justify-center mr-4 ${isSelected ? 'bg-brand-primary' : (isDark ? 'bg-white/10' : 'bg-slate-100')}`}>
+                                    <View style={[s.listItemIcon, isSelected ? s.listItemIconActive : (isDark ? s.listItemIconDark : s.listItemIconLight)]}>
                                         <Icon width={18} height={18} color={isSelected ? 'white' : '#94a3b8'} />
                                     </View>
-                                    <Text className={`flex-1 font-bold text-[15px] ${isSelected ? (isDark ? 'text-white' : 'text-slate-900') : 'text-slate-500'}`}>
+                                    <Text style={[s.listItemText, isSelected ? (isDark ? s.textWhite : s.textSlate900) : s.textSlate500]}>
                                         {labels[t]}
                                     </Text>
                                     {isSelected && <Check width={18} height={18} color={isDark ? 'white' : '#0f172a'} />}
@@ -326,9 +337,9 @@ export default function AccountScreen() {
                 </View>
 
                 {/* Security */}
-                <View className="pb-8">
-                    <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-5 ml-1">Security</Text>
-                    <View className={`rounded-[24px] p-6 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm'}`}>
+                <View style={{ marginBottom: 32 }}>
+                    <Text style={s.sectionLabel}>Security</Text>
+                    <View style={[s.card, isDark ? s.cardDark : s.cardLight]}>
                         <PasswordField label="Current" value={currentPassword} onChangeText={setCurrentPassword} show={showCurrentPw} onToggle={() => setShowCurrentPw(!showCurrentPw)} />
                         <PasswordField label="New Password" value={newPassword} onChangeText={setNewPassword} show={showNewPw} onToggle={() => setShowNewPw(!showNewPw)} />
                         <PasswordField label="Confirm" value={confirmPassword} onChangeText={setConfirmPassword} show={showConfirmPw} onToggle={() => setShowConfirmPw(!showConfirmPw)} />
@@ -337,12 +348,16 @@ export default function AccountScreen() {
                             onPress={handleUpdatePassword}
                             disabled={isUpdatingPassword}
                             activeOpacity={0.8}
-                            className={`h-[52px] rounded-xl items-center justify-center mt-4 border ${passwordSuccess ? 'bg-emerald-500 border-emerald-500' : (isDark ? 'bg-white border-white' : 'bg-slate-900 border-slate-900')} ${isUpdatingPassword ? 'opacity-70' : ''}`}
+                            style={[
+                                s.passwordBtn,
+                                passwordSuccess ? s.passwordBtnSuccess : (isDark ? s.passwordBtnDark : s.passwordBtnLight),
+                                isUpdatingPassword && { opacity: 0.7 }
+                            ]}
                         >
                             {isUpdatingPassword ? (
                                 <ActivityIndicator color={isDark ? '#0f0f11' : 'white'} />
                             ) : (
-                                <Text className={`font-bold text-[15px] ${passwordSuccess ? 'text-white' : (isDark ? 'text-slate-900' : 'text-white')}`}>
+                                <Text style={[s.passwordBtnText, passwordSuccess ? s.textWhite : (isDark ? s.textSlate900 : s.textWhite)]}>
                                     {passwordSuccess ? 'Password Secured' : 'Update Password'}
                                 </Text>
                             )}
@@ -351,29 +366,29 @@ export default function AccountScreen() {
                 </View>
 
                 {/* Legal & About */}
-                <View className="px-6 pb-12">
-                    <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-5 ml-1">Support & Legal</Text>
-                    <View className={`rounded-[24px] p-3 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm'}`}>
+                <View style={{ marginBottom: 48 }}>
+                    <Text style={s.sectionLabel}>Support & Legal</Text>
+                    <View style={[s.listContainer, isDark ? s.cardDark : s.cardLight]}>
                         <TouchableOpacity
                             onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/privacy')}
-                            className="flex-row items-center p-4 rounded-xl border-b border-slate-50 dark:border-slate-800"
+                            style={[s.legalItem, { borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}
                         >
                             <ShieldCheck width={18} height={18} color="#94a3b8" />
-                            <Text className={`ml-4 flex-1 font-bold text-[14px] ${isDark ? 'text-white' : 'text-slate-700'}`}>Privacy Policy</Text>
+                            <Text style={[s.legalText, { color: isDark ? '#fff' : '#334155' }]}>Privacy Policy</Text>
                             <NavArrowRight width={16} height={16} color="#94a3b8" />
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/terms')}
-                            className="flex-row items-center p-4 rounded-xl"
+                            style={s.legalItem}
                         >
                             <Page width={18} height={18} color="#94a3b8" />
-                            <Text className={`ml-4 flex-1 font-bold text-[14px] ${isDark ? 'text-white' : 'text-slate-700'}`}>Terms of Service</Text>
+                            <Text style={[s.legalText, { color: isDark ? '#fff' : '#334155' }]}>Terms of Service</Text>
                             <NavArrowRight width={16} height={16} color="#94a3b8" />
                         </TouchableOpacity>
                     </View>
 
-                    <Text className="text-center text-slate-400 font-bold text-[11px] uppercase tracking-[0.3em] mt-8">
+                    <Text style={s.versionText}>
                         Skeeme v1.5.0
                     </Text>
                 </View>
@@ -382,3 +397,86 @@ export default function AccountScreen() {
         </KeyboardAvoidingView>
     );
 }
+
+const s = StyleSheet.create({
+    header: { paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerTitle: { fontSize: 26, fontWeight: '700', letterSpacing: -0.5 },
+    drawerBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+    drawerBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'transparent' },
+    drawerBtnLight: { backgroundColor: '#fff', borderColor: '#E2E8F0' },
+
+    profileHeader: { marginBottom: 32, alignItems: 'center', justifyContent: 'center' },
+    avatarLarge: { width: 112, height: 112, borderRadius: 56, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderWidth: 4, marginBottom: 16 },
+    avatarLargeDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+    avatarLargeLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0' },
+    avatarInitial: { fontSize: 32, fontWeight: '900', color: '#8B5CF6' },
+    profileName: { fontSize: 28, fontWeight: '700', letterSpacing: -0.5, marginBottom: 4 },
+    profileEmail: { color: '#64748b', fontWeight: '500' },
+
+    sectionLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16, marginLeft: 4 },
+    card: { borderRadius: 24, padding: 24, borderWidth: 1 },
+    cardDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+    cardLight: { backgroundColor: '#fff', borderColor: '#F1F5F9' },
+    
+    cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+    planIcon: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+    planIconActive: { backgroundColor: 'rgba(139,92,246,0.2)' },
+    planIconDark: { backgroundColor: 'rgba(255,255,255,0.05)' },
+    planIconLight: { backgroundColor: '#F8FAFC' },
+    manageBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, borderWidth: 1 },
+    manageBtnDark: { backgroundColor: '#fff', borderColor: '#fff' },
+    manageBtnLight: { backgroundColor: '#020617', borderColor: '#020617' },
+    manageBtnText: { fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 },
+    planTitle: { fontSize: 22, fontWeight: '700', marginBottom: 4, letterSpacing: -0.5 },
+    planSubtitleActive: { color: '#8B5CF6', fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 },
+    planSubtitleFree: { color: '#64748b', fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 },
+
+    referralCard: { backgroundColor: '#8B5CF6', borderRadius: 24, padding: 24, flexDirection: 'row', alignItems: 'center' },
+    referralTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 8, letterSpacing: -0.3 },
+    referralText: { color: 'rgba(255,255,255,0.8)', fontWeight: '500', fontSize: 13, lineHeight: 20 },
+    referralIconBox: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.2)' },
+
+    inputLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, marginLeft: 4 },
+    inputContainer: { marginBottom: 20 },
+    input: { width: '100%', height: 56, borderRadius: 12, paddingHorizontal: 20, fontSize: 15, fontWeight: '700', borderWidth: 1 },
+    inputDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' },
+    inputLight: { backgroundColor: '#fff', borderColor: '#F1F5F9', color: '#0f172a' },
+    inputField: { fontWeight: '700', fontSize: 15, marginBottom: 24 },
+    inputFieldDark: { backgroundColor: 'transparent', borderColor: 'transparent', color: '#fff' },
+    inputFieldLight: { backgroundColor: '#F8FAFC', borderColor: '#F1F5F9', color: '#0f172a' },
+
+    avatarScroll: { marginBottom: 32 },
+    avatarRow: { flexDirection: 'row', gap: 12, paddingRight: 24 },
+    avatarItem: { width: 64, height: 64, borderRadius: 32, overflow: 'hidden', borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+    avatarItemActive: { borderColor: '#8B5CF6' },
+    avatarItemDark: { borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' },
+    avatarItemLight: { borderColor: '#E2E8F0', backgroundColor: '#F8FAFC' },
+
+    saveBtn: { height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#8B5CF6' },
+    saveBtnText: { fontWeight: '700', fontSize: 15, color: '#fff' },
+
+    listContainer: { borderRadius: 24, padding: 12, borderWidth: 1 },
+    listItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 16, marginBottom: 4 },
+    listItemActiveDark: { backgroundColor: 'rgba(255,255,255,0.05)' },
+    listItemActiveLight: { backgroundColor: '#F8FAFC' },
+    listItemIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    listItemIconActive: { backgroundColor: '#8B5CF6' },
+    listItemIconDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    listItemIconLight: { backgroundColor: '#F1F5F9' },
+    listItemText: { flex: 1, fontWeight: '700', fontSize: 15 },
+
+    textWhite: { color: '#fff' },
+    textSlate900: { color: '#0f172a' },
+    textSlate500: { color: '#64748b' },
+
+    passwordBtn: { height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 16, borderWidth: 1 },
+    passwordBtnSuccess: { backgroundColor: '#10b981', borderColor: '#10b981' },
+    passwordBtnDark: { backgroundColor: '#fff', borderColor: '#fff' },
+    passwordBtnLight: { backgroundColor: '#0f172a', borderColor: '#0f172a' },
+    passwordBtnText: { fontWeight: '700', fontSize: 15 },
+    pwToggle: { position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center', width: 48, alignItems: 'center' },
+
+    legalItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16 },
+    legalText: { marginLeft: 16, flex: 1, fontWeight: '700', fontSize: 14 },
+    versionText: { textAlign: 'center', color: '#94a3b8', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 3, marginTop: 32 },
+});

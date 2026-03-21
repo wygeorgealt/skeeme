@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\StudyStreak;
+use App\Models\QuizSession;
+use App\Models\FlashcardSession;
+use App\Models\Transaction;
 use Illuminate\Support\Facades\Log;
 
 use Illuminate\Support\Facades\Http;
@@ -211,6 +214,13 @@ class AuthController extends Controller
 
         Log::info('New student registered via API', ['user_id' => $user->id, 'device' => $deviceName]);
 
+        // Send Welcome Email
+        try {
+            \Illuminate\Support\Facades\Mail::mailer('resend')->to($user->email)->send(new \App\Mail\WelcomeMail($user->name));
+        } catch (\Exception $e) {
+            Log::error('Failed to send welcome email', ['error' => $e->getMessage()]);
+        }
+
         $pricing = $this->getLocalizedPrice($request);
 
         return response()->json([
@@ -252,6 +262,23 @@ class AuthController extends Controller
 
         $pricing = $this->getLocalizedPrice($request);
 
+        // Calculate Weekly Stats
+        $startOfWeek = now()->startOfWeek();
+        
+        $quizSessionsCount = QuizSession::where('user_id', $user->id)
+            ->where('created_at', '>=', $startOfWeek)
+            ->count();
+            
+        $flashcardSessionsCount = FlashcardSession::where('user_id', $user->id)
+            ->where('created_at', '>=', $startOfWeek)
+            ->count();
+            
+        $creditsSpent = Transaction::where('user_id', $user->id)
+            ->where('type', 'usage')
+            ->where('amount', '<', 0)
+            ->where('created_at', '>=', $startOfWeek)
+            ->sum('amount');
+
         return response()->json([
             'id' => $user->id,
             'name' => $user->name,
@@ -259,6 +286,8 @@ class AuthController extends Controller
             'last_name' => $user->last_name,
             'email' => $user->email,
             'credits' => $user->credits,
+            'credits_spent_this_week' => abs($creditsSpent),
+            'study_sessions_this_week' => $quizSessionsCount + $flashcardSessionsCount,
             'is_unlimited' => $user->is_unlimited_student,
             'plan_name' => $user->activeSubscription?->plan_name ?? 'free',
             'role' => $user->role,

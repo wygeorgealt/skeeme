@@ -16,14 +16,14 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://skeeme-web.onrender.com/api/v1/student/",
+        "EXPO_PUBLIC_API_URL": "https://skeeme.com/api/v1/student/",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "677120499703-77ktccne1953v7uci57q5qcl7lls27b9.apps.googleusercontent.com"
       }
     },
     "production": {
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://skeeme-web.onrender.com/api/v1/student/",
+        "EXPO_PUBLIC_API_URL": "https://skeeme.com/api/v1/student/",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "677120499703-77ktccne1953v7uci57q5qcl7lls27b9.apps.googleusercontent.com"
       }
     }

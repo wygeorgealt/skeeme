@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, useColorScheme } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, useColorScheme, StyleSheet } from 'react-native';
 import { Menu, Sparks, CheckCircle, GraduationCap, Book, Medal, Suitcase } from 'iconoir-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { router, useNavigation } from 'expo-router';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const LEVELS = [
     { key: 'high_school', label: 'High School', icon: GraduationCap },
@@ -87,145 +91,253 @@ export default function PreferencesScreen() {
         return (
             <TouchableOpacity
                 onPress={onPress}
-                activeOpacity={0.85}
-                className={`p-5 rounded-[28px] border mb-3 flex-row items-center ${isSelected 
-                    ? (isDark ? 'bg-white border-white' : 'bg-slate-900 border-slate-900') 
-                    : (isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm')}`}
+                activeOpacity={0.8}
+                style={s.cardWrapper}
             >
-                {Icon && (
-                    <View className={`w-12 h-12 rounded-xl items-center justify-center mr-4 ${isSelected ? (isDark ? 'bg-slate-100' : 'bg-slate-800') : (isDark ? 'bg-white/10' : 'bg-slate-50')}`}>
-                        <Icon width={18} height={18} color={isSelected ? (isDark ? '#0f0f11' : 'white') : '#8B5CF6'} />
-                    </View>
-                )}
-                <View className="flex-1">
-                    <Text className={`font-bold text-[15px] ${isSelected ? (isDark ? 'text-slate-900' : 'text-white') : (isDark ? 'text-white' : 'text-slate-900')}`}>
-                        {item.label}
-                    </Text>
-                    {hasDesc && item.desc && (
-                        <Text className={`text-[11px] mt-1 ${isSelected ? (isDark ? 'text-slate-500' : 'text-slate-400') : 'text-slate-500'}`}>
-                            {item.desc}
-                        </Text>
+                <BlurView 
+                    intensity={isSelected ? (isDark ? 50 : 80) : (isDark ? 10 : 30)} 
+                    tint={isDark ? 'dark' : 'light'} 
+                    style={[
+                        s.card, 
+                        isSelected && s.cardSelected
+                    ]}
+                >
+                    {isSelected && (
+                        <LinearGradient
+                            colors={['rgba(139, 92, 246, 0.1)', 'rgba(99, 102, 241, 0.1)']}
+                            style={StyleSheet.absoluteFill}
+                        />
                     )}
-                </View>
-                {isSelected && (
-                    <CheckCircle width={18} height={18} color={isDark ? '#0f0f11' : '#8B5CF6'} />
-                )}
+                    {Icon && (
+                        <View style={[
+                            s.iconBox,
+                            isSelected ? s.iconBoxSelected : (isDark ? s.bgWhite10 : s.bgWhite60)
+                        ]}>
+                            <Icon width={18} height={18} color={isSelected ? 'white' : '#8B5CF6'} />
+                        </View>
+                    )}
+                    <View style={s.cardContent}>
+                        <Text style={[
+                            s.cardTitle,
+                            isDark ? s.textWhite : s.textSlate900
+                        ]}>
+                            {item.label}
+                        </Text>
+                        {hasDesc && item.desc && (
+                            <Text style={[
+                                s.cardDesc,
+                                isDark ? s.textSlate400 : s.textSlate600
+                            ]}>
+                                {item.desc}
+                            </Text>
+                        )}
+                    </View>
+                    {isSelected ? (
+                        <View style={s.checkCircleFilled}>
+                            <CheckCircle width={18} height={18} color="white" />
+                        </View>
+                    ) : (
+                        <View style={[s.checkCircleEmpty, isDark ? s.borderWhite10 : s.borderSlate200]} />
+                    )}
+                </BlurView>
             </TouchableOpacity>
         );
     };
 
     return (
-        <GlowBackground>
-            {/* Header with drawer toggle */}
-            <View style={{ paddingTop: Math.max(insets.top, 8) }} className="px-5 pb-4 flex-row items-center justify-between">
-                <View className="flex-1 pr-4">
-                    <Text className={`text-[26px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Personalize</Text>
-                    <Text className="text-slate-500 font-medium text-[13px] mt-1">Tailor your AI experience to match your academic level and learning preferences.</Text>
+        <GlowBackground isRoot={true}>
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
+                <View style={s.headerTextContainer}>
+                    <Text style={[s.title, isDark ? s.textWhite : s.textSlate900]}>Personalize</Text>
+                    <Text style={s.subtitle}>Tailor your AI experience to match your academic level and learning preferences.</Text>
                 </View>
                 <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     activeOpacity={0.7}
-                    className={`size-10 rounded-xl items-center justify-center border ${isDark ? 'bg-white/10 border-transparent' : 'bg-white border-slate-200 shadow-sm'}`}
+                    style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                 >
-                    <Menu width={20} height={20} color={isDark ? 'white' : 'black'} />
+                    <Menu width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
             </View>
 
-            <ScrollView className="flex-1 px-5 pt-4" contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={s.scrollView} contentContainerStyle={{ paddingBottom: 150 }} showsVerticalScrollIndicator={false}>
                 {/* Education Level */}
-                <View className="mb-8">
-                    <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-5 ml-1">Academic Level</Text>
-                    {LEVELS.map(l => (
-                        <SelectionCard 
-                            key={l.key} 
-                            item={l} 
-                            isSelected={level === l.key} 
-                            onPress={() => setLevel(level === l.key ? '' : l.key)} 
-                            hasDesc={false}
-                        />
-                    ))}
-                </View>
+                <Animated.View entering={FadeInDown.delay(100)} style={s.section}>
+                    <Text style={s.sectionLabel}>Academic Level</Text>
+                    <BlurView intensity={isDark ? 10 : 20} tint={isDark ? 'dark' : 'light'} style={s.sectionGlass}>
+                        {LEVELS.map(l => (
+                            <SelectionCard 
+                                key={l.key} 
+                                item={l} 
+                                isSelected={level === l.key} 
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setLevel(level === l.key ? '' : l.key);
+                                }} 
+                                hasDesc={false}
+                            />
+                        ))}
+                    </BlurView>
+                </Animated.View>
 
                 {/* Field of Study */}
-                <View className="mb-8">
-                    <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-5 ml-1">Field of Study</Text>
-                    <TextInput
-                        value={field}
-                        onChangeText={setField}
-                        placeholder="e.g. Computer Science, Medicine..."
-                        placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
-                        className={`h-[56px] px-5 rounded-xl border font-bold text-[15px] ${isDark ? 'bg-transparent border-transparent text-white' : 'bg-white border-slate-100 text-slate-900 shadow-sm'}`}
-                    />
-                </View>
+                <Animated.View entering={FadeInDown.delay(200)} style={s.section}>
+                    <Text style={s.sectionLabel}>Field of Study</Text>
+                    <BlurView intensity={isDark ? 10 : 20} tint={isDark ? 'dark' : 'light'} style={s.inputGlass}>
+                        <TextInput
+                            value={field}
+                            onChangeText={setField}
+                            placeholder="e.g. Computer Science, Medicine..."
+                            placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
+                            style={[s.textInput, { color: isDark ? 'white' : '#0f172a' }]}
+                        />
+                    </BlurView>
+                </Animated.View>
 
                 {/* Learning Style */}
-                <View className="mb-8">
-                    <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-5 ml-1">Learning Style</Text>
-                    {STYLES.map(s => (
-                        <SelectionCard 
-                            key={s.key} 
-                            item={s} 
-                            isSelected={style === s.key} 
-                            onPress={() => setStyle(style === s.key ? '' : s.key)} 
-                        />
-                    ))}
-                </View>
+                <Animated.View entering={FadeInDown.delay(300)} style={s.section}>
+                    <Text style={s.sectionLabel}>Learning Style</Text>
+                    <BlurView intensity={isDark ? 10 : 20} tint={isDark ? 'dark' : 'light'} style={s.sectionGlass}>
+                        {STYLES.map(sItem => (
+                            <SelectionCard 
+                                key={sItem.key} 
+                                item={sItem} 
+                                isSelected={style === sItem.key} 
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setStyle(style === sItem.key ? '' : sItem.key);
+                                }} 
+                            />
+                        ))}
+                    </BlurView>
+                </Animated.View>
 
                 {/* AI Tone */}
-                <View className="mb-8">
-                    <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-5 ml-1">Interaction Tone</Text>
-                    {TONES.map(t => (
-                        <SelectionCard 
-                            key={t.key} 
-                            item={t} 
-                            isSelected={tone === t.key} 
-                            onPress={() => setTone(tone === t.key ? '' : t.key)} 
-                        />
-                    ))}
-                </View>
+                <Animated.View entering={FadeInDown.delay(400)} style={s.section}>
+                    <Text style={s.sectionLabel}>Interaction Tone</Text>
+                    <BlurView intensity={isDark ? 10 : 20} tint={isDark ? 'dark' : 'light'} style={s.sectionGlass}>
+                        {TONES.map(t => (
+                            <SelectionCard 
+                                key={t.key} 
+                                item={t} 
+                                isSelected={tone === t.key} 
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setTone(tone === t.key ? '' : t.key);
+                                }} 
+                            />
+                        ))}
+                    </BlurView>
+                </Animated.View>
 
                 {/* Language */}
-                <View className="mb-10">
-                    <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-5 ml-1">Primary Language</Text>
-                    <View className="flex-row flex-wrap gap-3">
-                        {LANGUAGES.map(l => (
-                            <TouchableOpacity
-                                key={l.key}
-                                onPress={() => setLanguage(l.key)}
-                                activeOpacity={0.8}
-                                className={`px-5 py-3 rounded-full border ${language === l.key 
-                                    ? 'bg-brand-primary border-brand-primary' 
-                                    : (isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm')}`}
-                            >
-                                <Text className={`font-bold text-[13px] ${language === l.key ? 'text-white' : (isDark ? 'text-slate-400' : 'text-slate-600')}`}>
-                                    {l.label}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
+                <Animated.View entering={FadeInDown.delay(500)} style={s.languageSection}>
+                    <Text style={s.sectionLabel}>Primary Language</Text>
+                    <BlurView intensity={isDark ? 10 : 20} tint={isDark ? 'dark' : 'light'} style={s.languageGlass}>
+                        <View style={s.languageGrid}>
+                            {LANGUAGES.map(l => (
+                                <TouchableOpacity
+                                    key={l.key}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        setLanguage(l.key);
+                                    }}
+                                    activeOpacity={0.8}
+                                    style={[s.langBtn, language === l.key ? s.langBtnSelected : (isDark ? s.bgWhite10 : s.bgWhite60)]}
+                                >
+                                    {language === l.key && (
+                                        <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+                                    )}
+                                    <Text style={[s.langText, language === l.key ? s.textWhite : (isDark ? s.textSlate400 : s.textSlate600)]}>
+                                        {l.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </BlurView>
+                </Animated.View>
 
-                {/* Save Button */}
+                <View style={s.bottomSpacer} />
+            </ScrollView>
+
+            {/* Sticky Save Button */}
+            <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={s.stickyFooter}>
                 <TouchableOpacity
                     onPress={handleSave}
                     disabled={saving}
                     activeOpacity={0.8}
-                    className={`h-[56px] bg-brand-primary rounded-xl items-center justify-center flex-row shadow-lg shadow-brand-primary/20 ${saving ? 'opacity-60' : ''}`}
+                    style={s.saveBtnShadow}
                 >
-                    {saving ? (
-                        <ActivityIndicator color="white" size="small" />
-                    ) : (
-                        <>
-                            <Sparks width={18} height={18} color="white" style={{ marginRight: 10 }} />
-                            <Text className="font-bold text-[15px] text-white">Update AI Preferences</Text>
-                        </>
-                    )}
+                    <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.saveBtnGradient}>
+                        {saving ? (
+                            <ActivityIndicator color="white" size="small" />
+                        ) : (
+                            <>
+                                <Sparks width={20} height={20} color="white" />
+                                <Text style={s.saveBtnText}>Update My AI Assistant</Text>
+                            </>
+                        )}
+                    </LinearGradient>
                 </TouchableOpacity>
-
-                <Text className="text-center text-slate-400 text-[11px] font-medium mt-6 leading-relaxed px-4">
-                    Changes take effect immediately across all study tools.
-                </Text>
-            </ScrollView>
+                <Text style={s.footerNote}>Adaptive learning engine updates in real-time.</Text>
+            </BlurView>
         </GlowBackground>
     );
 }
+
+const s = StyleSheet.create({
+    header: { paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerTextContainer: { flex: 1, paddingRight: 16 },
+    title: { fontSize: 26, fontWeight: '900', letterSpacing: -1 },
+    subtitle: { color: '#64748b', fontWeight: '600', fontSize: 13, marginTop: 4 },
+    menuBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    menuBtnLight: { backgroundColor: 'rgba(255,255,255,0.6)' },
+
+    scrollView: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
+    section: { marginBottom: 32 },
+    sectionLabel: { fontSize: 11, fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16, marginLeft: 4 },
+    sectionGlass: { borderRadius: 32, overflow: 'hidden', padding: 8 },
+    inputGlass: { borderRadius: 20, overflow: 'hidden', padding: 4 },
+    languageGlass: { borderRadius: 24, overflow: 'hidden', padding: 16 },
+
+    cardWrapper: { marginBottom: 8 },
+    card: { padding: 16, borderRadius: 24, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+    cardSelected: { borderBottomWidth: 2, borderBottomColor: 'rgba(139, 92, 246, 0.3)' },
+
+    iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    iconBoxSelected: { backgroundColor: '#8B5CF6' },
+    
+    cardContent: { flex: 1 },
+    cardTitle: { fontWeight: '800', fontSize: 15 },
+    cardDesc: { fontSize: 11, marginTop: 2, fontWeight: '500' },
+    
+    checkCircleFilled: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center' },
+    checkCircleEmpty: { width: 22, height: 22, borderRadius: 11, borderWidth: 2 },
+    
+    textInput: { height: 50, paddingHorizontal: 16, fontWeight: '700', fontSize: 15 },
+    
+    languageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    langBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, overflow: 'hidden' },
+    langBtnSelected: { elevation: 4, shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
+    langText: { fontWeight: '800', fontSize: 13 },
+
+    stickyFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingBottom: 40, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
+    saveBtnShadow: { height: 56, borderRadius: 16, overflow: 'hidden', elevation: 8, shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+    saveBtnGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+    saveBtnText: { color: 'white', fontWeight: '900', fontSize: 16, marginLeft: 10, letterSpacing: -0.3 },
+    
+    footerNote: { textAlign: 'center', color: '#94a3b8', fontSize: 11, fontWeight: '600', marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.5 },
+    bottomSpacer: { height: 20 },
+
+    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    bgWhite60: { backgroundColor: 'rgba(255,255,255,0.6)' },
+    bgBlack20: { backgroundColor: 'rgba(0,0,0,0.2)' },
+    borderWhite10: { borderColor: 'rgba(255,255,255,0.1)' },
+    borderSlate200: { borderColor: '#E2E8F0' },
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate600: { color: '#475569' },
+    languageSection: { marginBottom: 40 },
+});

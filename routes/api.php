@@ -168,6 +168,10 @@ Route::prefix('v1')->group(function () {
                 Route::get('decks', [\App\Http\Controllers\API\Student\FlashcardController::class, 'index']);
                 Route::get('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'show']);
                 Route::delete('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'destroy']);
+                
+                // Session history
+                Route::get('history', [\App\Http\Controllers\API\Student\FlashcardSessionController::class, 'index']);
+                Route::post('history', [\App\Http\Controllers\API\Student\FlashcardSessionController::class, 'store']);
             });
 
             Route::get('streaks/heatmap', [\App\Http\Controllers\API\Student\StreakController::class, 'heatmap']);

@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, useColorScheme, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, useColorScheme, TextInput, Alert, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';
@@ -41,11 +41,8 @@ export default function DemoScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const { setOnboardingStep } = useAuthStore();
-    const [showResult, setShowResult] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [topic, setTopic] = useState('');
     const [mode, setMode] = useState<'choose' | 'generate'>('choose');
-    const [displayTitle, setDisplayTitle] = useState('');
 
     useEffect(() => {
         setOnboardingStep(5);
@@ -76,32 +73,31 @@ export default function DemoScreen() {
     // Generate mode — show text input
     if (mode === 'generate') {
         return (
-            <View className={`flex-1 px-6 pt-16 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
+            <View style={[s.flex1, isDark ? s.bgDark : s.bgLight]}>
                 <StatusBar style={isDark ? 'light' : 'dark'} />
 
                 {/* Back button */}
-                <TouchableOpacity onPress={() => setMode('choose')} className="mb-5" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                <TouchableOpacity onPress={() => setMode('choose')} style={s.backBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                     <NavArrowLeft width={18} height={18} color={isDark ? '#fff' : '#000'} />
                 </TouchableOpacity>
 
                 <Animated.View entering={FadeInDown.duration(600)}>
-                    <View className="mb-8">
-                        <Text className={`text-[40px] font-bold tracking-tight leading-[46px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <View style={s.headerSection}>
+                        <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>
                             Type any topic.
                         </Text>
-                        <Text className={`text-[15px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        <Text style={[s.heroSubtitle, isDark ? s.textSlate400 : s.textSlate500]}>
                             Skeeme will break it down step by step using your personalized context.
                         </Text>
                     </View>
 
-                    <View className={`rounded-[24px] border-2 px-5 mb-5 ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white shadow-sm'}`}>
+                    <View style={[s.inputWrapper, isDark ? s.inputWrapperDark : s.inputWrapperLight]}>
                         <TextInput
-                            className="font-bold text-[16px] h-[72px]"
+                            style={[s.textInput, { color: isDark ? 'white' : 'black' }]}
                             placeholder="e.g. Photosynthesis, Newton's 3rd law..."
                             placeholderTextColor={isDark ? '#52525b' : '#a1a1aa'}
                             value={topic}
                             onChangeText={setTopic}
-                            style={{ color: isDark ? 'white' : 'black' }}
                             autoCapitalize="sentences"
                             autoFocus
                             returnKeyType="go"
@@ -113,10 +109,13 @@ export default function DemoScreen() {
                         onPress={handleGenerate}
                         disabled={!topic.trim()}
                         activeOpacity={0.9}
-                        className={`h-[56px] rounded-[24px] items-center justify-center flex-row shadow-lg ${topic.trim() ? 'bg-brand-primary shadow-brand-primary/25' : isDark ? 'bg-slate-800' : 'bg-slate-100'}`}
+                        style={[
+                            s.mainBtn,
+                            topic.trim() ? s.mainBtnActive : (isDark ? s.mainBtnDisabledDark : s.mainBtnDisabledLight)
+                        ]}
                     >
                         <Sparks width={18} height={18} color={topic.trim() ? '#fff' : isDark ? '#52525b' : '#a1a1aa'} />
-                        <Text className={`font-bold text-[15px] ml-2 tracking-wide ${topic.trim() ? 'text-white' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        <Text style={[s.mainBtnText, topic.trim() ? s.textWhite : (isDark ? s.textSlate500 : s.textSlate400)]}>
                             Generate Explanation
                         </Text>
                     </TouchableOpacity>
@@ -127,33 +126,33 @@ export default function DemoScreen() {
 
     // Choose mode — pick between Scan & Solve or Generate
     return (
-        <View className={`flex-1 px-6 pt-16 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
+        <View style={[s.flex1, isDark ? s.bgDark : s.bgLight]}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            <Animated.View entering={FadeInDown.duration(800).delay(100)} className="mb-10">
-                <Text className={`text-[40px] font-bold tracking-tight leading-[46px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <Animated.View entering={FadeInDown.duration(800).delay(100)} style={s.headerSection}>
+                <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>
                     Experience it.
                 </Text>
-                <Text className={`text-[15px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <Text style={[s.heroSubtitle, isDark ? s.textSlate400 : s.textSlate500]}>
                     Pick any topic or scan a question. See how Skeeme transforms your learning.
                 </Text>
             </Animated.View>
 
-            <View className="gap-4">
+            <View style={s.optionsGap}>
                 {/* Scan & Solve */}
                 <Animated.View entering={FadeInDown.duration(600).delay(200)}>
                     <TouchableOpacity
                         onPress={handleScanAndSolve}
                         activeOpacity={0.9}
-                        className={`p-6 rounded-[24px] border-2 shadow-sm ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white'}`}
+                        style={[s.optionCard, isDark ? s.optionCardDark : s.optionCardLight]}
                     >
-                        <View className="flex-row items-center">
-                            <View className={`w-14 h-14 rounded-[18px] items-center justify-center mr-5 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                        <View style={s.flexRow}>
+                            <View style={[s.iconBox, isDark ? s.bgSlate800 : s.bgSlate50]}>
                                 <Camera width={26} height={26} color={isDark ? '#fff' : '#0f172a'} />
                             </View>
-                            <View className="flex-1">
-                                <Text className={`font-bold text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Scan & Solve</Text>
-                                <Text className={`font-medium text-[13px] leading-relaxed mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Point your camera at any question</Text>
+                            <View style={s.flex1}>
+                                <Text style={[s.optionLabel, isDark ? s.textWhite : s.textSlate900]}>Scan & Solve</Text>
+                                <Text style={[s.optionDesc, isDark ? s.textSlate400 : s.textSlate500]}>Point your camera at any question</Text>
                             </View>
                             <NavArrowRight width={18} height={18} color={isDark ? '#3f3f46' : '#d1d5db'} />
                         </View>
@@ -161,10 +160,10 @@ export default function DemoScreen() {
                 </Animated.View>
 
                 {/* Divider */}
-                <View className="flex-row items-center py-4">
-                    <View className={`flex-1 h-0.5 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
-                    <Text className={`px-5 font-bold text-[11px] uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>or</Text>
-                    <View className={`flex-1 h-0.5 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+                <View style={s.dividerRow}>
+                    <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
+                    <Text style={[s.dividerText, isDark ? s.textSlate600 : s.textSlate400]}>or</Text>
+                    <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
                 </View>
 
                 {/* Generate from Topic */}
@@ -172,15 +171,15 @@ export default function DemoScreen() {
                     <TouchableOpacity
                         onPress={() => setMode('generate')}
                         activeOpacity={0.9}
-                        className={`p-6 rounded-[24px] border-2 shadow-sm ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-white'}`}
+                        style={[s.optionCard, isDark ? s.optionCardDark : s.optionCardLight]}
                     >
-                        <View className="flex-row items-center">
-                            <View className={`w-14 h-14 rounded-[18px] items-center justify-center mr-5 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                        <View style={s.flexRow}>
+                            <View style={[s.iconBox, isDark ? s.bgSlate800 : s.bgSlate50]}>
                                 <Sparks width={26} height={26} color={isDark ? '#fff' : '#0f172a'} />
                             </View>
-                            <View className="flex-1">
-                                <Text className={`font-bold text-[16px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Type a Topic</Text>
-                                <Text className={`font-medium text-[13px] leading-relaxed mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Generate an AI instant lesson</Text>
+                            <View style={s.flex1}>
+                                <Text style={[s.optionLabel, isDark ? s.textWhite : s.textSlate900]}>Type a Topic</Text>
+                                <Text style={[s.optionDesc, isDark ? s.textSlate400 : s.textSlate500]}>Generate an AI instant lesson</Text>
                             </View>
                             <NavArrowRight width={18} height={18} color={isDark ? '#3f3f46' : '#d1d5db'} />
                         </View>
@@ -190,3 +189,50 @@ export default function DemoScreen() {
         </View>
     );
 }
+
+const s = StyleSheet.create({
+    flex1: { flex: 1, paddingHorizontal: 24, paddingTop: 64 },
+    bgDark: { backgroundColor: '#0f0f11' },
+    bgLight: { backgroundColor: '#fafafa' },
+    
+    backBtn: { marginBottom: 20 },
+    headerSection: { marginBottom: 40 },
+    heroTitle: { fontSize: 40, fontWeight: '700', letterSpacing: -1, lineHeight: 46, marginBottom: 12 },
+    heroSubtitle: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
+    
+    inputWrapper: { borderRadius: 24, borderWidth: 2, paddingHorizontal: 20, marginBottom: 20 },
+    inputWrapperLight: { borderColor: '#f1f5f9', backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+    inputWrapperDark: { borderColor: '#1e293b', backgroundColor: 'rgba(15, 23, 42, 0.5)' },
+    textInput: { fontWeight: '700', fontSize: 16, height: 72 },
+    
+    mainBtn: { height: 56, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
+    mainBtnActive: { backgroundColor: '#8B5CF6', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 5 },
+    mainBtnDisabledLight: { backgroundColor: '#f1f5f9' },
+    mainBtnDisabledDark: { backgroundColor: '#1e293b' },
+    mainBtnText: { fontWeight: '700', fontSize: 15, marginLeft: 8, letterSpacing: 0.5 },
+    
+    optionsGap: { gap: 16 },
+    optionCard: { padding: 24, borderRadius: 24, borderWidth: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+    optionCardLight: { borderColor: '#f1f5f9', backgroundColor: 'white' },
+    optionCardDark: { borderColor: '#1e293b', backgroundColor: 'rgba(15, 23, 42, 0.5)' },
+    
+    flexRow: { flexDirection: 'row', alignItems: 'center' },
+    iconBox: { width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 20 },
+    bgSlate800: { backgroundColor: '#1e293b' },
+    bgSlate50: { backgroundColor: '#f8fafc' },
+    bgSlate100: { backgroundColor: '#f1f5f9' },
+    
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textSlate700: { color: '#334155' },
+    textSlate500: { color: '#64748b' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate600: { color: '#475569' },
+    
+    optionLabel: { fontWeight: '700', fontSize: 16 },
+    optionDesc: { fontWeight: '500', fontSize: 13, lineHeight: 18, marginTop: 4 },
+    
+    dividerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16 },
+    dividerLine: { flex: 1, height: 1 },
+    dividerText: { paddingHorizontal: 20, fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 2 },
+});

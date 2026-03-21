@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
-    ActivityIndicator, Alert, useColorScheme, Animated
+    ActivityIndicator, Alert, useColorScheme, Animated, StyleSheet
 } from 'react-native';
 import { 
     Page, Upload, Sparks, Check, 
@@ -30,6 +30,7 @@ import { TheoryCard } from '@/components/quiz/TheoryCard';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlowBackground } from '@/components/ui/GlowBackground';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & OPTIONS
@@ -313,6 +314,13 @@ export default function GenerateQuizScreen() {
         try {
             const res = await api.post('quizzes/history', payload);
             setIsSaved(true);
+            
+            // Refresh user stats for the dashboard
+            const userRes = await api.get('me');
+            if (userRes.data) {
+                updateUser(userRes.data);
+            }
+
             if (res.data.reward?.earned) {
                 setRewardData(res.data.reward);
                 setIsRewardModalVisible(true);
@@ -346,14 +354,14 @@ export default function GenerateQuizScreen() {
         return (
             <GlowBackground>
                 {/* Header with drawer toggle */}
-                <View style={{ paddingTop: Math.max(insets.top, 8) }} className="px-5 pb-4 flex-row items-center justify-between">
-                    <Text className={`text-[26px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
+                    <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>
                         Build Quiz
                     </Text>
                     <TouchableOpacity
                         onPress={() => navigation.openDrawer()}
                         activeOpacity={0.7}
-                        className={`size-10 rounded-xl items-center justify-center ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}
+                        style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                     >
                         <Menu width={22} height={22} color={isDark ? 'white' : 'black'} />
                     </TouchableOpacity>
@@ -364,189 +372,191 @@ export default function GenerateQuizScreen() {
                     contentContainerStyle={{ padding: 24, paddingBottom: 160, paddingTop: 10 }} 
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Source Selector */}
-                    <View className={`flex-row ${isDark ? 'bg-[#13151B]' : 'bg-slate-100'} rounded-xl p-1 mb-6 border ${isDark ? 'border-transparent' : 'border-slate-100'}`}>
-                        {(['topic', 'file'] as QuizMode[]).map(m => (
-                            <TouchableOpacity 
-                                key={m} 
-                                onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                className={`flex-1 items-center justify-center py-3 rounded-lg ${mode === m ? (isDark ? 'bg-white/10 shadow-sm' : 'bg-white shadow-sm') : ''}`}
-                            >
-                                <Text className={`font-semibold text-[13px] capitalize ${mode === m ? (isDark ? 'text-white' : 'text-slate-900') : 'text-slate-400'}`}>
-                                    {m}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                    {/* Glass Section: Source */}
+                    <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.sectionGlass}>
+                        <View style={s.sectionContent}>
+                            <Text style={s.sectionLabel}>Quiz Source</Text>
+                            <View style={[s.toggleContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
+                                {(['topic', 'file'] as QuizMode[]).map(m => (
+                                    <TouchableOpacity 
+                                        key={m} 
+                                        onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
+                                        style={[s.toggleButton, mode === m && (isDark ? s.toggleActiveDark : s.toggleActiveLight)]}
+                                    >
+                                        <Text style={[s.toggleText, mode === m ? { color: isDark ? '#fff' : '#0f172a' } : { color: '#94a3b8' }]}>
+                                            {m}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
 
-                    {/* Source Input */}
-                    <View className="mb-6">
-                        {mode === 'topic' ? (
-                            <>
-                                <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">Topic</Text>
+                            {mode === 'topic' ? (
                                 <TextInput
-                                    className={`h-[52px] ${isDark ? 'bg-[#13151B] border-transparent text-white' : 'bg-white border-slate-100 text-slate-900'} border-[1.5px] rounded-xl px-5 text-[15px] font-medium`}
+                                    style={[s.input, isDark ? s.inputDark : s.inputLight]}
                                     placeholder="e.g. Nigerian History, Algebra..."
                                     placeholderTextColor="#94a3b8"
                                     value={topic}
                                     onChangeText={setTopic}
                                 />
-                            </>
-                        ) : (
-                            <>
-                                <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">Document</Text>
+                            ) : (
                                 <TouchableOpacity
                                     onPress={handleFileSelect}
                                     disabled={isProcessingFile}
                                     activeOpacity={0.7}
-                                    className={`border-2 border-dashed ${isDark ? 'border-transparent bg-[#13151B]' : 'border-slate-200 bg-white'} rounded-xl p-6 items-center`}
+                                    style={[s.uploadBox, isDark ? s.uploadBoxDark : s.uploadBoxLight]}
                                 >
                                     {isProcessingFile ? (
-                                        <View className="items-center py-2">
+                                        <View style={s.centered}>
                                             <ActivityIndicator size="small" color="#8B5CF6" />
-                                            <Text className="text-[13px] font-medium text-brand-primary mt-4">Analyzing document...</Text>
+                                            <Text style={s.processingText}>Analyzing document...</Text>
                                         </View>
                                     ) : selectedFile ? (
                                         <>
-                                            <View className="bg-brand-primary/10 w-12 h-12 rounded-lg items-center justify-center mb-4">
-                                                <Page width={18} height={18} color="#8B5CF6" />
+                                            <View style={s.uploadIconActive}>
+                                                <Page width={18} height={18} color="#A78BFA" />
                                             </View>
-                                            <Text className={`text-[14px] font-semibold ${isDark ? 'text-white' : 'text-slate-900'} text-center mb-1`}>{selectedFile.name}</Text>
-                                            <Text className="text-[11px] font-medium text-brand-primary uppercase tracking-wider">Ready to generate</Text>
+                                            <Text style={[s.fileName, { color: isDark ? '#fff' : '#0f172a' }]}>{selectedFile.name}</Text>
+                                            <Text style={s.fileReady}>Ready to generate</Text>
                                         </>
                                     ) : (
                                         <>
-                                            <View className={`w-12 h-12 rounded-lg items-center justify-center mb-4 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                                            <View style={[s.uploadIconEmpty, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC' }]}>
                                                 <Upload width={18} height={18} color={isDark ? '#cbd5e1' : '#94a3b8'} />
                                             </View>
-                                            <Text className={`text-[14px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'} mb-1`}>Tap to upload PDF/DOCX</Text>
-                                            <Text className="text-[11px] font-medium text-slate-400">max 5MB • extractable text</Text>
+                                            <Text style={[s.uploadPlaceholder, { color: isDark ? '#94a3b8' : '#64748b' }]}>Tap to upload PDF/DOCX</Text>
+                                            <Text style={s.uploadSubtext}>max 5MB • extractable text</Text>
                                         </>
                                     )}
                                 </TouchableOpacity>
-                            </>
-                        )}
-                    </View>
-
-                    {/* Question Count */}
-                    <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">Total Questions</Text>
-                    <TextInput
-                        className={`h-[52px] ${isDark ? 'bg-[#13151B] border-transparent text-white' : 'bg-white border-slate-100 text-slate-900'} border-[1.5px] rounded-xl px-5 text-[15px] font-medium mb-6`}
-                        keyboardType="number-pad" 
-                        value={questionCount} 
-                        onChangeText={setQuestionCount}
-                    />
-
-                    <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">Difficulty</Text>
-                    <View className="gap-3 mb-6">
-                        {DIFFICULTY_OPTIONS.map((opt) => (
-                            <TouchableOpacity
-                                key={opt.key}
-                                onPress={() => setDifficulty(opt.key as Difficulty)}
-                                activeOpacity={0.8}
-                                className={`flex-row items-center p-4 rounded-xl border-[1.5px] ${
-                                    difficulty === opt.key
-                                        ? 'border-brand-primary bg-brand-primary/5'
-                                        : isDark ? 'border-transparent bg-[#13151B]' : 'border-slate-100 bg-white'
-                                }`}
-                            >
-                                <View className={`w-10 h-10 rounded-lg items-center justify-center mr-4 ${
-                                    difficulty === opt.key ? 'bg-brand-primary' : isDark ? 'bg-white/5' : 'bg-slate-50'
-                                }`}>
-                                    <opt.icon width={18} height={18} color={difficulty === opt.key ? '#fff' : '#8B5CF6'} />
-                                </View>
-                                <View className="flex-1">
-                                    <Text className={`font-semibold text-[14px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{opt.label}</Text>
-                                    <Text className="text-[11px] font-medium text-slate-400">{opt.desc}</Text>
-                                </View>
-                                {difficulty === opt.key && (
-                                    <CheckCircle width={18} height={18} color="#8B5CF6" />
-                                )}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-1">Format</Text>
-                    <View className="gap-3 mb-6">
-                        {FORMAT_OPTIONS.map((opt) => (
-                            <TouchableOpacity
-                                key={opt.key}
-                                onPress={() => setFormat(opt.key as FormatType)}
-                                activeOpacity={0.8}
-                                className={`flex-row items-center p-4 rounded-xl border-[1.5px] ${
-                                    format === opt.key
-                                        ? 'border-brand-primary bg-brand-primary/5'
-                                        : isDark ? 'border-transparent bg-[#13151B]' : 'border-slate-100 bg-white'
-                                }`}
-                            >
-                                <View className={`w-10 h-10 rounded-lg items-center justify-center mr-4 ${
-                                    format === opt.key ? 'bg-brand-primary' : isDark ? 'bg-white/5' : 'bg-slate-50'
-                                }`}>
-                                    <opt.icon width={18} height={18} color={format === opt.key ? '#fff' : '#8B5CF6'} />
-                                </View>
-                                <View className="flex-1">
-                                    <Text className={`font-semibold text-[14px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{opt.label}</Text>
-                                    <Text className="text-[11px] font-medium text-slate-400">{opt.desc}</Text>
-                                </View>
-                                {format === opt.key && (
-                                    <CheckCircle width={18} height={18} color="#8B5CF6" />
-                                )}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    {/* Timer Toggle */}
-                    <View className={`flex-row justify-between items-center p-4 rounded-xl border-[1.5px] ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-100'} mb-4`}>
-                        <View className="flex-1 mr-4">
-                            <Text className={`text-[14px] font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Strict Timer</Text>
-                            <Text className="text-[11px] font-medium text-slate-400 mt-0.5">Auto-submit when time expires</Text>
+                            )}
                         </View>
-                        <TouchableOpacity onPress={() => setTimerEnabled(!timerEnabled)}
-                            className={`w-12 h-7 rounded-full justify-center p-1 transition-colors ${timerEnabled ? 'bg-brand-primary' : (isDark ? 'bg-slate-800' : 'bg-slate-200')}`}>
-                            <Animated.View className="w-5 h-5 rounded-full bg-white shadow-sm" style={{ transform: [{ translateX: timerEnabled ? 20 : 0 }] }} />
-                        </TouchableOpacity>
-                    </View>
+                    </BlurView>
 
-                    {timerEnabled && (
-                        <View className="flex-row items-center mb-6 gap-3">
-                            <TextInput
-                                className={`flex-1 h-[52px] ${isDark ? 'bg-[#13151B] border-transparent text-white' : 'bg-white border-slate-100 text-slate-900'} border-[1.5px] rounded-xl px-5 text-[15px] font-medium`}
-                                keyboardType="number-pad" 
-                                value={timerMinutes} 
-                                onChangeText={setTimerMinutes} 
-                                placeholder="10" 
-                                placeholderTextColor="#94a3b8"
-                            />
-                            <Text className="font-semibold text-slate-400 text-[13px] w-12 text-center">mins</Text>
+                    {/* Glass Section: Configuration */}
+                    <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.sectionGlass}>
+                        <View style={s.sectionContent}>
+                            <Text style={s.sectionLabel}>Configuration</Text>
+                            
+                            <View style={{ marginBottom: 24 }}>
+                                <Text style={s.subLabel}>Number of Questions</Text>
+                                <TextInput
+                                    style={[s.input, isDark ? s.inputDark : s.inputLight]}
+                                    keyboardType="number-pad" 
+                                    value={questionCount} 
+                                    onChangeText={setQuestionCount}
+                                />
+                            </View>
+
+                            <Text style={s.subLabel}>Difficulty Level</Text>
+                            <View style={{ marginBottom: 24 }}>
+                                {DIFFICULTY_OPTIONS.map((opt) => (
+                                    <TouchableOpacity
+                                        key={opt.key}
+                                        onPress={() => setDifficulty(opt.key as Difficulty)}
+                                        activeOpacity={0.8}
+                                        style={[s.difficultyCard, { 
+                                            borderColor: difficulty === opt.key ? '#8B5CF6' : 'rgba(255,255,255,0.05)',
+                                            backgroundColor: difficulty === opt.key ? 'rgba(139,92,246,0.1)' : 'rgba(255,255,255,0.05)'
+                                        }]}
+                                    >
+                                        <View style={[s.iconBox, { backgroundColor: difficulty === opt.key ? '#8B5CF6' : 'rgba(255,255,255,0.05)' }]}>
+                                            <opt.icon width={18} height={18} color={difficulty === opt.key ? '#fff' : '#A78BFA'} />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[s.cardTitle, { color: isDark ? '#fff' : '#0f172a' }]}>{opt.label}</Text>
+                                            <Text style={s.cardDesc}>{opt.desc}</Text>
+                                        </View>
+                                        {difficulty === opt.key && (
+                                            <CheckCircle width={18} height={18} color="#A78BFA" />
+                                        )}
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <Text style={s.subLabel}>Question Format</Text>
+                            <View>
+                                {FORMAT_OPTIONS.map((opt) => (
+                                    <TouchableOpacity
+                                        key={opt.key}
+                                        onPress={() => setFormat(opt.key as FormatType)}
+                                        activeOpacity={0.8}
+                                        style={[s.difficultyCard, { 
+                                            borderColor: format === opt.key ? '#8B5CF6' : 'rgba(255,255,255,0.05)',
+                                            backgroundColor: format === opt.key ? 'rgba(139,92,246,0.1)' : 'rgba(255,255,255,0.05)'
+                                        }]}
+                                    >
+                                        <View style={[s.iconBox, { backgroundColor: format === opt.key ? '#8B5CF6' : 'rgba(255,255,255,0.05)' }]}>
+                                            <opt.icon width={18} height={18} color={format === opt.key ? '#fff' : '#A78BFA'} />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[s.cardTitle, { color: isDark ? '#fff' : '#0f172a' }]}>{opt.label}</Text>
+                                            <Text style={s.cardDesc}>{opt.desc}</Text>
+                                        </View>
+                                        {format === opt.key && (
+                                            <CheckCircle width={18} height={18} color="#A78BFA" />
+                                        )}
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
-                    )}
+                    </BlurView>
+
+                    {/* Timer Glass Section */}
+                    <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.sectionGlass}>
+                        <View style={s.sectionContent}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <View style={{ flex: 1, marginRight: 16 }}>
+                                    <Text style={[s.cardTitle, { color: isDark ? '#fff' : '#0f172a' }]}>Strict Timer</Text>
+                                    <Text style={s.cardDesc}>Auto-submit when time expires</Text>
+                                </View>
+                                <TouchableOpacity onPress={() => setTimerEnabled(!timerEnabled)}
+                                    style={[{ width: 48, height: 28, borderRadius: 14, justifyContent: 'center', padding: 4 }, { backgroundColor: timerEnabled ? '#8B5CF6' : (isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0') }]}>
+                                    <Animated.View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff', transform: [{ translateX: timerEnabled ? 20 : 0 }] }} />
+                                </TouchableOpacity>
+                            </View>
+
+                            {timerEnabled && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 12 }}>
+                                    <TextInput
+                                        style={[s.input, isDark ? s.inputDark : s.inputLight, { flex: 1 }]}
+                                        keyboardType="number-pad" 
+                                        value={timerMinutes} 
+                                        onChangeText={setTimerMinutes} 
+                                        placeholder="10" 
+                                        placeholderTextColor="#94a3b8"
+                                    />
+                                    <Text style={[s.toggleText, { color: '#94a3b8', width: 48, textAlign: 'center' }]}>mins</Text>
+                                </View>
+                            )}
+                        </View>
+                    </BlurView>
                 </ScrollView>
 
                 {/* Glassmorphic Sticky Footer */}
                 <BlurView 
                     intensity={80} 
                     tint={isDark ? "dark" : "light"} 
-                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, paddingBottom: insets.bottom || 24, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                    style={[s.footer, { paddingBottom: insets.bottom || 24, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
                 >
                     {isLoading ? (
-                        <View className="bg-brand-primary/5 dark:bg-brand-primary/10 rounded-[28px] p-5 border-2 border-brand-primary/20 items-center overflow-hidden">
-                            <View className="mb-4">
-                                <ActivityIndicator size="small" color="#8B5CF6" />
+                        <View style={[s.loadingBanner, { backgroundColor: 'rgba(139,92,246,0.05)', borderColor: 'rgba(139,92,246,0.2)' }]}>
+                            <View style={{ marginBottom: 16 }}>
+                                <ActivityIndicator size="small" color="#A78BFA" />
                             </View>
-                            <Text className="text-brand-primary font-black text-lg tracking-tight mb-1 text-center">{loadingStage}</Text>
-                            <Text className="text-slate-500 dark:text-slate-400 font-medium text-[11px] text-center px-2">
+                            <Text style={[s.stageText, { color: '#A78BFA' }]}>{loadingStage}</Text>
+                            <Text style={{ textAlign: 'center', color: '#64748b', fontSize: 11, fontWeight: '500', paddingHorizontal: 8 }}>
                                 Usually takes 15-30s.
                             </Text>
-                            <View className="flex-row gap-1.5 mt-4 w-full px-2">
-                                {PROGRESS_STAGES.map((s, i) => {
+                            <View style={{ flexDirection: 'row', gap: 6, marginTop: 16, width: '100%', paddingHorizontal: 8 }}>
+                                {PROGRESS_STAGES.map((st, i) => {
                                     const stages = mode === 'file' ? LOADING_STAGES_FILE : LOADING_STAGES_TOPIC;
                                     const currentIdx = stages.indexOf(loadingStage);
                                     const isComplete = i < currentIdx;
                                     const isActive = i === currentIdx;
                                     return (
-                                        <View key={i} className="flex-1 h-1.5 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800">
+                                        <View key={i} style={{ flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.1)' }}>
                                             {(isComplete || isActive) && (
-                                                <View className={`h-full ${isComplete ? 'bg-brand-primary' : 'bg-brand-primary/60'}`} style={{ width: isComplete ? '100%' : '60%' }} />
+                                                <View style={{ height: '100%', width: isComplete ? '100%' : '60%', backgroundColor: isComplete ? '#8B5CF6' : 'rgba(139,92,246,0.6)' }} />
                                             )}
                                         </View>
                                     );
@@ -557,13 +567,20 @@ export default function GenerateQuizScreen() {
                         <>
                             <TouchableOpacity
                                 onPress={handleGenerate}
-                                className="bg-[#8B5CF6] rounded-xl py-4 items-center flex-row justify-center shadow-lg shadow-[#8B5CF6]/20"
                                 activeOpacity={0.8}
+                                style={s.generateBtn}
                             >
-                                <Sparks width={18} height={18} color="#fff" />
-                                <Text className="text-white font-black ml-2 text-[15px]">Generate Quiz</Text>
+                                <LinearGradient
+                                    colors={['#8B5CF6', '#6366F1']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={s.generateBtnContent}
+                                >
+                                    <Sparks width={18} height={18} color="#fff" />
+                                    <Text style={s.btnText}>Generate Quiz</Text>
+                                </LinearGradient>
                             </TouchableOpacity>
-                            <Text className="text-center text-slate-400 font-bold text-[11px] uppercase tracking-widest mt-4">
+                            <Text style={s.costText}>
                                 Estimated Cost: {parseInt(questionCount) || 10} Credits | Max 5MB
                             </Text>
                         </>
@@ -576,26 +593,26 @@ export default function GenerateQuizScreen() {
     // ── QUIZ VIEW ───────────────────────────────────────────────────────────────
     if (questions.length > 0 && totalAnswered < questions.length) {
         return (
-            <View className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
-                {/* Quiz header managed by navigation */}
-
+            <GlowBackground>
                 {/* Progress Header */}
-                <View className={`px-5 py-4 flex-row items-center justify-between border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                    <View className="flex-row items-center">
-                        <View className={`w-8 h-8 rounded-lg items-center justify-center mr-3 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                            <Text className={`font-semibold text-[12px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{totalAnswered + 1}</Text>
+                <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={[s.quizHeader, { paddingTop: Math.max(insets.top, 8) }]}>
+                    <View style={s.quizHeaderContent}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <View style={[s.quizNumBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}>
+                                <Text style={[s.quizNumText, { color: isDark ? '#fff' : '#0f172a' }]}>{totalAnswered + 1}</Text>
+                            </View>
+                            <Text style={s.quizProgressLabel}>Question {totalAnswered + 1} of {questions.length}</Text>
                         </View>
-                        <Text className="text-slate-400 font-medium text-[12px] uppercase tracking-wider">Question of {questions.length}</Text>
+                        
+                        {timerEnabled && timeLeft > 0 && (
+                            <View style={[s.timerBadge, timeLeft < 60 ? s.timerCritical : (isDark ? s.timerDark : s.timerLight)]}>
+                                <Text style={[s.timerValue, timeLeft < 60 ? { color: '#f87171' } : (isDark ? { color: '#cbd5e1' } : { color: '#475569' })]}>
+                                    {formatTime(timeLeft)}
+                                </Text>
+                            </View>
+                        )}
                     </View>
-                    
-                    {timerEnabled && timeLeft > 0 && (
-                        <View className={`px-3 py-1.5 rounded-lg border ${timeLeft < 60 ? 'border-red-500 bg-red-500/5' : (isDark ? 'border-slate-800 bg-[#161618]' : 'border-slate-100 bg-white')}`}>
-                            <Text className={`font-semibold text-[12px] ${timeLeft < 60 ? 'text-red-500' : (isDark ? 'text-slate-400' : 'text-slate-500')}`}>
-                                {formatTime(timeLeft)}
-                            </Text>
-                        </View>
-                    )}
-                </View>
+                </BlurView>
 
                 <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
                     {questions.map((q, qi) =>
@@ -606,7 +623,7 @@ export default function GenerateQuizScreen() {
                         )
                     )}
                 </ScrollView>
-            </View>
+            </GlowBackground>
         );
     }
 
@@ -621,55 +638,58 @@ export default function GenerateQuizScreen() {
     const remark = getRemark(percentage);
 
     return (
-        <View className={`flex-1 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
-            {/* Results header managed by navigation */}
-
-            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 150 }}>
-                {/* Score Header */}
-                <View className="items-center py-8">
-                    <View className="w-20 h-20 bg-brand-primary/10 rounded-xl items-center justify-center mb-5">
-                        <remark.icon width={40} height={40} color="#8B5CF6" />
+        <GlowBackground>
+            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 160, paddingTop: insets.top + 20 }} showsVerticalScrollIndicator={false}>
+                {/* Score Header Glass Card */}
+                <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.resultsHeader}>
+                    <View style={s.resultsIconBox}>
+                        <remark.icon width={36} height={36} color="#A78BFA" />
                     </View>
-                    <Text className="text-brand-primary font-bold text-[12px] uppercase tracking-widest mb-2">{remark.title}</Text>
-                    <Text className={`text-[36px] font-semibold tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>{percentage}%</Text>
-                    <Text className="text-slate-500 font-medium text-[14px] mt-2 text-center px-4">{remark.subtitle}</Text>
+                    <Text style={s.resultsTitle}>{remark.title}</Text>
+                    <Text style={[s.scoreValue, { color: isDark ? '#fff' : '#0f172a' }]}>{percentage}%</Text>
+                    <Text style={s.resultsSubtitle}>{remark.subtitle}</Text>
 
                     {/* Meta Info */}
-                    <View className="flex-row mt-6 gap-3">
-                        <View className={`px-4 py-2 rounded-lg flex-row items-center border ${isDark ? 'bg-[#161618] border-transparent' : 'bg-white border-slate-100 shadow-sm'}`}>
+                    <View style={s.resultsMeta}>
+                        <View style={s.metaCard}>
                             <CheckCircle width={16} height={16} color="#4ADE80" />
-                            <Text className={`font-semibold text-[12px] ml-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{correctCount} Correct</Text>
+                            <Text style={[s.metaText, { color: isDark ? '#cbd5e1' : '#334155' }]}>{correctCount} OK</Text>
                         </View>
-                        <View className={`px-4 py-2 rounded-lg flex-row items-center border ${isDark ? 'bg-[#161618] border-transparent' : 'bg-white border-slate-100 shadow-sm'}`}>
-                            <Timer width={16} height={16} color="#6366f1" />
-                            <Text className={`font-semibold text-[12px] ml-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                        <View style={s.metaCard}>
+                            <Timer width={16} height={16} color="#A78BFA" />
+                            <Text style={[s.metaText, { color: isDark ? '#cbd5e1' : '#334155' }]}>
                                 {timerEnabled ? formatTime(((parseInt(timerMinutes) || 10) * 60) - timeLeft) : 'No Timer'}
                             </Text>
                         </View>
                     </View>
-                </View>
+                </BlurView>
 
                 {/* Review List */}
-                <Text className={`text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-4 ml-1`}>Review Questions</Text>
+                <Text style={s.sectionHeader}>Review Questions</Text>
                 {questions.map((q, qi) => {
                     const isTheory = q.question_type === 'essay';
                     const isCorrect = isTheory ? !!theoryResults[qi] : selectedAnswers[qi] === q.correct_answer;
                     return (
-                        <View key={qi} className={`p-4 rounded-xl border mb-3 flex-row items-center ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100'}`}>
-                            <View className={`w-8 h-8 rounded-lg items-center justify-center mr-4 ${isCorrect ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                        <BlurView 
+                            key={qi} 
+                            intensity={10} 
+                            tint={isDark ? "dark" : "light"} 
+                            style={[s.reviewCard, isDark ? s.reviewCardDark : s.reviewCardLight]}
+                        >
+                            <View style={[s.reviewStatusBox, { backgroundColor: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }]}>
                                 {isCorrect ? (
                                     <Check width={18} height={18} color="#10b981" />
                                 ) : (
                                     <Xmark width={18} height={18} color="#ef4444" />
                                 )}
                             </View>
-                            <View className="flex-1">
-                                <Text className={`font-semibold text-[13px] ${isDark ? 'text-white' : 'text-slate-900'}`} numberOfLines={1}>{q.question_text}</Text>
-                                <Text className="text-slate-400 text-[11px] mt-0.5" numberOfLines={1}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[s.reviewQuestion, { color: isDark ? '#fff' : '#0f172a' }]} numberOfLines={1}>{q.question_text}</Text>
+                                <Text style={s.reviewMeta} numberOfLines={1}>
                                     {isTheory ? (isCorrect ? "Mastered" : "Review Topic") : (isCorrect ? `Correct Answer` : `Missed Question`)}
                                 </Text>
                             </View>
-                        </View>
+                        </BlurView>
                     );
                 })}
             </ScrollView>
@@ -685,20 +705,24 @@ export default function GenerateQuizScreen() {
             </View>
 
             {/* Actions Footer */}
-            <View className={`absolute bottom-0 left-0 right-0 p-5 pb-8 border-t ${isDark ? 'bg-[#0f0f11]/95 border-slate-800' : 'bg-white/95 border-slate-100'}`}>
-                <View className="flex-row gap-3 mb-4">
+            <BlurView 
+                intensity={80} 
+                tint={isDark ? "dark" : "light"} 
+                style={[s.footer, { paddingBottom: insets.bottom || 24, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+            >
+                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
                     <TouchableOpacity
                         onPress={handleShare}
                         disabled={isSharing}
                         activeOpacity={0.8}
-                        className={`h-[48px] rounded-xl flex-1 items-center justify-center flex-row border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100'}`}
+                        style={[s.shareBtn, isDark ? s.shareBtnDark : s.shareBtnLight]}
                     >
                         {isSharing ? (
-                            <ActivityIndicator size="small" color="#8B5CF6" />
+                            <ActivityIndicator size="small" color="#A78BFA" />
                         ) : (
                             <>
                                 <ShareAndroid width={18} height={18} color={isDark ? '#fff' : '#0f172a'} />
-                                <Text className={`font-bold text-[15px] ml-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Share</Text>
+                                <Text style={[s.actionBtnText, { color: isDark ? '#fff' : '#0f172a' }]}>Share</Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -707,31 +731,125 @@ export default function GenerateQuizScreen() {
                         onPress={handleExportPDF}
                         disabled={isExporting}
                         activeOpacity={0.8}
-                        className="h-[48px] bg-brand-primary rounded-xl flex-1 items-center justify-center flex-row"
+                        style={s.exportBtn}
                     >
-                        {isExporting ? (
-                            <ActivityIndicator size="small" color="white" />
-                        ) : (
-                            <>
-                                <Page width={18} height={18} color="white" />
-                                <Text className="text-white font-bold text-[15px] ml-2">Export</Text>
-                            </>
-                        )}
+                        <LinearGradient
+                            colors={['#8B5CF6', '#6366F1']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={s.exportBtnContent}
+                        >
+                            {isExporting ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <>
+                                    <Page width={18} height={18} color="white" />
+                                    <Text style={s.exportBtnText}>Export</Text>
+                                </>
+                            )}
+                        </LinearGradient>
                     </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity
                     onPress={() => { setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); if (timerRef.current) clearInterval(timerRef.current); }}
                     activeOpacity={0.8}
-                    className={`h-[48px] rounded-xl items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}
+                    style={[s.returnBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}
                 >
-                    <Text className={`font-bold text-[15px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Return Home</Text>
+                    <Text style={[s.actionBtnText, { color: isDark ? '#fff' : '#0f172a' }]}>Return Home</Text>
                 </TouchableOpacity>
-            </View>
+            </BlurView>
 
             <RewardModal isVisible={isRewardModalVisible} onClose={() => setIsRewardModalVisible(false)} reward={rewardData} />
             <OutOfCreditsModal visible={showOutOfCredits} onDismiss={() => setShowOutOfCredits(false)} featureAttempted="quiz" />
-        </View>
+        </GlowBackground>
     );
 }
+
+const s = StyleSheet.create({
+    sectionGlass: { borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: 24 },
+    sectionContent: { padding: 16 },
+    sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, color: '#94a3b8', marginBottom: 16, marginLeft: 4 },
+    toggleContainer: { flexDirection: 'row', borderRadius: 16, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+    toggleButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12 },
+    toggleActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    toggleActiveLight: { backgroundColor: '#fff', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+    toggleText: { fontSize: 13, fontWeight: '700', textTransform: 'capitalize' },
+    input: { height: 56, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', borderRadius: 16, paddingHorizontal: 20, fontSize: 15, fontWeight: '500' },
+    inputDark: { backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff' },
+    inputLight: { backgroundColor: '#fff', color: '#0f172a' },
+    uploadBox: { borderStyle: 'dashed', borderWidth: 2, borderRadius: 20, padding: 24, alignItems: 'center' },
+    uploadBoxDark: { borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' },
+    uploadBoxLight: { borderColor: '#E2E8F0', backgroundColor: '#fff' },
+    centered: { alignItems: 'center', paddingVertical: 8 },
+    processingText: { fontSize: 13, fontWeight: '600', color: '#A78BFA', marginTop: 16 },
+    uploadIconActive: { backgroundColor: 'rgba(139,92,246,0.2)', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    fileName: { fontSize: 14, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
+    fileReady: { fontSize: 11, fontWeight: '700', color: '#A78BFA', textTransform: 'uppercase', letterSpacing: 1 },
+    uploadIconEmpty: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    uploadPlaceholder: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
+    uploadSubtext: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
+    // Configuration
+    subLabel: { fontSize: 12, fontWeight: '500', color: '#94a3b8', marginBottom: 8, marginLeft: 4 },
+    difficultyCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 10 },
+    iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    cardTitle: { fontSize: 14, fontWeight: '700' },
+    cardDesc: { fontSize: 10, fontWeight: '500', color: '#64748b' },
+    // Footer
+    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
+    generateBtn: { borderRadius: 16, overflow: 'hidden' },
+    generateBtnContent: { paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
+    btnText: { color: '#fff', fontWeight: '900', fontSize: 15, marginLeft: 8 },
+    costText: { textAlign: 'center', color: '#94a3b8', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 16 },
+    loadingBanner: { borderRadius: 28, padding: 20, borderWidth: 2, alignItems: 'center', overflow: 'hidden' },
+    stageText: { fontSize: 18, fontWeight: '900', letterSpacing: -0.5, marginBottom: 4, textAlign: 'center' },
+
+    // Shared Styles
+    header: { paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerTitle: { fontSize: 26, fontWeight: '700', letterSpacing: -1 },
+    menuBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    menuBtnLight: { backgroundColor: '#F1F5F9' },
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    sectionHeader: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, color: '#94a3b8', marginBottom: 16, marginLeft: 4 },
+
+    // Quiz View
+    quizHeader: { paddingTop: 60, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
+    quizHeaderContent: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, justifyContent: 'space-between' },
+    quitBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)' },
+    progressContainer: { flex: 1, alignItems: 'center' },
+    progressText: { fontWeight: '900', fontSize: 17 },
+    timerBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1 },
+    timerDark: { borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' },
+    timerLight: { borderColor: '#E2E8F0', backgroundColor: '#fff' },
+    timerCritical: { borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)' },
+    timerValue: { fontWeight: '700', fontSize: 12 },
+    quizNumBox: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+    quizNumText: { fontWeight: '600', fontSize: 13 },
+    quizProgressLabel: { color: '#94a3b8', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 },
+    // Results View
+    resultsHeader: { borderRadius: 32, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', padding: 32, alignItems: 'center', marginBottom: 32 },
+    resultsIconBox: { width: 80, height: 80, backgroundColor: 'rgba(139,92,246,0.2)', borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)' },
+    resultsTitle: { color: '#A78BFA', fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 },
+    scoreValue: { fontSize: 48, fontWeight: '900', letterSpacing: -2 },
+    resultsSubtitle: { color: '#64748b', fontWeight: '500', fontSize: 14, marginTop: 8, textAlign: 'center', paddingHorizontal: 16, lineHeight: 20 },
+    resultsMeta: { flexDirection: 'row', marginTop: 32, gap: 12, width: '100%' },
+    metaCard: { flex: 1, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+    metaText: { fontWeight: '700', fontSize: 12, marginLeft: 8 },
+    reviewCard: { padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 12, overflow: 'hidden', flexDirection: 'row', alignItems: 'center' },
+    reviewCardDark: { borderColor: 'rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.05)' },
+    reviewCardLight: { backgroundColor: '#fff', borderColor: '#F1F5F9' },
+    reviewStatusBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    reviewQuestion: { fontWeight: '600', fontSize: 14 },
+    reviewMeta: { color: '#64748b', fontSize: 11, fontWeight: '500', marginTop: 2 },
+    shareBtn: { height: 52, borderRadius: 16, flex: 1, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', borderWidth: 1 },
+    shareBtnDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.05)' },
+    shareBtnLight: { backgroundColor: '#fff', borderColor: '#F1F5F9' },
+    exportBtn: { height: 52, overflow: 'hidden', borderRadius: 16, flex: 1 },
+    exportBtnContent: { height: '100%', alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
+    exportBtnText: { color: '#fff', fontWeight: '700', fontSize: 15, marginLeft: 8 },
+    actionBtnText: { fontWeight: '700', fontSize: 15, marginLeft: 8 },
+    returnBtn: { height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+});
 

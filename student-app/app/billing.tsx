@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert, useColorScheme } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert, useColorScheme, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Stack, router } from 'expo-router';
@@ -21,15 +21,15 @@ interface Invoice {
 
 function SkeletonCard({ isDark }: { isDark: boolean }) {
     return (
-        <View className={`p-6 rounded-[24px] border mb-4 flex-row justify-between ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-100 shadow-sm'}`}>
+        <View style={[s.skeletonCard, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
             <View>
-                <View className={`h-3 w-24 rounded-full mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
-                <View className={`h-6 w-32 rounded-full mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
-                <View className={`h-3 w-20 rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+                <View style={[s.skeletonLineSmall, isDark ? s.bgSlate800 : s.bgSlate100, { marginBottom: 16 }]} />
+                <View style={[s.skeletonLineMedium, isDark ? s.bgSlate800 : s.bgSlate100, { marginBottom: 16 }]} />
+                <View style={[s.skeletonLineTiny, isDark ? s.bgSlate800 : s.bgSlate100]} />
             </View>
-            <View className="items-end">
-                <View className={`h-8 w-20 rounded-lg mb-5 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
-                <View className={`h-4 w-12 rounded-full ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+            <View style={s.itemsEnd}>
+                <View style={[s.skeletonBoxSmall, isDark ? s.bgSlate800 : s.bgSlate100, { marginBottom: 20 }]} />
+                <View style={[s.skeletonLineTiny, isDark ? s.bgSlate800 : s.bgSlate100, { width: 48 }]} />
             </View>
         </View>
     );
@@ -99,110 +99,179 @@ export default function BillingHistoryScreen() {
             />
 
             {isLoading ? (
-                <View className="flex-1 px-6 pt-8">
-                    <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-6 ml-1">Loading History</Text>
+                <View style={s.loadingContainer}>
+                    <Text style={s.loadingLabel}>Loading History</Text>
                     <SkeletonCard isDark={isDark} />
                     <SkeletonCard isDark={isDark} />
                 </View>
             ) : error ? (
-                <View className="flex-1 justify-center items-center p-6">
-                    <View className={`size-24 rounded-[24px] items-center justify-center mb-6 border ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-100 shadow-sm'}`}>
+                <View style={s.errorContainer}>
+                    <View style={[s.errorIconBox, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
                         <WarningTriangle width={40} height={40} color="#ef4444" />
                     </View>
-                    <Text className={`font-bold mb-3 text-[20px] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Unable to load</Text>
-                    <Text className="text-slate-500 text-center mb-8 font-medium text-[14px] leading-relaxed">
+                    <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Unable to load</Text>
+                    <Text style={s.errorSubtitle}>
                         We couldn't retrieve your billing history. Please check your connection.
                     </Text>
                     <TouchableOpacity 
                         onPress={() => refetch()}
-                        className="h-[52px] w-full max-w-[240px] rounded-[20px] bg-brand-primary items-center justify-center flex-row"
+                        style={s.retryBtn}
                     >
                         <Refresh width={18} height={18} color="white" />
-                        <Text className="text-white font-bold text-[15px] ml-2">Try Again</Text>
+                        <Text style={s.retryBtnText}>Try Again</Text>
                     </TouchableOpacity>
                 </View>
             ) : (
                 <ScrollView
-                    className="flex-1 pt-6"
-                    contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 60 }}
+                    style={s.flex1}
+                    contentContainerStyle={s.scrollContent}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? 'white' : '#121212'} />}
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Page Header */}
-                    <View className="mb-8 mt-2 px-2">
-                        <Text className={`text-[36px] font-bold tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Billing</Text>
-                        <Text className="text-slate-500 font-medium text-[15px]">
+                    <View style={s.pageHeader}>
+                        <Text style={[s.pageTitle, isDark ? s.textWhite : s.textSlate900]}>Billing</Text>
+                        <Text style={s.pageSubtitle}>
                             Manage your subscription and view past receipts.
                         </Text>
                     </View>
 
                     {/* Current Plan Overview */}
-                    <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-5 ml-1">Subscription Status</Text>
-                    <View className={`rounded-[24px] p-6 border mb-10 ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-100 shadow-sm'}`}>
-                        <View className="flex-row items-center justify-between mb-6">
-                            <View className={`size-12 rounded-xl items-center justify-center ${user?.is_unlimited ? 'bg-brand-primary/20' : (isDark ? 'bg-slate-800' : 'bg-slate-100')}`}>
+                    <Text style={s.sectionLabel}>Subscription Status</Text>
+                    <View style={[s.planCard, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
+                        <View style={s.planHeaderRow}>
+                            <View style={[s.planIconBox, user?.is_unlimited ? s.bgBrandSoft : (isDark ? s.bgSlate800 : s.bgSlate100)]}>
                                 <Sparks width={18} height={18} color={user?.is_unlimited ? "#8B5CF6" : "#94a3b8"} />
                             </View>
                             <TouchableOpacity
                                 onPress={() => router.push('/upgrade')}
-                                className={`px-5 py-2.5 rounded-lg border ${isDark ? 'bg-white border-white' : 'bg-slate-950 border-slate-950'}`}
+                                style={[s.planBadge, isDark ? s.bgWhite : s.bgSlate950]}
                             >
-                                <Text className={`font-bold text-[11px] uppercase tracking-widest ${isDark ? 'text-slate-900' : 'text-white'}`}>Plans</Text>
+                                <Text style={[s.planBadgeText, isDark ? s.textSlate900 : s.textWhite]}>Plans</Text>
                             </TouchableOpacity>
                         </View>
-                        <Text className={`font-bold text-[22px] tracking-tight mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        <Text style={[s.planTitle, isDark ? s.textWhite : s.textSlate900]}>
                             {user?.is_unlimited ? 'Unlimited Pro' : 'Free Academic'}
                         </Text>
-                        <Text className="text-slate-500 font-bold text-[13px]">
+                        <Text style={s.planSubtitle}>
                             {user?.is_unlimited ? 'Fully unlocked learning companion' : `${user?.credits ?? 0} Credits remaining`}
                         </Text>
                     </View>
 
-                    <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400 mb-5 ml-1">Payment History</Text>
+                    <Text style={s.sectionLabel}>Payment History</Text>
 
                     {data?.data?.length === 0 ? (
-                        <View className={`items-center py-20 rounded-[24px] border-2 border-dashed ${isDark ? 'bg-black/20 border-transparent' : 'bg-white border-slate-100'}`}>
-                            <View className={`size-16 rounded-[28px] items-center justify-center mb-5 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                        <View style={[s.emptyContainer, isDark ? s.bgDarkCardSoft : s.bgWhite, !isDark && s.borderSlate100]}>
+                            <View style={[s.emptyIconBox, isDark ? s.bgSlate800 : s.bgSlate50]}>
                                 <Page width={32} height={32} color={isDark ? '#cbd5e1' : '#64748b'} />
                             </View>
-                            <Text className={`font-bold text-[18px] tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>No Invoices</Text>
-                            <Text className="text-slate-500 font-medium text-[13px] text-center px-12 leading-relaxed">
+                            <Text style={[s.emptyTitle, isDark ? s.textWhite : s.textSlate900]}>No Invoices</Text>
+                            <Text style={s.emptySubtitle}>
                                 Once you start a subscription or buy credits, your receipts will appear here.
                             </Text>
                         </View>
                     ) : (
                         data?.data?.map((invoice: Invoice) => (
-                            <View key={invoice.id} className={`p-6 rounded-[24px] border mb-5 flex-row items-center justify-between ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-100 shadow-sm'}`}>
-                                <View className="flex-1 pr-4">
-                                    <View className="flex-row items-center mb-1">
-                                        <Text className={`font-bold text-[16px] tracking-tight mr-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            <View key={invoice.id} style={[s.invoiceCard, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
+                                <View style={s.flex1}>
+                                    <View style={s.invoiceTopRow}>
+                                        <Text style={[s.invoiceAmount, isDark ? s.textWhite : s.textSlate900]}>
                                             {invoice.currency} {Number(invoice.amount).toLocaleString()}
                                         </Text>
-                                        <View className={`px-2 py-0.5 rounded-lg border ${invoice.status === 'paid' ? 'border-emerald-500/20 bg-emerald-500/10' : 'border-slate-800 bg-slate-800/20'}`}>
-                                            <Text className={`text-[9px] font-bold uppercase tracking-widest ${invoice.status === 'paid' ? 'text-emerald-500' : 'text-slate-500'}`}>
+                                        <View style={[s.statusBadge, invoice.status === 'paid' ? s.statusPaid : s.statusOther]}>
+                                            <Text style={[s.statusText, invoice.status === 'paid' ? s.statusTextPaid : s.statusTextOther]}>
                                                 {invoice.status}
                                             </Text>
                                         </View>
                                     </View>
-                                    <Text className="text-slate-500 font-bold text-[11px] uppercase tracking-[0.1em] mb-4">
+                                    <Text style={s.invoiceDate}>
                                         {new Date(invoice.invoice_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </Text>
-                                    <Text className="text-[10px] font-bold text-slate-400/60 uppercase tracking-widest">#{invoice.invoice_number}</Text>
+                                    <Text style={s.invoiceNumber}>#{invoice.invoice_number}</Text>
                                 </View>
 
                                 <TouchableOpacity
                                     onPress={() => handleDownload(invoice.id)}
                                     activeOpacity={0.7}
-                                    className={`size-12 rounded-xl items-center justify-center border ${isDark ? 'bg-black/20 border-transparent' : 'bg-slate-50 border-slate-200'}`}
+                                    style={[s.downloadBtn, isDark ? s.bgDarkCardSoft : s.bgSlate50, !isDark && s.borderSlate200]}
                                 >
                                     <Download width={18} height={18} color={isDark ? 'white' : '#121212'} />
                                 </TouchableOpacity>
                             </View>
                         ))
                     )}
-                    <View className="h-10" />
+                    <View style={{ height: 40 }} />
                 </ScrollView>
             )}
         </GlowBackground>
     );
 }
+
+const s = StyleSheet.create({
+    flex1: { flex: 1 },
+    loadingContainer: { flex: 1, paddingHorizontal: 24, paddingTop: 32 },
+    loadingLabel: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: '700', color: '#94a3b8', marginBottom: 24, marginLeft: 4 },
+    
+    skeletonCard: { padding: 24, borderRadius: 24, borderWidth: 1, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between' },
+    skeletonLineSmall: { height: 12, width: 96, borderRadius: 99 },
+    skeletonLineMedium: { height: 24, width: 128, borderRadius: 99 },
+    skeletonLineTiny: { height: 12, width: 80, borderRadius: 99 },
+    skeletonBoxSmall: { height: 32, width: 80, borderRadius: 8 },
+    
+    bgDarkCard: { backgroundColor: '#13151B', borderColor: 'transparent' },
+    bgDarkCardSoft: { backgroundColor: 'rgba(0,0,0,0.2)', borderColor: 'transparent' },
+    bgWhiteCard: { backgroundColor: 'white', borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+    bgWhite: { backgroundColor: 'white' },
+    bgSlate800: { backgroundColor: '#1e293b' },
+    bgSlate100: { backgroundColor: '#f1f5f9' },
+    bgSlate50: { backgroundColor: '#f8fafc' },
+    bgSlate950: { backgroundColor: '#020617' },
+    bgBrandSoft: { backgroundColor: 'rgba(139, 92, 246, 0.2)' },
+    
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    
+    errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+    errorIconBox: { width: 96, height: 96, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 24, borderWidth: 1 },
+    errorTitle: { fontWeight: '700', marginBottom: 12, fontSize: 20, letterSpacing: -0.5 },
+    errorSubtitle: { color: '#64748b', textAlign: 'center', marginBottom: 32, fontWeight: '500', fontSize: 14, lineHeight: 22 },
+    retryBtn: { height: 52, width: '100%', maxWidth: 240, borderRadius: 20, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
+    retryBtnText: { color: 'white', fontWeight: '700', fontSize: 15, marginLeft: 8 },
+    
+    scrollContent: { paddingHorizontal: 24, paddingBottom: 60, paddingTop: 24 },
+    pageHeader: { marginBottom: 32, marginTop: 8, paddingHorizontal: 8 },
+    pageTitle: { fontSize: 36, fontWeight: '700', letterSpacing: -1, marginBottom: 8 },
+    pageSubtitle: { color: '#64748b', fontWeight: '500', fontSize: 15 },
+    
+    sectionLabel: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: '700', color: '#94a3b8', marginBottom: 20, marginLeft: 4 },
+    
+    planCard: { borderRadius: 24, padding: 24, borderWidth: 1, marginBottom: 40 },
+    planHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
+    planIconBox: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    planBadge: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, borderWidth: 1 },
+    planBadgeText: { fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5 },
+    planTitle: { fontWeight: '700', fontSize: 22, letterSpacing: -0.5, marginBottom: 4 },
+    planSubtitle: { color: '#64748b', fontWeight: '700', fontSize: 13 },
+    
+    emptyContainer: { alignItems: 'center', paddingVertical: 80, borderRadius: 24, borderWidth: 2, borderStyle: 'dashed' },
+    emptyIconBox: { width: 64, height: 64, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    emptyTitle: { fontWeight: '700', fontSize: 18, letterSpacing: -0.5, marginBottom: 8 },
+    emptySubtitle: { color: '#64748b', fontWeight: '500', fontSize: 13, textAlign: 'center', paddingHorizontal: 48, lineHeight: 20 },
+    
+    invoiceCard: { padding: 24, borderRadius: 24, borderWidth: 1, marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    invoiceTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+    invoiceAmount: { fontWeight: '700', fontSize: 16, letterSpacing: -0.5, marginRight: 12 },
+    statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, borderWidth: 1 },
+    statusPaid: { borderColor: 'rgba(16, 185, 129, 0.2)', backgroundColor: 'rgba(16, 185, 129, 0.1)' },
+    statusOther: { borderColor: '#1e293b', backgroundColor: 'rgba(30, 41, 59, 0.2)' },
+    statusText: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
+    statusTextPaid: { color: '#10b981' },
+    statusTextOther: { color: '#64748b' },
+    invoiceDate: { color: '#64748b', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
+    invoiceNumber: { fontSize: 10, fontWeight: '700', color: 'rgba(148, 163, 184, 0.6)', textTransform: 'uppercase', letterSpacing: 1.5 },
+    
+    downloadBtn: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+    borderSlate100: { borderColor: '#f1f5f9' },
+    borderSlate200: { borderColor: '#e2e8f0' },
+    itemsEnd: { alignItems: 'flex-end' },
+});

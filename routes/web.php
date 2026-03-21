@@ -430,3 +430,25 @@ Route::post('/webhooks/paystack', [\App\Http\Controllers\PaymentController::clas
 /* Access via: /work (not /team, it's secret!)                    */
 /* ================================================================ */
 require __DIR__ . '/work.php';
+
+/* ------------------------------------------------------------------ */
+/* Email Previews (Development Only)                                  */
+/* ------------------------------------------------------------------ */
+Route::get('/email-preview/{type}', function ($type) {
+    $user = (object)[
+        'first_name' => 'Kritex',
+        'email' => 'user@example.com'
+    ];
+    $sessionsCount = 12;
+    $creditsSpent = 48;
+    $streakCount = 5;
+    $topActivity = 'Flashcard Mastery';
+    $surveyUrl = 'https://skeeme.ng/feedback';
+    $planName = 'Skeeme Master Pro';
+    $nextBillingDate = 'October 24, 2026';
+    $planName = 'Skeeme Elite';
+    $code = '482910';
+    $name = 'Kritex User';
+
+    return view("emails.{$type}", compact('user', 'sessionsCount', 'creditsSpent', 'streakCount', 'topActivity', 'surveyUrl', 'planName', 'nextBillingDate', 'code', 'name'));
+});

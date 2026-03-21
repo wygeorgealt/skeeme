@@ -5,15 +5,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width, height } = Dimensions.get('window');
 
 
-export function GlowBackground({ children, className = '', isRoot = false }: { children: React.ReactNode; className?: string; isRoot?: boolean }) {
+export function GlowBackground({ children, className = '', isRoot = false, style, useSafeArea = false }: { children: React.ReactNode; className?: string; isRoot?: boolean; style?: any; useSafeArea?: boolean }) {
     const isDark = useColorScheme() === 'dark';
+    const insets = useSafeAreaInsets();
 
     if (!isRoot) {
-        return <View style={{ flex: 1, backgroundColor: 'transparent' }} className={className}>{children}</View>;
+        return <View style={[{ flex: 1, backgroundColor: 'transparent' }, useSafeArea && { paddingTop: insets.top }, style]} className={className}>{children}</View>;
     }
 
     return (
-        <View style={[styles.root, { backgroundColor: isDark ? '#100921' : '#fafafa' }]}>
+        <View style={[styles.root, { backgroundColor: isDark ? '#100921' : '#fafafa' }, useSafeArea && { paddingTop: insets.top }, style]}>
             {/* Gradient overlay */}
             <View style={StyleSheet.absoluteFill} pointerEvents="none">
                 {isDark ? (

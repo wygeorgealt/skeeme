@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-    View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme,
+    View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet,
 } from 'react-native';
 import { Image } from 'expo-image';
 import {
@@ -9,6 +9,17 @@ import {
     Refresh, Page, FireFlame
 } from 'iconoir-react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import Animated, { 
+    useSharedValue, 
+    useAnimatedStyle, 
+    withRepeat, 
+    withTiming, 
+    withDelay,
+    Easing,
+    interpolate
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { GlowBackground } from '@/components/ui/GlowBackground';
@@ -21,19 +32,11 @@ import { MathText } from '@/components/ui/MathText';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { generateScanHTML } from '@/lib/pdfGenerator';
-import CreditStatusBar from '@/components/CreditStatusBar';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
+import { scannerService, ScanResult } from '@/lib/scanner';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-type ScanResult = {
-    question: string;
-    topic: string;
-    type: 'calculation' | 'theory';
-    solution: string;
-    steps: string[];
-    explanation: string;
-    summary: string;
-};
+// Redundant local type removed in favor of @/lib/scanner
 
 const BASE_SCAN_COST = 2;
 const COST_PER_SOLUTION = 4;
@@ -56,7 +59,16 @@ export default function ScanScreen() {
     const [results, setResults] = useState<ScanResult[]>([]);
     const [lastScanCost, setLastScanCost] = useState<number | null>(null);
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
-    const [creditRefreshKey, setCreditRefreshKey] = useState(0);
+
+    const scanAnim = useSharedValue(0);
+
+    useState(() => {
+        scanAnim.value = withRepeat(
+            withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+            -1,
+            true
+        );
+    });
 
     const pickImage = async (useCamera: boolean) => {
         setResults([]);
@@ -109,19 +121,20 @@ export default function ScanScreen() {
         }, 2500);
 
         try {
-            const response = await api.post('scan/solve', { image: imageBase64 });
+            const data = await scannerService.solve(imageBase64, 'base64');
             setImageBase64(null);
-            const data = response.data;
             setResults(data.results || []);
             setLastScanCost(data.cost);
-            if (!user?.is_unlimited && data.remaining_credits !== undefined) {
-                updateUser({ credits: data.remaining_credits });
-                setCreditRefreshKey(k => k + 1);
+            
+            // Refresh user stats for the dashboard
+            const userRes = await api.get('me');
+            if (userRes.data) {
+                updateUser(userRes.data);
             }
         } catch (err: any) {
             let msg = 'Failed to solve. Try a clearer photo.';
-            const data = err?.response?.data;
-            if (data?.message) msg = data.message;
+            if (err?.response?.data?.message) msg = err.response.data.message;
+            else if (err?.message) msg = err.message;
             Alert.alert('Error', msg);
         } finally {
             clearInterval(stageInterval);
@@ -159,83 +172,86 @@ export default function ScanScreen() {
     };
 
     return (
-        <GlowBackground>
+        <GlowBackground isRoot={true}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            {/* Custom Header with drawer toggle */}
-            <View className={`flex-row items-center justify-between px-5 pt-14 pb-3`}>
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity
                     onPress={() => router.back()}
                     activeOpacity={0.7}
-                    className={`size-10 rounded-xl items-center justify-center ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}
+                    style={[s.headerBtn, isDark ? s.headerBtnDark : s.headerBtnLight]}
                 >
                     <NavArrowLeft width={20} height={20} color={isDark ? 'white' : 'black'} />
                 </TouchableOpacity>
-                <Text className={`font-semibold text-[15px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Scan & Solve</Text>
+                <Text style={[s.headerTitle, { color: isDark ? 'white' : 'black' }]}>Scan & Solve</Text>
                 <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     activeOpacity={0.7}
-                    className={`size-10 rounded-xl items-center justify-center ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}
+                    style={[s.headerBtn, isDark ? s.headerBtnDark : s.headerBtnLight]}
                 >
-                    <Menu width={20} height={20} color={isDark ? 'white' : 'black'} />
+                    <Menu width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
             </View>
 
-            <CreditStatusBar activeAction="scan" refreshKey={creditRefreshKey} />
-
-            <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
 
                 {!imageUri && results.length === 0 && (
-                    <View className="items-center mt-5">
-                        <View className={`w-48 h-48 rounded-[32px] items-center justify-center mb-8 ${isDark ? 'bg-white/5' : 'bg-white shadow-sm border border-slate-100'}`}>
+                    <BlurView intensity={isDark ? 20 : 40} tint={isDark ? 'dark' : 'light'} style={s.emptyStateCard}>
+                        <View style={[s.iconBox, isDark ? s.bgWhite5 : s.bgWhite60]}>
                             <Scanning width={72} height={72} color="#8B5CF6" strokeWidth={1.5} />
                         </View>
 
-                        <Text className={`font-semibold text-[22px] text-center mb-3 tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Scan Question(s)</Text>
-                        <Text className="text-slate-500 text-center font-medium text-[14px] mb-10 px-5 leading-relaxed">
+                        <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>Scan Question(s)</Text>
+                        <Text style={s.heroDesc}>
                             Snap a page or question. Skeeme will instantly detect and solve every sub-question (1a, 1b, etc).
                         </Text>
 
-                        <View className="flex-row w-full gap-3">
-                            <TouchableOpacity onPress={() => pickImage(true)} activeOpacity={0.8} className="flex-1 h-[48px] bg-brand-primary rounded-xl items-center justify-center flex-row shadow-sm">
-                                <Camera width={18} height={18} color="white" />
-                                <Text className="text-white font-bold ml-2 text-[15px]">Camera</Text>
+                        <View style={s.btnRow}>
+                            <TouchableOpacity onPress={() => pickImage(true)} activeOpacity={0.8} style={s.primaryBtnShadow}>
+                                <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtnGradient}>
+                                    <Camera width={18} height={18} color="white" />
+                                    <Text style={s.primaryBtnText}>Camera</Text>
+                                </LinearGradient>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} className={`flex-1 h-[48px] rounded-xl items-center justify-center flex-row border shadow-sm ${isDark ? 'bg-white/10 border-transparent' : 'bg-white border-slate-100'}`}>
-                                <Album width={18} height={18} color={isDark ? '#fff' : '#0f172a'} />
-                                <Text className={`font-bold ml-2 text-[15px] ${isDark ? 'text-white' : 'text-slate-900'}`}>Gallery</Text>
+                            <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={[s.secondaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}>
+                                <Album width={18} height={18} color={isDark ? '#fff' : '#475569'} />
+                                <Text style={[s.secondaryBtnText, isDark ? s.textWhite : s.textSlate600]}>Gallery</Text>
                             </TouchableOpacity>
                         </View>
 
-                        <View className={`mt-8 px-5 py-4 rounded-xl border flex-row items-center w-full justify-center ${isDark ? 'bg-[#13151B]/50 border-transparent' : 'bg-white border-slate-100'}`}>
-                            <Flash width={16} height={16} color="#8B5CF6" />
-                            <Text className="text-slate-500 font-semibold text-[12px] ml-2">
-                                <Text className="text-[#8B5CF6]">{BASE_SCAN_COST} cr</Text> base + <Text className="text-[#8B5CF6]">{COST_PER_SOLUTION} cr</Text> per question
+                        <View style={[s.costInfo, isDark ? s.bgWhite5 : s.bgWhite60]}>
+                            <FireFlame width={16} height={16} color="#8B5CF6" />
+                            <Text style={s.costText}>
+                                <Text style={{ color: '#8B5CF6' }}>{BASE_SCAN_COST} cr</Text> base + <Text style={{ color: '#8B5CF6' }}>{COST_PER_SOLUTION} cr</Text> per q
                             </Text>
                         </View>
-                    </View>
+                    </BlurView>
                 )}
 
                 {imageUri && results.length === 0 && (
-                    <View className="items-center">
-                        <View className={`w-full rounded-[24px] overflow-hidden border mb-6 ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-200'}`}>
-                            <Image source={{ uri: imageUri }} style={{ width: '100%', height: 350 }} contentFit="cover" />
-                        </View>
+                    <View style={s.previewContainer}>
+                        <BlurView intensity={isDark ? 30 : 60} tint={isDark ? 'dark' : 'light'} style={s.previewCard}>
+                            <Image source={{ uri: imageUri }} style={s.previewImage} contentFit="cover" />
+                        </BlurView>
 
                         {loading ? (
-                            <View className={`items-center py-8 w-full rounded-[24px] border ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-100'}`}>
-                                <ActivityIndicator size="large" color="#8B5CF6" />
-                                <Text className={`font-bold mt-5 text-[15px] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{loadingStage || 'Processing...'}</Text>
-                                <Text className="text-slate-500 font-medium text-sm mt-1">Skeeme AI is working hard</Text>
-                            </View>
+                            <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={s.loadingCard}>
+                                <View style={s.spinnerBox}>
+                                    <ActivityIndicator size="large" color="#8B5CF6" />
+                                </View>
+                                <Text style={[s.loadingStage, isDark ? s.textWhite : s.textSlate900]}>{loadingStage || 'Processing...'}</Text>
+                                <Text style={s.loadingSub}>Skeeme AI is working hard</Text>
+                            </BlurView>
                         ) : (
-                            <View className="w-full gap-3">
-                                <TouchableOpacity onPress={handleSolve} activeOpacity={0.8} className="h-[48px] bg-brand-primary rounded-xl items-center flex-row justify-center shadow-sm">
-                                    <Sparks width={18} height={18} color="#fff" />
-                                    <Text className="text-white font-bold ml-2 text-[15px]">Solve Everything</Text>
+                            <View style={s.fullBtnGroup}>
+                                <TouchableOpacity onPress={handleSolve} activeOpacity={0.8} style={s.primaryBtnShadow}>
+                                    <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtnGradient}>
+                                        <Sparks width={18} height={18} color="#fff" />
+                                        <Text style={s.fullBtnText}>Solve Everything</Text>
+                                    </LinearGradient>
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={resetScan} activeOpacity={0.8} className={`h-[48px] rounded-xl items-center justify-center border ${isDark ? 'bg-white/10 border-transparent' : 'bg-slate-100 border-slate-200'}`}>
-                                    <Text className={`font-bold text-[14px] ${isDark ? 'text-white' : 'text-slate-600'}`}>Retake Photo</Text>
+                                <TouchableOpacity onPress={resetScan} activeOpacity={0.8} style={[s.fullSecondaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}>
+                                    <Text style={[s.retakeText, isDark ? s.textWhite : s.textSlate600]}>Retake Photo</Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -244,85 +260,66 @@ export default function ScanScreen() {
 
                 {results.length > 0 && (
                     <View>
-                        <View className={`flex-row items-center justify-between mb-8 p-4 rounded-2xl border ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-100 shadow-sm'}`}>
+                        <BlurView intensity={isDark ? 30 : 60} tint={isDark ? 'dark' : 'light'} style={s.resultsHeaderGlass}>
                             <View>
-                                <Text className={`font-bold text-[16px] tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{results.length} Extracted Questions</Text>
-                                <Text className="text-slate-500 font-medium text-[12px] mt-0.5">Deep extraction complete</Text>
+                                <Text style={[s.resultsTitle, isDark ? s.textWhite : s.textSlate900]}>{results.length} Solutions found</Text>
+                                <Text style={s.resultsSub}>Deep scan complete</Text>
                             </View>
-                            <View className="bg-brand-primary px-3 py-1.5 rounded-lg">
-                                <Text className="text-white font-bold text-[11px] uppercase tracking-wider">-{lastScanCost} cr</Text>
-                            </View>
-                        </View>
+                            <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.costBadgeGradient}>
+                                <Text style={s.costBadgeText}>-{lastScanCost} CR</Text>
+                            </LinearGradient>
+                        </BlurView>
 
                         {results.map((item, index) => (
-                            <View key={index} className={`mb-8 w-full p-5 rounded-[24px] border ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-100 shadow-sm'}`}>
-                                <View className="flex-row items-center justify-between mb-5 pb-4 border-b border-slate-100 dark:border-transparent">
-                                    <View className="flex-row items-center gap-2">
-                                        <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-widest">Question {index + 1}</Text>
-                                        <View className={`px-2 py-0.5 rounded-lg border ${item.type === 'theory' ? 'border-blue-500/20 bg-blue-500/5' : 'border-emerald-500/20 bg-emerald-500/5'}`}>
-                                            <Text className={`font-bold text-[9px] uppercase tracking-widest ${item.type === 'theory' ? 'text-blue-500' : 'text-emerald-500'}`}>{item.type === 'theory' ? 'Theory' : 'Calc'}</Text>
+                            <BlurView key={index} intensity={isDark ? 20 : 40} tint={isDark ? 'dark' : 'light'} style={s.questionCardGlass}>
+                                <View style={s.questionHeader}>
+                                    <View style={s.questionMeta}>
+                                        <Text style={s.questionMetaText}>Q{index + 1}</Text>
+                                        <View style={s.typeTag}>
+                                            <Text style={s.typeTagText}>{item.type}</Text>
                                         </View>
                                     </View>
                                     {item.topic && (
-                                        <View className={`px-3 py-1 rounded-full border ${isDark ? 'bg-transparent border-transparent' : 'bg-slate-50 border-slate-200'}`}>
-                                            <Text className="text-slate-500 font-bold text-[10px] uppercase tracking-widest">{item.topic}</Text>
+                                        <View style={[s.topicTag, isDark ? s.bgWhite10 : s.bgWhite60]}>
+                                            <Text style={s.topicTagText}>{item.topic}</Text>
                                         </View>
                                     )}
                                 </View>
-                                <MathText content={item.question} color={isDark ? 'white' : '#121212'} fontSize={18} containerStyle={{ marginBottom: 24 }} />
+                                <MathText content={item.question} color={isDark ? 'white' : '#0f172a'} fontSize={18} containerStyle={{ marginBottom: 24 }} />
 
-                                {(item.type !== 'theory') && (
-                                    <View className="gap-6">
-                                        {item.steps && item.steps.length > 0 && (
-                                            <View className={`p-4 rounded-xl border ${isDark ? 'bg-black/20 border-transparent' : 'bg-slate-50 border-slate-100'}`}>
-                                                <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-widest mb-4">Solution Steps</Text>
-                                                {item.steps.map((step, i) => (
-                                                    <View key={i} className="flex-row mb-3">
-                                                        <View className="w-6 h-6 rounded-full bg-emerald-500/10 items-center justify-center mr-3 mt-0.5">
-                                                            <Text className="text-emerald-500 font-bold text-[11px]">{i + 1}</Text>
-                                                        </View>
-                                                        <MathText content={step} color={isDark ? '#cbd5e1' : '#475569'} fontSize={15} containerStyle={{ flex: 1 }} />
+                                <View style={s.solutionGap}>
+                                    {item.steps && item.steps.length > 0 && (
+                                        <View style={[s.stepsContainer, isDark ? s.bgBlack20 : s.bgWhite60]}>
+                                            <Text style={s.stepsLabel}>Solution Strategy</Text>
+                                            {item.steps?.map((step, i) => (
+                                                <View key={i} style={s.stepRow}>
+                                                    <View style={s.stepNum}>
+                                                        <Text style={s.stepNumText}>{i + 1}</Text>
                                                     </View>
-                                                ))}
-                                            </View>
-                                        )}
-                                        <View className="bg-brand-primary/10 rounded-xl p-4 border border-brand-primary/20">
-                                            <Text className="text-brand-primary font-bold text-[11px] uppercase tracking-widest mb-2">Final Answer</Text>
-                                            <MathText content={item.solution} color={isDark ? 'white' : '#121212'} fontSize={18} />
+                                                    <MathText content={step} color={isDark ? '#cbd5e1' : '#475569'} fontSize={15} containerStyle={{ flex: 1 }} />
+                                                </View>
+                                            ))}
                                         </View>
-                                    </View>
-                                )}
-
-                                {item.type === 'theory' && (
-                                    <View className="gap-6">
-                                        {item.explanation ? (
-                                            <View className={`p-4 rounded-xl border ${isDark ? 'bg-black/20 border-transparent' : 'bg-slate-50 border-slate-100'}`}>
-                                                <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-widest mb-3">Explanation</Text>
-                                                <MathText content={item.explanation} color={isDark ? '#cbd5e1' : '#475569'} fontSize={15} containerStyle={{ flex: 1 }} />
-                                            </View>
-                                        ) : null}
-                                        {item.summary ? (
-                                            <View className="bg-brand-primary/10 rounded-xl p-4 border border-brand-primary/20">
-                                                <Text className="text-brand-primary font-bold text-[11px] uppercase tracking-widest mb-2">Key Takeaway</Text>
-                                                <Text className={`font-semibold text-[15px] leading-relaxed ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.summary}</Text>
-                                            </View>
-                                        ) : null}
-                                    </View>
-                                )}
-                            </View>
+                                    )}
+                                    <LinearGradient colors={['rgba(139,92,246,0.15)', 'rgba(99,102,241,0.05)']} style={s.finalAnswerBoxGradient}>
+                                        <Text style={s.finalAnswerLabel}>Final Solution</Text>
+                                        <MathText content={item.solution || item.summary || ''} color={isDark ? 'white' : '#0f172a'} fontSize={18} />
+                                    </LinearGradient>
+                                </View>
+                            </BlurView>
                         ))}
                     </View>
                 )}
-                <View className="h-6" />
+                <View style={{ height: 24 }} />
             </ScrollView>
 
             {results.length > 0 && (
                 <BlurView
                     intensity={isDark ? 40 : 80}
                     tint={isDark ? "dark" : "light"}
-                    className={`absolute bottom-0 left-0 right-0 p-5 pb-8 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}
+                    style={[s.footerBlur, isDark ? { borderTopColor: '#1e293b' } : { borderTopColor: '#f1f5f9' }]}
                 >
-                    <View className="gap-3">
+                    <View style={s.footerStack}>
                         <TouchableOpacity
                             onPress={() => {
                                 const topics = results.map(r => r.topic).filter(Boolean);
@@ -331,47 +328,123 @@ export default function ScanScreen() {
                                 router.push({ pathname: '/generate', params: { topic: combinedTopic } });
                             }}
                             activeOpacity={0.8}
-                            className="h-[48px] bg-brand-primary rounded-xl items-center flex-row justify-center shadow-sm"
+                            style={s.primaryBtnShadow}
                         >
-                            <Sparks width={18} height={18} color="white" />
-                            <Text className="text-white font-bold text-[15px] ml-2">Practice Similar Quiz</Text>
+                            <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtnGradient}>
+                                <Sparks width={18} height={18} color="white" />
+                                <Text style={s.primaryBtnText}>Practice Similar Quiz</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
 
-                        <View className="flex-row gap-3">
+                        <View style={s.footerRow}>
                             <TouchableOpacity
                                 onPress={handleExport}
                                 disabled={loading}
                                 activeOpacity={0.8}
-                                className={`h-[48px] rounded-xl flex-1 items-center flex-row justify-center border shadow-sm ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-100'}`}
+                                style={[s.footerSecondaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}
                             >
                                 {loading ? (
                                     <ActivityIndicator size="small" color="#8B5CF6" />
                                 ) : (
-                                    <>
-                                        <ShareAndroid width={18} height={18} color={isDark ? '#fff' : '#0f172a'} />
-                                        <Text className={`font-bold text-[15px] ml-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Share</Text>
-                                    </>
+                                    <View style={s.rowBtnContent}>
+                                        <Page width={18} height={18} color={isDark ? '#fff' : '#475569'} />
+                                        <Text style={[s.rowBtnText, { color: isDark ? 'white' : '#475569' }]}>Export PDF</Text>
+                                    </View>
                                 )}
                             </TouchableOpacity>
 
                             <TouchableOpacity
                                 onPress={resetScan}
                                 activeOpacity={0.8}
-                                className={`h-[48px] rounded-xl flex-1 items-center flex-row justify-center ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}
+                                style={[s.footerTertiaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}
                             >
-                                <Camera width={18} height={18} color={isDark ? '#fff' : '#0f172a'} />
-                                <Text className={`font-bold text-[15px] ml-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Next Scan</Text>
+                                <View style={s.rowBtnContent}>
+                                    <Camera width={18} height={18} color={isDark ? '#fff' : '#475569'} />
+                                    <Text style={[s.rowBtnText, { color: isDark ? 'white' : '#475569' }]}>Next Scan</Text>
+                                </View>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </BlurView>
             )}
-            <OutOfCreditsModal
-                visible={showOutOfCredits}
-                onDismiss={() => setShowOutOfCredits(false)}
-                featureAttempted="scan"
-            />
-
         </GlowBackground>
     );
 }
+
+const s = StyleSheet.create({
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16 },
+    headerBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    headerBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    headerBtnLight: { backgroundColor: 'rgba(255,255,255,0.6)' },
+    headerTitle: { fontSize: 17, fontWeight: '800', letterSpacing: -0.5 },
+
+    emptyStateCard: { alignItems: 'center', padding: 32, borderRadius: 40, marginTop: 10 },
+    iconBox: { width: 140, height: 140, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
+    heroTitle: { fontSize: 24, fontWeight: '900', marginBottom: 12, textAlign: 'center', letterSpacing: -1 },
+    heroDesc: { color: '#64748b', textAlign: 'center', fontWeight: '600', fontSize: 14, marginBottom: 40, paddingHorizontal: 10, lineHeight: 22 },
+    
+    btnRow: { flexDirection: 'row', width: '100%', gap: 12 },
+    primaryBtnShadow: { flex: 1, height: 56, borderRadius: 16, overflow: 'hidden', elevation: 8, shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+    primaryBtnGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+    primaryBtnText: { color: 'white', fontWeight: '800', fontSize: 16, letterSpacing: -0.3 },
+    secondaryBtnGlass: { flex: 1, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
+    secondaryBtnText: { fontWeight: '800', fontSize: 16, letterSpacing: -0.3, marginLeft: 8 },
+
+    costInfo: { marginTop: 32, paddingHorizontal: 20, paddingVertical: 14, borderRadius: 16, flexDirection: 'row', alignItems: 'center', width: '100%', justifyContent: 'center' },
+    costText: { color: '#64748b', fontWeight: '800', fontSize: 12, marginLeft: 8 },
+
+    previewContainer: { alignItems: 'center' },
+    previewCard: { width: '100%', borderRadius: 32, overflow: 'hidden', borderBottomWidth: 3, borderBottomColor: 'rgba(139, 92, 246, 0.3)' },
+    previewImage: { width: '100%', height: 350 },
+    
+    loadingCard: { alignItems: 'center', paddingVertical: 40, width: '100%', borderRadius: 32, marginTop: 24 },
+    spinnerBox: { marginBottom: 20 },
+    loadingStage: { fontWeight: '800', fontSize: 17, letterSpacing: -0.5 },
+    loadingSub: { color: '#64748b', fontWeight: '600', fontSize: 13, marginTop: 4 },
+    
+    fullBtnGroup: { width: '100%', gap: 12, marginTop: 24 },
+    fullBtnText: { color: '#fff', fontWeight: '800', fontSize: 16, marginLeft: 10 },
+    fullSecondaryBtnGlass: { height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+    retakeText: { fontWeight: '800', fontSize: 15 },
+
+    resultsHeaderGlass: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, padding: 24, borderRadius: 32, borderBottomWidth: 2, borderBottomColor: 'rgba(139, 92, 246, 0.2)' },
+    resultsTitle: { fontWeight: '900', fontSize: 18, letterSpacing: -0.5 },
+    resultsSub: { color: '#64748b', fontWeight: '700', fontSize: 12, marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
+    costBadgeGradient: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
+    costBadgeText: { color: 'white', fontWeight: '900', fontSize: 11, letterSpacing: 1 },
+
+    questionCardGlass: { marginBottom: 24, width: '100%', padding: 24, borderRadius: 32, borderBottomWidth: 2, borderBottomColor: 'rgba(139, 92, 246, 0.1)' },
+    questionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16 },
+    questionMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    questionMetaText: { color: '#94a3b8', fontWeight: '800', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5 },
+    typeTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(139, 92, 246, 0.1)' },
+    typeTagText: { fontWeight: '900', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: '#8B5CF6' },
+    topicTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+    topicTagText: { color: '#64748b', fontWeight: '800', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+
+    solutionGap: { gap: 20 },
+    stepsContainer: { padding: 20, borderRadius: 20 },
+    bgBlack20: { backgroundColor: 'rgba(0,0,0,0.2)' },
+    stepsLabel: { color: '#94a3b8', fontWeight: '800', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16 },
+    stepRow: { flexDirection: 'row', marginBottom: 16 },
+    stepNum: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(139, 92, 246, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 },
+    stepNumText: { color: '#8B5CF6', fontWeight: '900', fontSize: 11 },
+
+    finalAnswerBoxGradient: { borderRadius: 20, padding: 20, overflow: 'hidden', borderLeftWidth: 4, borderLeftColor: '#8B5CF6' },
+    finalAnswerLabel: { color: '#8B5CF6', fontWeight: '900', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 },
+
+    footerBlur: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingBottom: 40, borderTopWidth: 1 },
+    footerStack: { gap: 12 },
+    footerRow: { flexDirection: 'row', gap: 12 },
+    footerSecondaryBtnGlass: { height: 56, borderRadius: 16, flex: 1, alignItems: 'center', justifyContent: 'center' },
+    footerTertiaryBtnGlass: { height: 56, borderRadius: 16, flex: 1, alignItems: 'center', justifyContent: 'center' },
+    rowBtnContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    rowBtnText: { fontWeight: '800', fontSize: 15 },
+
+    bgWhite5: { backgroundColor: 'rgba(255,255,255,0.05)' },
+    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    bgWhite60: { backgroundColor: 'rgba(255,255,255,0.6)' },
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textSlate600: { color: '#475569' },
+});

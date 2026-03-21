@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, useColorScheme, Platform, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, useColorScheme, Platform, Alert, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -17,6 +17,7 @@ import * as Print from 'expo-print';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { MathText } from '@/components/ui/MathText';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Storage helpers
 const storage = {
@@ -71,18 +72,18 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
     const parsedOptions: string[] = q.options ? JSON.parse(q.options) : [];
 
     return (
-        <View className={`mb-10`}>
+        <View style={s.qCard}>
             {/* Header */}
-            <View className="flex-row items-start mb-6">
-                <View className={`size-10 rounded-full items-center justify-center mr-4 ${q.is_correct ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+            <View style={s.qHeader}>
+                <View style={[s.qIcon, q.is_correct ? s.bgEmerald10 : s.bgRed10]}>
                     {q.is_correct ? (
                         <Check width={18} height={18} color="#10b981" strokeWidth={2.5} />
                     ) : (
                         <Xmark width={18} height={18} color="#ef4444" strokeWidth={2.5} />
                     )}
                 </View>
-                <View className="flex-1">
-                    <Text className="text-[11px] font-bold text-[#8B5CF6] uppercase tracking-widest mb-2">
+                <View style={s.flex1}>
+                    <Text style={s.qLabel}>
                         Question {index + 1}
                     </Text>
                     <MathText
@@ -95,11 +96,11 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
             </View>
 
             {/* Answer Display */}
-            <View className="pl-14">
+            <View style={s.answerPl}>
                 {isTheory ? (
-                    <View className="space-y-6">
+                    <View>
                         <View>
-                            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Model Answer</Text>
+                            <Text style={s.modelAnswerLabel}>Model Answer</Text>
                             <MathText
                                 content={q.correct_answer}
                                 color={isDark ? '#cbd5e1' : '#334155'}
@@ -107,10 +108,10 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                             />
                         </View>
                         {q.explanation && (
-                            <View className={`p-5 rounded-[24px] ${isDark ? 'bg-emerald-500/5' : 'bg-emerald-50'}`}>
-                                <View className="flex-row items-center mb-3">
+                            <View style={[s.feedbackBox, isDark ? s.bgEmeraldDark : s.bgEmeraldLight, { marginTop: 24 }]}>
+                                <View style={s.feedbackHeader}>
                                     <MagicWand width={14} height={14} color="#10b981" />
-                                    <Text className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest ml-2">AI Feedback</Text>
+                                    <Text style={s.feedbackTitle}>AI Feedback</Text>
                                 </View>
                                 <MathText
                                     content={q.explanation}
@@ -126,24 +127,24 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                             const isSelected = q.user_answer === opt;
                             const isCorrectOpt = q.correct_answer === opt;
 
-                            let bg = 'bg-transparent', 
-                                borderColor = isDark ? 'border-white/5' : 'border-slate-100',
-                                text = isDark ? 'text-white/40' : 'text-slate-400', 
+                            let bg = null, 
+                                borderColor = isDark ? s.borderWhite5 : s.borderSlate100,
+                                text = isDark ? s.textWhite40 : s.textSlate400,
                                 icon = null;
 
                             if (isCorrectOpt) {
-                                bg = isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'; 
-                                text = isDark ? 'text-emerald-400' : 'text-emerald-700'; 
+                                bg = isDark ? s.bgEmerald10 : s.bgEmerald50; 
+                                text = isDark ? s.textEmerald400 : s.textEmerald700; 
                                 icon = 'checkmark-circle';
                             } else if (isSelected && !isCorrectOpt) {
-                                bg = isDark ? 'bg-red-500/10' : 'bg-red-50'; 
-                                text = isDark ? 'text-red-400' : 'text-red-700'; 
+                                bg = isDark ? s.bgRed10 : s.bgRed50; 
+                                text = isDark ? s.textRed400 : s.textRed700; 
                                 icon = 'close-circle';
                             }
 
                             return (
-                                <View key={i} className={`flex-row items-center p-4 h-14 rounded-2xl border mb-3 ${bg} ${borderColor}`}>
-                                    <Text className={`flex-1 font-medium text-[14px] ${text}`}>{opt}</Text>
+                                <View key={i} style={[s.optionRow, bg, borderColor]}>
+                                    <Text style={[s.optionText, text]}>{opt}</Text>
                                     {icon === 'checkmark-circle' && <CheckCircle width={18} height={18} color="#10b981" />}
                                     {icon === 'close-circle' && <XmarkCircle width={18} height={18} color="#ef4444" />}
                                 </View>
@@ -151,10 +152,10 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                         })}
                         
                         {q.explanation && (
-                            <View className={`mt-6 p-5 rounded-[24px] ${isDark ? 'bg-emerald-500/5' : 'bg-emerald-50'}`}>
-                                <View className="flex-row items-center mb-3">
+                            <View style={[s.feedbackBox, isDark ? s.bgEmeraldDark : s.bgEmeraldLight]}>
+                                <View style={s.feedbackHeader}>
                                     <LightBulb width={14} height={14} color="#10b981" />
-                                    <Text className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest ml-2">Explanation</Text>
+                                    <Text style={s.feedbackTitle}>Explanation</Text>
                                 </View>
                                 <MathText
                                     content={q.explanation}
@@ -180,6 +181,7 @@ export default function QuizHistoryDetailScreen() {
     const [isExporting, setIsExporting] = useState(false);
     const [cachedSession, setCachedSession] = useState<QuizSessionDetail | null>(null);
     const viewShotRef = useRef<View>(null);
+    const insets = useSafeAreaInsets();
 
     // Hydrate cache on mount
     useEffect(() => {
@@ -222,23 +224,23 @@ export default function QuizHistoryDetailScreen() {
     };
 
     if (isLoading && !session) return (
-        <GlowBackground useSafeArea>
+        <GlowBackground isRoot={true}>
             <Stack.Screen options={{ headerShown: false }} />
-            <View className="px-6 pt-4 pb-6">
-                <TouchableOpacity onPress={() => router.back()} className="size-12 rounded-full items-center justify-center bg-white/10">
+            <View style={[s.topControls, { paddingTop: Math.max(insets.top, 16) }]}>
+                <TouchableOpacity onPress={() => router.back()} style={s.backBtnSkeleton}>
                     <NavArrowLeft width={24} height={24} color="white" />
                 </TouchableOpacity>
             </View>
-            <View className="items-center py-10">
+            <View style={s.loadingHeader}>
                 <SkeletonLoader width={80} height={80} borderRadius={40} style={{ marginBottom: 20 }} />
                 <SkeletonLoader width={120} height={40} style={{ marginBottom: 12 }} />
                 <SkeletonLoader width="60%" height={20} />
             </View>
-            <View className={`flex-1 rounded-t-[40px] px-6 pt-10 ${isDark ? 'bg-[#090A0F]' : 'bg-white'}`}>
+            <View style={[s.contentContainer, isDark ? s.bgDark : s.bgWhite]}>
                 {[1, 2, 3].map(i => (
-                    <View key={i} className="flex-row items-center mb-10">
+                    <View key={i} style={s.skeletonRow}>
                         <SkeletonLoader width={48} height={48} borderRadius={24} style={{ marginRight: 16 }} />
-                        <View className="flex-1">
+                        <View style={s.flex1}>
                             <SkeletonLoader width="70%" height={16} style={{ marginBottom: 8 }} />
                             <SkeletonLoader width="40%" height={12} />
                         </View>
@@ -260,10 +262,10 @@ export default function QuizHistoryDetailScreen() {
     const remark = getRemark(session.score_percentage);
 
     return (
-        <GlowBackground useSafeArea>
+        <GlowBackground isRoot={true}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            <View style={{ position: 'absolute', left: -9999, top: -9999 }}>
+            <View style={s.shareArea}>
                 <View ref={viewShotRef} collapsable={false}>
                     <QuizShareCard
                         topic={session.topic}
@@ -273,66 +275,66 @@ export default function QuizHistoryDetailScreen() {
             </View>
 
             <ScrollView 
-                className="flex-1" 
+                style={s.scrollView} 
                 contentContainerStyle={{ paddingBottom: 140 }}
                 showsVerticalScrollIndicator={false}
                 bounces={false}
             >
                 {/* Custom Header */}
-                <View className="px-6 pt-0 pb-4 flex-row items-center justify-between">
+                <View style={[s.headerRow, { paddingTop: 16 }]}>
                     <TouchableOpacity
                         onPress={() => router.back()}
                         activeOpacity={0.7}
-                        className={`size-12 rounded-full items-center justify-center ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}
+                        style={[s.menuBtn, isDark ? s.bgWhite10 : s.bgSlate100]}
                     >
                         <NavArrowLeft width={24} height={24} color={isDark ? 'white' : 'black'} />
                     </TouchableOpacity>
-                    <Text className={`text-[16px] font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Quiz Results</Text>
-                    <View className="size-12" />
+                    <Text style={[s.headerText, isDark ? s.textWhite : s.textSlate900]}>Quiz Results</Text>
+                    <View style={s.size12} />
                 </View>
 
                 {/* Top Score Area */}
-                <View className="items-center pt-6 pb-12">
-                    <View className={`size-20 rounded-full items-center justify-center mb-6 ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}>
+                <View style={s.scoreArea}>
+                    <View style={[s.scoreIconBox, isDark ? s.bgWhite10 : s.bgSlate100]}>
                         {remark.icon === 'star' && <MagicWand width={36} height={36} color="#8B5CF6" />}
                         {remark.icon === 'trophy' && <MagicWand width={36} height={36} color="#8B5CF6" />}
                         {remark.icon === 'school' && <MagicWand width={36} height={36} color="#8B5CF6" />}
                         {remark.icon === 'trending-up' && <MagicWand width={36} height={36} color="#8B5CF6" />}
                     </View>
-                    <Text className="text-brand-primary font-bold text-[13px] uppercase tracking-[0.2em] mb-2">{remark.title}</Text>
-                    <Text className={`text-[80px] font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <Text style={s.scoreTag}>{remark.title}</Text>
+                    <Text style={[s.scoreText, isDark ? s.textWhite : s.textSlate900]}>
                         {Math.round(session.score_percentage)}%
                     </Text>
-                    <Text className={`text-[15px] p-6 text-center leading-relaxed font-medium ${isDark ? 'text-white/60' : 'text-slate-500'}`}>
+                    <Text style={[s.scoreSubtitle, isDark ? s.textWhite60 : s.textSlate500]}>
                         {remark.subtitle}
                     </Text>
                 </View>
 
                 {/* Bottom Content Container */}
-                <View className={`flex-1 rounded-t-[40px] px-6 pt-10 min-h-[600px] ${isDark ? 'bg-[#090A0F]' : 'bg-white'}`}>
+                <View style={[s.contentContainer, isDark ? s.bgDark : s.bgWhite]}>
                     
                     {/* Topic Box - Borderless */}
-                    <View className={`p-6 rounded-[24px] mb-8 ${isDark ? 'bg-[#13151B]' : 'bg-slate-50'}`}>
-                        <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Topic</Text>
-                        <Text className={`text-[18px] font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{session.topic}</Text>
+                    <View style={[s.topicBox, isDark ? s.bgGrayDark : s.bgGrayLight]}>
+                        <Text style={s.topicLabel}>Topic</Text>
+                        <Text style={[s.topicTitle, isDark ? s.textWhite : s.textSlate900]}>{session.topic}</Text>
                     </View>
 
                     {/* Stats Row */}
-                    <View className="flex-row gap-4 mb-10">
-                        <View className={`flex-1 p-6 rounded-[24px] ${isDark ? 'bg-[#13151B]' : 'bg-slate-50'}`}>
-                            <Text className="text-emerald-500 font-bold text-[11px] uppercase tracking-widest mb-1">Correct</Text>
-                            <Text className={`text-[28px] font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{session.correct_answers}</Text>
+                    <View style={s.statsRow}>
+                        <View style={[s.statCard, isDark ? s.bgGrayDark : s.bgGrayLight]}>
+                            <Text style={s.statLabelCorrect}>Correct</Text>
+                            <Text style={[s.statValue, isDark ? s.textWhite : s.textSlate900]}>{session.correct_answers}</Text>
                         </View>
-                        <View className={`flex-1 p-6 rounded-[24px] ${isDark ? 'bg-[#13151B]' : 'bg-slate-50'}`}>
-                            <Text className="text-red-500 font-bold text-[11px] uppercase tracking-widest mb-1">Missed</Text>
-                            <Text className={`text-[28px] font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>{session.total_questions - session.correct_answers}</Text>
+                        <View style={[s.statCard, isDark ? s.bgGrayDark : s.bgGrayLight]}>
+                            <Text style={s.statLabelMissed}>Missed</Text>
+                            <Text style={[s.statValue, isDark ? s.textWhite : s.textSlate900]}>{session.total_questions - session.correct_answers}</Text>
                         </View>
                     </View>
 
                     {/* Detailed Review Section */}
-                    <View className="mb-6 flex-row items-center">
-                        <View className="w-1 h-4 bg-[#8B5CF6] rounded-full mr-3" />
-                        <Text className={`text-[15px] font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Detailed Review</Text>
+                    <View style={s.reviewDividerRow}>
+                        <View style={s.dividerLine} />
+                        <Text style={[s.reviewTitle, isDark ? s.textWhite : s.textSlate900]}>Detailed Review</Text>
                     </View>
 
                     {session.questions.map((q, i) => (
@@ -342,18 +344,18 @@ export default function QuizHistoryDetailScreen() {
             </ScrollView>
 
             {/* Floating Action Buttons */}
-            <View className={`absolute bottom-0 left-0 right-0 p-6 flex-row gap-4 border-t ${isDark ? 'bg-[#090A0F]/90 border-white/5' : 'bg-white/90 border-slate-100'}`}>
+            <View style={[s.footer, isDark ? s.footerDark : s.footerLight]}>
                 <TouchableOpacity
                     onPress={handleExport}
                     disabled={isExporting}
                     activeOpacity={0.7}
-                    className={`flex-1 h-[60px] rounded-full flex-row items-center justify-center ${isDark ? 'bg-white' : 'bg-slate-900'}`}
+                    style={[s.exportBtn, isDark ? s.bgWhite : s.bgSlate900]}
                 >
                     {isExporting ? <ActivityIndicator size="small" color={isDark ? 'black' : 'white'} /> : (
-                        <>
-                            <Page width={20} height={20} color={isDark ? 'black' : 'white'} className="mr-3" />
-                            <Text className={`font-bold text-[16px] ${isDark ? 'text-black' : 'text-white'}`}>Save Report</Text>
-                        </>
+                        <View style={s.exportBtnContent}>
+                            <Page width={20} height={20} color={isDark ? 'black' : 'white'} />
+                            <Text style={[s.exportBtnText, isDark ? s.textBlack : s.textWhite]}>Save Report</Text>
+                        </View>
                     )}
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -371,7 +373,7 @@ export default function QuizHistoryDetailScreen() {
                     }}
                     activeOpacity={0.7}
                     disabled={isSharing}
-                    className="size-[60px] rounded-full items-center justify-center bg-brand-primary"
+                    style={s.shareBtn}
                 >
                     {isSharing ? <ActivityIndicator size="small" color="white" /> : (
                         <ShareAndroid width={20} height={20} color="white" />
@@ -381,3 +383,88 @@ export default function QuizHistoryDetailScreen() {
         </GlowBackground>
     );
 }
+
+const s = StyleSheet.create({
+    flex1: { flex: 1 },
+    qCard: { marginBottom: 40 },
+    qHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24 },
+    qIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    bgEmerald10: { backgroundColor: 'rgba(16, 185, 129, 0.1)' },
+    bgRed10: { backgroundColor: 'rgba(239, 68, 68, 0.1)' },
+    qLabel: { fontSize: 11, fontWeight: '700', color: '#8B5CF6', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 },
+    answerPl: { paddingLeft: 56 },
+    modelAnswerLabel: { fontSize: 10, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 },
+    feedbackBox: { padding: 20, borderRadius: 24 },
+    bgEmeraldDark: { backgroundColor: 'rgba(16, 185, 129, 0.05)' },
+    bgEmeraldLight: { backgroundColor: '#F0FDF4' },
+    feedbackHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    feedbackTitle: { fontSize: 10, fontWeight: '700', color: '#059669', textTransform: 'uppercase', letterSpacing: 1.5, marginLeft: 8 },
+
+    optionRow: { flexDirection: 'row', alignItems: 'center', padding: 16, height: 56, borderRadius: 16, borderWidth: 1, marginBottom: 12 },
+    borderWhite5: { borderColor: 'rgba(255,255,255,0.05)' },
+    borderSlate100: { borderColor: '#F1F5F9' },
+    bgEmerald50: { backgroundColor: '#ECFDF5' },
+    bgRed50: { backgroundColor: '#FEF2F2' },
+    textEmerald400: { color: '#34D399' },
+    textEmerald700: { color: '#047857' },
+    textRed400: { color: '#F87171' },
+    textRed700: { color: '#B91C1C' },
+    optionText: { flex: 1, fontWeight: '500', fontSize: 14 },
+
+    topControls: { paddingHorizontal: 24, paddingBottom: 24 },
+    backBtnSkeleton: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)' },
+    loadingHeader: { alignItems: 'center', paddingVertical: 40 },
+    contentContainer: { flex: 1, borderTopLeftRadius: 40, borderTopRightRadius: 40, paddingHorizontal: 24, paddingTop: 40 },
+    bgDark: { backgroundColor: '#090A0F' },
+    bgWhite: { backgroundColor: 'white' },
+    skeletonRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
+
+    shareArea: { position: 'absolute', left: -9999, top: -9999 },
+    scrollView: { flex: 1 },
+    headerRow: { paddingHorizontal: 24, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    menuBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    bgSlate100: { backgroundColor: '#F1F5F9' },
+    bgSlate900: { backgroundColor: '#0f172a' },
+    headerText: { fontSize: 16, fontWeight: '700' },
+    size12: { width: 48 },
+
+    scoreArea: { alignItems: 'center', paddingTop: 24, paddingBottom: 48 },
+    scoreIconBox: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+    scoreTag: { color: '#8B5CF6', fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
+    scoreText: { fontSize: 80, fontWeight: '900', letterSpacing: -2 },
+    scoreSubtitle: { fontSize: 15, paddingHorizontal: 24, textAlign: 'center', fontWeight: '500', lineHeight: 22 },
+
+    topicBox: { padding: 24, borderRadius: 24, marginBottom: 32 },
+    bgGrayDark: { backgroundColor: '#13151B' },
+    bgGrayLight: { backgroundColor: '#F8FAFC' },
+    topicLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 },
+    topicTitle: { fontSize: 18, fontWeight: '700' },
+
+    statsRow: { flexDirection: 'row', gap: 16, marginBottom: 40 },
+    statCard: { flex: 1, padding: 24, borderRadius: 24 },
+    statLabelCorrect: { color: '#10B981', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 },
+    statLabelMissed: { color: '#EF4444', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 },
+    statValue: { fontSize: 28, fontWeight: '900' },
+
+    reviewDividerRow: { marginBottom: 24, flexDirection: 'row', alignItems: 'center' },
+    dividerLine: { width: 4, height: 16, backgroundColor: '#8B5CF6', borderRadius: 2, marginRight: 12 },
+    reviewTitle: { fontSize: 15, fontWeight: '700' },
+
+    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, flexDirection: 'row', gap: 16, borderTopWidth: 1 },
+    footerDark: { backgroundColor: 'rgba(9, 10, 15, 0.9)', borderTopColor: 'rgba(255,255,255,0.05)' },
+    footerLight: { backgroundColor: 'rgba(255, 255, 255, 0.9)', borderTopColor: '#F1F5F9' },
+    exportBtn: { flex: 1, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
+    exportBtnContent: { flexDirection: 'row', alignItems: 'center' },
+    exportBtnText: { fontWeight: '700', fontSize: 16, marginLeft: 12 },
+    textBlack: { color: 'black' },
+    shareBtn: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: '#8B5CF6' },
+
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textWhite40: { color: 'rgba(255,255,255,0.4)' },
+    textWhite60: { color: 'rgba(255,255,255,0.6)' },
+    textWhite30: { color: 'rgba(255,255,255,0.3)' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate500: { color: '#64748b' },
+});

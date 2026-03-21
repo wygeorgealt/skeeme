@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl, Alert, useColorScheme, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, RefreshControl, Alert, useColorScheme, Platform, StyleSheet, StatusBar } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -12,6 +12,8 @@ import { router, useNavigation } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 
 // Storage helpers
 const storage = {
@@ -47,11 +49,11 @@ type FlashcardDeck = {
 
 function SkeletonDeck({ isDark }: { isDark: boolean }) {
     return (
-        <View className={`p-6 rounded-[28px] mb-4 ${isDark ? 'bg-[#13151B]' : 'bg-white/80 border border-white/50 shadow-sm'}`}>
-            <View className={`h-5 w-3/4 rounded-lg mb-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-100'}`} />
-            <View className="flex-row gap-3">
-                <View className={`h-7 w-20 rounded-full ${isDark ? 'bg-slate-800/50' : 'bg-slate-100'}`} />
-                <View className={`h-7 w-24 rounded-full ${isDark ? 'bg-slate-800/50' : 'bg-slate-100'}`} />
+        <View style={[s.deckCard, isDark ? s.bgGrayDark : s.deckCardLight]}>
+            <View style={[s.skeletonTitle, isDark ? s.bgSlate800_50 : s.bgSlate100]} />
+            <View style={s.flexRowGap3}>
+                <View style={[s.skeletonBadge, isDark ? s.bgSlate800_50 : s.bgSlate100]} />
+                <View style={[s.skeletonBadge, isDark ? s.bgSlate800_50 : s.bgSlate100, { width: 96 }]} />
             </View>
         </View>
     );
@@ -74,21 +76,45 @@ export default function FlashcardsDashboard() {
         hydrate();
     }, []);
 
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+
     const { data: remoteDecks, isLoading, refetch } = useQuery({
-        queryKey: ['flashcard-decks'],
+        queryKey: ['flashcard-decks', page],
         queryFn: async () => {
-            const res = await api.get('flashcards/decks');
+            const res = await api.get('flashcards/decks', { params: { page, limit: 10 } });
             const data = res.data.data as FlashcardDeck[];
-            await storage.setItem('cache_flashcard_decks', JSON.stringify(data));
+            
+            // If we're on page 1, replace cache. If > 1, would append in real app.
+            if (page === 1) {
+                await storage.setItem('cache_flashcard_decks', JSON.stringify(data));
+            }
+
+            // Simple heuristic for "hasMore" until backend provides meta
+            if (data.length < 10) setHasMore(false);
+            
             return data;
         }
     });
 
-    const decks = remoteDecks || cachedDecks;
+    const [allDecks, setAllDecks] = useState<FlashcardDeck[]>([]);
+
+    useEffect(() => {
+        if (remoteDecks) {
+            if (page === 1) {
+                setAllDecks(remoteDecks);
+            } else {
+                setAllDecks(prev => [...prev, ...remoteDecks]);
+            }
+        }
+    }, [remoteDecks, page]);
+
+    const decks = allDecks.length > 0 ? allDecks : cachedDecks;
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => api.delete(`flashcards/decks/${id}`),
         onSuccess: () => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
         },
         onError: (error: any) => {
@@ -97,12 +123,14 @@ export default function FlashcardsDashboard() {
     });
 
     const onRefresh = useCallback(async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setRefreshing(true);
         await refetch();
         setRefreshing(false);
     }, [refetch]);
 
     const handleDelete = (id: number, title: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         Alert.alert(
             "Delete Deck",
             `Are you sure you want to delete "${title}"?`,
@@ -113,109 +141,211 @@ export default function FlashcardsDashboard() {
         );
     };
 
+    const handleDeckPress = (id: number) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push(`/(drawer)/flashcards/${id}` as any);
+    };
+
     return (
-        <GlowBackground>
+        <GlowBackground isRoot={true}>
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+            
             {/* Header */}
-            <View style={{ paddingTop: Math.max(insets.top, 8) }} className="px-5 pb-4 flex-row items-center justify-between">
-                <View>
-                    <Text className={`text-[26px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Flashcards</Text>
-                    <Text className={`font-medium text-[13px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Master topics with spaced repetition</Text>
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 20) }]}>
+                <View style={s.headerContent}>
+                    <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>Flashcards</Text>
+                    <Text style={[s.headerSubtitle, isDark ? s.textSlate500 : s.textSlate400]}>Master topics with Skeeme AI</Text>
                 </View>
                 <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     activeOpacity={0.7}
-                    className={`size-10 rounded-full items-center justify-center ${isDark ? 'bg-white/10' : 'bg-white/60'}`}
+                    style={[s.menuBtn, isDark ? s.bgWhite10 : s.bgWhite60]}
                 >
-                    <Menu width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
+                    <Menu width={22} height={22} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
             </View>
 
             <ScrollView
-                className="flex-1 px-5 pt-2"
+                style={s.scrollView}
+                contentContainerStyle={s.scrollContent}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Create New Button */}
-                <View className="mb-8">
+                <View style={s.createBtnWrapper}>
                     <TouchableOpacity
-                        onPress={() => router.push('/(drawer)/flashcards/create')}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            router.push('/(drawer)/flashcards/create');
+                        }}
                         activeOpacity={0.8}
-                        style={{ height: 56, borderRadius: 20, overflow: 'hidden' }}
+                        style={s.createBtn}
                     >
                         <LinearGradient
                             colors={['#8B5CF6', '#6366F1']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
-                            style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+                            style={s.createBtnGradient}
                         >
-                            <Sparks width={20} height={20} color="white" strokeWidth={2} />
-                            <Text className="text-white font-bold ml-2.5 text-[16px]">Generate New Deck</Text>
+                            <Sparks width={20} height={20} color="white" strokeWidth={2.5} />
+                            <Text style={s.createBtnText}>Generate New Deck</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
 
-                <View className="flex-row justify-between items-end mb-5 px-1">
-                    <Text className="text-[11px] uppercase tracking-widest font-bold text-slate-400">Your Study Sets</Text>
+                <View style={s.sectionHeaderRow}>
+                    <Text style={s.sectionTitle}>Your Library</Text>
                     {decks && decks.length > 0 && (
-                        <Text className="text-slate-400 font-bold text-[11px] tracking-widest uppercase">{decks.length} Sets</Text>
+                        <View style={[s.countBadge, isDark ? s.bgWhite10 : s.bgIndigo50]}>
+                            <Text style={[s.countBadgeText, isDark ? s.textWhite : s.textIndigo600]}>{decks.length} Sets</Text>
+                        </View>
                     )}
                 </View>
 
-                {isLoading ? (
+                {isLoading && !decks ? (
                     <View>
                         <SkeletonDeck isDark={isDark} />
                         <SkeletonDeck isDark={isDark} />
                         <SkeletonDeck isDark={isDark} />
                     </View>
                 ) : !decks || decks.length === 0 ? (
-                    <View className={`items-center py-16 border-2 border-dashed rounded-[32px] ${isDark ? 'bg-[#13151B]/50 border-transparent' : 'bg-white/60 border-slate-200'}`}>
-                        <View className={`w-24 h-24 rounded-[32px] items-center justify-center mb-6 ${isDark ? 'bg-[#13151B]' : 'bg-indigo-50'}`}>
+                    <BlurView intensity={isDark ? 20 : 40} tint={isDark ? 'dark' : 'light'} style={[s.emptyState, isDark ? s.glassBorderDark : s.glassBorderLight]}>
+                        <View style={[s.emptyIconBox, isDark ? s.bgWhite5 : s.bgIndigo50]}>
                             <Page width={40} height={40} color="#8B5CF6" strokeWidth={1.5} />
                         </View>
-                        <Text className={`font-bold text-[22px] tracking-tight mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>No Decks Yet</Text>
-                        <Text className={`font-medium text-[14px] text-center px-10 leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                            Turn your notes or topics into interactive study sets.
+                        <Text style={[s.emptyTitle, isDark ? s.textWhite : s.textSlate900]}>No Decks Yet</Text>
+                        <Text style={[s.emptySubtitle, isDark ? s.textSlate500 : s.textSlate400]}>
+                            Turn your notes or topics into interactive study sets with Skeeme AI.
                         </Text>
-                    </View>
+                    </BlurView>
                 ) : (
                     decks.map(deck => (
                         <TouchableOpacity
                             key={deck.id}
-                            onPress={() => router.push(`/(drawer)/flashcards/${deck.id}` as any)}
-                            activeOpacity={0.8}
-                            className={`p-6 rounded-[28px] mb-4 ${isDark ? 'bg-[#13151B]' : 'bg-white/80 border border-white/50 shadow-sm'}`}
+                            onPress={() => handleDeckPress(deck.id)}
+                            activeOpacity={0.9}
+                            style={s.deckBtn}
                         >
-                            <View className="flex-row justify-between items-start mb-5">
-                                <Text className={`font-bold text-[17px] tracking-tight flex-1 mr-4 ${isDark ? 'text-white' : 'text-slate-900'}`} numberOfLines={2}>
-                                    {deck.title}
-                                </Text>
-                                <TouchableOpacity
-                                    onPress={() => handleDelete(deck.id, deck.title)}
-                                    className={`size-9 rounded-full items-center justify-center ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}
-                                >
-                                    <Bin width={16} height={16} color="#ef4444" />
-                                </TouchableOpacity>
-                            </View>
+                            <BlurView intensity={isDark ? 30 : 60} tint={isDark ? 'dark' : 'light'} style={[s.deckCard, isDark ? s.glassBorderDark : s.glassBorderLight]}>
+                                <View style={s.deckHeader}>
+                                    <View style={s.titleContainer}>
+                                        <Text style={[s.deckTitle, isDark ? s.textWhite : s.textSlate900]} numberOfLines={2}>
+                                            {deck.title}
+                                        </Text>
+                                        <View style={s.deckMeta}>
+                                            <Calendar width={12} height={12} color="#94a3b8" />
+                                            <Text style={s.dateText}>
+                                                {new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={() => handleDelete(deck.id, deck.title)}
+                                        style={[s.binBtn, isDark ? s.bgRed10 : s.bgRed50]}
+                                    >
+                                        <Bin width={16} height={16} color="#ef4444" />
+                                    </TouchableOpacity>
+                                </View>
 
-                            <View className="flex-row items-center border-t border-slate-50 dark:border-slate-800/50 pt-4">
-                                <View className={`flex-row items-center px-3 py-1.5 rounded-full ${isDark ? 'bg-white/5' : 'bg-indigo-50'}`}>
-                                    <Group width={13} height={13} color="#8B5CF6" strokeWidth={2} />
-                                    <Text className={`font-bold text-[11px] ml-1.5 uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-indigo-600'}`}>
-                                        {deck.flashcards_count} Cards
-                                    </Text>
+                                <View style={s.deckFooter}>
+                                    <View style={[s.badge, isDark ? s.bgWhite10 : s.bgIndigo50]}>
+                                        <Group width={14} height={14} color="#8B5CF6" strokeWidth={2.5} />
+                                        <Text style={[s.badgeText, isDark ? s.textWhite : s.textIndigo600]}>
+                                            {deck.flashcards_count} Cards
+                                        </Text>
+                                    </View>
+                                    <View style={s.studyHint}>
+                                        <Text style={s.studyHintText}>Tap to Study</Text>
+                                        <NavArrowRight width={14} height={14} color="#8B5CF6" strokeWidth={3} />
+                                    </View>
                                 </View>
-                                <View className="flex-row items-center ml-auto">
-                                    <Calendar width={13} height={13} color="#94a3b8" />
-                                    <Text className="text-slate-400 font-bold text-[11px] ml-1.5 uppercase tracking-widest">
-                                        {new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                    </Text>
-                                </View>
-                            </View>
+                            </BlurView>
                         </TouchableOpacity>
                     ))
                 )}
-                <View className="h-10" />
+
+                {hasMore && decks && decks.length >= 10 && (
+                    <TouchableOpacity
+                        onPress={() => setPage(p => p + 1)}
+                        style={[s.loadMoreBtn, isDark ? s.bgWhite10 : s.bgWhite60]}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator size="small" color="#8B5CF6" />
+                        ) : (
+                            <Text style={[s.loadMoreText, isDark ? s.textWhite : s.textSlate900]}>Load More</Text>
+                        )}
+                    </TouchableOpacity>
+                )}
+                <View style={s.h20} />
             </ScrollView>
         </GlowBackground>
     );
 }
+
+const s = StyleSheet.create({
+    scrollContent: { paddingBottom: 100 },
+    header: { paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 24 },
+    headerContent: { flex: 1 },
+    headerTitle: { fontSize: 32, fontWeight: '900', letterSpacing: -1 },
+    headerSubtitle: { fontWeight: '600', fontSize: 14, marginTop: 4, letterSpacing: -0.2 },
+    menuBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+    bgWhite60: { backgroundColor: 'rgba(255,255,255,0.6)' },
+    loadMoreBtn: { height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', marginVertical: 20 },
+    loadMoreText: { fontWeight: '800', fontSize: 14, letterSpacing: -0.2 },
+
+    scrollView: { flex: 1, paddingHorizontal: 24 },
+    createBtnWrapper: { marginBottom: 32 },
+    createBtn: { height: 64, borderRadius: 24, overflow: 'hidden', elevation: 8, shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 },
+    createBtnGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+    createBtnText: { color: 'white', fontWeight: '800', fontSize: 17, letterSpacing: -0.3 },
+
+    sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    sectionTitle: { fontSize: 12, fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5 },
+    countBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+    countBadgeText: { fontWeight: '800', fontSize: 11 },
+
+    deckBtn: { marginBottom: 16 },
+    deckCard: { padding: 24, borderRadius: 32, borderBottomWidth: 2 },
+    deckCardLight: { backgroundColor: 'rgba(255,255,255,0.8)' },
+    glassBorderDark: { borderColor: 'rgba(255,255,255,0.05)', borderBottomColor: 'rgba(139, 92, 246, 0.2)' },
+    glassBorderLight: { borderColor: 'rgba(0,0,0,0.02)', borderBottomColor: 'rgba(139, 92, 246, 0.1)' },
+    
+    deckHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
+    titleContainer: { flex: 1, marginRight: 16 },
+    deckTitle: { fontWeight: '800', fontSize: 19, letterSpacing: -0.5, marginBottom: 8 },
+    deckMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    dateText: { color: '#94a3b8', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
+    
+    binBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    bgRed10: { backgroundColor: 'rgba(239, 68, 68, 0.1)' },
+    bgRed50: { backgroundColor: '#FEF2F2' },
+    bgIndigo50: { backgroundColor: '#EEF2FF' },
+    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
+
+    deckFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    badge: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
+    bgWhite5: { backgroundColor: 'rgba(255,255,255,0.05)' },
+    badgeText: { fontWeight: '800', fontSize: 12, letterSpacing: -0.2 },
+    textIndigo600: { color: '#4F46E5' },
+    
+    studyHint: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    studyHintText: { color: '#8B5CF6', fontWeight: '800', fontSize: 13, letterSpacing: -0.3 },
+
+    emptyState: { alignItems: 'center', borderRadius: 40, paddingVertical: 64, paddingHorizontal: 40, borderStyle: 'dashed', borderWidth: 2 },
+    emptyIconBox: { width: 80, height: 80, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+    emptyTitle: { fontWeight: '900', fontSize: 24, letterSpacing: -0.5, marginBottom: 12 },
+    emptySubtitle: { fontWeight: '600', fontSize: 15, textAlign: 'center', lineHeight: 22, color: '#94a3b8' },
+
+    skeletonTitle: { height: 20, width: '75%', borderRadius: 8, marginBottom: 16 },
+    bgGrayDark: { backgroundColor: '#13151B' },
+    bgSlate800_50: { backgroundColor: 'rgba(30, 41, 59, 0.5)' },
+    bgSlate100: { backgroundColor: '#F1F5F9' },
+    flexRowGap3: { flexDirection: 'row', gap: 12 },
+    skeletonBadge: { height: 28, width: 80, borderRadius: 14 },
+
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textSlate500: { color: '#64748b' },
+    textSlate400: { color: '#94a3b8' },
+    h20: { height: 80 },
+});

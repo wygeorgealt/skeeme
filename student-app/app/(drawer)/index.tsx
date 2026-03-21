@@ -2,7 +2,8 @@ import { View, Text, TouchableOpacity, ScrollView, RefreshControl, useColorSchem
 import { useAuthStore } from '@/store/authStore';
 import { 
     Scanning, GraduationCap, MultiplePages, Activity, FireFlame, Trophy, 
-    NavArrowRight, Plus, Rocket, Book, Calendar, CheckCircle
+    NavArrowRight, Plus, Rocket, Book, Calendar, CheckCircle,
+    Crown, Flash, Menu, Sparks
 } from 'iconoir-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useNavigation } from 'expo-router';
@@ -59,7 +60,7 @@ function WeeklyActivity({ data, isDark }: any) {
                                 <View style={{ height: `${heightPct}%`, width: 8, borderRadius: 4, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', minHeight: 4 }} />
                             )}
                         </View>
-                        <Text style={[s.weekLabel, { color: isToday ? (isDark ? '#fff' : '#0f172a') : '#94a3b8' }]}>{day[0]}</Text>
+                        <Text style={[s.weekLabel, isToday ? (isDark ? s.textWhite : s.textSlate900) : s.textSlate400]}>{day[0]}</Text>
                     </View>
                 );
             })}
@@ -139,11 +140,11 @@ function StreakCalendar({ activeDates, isLoading, isDark }: { activeDates: strin
                                     !isToday && !isFuture && { backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc' },
                                     isFuture && { opacity: 0.2 },
                                 ]}>
-                                    <Text style={[s.calDayText, {
-                                        color: isToday ? (isDark ? '#fff' : '#4F46E5')
-                                            : isFuture ? (isDark ? '#334155' : '#cbd5e1')
-                                            : (isDark ? '#64748b' : '#94a3b8')
-                                    }]}>{d}</Text>
+                                    <Text style={[s.calDayText, 
+                                        isToday ? (isDark ? s.textWhite : s.textIndigo600)
+                                            : isFuture ? (isDark ? s.textSlate800 : s.textSlate300)
+                                            : (isDark ? s.textSlate600 : s.textSlate400)
+                                    ]}>{d}</Text>
                                 </View>
                             )}
                         </View>
@@ -178,6 +179,62 @@ const s = StyleSheet.create({
     calCellGradient: { flex: 1, width: '100%', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     calActiveText: { color: '#fff', fontWeight: '700', fontSize: 11 },
     calDayText: { fontWeight: '700', fontSize: 11 },
+
+    flex1: { flex: 1 },
+    scrollContent: { paddingBottom: 40 },
+    heroRow: { paddingHorizontal: 24, paddingBottom: 32, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    heroSublabel: { fontSize: 14, fontWeight: '500', letterSpacing: 0.5, marginBottom: 8, opacity: 0.7 },
+    heroValueRow: { flexDirection: 'row', alignItems: 'center' },
+    heroValue: { fontSize: 48, fontWeight: '700', letterSpacing: -1 },
+    heroValueUnlimited: { fontSize: 40, fontWeight: '700', letterSpacing: -1 },
+    mr8: { marginRight: 8 },
+    heroActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    upgradeBtn: { height: 40, paddingHorizontal: 14, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+    upgradeBtnText: { color: '#fff', fontWeight: '700', fontSize: 12, marginLeft: 6 },
+    menuBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    bgWhite60: { backgroundColor: 'rgba(255,255,255,0.6)' },
+
+    quickActionsRow: { paddingHorizontal: 32, paddingBottom: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    quickActionWrap: { alignItems: 'center' },
+    quickActionIconBox: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginBottom: 10, borderWidth: 1, borderColor: 'rgba(139,92,246,0.15)' },
+    quickActionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: -0.3, color: '#94a3b8' },
+
+    bottomHalf: { flex: 1, borderTopLeftRadius: 40, borderTopRightRadius: 40, paddingTop: 40, paddingHorizontal: 24, minHeight: 600, paddingBottom: 48 },
+    bgBlack: { backgroundColor: '#090A0F' },
+    bgWhiteTrans: { backgroundColor: 'rgba(255,255,255,0.4)' },
+    statsGrid: { flexDirection: 'row', gap: 16, marginBottom: 32 },
+    card: { padding: 24, borderRadius: 32, marginBottom: 32 },
+    bgGrayDark: { backgroundColor: '#13151B' },
+    cardLight: { backgroundColor: 'rgba(255,255,255,0.8)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+    cardTitle: { fontSize: 16, fontWeight: '700' },
+    cardSubtitle: { color: '#94a3b8', fontSize: 11, fontWeight: '500', marginTop: 2 },
+
+    streakSection: { marginBottom: 32 },
+    sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 20 },
+    streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+    streakInfo: { flexDirection: 'row', alignItems: 'center' },
+    streakIconBox: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    streakLabel: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
+    streakSubtitle: { fontSize: 11, color: '#94a3b8' },
+    streakBadge: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 },
+    streakBadgeText: { fontSize: 13, fontWeight: '900' },
+    bgIndigo50: { backgroundColor: '#EEF2FF' },
+    bgAmber50: { backgroundColor: '#FFFBEB' },
+    bgWhite5: { backgroundColor: 'rgba(255,255,255,0.05)' },
+    textIndigo600: { color: '#4F46E5' },
+    textAmber600: { color: '#D97706' },
+
+    textWhite: { color: 'white' },
+    textWhite60: { color: 'rgba(255,255,255,0.6)' },
+    textSlate900: { color: '#0f172a' },
+    textSlate800: { color: '#1e293b' },
+    textSlate600: { color: '#475569' },
+    textSlate500: { color: '#64748b' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate300: { color: '#cbd5e1' },
+    textIndigo600_alt: { color: '#4F46E5' },
 });
 
 // ─── Main Dashboard ────────────────────────────────────────────────────────────
@@ -225,54 +282,57 @@ export default function DashboardScreen() {
 
     if (!user) return null;
 
+    const availableBalanceLabel = isDark ? s.textWhite60 : s.textSlate500;
+    const availableBalanceValue = isDark ? s.textWhite : s.textSlate900;
+
     return (
         <GlowBackground>
             <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={{ paddingBottom: 40, paddingTop: Math.max(insets.top, 16) }}
+                style={s.flex1}
+                contentContainerStyle={[s.scrollContent, { paddingTop: Math.max(insets.top, 16) }]}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
                 showsVerticalScrollIndicator={false}
                 bounces={false}
             >
                 {/* TOP HERO SECTION */}
-                <View style={{ paddingHorizontal: 24, paddingBottom: 32, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <View style={s.heroRow}>
                     <View>
-                        <Text style={{ fontSize: 14, fontWeight: '500', letterSpacing: 0.5, marginBottom: 8, opacity: 0.7, color: isDark ? '#fff' : '#64748b' }}>
+                        <Text style={[s.heroSublabel, availableBalanceLabel]}>
                             Available Balance
                         </Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={s.heroValueRow}>
                             {user.is_unlimited ? (
                                 <>
-                                    <Sparks width={28} height={28} color="#8B5CF6" style={{ marginRight: 8 }} />
-                                    <Text style={{ fontSize: 40, fontWeight: '700', letterSpacing: -1, color: isDark ? '#fff' : '#0f172a' }}>
+                                    <Sparks width={28} height={28} color="#8B5CF6" style={s.mr8} />
+                                    <Text style={[s.heroValueUnlimited, availableBalanceValue]}>
                                         Unlimited
                                     </Text>
                                 </>
                             ) : (
-                                <Text style={{ fontSize: 48, fontWeight: '700', letterSpacing: -1, color: isDark ? '#fff' : '#0f172a' }}>
+                                <Text style={[s.heroValue, availableBalanceValue]}>
                                     {user.credits.toLocaleString()}
                                 </Text>
                             )}
                         </View>
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={s.heroActions}>
                         {isFreePlan && (
                             <TouchableOpacity onPress={() => router.push('/upgrade')} activeOpacity={0.8}>
-                                <LinearGradient
-                                    colors={['#8B5CF6', '#6366F1']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    style={{ height: 40, paddingHorizontal: 14, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
-                                >
-                                    <Crown width={16} height={16} color="white" />
-                                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12, marginLeft: 6 }}>Upgrade</Text>
-                                </LinearGradient>
+                                    <LinearGradient
+                                        colors={['#8B5CF6', '#6366F1']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={s.upgradeBtn}
+                                    >
+                                        <Crown width={16} height={16} color="white" />
+                                        <Text style={s.upgradeBtnText}>Upgrade</Text>
+                                    </LinearGradient>
                             </TouchableOpacity>
                         )}
                         <TouchableOpacity 
                             onPress={() => navigation.openDrawer()} 
                             activeOpacity={0.7}
-                            style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)' }}
+                            style={[s.menuBtn, isDark ? s.bgWhite10 : s.bgWhite60]}
                         >
                             <Menu width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
                         </TouchableOpacity>
@@ -280,31 +340,25 @@ export default function DashboardScreen() {
                 </View>
 
                 {/* QUICK ACTIONS */}
-                <View style={{ paddingHorizontal: 32, paddingBottom: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={s.quickActionsRow}>
                     {[
                         { title: 'Scan', icon: Scanning, route: '/scan' },
                         { title: 'Quiz', icon: GraduationCap, route: '/generate' },
                         { title: 'Decks', icon: MultiplePages, route: '/flashcards' },
                         { title: 'History', icon: Activity, route: '/history' },
                     ].map((tool, idx) => (
-                        <View key={idx} style={{ alignItems: 'center' }}>
+                        <View key={idx} style={s.quickActionWrap}>
                             <TouchableOpacity onPress={() => router.push(tool.route as any)} activeOpacity={0.8}>
                                 <LinearGradient
                                     colors={isDark ? ['rgba(139,92,246,0.2)', 'rgba(99,102,241,0.1)'] : ['rgba(139,92,246,0.08)', 'rgba(99,102,241,0.04)']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 1 }}
-                                    style={{ 
-                                        width: 60, height: 60, borderRadius: 30,
-                                        alignItems: 'center', justifyContent: 'center',
-                                        marginBottom: 10,
-                                        borderWidth: 1,
-                                        borderColor: isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)',
-                                    }}
+                                    style={s.quickActionIconBox}
                                 >
                                     <tool.icon width={24} height={24} color={isDark ? '#C4B5FD' : '#7C3AED'} strokeWidth={1.5} />
                                 </LinearGradient>
                             </TouchableOpacity>
-                            <Text style={{ fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: -0.3, color: isDark ? 'rgba(255,255,255,0.6)' : '#94a3b8' }}>
+                            <Text style={s.quickActionLabel}>
                                 {tool.title}
                             </Text>
                         </View>
@@ -312,20 +366,20 @@ export default function DashboardScreen() {
                 </View>
 
                 {/* BOTTOM HALF */}
-                <View style={{ flex: 1, borderTopLeftRadius: 40, borderTopRightRadius: 40, paddingTop: 40, paddingHorizontal: 24, minHeight: 600, paddingBottom: 48, backgroundColor: isDark ? '#090A0F' : 'rgba(255,255,255,0.4)' }}>
+                <View style={[s.bottomHalf, isDark ? s.bgBlack : s.bgWhiteTrans]}>
                     
                     {/* Stats */}
-                    <View style={{ flexDirection: 'row', gap: 16, marginBottom: 32 }}>
+                    <View style={s.statsGrid}>
                         <StatCard label="Credits Spent" value={(user as any).credits_spent_this_week || 0} icon={Flash} color="#f59e0b" isDark={isDark} />
                         <StatCard label="Study Sessions" value={(user as any).study_sessions_this_week || 0} icon={GraduationCap} color="#8B5CF6" isDark={isDark} />
                     </View>
 
                     {/* Weekly Activity */}
-                    <View style={[{ padding: 24, borderRadius: 32, marginBottom: 32 }, isDark ? { backgroundColor: '#13151B' } : { backgroundColor: 'rgba(255,255,255,0.8)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' }]}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                    <View style={[s.card, isDark ? s.bgGrayDark : s.cardLight]}>
+                        <View style={s.cardHeader}>
                             <View>
-                                <Text style={{ fontSize: 16, fontWeight: '700', color: isDark ? '#fff' : '#0f172a' }}>Weekly Activity</Text>
-                                <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '500', marginTop: 2 }}>Your study momentum</Text>
+                                <Text style={[s.cardTitle, isDark ? s.textWhite : s.textSlate900]}>Weekly Activity</Text>
+                                <Text style={s.cardSubtitle}>Your study momentum</Text>
                             </View>
                             <Activity width={18} height={18} color="#8B5CF6" />
                         </View>
@@ -333,38 +387,38 @@ export default function DashboardScreen() {
                     </View>
 
                     {/* Streaks */}
-                    <View style={{ marginBottom: 32 }}>
-                        <Text style={{ fontSize: 15, fontWeight: '700', marginBottom: 20, color: isDark ? '#fff' : '#0f172a' }}>Streaks</Text>
+                    <View style={s.streakSection}>
+                        <Text style={[s.sectionTitle, isDark ? s.textWhite : s.textSlate900]}>Streaks</Text>
                         
-                        <TouchableOpacity onPress={() => router.push('/streak')} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <View style={{ width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 16, backgroundColor: isDark ? '#13151B' : 'rgba(255,255,255,0.8)' }}>
+                        <TouchableOpacity onPress={() => router.push('/streak')} activeOpacity={0.7} style={s.streakRow}>
+                            <View style={s.streakInfo}>
+                                <View style={[s.streakIconBox, isDark ? s.bgGrayDark : s.cardLight]}>
                                     <FireFlame width={18} height={18} color="#8B5CF6" />
                                 </View>
                                 <View>
-                                    <Text style={{ fontSize: 15, fontWeight: '700', marginBottom: 2, color: isDark ? '#fff' : '#0f172a' }}>Current Streak</Text>
-                                    <Text style={{ fontSize: 11, color: isDark ? '#64748b' : '#94a3b8' }}>Keep the fire alive</Text>
+                                    <Text style={[s.streakLabel, isDark ? s.textWhite : s.textSlate900]}>Current Streak</Text>
+                                    <Text style={s.streakSubtitle}>Keep the fire alive</Text>
                                 </View>
                             </View>
-                            <View style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#EEF2FF' }}>
-                                <Text style={{ fontSize: 13, fontWeight: '900', color: isDark ? '#fff' : '#4F46E5' }}>
+                            <View style={[s.streakBadge, isDark ? s.bgWhite5 : s.bgIndigo50]}>
+                                <Text style={[s.streakBadgeText, isDark ? s.textWhite : s.textIndigo600]}>
                                     {user.streak?.current_streak || 0}
                                 </Text>
                             </View>
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => router.push('/streak')} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <View style={{ width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 16, backgroundColor: isDark ? '#13151B' : 'rgba(255,255,255,0.8)' }}>
+                        <TouchableOpacity onPress={() => router.push('/streak')} activeOpacity={0.7} style={s.streakRow}>
+                            <View style={s.streakInfo}>
+                                <View style={[s.streakIconBox, isDark ? s.bgGrayDark : s.cardLight]}>
                                     <Trophy width={18} height={18} color="#f59e0b" />
                                 </View>
                                 <View>
-                                    <Text style={{ fontSize: 15, fontWeight: '700', marginBottom: 2, color: isDark ? '#fff' : '#0f172a' }}>Longest Streak</Text>
-                                    <Text style={{ fontSize: 11, color: isDark ? '#64748b' : '#94a3b8' }}>Your personal best</Text>
+                                    <Text style={[s.streakLabel, isDark ? s.textWhite : s.textSlate900]}>Longest Streak</Text>
+                                    <Text style={s.streakSubtitle}>Your personal best</Text>
                                 </View>
                             </View>
-                            <View style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#FFFBEB' }}>
-                                <Text style={{ fontSize: 13, fontWeight: '900', color: isDark ? '#fff' : '#D97706' }}>
+                            <View style={[s.streakBadge, isDark ? s.bgWhite5 : s.bgAmber50]}>
+                                <Text style={[s.streakBadgeText, isDark ? s.textWhite : s.textAmber600]}>
                                     {user.streak?.longest_streak || 0}
                                 </Text>
                             </View>
@@ -372,11 +426,11 @@ export default function DashboardScreen() {
                     </View>
 
                     {/* Activity Calendar */}
-                    <View style={[{ padding: 24, borderRadius: 32 }, isDark ? { backgroundColor: '#13151B' } : { backgroundColor: 'rgba(255,255,255,0.8)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' }]}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                    <View style={[s.card, isDark ? s.bgGrayDark : s.cardLight]}>
+                        <View style={s.cardHeader}>
                             <View>
-                                <Text style={{ fontSize: 16, fontWeight: '700', color: isDark ? '#fff' : '#0f172a' }}>Activity Calendar</Text>
-                                <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '500', marginTop: 2 }}>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</Text>
+                                <Text style={[s.cardTitle, isDark ? s.textWhite : s.textSlate900]}>Activity Calendar</Text>
+                                <Text style={s.cardSubtitle}>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</Text>
                             </View>
                         </View>
                         <StreakCalendar activeDates={heatmapDates} isLoading={isLoadingHeatmap} isDark={isDark} />

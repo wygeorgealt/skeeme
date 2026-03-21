@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, Platform } from 'react-native';
+import { useState, useRef, useEffect, memo, useMemo, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, StatusBar } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -7,12 +7,25 @@ import { GlowBackground } from '@/components/ui/GlowBackground';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
     Sparks, CheckCircle, WarningTriangle, 
-    NavArrowLeft, NavArrowRight, Check
+    NavArrowLeft, NavArrowRight, Check, Restart
 } from 'iconoir-react-native';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { MathText } from '@/components/ui/MathText';
+import { useAuthStore } from '@/store/authStore';
 import * as SecureStore from 'expo-secure-store';
-import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { 
+    interpolate, 
+    useAnimatedStyle, 
+    useSharedValue, 
+    withSpring, 
+    withTiming, 
+    Easing,
+    LayoutAnimation,
+    withRepeat
+} from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { ActivityIndicator } from 'react-native';
 
 // Storage helpers
 const storage = {
@@ -33,12 +46,13 @@ const storage = {
     },
 };
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type Card = { id: number; front: string; back: string; order_column: number };
 
-function FlashcardItem({ card, isActive, isDark }: { card: Card; isActive: boolean; isDark: boolean }) {
+const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: boolean; isDark: boolean }) => {
     const flipAnim = useSharedValue(0);
+    const scaleAnim = useSharedValue(1);
     const [flipped, setFlipped] = useState(false);
 
     useEffect(() => {
@@ -46,110 +60,143 @@ function FlashcardItem({ card, isActive, isDark }: { card: Card; isActive: boole
         setFlipped(false);
     }, [card.id, flipAnim]);
 
-    const handleFlip = () => {
-        flipAnim.value = withSpring(flipped ? 0 : 180, { damping: 20, stiffness: 80 });
+    const handleFlip = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        scaleAnim.value = withTiming(0.97, { duration: 100 }, () => {
+            scaleAnim.value = withSpring(1);
+        });
+        flipAnim.value = withSpring(flipped ? 0 : 180, { damping: 15, stiffness: 90 });
         setFlipped(!flipped);
-    };
+    }, [flipped, flipAnim, scaleAnim]);
 
     const frontAnimatedStyle = useAnimatedStyle(() => {
         const rotateY = interpolate(flipAnim.value, [0, 180], [0, 180]);
         return {
-            transform: [{ perspective: 1200 }, { rotateY: `${rotateY}deg` }],
+            transform: [{ perspective: 1500 }, { scale: scaleAnim.value }, { rotateY: `${rotateY}deg` }],
             backfaceVisibility: 'hidden',
             zIndex: flipped ? 0 : 1,
+            opacity: interpolate(flipAnim.value, [0, 90], [1, 0]),
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
         };
     });
 
     const backAnimatedStyle = useAnimatedStyle(() => {
         const rotateY = interpolate(flipAnim.value, [0, 180], [180, 360]);
         return {
-            transform: [{ perspective: 1200 }, { rotateY: `${rotateY}deg` }],
+            transform: [{ perspective: 1500 }, { scale: scaleAnim.value }, { rotateY: `${rotateY}deg` }],
             backfaceVisibility: 'hidden',
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
             zIndex: flipped ? 1 : 0,
+            opacity: interpolate(flipAnim.value, [90, 180], [0, 1]),
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
         };
     });
 
+    const CardSide = ({ type, text, footer, rotateY }: any) => (
+        <BlurView
+            intensity={isDark ? 40 : 60}
+            tint={isDark ? 'dark' : 'light'}
+            style={[s.glassCard, s.glassBorderBack]}
+        >
+            <LinearGradient
+                colors={['rgba(139, 92, 246, 0.15)', 'rgba(99, 102, 241, 0.15)']}
+                style={StyleSheet.absoluteFill}
+            />
+            
+            <View style={s.cardHeader}>
+                <View style={[s.typeBadge, { backgroundColor: '#8B5CF6' }]}>
+                    <Text style={[s.typeBadgeText, { color: 'white' }]}>{type}</Text>
+                </View>
+                {type === 'QUESTION' ? (
+                    <Sparks width={20} height={20} color="#C4B5FD" />
+                ) : (
+                    <CheckCircle width={20} height={20} color="#10B981" />
+                )}
+            </View>
+            
+            <View style={s.cardContent}>
+                <MathText
+                    content={text}
+                    color={isDark ? 'white' : '#0f172a'}
+                    fontSize={type === 'QUESTION' ? 26 : 20}
+                    containerStyle={s.mathTextContainer}
+                />
+            </View>
+            
+            <View style={s.cardFooterTextPos}>
+                <Text style={[s.cardFooterText, isDark ? s.textWhite40 : s.textSlate400]}>{footer}</Text>
+            </View>
+        </BlurView>
+    );
+
     return (
-        <View style={{ flex: 1, padding: 20, justifyContent: 'center' }}>
-            <TouchableOpacity 
-                activeOpacity={0.95} 
-                onPress={handleFlip} 
-                style={{ flex: 1 }}
-            >
-                {/* FRONT */}
-                <Animated.View 
-                    style={[frontAnimatedStyle, {
-                        flex: 1,
-                        borderRadius: 28,
-                        padding: 32,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        backgroundColor: isDark ? '#1a1b2e' : '#ffffff',
-                        borderWidth: 1,
-                        borderColor: isDark ? 'rgba(139,92,246,0.15)' : '#e2e8f0',
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: isDark ? 0.3 : 0.08,
-                        shadowRadius: 12,
-                        elevation: isDark ? 4 : 4,
-                    }]}
-                >
-                    <View style={{ position: 'absolute', top: 28, right: 28, zIndex: 20 }}>
-                        <Sparks width={20} height={20} color="#8B5CF6" style={{ opacity: 0.3 }} />
-                    </View>
-                    <View style={{ width: '100%', alignItems: 'center', zIndex: 20 }}>
-                        <MathText
-                            content={card.front}
-                            color={isDark ? 'white' : '#0f172a'}
-                            fontSize={24}
-                            containerStyle={{ width: '100%', alignItems: 'center' }}
-                        />
-                    </View>
-                    <View style={{ position: 'absolute', bottom: 28, alignItems: 'center', zIndex: 20 }}>
-                        <Text style={{ color: '#94a3b8', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5 }}>Tap to reveal answer</Text>
-                    </View>
+        <View style={s.cardContainer}>
+            <TouchableOpacity activeOpacity={1} onPress={handleFlip} style={s.flex1}>
+                <Animated.View style={frontAnimatedStyle}>
+                    <CardSide type="QUESTION" text={card.front} footer="Tap to reveal answer" />
                 </Animated.View>
 
-                {/* BACK */}
-                <Animated.View 
-                    style={[backAnimatedStyle, {
-                        flex: 1,
-                        borderRadius: 28,
-                        padding: 32,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        backgroundColor: '#6366F1',
-                    }]}
-                >
-                    <View style={{ position: 'absolute', top: 28, right: 28, zIndex: 20 }}>
-                        <CheckCircle width={20} height={20} color="rgba(255,255,255,0.4)" />
-                    </View>
-                    <View style={{ width: '100%', alignItems: 'center', zIndex: 20 }}>
-                        <MathText
-                            content={card.back}
-                            color="white"
-                            fontSize={20}
-                            containerStyle={{ width: '100%', alignItems: 'center' }}
-                        />
-                    </View>
-                    <View style={{ position: 'absolute', bottom: 28, alignItems: 'center', zIndex: 20 }}>
-                        <Text style={{ color: 'rgba(255,255,255,0.6)', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5 }}>Tap to view question</Text>
-                    </View>
+                <Animated.View style={backAnimatedStyle}>
+                    <CardSide type="ANSWER" text={card.back} footer="Tap to view question" />
                 </Animated.View>
             </TouchableOpacity>
         </View>
     );
-}
+});
 
 export default function StudyDeckScreen() {
     const { id } = useLocalSearchParams();
     const scrollRef = useRef<ScrollView>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [cachedDeck, setCachedDeck] = useState<any>(null);
+    const [isComplete, setIsComplete] = useState(false);
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const progressAnim = useSharedValue(0);
+    const syncAnim = useSharedValue(0);
+    const { updateUser } = useAuthStore();
+    const [isSavingSession, setIsSavingSession] = useState(false);
+
+    const { data: remoteDeck, isLoading, error } = useQuery({
+        queryKey: ['deck', id],
+        queryFn: async () => {
+            const res = await api.get(`/flashcards/decks/${id}`);
+            const data = res.data.data;
+            await storage.setItem(`cache_deck_detail_${id}`, JSON.stringify(data));
+            return data;
+        },
+        staleTime: 5000,
+    });
+
+    const deck = useMemo(() => remoteDeck || cachedDeck, [remoteDeck, cachedDeck]);
+    const cards = useMemo(() => deck?.flashcards || [], [deck?.flashcards]);
+
+    // Sync animation for loading state
+    useEffect(() => {
+        if (isLoading && !remoteDeck) {
+            syncAnim.value = withRepeat(
+                withTiming(360, { duration: 1500, easing: Easing.linear }),
+                -1,
+                false
+            );
+        } else {
+            syncAnim.value = withTiming(0);
+        }
+    }, [isLoading, remoteDeck]);
+
+    const syncAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [
+                { rotate: `${syncAnim.value}deg` }
+            ]
+        };
+    });
+
+    // Reset state when deck ID changes
+    useEffect(() => {
+        setCurrentIndex(0);
+        setIsComplete(false);
+        progressAnim.value = 0;
+    }, [id]);
 
     useEffect(() => {
         const hydrate = async () => {
@@ -160,179 +207,327 @@ export default function StudyDeckScreen() {
         hydrate();
     }, [id]);
 
-    const { data: remoteDeck, isLoading, error } = useQuery({
-        queryKey: ['deck', id],
-        queryFn: async () => {
-            const res = await api.get(`/flashcards/decks/${id}`);
-            const data = res.data.data;
-            await storage.setItem(`cache_deck_detail_${id}`, JSON.stringify(data));
-            return data;
+    useEffect(() => {
+        if (deck?.flashcards) {
+            progressAnim.value = withTiming((currentIndex + 1) / deck.flashcards.length, { duration: 300 });
         }
-    });
+    }, [currentIndex, deck]);
 
-    const deck = remoteDeck || cachedDeck;
+    const nextCard = () => {
+        if (!deck?.flashcards) return;
+        if (currentIndex < deck.flashcards.length - 1) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            const nextIndex = currentIndex + 1;
+            scrollRef.current?.scrollTo({ x: nextIndex * SCREEN_WIDTH, animated: true });
+            // The scroll listener will update the index to ensure smooth transition
+        } else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setIsComplete(true);
+        }
+    };
+
+    const prevCard = () => {
+        if (!deck?.flashcards) return;
+        if (currentIndex > 0) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            const prevIndex = currentIndex - 1;
+            scrollRef.current?.scrollTo({ x: prevIndex * SCREEN_WIDTH, animated: true });
+            // The scroll listener will update the index
+        }
+    };
+
+    const saveFlashcardSession = useCallback(async () => {
+        if (!deck || isSavingSession) return;
+        
+        setIsSavingSession(true);
+        try {
+            // Record the completion in history/sessions
+            await api.post('flashcards/history', {
+                deck_id: id,
+                cards_count: deck.flashcards.length,
+                completed_at: new Date().toISOString(),
+            });
+
+            // Refresh user stats for the dashboard
+            const userRes = await api.get('me');
+            if (userRes.data) {
+                updateUser(userRes.data);
+            }
+        } catch (err) {
+            if (__DEV__) console.warn('Failed to save flashcard session:', err);
+        } finally {
+            setIsSavingSession(false);
+        }
+    }, [id, deck, isSavingSession, updateUser]);
+
+    useEffect(() => {
+        if (isComplete) {
+            saveFlashcardSession();
+        }
+    }, [isComplete]);
+
+    const restartSession = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setIsComplete(false);
+        setCurrentIndex(0);
+        scrollRef.current?.scrollTo({ x: 0, animated: false });
+    };
+
+    const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        if (!deck?.flashcards) return;
+        const x = event.nativeEvent.contentOffset.x;
+        const index = Math.round(x / SCREEN_WIDTH);
+        if (index !== currentIndex && index >= 0 && index < deck.flashcards.length) {
+            setCurrentIndex(index);
+        }
+    };
 
     if (error && !deck) return (
-        <GlowBackground useSafeArea>
-            <View className="flex-1 justify-center items-center px-10">
+        <GlowBackground isRoot={true}>
+            <View style={s.errorCenter}>
                 <WarningTriangle width={64} height={64} color="#ef4444" />
-                <Text className={`font-black text-lg mt-5 text-center ${isDark ? 'text-white' : 'text-slate-900'}`}>Deck not found</Text>
-                <Text className="text-slate-500 font-medium text-center mt-2 mb-6">
-                    We couldn&apos;t load this flashcard deck. It might have been deleted or there was a connection issue.
+                <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Deck not found</Text>
+                <Text style={s.errorSubtitle}>
+                    We couldn't load this flashcard deck. It might have been deleted or there was a connection issue.
                 </Text>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    activeOpacity={0.8}
-                >
-                    <LinearGradient
-                        colors={['#8B5CF6', '#6366F1']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={{ paddingHorizontal: 24, paddingVertical: 16, borderRadius: 12 }}
-                    >
-                        <Text className="text-white font-black">Go Back</Text>
+                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
+                    <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.blueBtnGradient}>
+                        <Text style={s.btnTextLarge}>Go Back</Text>
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
         </GlowBackground>
     );
 
-    if (isLoading && !deck) {
-        return (
-            <GlowBackground useSafeArea>
-                <View className="flex-1 px-5 pt-12">
-                    <View className="items-center mt-6">
-                        <SkeletonLoader width={120} height={16} style={{ marginBottom: 12 }} />
-                        <SkeletonLoader width="60%" height={32} style={{ marginBottom: 32 }} />
-                        <View className={`w-full aspect-[3/4] rounded-[28px] border-2 p-6 justify-center items-center ${isDark ? 'bg-[#13151B] border-transparent' : 'bg-white border-slate-200'}`}>
-                            <SkeletonLoader width="80%" height={24} style={{ marginBottom: 12 }} />
-                            <SkeletonLoader width="60%" height={24} />
-                        </View>
-                    </View>
+    if (isLoading && !deck) return (
+        <GlowBackground isRoot={true}>
+            <View style={s.loadingWrapper}>
+                <SkeletonLoader width={120} height={16} style={{ marginBottom: 12, borderRadius: 8 }} />
+                <SkeletonLoader width="60%" height={32} style={{ marginBottom: 48, borderRadius: 12 }} />
+                <View style={[s.loadingPlaceholder, isDark ? s.bgGrayDark : s.bgWhite]}>
+                    <SkeletonLoader width="80%" height={24} style={{ marginBottom: 12, borderRadius: 6 }} />
+                    <SkeletonLoader width="60%" height={24} style={{ borderRadius: 6 }} />
                 </View>
-            </GlowBackground>
-        );
-    }
-
-    if (!deck || !deck.flashcards) return (
-        <GlowBackground useSafeArea>
-            <View className="flex-1 justify-center items-center">
-                <Text className="text-slate-500 font-bold">No cards found in this deck.</Text>
-                <TouchableOpacity onPress={() => router.back()} className="mt-4"><Text className="text-[#8B5CF6] font-black">Go Back</Text></TouchableOpacity>
             </View>
         </GlowBackground>
     );
 
-    const cards: Card[] = deck.flashcards;
-    const progress = ((currentIndex + 1) / cards.length) * 100;
+    if (!deck || !deck.flashcards) return (
+        <GlowBackground isRoot={true}>
+            <View style={s.errorCenter}>
+                <Text style={s.noCardsText}>No cards found in this deck.</Text>
+                <TouchableOpacity onPress={() => router.back()} style={s.mt4}>
+                    <Text style={s.goBackTextPrimary}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        </GlowBackground>
+    );
 
-    const nextCard = () => {
-        if (currentIndex < cards.length - 1) {
-            const nextIndex = currentIndex + 1;
-            scrollRef.current?.scrollTo({ x: nextIndex * SCREEN_WIDTH, animated: true });
-            setCurrentIndex(nextIndex);
-        }
-    };
+    if (isComplete) return (
+        <GlowBackground isRoot={true}>
+            <View style={s.successCenter}>
+                <View style={s.successIconBox}>
+                    <LinearGradient colors={['#8B5CF6', '#6366F1']} style={s.successIconGradient}>
+                        <Check width={48} height={48} color="white" strokeWidth={3} />
+                    </LinearGradient>
+                </View>
+                <Text style={[s.successTitle, isDark ? s.textWhite : s.textSlate900]}>Session Complete!</Text>
+                <Text style={s.successSubtitle}>You've mastered all {deck.flashcards.length} cards in this set. Great job!</Text>
+                
+                <View style={s.successActions}>
+                    <TouchableOpacity onPress={restartSession} activeOpacity={0.8} style={s.flex1}>
+                        <View style={[s.outlineBtn, isDark ? s.outlineBtnDark : s.outlineBtnLight]}>
+                            <Restart width={20} height={20} color={isDark ? 'white' : '#0f172a'} />
+                            <Text style={[s.outlineBtnText, isDark ? s.textWhite : s.textSlate900]}>Retake</Text>
+                        </View>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={s.flex1}>
+                        <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.blueBtnGradient}>
+                            <Text style={s.btnTextLarge}>Finish</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </GlowBackground>
+    );
 
-    const prevCard = () => {
-        if (currentIndex > 0) {
-            const prevIndex = currentIndex - 1;
-            scrollRef.current?.scrollTo({ x: prevIndex * SCREEN_WIDTH, animated: true });
-            setCurrentIndex(prevIndex);
-        }
-    };
-
-    const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-        const x = event.nativeEvent.contentOffset.x;
-        const index = Math.round(x / SCREEN_WIDTH);
-        if (index !== currentIndex && index >= 0 && index < cards.length) {
-            setCurrentIndex(index);
-        }
-    };
+    const progressWidth = cards.length > 0 ? `${((currentIndex + 1) / cards.length) * 100}%` : '0%';
 
     return (
-        <GlowBackground useSafeArea>
-            {/* Custom Header */}
-            <View className="px-5 pt-2 pb-2 flex-row items-center justify-between">
-                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} className={`size-10 rounded-full items-center justify-center ${isDark ? 'bg-white/10' : 'bg-white/60'}`}>
-                    <NavArrowLeft width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
+        <GlowBackground isRoot={true}>
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+            
+            {/* Header */}
+            <View style={s.headerRow}>
+                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.backBtn, isDark ? s.bgWhite10 : s.bgWhite60]}>
+                    <NavArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
-                <Text className={`text-[16px] font-bold tracking-tight flex-1 text-center mx-4 ${isDark ? 'text-white' : 'text-slate-900'}`} numberOfLines={1}>
-                    {deck.title || 'Study Deck'}
-                </Text>
-                <View className="size-10" />
-            </View>
-
-            {/* Progress Bar Area */}
-            <View className="px-6 pt-2 pb-4">
-                <View className="flex-row justify-between items-center mb-3">
-                    <Text className="text-slate-400 font-bold text-[11px] uppercase tracking-widest">Learning Session</Text>
-                    <View className={`px-3 py-1 rounded-full ${isDark ? 'bg-white/5' : 'bg-indigo-50'}`}>
-                        <Text className={`font-bold text-[11px] ${isDark ? 'text-white' : 'text-indigo-600'}`}>{currentIndex + 1} of {cards.length}</Text>
+                <View style={s.headerTextContainer}>
+                    <Text style={[s.headerLabel, isDark ? s.textWhite40 : s.textSlate400]}>STUDYING</Text>
+                    <View style={s.flexRowGap2}>
+                        <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900, { maxWidth: SCREEN_WIDTH * 0.5 }]} numberOfLines={1}>
+                            {deck?.title || 'Study Deck'}
+                        </Text>
+                        {isLoading && (
+                             <Animated.View style={syncAnimatedStyle}>
+                                <Sparks width={14} height={14} color="#8B5CF6" />
+                            </Animated.View>
+                        )}
                     </View>
                 </View>
-                <View className={`h-1.5 w-full rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-slate-200'}`}>
-                    <LinearGradient
-                        colors={['#8B5CF6', '#6366F1']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={{ height: '100%', width: `${progress}%`, borderRadius: 999 }}
-                    />
-                </View>
+                <View style={s.size10} />
             </View>
 
-            {/* Pager */}
+            {/* Progress Container */}
+            <View style={s.progressContainer}>
+                <View style={[s.progressBarBg, isDark ? s.bgWhite5 : s.bgSlate200]}>
+                    <Animated.View style={[s.progressBarFill, { width: progressWidth as any }]}>
+                        <LinearGradient 
+                            colors={['#8B5CF6', '#6366F1']} 
+                            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} 
+                            style={StyleSheet.absoluteFill} 
+                        />
+                    </Animated.View>
+                </View>
+                <Text style={s.progressText}>{currentIndex + 1} / {cards.length}</Text>
+            </View>
+
+            {/* Main Pager */}
             <ScrollView
                 ref={scrollRef}
                 horizontal
                 pagingEnabled
-                scrollEnabled={true}
                 showsHorizontalScrollIndicator={false}
                 onMomentumScrollEnd={handleScroll}
-                style={{ flex: 1 }}
-                contentContainerStyle={{ flexGrow: 1 }}
+                style={s.pager}
+                contentContainerStyle={s.pagerContent}
+                scrollEventThrottle={16}
             >
-                {cards.map((card, index) => (
-                    <View key={card.id.toString()} style={{ width: SCREEN_WIDTH, height: '100%' }}>
+                 {cards.map((card: Card, index: number) => (
+                    <View key={card.id.toString()} style={{ width: SCREEN_WIDTH, height: '100%', paddingHorizontal: 24 }}>
                         <FlashcardItem card={card} isActive={currentIndex === index} isDark={isDark} />
                     </View>
                 ))}
             </ScrollView>
 
-            {/* Controls */}
-            <View className="px-6 pb-10 pt-4 flex-row items-center gap-4">
-                <TouchableOpacity
-                    onPress={prevCard}
-                    disabled={currentIndex === 0}
-                    activeOpacity={0.8}
-                    className={`size-[56px] rounded-full items-center justify-center ${currentIndex === 0 ? 'opacity-20' : ''}`}
-                    style={currentIndex > 0 ? { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#f1f5f9' } : undefined}
-                >
-                    <NavArrowLeft width={22} height={22} color={isDark ? 'white' : '#0f172a'} />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    onPress={currentIndex === cards.length - 1 ? () => router.back() : nextCard}
-                    activeOpacity={0.8}
-                    style={{ flex: 1, height: 56, borderRadius: 28, overflow: 'hidden' }}
-                >
-                    <LinearGradient
-                        colors={currentIndex === cards.length - 1 ? ['#22c55e', '#16a34a'] : ['#8B5CF6', '#6366F1']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+            {/* Footer Navigation */}
+            <View style={s.footer}>
+                <View style={s.controlsRow}>
+                    <TouchableOpacity
+                        onPress={prevCard}
+                        disabled={currentIndex === 0}
+                        activeOpacity={0.7}
+                        style={[s.navIconBtn, currentIndex === 0 ? s.opacity0 : (isDark ? s.bgWhite10 : s.bgWhite60)]}
                     >
-                        <Text className="text-white font-bold text-[16px]">
-                            {currentIndex === cards.length - 1 ? 'Complete Session' : 'Next Card'}
-                        </Text>
-                        {currentIndex === cards.length - 1 ? (
-                            <Check width={20} height={20} color="white" strokeWidth={2.5} style={{ marginLeft: 8 }} />
-                        ) : (
-                            <NavArrowRight width={20} height={20} color="white" strokeWidth={2.5} style={{ marginLeft: 8 }} />
-                        )}
-                    </LinearGradient>
-                </TouchableOpacity>
+                        <NavArrowLeft width={24} height={24} color={isDark ? 'white' : '#0f172a'} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={nextCard}
+                        activeOpacity={0.9}
+                        style={s.mainActionBtn}
+                    >
+                        <BlurView intensity={isDark ? 50 : 80} tint={isDark ? 'dark' : 'light'} style={s.mainActionBlur}>
+                             <LinearGradient
+                                colors={currentIndex === cards.length - 1 ? ['#22c55e', '#16a34a'] : ['#8B5CF6', '#6366F1']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={s.mainActionGradient}
+                            >
+                                <Text style={s.mainActionLabel}>
+                                    {currentIndex === cards.length - 1 ? 'Finish Set' : 'Next Card'}
+                                </Text>
+                                {currentIndex === cards.length - 1 ? (
+                                    <Check width={20} height={20} color="white" strokeWidth={3} />
+                                ) : (
+                                    <NavArrowRight width={20} height={20} color="white" strokeWidth={3} />
+                                )}
+                            </LinearGradient>
+                        </BlurView>
+                    </TouchableOpacity>
+                </View>
             </View>
         </GlowBackground>
     );
 }
+
+const s = StyleSheet.create({
+    flex1: { flex: 1 },
+    headerRow: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerTextContainer: { flex: 1, alignItems: 'center', marginHorizontal: 12 },
+    headerLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 2, marginBottom: 4 },
+    headerTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
+    backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    bgWhite60: { backgroundColor: 'rgba(255,255,255,0.6)' },
+    size10: { width: 44 },
+    
+    progressContainer: { paddingHorizontal: 24, alignItems: 'center', gap: 12 },
+    progressBarBg: { height: 6, width: 100, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 3, overflow: 'hidden' },
+    bgWhite5: { backgroundColor: 'rgba(255,255,255,0.05)' },
+    bgSlate200: { backgroundColor: 'rgba(0,0,0,0.05)' },
+    progressBarFill: { height: '100%', borderRadius: 3 },
+    progressText: { fontSize: 11, fontWeight: '700', color: '#94a3b8', letterSpacing: 1 },
+
+    pager: { flex: 1 },
+    pagerContent: { paddingVertical: 20 },
+    
+    cardContainer: { height: SCREEN_HEIGHT * 0.55, marginVertical: 10 },
+    cardBase: { flex: 1, borderRadius: 40, overflow: 'hidden' },
+    glassCard: { flex: 1, borderRadius: 40, padding: 32, justifyContent: 'center', borderBottomWidth: 4 },
+    glassBorderDark: { borderColor: 'rgba(255,255,255,0.1)', borderBottomColor: 'rgba(139, 92, 246, 0.3)' },
+    glassBorderLight: { borderColor: 'rgba(0,0,0,0.05)', borderBottomColor: 'rgba(139, 92, 246, 0.15)' },
+    glassBorderBack: { borderColor: 'rgba(139, 92, 246, 0.2)', borderBottomColor: 'rgba(139, 92, 246, 0.4)' },
+    
+    cardHeader: { position: 'absolute', top: 32, left: 32, right: 32, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 },
+    typeBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(139, 92, 246, 0.1)' },
+    typeBadgeText: { fontSize: 10, fontWeight: '900', color: '#8B5CF6', letterSpacing: 1 },
+    
+    cardContent: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 40 },
+    mathTextContainer: { width: '100%' },
+    
+    cardFooterTextPos: { position: 'absolute', bottom: 32, left: 0, right: 0, alignItems: 'center', zIndex: 10 },
+    cardFooterText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
+    cardBackFooterText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
+
+    footer: { paddingHorizontal: 24, paddingBottom: 50, paddingTop: 20 },
+    controlsRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    navIconBtn: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+    mainActionBtn: { flex: 1, height: 64, borderRadius: 32, overflow: 'hidden' },
+    mainActionBlur: { flex: 1 },
+    mainActionGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+    mainActionLabel: { color: 'white', fontWeight: '800', fontSize: 16, letterSpacing: -0.2 },
+    opacity0: { opacity: 0 },
+
+    successCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+    successIconBox: { width: 100, height: 100, borderRadius: 50, marginBottom: 32, padding: 8, backgroundColor: 'rgba(139, 92, 246, 0.1)' },
+    successIconGradient: { flex: 1, borderRadius: 42, alignItems: 'center', justifyContent: 'center' },
+    successTitle: { fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 12, letterSpacing: -1 },
+    successSubtitle: { fontSize: 16, fontWeight: '500', color: '#94a3b8', textAlign: 'center', lineHeight: 24, marginBottom: 40 },
+    successActions: { flexDirection: 'row', gap: 16, width: '100%' },
+    outlineBtn: { height: 56, borderRadius: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 2 },
+    outlineBtnDark: { borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' },
+    outlineBtnLight: { borderColor: 'rgba(0,0,0,0.05)', backgroundColor: 'white' },
+    outlineBtnText: { fontWeight: '700', fontSize: 15 },
+    blueBtnGradient: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+    btnTextLarge: { color: 'white', fontWeight: '800', fontSize: 16 },
+
+    errorCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+    errorTitle: { fontSize: 20, fontWeight: '900', marginTop: 24, marginBottom: 8 },
+    errorSubtitle: { fontSize: 15, color: '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+    noCardsText: { fontSize: 16, color: '#64748b', fontWeight: '600' },
+    goBackTextPrimary: { color: '#8B5CF6', fontWeight: '800', fontSize: 15 },
+    mt4: { marginTop: 16 },
+
+    loadingWrapper: { flex: 1, paddingHorizontal: 24, paddingTop: 100 },
+    loadingPlaceholder: { width: '100%', aspectRatio: 3/4, borderRadius: 40, padding: 32, justifyContent: 'center' },
+    bgGrayDark: { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
+    bgWhite: { backgroundColor: 'rgba(255, 255, 255, 0.4)' },
+    flexRowGap2: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    
+    textWhite: { color: 'white' },
+    textWhite40: { color: 'rgba(255,255,255,0.4)' },
+    textSlate900: { color: '#0f172a' },
+    textSlate400: { color: '#94a3b8' },
+});

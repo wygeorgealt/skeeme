@@ -9,6 +9,7 @@ use App\Services\SubscriptionService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class UpdateSubscriptionOnPayment
 {
@@ -76,6 +77,14 @@ class UpdateSubscriptionOnPayment
                     'plan' => $planName, 
                     'credits_added' => $creditsToAdd
                 ]);
+
+                // Send Upgrade Confirmation Email
+                try {
+                    Mail::mailer('resend')->to($user->email)->send(new \App\Mail\UpgradeConfirmationMail($user, $planName));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send upgrade confirmation email', ['error' => $e->getMessage()]);
+                }
+                
                 return;
             }
         }

@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, useColorScheme, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, useColorScheme, Platform, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';
@@ -40,55 +40,95 @@ export default function NotificationsScreen() {
     };
 
     return (
-        <View className={`flex-1 px-6 pt-16 pb-6 ${isDark ? 'bg-[#0f0f11]' : 'bg-[#fafafa]'}`}>
+        <View style={[s.flex1, isDark ? s.bgDark : s.bgLight]}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            <Animated.View entering={FadeInDown.duration(800).delay(100)} className="mb-10">
-                <View className={`w-16 h-16 rounded-[22px] items-center justify-center mb-6 shadow-sm ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-white border border-slate-100 shadow-xl shadow-black/5'}`}>
+            <Animated.View entering={FadeInDown.duration(800).delay(100)} style={s.headerSection}>
+                <View style={[s.iconBox, isDark ? s.iconBoxDark : s.iconBoxLight]}>
                     <Bell width={28} height={28} color="#8B5CF6" />
                 </View>
-                <Text className={`text-[40px] font-bold tracking-tight leading-[46px] mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>
                     Stay on track.
                 </Text>
-                <Text className={`text-[15px] font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <Text style={[s.heroSubtitle, isDark ? s.textSlate400 : s.textSlate500]}>
                     Skeeme can remind you before your streak resets or when your AI context is ready.
                 </Text>
             </Animated.View>
 
             {/* Notification reasons */}
-            <View className="gap-4">
+            <View style={s.reasonsGap}>
                 {REASONS.map((reason, i) => (
                     <Animated.View key={i} entering={FadeInDown.duration(600).delay(300 + i * 150)}>
-                        <View className={`flex-row items-center p-5 rounded-[24px] border-2 shadow-sm ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-50 bg-white'}`}>
-                             <View className={`w-12 h-12 rounded-[16px] items-center justify-center mr-5 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                        <View style={[s.reasonCard, isDark ? s.reasonCardDark : s.reasonCardLight]}>
+                             <View style={[s.reasonIconBox, isDark ? s.bgSlate800 : s.bgSlate50]}>
                                 <reason.icon width={18} height={18} color={isDark ? '#94a3b8' : '#64748b'} />
                             </View>
-                            <Text className={`flex-1 font-bold text-[15px] ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{reason.text}</Text>
+                            <Text style={[s.reasonText, isDark ? s.textSlate200 : s.textSlate700]}>{reason.text}</Text>
                         </View>
                     </Animated.View>
                 ))}
             </View>
 
             {/* Buttons */}
-            <View className="mt-auto pt-8">
-                <Animated.View entering={FadeInUp.duration(600).delay(800)} className="gap-4">
+            <View style={s.footer}>
+                <Animated.View entering={FadeInUp.duration(600).delay(800)} style={s.btnGap}>
                     <TouchableOpacity
                         onPress={handleEnable}
                         activeOpacity={0.9}
-                        className="h-[56px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/25"
+                        style={s.mainBtn}
                     >
-                        <Text className="font-bold text-[15px] text-white tracking-wide">Enable Notifications</Text>
+                        <Text style={s.mainBtnText}>Enable Notifications</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         onPress={handleSkip}
                         activeOpacity={0.7}
-                        className="h-14 items-center justify-center rounded-[24px]"
+                        style={s.skipBtn}
                     >
-                        <Text className={`font-bold text-[14px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Maybe later</Text>
+                        <Text style={[s.skipBtnText, isDark ? s.textSlate500 : s.textSlate400]}>Maybe later</Text>
                     </TouchableOpacity>
                 </Animated.View>
             </View>
         </View>
     );
 }
+
+const s = StyleSheet.create({
+    flex1: { flex: 1, paddingHorizontal: 24, paddingTop: 64, paddingBottom: 24 },
+    bgDark: { backgroundColor: '#0f0f11' },
+    bgLight: { backgroundColor: '#fafafa' },
+    
+    headerSection: { marginBottom: 40 },
+    iconBox: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 24, borderWidth: 1 },
+    iconBoxLight: { backgroundColor: 'white', borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 5 },
+    iconBoxDark: { backgroundColor: '#0f172a', borderColor: '#1e293b' },
+    
+    heroTitle: { fontSize: 40, fontWeight: '700', letterSpacing: -1, lineHeight: 46, marginBottom: 12 },
+    heroSubtitle: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
+    
+    reasonsGap: { gap: 16 },
+    reasonCard: { flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 24, borderWidth: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+    reasonCardLight: { borderColor: '#f8fafc', backgroundColor: 'white' },
+    reasonCardDark: { borderColor: '#1e293b', backgroundColor: 'rgba(15, 23, 42, 0.5)' },
+    
+    reasonIconBox: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 20 },
+    bgSlate800: { backgroundColor: '#1e293b' },
+    bgSlate50: { backgroundColor: '#f8fafc' },
+    
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textSlate700: { color: '#334155' },
+    textSlate500: { color: '#64748b' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate200: { color: '#e2e8f0' },
+    
+    reasonText: { flex: 1, fontWeight: '700', fontSize: 15 },
+    
+    footer: { marginTop: 'auto', paddingTop: 32 },
+    btnGap: { gap: 16 },
+    mainBtn: { height: 56, backgroundColor: '#8B5CF6', borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 5 },
+    mainBtnText: { fontWeight: '700', fontSize: 15, color: 'white', letterSpacing: 0.5 },
+    
+    skipBtn: { height: 56, alignItems: 'center', justifyContent: 'center' },
+    skipBtnText: { fontWeight: '700', fontSize: 14 },
+});

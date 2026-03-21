@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, useColorScheme, Image } from 'react-native';
+import { View, Text, TouchableOpacity, useColorScheme, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
@@ -17,42 +17,66 @@ export default function HookScreen() {
 
     return (
         <GlowBackground useSafeArea>
-            <Animated.View entering={FadeInDown.duration(800).delay(200)} className="flex-1 px-6 items-center justify-center -mt-20">
-                <View className="w-24 h-24 rounded-[24px] bg-white shadow-xl shadow-black/5 items-center justify-center mb-8 border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+            <Animated.View entering={FadeInDown.duration(800).delay(200)} style={s.heroContainer}>
+                <View style={[s.iconBox, isDark ? s.iconBoxDark : s.iconBoxLight]}>
                     <Image
                         source={require('@/assets/images/icon.png')}
-                        className="w-16 h-16 opacity-90"
+                        style={s.iconImage}
                         resizeMode="contain"
                     />
                 </View>
 
-                <Text className={`text-[44px] font-bold tracking-tight text-center leading-[50px] mb-5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>
                     Study with{'\n'}Skeeme.
                 </Text>
-                <Text className={`text-[15px] font-medium text-center leading-relaxed px-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <Text style={[s.heroSubtitle, isDark ? s.textSlate400 : s.textSlate500]}>
                     The world's most powerful AI tutor, personalized exactly for you.
                 </Text>
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.duration(800).delay(600)} className="w-full px-6 pb-16">
+            <Animated.View entering={FadeInDown.duration(800).delay(600)} style={s.footer}>
                 <TouchableOpacity
                     onPress={() => router.push('/(onboarding)/education')}
                     activeOpacity={0.9}
-                    className="h-[56px] bg-brand-primary rounded-[24px] items-center justify-center mb-5 shadow-lg shadow-brand-primary/25"
+                    style={s.mainBtn}
                 >
-                    <Text className="font-bold text-[15px] text-white tracking-wide">Get Started</Text>
+                    <Text style={s.mainBtnText}>Get Started</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     onPress={() => router.push('/login')}
-                    className="h-12 items-center justify-center"
+                    style={s.loginLink}
                     activeOpacity={0.7}
                 >
-                    <Text className={`text-[14px] font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        Already have an account? <Text className="text-brand-primary">Log in</Text>
+                    <Text style={[s.loginLinkText, isDark ? s.textSlate400 : s.textSlate500]}>
+                        Already have an account? <Text style={s.textBrandPrimary}>Log in</Text>
                     </Text>
                 </TouchableOpacity>
             </Animated.View>
         </GlowBackground>
     );
 }
+
+const s = StyleSheet.create({
+    heroContainer: { flex: 1, paddingHorizontal: 24, alignItems: 'center', justifyContent: 'center', marginTop: -80 },
+    iconBox: { width: 96, height: 96, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 32, borderWidth: 1 },
+    iconBoxLight: { backgroundColor: 'white', borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 5 },
+    iconBoxDark: { backgroundColor: '#0f172a', borderColor: '#1e293b' },
+    iconImage: { width: 64, height: 64, opacity: 0.9 },
+    
+    heroTitle: { fontSize: 44, fontWeight: '700', letterSpacing: -1, textAlign: 'center', lineHeight: 50, marginBottom: 20 },
+    heroSubtitle: { fontSize: 15, fontWeight: '500', textAlign: 'center', lineHeight: 22, paddingHorizontal: 20 },
+    
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate500: { color: '#64748b' },
+    textBrandPrimary: { color: '#8B5CF6' },
+    
+    footer: { width: '100%', paddingHorizontal: 24, paddingBottom: 64 },
+    mainBtn: { height: 56, backgroundColor: '#8B5CF6', borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 20, shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 5 },
+    mainBtnText: { fontWeight: '700', fontSize: 15, color: 'white', letterSpacing: 0.5 },
+    
+    loginLink: { height: 48, alignItems: 'center', justifyContent: 'center' },
+    loginLinkText: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
+});

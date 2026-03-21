@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, useColorScheme } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, useColorScheme, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -104,21 +104,16 @@ export default function SignupScreen() {
         }
     };
 
-    const bgClass = isDark ? "bg-[#0f0f11]" : "bg-[#fafafa]";
-    const textClass = isDark ? "text-white" : "text-slate-900";
-    const subtextClass = isDark ? "text-slate-400" : "text-slate-500";
-    const inputBg = isDark ? "bg-[#0f0f11]" : "bg-transparent";
-    const inputBorder = isDark ? "border-slate-800" : "border-slate-200";
     const placeholderColor = isDark ? "#475569" : "#94a3b8";
 
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className={`flex-1 ${bgClass}`}
+            style={[s.flex1, isDark ? s.bgDark : s.bgLight]}
         >
             <StatusBar style={isDark ? "light" : "dark"} />
 
-            <View className="px-5 pt-16 pb-2 flex-row items-center">
+            <View style={s.header}>
                 <TouchableOpacity
                     onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
                     hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
@@ -128,107 +123,162 @@ export default function SignupScreen() {
             </View>
 
             <ScrollView 
-                className="flex-1 px-10 pt-4" 
+                style={s.scrollView} 
+                contentContainerStyle={s.scrollContent}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <View className="mb-10">
-                    <Text className={`${textClass} text-[40px] font-bold tracking-tight leading-[46px] mb-3`}>
+                <View style={s.heroSection}>
+                    <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>
                         Join Skeeme.
                     </Text>
-                    <Text className={`${subtextClass} text-[15px] font-medium leading-relaxed`}>
+                    <Text style={[s.heroSubtitle, isDark ? s.textSlate400 : s.textSlate500]}>
                         Create an account to start studying 5x faster.
                     </Text>
                 </View>
 
                 {/* Full Name */}
-                <View className="mb-4">
-                    <View className={`${inputBg} ${inputBorder} rounded-xl px-4 flex-row items-center border ${nameError ? 'border-red-500' : 'focus:border-slate-900 dark:focus:border-white'}`}>
+                <View style={s.inputContainer}>
+                    <View style={[
+                        s.inputWrapper, 
+                        isDark ? s.bgDark : s.bgTransparent,
+                        isDark ? s.borderSlate800 : s.borderSlate200,
+                        nameError ? s.borderRed : null
+                    ]}>
                         <TextInput
-                            className="flex-1 font-medium text-[15px] h-[48px]"
+                            style={[s.textInput, { color: isDark ? 'white' : 'black' }]}
                             placeholder="Full name"
                             placeholderTextColor={placeholderColor}
                             autoCapitalize="words"
                             value={name}
                             onChangeText={(t) => { setName(t); setNameError(''); }}
-                            style={{ color: isDark ? 'white' : 'black' }}
                         />
                     </View>
-                    {nameError ? <Text className="text-red-500 text-[12px] font-medium mt-1.5 ml-1">{nameError}</Text> : null}
+                    {nameError ? <Text style={s.errorText}>{nameError}</Text> : null}
                 </View>
 
                 {/* Email */}
-                <View className="mb-4">
-                    <View className={`${inputBg} ${inputBorder} rounded-xl px-4 flex-row items-center border ${emailError ? 'border-red-500' : 'focus:border-slate-900 dark:focus:border-white'}`}>
+                <View style={s.inputContainer}>
+                    <View style={[
+                        s.inputWrapper, 
+                        isDark ? s.bgDark : s.bgTransparent,
+                        isDark ? s.borderSlate800 : s.borderSlate200,
+                        emailError ? s.borderRed : null
+                    ]}>
                         <TextInput
-                            className="flex-1 font-medium text-[15px] h-[48px]"
+                            style={[s.textInput, { color: isDark ? 'white' : 'black' }]}
                             placeholder="Email address"
                             placeholderTextColor={placeholderColor}
                             keyboardType="email-address"
                             autoCapitalize="none"
                             value={email}
                             onChangeText={(t) => { setEmail(t); setEmailError(''); }}
-                            style={{ color: isDark ? 'white' : 'black' }}
                         />
                     </View>
                     {emailError === 'exists' ? (
-                        <View className="flex-row items-center mt-2 ml-1">
-                            <Text className="text-red-500 text-[12px] font-medium">An account with this email already exists. </Text>
+                        <View style={s.errorRow}>
+                            <Text style={s.errorText}>An account with this email already exists. </Text>
                             <TouchableOpacity onPress={() => router.push('/login')}>
-                                <Text className="text-brand-primary font-bold text-[12px]">Log in →</Text>
+                                <Text style={s.linkText}>Log in →</Text>
                             </TouchableOpacity>
                         </View>
                     ) : emailError ? (
-                        <Text className="text-red-500 text-[12px] font-medium mt-1.5 ml-1">{emailError}</Text>
+                        <Text style={s.errorText}>{emailError}</Text>
                     ) : null}
                 </View>
 
                 {/* Password */}
-                <View className="mb-2">
+                <View style={s.passwordContainer}>
                     <PasswordField
                         value={password}
                         onChangeText={(t: string) => { setPassword(t); setPasswordError(''); }}
-                        containerClassName=""
                     />
                     {passwordError ? (
-                        <Text className="text-red-500 text-[12px] font-medium mt-1.5 ml-1">{passwordError}</Text>
+                        <Text style={s.errorText}>{passwordError}</Text>
                     ) : null}
                 </View>
 
                 {/* Password Strength */}
                 {password.length > 0 && (
-                    <View className="mb-5 ml-1">
-                        <View className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                    <View style={s.strengthContainer}>
+                        <View style={[s.strengthTrack, isDark ? s.bgSlate800 : s.bgSlate100]}>
                             <View style={{ width: strength.width as any, backgroundColor: strength.color, height: '100%', borderRadius: 4 }} />
                         </View>
-                        <Text style={{ color: strength.color }} className="text-[10px] font-bold mt-2 uppercase tracking-widest">{strength.label}</Text>
+                        <Text style={[s.strengthLabel, { color: strength.color }]}>{strength.label}</Text>
                     </View>
                 )}
 
-                <View className="mt-4" />
+                <View style={s.spacer} />
 
                 {/* Signup Button */}
-                <View className="mt-6">
+                <View style={s.btnContainer}>
                     <TouchableOpacity
                         onPress={handleSignup}
                         disabled={isLoading}
                         activeOpacity={0.9}
-                        className={`w-full h-[52px] bg-brand-primary rounded-[24px] items-center justify-center shadow-lg shadow-brand-primary/20 ${isLoading ? 'opacity-70' : ''}`}
+                        style={[s.submitBtn, isLoading && s.opacity70]}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text className="font-bold text-[15px] text-white tracking-wide">Create Account</Text>
+                            <Text style={s.submitBtnText}>Create Account</Text>
                         )}
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity onPress={() => router.push('/login')} className="mt-10 mb-8 items-center">
-                    <Text className={`${subtextClass} font-bold text-[13px]`}>
-                        Already have an account? <Text className="text-brand-primary">Log in</Text>
+                <TouchableOpacity onPress={() => router.push('/login')} style={s.loginLink}>
+                    <Text style={[s.loginLinkText, isDark ? s.textSlate400 : s.textSlate500]}>
+                        Already have an account? <Text style={s.linkText}>Log in</Text>
                     </Text>
                 </TouchableOpacity>
             </ScrollView>
         </KeyboardAvoidingView>
     );
 }
+
+const s = StyleSheet.create({
+    flex1: { flex: 1 },
+    bgDark: { backgroundColor: '#0f0f11' },
+    bgLight: { backgroundColor: '#fafafa' },
+    bgTransparent: { backgroundColor: 'transparent' },
+    
+    header: { paddingHorizontal: 20, paddingTop: 64, paddingBottom: 8, flexDirection: 'row', alignItems: 'center' },
+    scrollView: { flex: 1 },
+    scrollContent: { paddingHorizontal: 40, paddingTop: 16 },
+    
+    heroSection: { marginBottom: 40 },
+    heroTitle: { fontSize: 40, fontWeight: '700', letterSpacing: -1, lineHeight: 46, marginBottom: 12 },
+    heroSubtitle: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
+    
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate50: { color: '#f8fafc' },
+    textSlate500: { color: '#64748b' },
+    
+    inputContainer: { marginBottom: 16 },
+    inputWrapper: { borderRadius: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
+    borderSlate800: { borderColor: '#1e293b' },
+    borderSlate200: { borderColor: '#e2e8f0' },
+    borderRed: { borderColor: '#ef4444' },
+    textInput: { flex: 1, fontWeight: '500', fontSize: 15, height: 48 },
+    errorText: { color: '#ef4444', fontSize: 12, fontWeight: '500', marginTop: 6, marginLeft: 4 },
+    errorRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, marginLeft: 4 },
+    linkText: { color: '#8B5CF6', fontWeight: '700' },
+    
+    passwordContainer: { marginBottom: 8 },
+    strengthContainer: { marginBottom: 20, marginLeft: 4 },
+    strengthTrack: { height: 6, borderRadius: 99, overflow: 'hidden' },
+    bgSlate800: { backgroundColor: '#1e293b' },
+    bgSlate100: { backgroundColor: '#f1f5f9' },
+    strengthLabel: { fontSize: 10, fontWeight: '700', marginTop: 8, textTransform: 'uppercase', letterSpacing: 1.5 },
+    
+    spacer: { height: 16 },
+    btnContainer: { marginTop: 24 },
+    submitBtn: { width: '100%', height: 52, backgroundColor: '#8B5CF6', borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 5 },
+    submitBtnText: { fontWeight: '700', fontSize: 15, color: 'white', letterSpacing: 0.5 },
+    opacity70: { opacity: 0.7 },
+    
+    loginLink: { marginTop: 40, marginBottom: 32, alignItems: 'center' },
+    loginLinkText: { fontWeight: '700', fontSize: 13 },
+});

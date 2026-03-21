@@ -1,5 +1,5 @@
 import { Drawer } from 'expo-router/drawer';
-import { View, Text, TouchableOpacity, useColorScheme, Alert, Platform, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, useColorScheme, Alert, Platform, Animated, StyleSheet } from 'react-native';
 import { 
     Rocket, NavArrowRight, Menu, Sparks, Flash,
     Home, Scanning, MultiplePages, Page, MagicWand, User, LogOut
@@ -87,14 +87,14 @@ function CustomDrawerContent(props: any) {
     };
 
     return (
-        <View className="flex-1 overflow-hidden" style={{ backgroundColor: 'transparent' }}>
+        <View style={[s.drawerRoot, { backgroundColor: 'transparent' }]}>
             <BlurView
                 intensity={isDark ? 80 : 40}
                 tint={isDark ? 'dark' : 'light'}
                 style={{ flex: 1, justifyContent: 'center' }}
             >
                 {/* Vertically centered nav items - Jobber FAB style */}
-                <View className="flex-1 justify-center items-end pr-6 pb-20">
+                <View style={s.navContainer}>
                     {NAV_ITEMS.map((item, index) => {
                         const isActive = pathname === item.route || (pathname.startsWith(item.route + '/') && item.route !== '/');
                         const isRootActive = pathname === '/' && item.route === '/';
@@ -112,9 +112,9 @@ function CustomDrawerContent(props: any) {
                                 <TouchableOpacity
                                     onPress={() => router.push(item.route as any)}
                                     activeOpacity={0.7}
-                                    className="flex-row items-center"
+                                    style={s.navItem}
                                 >
-                                    <Text className={`font-bold text-[14px] mr-4 ${active ? (isDark ? 'text-white' : 'text-slate-900') : (isDark ? 'text-white/60' : 'text-slate-500')}`}>
+                                    <Text style={[s.navLabel, active ? (isDark ? s.textWhite : s.textSlate900) : (isDark ? s.textWhite60 : s.textSlate700)]}>
                                         {item.label}
                                     </Text>
 
@@ -131,7 +131,7 @@ function CustomDrawerContent(props: any) {
                                         <item.icon
                                             width={22}
                                             height={22}
-                                            color={active ? '#FFFFFF' : (isDark ? '#9CA3AF' : '#64748B')}
+                                            color={active ? '#FFFFFF' : (isDark ? '#9CA3AF' : '#334155')}
                                             strokeWidth={active ? 2 : 1.5}
                                         />
                                     </View>
@@ -150,9 +150,9 @@ function CustomDrawerContent(props: any) {
                         <TouchableOpacity
                             onPress={handleLogout}
                             activeOpacity={0.7}
-                            className="flex-row items-center"
+                            style={s.navItem}
                         >
-                            <Text className="font-bold text-[14px] mr-4 text-red-400">Sign out</Text>
+                            <Text style={[s.navLabel, isDark ? s.textRed400 : s.textRed600]}>Sign out</Text>
                             <View
                                 style={{
                                     width: 48,
@@ -266,3 +266,16 @@ export default function DrawerLayout() {
         </Drawer >
     );
 }
+
+const s = StyleSheet.create({
+    drawerRoot: { flex: 1, overflow: 'hidden' },
+    navContainer: { flex: 1, justifyContent: 'center', alignItems: 'flex-end', paddingRight: 24, paddingBottom: 80 },
+    navItem: { flexDirection: 'row', alignItems: 'center' },
+    navLabel: { fontWeight: '700', fontSize: 14, marginRight: 16 },
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textWhite60: { color: 'rgba(255,255,255,0.6)' },
+    textSlate700: { color: '#334155' },
+    textRed400: { color: '#F87171' },
+    textRed600: { color: '#DC2626' },
+});

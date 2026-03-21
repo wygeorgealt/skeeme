@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, useColorScheme } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, useColorScheme, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
 import { NavArrowLeft, Mail } from 'iconoir-react-native';
@@ -124,42 +124,35 @@ export default function OtpScreen() {
         }
     };
 
-    const bgClass = isDark ? "bg-[#0f0f11]" : "bg-[#fafafa]";
-    const textClass = isDark ? "text-white" : "text-slate-900";
-    const subtextClass = isDark ? "text-slate-400" : "text-slate-500";
-    const boxBg = isDark ? "bg-[#0f0f11]" : "bg-transparent";
-    const borderDefault = isDark ? "border-slate-800" : "border-slate-200";
-
     const headline = type === 'verification' ? 'Verify your email' : 'Check your email';
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className={`flex-1 ${bgClass}`}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[s.flex1, isDark ? s.bgDark : s.bgLight]}>
             <StatusBar style={isDark ? "light" : "dark"} />
 
-            <View className="px-5 pt-16 pb-2 flex-row items-center">
+            <View style={s.header}>
                 <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
                     <NavArrowLeft width={28} height={28} color={isDark ? '#fff' : '#000'} />
                 </TouchableOpacity>
             </View>
 
-            <View className="flex-1 px-10 pt-10">
-                <View className="w-16 h-16 rounded-[22px] bg-brand-primary/10 items-center justify-center mb-6">
+            <View style={s.content}>
+                <View style={[s.iconBox, isDark ? s.bgBrandPrimary10 : s.bgBrandPrimary10]}>
                     <Mail width={32} height={32} color="#8B5CF6" />
                 </View>
 
-                <View className="mb-8">
-                    <Text className={`${textClass} text-[40px] font-bold tracking-tight leading-[46px] mb-3`}>
+                <View style={s.heroSection}>
+                    <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>
                         {headline}.
                     </Text>
-                    <Text className={`${subtextClass} text-[15px] font-medium leading-relaxed`}>
-                        We sent a 6-digit code to <Text className={`${textClass} font-bold`}>{email}</Text>.
+                    <Text style={[s.heroSubtitle, isDark ? s.textSlate400 : s.textSlate500]}>
+                        We sent a 6-digit code to <Text style={[s.textBold, isDark ? s.textWhite : s.textSlate900]}>{email}</Text>.
                     </Text>
                 </View>
 
-                <View className="flex-row justify-between mb-8">
+                <View style={s.otpRow}>
                     {code.map((digit, index) => {
                         const hasValue = digit !== '';
-                        const isFocused = inputs.current[index]?.isFocused();
                         return (
                             <TextInput
                                 key={index}
@@ -170,41 +163,42 @@ export default function OtpScreen() {
                                 keyboardType="number-pad"
                                 maxLength={6}
                                 selectTextOnFocus
-                                className={`w-[48px] h-[56px] text-center text-[20px] font-bold rounded-[18px] border
-                                    ${textClass}
-                                `}
-                                style={{
-                                    backgroundColor: boxBg,
-                                    borderColor: hasValue ? (isDark ? '#fff' : '#000') : (isDark ? '#1e293b' : '#e2e8f0'),
-                                    borderWidth: hasValue ? 2 : 1,
-                                }}
+                                style={[
+                                    s.otpInput,
+                                    isDark ? s.textWhite : s.textSlate900,
+                                    {
+                                        backgroundColor: isDark ? '#0f0f11' : 'transparent',
+                                        borderColor: hasValue ? (isDark ? '#fff' : '#000') : (isDark ? '#1e293b' : '#e2e8f0'),
+                                        borderWidth: hasValue ? 2 : 1,
+                                    }
+                                ]}
                             />
                         );
                     })}
                 </View>
 
                 {isLoading && (
-                    <View className="items-center mb-5">
+                    <View style={s.loaderContainer}>
                         <ActivityIndicator color="#8B5CF6" />
                     </View>
                 )}
 
                 {errorMsg ? (
-                    <View className="bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 p-4 rounded-xl mb-5">
-                        <Text className="text-red-600 dark:text-red-400 text-[13px] font-medium text-center">{errorMsg}</Text>
+                    <View style={[s.alert, isDark ? s.alertErrorDark : s.alertErrorLight]}>
+                        <Text style={[s.alertText, isDark ? s.textRed400 : s.textRed600]}>{errorMsg}</Text>
                     </View>
                 ) : null}
 
                 {resendSuccess ? (
-                    <View className="bg-brand-primary/10 border border-brand-primary/20 p-4 rounded-xl mb-5">
-                        <Text className="text-brand-primary text-[13px] font-medium text-center">{resendSuccess}</Text>
+                    <View style={s.alertSuccess}>
+                        <Text style={s.textBrandPrimarySmall}>{resendSuccess}</Text>
                     </View>
                 ) : null}
 
-                <View className="flex-row items-center justify-center mt-5">
-                    <Text className={`${subtextClass} font-bold text-[12px] mr-2`}>Didn't get it?</Text>
+                <View style={s.resendRow}>
+                    <Text style={[s.resendText, isDark ? s.textSlate400 : s.textSlate500]}>Didn't get it?</Text>
                     <TouchableOpacity onPress={handleResend} disabled={countdown > 0 || isLoading}>
-                        <Text className={`font-black text-[12px] ${countdown > 0 ? 'text-slate-400' : 'text-brand-primary'}`}>
+                        <Text style={[s.resendLink, countdown > 0 ? s.textSlate400 : s.textBrandPrimary]}>
                             {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
                         </Text>
                     </TouchableOpacity>
@@ -213,3 +207,45 @@ export default function OtpScreen() {
         </KeyboardAvoidingView>
     );
 }
+
+const s = StyleSheet.create({
+    flex1: { flex: 1 },
+    bgDark: { backgroundColor: '#0f0f11' },
+    bgLight: { backgroundColor: '#fafafa' },
+    
+    header: { paddingHorizontal: 20, paddingTop: 64, paddingBottom: 8, flexDirection: 'row', alignItems: 'center' },
+    content: { flex: 1, paddingHorizontal: 40, paddingTop: 40 },
+    
+    iconBox: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+    bgBrandPrimary10: { backgroundColor: 'rgba(139, 92, 246, 0.1)' },
+    
+    heroSection: { marginBottom: 32 },
+    heroTitle: { fontSize: 40, fontWeight: '700', letterSpacing: -1, lineHeight: 46, marginBottom: 12 },
+    heroSubtitle: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
+    textBold: { fontWeight: '700' },
+    
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    textSlate400: { color: '#94a3b8' },
+    textSlate500: { color: '#64748b' },
+    
+    otpRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 32 },
+    otpInput: { width: 48, height: 56, textAlign: 'center', fontSize: 20, fontWeight: '700', borderRadius: 18 },
+    
+    loaderContainer: { alignItems: 'center', marginBottom: 20 },
+    
+    alert: { padding: 16, borderRadius: 12, marginBottom: 20, borderWidth: 1 },
+    alertErrorLight: { backgroundColor: '#fef2f2', borderColor: '#fee2e2' },
+    alertErrorDark: { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.2)' },
+    alertText: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
+    textRed600: { color: '#dc2626' },
+    textRed400: { color: '#f87171' },
+    
+    alertSuccess: { backgroundColor: 'rgba(139, 92, 246, 0.1)', borderColor: 'rgba(139, 92, 246, 0.2)', borderWidth: 1, padding: 16, borderRadius: 12, marginBottom: 20 },
+    textBrandPrimarySmall: { color: '#8B5CF6', fontSize: 13, fontWeight: '500', textAlign: 'center' },
+    
+    resendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20 },
+    resendText: { fontWeight: '700', fontSize: 12, marginRight: 8 },
+    resendLink: { fontWeight: '900', fontSize: 12 },
+    textBrandPrimary: { color: '#8B5CF6' },
+});
