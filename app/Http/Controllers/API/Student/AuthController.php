@@ -19,6 +19,12 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+    protected $otpService;
+
+    public function __construct(\App\Services\OtpService $otpService)
+    {
+        $this->otpService = $otpService;
+    }
     /**
      * Handle student login and return Sanctum token
      */
@@ -226,12 +232,8 @@ class AuthController extends Controller
 
         Log::info('New student registered via API', ['user_id' => $user->id, 'device' => $deviceName]);
 
-        // Send Welcome Email
-        try {
-            \Illuminate\Support\Facades\Mail::mailer('resend')->to($user->email)->send(new \App\Mail\WelcomeMail($user->name));
-        } catch (\Exception $e) {
-            Log::error('Failed to send welcome email', ['error' => $e->getMessage()]);
-        }
+        // Send OTP Verification Email
+        $this->otpService->sendOtp($user->email, 'verification');
 
         $pricing = $this->getLocalizedPrice($request);
 

@@ -12,6 +12,9 @@ import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { TutorialModal } from '@/components/ui/TutorialModal';
+import * as SecureStore from 'expo-secure-store';
+import { useEffect } from 'react';
 
 // ─── Sub-components use ONLY style props (no className) ────────────────────────
 // NativeWind's css-interop wraps components using className and tries to access
@@ -241,12 +244,28 @@ const s = StyleSheet.create({
 export default function DashboardScreen() {
     const { user, updateUser } = useAuthStore();
     const [refreshing, setRefreshing] = useState(false);
+    const [tutorialVisible, setTutorialVisible] = useState(false);
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const isFreePlan = !user?.is_unlimited && (!user?.plan_name || user?.plan_name === 'free');
     const navigation = useNavigation() as any;
     const insets = useSafeAreaInsets();
     const queryClient = useQueryClient();
+
+    useEffect(() => {
+        const checkTutorial = async () => {
+            const hasSeen = await SecureStore.getItemAsync('tutorial_seen');
+            if (!hasSeen) {
+                setTutorialVisible(true);
+            }
+        };
+        checkTutorial();
+    }, []);
+
+    const handleDismissTutorial = async () => {
+        setTutorialVisible(false);
+        await SecureStore.setItemAsync('tutorial_seen', 'true');
+    };
 
     const { data: heatmapDates = [], isLoading: isLoadingHeatmap } = useQuery({
         queryKey: ['streak-heatmap'],
@@ -442,6 +461,10 @@ export default function DashboardScreen() {
                     </View>
                 </View>
             </ScrollView>
+            <TutorialModal 
+                visible={tutorialVisible} 
+                onDismiss={handleDismissTutorial} 
+            />
         </GlowBackground>
     );
 }
