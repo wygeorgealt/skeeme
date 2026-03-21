@@ -148,12 +148,29 @@ export default function RootLayout() {
             <Stack.Screen name="upgrade" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', headerShown: false }} />
             <Stack.Screen name="+not-found" />
           </Stack>
+
+          {/* Global Modals */}
+          <OutOfCreditsModalWrapper />
+
           <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
         </ThemeProvider>
       </QueryProvider>
       </View>
       </GlowBackground>
     </GestureHandlerRootView>
+  );
+}
+
+function OutOfCreditsModalWrapper() {
+  const { showCreditsModal, creditsModalFeature, toggleCreditsModal } = useAuthStore();
+  const OutOfCreditsModal = require('@/components/OutOfCreditsModal').default;
+
+  return (
+    <OutOfCreditsModal 
+      visible={showCreditsModal} 
+      onDismiss={() => toggleCreditsModal(false)}
+      featureAttempted={creditsModalFeature || 'scan'}
+    />
   );
 }
 

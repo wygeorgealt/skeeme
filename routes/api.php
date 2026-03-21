@@ -82,7 +82,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // AI Question Generation routes
-        Route::prefix('questions')->group(function () {
+        Route::group(['prefix' => 'questions', 'middleware' => ['throttle:30,1', 'sufficient.credits']], function () {
             Route::post('/generate', [AIQuestionController::class, 'generate'])->name('questions.generate');
             Route::post('/{question}/review', [AIQuestionController::class, 'review'])->name('questions.review');
             Route::get('/pools/{pool}/drafts', [AIQuestionController::class, 'drafts'])->name('questions.drafts');
@@ -92,7 +92,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // AI Grading routes
-        Route::prefix('gradings')->group(function () {
+        Route::group(['prefix' => 'gradings', 'middleware' => 'sufficient.credits'], function () {
             Route::post('/grade-session/{session}', [AIGradingController::class, 'gradeSession'])->name('gradings.gradeSession');
             Route::get('/pending', [AIGradingController::class, 'pendingReview'])->name('gradings.pending');
             Route::post('/{grading}/approve', [AIGradingController::class, 'approve'])->name('gradings.approve');
@@ -137,7 +137,7 @@ Route::prefix('v1')->group(function () {
             Route::get('me', [\App\Http\Controllers\API\Student\AuthController::class, 'me']);
             
             // AI-Intensive Routes (Throttled: 5 per minute)
-            Route::middleware('throttle:5,1')->group(function () {
+            Route::middleware(['throttle:5,1', 'sufficient.credits'])->group(function () {
                 Route::post('quizzes/generate', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'generate']);
                 Route::post('flashcards/generate', [\App\Http\Controllers\API\Student\FlashcardController::class, 'generate']);
                 Route::post('scan/solve', [\App\Http\Controllers\API\Student\ScanController::class, 'solve']);
@@ -156,7 +156,7 @@ Route::prefix('v1')->group(function () {
             Route::get('system/pricing', [\App\Http\Controllers\API\SystemController::class, 'getPricing']);
             Route::get('diag/system', [StudentSubscriptionController::class, 'debug']); // Performance diag
             
-            Route::post('quizzes/grade-theory', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'gradeTheory']);
+            Route::post('quizzes/grade-theory', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'gradeTheory'])->middleware('sufficient.credits');
             
             Route::prefix('quizzes/history')->group(function () {
                 Route::get('/', [\App\Http\Controllers\API\Student\QuizSessionController::class, 'index']);

@@ -12,23 +12,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 type PlanType = 'standard' | 'elite';
 type BillingCycle = 'monthly' | 'yearly';
 
-const FEATURES = {
-    standard: [
-        '1,500 Weekly Credits',
-        '6,000 Monthly Total',
-        'Advanced Quiz Generation',
-        'Detailed Flashcard creation',
-        'Priority AI model access',
-    ],
-    elite: [
-        '5,000 Weekly Credits',
-        '20,000 Monthly Total',
-        'Unlimited Flashcard creation',
-        'Ultra-fast Elite AI model',
-        'Unlimited Scan & Solve',
-    ]
-};
-
 export default function UpgradeScreen() {
     const { user, pricingConfig, fetchPricingConfig } = useAuthStore();
     const colorScheme = useColorScheme();
@@ -55,6 +38,25 @@ export default function UpgradeScreen() {
             </GlowBackground>
         );
     }
+
+    const currentPricing = pricingConfig[currency]?.[activeTab] || {};
+    
+    const FEATURES = {
+        standard: [
+            `${(currentPricing.weekly || 1500).toLocaleString()} Weekly Credits`,
+            `${(currentPricing.credits || 6000).toLocaleString()} Monthly Total`,
+            'Advanced Quiz Generation',
+            'Detailed Flashcard creation',
+            'Priority AI model access',
+        ],
+        elite: [
+            `${(currentPricing.weekly || 5000).toLocaleString()} Weekly Credits`,
+            `${(currentPricing.credits || 20000).toLocaleString()} Monthly Total`,
+            'Unlimited Flashcard creation',
+            'Ultra-fast Elite AI model',
+            'Unlimited Scan & Solve',
+        ]
+    };
 
     const isPromoActive = (plan: PlanType) => {
         if (!pricingConfig.promos || !pricingConfig.promos[`${plan}_end`]) return false;
@@ -212,12 +214,7 @@ export default function UpgradeScreen() {
                         </Text>
                         
                         <View style={s.topUpGrid}>
-                            {[
-                                { amount: 200, usd: 2.00, ngn: 1500 },
-                                { amount: 500, usd: 3.70, ngn: 2800 },
-                                { amount: 1000, usd: 6.00, ngn: 4000 },
-                                { amount: 5000, usd: 15.00, ngn: 9500 },
-                            ].map((pack) => (
+                            {(pricingConfig.credit_packs?.[currency] || []).map((pack: any) => (
                                 <TouchableOpacity 
                                     key={pack.amount}
                                     onPress={async () => {
@@ -255,7 +252,7 @@ export default function UpgradeScreen() {
                                     
                                     <View style={[s.topUpPriceBox, isDark ? s.bgWhite10 : s.bgSlate900]}>
                                         <Text style={s.textWhiteBold}>
-                                            {currencySymbol}{(currency === 'ngn' ? pack.ngn : pack.usd).toLocaleString(undefined, { minimumFractionDigits: currency === 'usd' ? 2 : 0 })}
+                                            {currencySymbol}{pack.price.toLocaleString(undefined, { minimumFractionDigits: currency === 'usd' ? 2 : 0 })}
                                         </Text>
                                     </View>
                                 </TouchableOpacity>

@@ -86,11 +86,15 @@ class StreakService
         };
 
         if ($credits > 0) {
-            $user = $streak->user_id ? \App\Models\User::find($streak->user_id) : null;
-            if ($user && !$user->is_unlimited_student) {
+            $rewardEarned = \Illuminate\Support\Facades\DB::transaction(function () use ($streak, $credits, $milestone) {
+                $user = \App\Models\User::lockForUpdate()->find($streak->user_id);
+                
+                if (!$user || $user->is_unlimited_student) {
+                    return false;
+                }
+
                 $user->increment('credits', $credits);
                 
-                // Track transaction for reward
                 try {
                     $user->transactions()->create([
                         'type' => 'reward',
@@ -107,6 +111,10 @@ class StreakService
                     'reward' => $credits
                 ]);
 
+                return true;
+            });
+
+            if ($rewardEarned) {
                 return [
                     'earned' => true,
                     'credits' => $credits,

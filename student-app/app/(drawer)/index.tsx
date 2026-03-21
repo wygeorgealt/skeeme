@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useNavigation } from 'expo-router';
 import { api } from '@/lib/api';
 import { useCallback, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -246,6 +246,7 @@ export default function DashboardScreen() {
     const isFreePlan = !user?.is_unlimited && (!user?.plan_name || user?.plan_name === 'free');
     const navigation = useNavigation() as any;
     const insets = useSafeAreaInsets();
+    const queryClient = useQueryClient();
 
     const { data: heatmapDates = [], isLoading: isLoadingHeatmap } = useQuery({
         queryKey: ['streak-heatmap'],
@@ -271,14 +272,18 @@ export default function DashboardScreen() {
     });
 
     const onRefresh = useCallback(async () => {
-        if (!user) return;
         setRefreshing(true);
         try {
-            const res = await api.get('me');
-            if (res.data) updateUser(res.data);
-        } catch { /* silent */ }
-        setRefreshing(false);
-    }, [user, updateUser]);
+            await Promise.all([
+                queryClient.refetchQueries({ queryKey: ['me'] }),
+                queryClient.refetchQueries({ queryKey: ['streak-heatmap'] })
+            ]);
+        } catch (error) {
+            console.error('Refresh failed:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    }, [queryClient]);
 
     if (!user) return null;
 
@@ -290,9 +295,9 @@ export default function DashboardScreen() {
             <ScrollView
                 style={s.flex1}
                 contentContainerStyle={[s.scrollContent, { paddingTop: Math.max(insets.top, 16) }]}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" colors={['#8B5CF6']} />}
                 showsVerticalScrollIndicator={false}
-                bounces={false}
+                bounces={true}
             >
                 {/* TOP HERO SECTION */}
                 <View style={s.heroRow}>

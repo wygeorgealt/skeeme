@@ -93,6 +93,9 @@ class ScanController extends Controller
                     }
                 });
 
+                // Invalidate credit cache
+                Cache::forget("user_credits_{$user->id}");
+
                 // Check if user is running low on credits
                 \App\Jobs\CheckLowCredits::dispatch($user->id);
             }

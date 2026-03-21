@@ -36,10 +36,31 @@ class AIGradingController
         try {
             $results = $this->gradingService->gradeSession($session);
 
+            // Deduct credits if not unlimited
+            $user = auth()->user();
+            if (!$user->is_unlimited_student) {
+                $cost = $request->attributes->get('calculated_credit_cost', 0);
+                if ($cost > 0) {
+                    \Illuminate\Support\Facades\DB::transaction(function() use ($user, $cost, $session) {
+                        $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+                        $lockedUser->decrement('credits', $cost);
+                        
+                        $lockedUser->transactions()->create([
+                            'type' => 'usage',
+                            'amount' => -$cost,
+                            'description' => "AI Grading: Session #{$session->id} in course '{$session->exam->course->name}'",
+                        ]);
+                    });
+                    
+                    \Illuminate\Support\Facades\Cache::forget("user_credits_{$user->id}");
+                }
+            }
+
             return response()->json([
                 'message' => 'Session graded successfully',
                 'session' => $session->refresh(),
                 'grading_results' => $results,
+                'credits_deducted' => $user->is_unlimited_student ? 0 : ($cost ?? 0),
             ]);
         } catch (\Exception $e) {
             return response()->json([

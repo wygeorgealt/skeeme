@@ -40,7 +40,7 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
                 style={[
                     styles.logo, 
                     animatedStyle, 
-                    { tintColor: isDark ? '#FFFFFF' : '#0F172A' }
+                    { tintColor: isDark ? '#FFFFFF' : '#8B5CF6' }
                 ]}
                 resizeMode="contain"
             />
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
         zIndex: 99999,
     },
     logo: {
-        width: 200,
-        height: 200,
+        width: 150,
+        height: 150,
     },
 });

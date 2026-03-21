@@ -18,8 +18,8 @@ class DeepseekAIService
         $this->apiKey = config('services.deepseek.api_key');
         $this->visionService = $visionService;
         $this->client = new Client([
-            'timeout' => 600, // Increased for large document/medicine notes (50+ pages)
-            'connect_timeout' => 30,
+            'timeout' => 60, // Capped at 60s per user audit request
+            'connect_timeout' => 15,
         ]);
     }
 
@@ -37,7 +37,7 @@ class DeepseekAIService
         ?array $aiPreferences = null
     ): array {
         try {
-            set_time_limit(300);
+            set_time_limit(60);
             
             if ($progressCallback) $progressCallback(10);
             
@@ -79,7 +79,7 @@ class DeepseekAIService
                         'Authorization' => 'Bearer ' . $this->apiKey,
                         'Content-Type' => 'application/json',
                     ],
-                    'timeout' => 300,
+                    'timeout' => 60,
                     'json' => [
                         'model' => 'deepseek-chat',
                         'messages' => [
@@ -275,7 +275,7 @@ class DeepseekAIService
                         'Authorization' => 'Bearer ' . $this->apiKey,
                         'Content-Type' => 'application/json',
                     ],
-                    'timeout' => 300,
+                    'timeout' => 60,
                     'json' => [
                         'model' => 'deepseek-chat',
                         'messages' => [
@@ -641,7 +641,7 @@ PROMPT;
     public function solveFromImage(string $base64Image): array
     {
         try {
-            set_time_limit(120);
+            set_time_limit(60);
 
             // ── Step 1: OCR the image ──
             \Log::info('Step 1: Running OCR on image...');
@@ -719,7 +719,7 @@ PROMPT;
                         'Authorization' => 'Bearer ' . $this->apiKey,
                         'Content-Type' => 'application/json',
                     ],
-                    'timeout' => 120,
+                    'timeout' => 60,
                     'json' => [
                         'model' => 'deepseek-chat',
                         'messages' => [

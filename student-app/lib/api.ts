@@ -56,6 +56,12 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        if (error.response?.status === 402) {
+            const { useAuthStore } = require('@/store/authStore');
+            useAuthStore.getState().toggleCreditsModal(true);
+            return Promise.reject(error);
+        }
+
         // 2. Handle Network Retries (Beginner mistake: no retries)
         config.retryCount = config.retryCount || 0;
         

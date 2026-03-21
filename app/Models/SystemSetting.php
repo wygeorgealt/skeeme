@@ -19,12 +19,12 @@ class SystemSetting extends Model
     {
         return self::get('pricing', [
             'ngn' => [
-                'standard' => ['monthly' => 3500, 'yearly' => 25000, 'promoMonthly' => 2600],
-                'elite' => ['monthly' => 5000, 'yearly' => 50000, 'promoMonthly' => 3700]
+                'standard' => ['monthly' => 3500, 'yearly' => 25000, 'promoMonthly' => 2600, 'credits' => 6000, 'weekly' => 1500],
+                'elite' => ['monthly' => 5000, 'yearly' => 50000, 'promoMonthly' => 3700, 'credits' => 20000, 'weekly' => 5000]
             ],
             'usd' => [
-                'standard' => ['monthly' => 4.99, 'yearly' => 39.99, 'promoMonthly' => 3.4],
-                'elite' => ['monthly' => 9.99, 'yearly' => 79.99, 'promoMonthly' => 6.99]
+                'standard' => ['monthly' => 4.99, 'yearly' => 39.99, 'promoMonthly' => 3.4, 'credits' => 6000, 'weekly' => 1500],
+                'elite' => ['monthly' => 9.99, 'yearly' => 79.99, 'promoMonthly' => 6.99, 'credits' => 20000, 'weekly' => 5000]
             ],
             'promos' => [
                 'standard_end' => '2026-03-22 23:59:59',
@@ -43,6 +43,14 @@ class SystemSetting extends Model
                     ['amount' => 1000, 'price' => 6.00],
                     ['amount' => 5000, 'price' => 15.00]
                 ]
+            ],
+            'rates' => [
+                'scan_solve' => 15,
+                'quiz_base' => 1,
+                'quiz_weight' => 5, // per 500 words
+                'flashcard_base' => 1,
+                'flashcard_weight' => 5, // per 500 words
+                'theory_grading' => 2,
             ]
         ]);
     }

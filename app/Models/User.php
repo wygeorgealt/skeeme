@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -80,6 +81,16 @@ class User extends Authenticatable implements FilamentUser
             'notifications_enabled' => 'boolean',
             'last_credit_alert_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the user's unlimited status (Alias for is_unlimited_student)
+     */
+    protected function isUnlimited(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->is_unlimited_student,
+        );
     }
 
     /**

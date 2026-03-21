@@ -51,6 +51,10 @@ interface AuthState {
     setOnboardingData: (data: Record<string, any>) => Promise<void>;
     completeOnboarding: () => Promise<void>;
     devReset: () => Promise<void>;
+    // Credits Modal
+    showCreditsModal: boolean;
+    creditsModalFeature: 'scan' | 'quiz' | 'flashcard' | null;
+    toggleCreditsModal: (show: boolean, feature?: 'scan' | 'quiz' | 'flashcard' | null) => void;
 }
 
 // Secure storage for sensitive data (tokens)
@@ -125,6 +129,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     onboardingData: {},
     storedEmail: null,
     onboardingComplete: false,
+    showCreditsModal: false,
+    creditsModalFeature: null,
 
     fetchPricingConfig: async () => {
         try {
@@ -141,6 +147,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
             await standardStorage.setItem('onboarding_step', String(step));
         } catch (e) {}
+    },
+
+    toggleCreditsModal: (show, feature) => {
+        set({ showCreditsModal: show, creditsModalFeature: feature || null });
     },
 
     setOnboardingData: async (data) => {

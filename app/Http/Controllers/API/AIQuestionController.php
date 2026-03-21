@@ -53,6 +53,26 @@ class AIQuestionController
 
         $questions = $service->generate($notes, $pool, $config);
 
+        // Deduct credits if not unlimited
+        $user = auth()->user();
+        if (!$user->is_unlimited_student) {
+            $cost = $request->attributes->get('calculated_credit_cost', 0);
+            if ($cost > 0) {
+                \Illuminate\Support\Facades\DB::transaction(function() use ($user, $cost, $questions) {
+                    $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+                    $lockedUser->decrement('credits', $cost);
+                    
+                    $lockedUser->transactions()->create([
+                        'type' => 'usage',
+                        'amount' => -$cost,
+                        'description' => "AI Question Generation: " . count($questions) . " questions in pool '{$pool->name}'",
+                    ]);
+                });
+                
+                \Illuminate\Support\Facades\Cache::forget("user_credits_{$user->id}");
+            }
+        }
+
         // Update pool count
         $pool->updateQuestionCount();
 
@@ -60,6 +80,7 @@ class AIQuestionController
             'message' => count($questions) . ' questions generated',
             'questions' => $questions,
             'pool' => $pool,
+            'credits_deducted' => $user->is_unlimited_student ? 0 : ($cost ?? 0),
         ], 201);
     }
 

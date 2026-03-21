@@ -77,19 +77,24 @@ export default function CreditStatusBar({ activeAction, onSummaryLoaded, refresh
     const { current_credits, credit_percentage, estimated_actions_remaining, weekly_refresh_in_days } = summary;
 
     // Color coding based on percentage
+    const { pricingConfig } = require('@/store/authStore').useAuthStore();
+
+    // Color coding based on percentage
     const getColor = () => {
-        if (credit_percentage > 30) return '#A1C4FD'; // Green
-        if (credit_percentage > 10) return '#F59E0B'; // Amber
+        if (credit_percentage > 50) return '#A1C4FD'; // Green/Blue
+        if (credit_percentage >= 20) return '#F59E0B'; // Amber (Show warning at 20%)
         return '#EF4444'; // Red
     };
 
     const color = getColor();
 
+    const rates = pricingConfig?.rates || { scan_solve: 15, quiz_base: 1, flashcard_base: 1 };
+
     // Inline action cost estimate
     const actionInfo: Record<string, { cost: string; remaining: number; label: string }> = {
-        scan: { cost: '~10', remaining: estimated_actions_remaining.scans, label: 'scans' },
-        quiz: { cost: '~15', remaining: estimated_actions_remaining.quizzes_10q, label: 'quizzes' },
-        flashcard: { cost: '~35', remaining: estimated_actions_remaining.flashcard_decks_20c, label: 'decks' },
+        scan: { cost: `~${rates.scan_solve}`, remaining: estimated_actions_remaining.scans, label: 'scans' },
+        quiz: { cost: `~${rates.quiz_base}`, remaining: estimated_actions_remaining.quizzes_10q, label: 'quizzes' },
+        flashcard: { cost: `~${rates.flashcard_base}`, remaining: estimated_actions_remaining.flashcard_decks_20c, label: 'decks' },
     };
 
     const activeInfo = activeAction ? actionInfo[activeAction] : null;

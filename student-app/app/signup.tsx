@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { NavArrowLeft } from 'iconoir-react-native';
+import { NavArrowLeft, Google, Apple } from 'iconoir-react-native';
 import { StatusBar } from 'expo-status-bar';
 import { PasswordField } from '@/components/ui/PasswordField';
 
@@ -137,6 +137,34 @@ export default function SignupScreen() {
                     </Text>
                 </View>
 
+                {/* Social Login */}
+                <View style={[s.socialRow, { marginBottom: 32 }]}>
+                    <TouchableOpacity
+                        activeOpacity={0.9}
+                        style={[s.socialBtn, isDark ? s.socialBtnDark : s.socialBtnLight]}
+                    >
+                        <Google width={18} height={18} color={isDark ? '#fff' : '#000'} />
+                        <Text style={[s.fontBold, s.textSmall, isDark ? s.textWhite : s.textSlate900, { marginLeft: 12 }]}>Continue with Google</Text>
+                    </TouchableOpacity>
+
+                    {Platform.OS === 'ios' && (
+                        <TouchableOpacity
+                            activeOpacity={0.9}
+                            style={[s.socialBtn, isDark ? s.bgWhite : s.bgSlate900, { marginTop: 12 }]}
+                        >
+                            <Apple width={18} height={18} color={isDark ? '#000' : '#fff'} />
+                            <Text style={[s.fontBold, s.textSmall, { marginLeft: 12 }, isDark ? s.textBlack : s.textWhite]}>Continue with Apple</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                {/* Divider */}
+                <View style={s.dividerContainer}>
+                    <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
+                    <Text style={[s.dividerText, isDark ? s.textSlate600 : s.textSlate400]}>or use email</Text>
+                    <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
+                </View>
+
                 {/* Full Name */}
                 <View style={s.inputContainer}>
                     <View style={[
@@ -255,6 +283,8 @@ const s = StyleSheet.create({
     textSlate400: { color: '#94a3b8' },
     textSlate50: { color: '#f8fafc' },
     textSlate500: { color: '#64748b' },
+    textSlate600: { color: '#475569' },
+    textSlate400: { color: '#94a3b8' },
     
     inputContainer: { marginBottom: 16 },
     inputWrapper: { borderRadius: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
@@ -281,4 +311,18 @@ const s = StyleSheet.create({
     
     loginLink: { marginTop: 40, marginBottom: 32, alignItems: 'center' },
     loginLinkText: { fontWeight: '700', fontSize: 13 },
+
+    socialRow: { width: '100%' },
+    socialBtn: { height: 52, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', borderWidth: 1 },
+    socialBtnDark: { backgroundColor: 'transparent', borderColor: '#1e293b' },
+    socialBtnLight: { backgroundColor: 'white', borderColor: '#f1f5f9' },
+    bgWhite: { backgroundColor: 'white' },
+    bgSlate900: { backgroundColor: '#0f172a' },
+    fontBold: { fontWeight: '700' },
+    textSmall: { fontSize: 14 },
+    textBlack: { color: 'black' },
+    
+    dividerContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 32 },
+    dividerLine: { flex: 1, height: 0.5 },
+    dividerText: { paddingHorizontal: 20, fontWeight: '700', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5 },
 });
