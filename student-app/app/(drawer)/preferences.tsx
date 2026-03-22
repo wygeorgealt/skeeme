@@ -151,13 +151,15 @@ export default function PreferencesScreen() {
                     <Text style={[s.title, isDark ? s.textWhite : s.textSlate900]}>Personalize</Text>
                     <Text style={s.subtitle}>Tailor your AI experience to match your academic level and learning preferences.</Text>
                 </View>
-                <TouchableOpacity
-                    onPress={() => navigation.openDrawer()}
-                    activeOpacity={0.7}
-                    style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
-                >
-                    <Menu width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
-                </TouchableOpacity>
+                {prefs?.education_level && (
+                    <TouchableOpacity
+                        onPress={() => navigation.openDrawer()}
+                        activeOpacity={0.7}
+                        style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
+                    >
+                        <Menu width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
+                    </TouchableOpacity>
+                )}
             </View>
 
             <ScrollView style={s.scrollView} contentContainerStyle={{ paddingBottom: 150 }} showsVerticalScrollIndicator={false}>
@@ -279,7 +281,6 @@ export default function PreferencesScreen() {
                         )}
                     </LinearGradient>
                 </TouchableOpacity>
-                <Text style={s.footerNote}>Adaptive learning engine updates in real-time.</Text>
             </BlurView>
         </GlowBackground>
     );

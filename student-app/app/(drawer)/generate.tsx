@@ -375,7 +375,6 @@ export default function GenerateQuizScreen() {
                     {/* Glass Section: Source */}
                     <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.sectionGlass}>
                         <View style={s.sectionContent}>
-                            <Text style={s.sectionLabel}>Quiz Source</Text>
                             <View style={[s.toggleContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
                                 {(['topic', 'file'] as QuizMode[]).map(m => (
                                     <TouchableOpacity 
@@ -434,9 +433,7 @@ export default function GenerateQuizScreen() {
 
                     {/* Glass Section: Configuration */}
                     <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.sectionGlass}>
-                        <View style={s.sectionContent}>
-                            <Text style={s.sectionLabel}>Configuration</Text>
-                            
+                        <View style={s.sectionContent}>                            
                             <View style={{ marginBottom: 24 }}>
                                 <Text style={s.subLabel}>Number of Questions</Text>
                                 <TextInput
@@ -444,6 +441,11 @@ export default function GenerateQuizScreen() {
                                     keyboardType="number-pad" 
                                     value={questionCount} 
                                     onChangeText={setQuestionCount}
+                                    onBlur={() => {
+                                        const val = parseInt(questionCount);
+                                        if (isNaN(val) || val < 10) setQuestionCount('10');
+                                        else if (val > 30) setQuestionCount('30');
+                                    }}
                                 />
                             </View>
 

@@ -203,7 +203,7 @@ export default function ScanScreen() {
 
                         <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>Scan Question(s)</Text>
                         <Text style={s.heroDesc}>
-                            Snap a page or question. Skeeme will instantly detect and solve every sub-question (1a, 1b, etc).
+                            Snap a page or question. Get instant answers and explanations.
                         </Text>
 
                         <View style={s.btnRow}>

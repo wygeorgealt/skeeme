@@ -45,12 +45,12 @@ use App\Http\Controllers\API\ClassComparisonDataController;
 |
 */
 
-Route::prefix('v1')->group(function () {
+Route::group(['prefix' => 'v1'], function () {
     // Public endpoints
     Route::post('/webhooks/zoom', [\App\Http\Controllers\Webhooks\ZoomWebhookController::class, 'handle']);
 
     // Authenticated routes
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::group(['middleware' => ['auth:sanctum', 'throttle:api']], function () {
         Route::apiResources([
             'announcements' => AnnouncementController::class,
             'attendances' => AttendanceController::class,
@@ -70,7 +70,7 @@ Route::prefix('v1')->group(function () {
         ]);
 
         // Exam session management routes
-        Route::prefix('exams/{exam}')->group(function () {
+        Route::group(['prefix' => 'exams/{exam}'], function () {
             Route::post('/sessions', [ExamSessionController::class, 'start'])->name('exams.sessions.start');
             Route::post('/sessions/{session}/begin', [ExamSessionController::class, 'begin'])->name('exams.sessions.begin');
             Route::get('/sessions/{session}', [ExamSessionController::class, 'show'])->name('exams.sessions.show');
@@ -106,7 +106,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Analytics routes
-        Route::prefix('analytics')->group(function () {
+        Route::group(['prefix' => 'analytics'], function () {
             Route::post('/exams/{exam}/snapshot', [AnalyticsController::class, 'generateSnapshot'])->name('analytics.snapshot');
             Route::get('/exams/{exam}/summary', [AnalyticsController::class, 'examSummary'])->name('analytics.examSummary');
             Route::get('/exams/{exam}/performance-trends', [AnalyticsController::class, 'performanceTrends'])->name('analytics.performanceTrends');
@@ -120,24 +120,27 @@ Route::prefix('v1')->group(function () {
     });
 
     // Student Mobile App API
-    Route::prefix('student')->group(function () {
+    Route::group(['prefix' => 'student', 'middleware' => 'throttle:auth'], function () {
         Route::post('login', [\App\Http\Controllers\API\Student\AuthController::class, 'login']);
         Route::post('register', [\App\Http\Controllers\API\Student\AuthController::class, 'register']);
         Route::post('oauth/{provider}', [\App\Http\Controllers\API\Student\AuthController::class, 'handleOAuthLogin']);
 
-        // OTP & Auth Flow
-        Route::post('otp/send', [\App\Http\Controllers\API\OtpController::class, 'send']);
-        Route::post('otp/verify', [\App\Http\Controllers\API\OtpController::class, 'verify']);
-        Route::post('otp/resend', [\App\Http\Controllers\API\OtpController::class, 'resend']);
+        // OTP & Auth Flow (Strictly Throttled)
+        Route::group(['middleware' => 'throttle:otp'], function () {
+            Route::post('otp/send', [\App\Http\Controllers\API\OtpController::class, 'send']);
+            Route::post('otp/verify', [\App\Http\Controllers\API\OtpController::class, 'verify']);
+            Route::post('otp/resend', [\App\Http\Controllers\API\OtpController::class, 'resend']);
+        });
+
         Route::post('auth/reset-password', [\App\Http\Controllers\API\Student\AuthController::class, 'resetPassword']);
         Route::post('auth/verify-account', [\App\Http\Controllers\API\Student\AuthController::class, 'verifyAccount']);
 
-        Route::middleware('auth:sanctum')->group(function () {
+        Route::group(['middleware' => 'auth:sanctum'], function () {
             Route::post('logout', [\App\Http\Controllers\API\Student\AuthController::class, 'logout']);
             Route::get('me', [\App\Http\Controllers\API\Student\AuthController::class, 'me']);
             
             // AI-Intensive Routes (Throttled: 5 per minute)
-            Route::middleware(['throttle:5,1', 'sufficient.credits'])->group(function () {
+            Route::group(['middleware' => ['throttle:5,1', 'sufficient.credits']], function () {
                 Route::post('quizzes/generate', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'generate']);
                 Route::post('flashcards/generate', [\App\Http\Controllers\API\Student\FlashcardController::class, 'generate']);
                 Route::post('scan/solve', [\App\Http\Controllers\API\Student\ScanController::class, 'solve']);
@@ -158,13 +161,13 @@ Route::prefix('v1')->group(function () {
             
             Route::post('quizzes/grade-theory', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'gradeTheory'])->middleware('sufficient.credits');
             
-            Route::prefix('quizzes/history')->group(function () {
+            Route::group(['prefix' => 'quizzes/history'], function () {
                 Route::get('/', [\App\Http\Controllers\API\Student\QuizSessionController::class, 'index']);
                 Route::post('/', [\App\Http\Controllers\API\Student\QuizSessionController::class, 'store']);
                 Route::get('{id}', [\App\Http\Controllers\API\Student\QuizSessionController::class, 'show']);
             });
 
-            Route::prefix('flashcards')->group(function () {
+            Route::group(['prefix' => 'flashcards'], function () {
                 Route::get('decks', [\App\Http\Controllers\API\Student\FlashcardController::class, 'index']);
                 Route::get('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'show']);
                 Route::delete('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'destroy']);
@@ -200,17 +203,14 @@ Route::prefix('v1')->group(function () {
             Route::get('referral/my-code', [\App\Http\Controllers\API\Student\ReferralController::class, 'myCode']);
             Route::get('referral/stats', [\App\Http\Controllers\API\Student\ReferralController::class, 'stats']);
             Route::post('referral/redeem', [\App\Http\Controllers\API\Student\ReferralController::class, 'redeem']);
-
-            // Scan & Solve (Camera AI) moved to throttled group above
-            // Route::post('scan/solve', [\App\Http\Controllers\API\Student\ScanController::class, 'solve']);
         });
     });
 
     // Team/Admin Mobile App API
-    Route::prefix('team')->group(function () {
+    Route::group(['prefix' => 'team', 'middleware' => 'throttle:auth'], function () {
         Route::post('login', [\App\Http\Controllers\API\Team\AuthController::class, 'login']);
 
-        Route::middleware('auth:sanctum')->group(function () {
+        Route::group(['middleware' => 'auth:sanctum'], function () {
             Route::post('logout', [\App\Http\Controllers\API\Team\AuthController::class, 'logout']);
             Route::get('me', [\App\Http\Controllers\API\Team\AuthController::class, 'user']);
             
