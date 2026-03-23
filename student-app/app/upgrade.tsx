@@ -265,6 +265,24 @@ export default function UpgradeScreen() {
                         </Text>
                     )}
                 </TouchableOpacity>
+
+                <TouchableOpacity 
+                    onPress={async () => {
+                        const { restorePurchases } = require('@/lib/revenuecat');
+                        const restored = await restorePurchases();
+                        if (restored) {
+                            await useAuthStore.getState().checkAuth();
+                            Alert.alert("Success", "Your purchases have been restored!");
+                            router.replace('/(drawer)');
+                        } else {
+                            Alert.alert("Restore Failed", "No active subscriptions found to restore.");
+                        }
+                    }}
+                    style={{ marginTop: 16, alignSelf: 'center' }}
+                >
+                    <Text style={[s.restoreText, isDark ? s.textIndigo400 : s.textBrandPrimary]}>Restore Purchases</Text>
+                </TouchableOpacity>
+
                 <Text style={[s.termsText, isDark ? s.textSlate500 : s.textSlate400]}>
                     By continuing, you agree to our Terms of Service & Privacy Policy.
                 </Text>
@@ -403,5 +421,6 @@ const s = StyleSheet.create({
     footerLight: { backgroundColor: 'white', borderTopColor: '#f1f5f9' },
     mainBtn: { height: 60, backgroundColor: '#8B5CF6', borderRadius: 22, alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
     mainBtnText: { color: 'white', fontWeight: '700', fontSize: 16, letterSpacing: 0.5 },
+    restoreText: { fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' },
     termsText: { textAlign: 'center', fontWeight: '500', fontSize: 11, marginTop: 20, paddingHorizontal: 16, lineHeight: 18 },
 });

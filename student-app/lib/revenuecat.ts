@@ -45,6 +45,18 @@ export const isUnlimitedMember = async (): Promise<boolean> => {
 };
 
 /**
+ * Restore previously purchased items (Mandatory for App Store)
+ */
+export const restorePurchases = async (): Promise<boolean> => {
+  try {
+    const customerInfo = await Purchases.restorePurchases();
+    return typeof customerInfo.entitlements.active['unlimited_access'] !== 'undefined';
+  } catch (e) {
+    return false;
+  }
+};
+
+/**
  * Logout from RevenueCat
  */
 export const logoutRevenueCat = async () => {

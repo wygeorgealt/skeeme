@@ -19,8 +19,8 @@ class RevenueCatService
             'entitlement' => $entitlementId
         ]);
 
-        $user = User::where('id', $appUserId)
-            ->orWhere('rc_app_user_id', $appUserId)
+        $user = User::where('id', '=', $appUserId)
+            ->orWhere('rc_app_user_id', '=', $appUserId)
             ->first();
 
         if (!$user) {
@@ -68,8 +68,8 @@ class RevenueCatService
             'product_id' => $productId
         ]);
 
-        $user = User::where('id', $appUserId)
-            ->orWhere('rc_app_user_id', $appUserId)
+        $user = User::where('id', '=', $appUserId)
+            ->orWhere('rc_app_user_id', '=', $appUserId)
             ->first();
 
         if (!$user) return false;
@@ -101,8 +101,8 @@ class RevenueCatService
             'entitlement' => $entitlementId
         ]);
 
-        $user = User::where('id', $appUserId)
-            ->orWhere('rc_app_user_id', $appUserId)
+        $user = User::where('id', '=', $appUserId)
+            ->orWhere('rc_app_user_id', '=', $appUserId)
             ->first();
 
         if (!$user) return false;
