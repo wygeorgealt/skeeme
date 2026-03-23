@@ -18,7 +18,7 @@ class DeepseekAIService
         $this->apiKey = config('services.deepseek.api_key');
         $this->visionService = $visionService;
         $this->client = new Client([
-            'timeout' => 60, // Capped at 60s per user audit request
+            'timeout' => 300, // Increased to 300s for large document generation
             'connect_timeout' => 15,
         ]);
     }
@@ -37,7 +37,7 @@ class DeepseekAIService
         ?array $aiPreferences = null
     ): array {
         try {
-            set_time_limit(60);
+            set_time_limit(300);
             
             if ($progressCallback) $progressCallback(10);
             
@@ -79,7 +79,7 @@ class DeepseekAIService
                         'Authorization' => 'Bearer ' . $this->apiKey,
                         'Content-Type' => 'application/json',
                     ],
-                    'timeout' => 60,
+                    'timeout' => 300,
                     'json' => [
                         'model' => 'deepseek-chat',
                         'messages' => [
@@ -275,7 +275,7 @@ class DeepseekAIService
                         'Authorization' => 'Bearer ' . $this->apiKey,
                         'Content-Type' => 'application/json',
                     ],
-                    'timeout' => 60,
+                    'timeout' => 300,
                     'json' => [
                         'model' => 'deepseek-chat',
                         'messages' => [
@@ -641,7 +641,7 @@ PROMPT;
     public function solveFromImage(string $base64Image): array
     {
         try {
-            set_time_limit(60);
+            set_time_limit(300);
 
             // ── Step 1: OCR the image ──
             \Log::info('Step 1: Running OCR on image...');
@@ -719,7 +719,7 @@ PROMPT;
                         'Authorization' => 'Bearer ' . $this->apiKey,
                         'Content-Type' => 'application/json',
                     ],
-                    'timeout' => 60,
+                    'timeout' => 300,
                     'json' => [
                         'model' => 'deepseek-chat',
                         'messages' => [
