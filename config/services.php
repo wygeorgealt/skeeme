@@ -79,4 +79,13 @@ return [
         'api_key' => env('GOOGLE_CLOUD_VISION_API_KEY'),
     ],
 
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY'),
+        'version' => '2023-06-01',
+    ],
+
+    'revenuecat' => [
+        'webhook_token' => env('REVENUECAT_WEBHOOK_TOKEN'),
+    ],
+
 ];

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\FlashcardDeck;
 use App\Models\Flashcard;
-use App\Services\DeepseekAIService;
+use App\Services\AnthropicAIService as AIService;
 use App\Services\FileExtractionService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +19,7 @@ class FlashcardController extends Controller
     protected $aiService;
     protected $extractionService;
 
-    public function __construct(DeepseekAIService $aiService, FileExtractionService $extractionService)
+    public function __construct(AIService $aiService, FileExtractionService $extractionService)
     {
         $this->aiService = $aiService;
         $this->extractionService = $extractionService;

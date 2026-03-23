@@ -4,14 +4,14 @@ namespace App\Http\Controllers\API\Student;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Services\DeepseekAIService;
+use App\Services\AnthropicAIService as AIService;
 use Illuminate\Support\Facades\Log;
 
 class TranslationController extends Controller
 {
     protected $aiService;
 
-    public function __construct(DeepseekAIService $aiService)
+    public function __construct(AIService $aiService)
     {
         $this->aiService = $aiService;
     }

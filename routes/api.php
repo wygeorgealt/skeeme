@@ -48,6 +48,7 @@ use App\Http\Controllers\API\ClassComparisonDataController;
 Route::group(['prefix' => 'v1'], function () {
     // Public endpoints
     Route::post('/webhooks/zoom', [\App\Http\Controllers\Webhooks\ZoomWebhookController::class, 'handle']);
+    Route::post('/webhooks/revenuecat', [\App\Http\Controllers\API\Webhooks\RevenueCatWebhookController::class, 'handle']);
 
     // Authenticated routes
     Route::group(['middleware' => ['auth:sanctum', 'throttle:api']], function () {

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API\Student;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Services\DeepseekAIService;
+use App\Services\AnthropicAIService as AIService;
 use App\Services\FileExtractionService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +18,7 @@ class PracticeQuizController extends Controller
     protected $aiService;
     protected $extractionService;
 
-    public function __construct(DeepseekAIService $aiService, FileExtractionService $extractionService)
+    public function __construct(AIService $aiService, FileExtractionService $extractionService)
     {
         $this->aiService = $aiService;
         $this->extractionService = $extractionService;
@@ -110,7 +110,7 @@ class PracticeQuizController extends Controller
             }
 
             // 5. Generate Synchronously (Mobile app expects immediate results)
-            Log::info("Calling Deepseek AI for quiz generation...");
+            Log::info("Calling Claude 3.5 Haiku for quiz generation...");
             
             $types = [];
             foreach ($validated['question_types'] as $type) {

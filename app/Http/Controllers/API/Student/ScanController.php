@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\API\Student;
 
-use App\Services\DeepseekAIService;
+use App\Services\AnthropicAIService as AIService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -13,9 +13,9 @@ use App\Http\Controllers\Controller;
 
 class ScanController extends Controller
 {
-    protected DeepseekAIService $aiService;
+    protected AIService $aiService;
 
-    public function __construct(DeepseekAIService $aiService)
+    public function __construct(AIService $aiService)
     {
         $this->aiService = $aiService;
     }
