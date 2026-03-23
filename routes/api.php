@@ -121,7 +121,7 @@ Route::group(['prefix' => 'v1'], function () {
     });
 
     // Student Mobile App API
-    Route::group(['prefix' => 'student', 'middleware' => 'throttle:auth'], function () {
+    Route::group(['prefix' => 'student', 'middleware' => 'throttle:api'], function () {
         Route::post('login', [\App\Http\Controllers\API\Student\AuthController::class, 'login']);
         Route::post('register', [\App\Http\Controllers\API\Student\AuthController::class, 'register']);
         Route::post('oauth/{provider}', [\App\Http\Controllers\API\Student\AuthController::class, 'handleOAuthLogin']);

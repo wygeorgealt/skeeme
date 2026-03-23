@@ -59,6 +59,39 @@ class RevenueCatService
     }
 
     /**
+     * Handle one-time credit purchases (Consumables)
+     */
+    public function grantConsumable(string $appUserId, string $productId): bool
+    {
+        Log::info("RevenueCat: Granting Consumable", [
+            'app_user_id' => $appUserId,
+            'product_id' => $productId
+        ]);
+
+        $user = User::where('id', $appUserId)
+            ->orWhere('rc_app_user_id', $appUserId)
+            ->first();
+
+        if (!$user) return false;
+
+        // Map your Product IDs to credit amounts
+        $creditMap = [
+            'skeeme_credits_1000' => 1000,
+            'skeeme_credits_5000' => 5000,
+            'skeeme_credits_20000' => 20000,
+        ];
+
+        $amount = $creditMap[$productId] ?? 0;
+
+        if ($amount > 0) {
+            $user->increment('credits', $amount);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Handle a subscription cancellation or expiration
      */
     public function revokeEntitlement(string $appUserId, string $entitlementId): bool

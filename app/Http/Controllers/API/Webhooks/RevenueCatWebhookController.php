@@ -53,6 +53,11 @@ class RevenueCatWebhookController extends Controller
                 }
                 break;
 
+            case 'NON_SUBSCRIPTION_PURCHASE':
+                $productId = $event['product_id'] ?? '';
+                $this->revenueCatService->grantConsumable($appUserId, $productId);
+                break;
+
             case 'CANCELLATION':
             case 'EXPIRATION':
             case 'BILLING_ISSUE':

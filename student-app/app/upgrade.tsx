@@ -70,46 +70,45 @@ export default function UpgradeScreen() {
     const handlePurchase = async () => {
         setIsPurchasing(true);
         try {
-            const response = await api.post('subscriptions/checkout', {
-                plan: activeTab,
-                cycle: billingCycle,
-            });
-
-            if (response.data.authorization_url) {
-                await Linking.openURL(response.data.authorization_url);
-                setTimeout(() => pollPaymentStatus(response.data.reference, 0), 5000);
+            // Use RevenueCat's high-fidelity Paywall UI
+            const RevenueCatUI = require('react-native-purchases-ui').default;
+            const { result } = await RevenueCatUI.presentPaywall();
+            
+            if (result === 'PURCHASED') {
+                await useAuthStore.getState().checkAuth();
+                Alert.alert("Success", "Welcome to the premium club! Your subscription is active.");
+                router.replace('/(drawer)');
             }
         } catch (error: any) {
-            const msg = error.response?.data?.message || "Could not start the payment process. Please try again.";
-            Alert.alert("Checkout Failed", msg);
+            Alert.alert("Checkout Failed", "Could not complete the purchase. Please try again.");
         } finally {
             setIsPurchasing(false);
         }
     };
 
-    const pollPaymentStatus = async (reference: string, attempt: number, isCreditPack: boolean = false) => {
-        const MAX_ATTEMPTS = 24;
-        if (attempt >= MAX_ATTEMPTS) {
-            Alert.alert(
-                "Payment Pending",
-                "We couldn't confirm your payment automatically. Use the 'Check Payment' button to verify manually.",
-            );
-            return;
-        }
-
+    const handleCreditPurchase = async (pack: any) => {
+        setPurchasingPack(pack.amount);
         try {
-            const endpoint = isCreditPack ? `/credits/verify/${reference}` : `/subscriptions/verify/${reference}`;
-            const response = await api.get(endpoint);
-
-            if (response.data.status === 'success') {
+            const Purchases = require('react-native-purchases').default;
+            
+            // Map your UI packs to Store Product IDs
+            const productID = `skeeme_credits_${pack.amount}`;
+            const products = await Purchases.getProducts([productID]);
+            
+            if (products.length > 0) {
+                await Purchases.purchaseProduct(products[0]);
                 await useAuthStore.getState().checkAuth();
-                Alert.alert("Success", "Welcome to the premium club! Your subscription is active.");
-                router.replace('/(drawer)');
-                return;
+                Alert.alert("Success", `Successfully added ${pack.amount.toLocaleString()} credits!`);
+            } else {
+                throw new Error("Product not found in store");
             }
-        } catch {
+        } catch (error: any) {
+            if (!error.userCancelled) {
+                Alert.alert("Purchase Failed", error.message || "Could not complete the transaction.");
+            }
+        } finally {
+            setPurchasingPack(null);
         }
-        setTimeout(() => pollPaymentStatus(reference, attempt + 1, isCreditPack), 5000);
     };
 
     return (
@@ -218,21 +217,7 @@ export default function UpgradeScreen() {
                             {(pricingConfig.credit_packs?.[currency] || []).map((pack: any) => (
                                 <TouchableOpacity 
                                     key={pack.amount}
-                                    onPress={async () => {
-                                        setPurchasingPack(pack.amount);
-                                        try {
-                                            const response = await api.post('credits/checkout', { amount: pack.amount });
-                                            if (response.data.authorization_url) {
-                                                await Linking.openURL(response.data.authorization_url);
-                                                setTimeout(() => pollPaymentStatus(response.data.reference, 0, true), 5000);
-                                            }
-                                        } catch (error: any) {
-                                            const msg = error.response?.data?.message || "Could not start checkout.";
-                                            Alert.alert("Checkout Failed", msg);
-                                        } finally {
-                                            setPurchasingPack(null);
-                                        }
-                                    }}
+                                    onPress={() => handleCreditPurchase(pack)}
                                     activeOpacity={0.8}
                                     disabled={purchasingPack !== null || isPurchasing}
                                     style={[
