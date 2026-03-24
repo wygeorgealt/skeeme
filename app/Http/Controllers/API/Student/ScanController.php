@@ -111,7 +111,7 @@ class ScanController extends Controller
         } catch (\Exception $e) {
             Log::error('Scan & Solve Failed: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Failed to solve: ' . $e->getMessage(),
+                'message' => $e->getMessage(),
             ], 500);
         }
     }

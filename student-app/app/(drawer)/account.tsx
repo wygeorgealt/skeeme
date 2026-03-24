@@ -55,6 +55,10 @@ export default function AccountScreen() {
     const [profileSuccess, setProfileSuccess] = useState(false);
     const [passwordSuccess, setPasswordSuccess] = useState(false);
 
+    const [deletePassword, setDeletePassword] = useState('');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const handleUpdateProfile = async () => {
         if (!name.trim()) return Alert.alert('Required', 'Name cannot be empty.');
 
@@ -380,10 +384,19 @@ export default function AccountScreen() {
 
                         <TouchableOpacity
                             onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/terms')}
-                            style={s.legalItem}
+                            style={[s.legalItem, { borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}
                         >
                             <Page width={18} height={18} color="#94a3b8" />
                             <Text style={[s.legalText, { color: isDark ? '#fff' : '#334155' }]}>Terms of Service</Text>
+                            <NavArrowRight width={16} height={16} color="#94a3b8" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => WebBrowser.openBrowserAsync('mailto:noreply@contact.skeeme.com')}
+                            style={s.legalItem}
+                        >
+                            <ShieldCheck width={18} height={18} color="#94a3b8" />
+                            <Text style={[s.legalText, { color: isDark ? '#fff' : '#334155' }]}>Contact Support</Text>
                             <NavArrowRight width={16} height={16} color="#94a3b8" />
                         </TouchableOpacity>
                     </View>
@@ -391,6 +404,84 @@ export default function AccountScreen() {
                     <Text style={s.versionText}>
                         Skeeme v1.5.0
                     </Text>
+                </View>
+
+                {/* Danger Zone */}
+                <View style={{ marginBottom: 64 }}>
+                    <Text style={[s.sectionLabel, { color: '#ef4444' }]}>Danger Zone</Text>
+                    <View style={[s.card, isDark ? s.cardDark : s.cardLight, { borderColor: 'rgba(239,68,68,0.3)' }]}>
+                        <Text style={{ color: isDark ? '#fca5a5' : '#b91c1c', fontSize: 13, fontWeight: '600', marginBottom: 16, lineHeight: 20 }}>
+                            Deleting your account will permanently remove all your data, including quizzes, flashcards, and credits. This action cannot be undone.
+                        </Text>
+
+                        {showDeleteConfirm && (
+                            <View style={{ marginBottom: 16 }}>
+                                <TextInput
+                                    style={[s.input, isDark ? s.inputDark : s.inputLight, { marginBottom: 12 }]}
+                                    placeholder="Enter your password"
+                                    placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
+                                    secureTextEntry
+                                    value={deletePassword}
+                                    onChangeText={setDeletePassword}
+                                    autoFocus
+                                />
+                                <View style={{ flexDirection: 'row', gap: 12 }}>
+                                    <TouchableOpacity
+                                        onPress={() => { setShowDeleteConfirm(false); setDeletePassword(''); }}
+                                        style={[s.passwordBtn, isDark ? s.passwordBtnDark : s.passwordBtnLight, { flex: 1 }]}
+                                    >
+                                        <Text style={[s.passwordBtnText, isDark ? s.textSlate900 : s.textWhite]}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={async () => {
+                                            if (!deletePassword) return Alert.alert('Error', 'Password is required.');
+                                            setIsDeleting(true);
+                                            try {
+                                                await api.delete('profile', { data: { password: deletePassword } });
+                                                await useAuthStore.getState().logout();
+                                                Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
+                                                router.replace('/login');
+                                            } catch (e: any) {
+                                                const msg = e?.response?.data?.message || 'Failed to delete account.';
+                                                Alert.alert('Deletion Failed', msg);
+                                            } finally {
+                                                setIsDeleting(false);
+                                                setDeletePassword('');
+                                                setShowDeleteConfirm(false);
+                                            }
+                                        }}
+                                        disabled={isDeleting}
+                                        style={[s.deleteBtn, { flex: 1 }, isDeleting && { opacity: 0.6 }]}
+                                    >
+                                        {isDeleting ? (
+                                            <ActivityIndicator color="#fff" size="small" />
+                                        ) : (
+                                            <Text style={s.deleteBtnText}>Delete Forever</Text>
+                                        )}
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        )}
+
+                        {!showDeleteConfirm && (
+                            <TouchableOpacity
+                                onPress={() => {
+                                    Alert.alert(
+                                        'Are you sure?',
+                                        'This will permanently delete your account and all associated data.',
+                                        [
+                                            { text: 'Cancel', style: 'cancel' },
+                                            { text: 'Continue', style: 'destructive', onPress: () => setShowDeleteConfirm(true) },
+                                        ]
+                                    );
+                                }}
+                                activeOpacity={0.8}
+                                style={s.deleteBtn}
+                            >
+                                <Text style={s.deleteBtnText}>Delete My Account</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
             </ScrollView>
             </GlowBackground>
@@ -479,4 +570,7 @@ const s = StyleSheet.create({
     legalItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16 },
     legalText: { marginLeft: 16, flex: 1, fontWeight: '700', fontSize: 14 },
     versionText: { textAlign: 'center', color: '#94a3b8', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 3, marginTop: 32 },
+
+    deleteBtn: { height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ef4444', borderWidth: 1, borderColor: '#dc2626' },
+    deleteBtnText: { fontWeight: '700', fontSize: 15, color: '#fff' },
 });

@@ -191,6 +191,7 @@ Route::group(['prefix' => 'v1'], function () {
             
             Route::patch('profile', [\App\Http\Controllers\API\Student\ProfileController::class, 'update']);
             Route::post('profile/password', [\App\Http\Controllers\API\Student\ProfileController::class, 'updatePassword']);
+            Route::delete('profile', [\App\Http\Controllers\API\Student\ProfileController::class, 'destroyAccount']);
 
             Route::post('preferences', [\App\Http\Controllers\API\Student\AuthController::class, 'updatePreferences']);
             Route::post('device-token', [\App\Http\Controllers\API\Student\DeviceTokenController::class, 'store']);

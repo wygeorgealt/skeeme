@@ -198,7 +198,7 @@ class PracticeQuizController extends Controller
                 'line' => $e->getLine(),
                 'trace' => substr($e->getTraceAsString(), 0, 1000)
             ]);
-            return response()->json(['message' => 'Failed to generate quiz: ' . $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 
@@ -230,7 +230,7 @@ class PracticeQuizController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Theory grading error: ' . $e->getMessage());
-            return response()->json(['message' => 'Grading failed: ' . $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 }

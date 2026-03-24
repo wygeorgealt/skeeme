@@ -42,8 +42,7 @@ class TranslationController extends Controller
             Log::error('Translation API failure: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Translation failed.',
-                'error' => $e->getMessage()
+                'message' => $e->getMessage()
             ], 500);
         }
     }

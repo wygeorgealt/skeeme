@@ -83,9 +83,8 @@ class AnthropicAIService
             Cache::put($cacheKey, $questions, now()->addHours(24));
             
             return $questions;
-        } catch (RequestException $e) {
-            \Log::error('Anthropic API Error: ' . $e->getMessage());
-            throw new \Exception('Failed to generate questions: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            throw $this->handleApiException($e, 'Questions');
         }
     }
 
@@ -131,8 +130,7 @@ class AnthropicAIService
 
             return is_array($decoded) ? $decoded : [];
         } catch (\Exception $e) {
-            \Log::error('Anthropic Flashcard Error: ' . $e->getMessage());
-            throw $e;
+            throw $this->handleApiException($e, 'Flashcards');
         }
     }
 
@@ -159,8 +157,8 @@ class AnthropicAIService
             $data = json_decode($response->getBody()->getContents(), true);
             return $data['content'][0]['text'] ?? "Error generating response.";
         } catch (\Exception $e) {
-            \Log::error('Anthropic Text Error: ' . $e->getMessage());
-            return "I'm having trouble connecting to Claude right now.";
+            $msg = $this->handleApiException($e, 'Text')->getMessage();
+            return $msg;
         }
     }
 
@@ -191,7 +189,7 @@ class AnthropicAIService
             return $data['content'][0]['text'] ?? $text;
         } catch (\Exception $e) {
             \Log::error('Claude Translation Error: ' . $e->getMessage());
-            return $text; // Fallback to original text
+            return $text; // Fallback to original text here
         }
     }
 
@@ -234,8 +232,7 @@ class AnthropicAIService
                 'analysis' => $decoded['analysis'] ?? '',
             ];
         } catch (\Exception $e) {
-            \Log::error('Claude Grading Error: ' . $e->getMessage());
-            throw $e;
+            throw $this->handleApiException($e, 'Grading');
         }
     }
 
@@ -286,9 +283,34 @@ class AnthropicAIService
             $content = $data['content'][0]['text'] ?? '{}';
             return json_decode(trim(preg_replace('/```(?:json)?|```/', '', $content)), true) ?? ['results' => []];
         } catch (\Exception $e) {
-            \Log::error('Claude Image Solve Error: ' . $e->getMessage());
-            throw $e;
+            throw $this->handleApiException($e, 'Image Solve');
         }
+    }
+
+    protected function handleApiException(\Exception $e, string $context): \Exception
+    {
+        \Log::error("Anthropic {$context} Error: " . $e->getMessage());
+        
+        if ($e instanceof RequestException && $e->hasResponse()) {
+            $statusCode = $e->getResponse()->getStatusCode();
+            $body = $e->getResponse()->getBody()->getContents();
+            
+            if ($statusCode === 429) {
+                return new \Exception("Skeeme is currently experiencing high demand. Please try again in a few moments.");
+            }
+            if ($statusCode >= 400 && str_contains(strtolower($body), 'credit balance')) {
+                return new \Exception("Skeeme is down, Please try again later.");
+            }
+            if ($statusCode >= 500 || $statusCode >= 400) {
+                return new \Exception("Skeeme is down, Please try again later.");
+            }
+        }
+        
+        if (str_contains($e->getMessage(), 'cURL error 28')) {
+            return new \Exception("The AI took too long to respond. Please try again or break down your request into smaller parts.");
+        }
+
+        return new \Exception("Skeeme encountered an unexpected error. Please try again later.");
     }
 
     protected function cleanBase64(string $base64): string

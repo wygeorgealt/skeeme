@@ -57,4 +57,38 @@ class ProfileController extends Controller
 
         return response()->json(['message' => 'Password updated successfully']);
     }
+
+    /**
+     * Delete the student's account (Required by App Store Guideline 5.1.1(v))
+     */
+    public function destroyAccount(Request $request)
+    {
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        $user = $request->user();
+
+        // Verify password before deletion
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Incorrect password. Account deletion cancelled.'], 403);
+        }
+
+        // 1. Revoke all API tokens
+        $user->tokens()->delete();
+
+        // 2. Anonymize personal data (GDPR-friendly — account becomes unusable)
+        $user->update([
+            'name'          => 'Deleted User',
+            'email'         => 'deleted_' . $user->id . '@removed.skeeme.com',
+            'password'      => Hash::make(\Str::random(64)), // Scramble password
+            'phone_number'  => null,
+            'avatar_url'    => null,
+            'first_name'    => null,
+            'last_name'     => null,
+            'credits'       => 0,
+        ]);
+
+        return response()->json(['message' => 'Your account has been permanently deleted.']);
+    }
 }

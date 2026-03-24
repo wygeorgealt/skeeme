@@ -217,7 +217,7 @@ class FlashcardController extends Controller
 
         } catch (\Exception $e) {
             Log::error("Flashcard generation failed: " . $e->getMessage());
-            return response()->json(['message' => 'Failed to generate flashcards: ' . $e->getMessage()], 500);
+            return response()->json(['message' => $e->getMessage()], 500);
         }
     }
 
