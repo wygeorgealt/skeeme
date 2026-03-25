@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Dimensions, useColorScheme } from 'react-native';
+import { Modal, View, TouchableOpacity, StyleSheet, Dimensions, useColorScheme } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Trophy } from 'iconoir-react-native';
 import Animated, { FadeInUp, ZoomIn, FadeOutDown } from 'react-native-reanimated';

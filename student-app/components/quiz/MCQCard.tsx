@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { CheckCircle, XmarkCircle, Check, Xmark, NavArrowLeft } from 'iconoir-react-native';
 import { QuizFlipCard } from './QuizFlipCard';
 import { Question, DIFF_COLORS } from './QuizTypes';

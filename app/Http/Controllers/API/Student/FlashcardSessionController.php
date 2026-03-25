@@ -14,12 +14,29 @@ class FlashcardSessionController extends Controller
      */
     public function index(Request $request)
     {
-        $sessions = FlashcardSession::where('user_id', $request->user()->id)
-            ->with('deck:id,title')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $limit = $request->input('limit', 15);
+        $cursor = $request->input('cursor');
 
-        return response()->json(['data' => $sessions]);
+        $query = FlashcardSession::where('user_id', $request->user()->id)
+            ->with('deck:id,title')
+            ->orderBy('id', 'desc');
+
+        if ($cursor) {
+            $query->where('id', '<', $cursor);
+        }
+
+        $sessions = $query->take($limit + 1)->get();
+
+        $nextCursor = null;
+        if ($sessions->count() > $limit) {
+            $sessions->pop();
+            $nextCursor = $sessions->last()->id;
+        }
+
+        return response()->json([
+            'data' => $sessions,
+            'next_cursor' => $nextCursor
+        ]);
     }
 
     /**

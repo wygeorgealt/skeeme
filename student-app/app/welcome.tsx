@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Dimensions, useColorScheme, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, ScrollView, Dimensions, useColorScheme, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';

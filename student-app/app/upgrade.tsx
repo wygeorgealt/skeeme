@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, useColorScheme, Linking, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, useColorScheme, Linking, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import { Xmark, Sparks, FireFlame, Check } from 'iconoir-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';

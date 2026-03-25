@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, useColorScheme, Platform, StyleSheet } from 'react-native';
+import { Text } from '@/components/ui/Text';
+import { View, TouchableOpacity, useColorScheme, Platform, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';

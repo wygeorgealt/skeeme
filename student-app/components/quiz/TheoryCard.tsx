@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, useColorScheme } from 'react-native';
+import { View, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, useColorScheme } from 'react-native';
 import { Star, WarningTriangle, Sparks } from 'iconoir-react-native';
 import { api } from '@/lib/api';
 import { Question, DIFF_COLORS, TheoryResult } from './QuizTypes';

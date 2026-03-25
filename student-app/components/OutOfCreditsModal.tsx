@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import React from 'react';
-import { View, Text, TouchableOpacity, useColorScheme, Share, Platform } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, Share, Platform } from 'react-native';
 import { FireFlame, ShareAndroid } from 'iconoir-react-native';
 import { router } from 'expo-router';
 import { api } from '@/lib/api';

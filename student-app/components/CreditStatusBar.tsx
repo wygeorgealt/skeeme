@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, useColorScheme } from 'react-native';
+import { View, useColorScheme } from 'react-native';
 import { api } from '@/lib/api';
 
 interface CreditSummary {

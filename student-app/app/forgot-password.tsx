@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, useColorScheme, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, useColorScheme, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { NavArrowLeft } from 'iconoir-react-native';

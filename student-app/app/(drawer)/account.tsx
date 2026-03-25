@@ -88,9 +88,7 @@ export default function AccountScreen() {
 
     const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
         setTheme(newTheme);
-        if (newTheme !== 'system') {
-            setColorScheme(newTheme);
-        }
+        setColorScheme(newTheme);
     };
 
     const handleUpdatePassword = async () => {

@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FireFlame, Trophy, Sparks } from 'iconoir-react-native';

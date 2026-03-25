@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl, useColorScheme, StyleSheet } from 'react-native';
+import { Text } from '@/components/ui/Text';
+import { View, TouchableOpacity, ScrollView, RefreshControl, useColorScheme, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { 
     Scanning, GraduationCap, MultiplePages, Activity, FireFlame, Trophy, 

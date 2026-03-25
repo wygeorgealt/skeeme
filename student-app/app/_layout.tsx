@@ -1,3 +1,4 @@
+import { Text } from '@/components/ui/Text';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments, ErrorBoundaryProps, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -5,8 +6,7 @@ import '../global.css';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { QueryProvider } from '@/components/QueryProvider';
-// Using platform system fonts (SF Pro on iOS, Roboto on Android) - no custom font loading needed
-import { useColorScheme as useNativeColorScheme, LogBox, View, Text, TouchableOpacity } from 'react-native';
+import { useColorScheme as useNativeColorScheme, LogBox, View, TouchableOpacity, TextStyle, Platform } from 'react-native';
 import { cssInterop, useColorScheme as useTailwindColorScheme } from 'nativewind';
 import { LinearGradient } from 'expo-linear-gradient';
 import { WarningTriangle, Refresh } from 'iconoir-react-native';
@@ -16,6 +16,7 @@ import { NetworkStatus } from '@/components/NetworkStatus';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { initializeRevenueCat, identifyUser } from '@/lib/revenuecat';
+import { useFonts } from 'expo-font';
 
 cssInterop(LinearGradient, {
   className: 'style',
@@ -43,8 +44,14 @@ export default function RootLayout() {
   const { hydrate, isLoading, user, onboardingComplete, onboardingStep, storedEmail } = useAuthStore();
   const [isAnimationFinished, setIsAnimationFinished] = useState(false);
 
-  // System fonts: SF Pro (iOS) / Roboto (Android) — no loading needed
-  const fontsLoaded = true;
+  const [fontsLoaded] = useFonts({
+    'ClashGrotesk-Regular': require('@/assets/fonts/ClashGrotesk-Regular.ttf'),
+    'ClashGrotesk-Light': require('@/assets/fonts/ClashGrotesk-Light.ttf'),
+    'ClashGrotesk-Extralight': require('@/assets/fonts/ClashGrotesk-Extralight.ttf'),
+    'ClashGrotesk-Medium': require('@/assets/fonts/ClashGrotesk-Medium.ttf'),
+    'ClashGrotesk-Semibold': require('@/assets/fonts/ClashGrotesk-Semibold.ttf'),
+    'ClashGrotesk-Bold': require('@/assets/fonts/ClashGrotesk-Bold.ttf'),
+  });
 
   const segments = useSegments();
   const router = useRouter();
@@ -96,14 +103,11 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, isLoading]);
 
+  const storeTheme = useAuthStore((state) => state.theme);
+
   useEffect(() => {
-    const storeTheme = useAuthStore.getState().theme;
-    if (storeTheme === 'system' || !storeTheme) {
-      setTailwindScheme(systemTheme || 'light');
-    } else {
-      setTailwindScheme(storeTheme as 'light' | 'dark');
-    }
-  }, [systemTheme, setTailwindScheme]);
+    setTailwindScheme(storeTheme || 'system');
+  }, [storeTheme, setTailwindScheme]);
 
   if (!fontsLoaded || isLoading) {
     return null;

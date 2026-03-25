@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Image, ViewStyle, TextStyle, ImageStyle } from 'react-native';
+import { Text } from '@/components/ui/Text';
+import { View, StyleSheet, Image, ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Apple, Google } from 'iconoir-react-native';
 

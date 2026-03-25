@@ -25,6 +25,12 @@ class ScanController extends Controller
      */
     public function solve(Request $request)
     {
+        $idempotencyKey = $request->header('Idempotency-Key') ?? $request->input('idempotency_key');
+        if ($idempotencyKey && Cache::has("idempotency_{$idempotencyKey}")) {
+            Log::info("Scan & Solve: Idempotency cache hit", ['key' => $idempotencyKey]);
+            return response()->json(Cache::get("idempotency_{$idempotencyKey}"));
+        }
+
         set_time_limit(240); // 4 minutes
         
         Log::info('Scan & Solve Request Received', [
@@ -100,13 +106,19 @@ class ScanController extends Controller
                 \App\Jobs\CheckLowCredits::dispatch($user->id);
             }
 
-            return response()->json([
+            $responseData = [
                 'message' => 'Image processed successfully.',
                 'results' => $solutions,
                 'cost' => $finalCost,
                 'credits_deducted' => $user->is_unlimited ? 0 : $finalCost,
                 'remaining_credits' => $user->fresh()->credits
-            ]);
+            ];
+
+            if ($idempotencyKey) {
+                Cache::put("idempotency_{$idempotencyKey}", $responseData, now()->addHours(24));
+            }
+
+            return response()->json($responseData);
 
         } catch (\Exception $e) {
             Log::error('Scan & Solve Failed: ' . $e->getMessage());

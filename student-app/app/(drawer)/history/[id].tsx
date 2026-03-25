@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, useColorScheme, Platform, Alert, StyleSheet } from 'react-native';
+import { Text } from '@/components/ui/Text';
+import { View, ScrollView, ActivityIndicator, TouchableOpacity, useColorScheme, Platform, Alert, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -429,7 +430,7 @@ const s = StyleSheet.create({
     scoreArea: { alignItems: 'center', paddingTop: 24, paddingBottom: 48 },
     scoreIconBox: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
     scoreTag: { color: '#8B5CF6', fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
-    scoreText: { fontSize: 80, fontWeight: '900', letterSpacing: -2 },
+    scoreText: { fontSize: 64, fontWeight: '900', letterSpacing: -2 },
     scoreSubtitle: { fontSize: 15, paddingHorizontal: 24, textAlign: 'center', fontWeight: '500', lineHeight: 22 },
 
     topicBox: { padding: 24, borderRadius: 24, marginBottom: 32 },

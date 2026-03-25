@@ -139,6 +139,7 @@ Route::group(['prefix' => 'v1'], function () {
         Route::group(['middleware' => 'auth:sanctum'], function () {
             Route::post('logout', [\App\Http\Controllers\API\Student\AuthController::class, 'logout']);
             Route::get('me', [\App\Http\Controllers\API\Student\AuthController::class, 'me']);
+            Route::get('sync', [\App\Http\Controllers\API\Student\SyncController::class, 'index']);
             
             // AI-Intensive Routes (Throttled: 5 per minute)
             Route::group(['middleware' => ['throttle:5,1', 'sufficient.credits']], function () {

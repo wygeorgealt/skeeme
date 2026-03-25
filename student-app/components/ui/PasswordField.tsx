@@ -1,3 +1,4 @@
+import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 import { Eye, EyeClosed } from 'iconoir-react-native';

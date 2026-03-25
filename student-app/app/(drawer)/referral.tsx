@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, useColorScheme, StyleSheet } from 'react-native';
+import { Text } from '@/components/ui/Text';
+import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, useColorScheme, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { router, useNavigation } from 'expo-router';
 import { Menu, Gift } from 'iconoir-react-native';

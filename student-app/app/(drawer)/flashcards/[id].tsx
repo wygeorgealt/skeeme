@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect, memo, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, StatusBar } from 'react-native';
+import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, StatusBar } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';

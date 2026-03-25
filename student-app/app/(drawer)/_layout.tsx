@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import { Drawer } from 'expo-router/drawer';
-import { View, Text, TouchableOpacity, useColorScheme, Alert, Platform, Animated, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, Alert, Platform, Animated, StyleSheet } from 'react-native';
 import { 
     Rocket, NavArrowRight, Menu, Sparks, Flash,
     Home, Scanning, MultiplePages, Page, MagicWand, User, LogOut
@@ -87,88 +88,109 @@ function CustomDrawerContent(props: any) {
     };
 
     return (
-        <View style={[s.drawerRoot, { backgroundColor: 'transparent' }]}>
-            <BlurView
-                intensity={isDark ? 80 : 40}
-                tint={isDark ? 'dark' : 'light'}
-                style={{ flex: 1, justifyContent: 'center' }}
-            >
-                {/* Vertically centered nav items - Jobber FAB style */}
-                <View style={s.navContainer}>
-                    {NAV_ITEMS.map((item, index) => {
-                        const isActive = pathname === item.route || (pathname.startsWith(item.route + '/') && item.route !== '/');
-                        const isRootActive = pathname === '/' && item.route === '/';
-                        const active = isActive || isRootActive;
+        <View style={[s.drawerRoot, { backgroundColor: isDark ? 'transparent' : '#ffffff' }]}>
+            {isDark ? (
+                <BlurView intensity={80} tint="dark" style={{ flex: 1, justifyContent: 'center' }}>
+                    <NavContent 
+                        pathname={pathname} anims={anims} logoutAnim={logoutAnim} 
+                        handleLogout={handleLogout} iconColors={iconColors} isDark={isDark} 
+                    />
+                </BlurView>
+            ) : (
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                    <NavContent 
+                        pathname={pathname} anims={anims} logoutAnim={logoutAnim} 
+                        handleLogout={handleLogout} iconColors={iconColors} isDark={isDark} 
+                    />
+                </View>
+            )}
+        </View>
+    );
+}
 
-                        return (
-                            <Animated.View
-                                key={item.route}
-                                style={{
-                                    opacity: anims[index],
-                                    transform: [{ translateX: anims[index].interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }],
-                                    marginBottom: 8,
-                                }}
-                            >
-                                <TouchableOpacity
-                                    onPress={() => router.push(item.route as any)}
-                                    activeOpacity={0.7}
-                                    style={s.navItem}
-                                >
-                                    <Text style={[s.navLabel, active ? (isDark ? s.textWhite : s.textSlate900) : (isDark ? s.textWhite60 : s.textSlate700)]}>
-                                        {item.label}
-                                    </Text>
+// Extracted NavContent to avoid duplicating JSX inside the BlurView/View toggle
+function NavContent({ pathname, anims, logoutAnim, handleLogout, iconColors, isDark }: any) {
+    return (
+        <View style={s.navContainer}>
+            {NAV_ITEMS.map((item, index) => {
+                const isActive = pathname === item.route || (pathname.startsWith(item.route + '/') && item.route !== '/');
+                const isRootActive = pathname === '/' && item.route === '/';
+                const active = isActive || isRootActive;
+                
+                const baseColor = iconColors[index] || '#6B7280';
 
-                                    <View
-                                        style={{
-                                            width: 48,
-                                            height: 48,
-                                            borderRadius: 24,
-                                            backgroundColor: active ? (iconColors[index] || '#6B7280') : (isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9'),
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                        }}
-                                    >
-                                        <item.icon
-                                            width={22}
-                                            height={22}
-                                            color={active ? '#FFFFFF' : (isDark ? '#9CA3AF' : '#334155')}
-                                            strokeWidth={active ? 2 : 1.5}
-                                        />
-                                    </View>
-                                </TouchableOpacity>
-                            </Animated.View>
-                        );
-                    })}
-
+                return (
                     <Animated.View
+                        key={item.route}
                         style={{
-                            opacity: logoutAnim,
-                            transform: [{ translateX: logoutAnim.interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }],
-                            marginTop: 16,
+                            opacity: anims[index],
+                            transform: [{ translateX: anims[index].interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }],
+                            marginBottom: 8,
                         }}
                     >
                         <TouchableOpacity
-                            onPress={handleLogout}
+                            onPress={() => router.push(item.route as any)}
                             activeOpacity={0.7}
                             style={s.navItem}
                         >
-                            <Text style={[s.navLabel, isDark ? s.textRed400 : s.textRed600]}>Sign out</Text>
+                            <Text style={[s.navLabel, active ? (isDark ? s.textWhite : s.textSlate900) : (isDark ? s.textWhite60 : s.textSlate400)]}>
+                                {item.label}
+                            </Text>
+
                             <View
                                 style={{
                                     width: 48,
                                     height: 48,
                                     borderRadius: 24,
-                                    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2',
+                                    // Dark mode: strong colors. Light mode: transparent or very subtle background.
+                                    backgroundColor: active 
+                                        ? (isDark ? baseColor : `${baseColor}1A`) 
+                                        : (isDark ? 'rgba(255,255,255,0.08)' : 'transparent'),
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                 }}
                             >
-                                <LogOut width={22} height={22} color="#F87171" strokeWidth={2} />
+                                <item.icon
+                                    width={22}
+                                    height={22}
+                                    color={active 
+                                        ? (isDark ? '#FFFFFF' : baseColor) 
+                                        : (isDark ? '#9CA3AF' : '#94A3B8')}
+                                    strokeWidth={active ? 2 : 1.5}
+                                />
                             </View>
                         </TouchableOpacity>
                     </Animated.View>
-                </View>
-            </BlurView>
+                );
+            })}
+
+            <Animated.View
+                style={{
+                    opacity: logoutAnim,
+                    transform: [{ translateX: logoutAnim.interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }],
+                    marginTop: 16,
+                }}
+            >
+                <TouchableOpacity
+                    onPress={handleLogout}
+                    activeOpacity={0.7}
+                    style={s.navItem}
+                >
+                    <Text style={[s.navLabel, isDark ? s.textRed400 : s.textRed600]}>Sign out</Text>
+                    <View
+                        style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 24,
+                            backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <LogOut width={22} height={22} color={isDark ? "#F87171" : "#EF4444"} strokeWidth={2} />
+                    </View>
+                </TouchableOpacity>
+            </Animated.View>
         </View>
     );
 }
@@ -286,6 +308,7 @@ const s = StyleSheet.create({
     textSlate900: { color: '#0f172a' },
     textWhite60: { color: 'rgba(255,255,255,0.6)' },
     textSlate700: { color: '#334155' },
+    textSlate400: { color: '#94a3b8' },
     textRed400: { color: '#F87171' },
     textRed600: { color: '#DC2626' },
 });

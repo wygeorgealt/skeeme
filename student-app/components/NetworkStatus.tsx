@@ -1,5 +1,6 @@
+import { Text } from '@/components/ui/Text';
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
+import { View, StyleSheet, useColorScheme } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import Animated, {
     useSharedValue,

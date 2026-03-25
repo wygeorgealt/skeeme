@@ -29,6 +29,12 @@ class PracticeQuizController extends Controller
      */
     public function generate(Request $request)
     {
+        $idempotencyKey = $request->header('Idempotency-Key') ?? $request->input('idempotency_key');
+        if ($idempotencyKey && Cache::has("idempotency_{$idempotencyKey}")) {
+            Log::info("Quiz Generation: Idempotency cache hit", ['key' => $idempotencyKey]);
+            return response()->json(Cache::get("idempotency_{$idempotencyKey}"));
+        }
+
         set_time_limit(600); // Massive boost for 50+ page documents
         Log::info("Quiz Generation Started", $request->except(['file']));
 
@@ -182,11 +188,17 @@ class PracticeQuizController extends Controller
                 }
             }
 
-            return response()->json([
+            $responseData = [
                 'questions' => $questions,
                 'credits_deducted' => $totalCost,
                 'remaining_credits' => $user->fresh()->credits
-            ]);
+            ];
+
+            if ($idempotencyKey) {
+                Cache::put("idempotency_{$idempotencyKey}", $responseData, now()->addHours(24));
+            }
+
+            return response()->json($responseData);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::warning("Validation Failed", $e->errors());

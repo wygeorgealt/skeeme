@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, useColorScheme, Platform, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
+import { Text } from '@/components/ui/Text';
+import { View, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, useColorScheme, Platform, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';

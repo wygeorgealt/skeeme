@@ -21,6 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(prepend: [
             \App\Http\Middleware\HandleCors::class,
+        ], append: [
+            \App\Http\Middleware\GzipMiddleware::class,
         ]);
 
         $middleware->trustProxies(at: '*');

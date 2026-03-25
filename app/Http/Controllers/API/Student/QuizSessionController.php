@@ -15,12 +15,30 @@ class QuizSessionController extends Controller
      */
     public function index(Request $request)
     {
-        $sessions = QuizSession::where('user_id', $request->user()->id)
-            ->withCount('questions')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $limit = $request->input('limit', 15);
+        $cursor = $request->input('cursor');
 
-        return response()->json(['data' => $sessions]);
+        $query = QuizSession::where('user_id', $request->user()->id)
+            ->withCount('questions')
+            ->orderBy('id', 'desc');
+
+        if ($cursor) {
+            $query->where('id', '<', $cursor);
+        }
+
+        // Fetch limit + 1 to determine if there are more results
+        $sessions = $query->take($limit + 1)->get();
+
+        $nextCursor = null;
+        if ($sessions->count() > $limit) {
+            $sessions->pop(); // Remove the extra item
+            $nextCursor = $sessions->last()->id;
+        }
+
+        return response()->json([
+            'data' => $sessions,
+            'next_cursor' => $nextCursor
+        ]);
     }
 
     /**
