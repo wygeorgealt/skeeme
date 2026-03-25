@@ -47,13 +47,19 @@
                 <p class="text-sm font-medium text-slate-500">Infrastructure health rating</p>
             </div>
 
-            <!-- Queue Status -->
-            <div class="p-8 rounded-[2rem] glass">
-                <p class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">Queue Status</p>
-                <p class="text-3xl font-extrabold {{ $stats['queue_size'] > 50 ? 'text-rose-500' : ($stats['queue_size'] > 10 ? 'text-amber-500' : 'text-emerald-500') }} mb-2">
-                    {{ $stats['queue_size'] }}
-                </p>
                 <p class="text-sm font-medium text-slate-500">Pending jobs (Healthy if near 0)</p>
+            </div>
+
+            <!-- AI Self-Healing Status -->
+            <div class="p-8 rounded-[2rem] glass">
+                <p class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">AI Self-Healing</p>
+                @if($stats['ai_fallback_active'])
+                    <p class="text-3xl font-extrabold text-amber-500 mb-2">FAILOVER</p>
+                    <p class="text-sm font-medium text-slate-500 italic">DeepSeek currently active</p>
+                @else
+                    <p class="text-3xl font-extrabold text-emerald-500 mb-2">ACTIVE</p>
+                    <p class="text-sm font-medium text-slate-500 italic">Claude 3.5 Primary active</p>
+                @endif
             </div>
         </div>
 

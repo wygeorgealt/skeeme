@@ -37,7 +37,8 @@ class SystemHealthController extends Controller
             'info' => [],
             'verdict' => 'Pending',
             'verdict_class' => 'text-gray-500',
-            'queue_size' => 0
+            'queue_size' => 0,
+            'ai_fallback_active' => false
         ];
 
         try {
@@ -62,6 +63,9 @@ class SystemHealthController extends Controller
                 $data['status'] = 'Degraded (Integrity Failure)';
             }
 
+            // AI Fallback Check
+            $data['ai_fallback_active'] = Cache::get('use_deepseek_fallback', false);
+
             // Queue Check
             $data['queue_size'] = Queue::size('default');
 
@@ -74,7 +78,8 @@ class SystemHealthController extends Controller
                 'Memory' => $redisInfo['used_memory_human'] ?? 'N/A',
                 'Clients' => $redisInfo['connected_clients'] ?? 'N/A',
                 'Uptime' => ($redisInfo['uptime_in_days'] ?? '0') . ' days',
-                'Version' => $redisInfo['redis_version'] ?? 'N/A'
+                'Version' => $redisInfo['redis_version'] ?? 'N/A',
+                'AI Engine' => $data['ai_fallback_active'] ? 'DeepSeek (Backup)' : 'Claude 3.5 (Primary)'
             ];
 
             // 4. Verdict
