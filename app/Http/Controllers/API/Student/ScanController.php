@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Student;
 
 use App\Services\AnthropicAIService as AIService;
+use App\Services\DeepseekAIService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -14,10 +15,12 @@ use App\Http\Controllers\Controller;
 class ScanController extends Controller
 {
     protected AIService $aiService;
+    protected DeepseekAIService $deepseek;
 
-    public function __construct(AIService $aiService)
+    public function __construct(AIService $aiService, DeepseekAIService $deepseek)
     {
         $this->aiService = $aiService;
+        $this->deepseek = $deepseek;
     }
 
     /**
@@ -71,10 +74,29 @@ class ScanController extends Controller
         }
 
         try {
-            // 4. Generate Synchronously (Fixing Sync Issue for Mobile)
+            // 4. Generate Synchronously (Circuit Breaker implementation)
             Log::info('Processing Scan & Solve Synchronously...', ['user_id' => $user->id]);
             
-            $result = $this->aiService->solveFromImage($request->input('image'));
+            $useDeepseek = Cache::get('use_deepseek_fallback', false);
+
+            try {
+                if ($useDeepseek) {
+                    Log::info("Circuit Breaker Active: Auto-routing Scan to DeepSeek (OCR Fallback).");
+                    $result = $this->deepseek->solveFromImage($request->input('image'));
+                } else {
+                    Log::info("Calling primary Vision AI (Claude) for scan solve...");
+                    $result = $this->aiService->solveFromImage($request->input('image'));
+                }
+            } catch (\Exception $e) {
+                if (!$useDeepseek) {
+                    Log::warning("Claude Vision API Failed! Circuit Breaker tripped. Failing over to DeepSeek. Error: " . $e->getMessage());
+                    Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
+                    $result = $this->deepseek->solveFromImage($request->input('image'));
+                } else {
+                    throw $e;
+                }
+            }
+
             $solutions = $result['results'] ?? [];
             $solutionsCount = count($solutions);
             

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API\Student;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\AnthropicAIService as AIService;
+use App\Services\DeepseekAIService;
 use App\Services\FileExtractionService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -16,11 +17,13 @@ use App\Jobs\ProcessAIQuiz;
 class PracticeQuizController extends Controller
 {
     protected $aiService;
+    protected $deepseek;
     protected $extractionService;
 
-    public function __construct(AIService $aiService, FileExtractionService $extractionService)
+    public function __construct(AIService $aiService, DeepseekAIService $deepseek, FileExtractionService $extractionService)
     {
         $this->aiService = $aiService;
+        $this->deepseek = $deepseek;
         $this->extractionService = $extractionService;
     }
 
@@ -115,25 +118,60 @@ class PracticeQuizController extends Controller
                 ], 403);
             }
 
-            // 5. Generate Synchronously (Mobile app expects immediate results)
-            Log::info("Calling Claude 3.5 Haiku for quiz generation...");
-            
+            // 5. Generate Synchronously (Circuit Breaker implementation)
             $types = [];
             foreach ($validated['question_types'] as $type) {
                 if ($type === 'mcq') $types[] = 'multiple_choice';
                 if ($type === 'theory') $types[] = 'essay';
             }
 
-            $questions = $this->aiService->generateQuestions(
-                [$sourceContent],
-                $validated['question_count'] ?? 10,
-                $validated['difficulty'] ?? 'medium',
-                $types,
-                $validated['topic'] ?? 'General Knowledge',
-                false,
-                null,
-                $user->ai_preferences
-            );
+            $useDeepseek = Cache::get('use_deepseek_fallback', false);
+
+            try {
+                if ($useDeepseek) {
+                    Log::info("Circuit Breaker Active: Auto-routing Quiz to DeepSeek.");
+                    $questions = $this->deepseek->generateQuestions(
+                        [$sourceContent],
+                        $validated['question_count'] ?? 10,
+                        $validated['difficulty'] ?? 'medium',
+                        $types,
+                        $validated['topic'] ?? 'General Knowledge',
+                        false,
+                        null,
+                        $user->ai_preferences
+                    );
+                } else {
+                    Log::info("Calling primary AI (Claude 3.5 Haiku) for quiz generation...");
+                    $questions = $this->aiService->generateQuestions(
+                        [$sourceContent],
+                        $validated['question_count'] ?? 10,
+                        $validated['difficulty'] ?? 'medium',
+                        $types,
+                        $validated['topic'] ?? 'General Knowledge',
+                        false,
+                        null,
+                        $user->ai_preferences
+                    );
+                }
+            } catch (\Exception $e) {
+                if (!$useDeepseek) {
+                    Log::warning("Claude API Failed! Circuit Breaker tripped. Failing over to DeepSeek. Error: " . $e->getMessage());
+                    Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
+                    
+                    $questions = $this->deepseek->generateQuestions(
+                        [$sourceContent],
+                        $validated['question_count'] ?? 10,
+                        $validated['difficulty'] ?? 'medium',
+                        $types,
+                        $validated['topic'] ?? 'General Knowledge',
+                        false,
+                        null,
+                        $user->ai_preferences
+                    );
+                } else {
+                    throw $e;
+                }
+            }
 
             if (empty($questions)) {
                 throw new \Exception('AI returned no questions. Please try a different topic or document.');
@@ -226,13 +264,22 @@ class PracticeQuizController extends Controller
         ]);
 
         try {
-            $result = $this->aiService->gradeTheoryAnswer(
-                $validated['question_text'],
-                $validated['student_answer'],
-                $validated['model_answer'] ?? '',
-                [],
-                10.0
-            );
+            $useDeepseek = Cache::get('use_deepseek_fallback', false);
+            try {
+                if ($useDeepseek) {
+                    $result = $this->deepseek->gradeTheoryAnswer($validated['question_text'], $validated['student_answer'], $validated['model_answer'] ?? '', [], 10.0);
+                } else {
+                    $result = $this->aiService->gradeTheoryAnswer($validated['question_text'], $validated['student_answer'], $validated['model_answer'] ?? '', [], 10.0);
+                }
+            } catch (\Exception $e) {
+                if (!$useDeepseek) {
+                    Log::warning("Claude API Failed on Grading! Circuit Breaker tripped. Error: " . $e->getMessage());
+                    Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
+                    $result = $this->deepseek->gradeTheoryAnswer($validated['question_text'], $validated['student_answer'], $validated['model_answer'] ?? '', [], 10.0);
+                } else {
+                    throw $e;
+                }
+            }
 
             return response()->json([
                 'score'    => $result['marks'] ?? 0,

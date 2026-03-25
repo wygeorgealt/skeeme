@@ -3,10 +3,14 @@ import { Drawer } from 'expo-router/drawer';
 import { View, TouchableOpacity, useColorScheme, Alert, Platform, Animated, StyleSheet } from 'react-native';
 import { 
     Rocket, NavArrowRight, Menu, Sparks, Flash,
-    Home, Scanning, MultiplePages, Page, MagicWand, User, LogOut
+    Home, MultiplePages, Page, User, LogOut
 } from 'iconoir-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useAuthStore } from '@/store/authStore';
+
+const CameraIcon = (props: any) => <Ionicons name="camera-outline" size={props.width || 22} color={props.color} />;
+const HappyIcon = (props: any) => <Ionicons name="happy" size={props.width || 22} color={props.color} />;
 
 import { api } from '@/lib/api';
 import { router, usePathname } from 'expo-router';
@@ -16,11 +20,11 @@ import { registerForPushNotificationsAsync } from '@/lib/notifications';
 
 const NAV_ITEMS = [
     { icon: Home, label: 'Dashboard', route: '/' },
-    { icon: Scanning, label: 'Scan & Solve', route: '/scan' },
+    { icon: CameraIcon, label: 'Scan & Solve', route: '/scan' },
     { icon: Sparks, label: 'AI Quiz', route: '/generate' },
     { icon: MultiplePages, label: 'Flashcards', route: '/flashcards' },
     { icon: Page, label: 'History', route: '/history' },
-    { icon: MagicWand, label: 'Personalize', route: '/preferences' },
+    { icon: HappyIcon, label: 'Personalize', route: '/preferences' },
     { icon: User, label: 'Account', route: '/account' },
 ];
 

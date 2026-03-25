@@ -2,13 +2,16 @@ import { Text } from '@/components/ui/Text';
 import { View, TouchableOpacity, ScrollView, RefreshControl, useColorScheme, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { 
-    Scanning, GraduationCap, MultiplePages, Activity, FireFlame, Trophy, 
+    GraduationCap, MultiplePages, Activity, FireFlame, Trophy, 
     NavArrowRight, Plus, Rocket, Book, Calendar, CheckCircle,
     Crown, Flash, Menu, Sparks
 } from 'iconoir-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useNavigation } from 'expo-router';
 import { api } from '@/lib/api';
+
+const CameraIcon = (props: any) => <Ionicons name="camera-outline" size={props.width || 24} color={props.color} />;
 import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { GlowBackground } from '@/components/ui/GlowBackground';
@@ -369,7 +372,7 @@ export default function DashboardScreen() {
                 {/* QUICK ACTIONS */}
                 <View style={s.quickActionsRow}>
                     {[
-                        { title: 'Scan', icon: Scanning, route: '/scan' },
+                        { title: 'Scan', icon: CameraIcon, route: '/scan' },
                         { title: 'Quiz', icon: GraduationCap, route: '/generate' },
                         { title: 'Flashcards', icon: MultiplePages, route: '/flashcards' },
                         { title: 'History', icon: Activity, route: '/history' },

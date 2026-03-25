@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\FlashcardDeck;
 use App\Models\Flashcard;
 use App\Services\AnthropicAIService as AIService;
+use App\Services\DeepseekAIService;
 use App\Services\FileExtractionService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -17,11 +18,13 @@ use App\Jobs\ProcessAIFlashcards;
 class FlashcardController extends Controller
 {
     protected $aiService;
+    protected $deepseek;
     protected $extractionService;
 
-    public function __construct(AIService $aiService, FileExtractionService $extractionService)
+    public function __construct(AIService $aiService, DeepseekAIService $deepseek, FileExtractionService $extractionService)
     {
         $this->aiService = $aiService;
+        $this->deepseek = $deepseek;
         $this->extractionService = $extractionService;
     }
 
@@ -158,14 +161,43 @@ class FlashcardController extends Controller
             ], 403);
         }
 
-        // 4. Generate Synchronously (Fixing Type-Mismatch + Sync for Mobile)
+        // 4. Generate Synchronously (Circuit Breaker implementation)
         try {
-            $cardsData = $this->aiService->generateFlashcards(
-                [$sourceContent],
-                (int) ($validated['card_count'] ?? 10),
-                $validated['difficulty'] ?? 'medium',
-                $validated['topic'] ?? 'General Topics'
-            );
+            $useDeepseek = Cache::get('use_deepseek_fallback', false);
+            
+            try {
+                if ($useDeepseek) {
+                    Log::info("Circuit Breaker Active: Auto-routing Flashcards to DeepSeek.");
+                    $cardsData = $this->deepseek->generateFlashcards(
+                        [$sourceContent],
+                        (int) ($validated['card_count'] ?? 10),
+                        $validated['difficulty'] ?? 'medium',
+                        $validated['topic'] ?? 'General Topics'
+                    );
+                } else {
+                    Log::info("Calling primary AI (Claude) for flashcard generation...");
+                    $cardsData = $this->aiService->generateFlashcards(
+                        [$sourceContent],
+                        (int) ($validated['card_count'] ?? 10),
+                        $validated['difficulty'] ?? 'medium',
+                        $validated['topic'] ?? 'General Topics'
+                    );
+                }
+            } catch (\Exception $e) {
+                if (!$useDeepseek) {
+                    Log::warning("Claude API Failed on Flashcards! Circuit Breaker tripped. Failing over to DeepSeek. Error: " . $e->getMessage());
+                    Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
+                    
+                    $cardsData = $this->deepseek->generateFlashcards(
+                        [$sourceContent],
+                        (int) ($validated['card_count'] ?? 10),
+                        $validated['difficulty'] ?? 'medium',
+                        $validated['topic'] ?? 'General Topics'
+                    );
+                } else {
+                    throw $e;
+                }
+            }
 
             if (empty($cardsData)) {
                 throw new \Exception('AI returned no flashcards.');

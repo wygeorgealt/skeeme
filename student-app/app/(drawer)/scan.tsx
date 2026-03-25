@@ -1,24 +1,21 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
-    View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet,
+    View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Dimensions
 } from 'react-native';
-import { Image } from 'expo-image';
+import { Image as ExpoImage } from 'expo-image';
 import {
     NavArrowLeft, Menu, Scanning, Camera,
-    Album, Sparks, ShareAndroid, Flash,
-    Refresh, Page, FireFlame
+    Album, Sparks, Page, Type
 } from 'iconoir-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Animated, { 
     useSharedValue, 
-    useAnimatedStyle, 
     withRepeat, 
     withTiming, 
-    withDelay,
-    Easing,
-    interpolate
+    Easing
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
@@ -28,29 +25,29 @@ import { Stack, useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { MathText } from '@/components/ui/MathText';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { generateScanHTML } from '@/lib/pdfGenerator';
-import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 import { scannerService, ScanResult } from '@/lib/scanner';
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
-// Redundant local type removed in favor of @/lib/scanner
 
 const BASE_SCAN_COST = 2;
 const COST_PER_SOLUTION = 4;
+const { width } = Dimensions.get('window');
+const CROP_BOX_WIDTH = width * 0.85;
+const CROP_BOX_HEIGHT = 160;
 
 export default function ScanScreen() {
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const bgColor = isDark ? '#121212' : '#ffffff';
-    const tintColor = isDark ? '#fff' : '#121212';
     const router = useRouter();
     const navigation = useNavigation() as any;
 
     const { user, updateUser } = useAuthStore();
+    const [permission, requestPermission] = useCameraPermissions();
+    const cameraRef = useRef<CameraView>(null);
 
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [imageBase64, setImageBase64] = useState<string | null>(null);
@@ -101,6 +98,21 @@ export default function ScanScreen() {
         }
     };
 
+    const handleCapture = async () => {
+        if (!cameraRef.current) return;
+        try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.5 });
+            if (photo) {
+                setImageUri(photo.uri);
+                setImageBase64(photo.base64 || null);
+            }
+        } catch (e) {
+            if (__DEV__) console.warn('Capture failed', e);
+            Alert.alert('Error', 'Could not take picture.');
+        }
+    };
+
     const handleSolve = async () => {
         if (!imageBase64) return;
 
@@ -126,7 +138,6 @@ export default function ScanScreen() {
             setResults(data.results || []);
             setLastScanCost(data.cost);
             
-            // Refresh user stats for the dashboard
             const userRes = await api.get('me');
             if (userRes.data) {
                 updateUser(userRes.data);
@@ -150,10 +161,7 @@ export default function ScanScreen() {
 
         try {
             const html = generateScanHTML(results);
-            const { uri } = await Print.printToFileAsync({
-                html,
-                base64: false
-            });
+            const { uri } = await Print.printToFileAsync({ html, base64: false });
             await Sharing.shareAsync(uri);
         } catch (err) {
             if (__DEV__) console.warn('PDF Export failed', err);
@@ -171,67 +179,96 @@ export default function ScanScreen() {
         setLastScanCost(null);
     };
 
+    const [enableTorch, setEnableTorch] = useState(false);
+    const showLiveScanner = !imageUri && results.length === 0;
+
+    if (showLiveScanner) {
+        return (
+            <View style={{ flex: 1, backgroundColor: 'black' }}>
+                <Stack.Screen options={{ headerShown: false }} />
+                {!permission ? (
+                    <View style={{ flex: 1 }} />
+                ) : !permission.granted ? (
+                    <View style={s.permissionContainer}>
+                        <Scanning width={64} height={64} color="#8B5CF6" style={{ marginBottom: 24 }} />
+                        <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>Camera Access Needed</Text>
+                        <Text style={[s.heroDesc, { paddingHorizontal: 40 }]}>
+                            Skeeme needs your camera to scan equations and past questions instantly.
+                        </Text>
+                        <TouchableOpacity onPress={requestPermission} style={[s.primaryBtnShadow, { width: 200 }]}>
+                            <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtnGradient}>
+                                <Text style={s.primaryBtnText}>Grant Access</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View style={StyleSheet.absoluteFill}>
+                        <CameraView style={StyleSheet.absoluteFill} facing="back" ref={cameraRef} enableTorch={enableTorch} />
+                        
+                        <View style={StyleSheet.absoluteFill}>
+                            <View style={[s.overlayHeader, { paddingTop: Math.max(insets.top, 16) }]}>
+                                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={s.overlayTopBtn}>
+                                    <NavArrowLeft width={22} height={22} color="white" />
+                                </TouchableOpacity>
+                                <View style={{ width: 44 }} />
+                            </View>
+
+                            <View style={s.overlayDimmedFlex} />
+
+                            <View style={s.cropRow}>
+                                <View style={s.overlayDimmedSide} />
+                                <View style={s.cropBox}>
+                                    <View style={s.cropCornerTL} />
+                                    <View style={s.cropCornerTR} />
+                                    <View style={s.cropCornerBL} />
+                                    <View style={s.cropCornerBR} />
+                                </View>
+                                <View style={s.overlayDimmedSide} />
+                            </View>
+
+                            <View style={s.overlayDimmedFlexBottom}>
+                                <View style={s.captureControls}>
+                                    <TouchableOpacity onPress={() => setEnableTorch(!enableTorch)} activeOpacity={0.8} style={s.secondaryActionCircle}>
+                                        <Ionicons name={enableTorch ? "flash" : "flash-off"} size={22} color="#333" />
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity onPress={handleCapture} activeOpacity={0.8} style={s.mainCaptureOuter}>
+                                        <View style={s.mainCaptureInner}>
+                                            <MathText content="" color="white" fontSize={18} />
+                                        </View>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={s.secondaryActionCircle}>
+                                        <Ionicons name="images-outline" size={22} color="#333" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+                )}
+            </View>
+        );
+    }
+
     return (
         <GlowBackground isRoot={true}>
             <Stack.Screen options={{ headerShown: false }} />
-
+            
             <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    activeOpacity={0.7}
-                    style={[s.headerBtn, isDark ? s.headerBtnDark : s.headerBtnLight]}
-                >
+                <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={[s.headerBtn, isDark ? s.headerBtnDark : s.headerBtnLight]}>
                     <NavArrowLeft width={20} height={20} color={isDark ? 'white' : 'black'} />
                 </TouchableOpacity>
-                <Text style={[s.headerTitle, { color: isDark ? 'white' : 'black' }]}>Scan & Solve</Text>
-                <TouchableOpacity
-                    onPress={() => navigation.openDrawer()}
-                    activeOpacity={0.7}
-                    style={[s.headerBtn, isDark ? s.headerBtnDark : s.headerBtnLight]}
-                >
+                <Text style={[s.headerTitle, { color: isDark ? 'white' : 'black' }]}>Results</Text>
+                <TouchableOpacity onPress={() => navigation.openDrawer()} activeOpacity={0.7} style={[s.headerBtn, isDark ? s.headerBtnDark : s.headerBtnLight]}>
                     <Menu width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
-
-                {!imageUri && results.length === 0 && (
-                    <BlurView intensity={isDark ? 20 : 40} tint={isDark ? 'dark' : 'light'} style={s.emptyStateCard}>
-                        <View style={[s.iconBox, isDark ? s.bgWhite5 : s.bgWhite60]}>
-                            <Scanning width={72} height={72} color="#8B5CF6" strokeWidth={1.5} />
-                        </View>
-
-                        <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>Scan Question(s)</Text>
-                        <Text style={s.heroDesc}>
-                            Snap a page or question. Get instant answers and explanations.
-                        </Text>
-
-                        <View style={s.btnRow}>
-                            <TouchableOpacity onPress={() => pickImage(true)} activeOpacity={0.8} style={s.primaryBtnShadow}>
-                                <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtnGradient}>
-                                    <Camera width={18} height={18} color="white" />
-                                    <Text style={s.primaryBtnText}>Camera</Text>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={[s.secondaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}>
-                                <Album width={18} height={18} color={isDark ? '#fff' : '#475569'} />
-                                <Text style={[s.secondaryBtnText, isDark ? s.textWhite : s.textSlate600]}>Gallery</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={[s.costInfo, isDark ? s.bgWhite5 : s.bgWhite60]}>
-                            <FireFlame width={16} height={16} color="#8B5CF6" />
-                            <Text style={s.costText}>
-                                <Text style={{ color: '#8B5CF6' }}>{BASE_SCAN_COST} cr</Text> base + <Text style={{ color: '#8B5CF6' }}>{COST_PER_SOLUTION} cr</Text> per q
-                            </Text>
-                        </View>
-                    </BlurView>
-                )}
-
-                {imageUri && results.length === 0 && (
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+                {!!imageUri && results.length === 0 && (
                     <View style={s.previewContainer}>
                         <BlurView intensity={isDark ? 30 : 60} tint={isDark ? 'dark' : 'light'} style={s.previewCard}>
-                            <Image source={{ uri: imageUri }} style={s.previewImage} contentFit="cover" />
+                            <ExpoImage source={{ uri: imageUri }} style={s.previewImage} contentFit="cover" />
                         </BlurView>
 
                         {loading ? (
@@ -258,7 +295,7 @@ export default function ScanScreen() {
                     </View>
                 )}
 
-                {results.length > 0 && (
+                {!!(results.length > 0) && (
                     <View>
                         <BlurView intensity={isDark ? 30 : 60} tint={isDark ? 'dark' : 'light'} style={s.resultsHeaderGlass}>
                             <View>
@@ -279,7 +316,7 @@ export default function ScanScreen() {
                                             <Text style={s.typeTagText}>{item.type}</Text>
                                         </View>
                                     </View>
-                                    {item.topic && (
+                                    {!!item.topic && (
                                         <View style={[s.topicTag, isDark ? s.bgWhite10 : s.bgWhite60]}>
                                             <Text style={s.topicTagText}>{item.topic}</Text>
                                         </View>
@@ -288,7 +325,7 @@ export default function ScanScreen() {
                                 <MathText content={item.question} color={isDark ? 'white' : '#0f172a'} fontSize={18} containerStyle={{ marginBottom: 24 }} />
 
                                 <View style={s.solutionGap}>
-                                    {item.steps && item.steps.length > 0 && (
+                                    {!!(item.steps && item.steps.length > 0) && (
                                         <View style={[s.stepsContainer, isDark ? s.bgBlack20 : s.bgWhite60]}>
                                             <Text style={s.stepsLabel}>Solution Strategy</Text>
                                             {item.steps?.map((step, i) => (
@@ -313,7 +350,7 @@ export default function ScanScreen() {
                 <View style={{ height: 24 }} />
             </ScrollView>
 
-            {results.length > 0 && (
+            {!!(results.length > 0) && (
                 <BlurView
                     intensity={isDark ? 40 : 80}
                     tint={isDark ? "dark" : "light"}
@@ -337,12 +374,7 @@ export default function ScanScreen() {
                         </TouchableOpacity>
 
                         <View style={s.footerRow}>
-                            <TouchableOpacity
-                                onPress={handleExport}
-                                disabled={loading}
-                                activeOpacity={0.8}
-                                style={[s.footerSecondaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}
-                            >
+                            <TouchableOpacity onPress={handleExport} disabled={loading} activeOpacity={0.8} style={[s.footerSecondaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}>
                                 {loading ? (
                                     <ActivityIndicator size="small" color="#8B5CF6" />
                                 ) : (
@@ -353,11 +385,7 @@ export default function ScanScreen() {
                                 )}
                             </TouchableOpacity>
 
-                            <TouchableOpacity
-                                onPress={resetScan}
-                                activeOpacity={0.8}
-                                style={[s.footerTertiaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}
-                            >
+                            <TouchableOpacity onPress={resetScan} activeOpacity={0.8} style={[s.footerTertiaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}>
                                 <View style={s.rowBtnContent}>
                                     <Camera width={18} height={18} color={isDark ? '#fff' : '#475569'} />
                                     <Text style={[s.rowBtnText, { color: isDark ? 'white' : '#475569' }]}>Next Scan</Text>
@@ -372,26 +400,39 @@ export default function ScanScreen() {
 }
 
 const s = StyleSheet.create({
+    permissionContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16 },
     headerBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     headerBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
     headerBtnLight: { backgroundColor: 'rgba(255,255,255,0.6)' },
     headerTitle: { fontSize: 17, fontWeight: '800', letterSpacing: -0.5 },
 
-    emptyStateCard: { alignItems: 'center', padding: 32, borderRadius: 40, marginTop: 10 },
-    iconBox: { width: 140, height: 140, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
     heroTitle: { fontSize: 24, fontWeight: '900', marginBottom: 12, textAlign: 'center', letterSpacing: -1 },
-    heroDesc: { color: '#64748b', textAlign: 'center', fontWeight: '600', fontSize: 14, marginBottom: 40, paddingHorizontal: 10, lineHeight: 22 },
+    heroDesc: { color: '#64748b', textAlign: 'center', fontWeight: '600', fontSize: 14, marginBottom: 30, lineHeight: 22 },
     
-    btnRow: { flexDirection: 'row', width: '100%', gap: 12 },
-    primaryBtnShadow: { flex: 1, height: 56, borderRadius: 16, overflow: 'hidden', elevation: 8, shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+    primaryBtnShadow: { height: 56, borderRadius: 16, overflow: 'hidden', elevation: 8, shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
     primaryBtnGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
     primaryBtnText: { color: 'white', fontWeight: '800', fontSize: 16, letterSpacing: -0.3 },
-    secondaryBtnGlass: { flex: 1, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
-    secondaryBtnText: { fontWeight: '800', fontSize: 16, letterSpacing: -0.3, marginLeft: 8 },
 
-    costInfo: { marginTop: 32, paddingHorizontal: 20, paddingVertical: 14, borderRadius: 16, flexDirection: 'row', alignItems: 'center', width: '100%', justifyContent: 'center' },
-    costText: { color: '#64748b', fontWeight: '800', fontSize: 12, marginLeft: 8 },
+    // Live Camera Overlays
+    overlayHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 16, backgroundColor: 'rgba(0,0,0,0.5)' },
+    overlayTopBtn: { width: 44, height: 44, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+    overlayDimmedFlex: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+    overlayDimmedFlexBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end', paddingBottom: 60 },
+    cropRow: { flexDirection: 'row', height: CROP_BOX_HEIGHT },
+    overlayDimmedSide: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+    cropBox: { width: CROP_BOX_WIDTH, height: CROP_BOX_HEIGHT, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' },
+    cropCornerTL: { position: 'absolute', top: -2, left: -2, width: 24, height: 24, borderTopWidth: 4, borderLeftWidth: 4, borderColor: 'white', borderTopLeftRadius: 16 },
+    cropCornerTR: { position: 'absolute', top: -2, right: -2, width: 24, height: 24, borderTopWidth: 4, borderRightWidth: 4, borderColor: 'white', borderTopRightRadius: 16 },
+    cropCornerBL: { position: 'absolute', bottom: -2, left: -2, width: 24, height: 24, borderBottomWidth: 4, borderLeftWidth: 4, borderColor: 'white', borderBottomLeftRadius: 16 },
+    cropCornerBR: { position: 'absolute', bottom: -2, right: -2, width: 24, height: 24, borderBottomWidth: 4, borderRightWidth: 4, borderColor: 'white', borderBottomRightRadius: 16 },
+    cropInnerTooltip: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+    cropTooltipTitle: { color: 'white', fontWeight: '800', fontSize: 15, textAlign: 'center' },
+    cropTooltipDesc: { color: 'rgba(255,255,255,0.8)', fontWeight: '600', fontSize: 11, textAlign: 'center', marginTop: 2 },
+    captureControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 40 },
+    mainCaptureOuter: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: 'black', shadowOffset: {width: 0, height: 8}, shadowOpacity: 0.5, shadowRadius: 12 },
+    mainCaptureInner: { width: 66, height: 66, borderRadius: 33, backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center' },
+    secondaryActionCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' },
 
     previewContainer: { alignItems: 'center' },
     previewCard: { width: '100%', borderRadius: 32, overflow: 'hidden', borderBottomWidth: 3, borderBottomColor: 'rgba(139, 92, 246, 0.3)' },
