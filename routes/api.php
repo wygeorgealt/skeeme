@@ -196,6 +196,7 @@ Route::group(['prefix' => 'v1'], function () {
             Route::post('preferences', [\App\Http\Controllers\API\Student\AuthController::class, 'updatePreferences']);
             Route::post('device-token', [\App\Http\Controllers\API\Student\DeviceTokenController::class, 'store']);
             Route::post('translate', [\App\Http\Controllers\API\Student\TranslationController::class, 'translate']);
+            Route::post('support/contact', [\App\Http\Controllers\API\Student\SupportController::class, 'contact']);
 
             // Credit Awareness
             Route::get('credits/summary', [\App\Http\Controllers\API\Student\CreditController::class, 'summary']);

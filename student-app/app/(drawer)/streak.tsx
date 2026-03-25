@@ -3,9 +3,11 @@ import { Stack, router, useNavigation } from 'expo-router';
 import { Menu, Snow, NavArrowLeft, Sparks, CheckCircle, GraduationCap, Book, Medal, Suitcase } from 'iconoir-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlowBackground } from '@/components/ui/GlowBackground';
+import * as Sharing from 'expo-sharing';
+import { ShareCard } from '@/components/ui/ShareCard';
 
 export default function StreakScreen() {
     const { user } = useAuthStore();
@@ -21,6 +23,23 @@ export default function StreakScreen() {
     // Milestones
     const current = user?.streak?.current_streak || 0;
     const longest = user?.streak?.longest_streak || 0;
+    const viewShotRef = useRef<any>(null);
+
+    const shareStreak = async () => {
+        try {
+            if (viewShotRef.current) {
+                const uri = await viewShotRef.current.capture();
+                if (await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(uri, {
+                        dialogTitle: 'Share your Skeeme Streak',
+                        mimeType: 'image/jpeg',
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Sharing failed', error);
+        }
+    };
     
     const milestones = [
         { title: '7 Day Streak', target: 7, reward: '50 Credits' },
@@ -57,6 +76,7 @@ export default function StreakScreen() {
     return (
         <GlowBackground>
             <Stack.Screen options={{ headerShown: false }} />
+            <ShareCard type="streak" data={{ current_streak: current }} viewShotRef={viewShotRef} />
 
             {/* Header with drawer toggle */}
             <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
@@ -88,6 +108,18 @@ export default function StreakScreen() {
                         </View>
                     </View>
                 </View>
+
+                {/* Share Button */}
+                {(current > 0 || longest > 0) && (
+                    <TouchableOpacity
+                        onPress={shareStreak}
+                        activeOpacity={0.8}
+                        style={[s.shareBtn, isDark ? s.bgWhite10 : s.bgWhite]}
+                    >
+                        <Sparks width={18} height={18} color={isDark ? '#C4B5FD' : '#8B5CF6'} style={{ marginRight: 8 }} />
+                        <Text style={[s.shareBtnText, isDark ? s.textWhite : s.textIndigo600]}>Share Milestone</Text>
+                    </TouchableOpacity>
+                )}
 
                 {/* Freezes */}
                 <Text style={[s.sectionLabel, isDark ? s.textSlate500 : s.textSlate400]}>Streak Protection</Text>
@@ -178,11 +210,17 @@ const s = StyleSheet.create({
     statValue: { fontSize: 36, fontWeight: '700', letterSpacing: -1.5 },
     statUnit: { fontSize: 11, fontWeight: '700', color: '#94a3b8', marginLeft: 6, textTransform: 'uppercase' },
 
+    shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 20, marginBottom: 32, borderWidth: 1, borderColor: 'rgba(139,92,246,0.1)' },
+    shareBtnText: { fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
+
     sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 20, marginLeft: 4 },
     textSlate400: { color: '#94a3b8' },
     textSlate500: { color: '#64748b' },
     textWhite: { color: 'white' },
     textSlate900: { color: '#0f172a' },
+    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    bgWhite: { backgroundColor: 'white' },
+    textIndigo600: { color: '#4F46E5' },
 
     protectionCard: { padding: 24, borderRadius: 24, borderWidth: 1, marginBottom: 32 },
     protectionEliteDark: { backgroundColor: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)' },

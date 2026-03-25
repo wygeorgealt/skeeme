@@ -11,7 +11,7 @@ import { useState, useRef, useEffect } from 'react';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
-import { QuizShareCard } from '@/components/QuizShareCard';
+import { ShareCard } from '@/components/ui/ShareCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import * as Print from 'expo-print';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
@@ -265,14 +265,11 @@ export default function QuizHistoryDetailScreen() {
         <GlowBackground isRoot={true}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            <View style={s.shareArea}>
-                <View ref={viewShotRef} collapsable={false}>
-                    <QuizShareCard
-                        topic={session.topic}
-                        percentage={Math.round(session.score_percentage)}
-                    />
-                </View>
-            </View>
+            <ShareCard
+                type="quiz"
+                data={{ topic: session.topic, score_percentage: Math.round(session.score_percentage) }}
+                viewShotRef={viewShotRef}
+            />
 
             <ScrollView 
                 style={s.scrollView} 

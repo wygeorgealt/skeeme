@@ -78,21 +78,8 @@ export default function RootLayout() {
       if (storedEmail) {
         // Had a previous session → login with pre-filled email
         router.replace('/login');
-      } else if (!onboardingComplete && onboardingStep > 0) {
-        // Started onboarding but didn't finish → resume
-        const stepRoutes: Record<number, string> = {
-          1: '/(onboarding)/hook',
-          2: '/(onboarding)/education',
-          3: '/(onboarding)/field',
-          4: '/(onboarding)/style',
-          5: '/(onboarding)/demo',
-          6: '/(onboarding)/create-account',
-          7: '/(onboarding)/streak-intro',
-          8: '/(onboarding)/notifications',
-        };
-        router.replace((stepRoutes[onboardingStep] || '/(onboarding)/hook') as any);
       } else if (!onboardingComplete) {
-        // Fresh install → start onboarding
+        // Fresh install or incomplete onboarding → start from the beginning
         router.replace('/(onboarding)/hook');
       } else {
         // Completed onboarding but no user (logged out) → login

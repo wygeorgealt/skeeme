@@ -21,7 +21,7 @@ export function PasswordField({
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
-    const inputBgClass = isDark ? "bg-[#0f0f11]" : "bg-transparent";
+    const inputBgClass = isDark ? "bg-slate-900" : "bg-transparent";
     const inputBorderClass = isDark ? "border-slate-800" : "border-slate-200";
     const placeholderColor = isDark ? "#475569" : "#94a3b8";
 

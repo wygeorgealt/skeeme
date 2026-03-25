@@ -18,7 +18,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
-import { QuizShareCard } from '@/components/QuizShareCard';
+import { ShareCard } from '@/components/ui/ShareCard';
 import { RewardModal } from '@/components/RewardModal';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
 import CreditStatusBar from '@/components/CreditStatusBar';
@@ -699,14 +699,14 @@ export default function GenerateQuizScreen() {
             </ScrollView>
 
             {/* Hidden capture view for sharing */}
-            <View style={{ position: 'absolute', left: -9999, top: -9999 }}>
-                <View ref={viewShotRef} collapsable={false}>
-                    <QuizShareCard
-                        topic={mode === 'topic' ? topic : (selectedFile?.name || 'File Upload')}
-                        percentage={percentage}
-                    />
-                </View>
-            </View>
+            <ShareCard
+                type="quiz"
+                data={{ 
+                    topic: mode === 'topic' ? topic : (selectedFile?.name || 'File Upload'), 
+                    score_percentage: percentage 
+                }}
+                viewShotRef={viewShotRef}
+            />
 
             {/* Actions Footer */}
             <BlurView 

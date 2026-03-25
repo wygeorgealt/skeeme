@@ -392,7 +392,7 @@ export default function AccountScreen() {
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            onPress={() => WebBrowser.openBrowserAsync('mailto:noreply@contact.skeeme.com')}
+                            onPress={() => router.push('/support')}
                             style={s.legalItem}
                         >
                             <ShieldCheck width={18} height={18} color="#94a3b8" />

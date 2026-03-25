@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { NavArrowLeft, Google, Apple } from 'iconoir-react-native';
 import { StatusBar } from 'expo-status-bar';
 import { PasswordField } from '@/components/ui/PasswordField';
+import { GlowBackground } from '@/components/ui/GlowBackground';
 
 export default function SignupScreen() {
     const colorScheme = useColorScheme();
@@ -110,11 +111,11 @@ export default function SignupScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={[s.flex1, isDark ? s.bgDark : s.bgLight]}
+            style={s.flex1}
         >
             <StatusBar style={isDark ? "light" : "dark"} />
-
-            <View style={s.header}>
+            <GlowBackground useSafeArea>
+                <View style={s.header}>
                 <TouchableOpacity
                     onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
                     hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
@@ -170,7 +171,7 @@ export default function SignupScreen() {
                 <View style={s.inputContainer}>
                     <View style={[
                         s.inputWrapper, 
-                        isDark ? s.bgDark : s.bgTransparent,
+                        isDark ? s.bgSlate900 : s.bgTransparent,
                         isDark ? s.borderSlate800 : s.borderSlate200,
                         nameError ? s.borderRed : null
                     ]}>
@@ -190,7 +191,7 @@ export default function SignupScreen() {
                 <View style={s.inputContainer}>
                     <View style={[
                         s.inputWrapper, 
-                        isDark ? s.bgDark : s.bgTransparent,
+                        isDark ? s.bgSlate900 : s.bgTransparent,
                         isDark ? s.borderSlate800 : s.borderSlate200,
                         emailError ? s.borderRed : null
                     ]}>
@@ -261,6 +262,7 @@ export default function SignupScreen() {
                     </Text>
                 </TouchableOpacity>
             </ScrollView>
+            </GlowBackground>
         </KeyboardAvoidingView>
     );
 }
