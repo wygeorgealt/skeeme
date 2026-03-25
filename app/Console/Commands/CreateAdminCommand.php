@@ -31,15 +31,31 @@ class CreateAdminCommand extends Command
         $password = $this->argument('password') ?: 'password123';
 
         $user = User::where('email', $email)->first();
+        $isExistingAdmin = $user && $user->role === 'admin';
 
         if ($user) {
-            $user->role = 'admin';
-            $user->status = 'active';
-            if ($this->argument('password')) {
-                $user->password = Hash::make($password);
+            $hasChanges = false;
+            
+            if ($user->role !== 'admin') {
+                $user->role = 'admin';
+                $hasChanges = true;
             }
-            $user->save();
-            $this->info("User {$email} promoted to admin successfully.");
+            
+            if ($user->status !== 'active') {
+                $user->status = 'active';
+                $hasChanges = true;
+            }
+
+            // Only update password if explicitly provided as argument
+            if ($this->argument('password')) {
+                $user->password = Hash::make($this->argument('password'));
+                $hasChanges = true;
+            }
+
+            if ($hasChanges) {
+                $user->save();
+                $this->info("User {$email} updated/promoted to admin successfully.");
+            }
         } else {
             $user = User::create([
                 'name' => 'Admin User',
@@ -51,7 +67,7 @@ class CreateAdminCommand extends Command
                 'status' => 'active',
                 'email_verified_at' => now(),
             ]);
-            $this->info("New admin user {$email} created successfully with password: {$password}");
+            $this->info("New admin user {$email} created successfully.");
         }
 
         // Also ensure they are a super-admin team member
@@ -62,7 +78,10 @@ class CreateAdminCommand extends Command
                 'is_active' => true,
             ]
         );
-        $this->info("User {$email} is now also a super-admin creator.");
+        
+        if (!$isExistingAdmin) {
+            $this->info("User {$email} is now also a super-admin creator.");
+        }
 
         return Command::SUCCESS;
     }

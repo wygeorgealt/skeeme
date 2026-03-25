@@ -38,6 +38,7 @@ class UserSeeder extends Seeder
         );
 
         // Create admin users
+        /*
         User::firstOrCreate(
             ['email' => 'admin@demo.com'],
             [
@@ -65,6 +66,7 @@ class UserSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+        */
 
         // Create lecturer users
         User::firstOrCreate(
