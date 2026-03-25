@@ -60,15 +60,15 @@ export async function registerForPushNotificationsAsync(authToken?: string | nul
                         Authorization: `Bearer ${authToken}`
                     }
                 });
-                console.log('Successfully synced push token to backend:', token);
+                if (__DEV__) console.log('Successfully synced push token to backend:', token);
             } else if (token) {
-                console.log('Got push token but user not logged in. Will sync later:', token);
+                if (__DEV__) console.log('Got push token but user not logged in. Will sync later:', token);
             }
         } catch (e) {
             console.error('Push Token Error:', e);
         }
     } else {
-        console.log('Must use physical device for Push Notifications');
+        if (__DEV__) console.log('Must use physical device for Push Notifications');
     }
 
     return token;

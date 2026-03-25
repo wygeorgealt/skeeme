@@ -361,6 +361,8 @@ export default function GenerateQuizScreen() {
                     <TouchableOpacity
                         onPress={() => navigation.openDrawer()}
                         activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel="Open Menu"
                         style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                     >
                         <Menu width={22} height={22} color={isDark ? 'white' : 'black'} />

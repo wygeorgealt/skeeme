@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl, useColorScheme, Platform, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, FlatList, RefreshControl, useColorScheme, Platform, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { 
@@ -125,6 +125,8 @@ export default function StudyHistoryDashboard() {
                 <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open Menu"
                     style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                 >
                     <Menu width={22} height={22} color={isDark ? 'white' : 'black'} />
@@ -151,57 +153,62 @@ export default function StudyHistoryDashboard() {
 
             {/* Bottom Half Container Content */}
             <View style={[s.contentContainer, isDark ? s.bgDark : s.bgWhite]}>
-                <ScrollView
+                <FlatList<any>
                     style={s.scrollView}
+                    contentContainerStyle={{ paddingBottom: 40 }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
                     showsVerticalScrollIndicator={false}
-                >
-                {isLoading && quizzes.length === 0 && decks.length === 0 ? (
-                    <View>
-                        <View style={s.skeletonRow}>
-                            <SkeletonLoader width={48} height={48} borderRadius={24} style={{ marginRight: 16 }} />
-                            <View style={s.flex1}>
-                                <SkeletonLoader width="60%" height={16} style={{ marginBottom: 8 }} />
-                                <SkeletonLoader width="30%" height={12} />
-                            </View>
-                        </View>
-                        <View style={s.skeletonRow}>
-                            <SkeletonLoader width={48} height={48} borderRadius={24} style={{ marginRight: 16 }} />
-                            <View style={s.flex1}>
-                                <SkeletonLoader width="70%" height={16} style={{ marginBottom: 8 }} />
-                                <SkeletonLoader width="40%" height={12} />
-                            </View>
-                        </View>
-                    </View>
-                ) : activeTab === 'quizzes' ? (
-                    quizzes.length === 0 ? (
-                        <View style={[s.emptyState, isDark ? s.emptyStateDark : s.emptyStateLight]}>
-                            <Calendar width={40} height={40} color="#8B5CF6" style={{ opacity: 0.5 }} />
-                            <Text style={s.emptyStateText}>
-                                Complete a practice quiz to see results here.
-                            </Text>
-                        </View>
-                    ) : (
-                        quizzes.map(session => (
-                            <QuizCard key={session.id} session={session} isDark={isDark} />
-                        ))
-                    )
-                ) : (
-                    decks.length === 0 ? (
-                        <View style={[s.emptyState, isDark ? s.emptyStateDark : s.emptyStateLight]}>
-                            <MultiplePages width={40} height={40} color="#8B5CF6" style={{ opacity: 0.5 }} />
-                            <Text style={s.emptyStateText}>
-                                Generate some flashcards to start studying.
-                            </Text>
-                        </View>
-                    ) : (
-                        decks.map(deck => (
-                            <DeckCard key={deck.id} deck={deck} isDark={isDark} />
-                        ))
-                    )
-                )}
-                <View style={s.spacer} />
-                </ScrollView>
+                    data={isLoading && quizzes.length === 0 && decks.length === 0 ? [] : (activeTab === 'quizzes' ? quizzes : decks)}
+                    keyExtractor={(item) => String(item.id)}
+                    renderItem={({ item }) => {
+                        if (activeTab === 'quizzes') {
+                            return <QuizCard session={item as QuizSession} isDark={isDark} />;
+                        } else {
+                            return <DeckCard deck={item as FlashcardDeck} isDark={isDark} />;
+                        }
+                    }}
+                    ListEmptyComponent={() => {
+                        if (isLoading) {
+                            return (
+                                <View>
+                                    <View style={s.skeletonRow}>
+                                        <SkeletonLoader width={48} height={48} borderRadius={24} style={{ marginRight: 16 }} />
+                                        <View style={s.flex1}>
+                                            <SkeletonLoader width="60%" height={16} style={{ marginBottom: 8 }} />
+                                            <SkeletonLoader width="30%" height={12} />
+                                        </View>
+                                    </View>
+                                    <View style={s.skeletonRow}>
+                                        <SkeletonLoader width={48} height={48} borderRadius={24} style={{ marginRight: 16 }} />
+                                        <View style={s.flex1}>
+                                            <SkeletonLoader width="70%" height={16} style={{ marginBottom: 8 }} />
+                                            <SkeletonLoader width="40%" height={12} />
+                                        </View>
+                                    </View>
+                                </View>
+                            );
+                        }
+                        if (activeTab === 'quizzes') {
+                            return (
+                                <View style={[s.emptyState, isDark ? s.emptyStateDark : s.emptyStateLight]}>
+                                    <Calendar width={40} height={40} color="#8B5CF6" style={{ opacity: 0.5 }} />
+                                    <Text style={s.emptyStateText}>
+                                        Complete a practice quiz to see results here.
+                                    </Text>
+                                </View>
+                            );
+                        } else {
+                            return (
+                                <View style={[s.emptyState, isDark ? s.emptyStateDark : s.emptyStateLight]}>
+                                    <MultiplePages width={40} height={40} color="#8B5CF6" style={{ opacity: 0.5 }} />
+                                    <Text style={s.emptyStateText}>
+                                        Generate some flashcards to start studying.
+                                    </Text>
+                                </View>
+                            );
+                        }
+                    }}
+                />
             </View>
         </GlowBackground>
     );

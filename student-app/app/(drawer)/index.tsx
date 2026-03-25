@@ -356,6 +356,8 @@ export default function DashboardScreen() {
                         <TouchableOpacity 
                             onPress={() => navigation.openDrawer()} 
                             activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel="Open Menu"
                             style={[s.menuBtn, isDark ? s.bgWhite10 : s.bgWhite60]}
                         >
                             <Menu width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
@@ -368,7 +370,7 @@ export default function DashboardScreen() {
                     {[
                         { title: 'Scan', icon: Scanning, route: '/scan' },
                         { title: 'Quiz', icon: GraduationCap, route: '/generate' },
-                        { title: 'Decks', icon: MultiplePages, route: '/flashcards' },
+                        { title: 'Flashcards', icon: MultiplePages, route: '/flashcards' },
                         { title: 'History', icon: Activity, route: '/history' },
                     ].map((tool, idx) => (
                         <View key={idx} style={s.quickActionWrap}>

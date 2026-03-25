@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, RefreshControl, Alert, useColorScheme, Platform, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, useColorScheme, Platform, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -152,125 +152,130 @@ export default function FlashcardsDashboard() {
                 <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open Menu"
                     style={[s.menuBtn, isDark ? s.bgWhite10 : s.bgWhite60]}
                 >
                     <Menu width={22} height={22} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
             </View>
 
-            <ScrollView
+            <FlatList
                 style={s.scrollView}
                 contentContainerStyle={s.scrollContent}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
                 showsVerticalScrollIndicator={false}
-            >
-                {/* Create New Button */}
-                <View style={s.createBtnWrapper}>
+                data={(!decks && isLoading) ? [] : decks}
+                keyExtractor={(item) => String(item.id)}
+                ListHeaderComponent={
+                    <>
+                        <View style={s.createBtnWrapper}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    router.push('/(drawer)/flashcards/create');
+                                }}
+                                activeOpacity={0.8}
+                                style={s.createBtn}
+                            >
+                                <LinearGradient
+                                    colors={['#8B5CF6', '#6366F1']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={s.createBtnGradient}
+                                >
+                                    <Sparks width={20} height={20} color="white" strokeWidth={2.5} />
+                                    <Text style={s.createBtnText}>Generate New Deck</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={s.sectionHeaderRow}>
+                            <Text style={s.sectionTitle}>Your Library</Text>
+                            {decks && decks.length > 0 && (
+                                <View style={[s.countBadge, isDark ? s.bgWhite10 : s.bgIndigo50]}>
+                                    <Text style={[s.countBadgeText, isDark ? s.textWhite : s.textIndigo600]}>{decks.length} Sets</Text>
+                                </View>
+                            )}
+                        </View>
+                    </>
+                }
+                renderItem={({ item: deck }) => (
                     <TouchableOpacity
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            router.push('/(drawer)/flashcards/create');
-                        }}
-                        activeOpacity={0.8}
-                        style={s.createBtn}
+                        onPress={() => handleDeckPress(deck.id)}
+                        activeOpacity={0.9}
+                        style={s.deckBtn}
                     >
-                        <LinearGradient
-                            colors={['#8B5CF6', '#6366F1']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={s.createBtnGradient}
-                        >
-                            <Sparks width={20} height={20} color="white" strokeWidth={2.5} />
-                            <Text style={s.createBtnText}>Generate New Deck</Text>
-                        </LinearGradient>
+                        <BlurView intensity={isDark ? 30 : 60} tint={isDark ? 'dark' : 'light'} style={[s.deckCard, isDark ? s.glassBorderDark : s.glassBorderLight]}>
+                            <View style={s.deckHeader}>
+                                <View style={s.titleContainer}>
+                                    <Text style={[s.deckTitle, isDark ? s.textWhite : s.textSlate900]} numberOfLines={2}>
+                                        {deck.title}
+                                    </Text>
+                                    <View style={s.deckMeta}>
+                                        <Calendar width={12} height={12} color="#94a3b8" />
+                                        <Text style={s.dateText}>
+                                            {new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => handleDelete(deck.id, deck.title)}
+                                    style={[s.binBtn, isDark ? s.bgRed10 : s.bgRed50]}
+                                >
+                                    <Bin width={16} height={16} color="#ef4444" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={s.deckFooter}>
+                                <View style={[s.badge, isDark ? s.bgWhite10 : s.bgIndigo50]}>
+                                    <Group width={14} height={14} color="#8B5CF6" strokeWidth={2.5} />
+                                    <Text style={[s.badgeText, isDark ? s.textWhite : s.textIndigo600]}>
+                                        {deck.flashcards_count} Cards
+                                    </Text>
+                                </View>
+                                <View style={s.studyHint}>
+                                    <Text style={s.studyHintText}>Tap to Study</Text>
+                                    <NavArrowRight width={14} height={14} color="#8B5CF6" strokeWidth={3} />
+                                </View>
+                            </View>
+                        </BlurView>
                     </TouchableOpacity>
-                </View>
-
-                <View style={s.sectionHeaderRow}>
-                    <Text style={s.sectionTitle}>Your Library</Text>
-                    {decks && decks.length > 0 && (
-                        <View style={[s.countBadge, isDark ? s.bgWhite10 : s.bgIndigo50]}>
-                            <Text style={[s.countBadgeText, isDark ? s.textWhite : s.textIndigo600]}>{decks.length} Sets</Text>
+                )}
+                ListEmptyComponent={
+                    isLoading ? (
+                        <View>
+                            <SkeletonDeck isDark={isDark} />
+                            <SkeletonDeck isDark={isDark} />
+                            <SkeletonDeck isDark={isDark} />
                         </View>
-                    )}
-                </View>
-
-                {isLoading && !decks ? (
-                    <View>
-                        <SkeletonDeck isDark={isDark} />
-                        <SkeletonDeck isDark={isDark} />
-                        <SkeletonDeck isDark={isDark} />
-                    </View>
-                ) : !decks || decks.length === 0 ? (
-                    <BlurView intensity={isDark ? 20 : 40} tint={isDark ? 'dark' : 'light'} style={[s.emptyState, isDark ? s.glassBorderDark : s.glassBorderLight]}>
-                        <View style={[s.emptyIconBox, isDark ? s.bgWhite5 : s.bgIndigo50]}>
-                            <Page width={40} height={40} color="#8B5CF6" strokeWidth={1.5} />
-                        </View>
-                        <Text style={[s.emptyTitle, isDark ? s.textWhite : s.textSlate900]}>No Decks Yet</Text>
-                        <Text style={[s.emptySubtitle, isDark ? s.textSlate500 : s.textSlate400]}>
-                            Turn your notes or topics into interactive study sets with Skeeme AI.
-                        </Text>
-                    </BlurView>
-                ) : (
-                    decks.map(deck => (
+                    ) : (
+                        <BlurView intensity={isDark ? 20 : 40} tint={isDark ? 'dark' : 'light'} style={[s.emptyState, isDark ? s.glassBorderDark : s.glassBorderLight]}>
+                            <View style={[s.emptyIconBox, isDark ? s.bgWhite5 : s.bgIndigo50]}>
+                                <Page width={40} height={40} color="#8B5CF6" strokeWidth={1.5} />
+                            </View>
+                            <Text style={[s.emptyTitle, isDark ? s.textWhite : s.textSlate900]}>No Decks Yet</Text>
+                            <Text style={[s.emptySubtitle, isDark ? s.textSlate500 : s.textSlate400]}>
+                                Turn your notes or topics into interactive study sets with Skeeme AI.
+                            </Text>
+                        </BlurView>
+                    )
+                }
+                ListFooterComponent={
+                    hasMore && decks && decks.length >= 10 ? (
                         <TouchableOpacity
-                            key={deck.id}
-                            onPress={() => handleDeckPress(deck.id)}
-                            activeOpacity={0.9}
-                            style={s.deckBtn}
+                            onPress={() => setPage(p => p + 1)}
+                            style={[s.loadMoreBtn, isDark ? s.bgWhite10 : s.bgWhite60]}
                         >
-                            <BlurView intensity={isDark ? 30 : 60} tint={isDark ? 'dark' : 'light'} style={[s.deckCard, isDark ? s.glassBorderDark : s.glassBorderLight]}>
-                                <View style={s.deckHeader}>
-                                    <View style={s.titleContainer}>
-                                        <Text style={[s.deckTitle, isDark ? s.textWhite : s.textSlate900]} numberOfLines={2}>
-                                            {deck.title}
-                                        </Text>
-                                        <View style={s.deckMeta}>
-                                            <Calendar width={12} height={12} color="#94a3b8" />
-                                            <Text style={s.dateText}>
-                                                {new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                    <TouchableOpacity
-                                        onPress={() => handleDelete(deck.id, deck.title)}
-                                        style={[s.binBtn, isDark ? s.bgRed10 : s.bgRed50]}
-                                    >
-                                        <Bin width={16} height={16} color="#ef4444" />
-                                    </TouchableOpacity>
-                                </View>
-
-                                <View style={s.deckFooter}>
-                                    <View style={[s.badge, isDark ? s.bgWhite10 : s.bgIndigo50]}>
-                                        <Group width={14} height={14} color="#8B5CF6" strokeWidth={2.5} />
-                                        <Text style={[s.badgeText, isDark ? s.textWhite : s.textIndigo600]}>
-                                            {deck.flashcards_count} Cards
-                                        </Text>
-                                    </View>
-                                    <View style={s.studyHint}>
-                                        <Text style={s.studyHintText}>Tap to Study</Text>
-                                        <NavArrowRight width={14} height={14} color="#8B5CF6" strokeWidth={3} />
-                                    </View>
-                                </View>
-                            </BlurView>
+                            {isLoading ? (
+                                <ActivityIndicator size="small" color="#8B5CF6" />
+                            ) : (
+                                <Text style={[s.loadMoreText, isDark ? s.textWhite : s.textSlate900]}>Load More</Text>
+                            )}
                         </TouchableOpacity>
-                    ))
-                )}
-
-                {hasMore && decks && decks.length >= 10 && (
-                    <TouchableOpacity
-                        onPress={() => setPage(p => p + 1)}
-                        style={[s.loadMoreBtn, isDark ? s.bgWhite10 : s.bgWhite60]}
-                    >
-                        {isLoading ? (
-                            <ActivityIndicator size="small" color="#8B5CF6" />
-                        ) : (
-                            <Text style={[s.loadMoreText, isDark ? s.textWhite : s.textSlate900]}>Load More</Text>
-                        )}
-                    </TouchableOpacity>
-                )}
-                <View style={s.h20} />
-            </ScrollView>
+                    ) : null
+                }
+            />
         </GlowBackground>
     );
 }

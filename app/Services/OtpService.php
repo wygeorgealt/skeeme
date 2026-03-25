@@ -39,11 +39,11 @@ class OtpService
 
         try {
             if ($type === 'verification') {
-                Mail::mailer('resend')->to($email)->send(new SignupVerificationMail($code));
+                Mail::mailer('resend')->to($email)->queue(new SignupVerificationMail($code));
             } else {
-                Mail::mailer('resend')->to($email)->send(new ForgotPasswordMail($code));
+                Mail::mailer('resend')->to($email)->queue(new ForgotPasswordMail($code));
             }
-            \Illuminate\Support\Facades\Log::info("OTP email sent successfully to {$email}", ['type' => $type]);
+            \Illuminate\Support\Facades\Log::info("OTP email queued successfully to {$email}", ['type' => $type]);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Failed to send OTP email to {$email}", [
                 'type' => $type,

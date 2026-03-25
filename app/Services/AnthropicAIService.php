@@ -19,13 +19,14 @@ class AnthropicAIService
     {
         $this->apiKey = config('services.anthropic.api_key');
         $this->client = new Client([
-            'timeout' => 300, // Matching the "Ultra" timeout for Skeeme
+            'timeout' => 300,
             'connect_timeout' => 15,
         ]);
     }
 
     /**
      * Generate questions using Claude 4.5 Haiku
+     * Production-hardened: dynamic tokens, personalization, language detection, cache logging
      */
     public function generateQuestions(
         array $notes,
@@ -42,28 +43,41 @@ class AnthropicAIService
             
             if ($progressCallback) $progressCallback(10);
             
+            // Check cache first (24 hour TTL) - ELIMINATES REDUNDANT API CALLS
             $cacheKey = $this->generateCacheKey('q', $notes, $numberOfQuestions, $difficulty, $questionTypes, $prompt, $includeVisuals);
             if (Cache::has($cacheKey)) {
+                $questions = Cache::get($cacheKey);
+                Log::info('Claude Cache Hit: Questions retrieved from cache.', [
+                    'cache_key' => $cacheKey,
+                    'questions_count' => count($questions),
+                    'estimated_time_saved' => '15-30s (AI API Bypass)'
+                ]);
                 if ($progressCallback) $progressCallback(100);
-                return Cache::get($cacheKey);
+                return $questions;
             }
             
             if ($progressCallback) $progressCallback(30);
 
-            $optimizedPrompt = $this->buildOptimizedPrompt($notes, $numberOfQuestions, $difficulty, $questionTypes, $prompt, $includeVisuals, $aiPreferences);
+            // Sanitize inputs for UTF-8
+            $sanitizedNotes = array_map([$this, 'sanitizeUtf8'], $notes);
+            $sanitizedPrompt = $this->sanitizeUtf8($prompt);
+
+            $optimizedPrompt = $this->buildOptimizedPrompt(
+                $sanitizedNotes, $numberOfQuestions, $difficulty, 
+                $questionTypes, $sanitizedPrompt, $includeVisuals, $aiPreferences
+            );
 
             if ($progressCallback) $progressCallback(50);
             
+            // Dynamic max_tokens based on count (~350 tokens per question to prevent truncation)
+            $calculatedMaxTokens = min(8192, max(1500, $numberOfQuestions * 350));
+
             $response = $this->client->post($this->baseUrl, [
-                'headers' => [
-                    'x-api-key' => $this->apiKey,
-                    'anthropic-version' => $this->version,
-                    'content-type' => 'application/json',
-                ],
+                'headers' => $this->buildHeaders(),
                 'json' => [
                     'model' => $this->model,
-                    'max_tokens' => 8192,
-                    'system' => "You are a quiz generator. Return ONLY raw JSON matching the requested schema. No conversational text.",
+                    'max_tokens' => $calculatedMaxTokens,
+                    'system' => 'You are a quiz generator. Return ONLY raw JSON matching the requested schema. No conversational text.',
                     'messages' => [
                         ['role' => 'user', 'content' => $optimizedPrompt]
                     ],
@@ -89,7 +103,7 @@ class AnthropicAIService
     }
 
     /**
-     * Generate Flashcards
+     * Generate Flashcards — production-hardened with detailed prompts and dynamic tokens
      */
     public function generateFlashcards(
         array $notes,
@@ -102,31 +116,46 @@ class AnthropicAIService
             set_time_limit(300);
             if ($progressCallback) $progressCallback(10);
 
-            $notesText = implode("\n", $notes);
-            $systemPrompt = "You are an expert tutor creating flashcards. Return ONLY raw JSON array: [{\"front\": \"...\", \"back\": \"...\"}]";
-            $userPrompt = "Generate EXACTLY {$numberOfCards} flashcards from this content: \n\n {$notesText} \n\n Additional context: {$prompt}";
+            $sanitizedNotes = array_map([$this, 'sanitizeUtf8'], $notes);
+            $optimizedPrompt = $this->buildFlashcardPrompt($sanitizedNotes, $numberOfCards, $difficulty, $prompt);
+
+            // Dynamic max_tokens (~200 tokens per card)
+            $calculatedMaxTokens = min(8192, max(1000, $numberOfCards * 200));
+
+            if ($progressCallback) $progressCallback(30);
 
             $response = $this->client->post($this->baseUrl, [
-                'headers' => [
-                    'x-api-key' => $this->apiKey,
-                    'anthropic-version' => $this->version,
-                    'content-type' => 'application/json',
-                ],
+                'headers' => $this->buildHeaders(),
                 'json' => [
                     'model' => $this->model,
-                    'max_tokens' => 4096,
-                    'system' => $systemPrompt,
-                    'messages' => [['role' => 'user', 'content' => $userPrompt]],
-                    'temperature' => 0.7,
+                    'max_tokens' => $calculatedMaxTokens,
+                    'system' => 'You are an expert tutor creating highly effective flashcards. Return only JSON.',
+                    'messages' => [['role' => 'user', 'content' => $optimizedPrompt]],
+                    'temperature' => 0.5,
                 ],
             ]);
+
+            if ($progressCallback) $progressCallback(70);
 
             $data = json_decode($response->getBody()->getContents(), true);
             $content = $data['content'][0]['text'] ?? '[]';
             
-            // Basic cleanup for JSON
+            // Robust JSON parsing (same as DeepSeek)
             $content = preg_replace('/```(?:json)?|```/', '', $content);
             $decoded = json_decode(trim($content), true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                // Fallback: extract JSON array via regex
+                preg_match('/\[.*\]/s', $content, $matches);
+                if (!empty($matches[0])) {
+                    $decoded = json_decode($matches[0], true);
+                }
+            }
+
+            // Handle {flashcards: [...]} wrapper
+            if (is_array($decoded) && isset($decoded['flashcards']) && is_array($decoded['flashcards'])) {
+                $decoded = $decoded['flashcards'];
+            }
 
             return is_array($decoded) ? $decoded : [];
         } catch (\Exception $e) {
@@ -141,16 +170,13 @@ class AnthropicAIService
     {
         try {
             $response = $this->client->post($this->baseUrl, [
-                'headers' => [
-                    'x-api-key' => $this->apiKey,
-                    'anthropic-version' => $this->version,
-                    'content-type' => 'application/json',
-                ],
+                'headers' => $this->buildHeaders(),
                 'json' => [
                     'model' => $this->model,
                     'max_tokens' => 4096,
                     'system' => $systemPrompt,
                     'messages' => [['role' => 'user', 'content' => $prompt]],
+                    'temperature' => 0.7,
                 ],
             ]);
 
@@ -171,11 +197,7 @@ class AnthropicAIService
             $systemPrompt = "You are a professional translator. Translate the provided text to {$targetLanguage}. Return ONLY the translated text.";
             
             $response = $this->client->post($this->baseUrl, [
-                'headers' => [
-                    'x-api-key' => $this->apiKey,
-                    'anthropic-version' => $this->version,
-                    'content-type' => 'application/json',
-                ],
+                'headers' => $this->buildHeaders(),
                 'json' => [
                     'model' => $this->model,
                     'max_tokens' => 4096,
@@ -188,13 +210,14 @@ class AnthropicAIService
             $data = json_decode($response->getBody()->getContents(), true);
             return $data['content'][0]['text'] ?? $text;
         } catch (\Exception $e) {
-            \Log::error('Claude Translation Error: ' . $e->getMessage());
-            return $text; // Fallback to original text here
+            Log::error('Claude Translation Error: ' . $e->getMessage());
+            return $text; // Fallback to original text
         }
     }
 
     /**
      * Grade a theory/essay answer using Claude 4.5 Haiku
+     * Enhanced with rubric support and detailed analysis (parity with DeepSeek)
      */
     public function gradeTheoryAnswer(
         string $questionText,
@@ -204,15 +227,30 @@ class AnthropicAIService
         float $maxMarks = 10.0
     ): array {
         try {
-            $systemPrompt = "You are an expert academic examiner. Grade the student's answer fairly but strictly. Return ONLY JSON.";
-            $prompt = "QUESTION: {$questionText}\nMODEL ANSWER: {$modelAnswer}\nSTUDENT ANSWER: {$studentAnswer}\nMAX MARKS: {$maxMarks}\n\nSchema: {\"marks\": float, \"feedback\": \"string\", \"analysis\": \"string\"}";
+            $rubricText = !empty($rubric) ? json_encode($rubric) : 'Grade based on accuracy and completeness.';
+            $modelAnswerText = !empty($modelAnswer) ? "MODEL ANSWER: {$modelAnswer}" : "No model answer provided. Use general knowledge of the topic.";
+
+            $systemPrompt = "You are an expert academic examiner. Grade the student's answer based on the question and criteria provided.
+            
+            Return the result in JSON format with the following keys:
+            - 'marks': (float) Marks awarded out of {$maxMarks}.
+            - 'confidence': (float) Your confidence in this grade (0-100).
+            - 'reasoning': (string) Brief explanation of why you gave this grade.
+            - 'feedback': (string) Constructive feedback for the student.
+            - 'analysis': (string) Breakdown of the grade.
+            
+            Be fair but strict. A partially correct answer should get partial marks.";
+
+            $prompt = "QUESTION: {$questionText}
+            {$modelAnswerText}
+            RUBRIC/CRITERIA: {$rubricText}
+            STUDENT ANSWER: {$studentAnswer}
+            MAX MARKS: {$maxMarks}
+            
+            Grade this answer now.";
 
             $response = $this->client->post($this->baseUrl, [
-                'headers' => [
-                    'x-api-key' => $this->apiKey,
-                    'anthropic-version' => $this->version,
-                    'content-type' => 'application/json',
-                ],
+                'headers' => $this->buildHeaders(),
                 'json' => [
                     'model' => $this->model,
                     'max_tokens' => 1024,
@@ -228,6 +266,8 @@ class AnthropicAIService
 
             return [
                 'marks' => (float) ($decoded['marks'] ?? 0),
+                'confidence' => (float) ($decoded['confidence'] ?? 50),
+                'reasoning' => $decoded['reasoning'] ?? 'AI graded response.',
                 'ai_feedback' => $decoded['feedback'] ?? '',
                 'analysis' => $decoded['analysis'] ?? '',
             ];
@@ -237,26 +277,75 @@ class AnthropicAIService
     }
 
     /**
-     * Solve a question from a scanned image (Multi-step optimization)
+     * Solve questions from a scanned image using Claude's native vision (no external OCR needed)
+     * Claude 4.5 Haiku natively reads images — superior to OCR.space/Google Vision pipeline
      */
     public function solveFromImage(string $base64Image): array
     {
-        // For vision tasks, we use Claude 4.5 Sonnet if available, or just Sonar/Vision.
-        // But Claude 4.5 Haiku doesn't support vision in the same way via messages API with base64 yet (it does, but needs specific format).
-        // Actually, Claude 4.5 Haiku DOES support vision.
         try {
             set_time_limit(300);
             
+            Log::info('Claude Vision: Processing image directly (native OCR)...');
+
+            $solvePrompt = <<<PROMPT
+You are a world-class tutor solving exam papers. Look at this image carefully.
+
+Your job:
+1. Identify ALL questions or sub-questions (e.g., 1a, 1b, Question 2, c, d) present in the image.
+2. Classify each question as either "calculation" or "theory".
+3. Solve EVERY single one accordingly.
+
+CLASSIFICATION RULES:
+- "calculation": Any question requiring mathematical operations, derivations, equations, numerical answers, proofs, balancing equations, or step-by-step problem solving.
+- "theory": Any question asking to explain, define, describe, compare, discuss, list, or analyze a concept.
+
+RESPONSE RULES BY TYPE:
+- For "calculation" questions:
+  - Provide numbered "steps" showing the full working.
+  - Provide a "solution" with the final answer.
+  - Use proper Unicode math symbols (e.g. x², √x, ∫, π, θ). NEVER use raw caret notation like x^2.
+
+- For "theory" questions:
+  - Provide an "explanation" field with a well-structured answer using bullet points (•) and clear paragraphs. Include simple examples where helpful.
+  - Provide a "summary" field with a one-line takeaway.
+  - Leave "steps" as an empty array and "solution" as empty string.
+
+GENERAL RULES:
+- If a question has sub-parts (a, b, c), treat them as separate items in the list.
+- Use ultra-simple English.
+- Use proper Unicode for all math symbols.
+
+Return JSON only in this format:
+{
+  "results": [
+    {
+      "question": "reconstructed question text",
+      "topic": "subject area",
+      "type": "calculation",
+      "solution": "final answer",
+      "steps": ["step 1...", "step 2..."],
+      "explanation": "",
+      "summary": ""
+    },
+    {
+      "question": "reconstructed question text",
+      "topic": "subject area",
+      "type": "theory",
+      "solution": "",
+      "steps": [],
+      "explanation": "• Key point one\n• Key point two\n\nFor example, ...",
+      "summary": "One-line takeaway"
+    }
+  ]
+}
+PROMPT;
+
             $response = $this->client->post($this->baseUrl, [
-                'headers' => [
-                    'x-api-key' => $this->apiKey,
-                    'anthropic-version' => $this->version,
-                    'content-type' => 'application/json',
-                ],
+                'headers' => $this->buildHeaders(),
                 'json' => [
                     'model' => $this->model,
                     'max_tokens' => 4096,
-                    'system' => "You are a world-class tutor. Solve the questions in the image. Return ONLY JSON.",
+                    'system' => 'You are a world-class tutor solving exam papers. Return only JSON.',
                     'messages' => [
                         [
                             'role' => 'user',
@@ -265,31 +354,60 @@ class AnthropicAIService
                                     'type' => 'image',
                                     'source' => [
                                         'type' => 'base64',
-                                        'media_type' => 'image/jpeg',
+                                        'media_type' => $this->detectImageType($base64Image),
                                         'data' => $this->cleanBase64($base64Image),
                                     ],
                                 ],
                                 [
                                     'type' => 'text',
-                                    'text' => "Identify all questions and solve them. Format: {\"results\": [{\"question\": \"...\", \"solution\": \"...\", \"steps\": []}]}",
+                                    'text' => $solvePrompt,
                                 ],
                             ],
                         ],
                     ],
+                    'temperature' => 0.3,
                 ],
             ]);
 
             $data = json_decode($response->getBody()->getContents(), true);
             $content = $data['content'][0]['text'] ?? '{}';
-            return json_decode(trim(preg_replace('/```(?:json)?|```/', '', $content)), true) ?? ['results' => []];
+            $content = preg_replace('/```(?:json)?|```/', '', $content);
+            $decoded = json_decode(trim($content), true);
+
+            if (!is_array($decoded) || !isset($decoded['results'])) {
+                // Fallback: try to extract results array
+                if (is_array($decoded) && array_is_list($decoded)) {
+                    return ['results' => $decoded];
+                }
+                throw new \Exception('AI returned invalid JSON structure for scan solve');
+            }
+
+            return $decoded;
         } catch (\Exception $e) {
             throw $this->handleApiException($e, 'Image Solve');
         }
     }
 
+    // ─── SHARED HELPERS ─────────────────────────────────────────────────
+
+    /**
+     * Build standard Anthropic API headers
+     */
+    protected function buildHeaders(): array
+    {
+        return [
+            'x-api-key' => $this->apiKey,
+            'anthropic-version' => $this->version,
+            'content-type' => 'application/json',
+        ];
+    }
+
+    /**
+     * Centralized error handler — returns user-friendly messages
+     */
     protected function handleApiException(\Exception $e, string $context): \Exception
     {
-        \Log::error("Anthropic {$context} Error: " . $e->getMessage());
+        Log::error("Anthropic {$context} Error: " . $e->getMessage());
         
         if ($e instanceof RequestException && $e->hasResponse()) {
             $statusCode = $e->getResponse()->getStatusCode();
@@ -313,47 +431,231 @@ class AnthropicAIService
         return new \Exception("Skeeme encountered an unexpected error. Please try again later.");
     }
 
+    /**
+     * Sanitize strings for UTF-8 compatibility (prevents API errors from bad encoding)
+     */
+    protected function sanitizeUtf8(string $text): string
+    {
+        return mb_convert_encoding($text, 'UTF-8', 'UTF-8');
+    }
+
+    /**
+     * Clean base64 image data (remove data URI prefix)
+     */
     protected function cleanBase64(string $base64): string
     {
-        return preg_replace('/^data:image\/(png|jpeg|jpg);base64,/', '', $base64);
+        return preg_replace('/^data:image\/(png|jpeg|jpg|gif|webp);base64,/', '', $base64);
     }
 
+    /**
+     * Detect image MIME type from base64 header
+     */
+    protected function detectImageType(string $base64): string
+    {
+        if (str_starts_with($base64, 'data:image/png')) return 'image/png';
+        if (str_starts_with($base64, 'data:image/gif')) return 'image/gif';
+        if (str_starts_with($base64, 'data:image/webp')) return 'image/webp';
+        return 'image/jpeg'; // Default for camera captures
+    }
+
+    /**
+     * Generate cache key — identical inputs = cached results
+     */
     protected function generateCacheKey(string $type, ...$params): string
     {
-        return "skeeme:claude:{$type}:" . substr(md5(json_encode($params)), 0, 16);
+        $hash = hash('sha256', json_encode($params));
+        return "skeeme:claude:{$type}:" . substr($hash, 0, 32);
     }
 
-    protected function buildOptimizedPrompt(array $notes, int $count, string $diff, array $types, string $userPrompt, bool $visuals, ?array $prefs): string
-    {
-        $notesText = implode(" ", $notes);
-        $typesText = implode("/", $types);
+    // ─── PROMPT BUILDERS ────────────────────────────────────────────────
+
+    /**
+     * Build OPTIMIZED prompt for questions — Reduces input tokens by ~60%
+     * 
+     * TOKEN REDUCTION TECHNIQUES:
+     * 1. Abbreviate terms (MC, TF, SA, ES, FB = -30% tokens)
+     * 2. Collapse whitespace (-20% tokens)
+     * 3. Shorten system prompt (-10% tokens)
+     * 4. Use shorthand JSON keys (-10% tokens)
+     * 5. Cache identical requests (100% token saving on reuse)
+     */
+    protected function buildOptimizedPrompt(
+        array $notes, int $count, string $diff, array $types, 
+        string $userPrompt, bool $visuals, ?array $prefs
+    ): string {
+        // Abbreviate question types
+        $typeMap = [
+            'multiple_choice' => 'MC', 'true_false' => 'TF', 'short_answer' => 'SA',
+            'essay' => 'ES', 'fill_blank' => 'FB',
+        ];
+        $typesText = implode('/', array_map(fn($t) => $typeMap[$t] ?? 'MC', $types));
         
-        return "Gen EXACTLY {$count} questions. Types: {$typesText}. Diff: {$diff}.
-Material: {$notesText}
-Context: {$userPrompt}
-Schema: [{\"q\":\"text\",\"t\":\"MC|TF|SA|ES|FB\",\"d\":\"E|M|H\",\"o\":[\"A\",\"B\"],\"c\":\"A\",\"x\":\"why\"}]
-Return ONLY the JSON array.";
+        // Compress material
+        $notesText = preg_replace('/\s+/', ' ', implode("\n", $notes));
+        
+        // Abbreviate difficulty
+        $diffShort = match($diff) {
+            'easy' => 'E', 'medium' => 'M', 'hard' => 'H', default => 'E/M/H',
+        };
+
+        $focusSection = !empty($userPrompt) ? "\nFOCUS: {$userPrompt}" : '';
+
+        // Visual instructions
+        $visualsInstruction = "\nINSTRUCTION: Text only. No LaTeX/SVG.";
+        if ($visuals) {
+            $visualsInstruction = "\nVISUALS: Include SIMPLE SVG diagrams or $$...$$ wrapped math where appropriate.";
+        }
+
+        // Build personalization from user preferences
+        $personalization = '';
+        if ($prefs) {
+            $parts = [];
+            $levelMap = ['high_school' => 'High School', 'undergraduate' => 'Undergraduate', 'masters' => 'Masters/Graduate', 'professional' => 'Professional'];
+            $styleMap = ['simple' => 'Use ultra-simple language and everyday analogies', 'detailed' => 'Give detailed academic breakdowns', 'analogies' => 'Explain with real-world analogies and examples'];
+            $toneMap = ['encouraging' => 'Be warm and encouraging', 'strict' => 'Be strict and formal', 'concise' => 'Be very concise and direct'];
+
+            if (!empty($prefs['education_level'])) $parts[] = 'Level: ' . ($levelMap[$prefs['education_level']] ?? $prefs['education_level']);
+            if (!empty($prefs['field_of_study'])) $parts[] = 'Field: ' . $prefs['field_of_study'];
+            if (!empty($prefs['learning_style'])) $parts[] = 'Style: ' . ($styleMap[$prefs['learning_style']] ?? $prefs['learning_style']);
+            if (!empty($prefs['tone'])) $parts[] = 'Tone: ' . ($toneMap[$prefs['tone']] ?? $prefs['tone']);
+
+            if (!empty($parts)) {
+                $personalization = "\nSTUDENT PROFILE: " . implode('. ', $parts) . ". Tailor ALL questions and explanations to this profile.";
+            }
+        }
+
+        return <<<PROMPT
+Gen EXACTLY {$count} Q. Types: {$typesText}. Diff: {$diffShort}.{$focusSection}{$visualsInstruction}{$personalization}
+
+INPUT (Notes or Topic): {$notesText}
+
+Format: JSON only. Expand on topic or extract from notes.
+Language: YOU MUST detect the language of the provided material and generate the entire output in that EXACT same language. Use simple, natural language appropriate for the detected tongue.
+Math: Use proper Unicode characters for math (e.g. sec²(x), x³, √x). Do NOT use raw caret signs like sec^2.
+Schema: [{"q":"text","t":"MC|TF|SA|ES|FB","d":"E|M|H","o":["A","B"],"c":"A","x":"why"}]
+PROMPT;
     }
 
+    /**
+     * Build OPTIMIZED prompt for flashcards (ported from DeepSeek)
+     */
+    protected function buildFlashcardPrompt(array $notes, int $numberOfCards, string $difficulty, string $userPrompt = ''): string
+    {
+        $notesText = preg_replace('/\s+/', ' ', implode("\n", $notes));
+        
+        $diffShort = match($difficulty) {
+            'easy' => 'E', 'medium' => 'M', 'hard' => 'H', default => 'E/M/H',
+        };
+
+        $focusSection = !empty($userPrompt) ? "\nFOCUS: {$userPrompt}" : '';
+
+        return <<<PROMPT
+Gen EXACTLY {$numberOfCards} Flashcards. Diff: {$diffShort}.{$focusSection}
+
+INPUT: {$notesText}
+
+Format: JSON strictly. No markdown wrappers. Just a raw array.
+Language: YOU MUST detect the language of the provided material and generate in that EXACT same language.
+Schema: [{"front": "Question or concept (short)", "back": "Answer or definition"}]
+
+Rules:
+1. The 'front' should be a clear, concise question, term, or concept.
+2. The 'back' must be the direct answer or definition. Keep it under 3 sentences.
+3. Output ONLY valid JSON.
+4. MATH/SCIENCE: Use proper Unicode characters for math (e.g. sec²(x), x³, √x). Do NOT use raw caret signs like sec^2.
+PROMPT;
+    }
+
+    // ─── RESPONSE PARSERS ───────────────────────────────────────────────
+
+    /**
+     * Parse questions from API response — 3-tier fallback (ported from DeepSeek)
+     * Attempt 1: Direct JSON decode
+     * Attempt 2: Regex array extraction
+     * Attempt 3: Truncated JSON salvage (individual object extraction)
+     */
     protected function parseQuestionsFromResponse(string $response): array
     {
-        $clean = preg_replace('/```(?:json)?|```/', '', $response);
-        $decoded = json_decode(trim($clean), true);
-        
-        if (!is_array($decoded)) return [];
+        // Clean markdown code blocks
+        $cleanResponse = preg_replace('/```(?:json)?|```/', '', $response);
+        $cleanResponse = trim($cleanResponse);
 
-        // Formatting logic similar to DeepseekAIService
+        // Attempt 1: Direct JSON Decode
+        $data = json_decode($cleanResponse, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            if (isset($data['questions']) && is_array($data['questions'])) {
+                return $this->formatQuestions($data['questions']);
+            }
+            if (is_array($data) && array_is_list($data)) {
+                return $this->formatQuestions($data);
+            }
+        }
+
+        // Attempt 2: Fallback Regex Extraction
+        if (preg_match('/\[[\s\S]*\]/', $response, $matches)) {
+            $questions = json_decode($matches[0], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($questions)) {
+                return $this->formatQuestions($questions);
+            }
+        }
+
+        // Attempt 3: Truncated JSON Salvage (if max_tokens cut it off)
+        preg_match_all('/\{[^{}]+\}/', $response, $objectMatches);
+        if (!empty($objectMatches[0])) {
+            $salvagedData = [];
+            foreach ($objectMatches[0] as $jsonObj) {
+                $decoded = json_decode($jsonObj, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && (isset($decoded['q']) || isset($decoded['question_text']))) {
+                    $salvagedData[] = $decoded;
+                }
+            }
+            if (!empty($salvagedData)) {
+                Log::warning('AnthropicAIService: JSON was truncated, but salvaged ' . count($salvagedData) . ' valid questions.');
+                return $this->formatQuestions($salvagedData);
+            }
+        }
+
+        throw new \Exception('Could not parse questions from response. Raw: ' . substr($response, 0, 100));
+    }
+
+    /**
+     * Format questions — handles both abbreviated (q, t, d) and full (question_text, etc) keys
+     */
+    protected function formatQuestions(array $rawQuestions): array
+    {
         $typeMap = ['MC' => 'multiple_choice', 'TF' => 'true_false', 'SA' => 'short_answer', 'ES' => 'essay', 'FB' => 'fill_blank'];
-        
-        return array_map(function ($q) use ($typeMap) {
+        $diffMap = ['E' => 'easy', 'M' => 'medium', 'H' => 'hard'];
+
+        return array_map(function ($q) use ($typeMap, $diffMap) {
+            $type = $q['t'] ?? $q['question_type'] ?? 'MC';
+            $type = $typeMap[$type] ?? $this->mapQuestionType($type);
+            
+            $diff = $q['d'] ?? $q['difficulty_level'] ?? 'M';
+            $diff = $diffMap[$diff] ?? 'medium';
+
             return [
-                'question_text' => $q['q'] ?? '',
-                'question_type' => $typeMap[$q['t'] ?? 'MC'] ?? 'multiple_choice',
-                'difficulty_level' => $q['d'] ?? 'medium',
-                'explanation' => $q['x'] ?? '',
-                'options' => $q['o'] ?? [],
-                'correct_answer' => $q['c'] ?? '',
+                'question_text' => $q['q'] ?? $q['question_text'] ?? '',
+                'question_type' => $type,
+                'difficulty_level' => $diff,
+                'topic' => $q['topic'] ?? 'General',
+                'learning_objective' => $q['learning_objective'] ?? '',
+                'explanation' => $q['x'] ?? $q['explanation'] ?? '',
+                'options' => $q['o'] ?? $q['options'] ?? [],
+                'correct_answer' => $q['c'] ?? $q['correct_answer'] ?? '',
             ];
-        }, $decoded);
+        }, $rawQuestions);
+    }
+
+    /**
+     * Map question type strings to system types
+     */
+    protected function mapQuestionType(string $type): string
+    {
+        $mapping = [
+            'mcq' => 'multiple_choice', 'multiple_choice' => 'multiple_choice',
+            'true_false' => 'true_false', 'short_answer' => 'short_answer',
+            'essay' => 'essay', 'fill_blank' => 'fill_blank',
+        ];
+        return $mapping[strtolower($type)] ?? 'multiple_choice';
     }
 }

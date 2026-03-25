@@ -13,7 +13,8 @@
       "bundleIdentifier": "com.kantrol.skeeme",
       "infoPlist": {
         "NSCameraUsageDescription": "Skeeme uses the camera to scan questions for AI solving.",
-        "NSPhotoLibraryUsageDescription": "Skeeme accesses your photos to select question images for scanning."
+        "NSPhotoLibraryUsageDescription": "Skeeme accesses your photos to select question images for scanning.",
+        "NSUserTrackingUsageDescription": "Skeeme uses this to provide personalized educational content and diagnostic crash reporting."
       }
     },
     "android": {
