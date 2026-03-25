@@ -1,4 +1,5 @@
 import axios from 'axios';
+import NetInfo from '@react-native-community/netinfo';
 import { useAuthStore } from '../store/authStore';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
@@ -16,9 +17,20 @@ export const api = axios.create({
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1s
 
-// Single request interceptor: attach auth token
+// Single request interceptor: attach auth token and network metadata
 api.interceptors.request.use(
-    (config) => {
+    async (config) => {
+        // Attach network quality headers for AI timeout optimization
+        try {
+            const netInfo = await NetInfo.fetch();
+            config.headers['X-Network-Type'] = netInfo.type;
+            if (netInfo.type === 'cellular') {
+                config.headers['X-Network-Generation'] = (netInfo.details as any)?.cellularGeneration || 'unknown';
+            }
+        } catch (e) {
+            console.error('[API] Failed to fetch network info', e);
+        }
+
         if (__DEV__) {
             const fullUrl = `${config.baseURL}${config.url}`;
             console.log(`[API] ${config.method?.toUpperCase()} ${fullUrl}`);

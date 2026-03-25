@@ -79,6 +79,15 @@ class ScanController extends Controller
             
             $useDeepseek = Cache::get('use_deepseek_fallback', false);
 
+            // Dynamic Timeout based on Network Quality Header
+            $networkType = $request->header('X-Network-Type');
+            $networkGen = $request->header('X-Network-Generation');
+            // Give Vision a bit more time (12s vs 8s) because images are large
+            $timeout = ($networkType === 'cellular' && in_array($networkGen, ['2g', '3g', 'edge'])) ? 12 : 30;
+            
+            $this->aiService->setTimeout($timeout);
+            $this->deepseek->setTimeout($timeout + 15);
+
             try {
                 if ($useDeepseek) {
                     Log::info("Circuit Breaker Active: Auto-routing Scan to DeepSeek (OCR Fallback).");

@@ -14,14 +14,22 @@ class AnthropicAIService
     protected $version = '2023-06-01';
     protected $baseUrl = 'https://api.anthropic.com/v1/messages';
     protected $model = 'claude-haiku-4-5-20251001';
+    protected $timeout = 60; // Default 60s for backend generation
 
     public function __construct()
     {
         $this->apiKey = config('services.anthropic.api_key');
+        // We use a high default in client, but can override per-request
         $this->client = new Client([
-            'timeout' => 300,
-            'connect_timeout' => 15,
+            'timeout' => 120, 
+            'connect_timeout' => 10,
         ]);
+    }
+
+    public function setTimeout(int $seconds): self
+    {
+        $this->timeout = $seconds;
+        return $this;
     }
 
     /**
@@ -83,6 +91,7 @@ class AnthropicAIService
                     ],
                     'temperature' => 0.5,
                 ],
+                'timeout' => $this->timeout,
             ]);
 
             if ($progressCallback) $progressCallback(80);
@@ -133,6 +142,7 @@ class AnthropicAIService
                     'messages' => [['role' => 'user', 'content' => $optimizedPrompt]],
                     'temperature' => 0.5,
                 ],
+                'timeout' => $this->timeout,
             ]);
 
             if ($progressCallback) $progressCallback(70);
@@ -367,6 +377,7 @@ PROMPT;
                     ],
                     'temperature' => 0.3,
                 ],
+                'timeout' => $this->timeout,
             ]);
 
             $data = json_decode($response->getBody()->getContents(), true);

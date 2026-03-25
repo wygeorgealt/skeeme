@@ -165,6 +165,14 @@ class FlashcardController extends Controller
         try {
             $useDeepseek = Cache::get('use_deepseek_fallback', false);
             
+            // Dynamic Timeout based on Network Quality Header
+            $networkType = $request->header('X-Network-Type');
+            $networkGen = $request->header('X-Network-Generation');
+            $timeout = ($networkType === 'cellular' && in_array($networkGen, ['2g', '3g', 'edge'])) ? 8 : 25;
+            
+            $this->aiService->setTimeout($timeout);
+            $this->deepseek->setTimeout($timeout + 10);
+            
             try {
                 if ($useDeepseek) {
                     Log::info("Circuit Breaker Active: Auto-routing Flashcards to DeepSeek.");

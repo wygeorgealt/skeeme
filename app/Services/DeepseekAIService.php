@@ -12,15 +12,22 @@ class DeepseekAIService
     protected $apiKey;
     protected $baseUrl = 'https://api.deepseek.com/v1';
     protected $visionService;
+    protected $timeout = 60; // Default 60s
 
     public function __construct(GoogleVisionService $visionService)
     {
         $this->apiKey = config('services.deepseek.api_key');
         $this->visionService = $visionService;
         $this->client = new Client([
-            'timeout' => 300, // Increased to 300s for large document generation
-            'connect_timeout' => 15,
+            'timeout' => 120, // High default, overridden per request
+            'connect_timeout' => 10,
         ]);
+    }
+
+    public function setTimeout(int $seconds): self
+    {
+        $this->timeout = $seconds;
+        return $this;
     }
 
     /**
@@ -79,7 +86,7 @@ class DeepseekAIService
                         'Authorization' => 'Bearer ' . $this->apiKey,
                         'Content-Type' => 'application/json',
                     ],
-                    'timeout' => 300,
+                    'timeout' => $this->timeout,
                     'json' => [
                         'model' => 'deepseek-chat',
                         'messages' => [
@@ -96,6 +103,7 @@ class DeepseekAIService
                         'max_tokens' => $calculatedMaxTokens,
                         'response_format' => ['type' => 'json_object']
                     ],
+                    'timeout' => $this->timeout,
                 ]
             );
 
@@ -275,7 +283,7 @@ class DeepseekAIService
                         'Authorization' => 'Bearer ' . $this->apiKey,
                         'Content-Type' => 'application/json',
                     ],
-                    'timeout' => 300,
+                    'timeout' => $this->timeout,
                     'json' => [
                         'model' => 'deepseek-chat',
                         'messages' => [
@@ -399,6 +407,7 @@ PROMPT;
                         ],
                         'temperature' => 0.7,
                     ],
+                    'timeout' => $this->timeout,
                 ]
             );
 
@@ -719,7 +728,7 @@ PROMPT;
                         'Authorization' => 'Bearer ' . $this->apiKey,
                         'Content-Type' => 'application/json',
                     ],
-                    'timeout' => 300,
+                    'timeout' => $this->timeout,
                     'json' => [
                         'model' => 'deepseek-chat',
                         'messages' => [
