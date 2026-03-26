@@ -15,8 +15,8 @@ export function MathText({
   fontSize = 16,
   containerStyle
 }: MathTextProps) {
-  const [height, setHeight] = React.useState(40);
-
+  // Start with a small default height so it doesn't jump too wildly, but calculates instantly.
+  const [height, setHeight] = React.useState(24);
 
   const html = `
     <!DOCTYPE html>
@@ -24,22 +24,26 @@ export function MathText({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
         <style>
-          body {
+          html, body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, system-ui;
+            background-color: transparent;
+          }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             color: ${color};
             font-size: ${fontSize}px;
-            background-color: transparent;
             word-wrap: break-word;
-            overflow: hidden;
+            overflow: hidden; /* Hide scrollbars */
+            line-height: 1.5;
           }
           #math-container {
-            padding: 4px 0;
-            line-height: 1.5;
+            padding: 2px 0;
+            display: inline-block;
+            min-width: 100%;
           }
           .katex { font-size: 1.1em; }
           .katex-display { margin: 0.5em 0; }
@@ -48,44 +52,61 @@ export function MathText({
       <body>
         <div id="math-container">${content}</div>
         <script>
+          let lastHeight = 0;
           function sendHeight() {
-            var height = document.getElementById('math-container').offsetHeight;
-            window.ReactNativeWebView.postMessage(JSON.stringify({ height: height }));
+            const container = document.getElementById('math-container');
+            const newHeight = container.offsetHeight;
+            if (newHeight !== lastHeight && newHeight > 0) {
+              lastHeight = newHeight;
+              window.ReactNativeWebView.postMessage(JSON.stringify({ height: newHeight }));
+            }
           }
 
+          // 1. Send initial raw text height immediately for fast perceived rendering
+          sendHeight();
+
+          // 2. Render math once KaTeX loads
           document.addEventListener("DOMContentLoaded", function() {
-            renderMathInElement(document.getElementById('math-container'), {
-              delimiters: [
-                {left: '$$', right: '$$', display: true},
-                {left: '$', right: '$', display: false},
-                {left: '\\(', right: '\\)', display: false},
-                {left: '\\[', right: '\\]', display: true}
-              ],
-              throwOnError : false
-            });
-            setTimeout(sendHeight, 100);
+            if (window.renderMathInElement) {
+                renderMathInElement(document.getElementById('math-container'), {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\\\(', right: '\\\\)', display: false},
+                    {left: '\\\\[', right: '\\\\]', display: true}
+                ],
+                throwOnError: false
+                });
+                sendHeight(); // Send height again after math renders
+            }
           });
 
-          // Use ResizeObserver for dynamic updates
-          new ResizeObserver(sendHeight).observe(document.body);
+          // 3. Immediately catch any layout shifts
+          const observer = new MutationObserver(sendHeight);
+          observer.observe(document.getElementById('math-container'), { childList: true, subtree: true, characterData: true });
+          
+          window.addEventListener('load', sendHeight);
         </script>
       </body>
     </html>
   `;
 
   return (
-    <View style={[{ height: height, width: '100%' }, containerStyle]}>
+    <View style={[{ height: Math.max(height, 24), width: '100%' }, containerStyle]}>
       <WebView
         originWhitelist={['*']}
         source={{ html }}
-        style={{ backgroundColor: 'transparent' }}
+        style={{ backgroundColor: 'transparent', opacity: height > 24 ? 1 : 0.99 }} // Force hardware acceleration
         scrollEnabled={false}
         javaScriptEnabled={true}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        bounces={false}
         onMessage={(event) => {
           try {
             const data = JSON.parse(event.nativeEvent.data);
             if (data.height) {
-              setHeight(data.height + 18); // Increased buffer for safety
+              setHeight(Math.ceil(data.height) + 12); // Tighter buffer for a cleaner look
             }
           } catch { }
         }}

@@ -105,7 +105,7 @@ export default function LoginScreen() {
                         </Text>
                     </View>
 
-                {/* Social Login */}
+                {/* Social Login 
                 <View style={s.socialRow}>
                     <TouchableOpacity
                         activeOpacity={0.9}
@@ -125,13 +125,15 @@ export default function LoginScreen() {
                         </TouchableOpacity>
                     )}
                 </View>
+                */}
 
-                {/* Divider */}
+                {/* Divider 
                 <View style={s.dividerContainer}>
                     <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
                     <Text style={[s.dividerText, isDark ? s.textSlate600 : s.textSlate400]}>or use email</Text>
                     <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
                 </View>
+                */}
 
                 {/* Email */}
                 <View style={s.inputContainer}>
@@ -189,11 +191,7 @@ export default function LoginScreen() {
                     </Text>
                 </TouchableOpacity>
 
-                {__DEV__ && (
-                    <TouchableOpacity onPress={() => { useAuthStore.getState().devReset(); router.replace('/(onboarding)/hook'); }} style={s.devReset}>
-                        <Text style={s.devResetText}>DEV ONLY: Reset Storage</Text>
-                    </TouchableOpacity>
-                )}
+                {/* DEV ONLY Reset Removed */}
             </ScrollView>
             </GlowBackground>
         </KeyboardAvoidingView>

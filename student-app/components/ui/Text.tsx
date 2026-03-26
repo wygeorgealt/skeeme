@@ -17,7 +17,12 @@ const FONT_WEIGHT_MAP: Record<string, string> = {
 export const Text = React.forwardRef<RNText, RNTextProps>((props, ref) => {
   const { style, ...rest } = props;
 
-  // Flatten the style array safely safely safely
+  // On iOS, use the default system font (San Francisco) — no custom font mapping
+  if (Platform.OS === 'ios') {
+    return <RNText ref={ref} {...rest} style={style} />;
+  }
+
+  // On Android, map font weights to ClashGrotesk variants
   let flatStyle: any = {};
   if (style) {
     const flattened = StyleSheet.flatten(style);
@@ -35,11 +40,7 @@ export const Text = React.forwardRef<RNText, RNTextProps>((props, ref) => {
       {...rest}
       style={[
         style,
-        { 
-          fontFamily: mappedFont,
-          // Strip fontWeight on iOS when using custom fonts to avoid system font override
-          ...(Platform.OS === 'ios' && !isCustomFont ? { fontWeight: undefined } : {})
-        }
+        { fontFamily: mappedFont }
       ]}
     />
   );

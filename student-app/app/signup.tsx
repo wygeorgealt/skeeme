@@ -140,7 +140,7 @@ export default function SignupScreen() {
                     </Text>
                 </View>
 
-                {/* Social Login */}
+                {/* Social Login 
                 <View style={[s.socialRow, { marginBottom: 32 }]}>
                     <TouchableOpacity
                         activeOpacity={0.9}
@@ -160,13 +160,15 @@ export default function SignupScreen() {
                         </TouchableOpacity>
                     )}
                 </View>
+                */}
 
-                {/* Divider */}
+                {/* Divider 
                 <View style={s.dividerContainer}>
                     <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
                     <Text style={[s.dividerText, isDark ? s.textSlate600 : s.textSlate400]}>or use email</Text>
                     <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
                 </View>
+                */}
 
                 {/* Full Name */}
                 <View style={s.inputContainer}>

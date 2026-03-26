@@ -285,6 +285,10 @@ class AuthController extends Controller
             ->where('created_at', '>=', $startOfWeek)
             ->count();
             
+        $scanHistoryCount = \App\Models\ScanHistory::where('user_id', $user->id)
+            ->where('created_at', '>=', $startOfWeek)
+            ->count();
+            
         $creditsSpent = Transaction::where('user_id', $user->id)
             ->where('type', 'usage')
             ->where('amount', '<', 0)
@@ -299,7 +303,7 @@ class AuthController extends Controller
             'email' => $user->email,
             'credits' => $user->credits,
             'credits_spent_this_week' => abs($creditsSpent),
-            'study_sessions_this_week' => $quizSessionsCount + $flashcardSessionsCount,
+            'study_sessions_this_week' => $quizSessionsCount + $flashcardSessionsCount + $scanHistoryCount,
             'is_unlimited' => $user->is_unlimited_student,
             'plan_name' => $user->activeSubscription?->plan_name ?? 'free',
             'role' => $user->role,

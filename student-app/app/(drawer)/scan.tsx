@@ -15,7 +15,8 @@ import Animated, {
     useSharedValue, 
     withRepeat, 
     withTiming, 
-    Easing
+    Easing,
+    FadeIn
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
@@ -57,6 +58,7 @@ export default function ScanScreen() {
     const [results, setResults] = useState<ScanResult[]>([]);
     const [lastScanCost, setLastScanCost] = useState<number | null>(null);
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
+    const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'unhelpful'>>({});
 
     const scanAnim = useSharedValue(0);
 
@@ -328,67 +330,124 @@ export default function ScanScreen() {
 
                 {!!(results.length > 0) && (
                     <View>
-                        <BlurView intensity={isDark ? 30 : 60} tint={isDark ? 'dark' : 'light'} style={s.resultsHeaderGlass}>
-                            <View>
-                                <Text style={[s.resultsTitle, isDark ? s.textWhite : s.textSlate900]}>{results.length} Solutions found</Text>
-                                <Text style={s.resultsSub}>Deep scan complete</Text>
+                        {/* Captured Image Thumbnail */}
+                        {!!imageUri && (
+                            <View style={[s.capturedImageBar, isDark ? s.cardDark : s.cardLight]}>
+                                <ExpoImage source={{ uri: imageUri }} style={s.capturedThumb} contentFit="cover" />
                             </View>
-                            <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.costBadgeGradient}>
-                                <Text style={s.costBadgeText}>-{lastScanCost} CR</Text>
-                            </LinearGradient>
-                        </BlurView>
+                        )}
 
+                        {/* Metadata Bar: Credits Used + Accuracy */}
+                        <View style={[s.metaBar, isDark ? s.cardDark : s.cardLight]}>
+                            <View style={s.metaItem}>
+                                <Sparks width={16} height={16} color="#8B5CF6" />
+                                <Text style={[s.metaLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Credits Used</Text>
+                                <Text style={[s.metaValue, isDark ? s.textWhite : s.textSlate900]}>{lastScanCost ?? '—'}</Text>
+                            </View>
+                            <View style={s.metaDivider} />
+                            <View style={s.metaItem}>
+                                <Sparks width={16} height={16} color="#10b981" />
+                                <Text style={[s.metaLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Accuracy</Text>
+                                <Text style={[s.metaValue, isDark ? s.textWhite : s.textSlate900]}>High</Text>
+                            </View>
+                        </View>
+
+                        {/* Solutions */}
                         {results.map((item, index) => (
-                            <BlurView key={index} intensity={isDark ? 20 : 40} tint={isDark ? 'dark' : 'light'} style={s.questionCardGlass}>
-                                <View style={s.questionHeader}>
-                                    <View style={s.questionMeta}>
-                                        <Text style={s.questionMetaText}>Q{index + 1}</Text>
-                                        <View style={s.typeTag}>
-                                            <Text style={s.typeTagText}>{item.type}</Text>
-                                        </View>
+                            <View key={index} style={[s.answerCard, isDark ? s.cardDark : s.cardLight]}>
+                                {/* Question Header */}
+                                <View style={s.answerHeader}>
+                                    <View style={s.qBadge}>
+                                        <Text style={s.qBadgeText}>Q{index + 1}</Text>
                                     </View>
                                     {!!item.topic && (
-                                        <View style={[s.topicTag, isDark ? s.bgWhite10 : s.bgWhite60]}>
-                                            <Text style={s.topicTagText}>{item.topic}</Text>
-                                        </View>
+                                        <Text style={[s.topicLabel, isDark ? s.textSlate400d : s.textSlate500l]}>{item.topic}</Text>
                                     )}
                                 </View>
-                                <MathText content={item.question} color={isDark ? 'white' : '#0f172a'} fontSize={18} containerStyle={{ marginBottom: 24 }} />
 
-                                <View style={s.solutionGap}>
-                                    {!!(item.steps && item.steps.length > 0) && (
-                                        <View style={[s.stepsContainer, isDark ? s.bgBlack20 : s.bgWhite60]}>
-                                            <Text style={s.stepsLabel}>Solution Strategy</Text>
-                                            {item.steps?.map((step, i) => (
-                                                <View key={i} style={s.stepRow}>
-                                                    <View style={s.stepNum}>
-                                                        <Text style={s.stepNumText}>{i + 1}</Text>
-                                                    </View>
-                                                    <MathText content={step} color={isDark ? '#cbd5e1' : '#475569'} fontSize={15} containerStyle={{ flex: 1 }} />
+                                {/* Question Text */}
+                                <MathText content={item.question} color={isDark ? '#e2e8f0' : '#0f172a'} fontSize={16} containerStyle={{ marginBottom: 20 }} />
+
+                                {/* Divider */}
+                                <View style={[s.answerDivider, isDark ? s.dividerDark : s.dividerLight]} />
+
+                                {/* Answer Label */}
+                                <View style={s.answerLabelRow}>
+                                    <Text style={s.answerLabelIcon}>≡</Text>
+                                    <Text style={[s.answerLabelText, isDark ? s.textWhite : s.textSlate900]}>Answer</Text>
+                                </View>
+
+                                {/* Step-by-step Solution */}
+                                {!!(item.steps && item.steps.length > 0) && (
+                                    <View style={s.stepsBlock}>
+                                        {item.steps.map((step, i) => (
+                                            <View key={i} style={s.stepItem}>
+                                                <View style={[s.stepCircle, isDark ? s.stepCircleDark : s.stepCircleLight]}>
+                                                    <Text style={s.stepCircleText}>{i + 1}</Text>
                                                 </View>
-                                            ))}
-                                        </View>
-                                    )}
-                                    <LinearGradient colors={['rgba(139,92,246,0.15)', 'rgba(99,102,241,0.05)']} style={s.finalAnswerBoxGradient}>
-                                        <Text style={s.finalAnswerLabel}>Final Solution</Text>
-                                        <MathText content={item.solution || item.summary || ''} color={isDark ? 'white' : '#0f172a'} fontSize={18} />
-                                    </LinearGradient>
-                                </View>
-                            </BlurView>
-                        ))}
-                    </View>
-                )}
-                <View style={{ height: 24 }} />
-            </ScrollView>
+                                                <MathText content={step} color={isDark ? '#cbd5e1' : '#334155'} fontSize={15} containerStyle={{ flex: 1 }} />
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
 
-            {!!(results.length > 0) && (
-                <BlurView
-                    intensity={isDark ? 40 : 80}
-                    tint={isDark ? "dark" : "light"}
-                    style={[s.footerBlur, isDark ? { borderTopColor: '#1e293b' } : { borderTopColor: '#f1f5f9' }]}
-                >
-                    <View style={s.footerStack}>
-                        <TouchableOpacity
+                                {/* Final Answer */}
+                                <View style={[s.finalBox, isDark ? s.finalBoxDark : s.finalBoxLight]}>
+                                    <Text style={s.finalLabel}>Answer:</Text>
+                                    <MathText content={item.solution || item.summary || ''} color={isDark ? 'white' : '#0f172a'} fontSize={16} />
+                                </View>
+
+                                {/* Explanation (if present) */}
+                                {!!item.explanation && (
+                                    <View style={s.explanationBlock}>
+                                        <MathText content={item.explanation} color={isDark ? '#94a3b8' : '#64748b'} fontSize={14} />
+                                    </View>
+                                )}
+
+                                {/* Feedback Row */}
+                                <View style={s.feedbackRow}>
+                                    {feedback[index] ? (
+                                        <Animated.View entering={FadeIn.duration(300)} style={s.feedbackDone}>
+                                            <Text style={s.feedbackDoneIcon}>{feedback[index] === 'helpful' ? '👍' : '👎'}</Text>
+                                            <Text style={[s.feedbackDoneText, { color: feedback[index] === 'helpful' ? '#10b981' : '#f59e0b' }]}>
+                                                {feedback[index] === 'helpful' ? 'Thanks for the feedback!' : 'We\'ll improve this'}
+                                            </Text>
+                                        </Animated.View>
+                                    ) : (
+                                        <>
+                                            <Text style={[s.feedbackPrompt, isDark ? s.textSlate400d : s.textSlate500l]}>Happy with the answer?</Text>
+                                            <View style={s.feedbackBtns}>
+                                                <TouchableOpacity 
+                                                    onPress={() => {
+                                                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                                        setFeedback(prev => ({ ...prev, [index]: 'helpful' }));
+                                                    }}
+                                                    activeOpacity={0.7} 
+                                                    style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
+                                                >
+                                                    <Text style={s.feedbackBtnIcon}>👍</Text>
+                                                    <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Helpful</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity 
+                                                    onPress={() => {
+                                                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                                                        setFeedback(prev => ({ ...prev, [index]: 'unhelpful' }));
+                                                    }}
+                                                    activeOpacity={0.7} 
+                                                    style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
+                                                >
+                                                    <Text style={s.feedbackBtnIcon}>👎</Text>
+                                                    <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Unhelpful</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </>
+                                    )}
+                                </View>
+                            </View>
+                        ))}
+
+                        {/* Follow-up Input */}
+                        <TouchableOpacity 
                             onPress={() => {
                                 const topics = results.map(r => r.topic).filter(Boolean);
                                 const uniqueTopics = [...new Set(topics)];
@@ -396,35 +455,34 @@ export default function ScanScreen() {
                                 router.push({ pathname: '/generate', params: { topic: combinedTopic } });
                             }}
                             activeOpacity={0.8}
-                            style={s.primaryBtnShadow}
+                            style={[s.followUpBar, isDark ? s.cardDark : s.cardLight]}
                         >
-                            <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtnGradient}>
-                                <Sparks width={18} height={18} color="white" />
-                                <Text style={s.primaryBtnText}>Practice Similar Quiz</Text>
-                            </LinearGradient>
+                            <Text style={[s.followUpText, isDark ? s.textSlate400d : s.textSlate500l]}>Practice similar questions...</Text>
                         </TouchableOpacity>
-
-                        <View style={s.footerRow}>
-                            <TouchableOpacity onPress={handleExport} disabled={loading} activeOpacity={0.8} style={[s.footerSecondaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}>
-                                {loading ? (
-                                    <ActivityIndicator size="small" color="#8B5CF6" />
-                                ) : (
-                                    <View style={s.rowBtnContent}>
-                                        <Page width={18} height={18} color={isDark ? '#fff' : '#475569'} />
-                                        <Text style={[s.rowBtnText, { color: isDark ? 'white' : '#475569' }]}>Export PDF</Text>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-
-                            <TouchableOpacity onPress={resetScan} activeOpacity={0.8} style={[s.footerTertiaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}>
-                                <View style={s.rowBtnContent}>
-                                    <Camera width={18} height={18} color={isDark ? '#fff' : '#475569'} />
-                                    <Text style={[s.rowBtnText, { color: isDark ? 'white' : '#475569' }]}>Next Scan</Text>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
                     </View>
-                </BlurView>
+                )}
+                <View style={{ height: 24 }} />
+            </ScrollView>
+
+            {/* Slim Bottom Actions */}
+            {!!(results.length > 0) && (
+                <View style={[s.slimFooter, isDark ? s.slimFooterDark : s.slimFooterLight]}>
+                    <TouchableOpacity onPress={handleExport} disabled={loading} activeOpacity={0.7} style={s.slimFooterBtn}>
+                        {loading ? (
+                            <ActivityIndicator size="small" color="#8B5CF6" />
+                        ) : (
+                            <>
+                                <Page width={18} height={18} color={isDark ? '#cbd5e1' : '#64748b'} />
+                                <Text style={[s.slimFooterBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>Export</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                    <View style={[s.slimFooterDivider, isDark ? s.dividerDark : s.dividerLight]} />
+                    <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={s.slimFooterBtn}>
+                        <Camera width={18} height={18} color={isDark ? '#cbd5e1' : '#64748b'} />
+                        <Text style={[s.slimFooterBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>New Scan</Text>
+                    </TouchableOpacity>
+                </View>
             )}
         </GlowBackground>
     );
@@ -457,63 +515,103 @@ const s = StyleSheet.create({
     cropCornerTR: { position: 'absolute', top: -2, right: -2, width: 24, height: 24, borderTopWidth: 4, borderRightWidth: 4, borderColor: 'white', borderTopRightRadius: 16 },
     cropCornerBL: { position: 'absolute', bottom: -2, left: -2, width: 24, height: 24, borderBottomWidth: 4, borderLeftWidth: 4, borderColor: 'white', borderBottomLeftRadius: 16 },
     cropCornerBR: { position: 'absolute', bottom: -2, right: -2, width: 24, height: 24, borderBottomWidth: 4, borderRightWidth: 4, borderColor: 'white', borderBottomRightRadius: 16 },
-    cropInnerTooltip: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-    cropTooltipTitle: { color: 'white', fontWeight: '800', fontSize: 15, textAlign: 'center' },
-    cropTooltipDesc: { color: 'rgba(255,255,255,0.8)', fontWeight: '600', fontSize: 11, textAlign: 'center', marginTop: 2 },
     captureControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 40 },
     mainCaptureOuter: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: 'black', shadowOffset: {width: 0, height: 8}, shadowOpacity: 0.5, shadowRadius: 12 },
     mainCaptureInner: { width: 66, height: 66, borderRadius: 33, backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center' },
     secondaryActionCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' },
 
+    // Preview (before solve)
     previewContainer: { alignItems: 'center' },
-    previewCard: { width: '100%', borderRadius: 32, overflow: 'hidden', borderBottomWidth: 3, borderBottomColor: 'rgba(139, 92, 246, 0.3)' },
+    previewCard: { width: '100%', borderRadius: 24, overflow: 'hidden', borderBottomWidth: 3, borderBottomColor: 'rgba(139, 92, 246, 0.3)' },
     previewImage: { width: '100%', height: 350 },
-    
-    loadingCard: { alignItems: 'center', paddingVertical: 40, width: '100%', borderRadius: 32, marginTop: 24 },
+    loadingCard: { alignItems: 'center', paddingVertical: 40, width: '100%', borderRadius: 24, marginTop: 24 },
     spinnerBox: { marginBottom: 20 },
     loadingStage: { fontWeight: '800', fontSize: 17, letterSpacing: -0.5 },
     loadingSub: { color: '#64748b', fontWeight: '600', fontSize: 13, marginTop: 4 },
-    
     fullBtnGroup: { width: '100%', gap: 12, marginTop: 24 },
     fullBtnText: { color: '#fff', fontWeight: '800', fontSize: 16, marginLeft: 10 },
     fullSecondaryBtnGlass: { height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
     retakeText: { fontWeight: '800', fontSize: 15 },
 
-    resultsHeaderGlass: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, padding: 24, borderRadius: 32, borderBottomWidth: 2, borderBottomColor: 'rgba(139, 92, 246, 0.2)' },
-    resultsTitle: { fontWeight: '900', fontSize: 18, letterSpacing: -0.5 },
-    resultsSub: { color: '#64748b', fontWeight: '700', fontSize: 12, marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
-    costBadgeGradient: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
-    costBadgeText: { color: 'white', fontWeight: '900', fontSize: 11, letterSpacing: 1 },
+    // === Minimalistic Results (Gauth-inspired) ===
 
-    questionCardGlass: { marginBottom: 24, width: '100%', padding: 24, borderRadius: 32, borderBottomWidth: 2, borderBottomColor: 'rgba(139, 92, 246, 0.1)' },
-    questionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16 },
-    questionMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    questionMetaText: { color: '#94a3b8', fontWeight: '800', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5 },
-    typeTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(139, 92, 246, 0.1)' },
-    typeTagText: { fontWeight: '900', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: '#8B5CF6' },
-    topicTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-    topicTagText: { color: '#64748b', fontWeight: '800', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+    // Card containers
+    cardDark: { backgroundColor: '#1a1c24', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+    cardLight: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#f1f5f9' },
 
-    solutionGap: { gap: 20 },
-    stepsContainer: { padding: 20, borderRadius: 20 },
-    bgBlack20: { backgroundColor: 'rgba(0,0,0,0.2)' },
-    stepsLabel: { color: '#94a3b8', fontWeight: '800', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16 },
-    stepRow: { flexDirection: 'row', marginBottom: 16 },
-    stepNum: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(139, 92, 246, 0.1)', alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 },
-    stepNumText: { color: '#8B5CF6', fontWeight: '900', fontSize: 11 },
+    // Captured image bar
+    capturedImageBar: { borderRadius: 16, overflow: 'hidden', marginBottom: 12 },
+    capturedThumb: { width: '100%', height: 160 },
 
-    finalAnswerBoxGradient: { borderRadius: 20, padding: 20, overflow: 'hidden', borderLeftWidth: 4, borderLeftColor: '#8B5CF6' },
-    finalAnswerLabel: { color: '#8B5CF6', fontWeight: '900', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 },
+    // Metadata bar (Credits Used + Accuracy)
+    metaBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 16, padding: 16, marginBottom: 16 },
+    metaItem: { flex: 1, alignItems: 'center', gap: 4 },
+    metaLabel: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+    metaValue: { fontSize: 18, fontWeight: '900', letterSpacing: -0.5 },
+    metaDivider: { width: 1, height: 32, backgroundColor: 'rgba(148,163,184,0.2)' },
 
-    footerBlur: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingBottom: 40, borderTopWidth: 1 },
-    footerStack: { gap: 12 },
-    footerRow: { flexDirection: 'row', gap: 12 },
-    footerSecondaryBtnGlass: { height: 56, borderRadius: 16, flex: 1, alignItems: 'center', justifyContent: 'center' },
-    footerTertiaryBtnGlass: { height: 56, borderRadius: 16, flex: 1, alignItems: 'center', justifyContent: 'center' },
-    rowBtnContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    rowBtnText: { fontWeight: '800', fontSize: 15 },
+    // Answer cards
+    answerCard: { borderRadius: 16, padding: 20, marginBottom: 16 },
+    answerHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+    qBadge: { backgroundColor: 'rgba(139,92,246,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+    qBadgeText: { color: '#8B5CF6', fontWeight: '900', fontSize: 12 },
+    topicLabel: { fontSize: 13, fontWeight: '600' },
 
-    bgWhite5: { backgroundColor: 'rgba(255,255,255,0.05)' },
+    // Divider
+    answerDivider: { height: 1, marginBottom: 16 },
+    dividerDark: { backgroundColor: 'rgba(255,255,255,0.06)' },
+    dividerLight: { backgroundColor: '#f1f5f9' },
+
+    // Answer label ( ≡ Answer )
+    answerLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
+    answerLabelIcon: { fontSize: 18, color: '#8B5CF6', fontWeight: '900' },
+    answerLabelText: { fontSize: 16, fontWeight: '800' },
+
+    // Steps
+    stepsBlock: { marginBottom: 16 },
+    stepItem: { flexDirection: 'row', marginBottom: 14 },
+    stepCircle: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 },
+    stepCircleDark: { backgroundColor: 'rgba(139,92,246,0.15)' },
+    stepCircleLight: { backgroundColor: 'rgba(139,92,246,0.08)' },
+    stepCircleText: { color: '#8B5CF6', fontWeight: '800', fontSize: 11 },
+
+    // Final answer box
+    finalBox: { borderRadius: 12, padding: 16, marginBottom: 16 },
+    finalBoxDark: { backgroundColor: 'rgba(139,92,246,0.08)' },
+    finalBoxLight: { backgroundColor: '#faf5ff' },
+    finalLabel: { color: '#8B5CF6', fontWeight: '800', fontSize: 13, marginBottom: 6 },
+
+    // Explanation
+    explanationBlock: { marginBottom: 16, paddingTop: 4 },
+
+    // Feedback
+    feedbackRow: { alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(148,163,184,0.1)' },
+    feedbackPrompt: { fontSize: 13, fontWeight: '600', marginBottom: 12 },
+    feedbackBtns: { flexDirection: 'row', gap: 12 },
+    feedbackBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
+    feedbackBtnDark: { backgroundColor: 'rgba(255,255,255,0.06)' },
+    feedbackBtnLight: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0' },
+    feedbackBtnIcon: { fontSize: 16 },
+    feedbackBtnText: { fontSize: 13, fontWeight: '700' },
+    feedbackDone: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: 'rgba(139,92,246,0.08)', borderRadius: 12 },
+    feedbackDoneIcon: { fontSize: 18 },
+    feedbackDoneText: { fontSize: 13, fontWeight: '700' },
+
+    // Follow-up bar
+    followUpBar: { borderRadius: 16, padding: 18, marginTop: 4 },
+    followUpText: { fontSize: 14, fontWeight: '600' },
+
+    // Slim footer
+    slimFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, paddingBottom: 36, borderTopWidth: 1 },
+    slimFooterDark: { backgroundColor: '#0f1017', borderTopColor: 'rgba(255,255,255,0.06)' },
+    slimFooterLight: { backgroundColor: '#ffffff', borderTopColor: '#f1f5f9' },
+    slimFooterBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 24, paddingVertical: 10 },
+    slimFooterBtnText: { fontSize: 14, fontWeight: '700' },
+    slimFooterDivider: { width: 1, height: 20 },
+
+    // Text utilities
+    textSlate400d: { color: '#94a3b8' },
+    textSlate500l: { color: '#64748b' },
     bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
     bgWhite60: { backgroundColor: 'rgba(255,255,255,0.6)' },
     textWhite: { color: 'white' },
