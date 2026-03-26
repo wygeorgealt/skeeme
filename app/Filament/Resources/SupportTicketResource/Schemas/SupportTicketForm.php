@@ -82,7 +82,12 @@ class SupportTicketForm
                             ->required()
                             ->default('app_support'),
                         Select::make('assigned_to')
-                            ->relationship('assignedTo', 'name')
+                            ->label('Assigned To')
+                            ->options(function () {
+                                return \App\Models\TeamMember::with('user')->get()->mapWithKeys(function ($member) {
+                                    return [$member->id => $member->user ? $member->user->name : 'Unknown User'];
+                                });
+                            })
                             ->searchable(),
                     ])->columns(2),
  

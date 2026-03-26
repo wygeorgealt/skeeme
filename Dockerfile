@@ -6,9 +6,9 @@ USER root
 # Install PHP extensions
 RUN install-php-extensions intl gd bcmath
 
-# Install Node.js and NPM
+# Install Node.js, NPM, and cron
 RUN apt-get update && \
-    apt-get install -y ca-certificates curl gnupg && \
+    apt-get install -y ca-certificates curl gnupg cron && \
     mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
     NODE_MAJOR=20 && \
