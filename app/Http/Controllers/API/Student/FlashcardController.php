@@ -193,7 +193,7 @@ class FlashcardController extends Controller
                 }
             } catch (\Exception $e) {
                 if (!$useDeepseek) {
-                    Log::warning("Claude API Failed on Flashcards! Circuit Breaker tripped. Failing over to DeepSeek. Error: " . $e->getMessage());
+                    Log::warning("Claude API unavailable for Flashcards. Circuit Breaker tripped → routing to DeepSeek. Reason: " . $e->getMessage());
                     Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
                     
                     $cardsData = $this->deepseek->generateFlashcards(

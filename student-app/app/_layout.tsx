@@ -15,7 +15,6 @@ import Animated, { FadeOut } from 'react-native-reanimated';
 import { NetworkStatus } from '@/components/NetworkStatus';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { GlowBackground } from '@/components/ui/GlowBackground';
-import { initializeRevenueCat, identifyUser } from '@/lib/revenuecat';
 import { useFonts } from 'expo-font';
 
 cssInterop(LinearGradient, {
@@ -61,13 +60,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     hydrate();
-    initializeRevenueCat();
   }, [hydrate]);
 
+  // Removed RevenueCat identification
   useEffect(() => {
-    if (user?.id) {
-      identifyUser(user.id.toString());
-    }
+    // Other user-specific initializations can go here
   }, [user]);
 
   useEffect(() => {

@@ -112,12 +112,14 @@ export default function GenerateFlashcardScreen() {
 
             queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
 
+            const deckId = response.data.data?.id;
+
             if (response.data.reward?.earned) {
                 setRewardData(response.data.reward);
-                setPendingDeckId(response.data.deck_id);
+                setPendingDeckId(deckId);
                 setIsRewardModalVisible(true);
             } else {
-                router.replace(`/(drawer)/flashcards/${response.data.deck_id}`);
+                router.replace(`/(drawer)/flashcards/${deckId}`);
             }
 
         } catch (e: any) {

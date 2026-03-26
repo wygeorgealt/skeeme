@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, useColorScheme, Linking, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, useColorScheme, Linking, Alert, ActivityIndicator, StyleSheet, Modal, SafeAreaView } from 'react-native';
 import { Xmark, Sparks, FireFlame, Check } from 'iconoir-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { api } from '@/lib/api';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { LinearGradient } from 'expo-linear-gradient';
+import { WebView } from 'react-native-webview';
 
 import { PlanType, CurrencyType } from '@/types';
 type BillingCycle = 'monthly' | 'yearly';
@@ -22,12 +23,15 @@ export default function UpgradeScreen() {
     const [billingCycle, setBillingCycle] = useState<BillingCycle>('yearly');
     const [isPurchasing, setIsPurchasing] = useState(false);
     const [purchasingPack, setPurchasingPack] = useState<number | null>(null);
+    const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+    const [paymentRef, setPaymentRef] = useState<string | null>(null);
+    const [paymentType, setPaymentType] = useState<'subscription' | 'credits' | null>(null);
 
     useEffect(() => {
-        if (!pricingConfig) {
-            fetchPricingConfig();
-        }
-    }, [pricingConfig]);
+        // Always fetch fresh pricing data when the upgrade screen opens
+        // so admin promo/price changes are reflected immediately
+        fetchPricingConfig();
+    }, []);
 
     const currencySymbol = user?.pricing?.currency || '$';
     const currency: CurrencyType = user?.pricing?.currency === '₦' ? 'ngn' : 'usd';
@@ -71,17 +75,19 @@ export default function UpgradeScreen() {
     const handlePurchase = async () => {
         setIsPurchasing(true);
         try {
-            // Use RevenueCat's high-fidelity Paywall UI
-            const RevenueCatUI = require('react-native-purchases-ui').default;
-            const { result } = await RevenueCatUI.presentPaywall();
-            
-            if (result === 'PURCHASED') {
-                await useAuthStore.getState().checkAuth();
-                Alert.alert("Success", "Welcome to the premium club! Your subscription is active.");
-                router.replace('/(drawer)');
+            const res = await api.post('subscriptions/checkout', {
+                plan: activeTab,
+                cycle: billingCycle,
+            });
+            if (res.data?.authorization_url && res.data?.reference) {
+                setPaymentRef(res.data.reference);
+                setPaymentType('subscription');
+                setCheckoutUrl(res.data.authorization_url);
+            } else {
+                throw new Error("Invalid response from server");
             }
         } catch (error: any) {
-            const msg = error.response?.data?.message || "Could not complete the purchase. Please try again.";
+            const msg = error.response?.data?.message || "Could not initialize checkout. Please try again.";
             Alert.alert("Checkout Failed", msg);
         } finally {
             setIsPurchasing(false);
@@ -91,26 +97,59 @@ export default function UpgradeScreen() {
     const handleCreditPurchase = async (pack: any) => {
         setPurchasingPack(pack.amount);
         try {
-            const Purchases = require('react-native-purchases').default;
-            
-            // Map your UI packs to Store Product IDs
-            const productID = `skeeme_credits_${pack.amount}`;
-            const products = await Purchases.getProducts([productID]);
-            
-            if (products.length > 0) {
-                await Purchases.purchaseProduct(products[0]);
-                await useAuthStore.getState().checkAuth();
-                Alert.alert("Success", `Successfully added ${pack.amount.toLocaleString()} credits!`);
+            const res = await api.post('credits/checkout', {
+                amount: pack.amount,
+            });
+            if (res.data?.authorization_url && res.data?.reference) {
+                setPaymentRef(res.data.reference);
+                setPaymentType('credits');
+                setCheckoutUrl(res.data.authorization_url);
             } else {
-                throw new Error("Product not found in store");
+                throw new Error("Invalid response from server");
             }
         } catch (error: any) {
-            if (!error.userCancelled) {
-                const msg = error.response?.data?.message || error.message || "Could not complete the transaction.";
-                Alert.alert("Purchase Failed", msg);
-            }
+            const msg = error.response?.data?.message || "Could not initialize checkout. Please try again.";
+            Alert.alert("Checkout Failed", msg);
         } finally {
             setPurchasingPack(null);
+        }
+    };
+
+    const verifyPayment = async (reference: string, type: 'subscription' | 'credits') => {
+        setIsPurchasing(true);
+        try {
+            const endpoint = type === 'subscription' 
+                ? `subscriptions/verify/${reference}` 
+                : `credits/verify/${reference}`;
+            const res = await api.get(endpoint);
+            
+            if (res.data?.status === 'success') {
+                await useAuthStore.getState().checkAuth();
+                Alert.alert("Success", type === 'subscription' 
+                    ? "Welcome to the premium club! Your subscription is active." 
+                    : "Credits added successfully!");
+                router.replace('/(drawer)');
+            } else {
+                Alert.alert("Payment Pending", res.data?.message || "Payment is still processing. Please check your balance shortly.");
+            }
+        } catch (error: any) {
+            const msg = error.response?.data?.message || "Could not verify your payment. Please contact support if your account isn't updated.";
+            Alert.alert("Verification Check", msg);
+        } finally {
+            setIsPurchasing(false);
+            setPaymentRef(null);
+            setPaymentType(null);
+        }
+    };
+
+    const handleWebViewNavigation = (navState: any) => {
+        const url = navState.url;
+        // Check for common redirect parameters Paystack attaches upon success/cancel
+        if (url.includes('reference=') || url.includes('/callback') || url.includes('skeeme.com/callback') || url.includes('trxref=')) {
+            setCheckoutUrl(null);
+            if (paymentRef && paymentType) {
+                verifyPayment(paymentRef, paymentType);
+            }
         }
     };
 
@@ -269,27 +308,36 @@ export default function UpgradeScreen() {
                     )}
                 </TouchableOpacity>
 
-                <TouchableOpacity 
-                    onPress={async () => {
-                        const { restorePurchases } = require('@/lib/revenuecat');
-                        const restored = await restorePurchases();
-                        if (restored) {
-                            await useAuthStore.getState().checkAuth();
-                            Alert.alert("Success", "Your purchases have been restored!");
-                            router.replace('/(drawer)');
-                        } else {
-                            Alert.alert("Restore Failed", "No active subscriptions found to restore.");
-                        }
-                    }}
-                    style={{ marginTop: 16, alignSelf: 'center' }}
-                >
-                    <Text style={[s.restoreText, isDark ? s.textIndigo400 : s.textBrandPrimary]}>Restore Purchases</Text>
-                </TouchableOpacity>
 
                 <Text style={[s.termsText, isDark ? s.textSlate500 : s.textSlate400]}>
                     By continuing, you agree to our Terms of Service & Privacy Policy.
                 </Text>
             </View>
+
+
+            {/* Paystack Checkout Modal */}
+            {checkoutUrl && (
+                <Modal visible={true} animationType="slide" presentationStyle="pageSheet">
+                    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#0f172a' : '#f8fafc' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16, borderBottomWidth: 1, borderBottomColor: isDark ? '#1e293b' : '#e2e8f0' }}>
+                            <TouchableOpacity onPress={() => {
+                                setCheckoutUrl(null);
+                                if (paymentRef && paymentType) {
+                                    verifyPayment(paymentRef, paymentType);
+                                }
+                            }}>
+                                <Text style={{ fontWeight: '700', color: '#ef4444', fontSize: 16 }}>Close & Verify</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <WebView 
+                            source={{ uri: checkoutUrl }} 
+                            onNavigationStateChange={handleWebViewNavigation}
+                            startInLoadingState={true}
+                            style={{ flex: 1 }}
+                        />
+                    </SafeAreaView>
+                </Modal>
+            )}
         </GlowBackground>
     );
 }
