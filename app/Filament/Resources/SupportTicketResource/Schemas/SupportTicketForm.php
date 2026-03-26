@@ -5,9 +5,11 @@ namespace App\Filament\Resources\SupportTicketResource\Schemas;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\MarkdownEditor;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Str;
+use App\Models\TicketResponse;
  
 class SupportTicketForm
 {
@@ -15,6 +17,27 @@ class SupportTicketForm
     {
         return $schema
             ->components([
+                Section::make('AI Assistant')
+                    ->description('Proposed draft from Skeeme AI Agent')
+                    ->icon('heroicon-o-sparkles')
+                    ->aside()
+                    ->schema([
+                        MarkdownEditor::make('ai_draft')
+                            ->label('Auto-Generated Draft')
+                            ->placeholder('No AI draft generated yet.')
+                            ->afterStateHydrated(function ($component, $record) {
+                                if (!$record) return;
+                                $draft = TicketResponse::where('ticket_id', $record->id)
+                                    ->where('is_internal', true)
+                                    ->latest()
+                                    ->first();
+                                $component->state($draft?->response);
+                            })
+                            ->disabled()
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible(),
+ 
                 Section::make('Ticket Information')
                     ->schema([
                         TextInput::make('title')

@@ -88,7 +88,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewWebTinker', function ($user) {
             return $user->isCreator();
         });
-
+ 
+        // Register Observers for AI Agents
+        \App\Models\SupportTicket::observe(\App\Observers\SupportTicketObserver::class);
+ 
         $this->configureRateLimiting();
     }
 

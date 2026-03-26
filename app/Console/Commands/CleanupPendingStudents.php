@@ -31,22 +31,12 @@ class CleanupPendingStudents extends Command
  
         $threshold = now()->subHours(2);
  
-        $query = User::where('role', '=', 'student', 'and')
-            ->where('status', '=', 'pending', 'and')
-            ->where('created_at', '<', $threshold, 'and');
- 
-        $count = $query->count('*');
- 
-        if ($count === 0) {
-            $this->info('No stale pending student accounts found.');
-            return;
-        }
- 
-        $this->warn("Found {$count} accounts to delete.");
- 
         try {
-            $deleted = $query->delete();
-            
+            $deleted = User::where('role', 'student')
+                ->where('status', 'pending')
+                ->where('created_at', '<', $threshold)
+                ->delete();
+                
             $message = "Successfully deleted {$deleted} stale pending student accounts.";
             $this->info($message);
             Log::info("[Cleanup] " . $message);
