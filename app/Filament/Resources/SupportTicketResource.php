@@ -17,9 +17,9 @@ class SupportTicketResource extends Resource
 {
     protected static ?string $model = SupportTicket::class;
  
-    protected static ?string $navigationIcon = 'heroicon-o-ticket';
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-ticket';
  
-    protected static ?string $navigationGroup = 'Support';
+    protected static \UnitEnum|string|null $navigationGroup = 'Support';
  
     protected static ?string $recordTitleAttribute = 'title';
  
