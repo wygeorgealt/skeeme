@@ -81,7 +81,8 @@ export default function UpgradeScreen() {
                 router.replace('/(drawer)');
             }
         } catch (error: any) {
-            Alert.alert("Checkout Failed", "Could not complete the purchase. Please try again.");
+            const msg = error.response?.data?.message || "Could not complete the purchase. Please try again.";
+            Alert.alert("Checkout Failed", msg);
         } finally {
             setIsPurchasing(false);
         }
@@ -105,7 +106,8 @@ export default function UpgradeScreen() {
             }
         } catch (error: any) {
             if (!error.userCancelled) {
-                Alert.alert("Purchase Failed", error.message || "Could not complete the transaction.");
+                const msg = error.response?.data?.message || error.message || "Could not complete the transaction.";
+                Alert.alert("Purchase Failed", msg);
             }
         } finally {
             setPurchasingPack(null);

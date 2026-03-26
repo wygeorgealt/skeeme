@@ -57,7 +57,7 @@ class ScanController extends Controller
 
         // 3. Preliminary Check & Lock Credits (Atomic)
         $canProceed = DB::transaction(function() use ($user, $baseCost, $costPerSolution) {
-            $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+            $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
             
             if (!$lockedUser->is_unlimited && $lockedUser->credits < ($baseCost + $costPerSolution)) {
                 return false;
@@ -116,7 +116,7 @@ class ScanController extends Controller
             // 6. Deduct Usage (Atomic)
             if (!$user->is_unlimited) {
                 DB::transaction(function() use ($user, $finalCost, $solutionsCount) {
-                    $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+                    $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
                     $lockedUser->decrement('credits', $finalCost);
                     
                     try {
@@ -152,10 +152,15 @@ class ScanController extends Controller
             return response()->json($responseData);
 
         } catch (\Exception $e) {
-            Log::error('Scan & Solve Failed: ' . $e->getMessage());
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 500);
+            Log::error("API Quiz Gen Critical Error: " . $e->getMessage());
+            
+            $message = $e->getMessage();
+            if (str_contains(strtolower($message), 'failed') || 
+                str_contains(strtolower($message), 'error 28') || 
+                str_contains(strtolower($message), 'exception')) {
+                $message = "Skeeme is down, Please try again later.";
+            }
+            return response()->json(['message' => $message], 500);
         }
     }
 }

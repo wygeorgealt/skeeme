@@ -275,10 +275,11 @@ export default function PreferencesScreen() {
                         {saving ? (
                             <ActivityIndicator color="white" size="small" />
                         ) : (
-                            <>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Sparks width={20} height={20} color="white" />
+                                <View style={{ width: 10 }} />
                                 <Text style={s.saveBtnText}>Update My AI Assistant</Text>
-                            </>
+                            </View>
                         )}
                     </LinearGradient>
                 </TouchableOpacity>

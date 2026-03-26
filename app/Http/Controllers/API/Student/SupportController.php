@@ -28,8 +28,20 @@ class SupportController extends Controller
             $content .= "----------------------------------------\n\n";
             $content .= "Message:\n" . $request->message . "\n";
 
-            Mail::raw($content, function ($msg) use ($user) {
-                $msg->to('noreply@contact.skeeme.com')
+            $recipient = env('ADMIN_EMAIL', 'support@contact.skeeme.com');
+ 
+            // Save to database for Filament visibility
+            \App\Models\SupportTicket::create([
+                'user_id' => $user->id,
+                'title' => 'Mobile App Support: ' . \Illuminate\Support\Str::limit($request->message, 50),
+                'description' => $request->message,
+                'priority' => 'normal',
+                'status' => 'open',
+                'category' => 'app_support',
+            ]);
+ 
+            Mail::raw($content, function ($msg) use ($user, $recipient) {
+                $msg->to($recipient)
                     ->replyTo($user->email, $user->name)
                     ->subject("Skeeme Support Ticket - {$user->name}");
             });

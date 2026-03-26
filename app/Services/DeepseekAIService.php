@@ -124,12 +124,8 @@ class DeepseekAIService
             Cache::put($cacheKey, $questions, now()->addHours(24));
             
             return $questions;
-        } catch (RequestException $e) {
-            \Log::error('Deepseek API Error: ' . $e->getMessage());
-            throw new \Exception('Failed to generate questions: ' . $e->getMessage());
         } catch (\Exception $e) {
-            \Log::error('Question Generation Error: ' . $e->getMessage());
-            throw $e;
+            throw $this->handleApiException($e, 'Questions');
         }
     }
 
@@ -181,8 +177,7 @@ class DeepseekAIService
                 'event_end_date' => $content['event_end_date'] ?? null,
             ];
         } catch (\Exception $e) {
-            \Log::error('Announcement Generation Error: ' . $e->getMessage());
-            throw $e;
+            throw $this->handleApiException($e, 'Announcement');
         }
     }
 
@@ -251,8 +246,7 @@ class DeepseekAIService
                 'consistency_score' => 100,
             ];
         } catch (\Exception $e) {
-            \Log::error('Deepseek Grading Error: ' . $e->getMessage());
-            throw $e;
+            throw $this->handleApiException($e, 'Grading');
         }
     }
 
@@ -768,12 +762,8 @@ PROMPT;
 
             return $decoded;
 
-        } catch (RequestException $e) {
-            \Log::error('Scan Solve API Error: ' . $e->getMessage());
-            throw new \Exception('Failed to solve question: ' . $e->getMessage());
         } catch (\Exception $e) {
-            \Log::error('Scan Solve Error: ' . $e->getMessage());
-            throw $e;
+            throw $this->handleApiException($e, 'Image Solve');
         }
     }
 
@@ -904,6 +894,40 @@ PROMPT;
             \Log::error('Translation Error: ' . $e->getMessage());
             return $text;
         }
+    }
+
+    /**
+     * Centralized error handler — returns user-friendly messages
+     */
+    protected function handleApiException(\Exception $e, string $context): \Exception
+    {
+        \Log::error("Deepseek {$context} Error: " . $e->getMessage());
+        
+        if ($e instanceof RequestException && $e->hasResponse()) {
+            $statusCode = $e->getResponse()->getStatusCode();
+            $body = $e->getResponse()->getBody()->getContents();
+            
+            if ($statusCode === 429) {
+                return new \Exception("Skeeme is currently experiencing high demand. Please try again in a few moments.");
+            }
+            if ($statusCode >= 400 && str_contains(strtolower($body), 'insufficient balance')) {
+                return new \Exception("Skeeme is down, Please try again later.");
+            }
+            if ($statusCode >= 500 || $statusCode >= 400) {
+                return new \Exception("Skeeme is down, Please try again later.");
+            }
+        }
+        
+        if (str_contains($e->getMessage(), 'cURL error 28') || str_contains($e->getMessage(), 'timed out')) {
+            return new \Exception("Skeeme is down, Please try again later.");
+        }
+
+        // If it's the specific "Could not read any text" error, keep it as is as it's helpful
+        if (str_contains($e->getMessage(), 'Could not read any text')) {
+            return $e;
+        }
+
+        return new \Exception("Skeeme encountered an unexpected error. Please try again later.");
     }
 
     /**

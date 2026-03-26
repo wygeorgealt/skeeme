@@ -61,7 +61,7 @@ export default function SupportScreen() {
                         <NavArrowLeft width={24} height={24} color={isDark ? '#fff' : '#000'} />
                     </TouchableOpacity>
                     <Text style={[s.headerTitle, { color: isDark ? '#fff' : '#0f172a' }]}>Contact Support</Text>
-                    <View style={{ width: 40 }} /> {/* spacer for center alignment */}
+                    <View style={{ width: 40 }} />
                 </View>
 
                 <ScrollView
@@ -80,7 +80,7 @@ export default function SupportScreen() {
                     <View style={[s.card, isDark ? s.cardDark : s.cardLight]}>
                         <View style={s.userInfoBadge}>
                             <Text style={s.userInfoText}>
-                                Sending as <Text style={{ fontWeight: '700' }}>{user?.name}</Text> ({user?.email})
+                                Sending as <Text style={{ fontWeight: '700' }}>{user?.name || 'User'}</Text> ({user?.email || 'No email'})
                             </Text>
                         </View>
 
@@ -107,10 +107,11 @@ export default function SupportScreen() {
                             {isSubmitting ? (
                                 <ActivityIndicator color="white" />
                             ) : (
-                                <>
-                                    <Mail width={18} height={18} color="white" style={{ marginRight: 8 }} />
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Mail width={18} height={18} color="white" />
+                                    <View style={{ width: 8 }} />
                                     <Text style={s.submitBtnText}>Send Message</Text>
-                                </>
+                                </View>
                             )}
                         </TouchableOpacity>
                     </View>

@@ -330,12 +330,12 @@ export default function DashboardScreen() {
                         </Text>
                         <View style={s.heroValueRow}>
                             {user.is_unlimited ? (
-                                <>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <Sparks width={28} height={28} color="#8B5CF6" style={s.mr8} />
                                     <Text style={[s.heroValueUnlimited, availableBalanceValue]}>
                                         Unlimited
                                     </Text>
-                                </>
+                                </View>
                             ) : (
                                 <Text style={[s.heroValue, availableBalanceValue]}>
                                     {user.credits.toLocaleString()}

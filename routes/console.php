@@ -44,6 +44,11 @@ Schedule::command('otp:purge')
     ->dailyAt('00:00')
     ->description('Purge expired and fully used email OTPs');
 
+// Schedule cleanup of pending student accounts older than 2 hours
+Schedule::command('app:cleanup-pending-students')
+    ->hourly()
+    ->description('Deletes student accounts that have been in pending status for more than 2 hours');
+
 use Mailtrap\Helper\ResponseHelper;
 use Mailtrap\MailtrapClient;
 use Mailtrap\Mime\MailtrapEmail;

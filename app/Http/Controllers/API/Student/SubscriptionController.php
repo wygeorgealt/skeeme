@@ -141,7 +141,11 @@ class SubscriptionController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+            Log::error('Subscription Verification Failed: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error', 
+                'message' => 'Could not verify your payment. Please contact support if your credits do not appear.'
+            ], 500);
         }
     }
 
@@ -163,7 +167,7 @@ class SubscriptionController extends Controller
                 'env' => config('app.env'),
             ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => 'System diagnostics unavailable.'], 500);
         }
     }
 
@@ -287,7 +291,11 @@ class SubscriptionController extends Controller
                 'message' => 'Payment is still processing.'
             ]);
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+            Log::error('Credit Verification Failed: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error', 
+                'message' => 'Could not verify your payment. Please contact support if your credits do not appear.'
+            ], 500);
         }
     }
 }

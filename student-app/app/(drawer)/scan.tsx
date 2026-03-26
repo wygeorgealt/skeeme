@@ -26,6 +26,7 @@ import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { MathText } from '@/components/ui/MathText';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
@@ -102,14 +103,44 @@ export default function ScanScreen() {
         if (!cameraRef.current) return;
         try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.5 });
+            const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
+            
             if (photo) {
-                setImageUri(photo.uri);
-                setImageBase64(photo.base64 || null);
+                setLoading(true);
+                setLoadingStage('Cropping...');
+
+                // Calculate crop coordinates relative to image size
+                const screenHeight = Dimensions.get('window').height;
+                const headerHeight = 44 + Math.max(insets.top, 16);
+                const remainingHeight = screenHeight - headerHeight;
+                const topFlexHeight = (remainingHeight - CROP_BOX_HEIGHT) / 2;
+                
+                const cropTop = headerHeight + topFlexHeight;
+                const cropLeft = (width - CROP_BOX_WIDTH) / 2;
+
+                // Scale to image dimensions
+                const scaleX = photo.width / width;
+                const scaleY = photo.height / screenHeight;
+
+                const originX = cropLeft * scaleX;
+                const originY = cropTop * scaleY;
+                const cropWidth = CROP_BOX_WIDTH * scaleX;
+                const cropHeight = CROP_BOX_HEIGHT * scaleY;
+
+                const manipulated = await manipulateAsync(
+                    photo.uri,
+                    [{ crop: { originX, originY, width: cropWidth, height: cropHeight } }],
+                    { compress: 0.7, format: SaveFormat.JPEG, base64: true }
+                );
+
+                setImageUri(manipulated.uri);
+                setImageBase64(manipulated.base64 || null);
+                setLoading(false);
             }
         } catch (e) {
             if (__DEV__) console.warn('Capture failed', e);
             Alert.alert('Error', 'Could not take picture.');
+            setLoading(false);
         }
     };
 

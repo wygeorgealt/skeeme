@@ -250,13 +250,16 @@ class PracticeQuizController extends Controller
             Log::warning("Validation Failed", $e->errors());
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            Log::error("API Quiz Gen Critical Error", [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => substr($e->getTraceAsString(), 0, 1000)
-            ]);
-            return response()->json(['message' => $e->getMessage()], 500);
+            Log::error("API Quiz Gen Critical Error: " . $e->getMessage());
+            
+            $message = $e->getMessage();
+            if (str_contains(strtolower($message), 'failed') || 
+                str_contains(strtolower($message), 'error 28') || 
+                str_contains(strtolower($message), 'exception')) {
+                $message = "Skeeme is down, Please try again later.";
+            }
+
+            return response()->json(['message' => $message], 500);
         }
     }
 
@@ -303,7 +306,11 @@ class PracticeQuizController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Theory grading error: ' . $e->getMessage());
-            return response()->json(['message' => $e->getMessage()], 500);
+            $message = $e->getMessage();
+            if (str_contains(strtolower($message), 'failed') || str_contains(strtolower($message), 'exception')) {
+                $message = "Skeeme is down, Please try again later.";
+            }
+            return response()->json(['message' => $message], 500);
         }
     }
 }

@@ -93,6 +93,15 @@ api.interceptors.response.use(
             const errorMsg = response?.data?.message || error.message;
             console.error(`[API] ❌ ${errorMsg} on ${url}`);
         }
+
+        // Global fallback for 500 errors to ensure "Skeeme is down" is always shown
+        if (response?.status && response.status >= 500) {
+            if (!response.data?.message) {
+                error.message = 'Skeeme is down, Please try again later.';
+                if (response.data) response.data.message = error.message;
+                else error.response.data = { message: error.message };
+            }
+        }
         
         return Promise.reject(error);
     }

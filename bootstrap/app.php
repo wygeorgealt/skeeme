@@ -40,5 +40,21 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            if ($request->is('api/*')) {
+                // If it's a 500 error or a connection error, mask it with the friendly message
+                if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                    $status = $e->getStatusCode();
+                } else {
+                    $status = 500;
+                }
+
+                if ($status >= 500) {
+                    return response()->json([
+                        'message' => 'Skeeme is down, Please try again later.',
+                        'error_code' => 'SERVER_ERROR'
+                    ], 500);
+                }
+            }
+        });
     })->create();
