@@ -8,14 +8,11 @@ import { Check, NavArrowRight } from 'iconoir-react-native';
 
 const { width, height } = Dimensions.get('window');
 
-// Slide 1: indigo bg baked into image → match exactly
-// Slide 2: white bg baked into image → always use white bg; dark mode shows a card overlay
-// Slide 3: amber bg baked into image → match exactly
 const SLIDES = [
     {
         id: 1,
-        title: 'Your Pocket\nTutor',
-        description: 'Skeeme turns your notes, slides, and textbooks into ready-to-study quizzes — in seconds.',
+        title: 'Snap a Photo of Any Problem',
+        description: 'Get step-by-step solutions instantly. Skeeme breaks down complex questions to help you understand.',
         image: require('@/assets/images/slide1.png'),
         bgColor: '#8B5CF6',
         textColor: '#ffffff',
@@ -24,8 +21,8 @@ const SLIDES = [
     },
     {
         id: 2,
-        title: 'Scan it.\nSolve it.',
-        description: 'Point your camera at any problem. Skeeme\'s AI breaks it down and walks you through the answer.',
+        title: 'Quiz & Flashcards',
+        description: 'Generate custom quizzes and flashcards instantly from your notes, slides, and textbooks.',
         image: require('@/assets/images/slide2.png'),
         bgColor: '#ffffff',
         bgColorDark: '#1a1a2e',
@@ -36,8 +33,8 @@ const SLIDES = [
     },
     {
         id: 3,
-        title: 'Ace Every\nExam',
-        description: 'Track streaks, revisit missed questions, and stay ahead of every deadline — all in one place.',
+        title: 'Your Complete Ecosystem',
+        description: 'Your complete study workspace to track progress, revisit missed questions, and ace exams.',
         image: require('@/assets/images/slide3.png'),
         bgColor: '#f59e0b',
         textColor: '#ffffff',

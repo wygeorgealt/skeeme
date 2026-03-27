@@ -70,7 +70,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (isLoading) return;
 
-    const publicRoutes = ['login', 'signup', '(onboarding)', 'forgot-password', 'otp', 'new-password'];
+    const publicRoutes = ['login', 'signup', '(onboarding)', 'welcome', 'forgot-password', 'otp', 'new-password'];
     const currentSegment = segments[0] as string;
     const isPublicRoute = publicRoutes.includes(currentSegment);
 

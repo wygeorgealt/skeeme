@@ -285,7 +285,9 @@ class AuthController extends Controller
             ->where('created_at', '>=', $startOfWeek)
             ->count();
             
-        $scanHistoryCount = \App\Models\ScanHistory::where('user_id', $user->id)
+        $scanHistoryCount = \App\Models\Transaction::where('user_id', $user->id)
+            ->where('type', 'usage')
+            ->where('description', 'like', 'Scan & Solve%')
             ->where('created_at', '>=', $startOfWeek)
             ->count();
             

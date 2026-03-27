@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, useColorScheme } from 'react-native';
+import { View, StyleSheet, useColorScheme, Text } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -34,13 +34,12 @@ export default function AnimatedSplash({ onFinish }: AnimatedSplashProps) {
     }, [onFinish, translateY, opacity]);
 
     return (
-        <View style={[styles.container, { backgroundColor: isDark ? '#100921' : '#ffffff' }]}>
+        <View style={[styles.container, { backgroundColor: isDark ? '#100921' : '#f9fafb' }]}>
             <Animated.Image
-                source={require('@/assets/images/skeemeword.png')}
+                source={require('@/assets/images/icon.png')}
                 style={[
                     styles.logo, 
                     animatedStyle, 
-                    { tintColor: isDark ? '#FFFFFF' : '#8B5CF6' }
                 ]}
                 resizeMode="contain"
             />
@@ -56,7 +55,8 @@ const styles = StyleSheet.create({
         zIndex: 99999,
     },
     logo: {
-        width: 150,
-        height: 150,
-    },
+        width: 120,
+        height: 120,
+        borderRadius: 30,
+    }
 });

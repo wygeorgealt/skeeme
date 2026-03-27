@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, Image, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
@@ -16,42 +16,40 @@ export default function HookScreen() {
         setOnboardingStep(1);
     }, []);
 
+    const openLink = (url: string) => Linking.openURL(url);
+
     return (
         <GlowBackground useSafeArea>
             <Animated.View entering={FadeInDown.duration(800).delay(200)} style={s.heroContainer}>
-                <View style={[s.iconBox, isDark ? s.iconBoxDark : s.iconBoxLight]}>
-                    <Image
-                        source={require('@/assets/images/icon.png')}
-                        style={s.iconImage}
-                        resizeMode="contain"
-                    />
-                </View>
-
                 <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>
-                    Study with{'\n'}Skeeme.
-                </Text>
-                <Text style={[s.heroSubtitle, isDark ? s.textSlate400 : s.textSlate500]}>
-                    The world's most powerful AI tutor, personalized exactly for you.
+                    Welcome to Skeeme
                 </Text>
             </Animated.View>
 
             <Animated.View entering={FadeInDown.duration(800).delay(600)} style={s.footer}>
+                <View style={s.termsContainer}>
+                    <Text style={[s.termsText, isDark ? s.textSlate400 : s.textSlate500]}>
+                        By continuing, you agree to our{' '}
+                        <Text style={s.linkText} onPress={() => openLink('https://skeeme.com/terms')}>
+                            Terms of Service
+                        </Text>
+                        , and confirm you have read the{' '}
+                        <Text style={s.linkText} onPress={() => openLink('https://skeeme.com/privacy')}>
+                            Privacy Policy
+                        </Text>
+                        {' '}to learn how we collect, use and share your data and are at least 13 years of age.
+                    </Text>
+                    <Text style={[s.poweredBy, isDark ? s.textSlate500 : s.textSlate400]}>
+                        Skeeme AI's responses are powered by artificial intelligence and may sometimes be inaccurate.
+                    </Text>
+                </View>
+
                 <TouchableOpacity
-                    onPress={() => router.push('/(onboarding)/education')}
+                    onPress={() => router.push('/welcome')}
                     activeOpacity={0.9}
                     style={s.mainBtn}
                 >
-                    <Text style={s.mainBtnText}>Get Started</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    onPress={() => router.push('/login')}
-                    style={s.loginLink}
-                    activeOpacity={0.7}
-                >
-                    <Text style={[s.loginLinkText, isDark ? s.textSlate400 : s.textSlate500]}>
-                        Already have an account? <Text style={s.textBrandPrimary}>Log in</Text>
-                    </Text>
+                    <Text style={s.mainBtnText}>Agree and continue</Text>
                 </TouchableOpacity>
             </Animated.View>
         </GlowBackground>
@@ -59,25 +57,21 @@ export default function HookScreen() {
 }
 
 const s = StyleSheet.create({
-    heroContainer: { flex: 1, paddingHorizontal: 24, alignItems: 'center', justifyContent: 'center', marginTop: -80 },
-    iconBox: { width: 96, height: 96, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 32, borderWidth: 1 },
-    iconBoxLight: { backgroundColor: 'white', borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 5 },
-    iconBoxDark: { backgroundColor: '#0f172a', borderColor: '#1e293b' },
-    iconImage: { width: 64, height: 64, opacity: 0.9 },
-    
-    heroTitle: { fontSize: 44, fontWeight: '700', letterSpacing: -1, textAlign: 'center', lineHeight: 50, marginBottom: 20 },
-    heroSubtitle: { fontSize: 15, fontWeight: '500', textAlign: 'center', lineHeight: 22, paddingHorizontal: 20 },
+    heroContainer: { flex: 1, paddingHorizontal: 24, alignItems: 'center', justifyContent: 'center' },
+    heroTitle: { fontSize: 44, fontWeight: '900', letterSpacing: -1, textAlign: 'center', lineHeight: 50 },
     
     textWhite: { color: 'white' },
     textSlate900: { color: '#0f172a' },
     textSlate400: { color: '#94a3b8' },
     textSlate500: { color: '#64748b' },
-    textBrandPrimary: { color: '#8B5CF6' },
     
-    footer: { width: '100%', paddingHorizontal: 24, paddingBottom: 64 },
-    mainBtn: { height: 56, backgroundColor: '#8B5CF6', borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 20, shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 5 },
-    mainBtnText: { fontWeight: '700', fontSize: 15, color: 'white', letterSpacing: 0.5 },
+    footer: { width: '100%', paddingHorizontal: 24, paddingBottom: 40 },
     
-    loginLink: { height: 48, alignItems: 'center', justifyContent: 'center' },
-    loginLinkText: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
+    termsContainer: { marginBottom: 32, alignItems: 'center' },
+    termsText: { fontSize: 12, lineHeight: 18, textAlign: 'center', marginBottom: 16 },
+    linkText: { fontWeight: '700', color: '#8B5CF6' },
+    poweredBy: { fontSize: 11, lineHeight: 16, textAlign: 'center' },
+    
+    mainBtn: { height: 56, backgroundColor: '#8B5CF6', borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 5 },
+    mainBtnText: { fontWeight: '800', fontSize: 16, color: 'white', letterSpacing: 0.5 },
 });
