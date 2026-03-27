@@ -168,10 +168,10 @@ class FlashcardController extends Controller
             // Dynamic Timeout based on Network Quality Header
             $networkType = $request->header('X-Network-Type');
             $networkGen = $request->header('X-Network-Generation');
-            $timeout = ($networkType === 'cellular' && in_array($networkGen, ['2g', '3g', 'edge'])) ? 8 : 25;
+            $timeout = ($networkType === 'cellular' && in_array($networkGen, ['2g', '3g', 'edge'])) ? 30 : 60;
             
             $this->aiService->setTimeout($timeout);
-            $this->deepseek->setTimeout($timeout + 10);
+            $this->deepseek->setTimeout($timeout + 60);
             
             try {
                 if ($useDeepseek) {

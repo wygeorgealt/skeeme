@@ -130,10 +130,10 @@ class PracticeQuizController extends Controller
             // Dynamic Timeout based on Network Quality Header
             $networkType = $request->header('X-Network-Type');
             $networkGen = $request->header('X-Network-Generation');
-            $timeout = ($networkType === 'cellular' && in_array($networkGen, ['2g', '3g', 'edge'])) ? 8 : 25;
+            $timeout = ($networkType === 'cellular' && in_array($networkGen, ['2g', '3g', 'edge'])) ? 30 : 60;
             
             $this->aiService->setTimeout($timeout);
-            $this->deepseek->setTimeout($timeout + 10); // Give fallback more room
+            $this->deepseek->setTimeout($timeout + 60); // Give fallback more room (120s max)
 
             try {
                 if ($useDeepseek) {
@@ -278,9 +278,9 @@ class PracticeQuizController extends Controller
             $useDeepseek = Cache::get('use_deepseek_fallback', false);
             
             $networkType = $request->header('X-Network-Type');
-            $timeout = ($networkType === 'cellular') ? 5 : 15;
+            $timeout = ($networkType === 'cellular') ? 15 : 30;
             $this->aiService->setTimeout($timeout);
-            $this->deepseek->setTimeout($timeout + 10);
+            $this->deepseek->setTimeout($timeout + 30);
 
             try {
                 if ($useDeepseek) {
