@@ -55,10 +55,10 @@ Instructions:
 Draft Response:";
  
         try {
-            $draftResponse = $aiService->getChatCompletion([
-                ['role' => 'system', 'content' => 'You are a helpful support agent for Skeeme, an AI study app.'],
-                ['role' => 'user', 'content' => $prompt]
-            ]);
+            $draftResponse = $aiService->generateText(
+                $prompt,
+                'You are a helpful support agent for Skeeme, an AI study app.'
+            );
  
             if ($draftResponse) {
                 TicketResponse::create([

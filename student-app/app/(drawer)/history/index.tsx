@@ -229,7 +229,7 @@ function QuizCard({ session, isDark }: { session: QuizSession; isDark: boolean }
                     </View>
                     <View style={{ flex: 1 }}>
                         <Text style={{ fontSize: 16, fontWeight: '700', color: isDark ? '#FFF' : '#000', marginBottom: 4 }} numberOfLines={1}>{session.topic}</Text>
-                        <Text style={{ fontSize: 13, color: '#8E8E93' }}>{session.difficulty} • {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                        <Text style={{ fontSize: 13, color: '#8E8E93' }}>{session.difficulty ? session.difficulty.charAt(0).toUpperCase() + session.difficulty.slice(1) : ''} • {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                     </View>
                 </View>
                 <View style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: isPass ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 59, 48, 0.12)' }}>

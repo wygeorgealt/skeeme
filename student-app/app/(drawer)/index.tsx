@@ -159,9 +159,6 @@ export default function DashboardScreen() {
                                 <Ionicons name="sparkles" size={14} color="#FFF" />
                                 <Text style={s.upgradeText}>Upgrade</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[s.menuCircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E5E5EA' }]}>
-                                <Ionicons name="reorder-two" size={20} color={C.text} />
-                            </TouchableOpacity>
                         </View>
                     </View>
 
