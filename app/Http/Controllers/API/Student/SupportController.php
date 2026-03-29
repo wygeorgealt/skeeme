@@ -28,7 +28,7 @@ class SupportController extends Controller
             $content .= "----------------------------------------\n\n";
             $content .= "Message:\n" . $request->message . "\n";
 
-            $recipient = env('ADMIN_EMAIL', 'support@contact.skeeme.com');
+            $recipient = 'otuturusolomom@gmail.com';
  
             // Save to database for Filament visibility
             \App\Models\SupportTicket::create([

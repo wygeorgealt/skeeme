@@ -15,6 +15,7 @@ import Animated, { FadeOut } from 'react-native-reanimated';
 import { NetworkStatus } from '@/components/NetworkStatus';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { GlowBackground } from '@/components/ui/GlowBackground';
+import { ShakeReporter } from '@/components/ShakeReporter';
 import { useFonts } from 'expo-font';
 
 cssInterop(LinearGradient, {
@@ -147,6 +148,7 @@ export default function RootLayout() {
 
           {/* Global Modals */}
           <OutOfCreditsModalWrapper />
+          <ShakeReporter />
 
           <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
         </ThemeProvider>
