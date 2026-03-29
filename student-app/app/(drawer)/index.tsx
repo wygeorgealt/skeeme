@@ -1,73 +1,63 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, ScrollView, RefreshControl, useColorScheme, StyleSheet } from 'react-native';
+import { View, ScrollView, RefreshControl, useColorScheme, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
-import { 
-    GraduationCap, MultiplePages, Activity, FireFlame, Trophy, 
-    NavArrowRight, Plus, Rocket, Book, Calendar, CheckCircle,
-    Crown, Flash, Menu, Sparks
-} from 'iconoir-react-native';
+import { GraduationCap, Activity, FireFlame, Trophy, MultiplePages } from 'iconoir-react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router, useNavigation } from 'expo-router';
+import { router } from 'expo-router';
 import { api } from '@/lib/api';
-
-const CameraIcon = (props: any) => <Ionicons name="camera-outline" size={props.width || 24} color={props.color} />;
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TutorialModal } from '@/components/ui/TutorialModal';
 import * as SecureStore from 'expo-secure-store';
-import { useEffect } from 'react';
+import { IosCard } from '@/components/ui/IosCard';
+import { IosPillButton } from '@/components/ui/IosPillButton';
+import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
+import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop, Circle } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 
-// ─── Sub-components use ONLY style props (no className) ────────────────────────
-// NativeWind's css-interop wraps components using className and tries to access
-// the navigation context, which can fail during render. Using style props avoids
-// this entirely.
+// ─── Quick action data ────────────────────────────────────────────────────────
+const QUICK_ACTIONS = [
+    { label: 'Quiz', icon: 'school-outline', route: '/generate', color: '#007AFF' },
+    { label: 'Flashcards', icon: 'albums-outline', route: '/flashcards', color: '#34C759' },
+    { label: 'History', icon: 'time-outline', route: '/history', color: '#FF9500' },
+    { label: 'Streak', icon: 'flame-outline', route: '/streak', color: '#FF3B30' },
+] as const;
 
-function StatCard({ label, value, icon: Icon, color, isDark }: any) {
-    return (
-        <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
-            <View style={[s.statIcon, { backgroundColor: `${color}15` }]}>
-                <Icon width={20} height={20} color={color} />
-            </View>
-            <Text style={[s.statValue, { color: isDark ? '#fff' : '#0f172a' }]}>{value}</Text>
-            <Text style={s.statLabel}>{label}</Text>
-        </View>
-    );
-}
-
-function WeeklyActivity({ data, isDark }: any) {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const values = days.map((_, i) => {
-        if (Array.isArray(data) && data[i]) {
-            return typeof data[i] === 'object' ? data[i].value || 0 : data[i];
-        }
-        return 0;
-    });
-    const max = Math.max(...values, 1);
+// ─── 7-Day Streak Calendar ───────────────────────────────────────────────────
+function StreakCalendar({ data, isDark }: { data: any[]; isDark: boolean }) {
+    const C = Colors[isDark ? 'dark' : 'light'];
+    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const todayIndex = (new Date().getDay() + 6) % 7; // Mon is 0
     
+    // Check for activity — if value > 0 then day is active
+    const isActive = (idx: number) => {
+        const val = data?.[idx];
+        return typeof val === 'number' ? val > 0 : typeof val === 'object' ? (val?.value ?? 0) > 0 : false;
+    };
+
     return (
-        <View style={s.weekRow}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 }}>
             {days.map((day, i) => {
-                const val = values[i];
-                const heightPct = Math.max((val / max) * 100, 6);
-                const isToday = new Date().getDay() === (i === 6 ? 0 : i + 1);
+                const active = isActive(i);
+                const isToday = i === todayIndex;
+                
                 return (
-                    <View key={i} style={s.weekCol}>
-                        <View style={s.weekBarWrap}>
-                            {val > 0 ? (
-                                <LinearGradient
-                                    colors={['#8B5CF6', '#6366F1']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 0, y: 1 }}
-                                    style={{ height: `${heightPct}%`, width: 8, borderRadius: 4, minHeight: 4 }}
-                                />
+                    <View key={i} style={{ alignItems: 'center', gap: 10 }}>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: isToday ? C.primary : C.textSecondary }}>{day}</Text>
+                        <View style={{
+                            width: 32, height: 32, borderRadius: 16,
+                            alignItems: 'center', justifyContent: 'center',
+                            backgroundColor: active ? C.primary : (isDark ? 'rgba(148,163,184,0.1)' : 'rgba(148,163,184,0.05)'),
+                            borderWidth: !active && isToday ? 2 : 0,
+                            borderColor: !active && isToday ? C.primary : 'transparent'
+                        }}>
+                            {active ? (
+                                <FireFlame width={16} height={16} color="#FFF" />
                             ) : (
-                                <View style={{ height: `${heightPct}%`, width: 8, borderRadius: 4, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', minHeight: 4 }} />
+                                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: C.textTertiary }} />
                             )}
                         </View>
-                        <Text style={[s.weekLabel, isToday ? (isDark ? s.textWhite : s.textSlate900) : s.textSlate400]}>{day[0]}</Text>
                     </View>
                 );
             })}
@@ -75,201 +65,24 @@ function WeeklyActivity({ data, isDark }: any) {
     );
 }
 
-function StreakCalendar({ activeDates, isLoading, isDark }: { activeDates: string[], isLoading: boolean, isDark: boolean }) {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const currentDay = today.getDate();
-    const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
-
-    const blanks = Array.from({ length: firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1 }, () => 0);
-    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    const grid = [...blanks, ...days];
-    const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-    if (isLoading) {
-        return (
-            <View>
-                <View style={s.calWeekHeader}>
-                    {weekDays.map((d, i) => (
-                        <View key={`wh-${i}`} style={s.calWeekDay}>
-                            <Text style={s.calWeekDayText}>{d}</Text>
-                        </View>
-                    ))}
-                </View>
-                <View style={s.calGrid}>
-                    {Array.from({ length: 14 }).map((_, i) => (
-                        <View key={`skel-${i}`} style={s.calCell}>
-                            <View style={[s.calCellInner, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f1f5f9' }]} />
-                        </View>
-                    ))}
-                </View>
-            </View>
-        );
-    }
-
-    const safeDates = activeDates || [];
-
-    return (
-        <View>
-            <View style={s.calWeekHeader}>
-                {weekDays.map((d, i) => (
-                    <View key={`wh-${i}`} style={s.calWeekDay}>
-                        <Text style={s.calWeekDayText}>{d}</Text>
-                    </View>
-                ))}
-            </View>
-            <View style={s.calGrid}>
-                {grid.map((d, idx) => {
-                    if (d === 0) return <View key={`blank-${idx}`} style={s.calCell} />;
-                    
-                    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                    const isActive = safeDates.includes(dateStr);
-                    const isToday = d === currentDay;
-                    const isFuture = d > currentDay;
-
-                    return (
-                        <View key={`day-${d}`} style={s.calCell}>
-                            {isActive ? (
-                                <LinearGradient
-                                    colors={['#8B5CF6', '#6366F1']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={s.calCellGradient}
-                                >
-                                    <Text style={s.calActiveText}>{d}</Text>
-                                </LinearGradient>
-                            ) : (
-                                <View style={[
-                                    s.calCellInner,
-                                    isToday && { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#EEF2FF', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : '#C7D2FE' },
-                                    !isToday && !isFuture && { backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc' },
-                                    isFuture && { opacity: 0.2 },
-                                ]}>
-                                    <Text style={[s.calDayText, 
-                                        isToday ? (isDark ? s.textWhite : s.textIndigo600)
-                                            : isFuture ? (isDark ? s.textSlate800 : s.textSlate300)
-                                            : (isDark ? s.textSlate600 : s.textSlate400)
-                                    ]}>{d}</Text>
-                                </View>
-                            )}
-                        </View>
-                    );
-                })}
-            </View>
-        </View>
-    );
-}
-
-// ─── Stylesheet ────────────────────────────────────────────────────────────────
-const s = StyleSheet.create({
-    // Stat card
-    statCard: { flex: 1, padding: 20, borderRadius: 28 },
-    statCardDark: { backgroundColor: '#13151B' },
-    statCardLight: { backgroundColor: 'rgba(255,255,255,0.8)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' },
-    statIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-    statValue: { fontSize: 24, fontWeight: '700', letterSpacing: -0.5, marginBottom: 4 },
-    statLabel: { color: '#94a3b8', fontWeight: '700', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5 },
-    // Weekly activity
-    weekRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 100, paddingHorizontal: 4 },
-    weekCol: { alignItems: 'center', flex: 1, gap: 8 },
-    weekBarWrap: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'flex-end' },
-    weekLabel: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase' },
-    // Calendar
-    calWeekHeader: { flexDirection: 'row', marginBottom: 12 },
-    calWeekDay: { flex: 1, alignItems: 'center' },
-    calWeekDayText: { fontSize: 10, fontWeight: '700', color: '#94a3b8' },
-    calGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-    calCell: { width: '14.28%', aspectRatio: 1, padding: 2 },
-    calCellInner: { flex: 1, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    calCellGradient: { flex: 1, width: '100%', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    calActiveText: { color: '#fff', fontWeight: '700', fontSize: 11 },
-    calDayText: { fontWeight: '700', fontSize: 11 },
-
-    flex1: { flex: 1 },
-    scrollContent: { paddingBottom: 40 },
-    heroRow: { paddingHorizontal: 24, paddingBottom: 32, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    heroSublabel: { fontSize: 14, fontWeight: '500', letterSpacing: 0.5, marginBottom: 8, opacity: 0.7 },
-    heroValueRow: { flexDirection: 'row', alignItems: 'center' },
-    heroValue: { fontSize: 48, fontWeight: '700', letterSpacing: -1 },
-    heroValueUnlimited: { fontSize: 40, fontWeight: '700', letterSpacing: -1 },
-    mr8: { marginRight: 8 },
-    heroActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    upgradeBtn: { height: 40, paddingHorizontal: 14, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-    upgradeBtnText: { color: '#fff', fontWeight: '700', fontSize: 12, marginLeft: 6 },
-    menuBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
-    bgWhite60: { backgroundColor: 'rgba(255,255,255,0.6)' },
-
-    quickActionsRow: { paddingHorizontal: 32, paddingBottom: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    quickActionWrap: { alignItems: 'center' },
-    quickActionIconBox: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginBottom: 10, borderWidth: 1, borderColor: 'rgba(139,92,246,0.15)' },
-    quickActionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: -0.3, color: '#94a3b8' },
-
-    bottomHalf: { flex: 1, borderTopLeftRadius: 40, borderTopRightRadius: 40, paddingTop: 40, paddingHorizontal: 24, minHeight: 600, paddingBottom: 48 },
-    bgBlack: { backgroundColor: '#090A0F' },
-    bgWhiteTrans: { backgroundColor: 'rgba(255,255,255,0.4)' },
-    statsGrid: { flexDirection: 'row', gap: 16, marginBottom: 32 },
-    card: { padding: 24, borderRadius: 32, marginBottom: 32 },
-    bgGrayDark: { backgroundColor: '#13151B' },
-    cardLight: { backgroundColor: 'rgba(255,255,255,0.8)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-    cardTitle: { fontSize: 16, fontWeight: '700' },
-    cardSubtitle: { color: '#94a3b8', fontSize: 11, fontWeight: '500', marginTop: 2 },
-
-    streakSection: { marginBottom: 32 },
-    sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 20 },
-    streakRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-    streakInfo: { flexDirection: 'row', alignItems: 'center' },
-    streakIconBox: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-    streakLabel: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
-    streakSubtitle: { fontSize: 11, color: '#94a3b8' },
-    streakBadge: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 },
-    streakBadgeText: { fontSize: 13, fontWeight: '900' },
-    bgIndigo50: { backgroundColor: '#EEF2FF' },
-    bgAmber50: { backgroundColor: '#FFFBEB' },
-    bgWhite5: { backgroundColor: 'rgba(255,255,255,0.05)' },
-    textIndigo600: { color: '#4F46E5' },
-    textAmber600: { color: '#D97706' },
-
-    textWhite: { color: 'white' },
-    textWhite60: { color: 'rgba(255,255,255,0.6)' },
-    textSlate900: { color: '#0f172a' },
-    textSlate800: { color: '#1e293b' },
-    textSlate600: { color: '#475569' },
-    textSlate500: { color: '#64748b' },
-    textSlate400: { color: '#94a3b8' },
-    textSlate300: { color: '#cbd5e1' },
-    textIndigo600_alt: { color: '#4F46E5' },
-});
-
-// ─── Main Dashboard ────────────────────────────────────────────────────────────
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 export default function DashboardScreen() {
     const { user, updateUser } = useAuthStore();
     const [refreshing, setRefreshing] = useState(false);
     const [tutorialVisible, setTutorialVisible] = useState(false);
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
-    const isFreePlan = !user?.is_unlimited && (!user?.plan_name || user?.plan_name === 'free');
-    const navigation = useNavigation() as any;
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
     const queryClient = useQueryClient();
 
-    useEffect(() => {
-        const checkTutorial = async () => {
-            const hasSeen = await SecureStore.getItemAsync('tutorial_seen');
-            if (!hasSeen) {
-                setTutorialVisible(true);
-            }
-        };
-        checkTutorial();
-    }, []);
+    const isFreePlan = !user?.is_unlimited && (!user?.plan_name || user?.plan_name === 'free');
 
-    const handleDismissTutorial = async () => {
-        setTutorialVisible(false);
-        await SecureStore.setItemAsync('tutorial_seen', 'true');
-    };
+    useEffect(() => {
+        SecureStore.getItemAsync('tutorial_seen').then((seen) => {
+            if (!seen) setTutorialVisible(true);
+        });
+    }, []);
 
     const { data: heatmapDates = [], isLoading: isLoadingHeatmap } = useQuery({
         queryKey: ['streak-heatmap'],
@@ -299,10 +112,8 @@ export default function DashboardScreen() {
         try {
             await Promise.all([
                 queryClient.refetchQueries({ queryKey: ['me'] }),
-                queryClient.refetchQueries({ queryKey: ['streak-heatmap'] })
+                queryClient.refetchQueries({ queryKey: ['streak-heatmap'] }),
             ]);
-        } catch (error) {
-            console.error('Refresh failed:', error);
         } finally {
             setRefreshing(false);
         }
@@ -310,167 +121,180 @@ export default function DashboardScreen() {
 
     if (!user) return null;
 
-    const availableBalanceLabel = isDark ? s.textWhite60 : s.textSlate500;
-    const availableBalanceValue = isDark ? s.textWhite : s.textSlate900;
+    const greeting = () => {
+        const h = new Date().getHours();
+        if (h < 12) return 'Good morning';
+        if (h < 18) return 'Good afternoon';
+        return 'Good evening';
+    };
 
     return (
-        <GlowBackground>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             <ScrollView
-                style={s.flex1}
-                contentContainerStyle={[s.scrollContent, { paddingTop: Math.max(insets.top, 16) }]}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" colors={['#8B5CF6']} />}
+                contentContainerStyle={[s.scroll, { paddingTop: insets.top + Spacing.sm, paddingBottom: 120 }]}
                 showsVerticalScrollIndicator={false}
-                bounces={true}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={C.primary}
+                        colors={[C.primary]}
+                    />
+                }
             >
-                {/* TOP HERO SECTION */}
-                <View style={s.heroRow}>
-                    <View>
-                        <Text style={[s.heroSublabel, availableBalanceLabel]}>
-                            Available Balance
-                        </Text>
-                        <View style={s.heroValueRow}>
-                            {user.is_unlimited ? (
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Sparks width={28} height={28} color="#8B5CF6" style={s.mr8} />
-                                    <Text style={[s.heroValueUnlimited, availableBalanceValue]}>
-                                        Unlimited
-                                    </Text>
-                                </View>
-                            ) : (
-                                <Text style={[s.heroValue, availableBalanceValue]}>
-                                    {user.credits.toLocaleString()}
-                                </Text>
-                            )}
-                        </View>
-                    </View>
-                    <View style={s.heroActions}>
-                        {isFreePlan && (
-                            <TouchableOpacity onPress={() => router.push('/upgrade')} activeOpacity={0.8}>
-                                    <LinearGradient
-                                        colors={['#8B5CF6', '#6366F1']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                        style={s.upgradeBtn}
-                                    >
-                                        <Crown width={16} height={16} color="white" />
-                                        <Text style={s.upgradeBtnText}>Upgrade</Text>
-                                    </LinearGradient>
-                            </TouchableOpacity>
-                        )}
-                        <TouchableOpacity 
-                            onPress={() => navigation.openDrawer()} 
-                            activeOpacity={0.7}
-                            accessibilityRole="button"
-                            accessibilityLabel="Open Menu"
-                            style={[s.menuBtn, isDark ? s.bgWhite10 : s.bgWhite60]}
-                        >
-                            <Menu width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* QUICK ACTIONS */}
-                <View style={s.quickActionsRow}>
-                    {[
-                        { title: 'Scan', icon: CameraIcon, route: '/scan' },
-                        { title: 'Quiz', icon: GraduationCap, route: '/generate' },
-                        { title: 'Flashcards', icon: MultiplePages, route: '/flashcards' },
-                        { title: 'History', icon: Activity, route: '/history' },
-                    ].map((tool, idx) => (
-                        <View key={idx} style={s.quickActionWrap}>
-                            <TouchableOpacity onPress={() => router.push(tool.route as any)} activeOpacity={0.8}>
-                                <LinearGradient
-                                    colors={isDark ? ['rgba(139,92,246,0.2)', 'rgba(99,102,241,0.1)'] : ['rgba(139,92,246,0.08)', 'rgba(99,102,241,0.04)']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={s.quickActionIconBox}
-                                >
-                                    <tool.icon width={24} height={24} color={isDark ? '#C4B5FD' : '#7C3AED'} strokeWidth={1.5} />
-                                </LinearGradient>
-                            </TouchableOpacity>
-                            <Text style={s.quickActionLabel}>
-                                {tool.title}
+                {/* ── Hero Card: Balance & Quick Actions ── */}
+                <IosCard style={s.heroCard} padding="lg">
+                    <View style={s.heroTop}>
+                        <View>
+                            <Text style={[s.heroLabel, { color: C.textSecondary }]}>Available Balance</Text>
+                            <Text style={[s.heroValue, { color: C.text }]}>
+                                {user.is_unlimited ? '∞' : user.credits?.toLocaleString() ?? '0'}
                             </Text>
                         </View>
-                    ))}
+                        <View style={s.heroActions}>
+                            <TouchableOpacity 
+                                onPress={() => router.push('/upgrade')}
+                                style={[s.upgradePill, { backgroundColor: C.primary }]}
+                            >
+                                <Ionicons name="sparkles" size={14} color="#FFF" />
+                                <Text style={s.upgradeText}>Upgrade</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[s.menuCircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E5E5EA' }]}>
+                                <Ionicons name="reorder-two" size={20} color={C.text} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={s.quickRow}>
+                        {QUICK_ACTIONS.map((action) => (
+                            <TouchableOpacity
+                                key={action.route}
+                                onPress={() => router.push(action.route)}
+                                activeOpacity={0.7}
+                                style={s.quickItem}
+                            >
+                                <View style={[s.quickIcon, { backgroundColor: action.color + '12' }]}>
+                                    <View style={[styles.innerCircle, { backgroundColor: action.color + '10' }]}>
+                                        <Ionicons name={action.icon as any} size={22} color={action.color} />
+                                    </View>
+                                </View>
+                                <Text style={[s.quickLabel, { color: C.textSecondary }]}>{action.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </IosCard>
+
+                {/* ── Stats Row ── */}
+                <View style={s.statsRow}>
+                    <IosCard style={{ flex: 1 }} padding="md">
+                        <View style={[s.statIconBox, { backgroundColor: '#FFD60A15' }]}>
+                            <Ionicons name="flash" size={16} color="#FFD60A" />
+                        </View>
+                        <Text style={[s.statNum, { color: C.text }]}>{user.credits_spent_this_week ?? 0}</Text>
+                        <Text style={[s.statDesc, { color: C.textSecondary }]}>Credits Spent</Text>
+                    </IosCard>
+                    <IosCard style={{ flex: 1 }} padding="md">
+                        <View style={[s.statIconBox, { backgroundColor: '#007AFF15' }]}>
+                            <GraduationCap width={16} height={16} color="#007AFF" />
+                        </View>
+                        <Text style={[s.statNum, { color: C.text }]}>{user.study_sessions_this_week ?? 0}</Text>
+                        <Text style={[s.statDesc, { color: C.textSecondary }]}>Study Sessions</Text>
+                    </IosCard>
                 </View>
 
-                {/* BOTTOM HALF */}
-                <View style={[s.bottomHalf, isDark ? s.bgBlack : s.bgWhiteTrans]}>
-                    
-                    {/* Stats */}
-                    <View style={s.statsGrid}>
-                        <StatCard label="Credits Spent" value={user.credits_spent_this_week || 0} icon={Flash} color="#f59e0b" isDark={isDark} />
-                        <StatCard label="Study Sessions" value={user.study_sessions_this_week || 0} icon={GraduationCap} color="#8B5CF6" isDark={isDark} />
-                    </View>
-
-                    {/* Weekly Activity */}
-                    <View style={[s.card, isDark ? s.bgGrayDark : s.cardLight]}>
-                        <View style={s.cardHeader}>
-                            <View>
-                                <Text style={[s.cardTitle, isDark ? s.textWhite : s.textSlate900]}>Weekly Activity</Text>
-                                <Text style={s.cardSubtitle}>Your study momentum</Text>
-                            </View>
-                            <Activity width={18} height={18} color="#8B5CF6" />
+                {/* ── Weekly Activity (Streak Calendar) ── */}
+                <IosCard padding="lg" style={{ marginBottom: Spacing.lg }}>
+                    <View style={s.activityHeader}>
+                        <View>
+                            <Text style={[s.activityTitle, { color: C.text }]}>Weekly Activity</Text>
+                            <Text style={[s.activitySub, { color: C.textSecondary }]}>Your study momentum</Text>
                         </View>
-                        <WeeklyActivity data={user.weekly_activity_points || []} isDark={isDark} />
+                        <Activity color={C.primary} width={20} height={20} />
                     </View>
+                    <View style={{ height: 10 }} />
+                    <StreakCalendar data={user.weekly_activity_points ?? []} isDark={isDark} />
+                    <View style={{ height: 10 }} />
+                </IosCard>
 
-                    {/* Streaks */}
-                    <View style={s.streakSection}>
-                        <Text style={[s.sectionTitle, isDark ? s.textWhite : s.textSlate900]}>Streaks</Text>
-                        
-                        <TouchableOpacity onPress={() => router.push('/streak')} activeOpacity={0.7} style={s.streakRow}>
-                            <View style={s.streakInfo}>
-                                <View style={[s.streakIconBox, isDark ? s.bgGrayDark : s.cardLight]}>
-                                    <FireFlame width={18} height={18} color="#8B5CF6" />
-                                </View>
-                                <View>
-                                    <Text style={[s.streakLabel, isDark ? s.textWhite : s.textSlate900]}>Current Streak</Text>
-                                    <Text style={s.streakSubtitle}>Keep the fire alive</Text>
-                                </View>
-                            </View>
-                            <View style={[s.streakBadge, isDark ? s.bgWhite5 : s.bgIndigo50]}>
-                                <Text style={[s.streakBadgeText, isDark ? s.textWhite : s.textIndigo600]}>
-                                    {user.streak?.current_streak || 0}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity onPress={() => router.push('/streak')} activeOpacity={0.7} style={s.streakRow}>
-                            <View style={s.streakInfo}>
-                                <View style={[s.streakIconBox, isDark ? s.bgGrayDark : s.cardLight]}>
-                                    <Trophy width={18} height={18} color="#f59e0b" />
-                                </View>
-                                <View>
-                                    <Text style={[s.streakLabel, isDark ? s.textWhite : s.textSlate900]}>Longest Streak</Text>
-                                    <Text style={s.streakSubtitle}>Your personal best</Text>
-                                </View>
-                            </View>
-                            <View style={[s.streakBadge, isDark ? s.bgWhite5 : s.bgAmber50]}>
-                                <Text style={[s.streakBadgeText, isDark ? s.textWhite : s.textAmber600]}>
-                                    {user.streak?.longest_streak || 0}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Activity Calendar */}
-                    <View style={[s.card, isDark ? s.bgGrayDark : s.cardLight]}>
-                        <View style={s.cardHeader}>
-                            <View>
-                                <Text style={[s.cardTitle, isDark ? s.textWhite : s.textSlate900]}>Activity Calendar</Text>
-                                <Text style={s.cardSubtitle}>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</Text>
-                            </View>
-                        </View>
-                        <StreakCalendar activeDates={heatmapDates} isLoading={isLoadingHeatmap} isDark={isDark} />
-                    </View>
+                {/* ── Streaks Header ── */}
+                <View style={{ paddingHorizontal: 4, marginBottom: Spacing.sm }}>
+                    <Text style={[s.sectionTitle, { color: C.text }]}>Streaks</Text>
                 </View>
+
+                <IosCard padding="none" style={{ marginBottom: Spacing.lg }}>
+                    <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.7}>
+                        <View style={[s.streakIcon, { backgroundColor: '#FF3B3015' }]}>
+                            <FireFlame width={18} height={18} color="#FF3B30" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={[s.streakTitle, { color: C.text }]}>Current Streak</Text>
+                            <Text style={[s.streakSub, { color: C.textSecondary }]}>Keep the fire alive</Text>
+                        </View>
+                        <Text style={[s.streakCount, { color: C.text }]}>{user.streak?.current_streak ?? 0}</Text>
+                        <Ionicons name="chevron-forward" size={16} color={C.textTertiary} style={{ marginLeft: 4 }} />
+                    </TouchableOpacity>
+                    <View style={[s.divider, { backgroundColor: C.separator }]} />
+                    <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.7}>
+                        <View style={[s.streakIcon, { backgroundColor: '#FF950015' }]}>
+                            <Trophy width={18} height={18} color="#FF9500" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={[s.streakTitle, { color: C.text }]}>Longest Streak</Text>
+                            <Text style={[s.streakSub, { color: C.textSecondary }]}>Your personal best</Text>
+                        </View>
+                        <Text style={[s.streakCount, { color: C.text }]}>{user.streak?.longest_streak ?? 0}</Text>
+                        <Ionicons name="chevron-forward" size={16} color={C.textTertiary} style={{ marginLeft: 4 }} />
+                    </TouchableOpacity>
+                </IosCard>
             </ScrollView>
-            <TutorialModal 
-                visible={tutorialVisible} 
-                onDismiss={handleDismissTutorial} 
+
+            <TutorialModal
+                visible={tutorialVisible}
+                onDismiss={async () => {
+                    setTutorialVisible(false);
+                    await SecureStore.setItemAsync('tutorial_seen', 'true');
+                }}
             />
-        </GlowBackground>
+        </View>
     );
 }
+
+const s = StyleSheet.create({
+    scroll: { paddingHorizontal: Spacing.md, gap: 0 },
+    
+    heroCard: { marginBottom: Spacing.md, marginTop: Spacing.sm },
+    heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 },
+    heroLabel: { fontSize: 13, fontWeight: '500', marginBottom: 4 },
+    heroValue: { fontSize: 44, fontWeight: '700', letterSpacing: -1 },
+    heroActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+    upgradePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, gap: 6 },
+    upgradeText: { color: '#FFF', fontSize: 13, fontWeight: '700' },
+    menuCircle: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+
+    quickRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 },
+    quickItem: { alignItems: 'center', gap: 8 },
+    quickIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+    quickLabel: { fontSize: 11, fontWeight: '600' },
+
+    statsRow: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.md },
+    statIconBox: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    statNum: { fontSize: 28, fontWeight: '700', marginBottom: 2 },
+    statDesc: { fontSize: 13, fontWeight: '500' },
+
+    activityHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+    activityTitle: { fontSize: 17, fontWeight: '700', marginBottom: 2 },
+    activitySub: { fontSize: 13, fontWeight: '500' },
+
+    sectionTitle: { fontSize: 20, fontWeight: '700', marginTop: 8 },
+
+    streakRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, gap: Spacing.sm },
+    streakIcon: { width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
+    streakTitle: { fontSize: FontSize.subhead, fontWeight: '600' },
+    streakSub: { fontSize: FontSize.caption1, marginTop: 2 },
+    streakCount: { fontSize: FontSize.title3, fontWeight: '700' },
+    divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.md },
+});
+
+const styles = StyleSheet.create({
+    innerCircle: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+});

@@ -1,25 +1,21 @@
 import { Text } from '@/components/ui/Text';
 import { View, ScrollView, TouchableOpacity, useColorScheme, ActivityIndicator, Platform, StyleSheet } from 'react-native';
-import { Stack, router, useNavigation } from 'expo-router';
-import { Menu, Snow, NavArrowLeft, Sparks, CheckCircle, GraduationCap, Book, Medal, Suitcase } from 'iconoir-react-native';
+import { Stack, router } from 'expo-router';
+import { Snow, NavArrowLeft, Sparks, CheckCircle, GraduationCap, Book, Medal, Suitcase } from 'iconoir-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useState, useEffect, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import * as Sharing from 'expo-sharing';
 import { ShareCard } from '@/components/ui/ShareCard';
+import { Colors } from '@/constants/theme';
 
 export default function StreakScreen() {
     const { user } = useAuthStore();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const navigation = useNavigation() as any;
+    const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
-    const bgColor = isDark ? "#0f0f11" : "#fafafa";
-    const tintColor = isDark ? '#ffffff' : '#0f172a';
-    const cardBg = isDark ? "#161618" : "#ffffff";
-    const borderColor = isDark ? "border-slate-800" : "border-slate-200";
 
     // Milestones
     const current = user?.streak?.current_streak || 0;
@@ -75,20 +71,16 @@ export default function StreakScreen() {
     const borderColorClass = isDark ? 'border-transparent' : 'border-slate-100 shadow-sm';
 
     return (
-        <GlowBackground>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             <Stack.Screen options={{ headerShown: false }} />
             <ShareCard type="streak" data={{ current_streak: current }} viewShotRef={viewShotRef} />
 
-            {/* Header with drawer toggle */}
             <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
-                <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>Streak</Text>
-                <TouchableOpacity
-                    onPress={() => navigation.openDrawer()}
-                    activeOpacity={0.7}
-                    style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
-                >
-                    <Menu width={20} height={20} color={isDark ? 'white' : 'black'} />
+                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
+                    <NavArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
+                <Text style={[s.headerTitle, { color: C.text }]}>Streak</Text>
+                <View style={{ width: 44 }} />
             </View>
 
             <ScrollView style={s.scrollView} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
@@ -117,8 +109,8 @@ export default function StreakScreen() {
                         activeOpacity={0.8}
                         style={[s.shareBtn, isDark ? s.bgWhite10 : s.bgWhite]}
                     >
-                        <Sparks width={18} height={18} color={isDark ? '#C4B5FD' : '#8B5CF6'} style={{ marginRight: 8 }} />
-                        <Text style={[s.shareBtnText, isDark ? s.textWhite : s.textIndigo600]}>Share Milestone</Text>
+                        <Sparks width={18} height={18} color={C.primary} style={{ marginRight: 8 }} />
+                        <Text style={[s.shareBtnText, { color: C.primary }]}>Share Milestone</Text>
                     </TouchableOpacity>
                 )}
 
@@ -130,14 +122,14 @@ export default function StreakScreen() {
                 ]}>
                     <View style={s.protectionHeader}>
                         <View style={[s.protectionIconBox, isDark ? s.protectionIconBoxDark : s.protectionIconBoxLight]}>
-                            <Snow width={18} height={18} color="#6366f1" />
+                            <Snow width={18} height={18} color={C.primary} />
                         </View>
                         {!isElite ? (
                             <View style={[s.badge, isDark ? s.badgeDark : s.badgeLight]}>
                                 <Text style={[s.badgeText, isDark ? s.textSlate950 : s.textWhite]}>Elite Feature</Text>
                             </View>
                         ) : loadingFreezes ? (
-                            <ActivityIndicator size="small" color="#6366f1" />
+                            <ActivityIndicator size="small" color={C.primary} />
                         ) : (
                             <View style={s.freezeAvailableBadge}>
                                 <Text style={s.freezeAvailableText}>{freezesLeft} Available</Text>
@@ -151,8 +143,8 @@ export default function StreakScreen() {
                     
                     {!isElite && (
                         <TouchableOpacity 
-                            onPress={() => router.push('/upgrade')} 
-                            style={s.upgradeBtn} 
+                            onPress={() => router.push('/upgrade' as any)} 
+                            style={[s.upgradeBtn, { backgroundColor: C.primary }]} 
                             activeOpacity={0.9}
                         >
                             <Text style={s.upgradeBtnText}>Get Streak Protection</Text>
@@ -171,8 +163,8 @@ export default function StreakScreen() {
                             <View key={i} style={[s.milestoneRow, i === milestones.length - 1 ? s.lastMilestone : null]}>
                                 <View style={s.milestoneHeader}>
                                     <View>
-                                        <Text style={[s.milestoneTitle, isDark ? s.textWhite : s.textSlate900]}>{m.title}</Text>
-                                        <Text style={s.milestoneReward}>{m.reward}</Text>
+                                        <Text style={[s.milestoneTitle, { color: C.text }]}>{m.title}</Text>
+                                        <Text style={[s.milestoneReward, { color: C.primary }]}>{m.reward}</Text>
                                     </View>
                                     <Text style={s.milestoneProgressText}>{current} / {m.target}</Text>
                                 </View>
@@ -190,7 +182,7 @@ export default function StreakScreen() {
                     })}
                 </View>
             </ScrollView>
-        </GlowBackground>
+        </View>
     );
 }
 
@@ -211,7 +203,7 @@ const s = StyleSheet.create({
     statValue: { fontSize: 36, fontWeight: '700', letterSpacing: -1.5 },
     statUnit: { fontSize: 11, fontWeight: '700', color: '#94a3b8', marginLeft: 6, textTransform: 'uppercase' },
 
-    shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 20, marginBottom: 32, borderWidth: 1, borderColor: 'rgba(139,92,246,0.1)' },
+    shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 20, marginBottom: 32, borderWidth: 1, borderColor: 'rgba(0,122,255,0.1)' },
     shareBtnText: { fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
 
     sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 20, marginLeft: 4 },
@@ -224,14 +216,14 @@ const s = StyleSheet.create({
     textIndigo600: { color: '#4F46E5' },
 
     protectionCard: { padding: 24, borderRadius: 24, borderWidth: 1, marginBottom: 32 },
-    protectionEliteDark: { backgroundColor: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)' },
-    protectionEliteLight: { backgroundColor: '#F5F3FF', borderColor: '#E0E7FF' },
+    protectionEliteDark: { backgroundColor: 'rgba(0,122,255,0.1)', borderColor: 'rgba(0,122,255,0.2)' },
+    protectionEliteLight: { backgroundColor: 'rgba(0,122,255,0.05)', borderColor: 'rgba(0,122,255,0.1)' },
     protectionBasicDark: { backgroundColor: '#13151B', borderColor: 'transparent' },
     protectionBasicLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
     protectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
     protectionIconBox: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    protectionIconBoxDark: { backgroundColor: 'rgba(99,102,241,0.2)' },
-    protectionIconBoxLight: { backgroundColor: '#EEF2FF' },
+    protectionIconBoxDark: { backgroundColor: 'rgba(0,122,255,0.2)' },
+    protectionIconBoxLight: { backgroundColor: 'rgba(0,122,255,0.1)' },
     badge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
     badgeDark: { backgroundColor: 'white' },
     badgeLight: { backgroundColor: '#0f172a' },
@@ -241,7 +233,7 @@ const s = StyleSheet.create({
     freezeAvailableText: { color: '#10B981', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5 },
     protectionTitle: { fontSize: 20, fontWeight: '700', letterSpacing: -0.5, marginBottom: 8 },
     protectionDesc: { color: '#64748b', fontWeight: '500', fontSize: 14, lineHeight: 22, marginBottom: 24 },
-    upgradeBtn: { height: 48, backgroundColor: '#8B5CF6', borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    upgradeBtn: { height: 48, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
     upgradeBtnText: { color: 'white', fontWeight: '700', fontSize: 15 },
 
     achievementCard: { borderRadius: 24, padding: 24, borderWidth: 1 },
@@ -249,13 +241,13 @@ const s = StyleSheet.create({
     lastMilestone: { marginBottom: 8 },
     milestoneHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
     milestoneTitle: { fontSize: 15, fontWeight: '700', letterSpacing: -0.3 },
-    milestoneReward: { color: '#8B5CF6', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 },
+    milestoneReward: { fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 },
     milestoneProgressText: { color: '#94a3b8', fontWeight: '700', fontSize: 11, letterSpacing: -0.5, marginTop: 4 },
     progressBarBg: { height: 6, borderRadius: 999, overflow: 'hidden' },
     progressBarBgDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
     progressBarBgLight: { backgroundColor: '#F1F5F9' },
     progressBarFill: { height: '100%', borderRadius: 999 },
-    progressBarFilled: { backgroundColor: '#8B5CF6' },
-    progressBarEmptyDark: { backgroundColor: 'rgba(139,92,246,0.2)' },
-    progressBarEmptyLight: { backgroundColor: 'rgba(139,92,246,0.3)' },
+    progressBarFilled: { backgroundColor: '#007AFF' },
+    progressBarEmptyDark: { backgroundColor: 'rgba(0,122,255,0.2)' },
+    progressBarEmptyLight: { backgroundColor: 'rgba(0,122,255,0.2)' },
 });

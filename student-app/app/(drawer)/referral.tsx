@@ -1,20 +1,18 @@
 import { Text } from '@/components/ui/Text';
 import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, useColorScheme, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
-import { router, useNavigation } from 'expo-router';
-import { Menu, Gift } from 'iconoir-react-native';
+import { router } from 'expo-router';
+import { NavArrowLeft, Gift } from 'iconoir-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useState, useEffect } from 'react';
-import { GlowBackground } from '@/components/ui/GlowBackground';
+import { Colors } from '@/constants/theme';
 
 export default function ReferralScreen() {
     const { user, updateUser } = useAuthStore();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const navigation = useNavigation() as any;
-    const bgColor = isDark ? '#121212' : '#ffffff';
-    const tintColor = isDark ? '#ffffff' : '#121212';
+    const C = Colors[isDark ? 'dark' : 'light'];
     
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
@@ -51,22 +49,19 @@ export default function ReferralScreen() {
     };
 
     return (
-        <GlowBackground isRoot={true}>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            {/* Header with drawer toggle */}
+            {/* Header */}
             <View style={s.header}>
-                <View style={s.headerTextContainer}>
-                    <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>Rewards</Text>
-                    <Text style={s.headerSubtitle}>Redeem codes or invite classmates to earn learning credits.</Text>
-                </View>
-                <TouchableOpacity
-                    onPress={() => navigation.openDrawer()}
-                    activeOpacity={0.7}
-                    style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
-                >
-                    <Menu width={20} height={20} color={isDark ? 'white' : 'black'} />
+                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
+                    <NavArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
+                <View style={s.headerTextContainer}>
+                    <Text style={[s.headerTitle, { color: C.text }]}>Rewards</Text>
+                    <Text style={[s.headerSubtitle, { color: C.textSecondary }]}>Redeem codes or invite classmates to earn learning credits.</Text>
+                </View>
+                <View style={{ width: 44 }} />
             </View>
 
             <ScrollView style={s.scrollView} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
@@ -74,9 +69,9 @@ export default function ReferralScreen() {
                 {/* Redeem Section */}
                 <View style={[s.sectionCard, isDark ? s.sectionCardDark : s.sectionCardLight]}>
                     <View style={s.iconBox}>
-                        <Gift width={18} height={18} color="#8B5CF6" />
+                        <Gift width={18} height={18} color={C.primary} />
                     </View>
-                    <Text style={[s.sectionTitle, isDark ? s.textWhite : s.textSlate900]}>Redeem an Invitation</Text>
+                    <Text style={[s.sectionTitle, { color: C.text }]}>Redeem an Invitation</Text>
                     <Text style={s.sectionDesc}>
                         Enter a friend's referral code to instantly claim 100 bonus credits.
                     </Text>
@@ -104,7 +99,7 @@ export default function ReferralScreen() {
                 {/* My Code Section */}
                 <View style={s.statsSection}>
                     <Text style={s.sectionLabel}>Your Network</Text>
-                    <View style={s.codeCard}>
+                    <View style={[s.codeCard, { backgroundColor: C.primary }]}>
                         <View style={s.codeHeader}>
                             <Text style={s.codeLabel}>Referral Code</Text>
                             {loadingStats ? (
@@ -136,15 +131,15 @@ export default function ReferralScreen() {
                 </View>
 
             </ScrollView>
-        </GlowBackground>
+        </View>
     );
 }
 
 const s = StyleSheet.create({
     header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    headerTextContainer: { flex: 1, paddingRight: 16 },
+    headerTextContainer: { flex: 1, paddingHorizontal: 16, alignItems: 'center' },
     headerTitle: { fontSize: 26, fontWeight: '700', letterSpacing: -1 },
-    headerSubtitle: { color: '#64748b', fontWeight: '500', fontSize: 13, marginTop: 4 },
+    headerSubtitle: { fontWeight: '500', fontSize: 13, marginTop: 4, textAlign: 'center' },
     menuBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
     menuBtnLight: { backgroundColor: '#F1F5F9' },
@@ -152,10 +147,10 @@ const s = StyleSheet.create({
     scrollView: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
     
     sectionCard: { borderRadius: 24, padding: 24, borderWidth: 1, marginBottom: 32 },
-    sectionCardDark: { backgroundColor: '#13151B', borderColor: 'transparent' },
+    sectionCardDark: { backgroundColor: '#1C1C1E', borderColor: 'transparent' },
     sectionCardLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
     
-    iconBox: { backgroundColor: 'rgba(139,92,246,0.1)', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    iconBox: { backgroundColor: 'rgba(0,122,255,0.1)', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
     sectionTitle: { fontSize: 22, fontWeight: '700', marginBottom: 12, letterSpacing: -0.5 },
     sectionDesc: { color: '#64748b', fontWeight: '500', fontSize: 13, lineHeight: 20, marginBottom: 24 },
     
@@ -165,7 +160,7 @@ const s = StyleSheet.create({
     textInputLight: { backgroundColor: '#F8FAFC', borderColor: '#F1F5F9', color: '#0f172a' },
     
     claimBtn: { width: 80, height: 52, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-    claimBtnActive: { backgroundColor: '#8B5CF6' },
+    claimBtnActive: { backgroundColor: '#007AFF' },
     claimBtnLight: { backgroundColor: '#CBD5E1' },
     claimBtnDark: { backgroundColor: '#334155' },
     claimBtnText: { color: 'white', fontWeight: '700' },
@@ -173,7 +168,7 @@ const s = StyleSheet.create({
     statsSection: { marginBottom: 32 },
     sectionLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 20, marginLeft: 4 },
     
-    codeCard: { backgroundColor: '#8B5CF6', borderRadius: 24, padding: 32 },
+    codeCard: { borderRadius: 24, padding: 32 },
     codeHeader: { alignItems: 'center', marginBottom: 32 },
     codeLabel: { color: 'rgba(255,255,255,0.6)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2, fontSize: 11, marginBottom: 16 },
     codeValue: { color: 'white', fontWeight: '900', fontSize: 32, letterSpacing: 4 },

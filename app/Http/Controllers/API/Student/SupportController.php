@@ -35,9 +35,9 @@ class SupportController extends Controller
                 'user_id' => $user->id,
                 'title' => 'Mobile App Support: ' . \Illuminate\Support\Str::limit($request->message, 50),
                 'description' => $request->message,
-                'priority' => 'normal',
+                'priority' => 'medium',
                 'status' => 'open',
-                'category' => 'app_support',
+                'category' => 'other',
             ]);
  
             Mail::raw($content, function ($msg) use ($user, $recipient) {

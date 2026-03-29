@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-    View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView,
+    View, TextInput, TouchableOpacity, KeyboardAvoidingView,
     Platform, ActivityIndicator, useColorScheme, StyleSheet, ScrollView, Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -8,13 +8,15 @@ import { StatusBar } from 'expo-status-bar';
 import { NavArrowLeft, Mail } from 'iconoir-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors, Spacing, Radius } from '@/constants/theme';
+import { Text } from '@/components/ui/Text';
 
 export default function SupportScreen() {
     const router = useRouter();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const { user } = useAuthStore();
     const insets = useSafeAreaInsets();
 
@@ -47,107 +49,98 @@ export default function SupportScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1 }}
+            style={{ flex: 1, backgroundColor: C.background }}
         >
-            <GlowBackground>
-                {/* Header */}
-                <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        activeOpacity={0.7}
-                        style={[s.backBtn, isDark ? s.backBtnDark : s.backBtnLight]}
-                        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                    >
-                        <NavArrowLeft width={24} height={24} color={isDark ? '#fff' : '#000'} />
-                    </TouchableOpacity>
-                    <Text style={[s.headerTitle, { color: isDark ? '#fff' : '#0f172a' }]}>Contact Support</Text>
-                    <View style={{ width: 40 }} />
-                </View>
-
-                <ScrollView
-                    style={{ flex: 1 }}
-                    contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 60 }}
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator={false}
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            
+            {/* Header */}
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
+                <TouchableOpacity
+                    onPress={() => router.back()}
+                    activeOpacity={0.7}
+                    style={[s.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}
                 >
-                    <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>
-                        How can we help?
-                    </Text>
-                    <Text style={[s.heroSubtitle, isDark ? s.textSlate400 : s.textSlate500]}>
-                        Describe the issue or feedback below. We will reply to your registered email address.
-                    </Text>
+                    <NavArrowLeft width={24} height={24} color={C.text} />
+                </TouchableOpacity>
+                <Text style={[s.headerTitle, { color: C.text }]}>Support</Text>
+                <View style={{ width: 44 }} />
+            </View>
 
-                    <View style={[s.card, isDark ? s.cardDark : s.cardLight]}>
-                        <View style={s.userInfoBadge}>
-                            <Text style={s.userInfoText}>
-                                Sending as <Text style={{ fontWeight: '700' }}>{user?.name || 'User'}</Text> ({user?.email || 'No email'})
-                            </Text>
-                        </View>
+            <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 60 }}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                <Text style={[s.heroTitle, { color: C.text }]}>
+                    How can we help?
+                </Text>
+                <Text style={[s.heroSubtitle, { color: C.textSecondary }]}>
+                    Describe the issue or feedback below. We will reply to your registered email address.
+                </Text>
 
-                        <Text style={s.inputLabel}>What Happened?</Text>
-                        <TextInput
-                            style={[
-                                s.textArea,
-                                isDark ? s.inputDark : s.inputLight
-                            ]}
-                            placeholder="Please describe your issue, bug, or feature request in detail..."
-                            placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
-                            multiline
-                            textAlignVertical="top"
-                            value={message}
-                            onChangeText={setMessage}
-                        />
-
-                        <TouchableOpacity
-                            onPress={handleSubmit}
-                            disabled={isSubmitting}
-                            activeOpacity={0.8}
-                            style={[s.submitBtn, isSubmitting && { opacity: 0.7 }]}
-                        >
-                            {isSubmitting ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Mail width={18} height={18} color="white" />
-                                    <View style={{ width: 8 }} />
-                                    <Text style={s.submitBtnText}>Send Message</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
+                <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
+                    <View style={s.userInfoBadge}>
+                        <Text style={s.userInfoText}>
+                            Sending as <Text style={{ fontWeight: '700' }}>{user?.name || 'User'}</Text>
+                        </Text>
+                        <Text style={[s.userInfoSub, { color: C.textTertiary }]}>{user?.email}</Text>
                     </View>
-                </ScrollView>
-            </GlowBackground>
+
+                    <Text style={[s.inputLabel, { color: C.textSecondary }]}>What Happened?</Text>
+                    <TextInput
+                        style={[
+                            s.textArea,
+                            { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', borderColor: C.separator, color: C.text }
+                        ]}
+                        placeholder="Describe your issue or feedback..."
+                        placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
+                        multiline
+                        textAlignVertical="top"
+                        value={message}
+                        onChangeText={setMessage}
+                    />
+
+                    <TouchableOpacity
+                        onPress={handleSubmit}
+                        disabled={isSubmitting}
+                        activeOpacity={0.8}
+                        style={[s.submitBtn, { backgroundColor: C.primary }, isSubmitting && { opacity: 0.7 }]}
+                    >
+                        {isSubmitting ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Mail width={18} height={18} color="white" />
+                                <View style={{ width: 10 }} />
+                                <Text style={s.submitBtnText}>Send Message</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
         </KeyboardAvoidingView>
     );
 }
 
 const s = StyleSheet.create({
-    header: { paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    backBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-    backBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'transparent' },
-    backBtnLight: { backgroundColor: '#fff', borderColor: '#E2E8F0' },
-    headerTitle: { fontSize: 18, fontWeight: '700' },
+    header: { paddingHorizontal: 16, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    backBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { fontSize: 17, fontWeight: '700' },
 
-    heroTitle: { fontSize: 32, fontWeight: '700', letterSpacing: -0.5, marginBottom: 8 },
-    heroSubtitle: { fontSize: 15, fontWeight: '500', lineHeight: 22, marginBottom: 32 },
+    heroTitle: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5, marginBottom: 8 },
+    heroSubtitle: { fontSize: 16, lineHeight: 22, marginBottom: 32 },
 
-    card: { borderRadius: 24, padding: 24, borderWidth: 1 },
-    cardDark: { backgroundColor: 'rgba(15,23,42,0.4)', borderColor: 'rgba(255,255,255,0.1)' },
-    cardLight: { backgroundColor: '#fff', borderColor: '#F1F5F9' },
+    card: { borderRadius: Radius.lg, padding: 20, borderWidth: StyleSheet.hairlineWidth },
 
-    userInfoBadge: { backgroundColor: 'rgba(139,92,246,0.1)', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, marginBottom: 24 },
-    userInfoText: { color: '#8B5CF6', fontSize: 13, fontWeight: '500', textAlign: 'center' },
+    userInfoBadge: { alignItems: 'center', marginBottom: 24, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(148,163,184,0.1)' },
+    userInfoText: { color: '#007AFF', fontSize: 15, fontWeight: '600' },
+    userInfoSub: { fontSize: 13, marginTop: 2 },
 
-    inputLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, marginLeft: 4 },
-    textArea: { height: 160, borderRadius: 16, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, fontSize: 15, fontWeight: '500', borderWidth: 1, marginBottom: 24 },
-    inputDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', color: '#fff' },
-    inputLight: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', color: '#0f172a' },
+    inputLabel: { fontSize: 13, fontWeight: '600', marginBottom: 12, marginLeft: 4 },
+    textArea: { height: 160, borderRadius: 16, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, fontSize: 16, fontWeight: '500', borderWidth: StyleSheet.hairlineWidth, marginBottom: 24 },
 
-    submitBtn: { height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', backgroundColor: '#8B5CF6', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 5 },
-    submitBtnText: { fontWeight: '700', fontSize: 15, color: '#fff' },
-
-    textWhite: { color: '#fff' },
-    textSlate900: { color: '#0f172a' },
-    textSlate400: { color: '#94a3b8' },
-    textSlate500: { color: '#64748b' },
+    submitBtn: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
+    submitBtnText: { fontWeight: '700', fontSize: 16, color: '#fff' },
 });
+

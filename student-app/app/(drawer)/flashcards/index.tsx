@@ -1,21 +1,21 @@
 import { Text } from '@/components/ui/Text';
 import { View, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, useColorScheme, Platform, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { GlowBackground } from '@/components/ui/GlowBackground';
-import { LinearGradient } from 'expo-linear-gradient';
 import { 
-    Menu, Sparks, Bin, Group, Calendar, 
+    Sparks, Bin, Group, Calendar, 
     Page, NavArrowRight, Plus 
 } from 'iconoir-react-native';
+import { Colors } from '@/constants/theme';
 import { router, useNavigation } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { FlashcardDeck } from '@/types';
+import { Swipeable } from 'react-native-gesture-handler';
 
 // Storage helpers
 const storage = {
@@ -58,7 +58,7 @@ export default function FlashcardsDashboard() {
     const [refreshing, setRefreshing] = useState(false);
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const navigation = useNavigation() as any;
+    const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
     const [cachedDecks, setCachedDecks] = useState<FlashcardDeck[] | null>(null);
 
@@ -141,30 +141,22 @@ export default function FlashcardsDashboard() {
     };
 
     return (
-        <GlowBackground isRoot={true}>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
             
             {/* Header */}
             <View style={[s.header, { paddingTop: Math.max(insets.top, 20) }]}>
                 <View style={s.headerContent}>
-                    <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>Flashcards</Text>
-                    <Text style={[s.headerSubtitle, isDark ? s.textSlate500 : s.textSlate400]}>Master topics with Skeeme AI</Text>
+                    <Text style={[s.headerTitle, { color: C.text }]}>Flashcards</Text>
+                    <Text style={[s.headerSubtitle, { color: C.textSecondary }]}>Master topics with Skeeme AI</Text>
                 </View>
-                <TouchableOpacity
-                    onPress={() => navigation.openDrawer()}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel="Open Menu"
-                    style={[s.menuBtn, isDark ? s.bgWhite10 : s.bgWhite60]}
-                >
-                    <Menu width={22} height={22} color={isDark ? 'white' : '#1e293b'} />
-                </TouchableOpacity>
+                <View style={{ width: 48 }} />
             </View>
 
             <FlatList
                 style={s.scrollView}
                 contentContainerStyle={s.scrollContent}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
                 showsVerticalScrollIndicator={false}
                 data={(!decks && isLoading) ? [] : decks}
                 keyExtractor={(item) => String(item.id)}
@@ -177,17 +169,12 @@ export default function FlashcardsDashboard() {
                                     router.push('/(drawer)/flashcards/create');
                                 }}
                                 activeOpacity={0.8}
-                                style={s.createBtn}
+                                style={[s.createBtn, { backgroundColor: C.primary }]}
                             >
-                                <LinearGradient
-                                    colors={['#8B5CF6', '#6366F1']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    style={s.createBtnGradient}
-                                >
+                                <View style={s.createBtnGradient}>
                                     <Sparks width={20} height={20} color="white" strokeWidth={2.5} />
                                     <Text style={s.createBtnText}>Generate New Deck</Text>
-                                </LinearGradient>
+                                </View>
                             </TouchableOpacity>
                         </View>
 
@@ -201,48 +188,36 @@ export default function FlashcardsDashboard() {
                         </View>
                     </>
                 }
-                renderItem={({ item: deck }) => (
-                    <TouchableOpacity
-                        onPress={() => handleDeckPress(deck.id)}
-                        activeOpacity={0.9}
-                        style={s.deckBtn}
-                    >
-                        <BlurView intensity={isDark ? 30 : 60} tint={isDark ? 'dark' : 'light'} style={[s.deckCard, isDark ? s.glassBorderDark : s.glassBorderLight]}>
-                            <View style={s.deckHeader}>
-                                <View style={s.titleContainer}>
-                                    <Text style={[s.deckTitle, isDark ? s.textWhite : s.textSlate900]} numberOfLines={2}>
-                                        {deck.title}
-                                    </Text>
-                                    <View style={s.deckMeta}>
-                                        <Calendar width={12} height={12} color="#94a3b8" />
-                                        <Text style={s.dateText}>
-                                            {new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                        </Text>
+                renderItem={({ item: deck }) => {
+                    const renderRightActions = () => (
+                        <TouchableOpacity 
+                            style={{ backgroundColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', width: 80, marginBottom: 16, borderTopRightRadius: 20, borderBottomRightRadius: 20 }}
+                            onPress={() => handleDelete(deck.id, deck.title)}
+                        >
+                            <Bin width={24} height={24} color="white" />
+                        </TouchableOpacity>
+                    );
+
+                    return (
+                        <Swipeable renderRightActions={renderRightActions} overshootRight={false} containerStyle={{ marginBottom: 16 }}>
+                            <TouchableOpacity
+                                onPress={() => handleDeckPress(deck.id)}
+                                activeOpacity={0.9}
+                                style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                            >
+                                <View style={{ flex: 1, marginRight: 16 }}>
+                                    <Text style={{ fontSize: 18, fontWeight: '700', color: isDark ? '#FFF' : '#000', marginBottom: 6 }} numberOfLines={2}>{deck.title}</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#8E8E93' }}>{deck.flashcards_count} Cards</Text>
+                                        <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#C7C7CC' }} />
+                                        <Text style={{ fontSize: 13, fontWeight: '500', color: '#8E8E93' }}>{new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
                                     </View>
                                 </View>
-                                <TouchableOpacity
-                                    onPress={() => handleDelete(deck.id, deck.title)}
-                                    style={[s.binBtn, isDark ? s.bgRed10 : s.bgRed50]}
-                                >
-                                    <Bin width={16} height={16} color="#ef4444" />
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={s.deckFooter}>
-                                <View style={[s.badge, isDark ? s.bgWhite10 : s.bgIndigo50]}>
-                                    <Group width={14} height={14} color="#8B5CF6" strokeWidth={2.5} />
-                                    <Text style={[s.badgeText, isDark ? s.textWhite : s.textIndigo600]}>
-                                        {deck.flashcards_count} Cards
-                                    </Text>
-                                </View>
-                                <View style={s.studyHint}>
-                                    <Text style={s.studyHintText}>Tap to Study</Text>
-                                    <NavArrowRight width={14} height={14} color="#8B5CF6" strokeWidth={3} />
-                                </View>
-                            </View>
-                        </BlurView>
-                    </TouchableOpacity>
-                )}
+                                <NavArrowRight width={20} height={20} color="#C7C7CC" strokeWidth={3} />
+                            </TouchableOpacity>
+                        </Swipeable>
+                    );
+                }}
                 ListEmptyComponent={
                     isLoading ? (
                         <View>
@@ -269,7 +244,7 @@ export default function FlashcardsDashboard() {
                             style={[s.loadMoreBtn, isDark ? s.bgWhite10 : s.bgWhite60]}
                         >
                             {isLoading ? (
-                                <ActivityIndicator size="small" color="#8B5CF6" />
+                                <ActivityIndicator size="small" color={C.primary} />
                             ) : (
                                 <Text style={[s.loadMoreText, isDark ? s.textWhite : s.textSlate900]}>Load More</Text>
                             )}
@@ -277,13 +252,13 @@ export default function FlashcardsDashboard() {
                     ) : null
                 }
             />
-        </GlowBackground>
+        </View>
     );
 }
 
 const s = StyleSheet.create({
     scrollContent: { paddingBottom: 100 },
-    header: { paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 24 },
+    header: { paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 24 },
     headerContent: { flex: 1 },
     headerTitle: { fontSize: 32, fontWeight: '900', letterSpacing: -1 },
     headerSubtitle: { fontWeight: '600', fontSize: 14, marginTop: 4, letterSpacing: -0.2 },
@@ -292,9 +267,9 @@ const s = StyleSheet.create({
     loadMoreBtn: { height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', marginVertical: 20 },
     loadMoreText: { fontWeight: '800', fontSize: 14, letterSpacing: -0.2 },
 
-    scrollView: { flex: 1, paddingHorizontal: 24 },
+    scrollView: { flex: 1, paddingHorizontal: 16 },
     createBtnWrapper: { marginBottom: 32 },
-    createBtn: { height: 64, borderRadius: 24, overflow: 'hidden', elevation: 8, shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 },
+    createBtn: { height: 64, borderRadius: 24, overflow: 'hidden', elevation: 8, shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12 },
     createBtnGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
     createBtnText: { color: 'white', fontWeight: '800', fontSize: 17, letterSpacing: -0.3 },
 
@@ -304,7 +279,7 @@ const s = StyleSheet.create({
     countBadgeText: { fontWeight: '800', fontSize: 11 },
 
     deckBtn: { marginBottom: 16 },
-    deckCard: { padding: 24, borderRadius: 32, borderBottomWidth: 2 },
+    deckCard: { padding: 16, borderRadius: 16, borderBottomWidth: 2 },
     deckCardLight: { backgroundColor: 'rgba(255,255,255,0.8)' },
     glassBorderDark: { borderColor: 'rgba(255,255,255,0.05)', borderBottomColor: 'rgba(139, 92, 246, 0.2)' },
     glassBorderLight: { borderColor: 'rgba(0,0,0,0.02)', borderBottomColor: 'rgba(139, 92, 246, 0.1)' },

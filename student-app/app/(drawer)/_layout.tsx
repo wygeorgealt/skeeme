@@ -1,226 +1,191 @@
-import { Text } from '@/components/ui/Text';
-import { Drawer } from 'expo-router/drawer';
-import { View, TouchableOpacity, useColorScheme, Alert, Platform, Animated, StyleSheet } from 'react-native';
-import { 
-    Rocket, NavArrowRight, Menu, Sparks, Flash,
-    Home, MultiplePages, Page, User, LogOut
-} from 'iconoir-react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Tabs, router, usePathname } from 'expo-router';
+import { View, TouchableOpacity, StyleSheet, useColorScheme, Platform, Alert } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
-
-const CameraIcon = (props: any) => <Ionicons name="camera-outline" size={props.width || 22} color={props.color} />;
-const HappyIcon = (props: any) => <Ionicons name="happy" size={props.width || 22} color={props.color} />;
-
 import { api } from '@/lib/api';
-import { router, usePathname } from 'expo-router';
-import { DrawerContentScrollView } from '@react-navigation/drawer';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { registerForPushNotificationsAsync } from '@/lib/notifications';
 
-const NAV_ITEMS = [
-    { icon: Home, label: 'Dashboard', route: '/' },
-    { icon: CameraIcon, label: 'Scan & Solve', route: '/scan' },
-    { icon: Sparks, label: 'AI Quiz', route: '/generate' },
-    { icon: MultiplePages, label: 'Flashcards', route: '/flashcards' },
-    { icon: Page, label: 'History', route: '/history' },
-    { icon: HappyIcon, label: 'Personalize', route: '/preferences' },
-    { icon: User, label: 'Account', route: '/account' },
-];
+// ─── Icons ───────────────────────────────────────────────────────────────────
+const HomeIcon = ({ color, size }: any) => <Ionicons name="home" size={size} color={color} />;
+const HomeOutlineIcon = ({ color, size }: any) => <Ionicons name="home-outline" size={size} color={color} />;
+const GridIcon = ({ color, size }: any) => <Ionicons name="grid" size={size} color={color} />;
+const GridOutlineIcon = ({ color, size }: any) => <Ionicons name="grid-outline" size={size} color={color} />;
+const PersonIcon = ({ color, size }: any) => <Ionicons name="person" size={size} color={color} />;
+const PersonOutlineIcon = ({ color, size }: any) => <Ionicons name="person-outline" size={size} color={color} />;
+const CameraIcon = ({ color, size }: any) => <Ionicons name="camera" size={size} color={color} />;
 
-function CustomDrawerContent(props: any) {
-    const { user, logout } = useAuthStore();
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
-    const pathname = usePathname();
-
-    // Stagger animations for each row
-    const anims = useRef(NAV_ITEMS.map(() => new Animated.Value(0))).current;
-    const logoutAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        // Reset
-        anims.forEach(a => a.setValue(0));
-        logoutAnim.setValue(0);
-
-        // Stagger entrance
-        const animations = [
-            ...anims.map((a, i) =>
-                Animated.spring(a, { toValue: 1, useNativeDriver: true, delay: i * 50, tension: 80, friction: 12 })
-            ),
-            Animated.spring(logoutAnim, { toValue: 1, useNativeDriver: true, delay: NAV_ITEMS.length * 50, tension: 80, friction: 12 })
-        ];
-
-        Animated.parallel(animations).start();
-    }, []);
-
-    const handleLogout = async () => {
-        const performLogout = async () => {
-            try {
-                await api.post('logout');
-            } catch {
-                console.warn('Logout API failed, forcing local logout');
-            } finally {
-                logout();
-                router.replace('/login');
-            }
-        };
-
-        if (Platform.OS === 'web') {
-            await performLogout();
-            return;
-        }
-
-        Alert.alert(
-            "Sign Out",
-            "Are you sure you want to sign out of Skeeme?",
-            [
-                { text: "Cancel", style: "cancel" },
-                { text: "Sign Out", style: "destructive", onPress: performLogout }
-            ]
-        );
-    };
-
-    const iconColors: Record<number, string> = {
-        0: '#6B7280', // Home
-        1: '#92400E', // Scan
-        2: '#3B82F6', // Quiz
-        3: '#10B981', // Flashcards
-        4: '#8B5CF6', // History
-        5: '#EC4899', // Personalize
-        6: '#64748B', // Account
-    };
+// ─── Scan FAB (center elevated button) ───────────────────────────────────────
+function ScanTabButton({ onPress }: { onPress?: () => void }) {
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
 
     return (
-        <View style={[s.drawerRoot, { backgroundColor: isDark ? 'transparent' : '#ffffff' }]}>
-            {isDark ? (
-                <BlurView intensity={80} tint="dark" style={{ flex: 1, justifyContent: 'center' }}>
-                    <NavContent 
-                        pathname={pathname} anims={anims} logoutAnim={logoutAnim} 
-                        handleLogout={handleLogout} iconColors={iconColors} isDark={isDark} 
-                    />
-                </BlurView>
-            ) : (
-                <View style={{ flex: 1, justifyContent: 'center' }}>
-                    <NavContent 
-                        pathname={pathname} anims={anims} logoutAnim={logoutAnim} 
-                        handleLogout={handleLogout} iconColors={iconColors} isDark={isDark} 
-                    />
-                </View>
-            )}
-        </View>
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.85}
+            style={fab.wrapper}
+            accessibilityRole="button"
+            accessibilityLabel="Scan"
+        >
+            <View style={[fab.circle, { backgroundColor: C.primary }]}>
+                <CameraIcon color="#FFFFFF" size={26} />
+            </View>
+        </TouchableOpacity>
     );
 }
 
-// Extracted NavContent to avoid duplicating JSX inside the BlurView/View toggle
-function NavContent({ pathname, anims, logoutAnim, handleLogout, iconColors, isDark }: any) {
+const fab = StyleSheet.create({
+    wrapper: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+    },
+    circle: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#007AFF',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 10,
+        elevation: 8,
+        position: 'absolute',
+        bottom: 24, // Floating identically over the baseline
+    },
+});
+
+// ─── Custom glass tab bar ─────────────────────────────────────────────────────
+function TabBar({ state, descriptors, navigation }: any) {
+    const insets = useSafeAreaInsets();
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
+
     return (
-        <View style={s.navContainer}>
-            {NAV_ITEMS.map((item, index) => {
-                const isActive = pathname === item.route || (pathname.startsWith(item.route + '/') && item.route !== '/');
-                const isRootActive = pathname === '/' && item.route === '/';
-                const active = isActive || isRootActive;
-                
-                const baseColor = iconColors[index] || '#6B7280';
-
-                return (
-                    <Animated.View
-                        key={item.route}
-                        style={{
-                            opacity: anims[index],
-                            transform: [{ translateX: anims[index].interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }],
-                            marginBottom: 8,
-                        }}
-                    >
-                        <TouchableOpacity
-                            onPress={() => router.push(item.route as any)}
-                            activeOpacity={0.7}
-                            style={s.navItem}
-                        >
-                            <Text style={[s.navLabel, active ? (isDark ? s.textWhite : s.textSlate900) : (isDark ? s.textWhite60 : s.textSlate400)]}>
-                                {item.label}
-                            </Text>
-
-                            <View
-                                style={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: 24,
-                                    // Dark mode: strong colors. Light mode: transparent or very subtle background.
-                                    backgroundColor: active 
-                                        ? (isDark ? baseColor : `${baseColor}1A`) 
-                                        : (isDark ? 'rgba(255,255,255,0.08)' : 'transparent'),
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <item.icon
-                                    width={22}
-                                    height={22}
-                                    color={active 
-                                        ? (isDark ? '#FFFFFF' : baseColor) 
-                                        : (isDark ? '#9CA3AF' : '#94A3B8')}
-                                    strokeWidth={active ? 2 : 1.5}
-                                />
-                            </View>
-                        </TouchableOpacity>
-                    </Animated.View>
-                );
-            })}
-
-            <Animated.View
-                style={{
-                    opacity: logoutAnim,
-                    transform: [{ translateX: logoutAnim.interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) }],
-                    marginTop: 16,
-                }}
+        <View style={bar.outerWrap}>
+            <BlurView
+                intensity={isDark ? 50 : 80}
+                tint={isDark ? 'dark' : 'light'}
+                style={[
+                    bar.blurBase, 
+                    { 
+                        paddingBottom: Math.max(insets.bottom, 12),
+                        backgroundColor: isDark ? 'rgba(28,28,30,0.85)' : 'rgba(255,255,255,0.85)',
+                        borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
+                    }
+                ]}
             >
-                <TouchableOpacity
-                    onPress={handleLogout}
-                    activeOpacity={0.7}
-                    style={s.navItem}
-                >
-                    <Text style={[s.navLabel, isDark ? s.textRed400 : s.textRed600]}>Sign out</Text>
-                    <View
-                        style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 24,
-                            backgroundColor: isDark ? 'rgba(239, 68, 68, 0.1)' : 'transparent',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <LogOut width={22} height={22} color={isDark ? "#F87171" : "#EF4444"} strokeWidth={2} />
-                    </View>
-                </TouchableOpacity>
-            </Animated.View>
+                {state.routes.map((route: any, index: number) => {
+                    const { options } = descriptors[route.key];
+                    
+                    // Prevent hidden routes from rendering invisibly and pushing layout
+                    if (options.href === null || options.tabBarItemStyle?.display === 'none') {
+                        return null;
+                    }
+
+                    const isFocused = state.index === index;
+                    const isScan = route.name === 'scan';
+
+                    const onPress = () => {
+                        const event = navigation.emit({
+                            type: 'tabPress',
+                            target: route.key,
+                            canPreventDefault: true,
+                        });
+                        if (!isFocused && !event.defaultPrevented) {
+                            navigation.navigate(route.name);
+                        }
+                    };
+
+                    if (isScan) {
+                        return <ScanTabButton key={route.key} onPress={onPress} />;
+                    }
+
+                    const label =
+                        options.tabBarLabel !== undefined
+                            ? options.tabBarLabel
+                            : options.title !== undefined
+                            ? options.title
+                            : route.name;
+
+                    const iconColor = isFocused ? C.iconActive : C.icon;
+
+                    return (
+                        <TouchableOpacity
+                            key={route.key}
+                            onPress={onPress}
+                            activeOpacity={0.7}
+                            style={bar.tab}
+                            accessibilityRole="button"
+                            accessibilityLabel={String(label)}
+                            accessibilityState={isFocused ? { selected: true } : {}}
+                        >
+                            {options.tabBarIcon?.({ color: iconColor, size: 24, focused: isFocused })}
+                        </TouchableOpacity>
+                    );
+                })}
+            </BlurView>
         </View>
     );
 }
 
+const bar = StyleSheet.create({
+    outerWrap: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'flex-end',
+        pointerEvents: 'box-none',
+    },
+    blurBase: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 16,
+        paddingHorizontal: 24,
+        borderTopWidth: 1,
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        width: '100%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 10,
+    },
+    tab: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12, // Identical vertical baseline
+    },
+});
 
-export default function DrawerLayout() {
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
-
-    const bgColor = isDark ? '#100921' : '#fafafa';
-    const drawerBg = isDark ? '#100921' : '#fafafa';
-    const tintColor = isDark ? '#fff' : '#121212';
-
+// ─── Layout ───────────────────────────────────────────────────────────────────
+export default function TabLayout() {
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const { user, token } = useAuthStore();
     const pathname = usePathname();
 
     useEffect(() => {
-        // AI Personalization Guard
-        // If logged in but academic level is missing, force them to preferences
+        // AI Personalization Guard — if logged in but no education level, force preferences
         if (token && user && !user.ai_preferences?.education_level) {
             if (pathname !== '/preferences') {
                 router.replace('/preferences');
             }
         }
 
-        // Defer push token registration to avoid triggering during navigation mount
+        // Defer push token registration
         const timer = setTimeout(() => {
             if (token) {
                 registerForPushNotificationsAsync(token).catch(() => {});
@@ -230,89 +195,52 @@ export default function DrawerLayout() {
     }, [token, user, pathname]);
 
     return (
-        <Drawer
-            drawerContent={(props) => <CustomDrawerContent {...props} />}
+        <Tabs
+            tabBar={(props) => <TabBar {...props} />}
             screenOptions={{
                 headerShown: false,
-                drawerPosition: 'right',
-                drawerType: 'front',
-                overlayColor: 'rgba(0,0,0,0.7)',
-                sceneStyle: {
-                    backgroundColor: 'transparent'
-                },
-                drawerStyle: {
-                    backgroundColor: 'transparent',
-                    width: '55%',
-                    elevation: 0,
-                    shadowOpacity: 0,
-                }
-            }}>
-
-            <Drawer.Screen
+                // Background under the tab bar
+                sceneStyle: { backgroundColor: C.background },
+            }}
+        >
+            <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Dashboard',
+                    title: 'Home',
+                    tabBarIcon: ({ color, size, focused }) =>
+                        focused ? <HomeIcon color={color} size={size} /> : <HomeOutlineIcon color={color} size={size} />,
                 }}
             />
-
-            <Drawer.Screen
-                name="flashcards"
-                options={{
-                    title: 'Flashcards',
-                    drawerItemStyle: { display: 'none' }, // Using custom link in Study Tools
-                }}
-            />
-
-            <Drawer.Screen
+            <Tabs.Screen
                 name="scan"
                 options={{
                     title: 'Scan',
-                    drawerItemStyle: { display: 'none' },
+                    // Icon handled by ScanTabButton inside TabBar
+                    tabBarIcon: ({ color, size }) => <CameraIcon color={color} size={size} />,
                 }}
             />
-
-            <Drawer.Screen
+            <Tabs.Screen
                 name="generate"
                 options={{
-                    title: 'Generate',
-                    drawerItemStyle: { display: 'none' },
+                    href: null, // Hiding Quiz tab natively
                 }}
             />
-
-            <Drawer.Screen
-                name="history"
-                options={{
-                    title: 'Study History',
-                }}
-            />
-
-            <Drawer.Screen
+            <Tabs.Screen
                 name="account"
                 options={{
-                    title: 'Account & Settings',
+                    title: 'Me',
+                    tabBarIcon: ({ color, size, focused }) =>
+                        focused ? <PersonIcon color={color} size={size} /> : <PersonOutlineIcon color={color} size={size} />,
                 }}
             />
 
-            <Drawer.Screen
-                name="preferences"
-                options={{
-                    title: 'Personalize AI',
-                }}
-            />
-        </Drawer >
+            {/* Hidden screens — accessible via router.push() */}
+            <Tabs.Screen name="flashcards" options={{ href: null }} />
+            <Tabs.Screen name="history" options={{ href: null }} />
+            <Tabs.Screen name="preferences" options={{ href: null }} />
+            <Tabs.Screen name="streak" options={{ href: null }} />
+            <Tabs.Screen name="referral" options={{ href: null }} />
+            <Tabs.Screen name="support" options={{ href: null }} />
+        </Tabs>
     );
 }
-
-const s = StyleSheet.create({
-    drawerRoot: { flex: 1, overflow: 'hidden' },
-    navContainer: { flex: 1, justifyContent: 'center', alignItems: 'flex-end', paddingRight: 24, paddingBottom: 80 },
-    navItem: { flexDirection: 'row', alignItems: 'center' },
-    navLabel: { fontWeight: '700', fontSize: 14, marginRight: 16 },
-    textWhite: { color: 'white' },
-    textSlate900: { color: '#0f172a' },
-    textWhite60: { color: 'rgba(255,255,255,0.6)' },
-    textSlate700: { color: '#334155' },
-    textSlate400: { color: '#94a3b8' },
-    textRed400: { color: '#F87171' },
-    textRed600: { color: '#DC2626' },
-});

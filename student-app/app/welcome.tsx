@@ -14,10 +14,10 @@ const SLIDES = [
         title: 'Snap a Photo of Any Problem',
         description: 'Get step-by-step solutions instantly. Skeeme breaks down complex questions to help you understand.',
         image: require('@/assets/images/slide1.png'),
-        bgColor: '#8B5CF6',
+        bgColor: '#007AFF',
         textColor: '#ffffff',
         accentBg: '#ffffff',
-        accentIcon: '#8B5CF6',
+        accentIcon: '#007AFF',
     },
     {
         id: 2,
@@ -25,10 +25,10 @@ const SLIDES = [
         description: 'Generate custom quizzes and flashcards instantly from your notes, slides, and textbooks.',
         image: require('@/assets/images/slide2.png'),
         bgColor: '#ffffff',
-        bgColorDark: '#1a1a2e',
-        textColor: '#000000',
+        bgColorDark: '#1C1C1E',
+        textColor: '#111111',
         textColorDark: '#ffffff',
-        accentBg: '#8B5CF6',
+        accentBg: '#007AFF',
         accentIcon: '#ffffff',
     },
     {
@@ -36,12 +36,13 @@ const SLIDES = [
         title: 'Your Complete Ecosystem',
         description: 'Your complete study workspace to track progress, revisit missed questions, and ace exams.',
         image: require('@/assets/images/slide3.png'),
-        bgColor: '#f59e0b',
+        bgColor: '#34C759',
         textColor: '#ffffff',
         accentBg: '#ffffff',
-        accentIcon: '#f59e0b',
+        accentIcon: '#34C759',
     }
 ];
+
 
 export default function WelcomeScreen() {
     const router = useRouter();

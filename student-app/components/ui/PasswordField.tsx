@@ -1,14 +1,16 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
+import { View, TextInput, TouchableOpacity, useColorScheme, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
 import { Eye, EyeClosed } from 'iconoir-react-native';
+import { Colors } from '@/constants/theme';
 
 interface PasswordFieldProps {
     value: string;
     onChangeText: (text: string) => void;
     placeholder?: string;
     autoFocus?: boolean;
-    containerClassName?: string;
+    style?: StyleProp<ViewStyle>;
+    inputStyle?: StyleProp<TextStyle>;
 }
 
 export function PasswordField({
@@ -16,28 +18,25 @@ export function PasswordField({
     onChangeText,
     placeholder = "Password",
     autoFocus = false,
-    containerClassName = "mb-4",
+    style,
+    inputStyle,
 }: PasswordFieldProps) {
     const [showPassword, setShowPassword] = useState(false);
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
+    const placeholderColor = C.textTertiary || (isDark ? "#475569" : "#94a3b8");
 
-    const inputBgClass = isDark ? "bg-slate-900" : "bg-transparent";
-    const inputBorderClass = isDark ? "border-slate-800" : "border-slate-200";
-    const placeholderColor = isDark ? "#475569" : "#94a3b8";
-
-    // Use py-1 like signup.tsx but allow overriding padding in container if needed
     return (
-        <View className={`${inputBgClass} ${inputBorderClass} rounded-xl px-4 flex-row items-center border focus:border-slate-900 dark:focus:border-white ${containerClassName}`}>
+        <View style={[s.container, style]}>
             <TextInput
-                className="flex-1 font-medium text-[15px] h-[48px]"
+                style={[s.input, { color: C.text }, inputStyle]}
                 placeholder={placeholder}
                 placeholderTextColor={placeholderColor}
                 secureTextEntry={!showPassword}
                 value={value}
                 onChangeText={onChangeText}
                 autoFocus={autoFocus}
-                style={{ color: isDark ? 'white' : 'black' }}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 {showPassword ? (
@@ -49,3 +48,8 @@ export function PasswordField({
         </View>
     );
 }
+
+const s = StyleSheet.create({
+    container: { flexDirection: 'row', alignItems: 'center', height: 48 },
+    input: { flex: 1, fontWeight: '500', fontSize: 15, height: '100%' },
+});

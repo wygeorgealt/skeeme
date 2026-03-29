@@ -1,10 +1,11 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
-import { CheckCircle, XmarkCircle, Check, Xmark, NavArrowLeft } from 'iconoir-react-native';
+import { CheckCircle, XmarkCircle, Check, Xmark, NavArrowLeft, Refresh } from 'iconoir-react-native';
 import { QuizFlipCard } from './QuizFlipCard';
-import { Question, DIFF_COLORS } from './QuizTypes';
+import { Question } from './QuizTypes';
 import { MathText } from '../ui/MathText';
+import { Colors, Spacing, Radius } from '@/constants/theme';
 
 export function MCQCard({
     q, qi, onAnswer, selectedAnswer, quizFinished,
@@ -21,6 +22,7 @@ export function MCQCard({
 
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
 
     const getOptionStyles = (opt: string) => {
         const isSelected = selectedAnswer === opt;
@@ -28,8 +30,8 @@ export function MCQCard({
         
         if (!answered) {
             return {
-                container: isDark ? 'border-slate-800 bg-[#161618]/50' : 'border-slate-100 bg-slate-50',
-                text: isDark ? 'text-white' : 'text-slate-900',
+                container: { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC', borderColor: C.separator },
+                text: { color: C.text },
                 icon: null,
                 iconColor: ''
             };
@@ -37,61 +39,61 @@ export function MCQCard({
 
         if (isCorrectOpt) {
             return {
-                container: 'border-brand-primary bg-brand-primary/10',
-                text: 'text-brand-primary',
+                container: { borderColor: C.success, backgroundColor: isDark ? 'rgba(48,209,88,0.1)' : 'rgba(52,199,89,0.1)' },
+                text: { color: C.success },
                 icon: 'checkmark-circle' as const,
-                iconColor: '#A1C4FD'
+                iconColor: C.success
             };
         }
 
         if (isSelected && !isCorrectOpt) {
             return {
-                container: 'border-red-500 bg-red-500/10',
-                text: 'text-red-500',
+                container: { borderColor: C.destructive, backgroundColor: isDark ? 'rgba(255,69,58,0.1)' : 'rgba(255,59,48,0.1)' },
+                text: { color: C.destructive },
                 icon: 'close-circle' as const,
-                iconColor: '#ef4444'
+                iconColor: C.destructive
             };
         }
 
         return {
-            container: isDark ? 'border-slate-800 bg-transparent' : 'border-slate-100 bg-transparent',
-            text: isDark ? 'text-slate-500' : 'text-slate-400',
+            container: { borderColor: C.separator, opacity: 0.5 },
+            text: { color: C.textSecondary },
             icon: null,
             iconColor: ''
         };
     };
 
     const front = (
-        <View className={`rounded-[24px] p-5 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+        <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
             {/* Header */}
-            <View className="flex-row justify-between items-center mb-5 pb-4 border-b border-slate-100 dark:border-slate-800/50">
-                <Text className="text-[11px] font-bold tracking-widest uppercase text-slate-400">Question {qi + 1}</Text>
-                <View className={`px-2.5 py-1 rounded-lg border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                    <Text className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <View style={[s.cardHeader, { borderBottomColor: C.separator }]}>
+                <Text style={[s.qNum, { color: C.textTertiary }]}>Question {qi + 1}</Text>
+                <View style={[s.diffBadge, { borderColor: C.separator }]}>
+                    <Text style={[s.diffText, { color: C.textSecondary }]}>
                         {q.difficulty_level}
                     </Text>
                 </View>
             </View>
 
             <MathText
-                content={q.question_text}
-                color={isDark ? 'white' : '#121212'}
+                content={q.question_text || ''}
+                color={C.text}
                 fontSize={17}
                 containerStyle={{ minHeight: 60 }}
             />
 
             {/* Options */}
-            <View className="mt-6 gap-3">
-                {q.options.map((opt, oi) => {
+            <View style={s.optionsGrid}>
+                {(q.options || []).map((opt, oi) => {
                     const styles = getOptionStyles(opt);
                     return (
                         <TouchableOpacity
                             key={oi}
                             activeOpacity={answered ? 1 : 0.8}
                             onPress={() => { if (!answered && !quizFinished) onAnswer(qi, opt); }}
-                            className={`flex-row items-center p-4 rounded-xl border-2 ${styles.container}`}
+                            style={[s.optionBtn, styles.container]}
                         >
-                            <Text className={`flex-1 font-semibold text-[14px] ${styles.text}`}>{opt}</Text>
+                            <Text style={[s.optionText, styles.text]}>{opt}</Text>
                             {styles.icon === 'checkmark-circle' && <CheckCircle width={18} height={18} color={styles.iconColor} />}
                             {styles.icon === 'close-circle' && <XmarkCircle width={18} height={18} color={styles.iconColor} />}
                         </TouchableOpacity>
@@ -100,15 +102,15 @@ export function MCQCard({
             </View>
 
             {/* Flip to Explain button */}
-            {answered && q.explanation ? (
-                <View className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/50 flex-row items-center justify-between">
-                    <View className={`px-3 py-1.5 rounded-lg flex-row items-center border ${isCorrect ? 'border-brand-primary bg-brand-primary/5' : 'border-red-500 bg-red-500/5'}`}>
+            {answered && (
+                <View style={[s.footer, { borderTopColor: C.separator }]}>
+                    <View style={[s.statusBadge, { borderColor: isCorrect ? C.success : C.destructive, backgroundColor: isCorrect ? (isDark ? 'rgba(48,209,88,0.1)' : 'rgba(52,199,89,0.1)') : (isDark ? 'rgba(255,69,58,0.1)' : 'rgba(255,59,48,0.1)') }]}>
                         {isCorrect ? (
-                            <Check width={14} height={14} color="#A1C4FD" />
+                            <Check width={14} height={14} color={C.success} />
                         ) : (
-                            <Xmark width={14} height={14} color="#ef4444" />
+                            <Xmark width={14} height={14} color={C.destructive} />
                         )}
-                        <Text className={`font-bold ml-1.5 text-[11px] uppercase tracking-wider ${isCorrect ? 'text-brand-primary' : 'text-red-500'}`}>
+                        <Text style={[s.statusText, { color: isCorrect ? C.success : C.destructive }]}>
                             {isCorrect ? 'Correct' : 'Incorrect'}
                         </Text>
                     </View>
@@ -116,36 +118,41 @@ export function MCQCard({
                     <TouchableOpacity
                         onPress={() => setFlipped(true)}
                         activeOpacity={0.8}
-                        className={`h-10 px-5 rounded-lg items-center justify-center ${isDark ? 'bg-white' : 'bg-slate-900'}`}
+                        style={[s.explainBtn, { backgroundColor: isDark ? '#FFF' : '#000' }]}
                     >
-                        <Text className={`font-bold text-[12px] ${isDark ? 'text-slate-900' : 'text-white'}`}>See Explanation</Text>
+                        <Refresh width={16} height={16} color={isDark ? '#000' : '#FFF'} style={{ marginRight: 8 }} />
+                        <Text style={[s.explainBtnText, { color: isDark ? '#000' : '#FFF' }]}>Flip for Explanation</Text>
                     </TouchableOpacity>
                 </View>
-            ) : null}
+            )}
         </View>
     );
 
     const back = (
-        <View className={`rounded-[24px] p-5 border ${isDark ? 'bg-[#161618] border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
-            <TouchableOpacity onPress={() => setFlipped(false)} className="flex-row items-center mb-5">
-                <NavArrowLeft width={18} height={18} color={isDark ? '#fff' : '#0f172a'} />
-                <Text className={`font-bold ml-2 text-[13px] uppercase tracking-widest ${isDark ? 'text-white' : 'text-slate-900'}`}>Back</Text>
+        <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
+            <TouchableOpacity onPress={() => setFlipped(false)} style={s.backBtn}>
+                <NavArrowLeft width={18} height={18} color={C.text} />
+                <Text style={[s.backText, { color: C.text }]}>Back</Text>
             </TouchableOpacity>
             
-            <Text className="text-[11px] font-bold tracking-widest uppercase text-slate-400 mb-3 ml-1">Explanation</Text>
-            <View className={`p-4 rounded-xl border ${isDark ? 'bg-[#0f0f11] border-slate-800' : 'bg-slate-50 border-slate-100'}`}>
-                <MathText
-                    content={q.explanation || ''}
-                    color={isDark ? '#CBD5E1' : '#475569'}
-                    fontSize={15}
-                />
+            <Text style={[s.sectionTitle, { color: C.textTertiary }]}>Explanation</Text>
+            <View style={[s.feedbackBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC', borderColor: C.separator }]}>
+                {q.explanation ? (
+                    <MathText
+                        content={q.explanation}
+                        color={C.textSecondary}
+                        fontSize={15}
+                    />
+                ) : (
+                    <Text style={{ color: C.textSecondary, fontStyle: 'italic', fontSize: 13 }}>No explanation provided for this question.</Text>
+                )}
             </View>
             
-            {!isCorrect && (
-                <View className="mt-5 pt-6 border-t border-slate-100 dark:border-slate-800/50">
-                    <Text className="text-[10px] font-bold tracking-widest uppercase text-brand-primary mb-2 ml-1">Correct Answer</Text>
-                    <View className={`p-4 rounded-lg border border-brand-primary/20 bg-brand-primary/5`}>
-                        <Text className={`font-semibold text-[14px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{q.correct_answer}</Text>
+            {!isCorrect && q.correct_answer && (
+                <View style={[s.correctSection, { borderTopColor: C.separator }]}>
+                    <Text style={[s.correctTitle, { color: C.primary }]}>Correct Answer</Text>
+                    <View style={[s.correctBox, { borderColor: C.primary + '30', backgroundColor: C.primary + '10' }]}>
+                        <Text style={[s.correctAnswerText, { color: C.text }]}>{q.correct_answer}</Text>
                     </View>
                 </View>
             )}
@@ -153,7 +160,7 @@ export function MCQCard({
     );
 
     return (
-        <View className="mb-6">
+        <View style={s.cardOuter}>
             <QuizFlipCard
                 front={front}
                 back={back}
@@ -162,3 +169,34 @@ export function MCQCard({
         </View>
     );
 }
+
+const s = StyleSheet.create({
+    cardOuter: { marginBottom: Spacing.lg },
+    card: { borderRadius: Radius.lg, padding: 20, borderWidth: StyleSheet.hairlineWidth, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+    qNum: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
+    diffBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
+    diffText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+
+    optionsGrid: { marginTop: 24, gap: 12 },
+    optionBtn: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 2 },
+    optionText: { flex: 1, fontWeight: '600', fontSize: 15 },
+
+    footer: { marginTop: 24, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'column', gap: 12, paddingTop: 20 },
+    statusBadge: { borderRadius: 8, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, alignSelf: 'flex-start' },
+    statusText: { fontWeight: '700', textTransform: 'uppercase', fontSize: 11, letterSpacing: 1, marginLeft: 6 },
+    
+    explainBtn: { borderRadius: 100, alignItems: 'center', justifyContent: 'center', height: 48, flexDirection: 'row', width: '100%' },
+    explainBtnText: { fontWeight: '700', fontSize: 14 },
+
+    backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+    backText: { fontWeight: '700', marginLeft: 8, textTransform: 'uppercase', fontSize: 13, letterSpacing: 1 },
+    
+    sectionTitle: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, marginLeft: 4 },
+    feedbackBox: { padding: 16, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth },
+    
+    correctSection: { marginTop: 20, paddingTop: 20, borderTopWidth: StyleSheet.hairlineWidth },
+    correctTitle: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8, marginLeft: 4 },
+    correctBox: { padding: 16, borderRadius: 12, borderWidth: 1 },
+    correctAnswerText: { fontWeight: '600', fontSize: 15 },
+});

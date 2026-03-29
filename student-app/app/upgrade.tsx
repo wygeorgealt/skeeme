@@ -1,25 +1,25 @@
-import { Text } from '@/components/ui/Text';
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, useColorScheme, Linking, Alert, ActivityIndicator, StyleSheet, Modal, SafeAreaView } from 'react-native';
-import { Xmark, Sparks, FireFlame, Check } from 'iconoir-react-native';
+import { View, ScrollView, TouchableOpacity, useColorScheme, Alert, ActivityIndicator, StyleSheet, Modal, SafeAreaView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import { api } from '@/lib/api';
-import { GlowBackground } from '@/components/ui/GlowBackground';
-import { LinearGradient } from 'expo-linear-gradient';
 import { WebView } from 'react-native-webview';
-
 import { PlanType, CurrencyType } from '@/types';
+import { Colors, Spacing, FontSize } from '@/constants/theme';
+import { Text } from '@/components/ui/Text';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 type BillingCycle = 'monthly' | 'yearly';
 
 export default function UpgradeScreen() {
     const { user, pricingConfig, fetchPricingConfig } = useAuthStore();
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
+    const isDark = useColorScheme() === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
+    const insets = useSafeAreaInsets();
 
-    const [activeTab, setActiveTab] = useState<Exclude<PlanType, 'free'>>('standard');
+    const [activePlan, setActivePlan] = useState<Exclude<PlanType, 'free'>>('standard');
     const [billingCycle, setBillingCycle] = useState<BillingCycle>('yearly');
     const [isPurchasing, setIsPurchasing] = useState(false);
     const [purchasingPack, setPurchasingPack] = useState<number | null>(null);
@@ -28,8 +28,6 @@ export default function UpgradeScreen() {
     const [paymentType, setPaymentType] = useState<'subscription' | 'credits' | null>(null);
 
     useEffect(() => {
-        // Always fetch fresh pricing data when the upgrade screen opens
-        // so admin promo/price changes are reflected immediately
         fetchPricingConfig();
     }, []);
 
@@ -38,45 +36,55 @@ export default function UpgradeScreen() {
 
     if (!pricingConfig) {
         return (
-            <GlowBackground isRoot style={s.loadingContainer}>
-                <ActivityIndicator size="large" color="#8B5CF6" />
-            </GlowBackground>
+            <View style={[s.loadingContainer, { backgroundColor: C.background }]}>
+                <ActivityIndicator size="large" color="#007AFF" />
+            </View>
         );
     }
 
-    const currentPricing = pricingConfig[currency]?.[activeTab] || {};
-    
-    const FEATURES = {
-        standard: [
-            `${(currentPricing.weekly || 1500).toLocaleString()} Weekly Credits`,
-            `${(currentPricing.credits || 6000).toLocaleString()} Monthly Total`,
-            'Advanced Quiz Generation',
-            'Detailed Flashcard creation',
-            'Priority AI model access',
-        ],
-        elite: [
-            `${(currentPricing.weekly || 5000).toLocaleString()} Weekly Credits`,
-            `${(currentPricing.credits || 20000).toLocaleString()} Monthly Total`,
-            'Unlimited Flashcard creation',
-            'Ultra-fast Elite AI model',
-            'Unlimited Scan & Solve',
-        ]
-    };
+    const PLANS = [
+        {
+            id: 'standard',
+            name: 'Standard',
+            badge: null,
+            features: [
+                '5,000 Weekly Credits',
+                'Advanced Quiz Generation',
+                'Detailed Flashcard creation',
+                'Priority AI model access'
+            ],
+            config: pricingConfig[currency]?.standard || {}
+        },
+        {
+            id: 'elite',
+            name: 'Elite',
+            badge: 'Most Popular',
+            features: [
+                '10,000+ Weekly Credits',
+                'Unlimited Scan & Solve',
+                'Unlimited Flashcard creation',
+                'Ultra-fast Elite AI model'
+            ],
+            config: pricingConfig[currency]?.elite || {}
+        }
+    ];
 
-    const isPromoActive = (plan: PlanType) => {
-        const promoEnd = pricingConfig.promos[`${plan}_end`];
+    const isPromoActive = (plan: string) => {
+        const promoEnd = pricingConfig.promos?.[`${plan}_end`];
         if (!promoEnd) return false;
         return new Date() < new Date(promoEnd);
     };
 
-    const activePricing = pricingConfig[currency][activeTab];
-    const isPromo = isPromoActive(activeTab);
+    const activePricing = pricingConfig[currency]?.[activePlan] || {};
+    const isPromo = isPromoActive(activePlan) && billingCycle === 'monthly';
+    const displayPrice = isPromo ? activePricing.promoMonthly : activePricing[billingCycle];
+    const selectedPriceStr = `${currencySymbol}${displayPrice?.toLocaleString()}`;
 
     const handlePurchase = async () => {
         setIsPurchasing(true);
         try {
             const res = await api.post('subscriptions/checkout', {
-                plan: activeTab,
+                plan: activePlan,
                 cycle: billingCycle,
             });
             if (res.data?.authorization_url && res.data?.reference) {
@@ -118,22 +126,18 @@ export default function UpgradeScreen() {
     const verifyPayment = async (reference: string, type: 'subscription' | 'credits') => {
         setIsPurchasing(true);
         try {
-            const endpoint = type === 'subscription' 
-                ? `subscriptions/verify/${reference}` 
-                : `credits/verify/${reference}`;
+            const endpoint = type === 'subscription' ? `subscriptions/verify/${reference}` : `credits/verify/${reference}`;
             const res = await api.get(endpoint);
             
             if (res.data?.status === 'success') {
                 await useAuthStore.getState().checkAuth();
-                Alert.alert("Success", type === 'subscription' 
-                    ? "Welcome to the premium club! Your subscription is active." 
-                    : "Credits added successfully!");
+                Alert.alert("Success", type === 'subscription' ? "Welcome to the premium club! Your subscription is active." : "Credits added successfully!");
                 router.replace('/(drawer)');
             } else {
                 Alert.alert("Payment Pending", res.data?.message || "Payment is still processing. Please check your balance shortly.");
             }
         } catch (error: any) {
-            const msg = error.response?.data?.message || "Could not verify your payment. Please contact support if your account isn't updated.";
+            const msg = error.response?.data?.message || "Could not verify your payment.";
             Alert.alert("Verification Check", msg);
         } finally {
             setIsPurchasing(false);
@@ -144,334 +148,223 @@ export default function UpgradeScreen() {
 
     const handleWebViewNavigation = (navState: any) => {
         const url = navState.url;
-        // Check for common redirect parameters Paystack attaches upon success/cancel
         if (url.includes('reference=') || url.includes('/callback') || url.includes('skeeme.com/callback') || url.includes('trxref=')) {
             setCheckoutUrl(null);
-            if (paymentRef && paymentType) {
-                verifyPayment(paymentRef, paymentType);
-            }
+            if (paymentRef && paymentType) verifyPayment(paymentRef, paymentType);
         }
     };
 
     return (
-        <GlowBackground isRoot style={s.flex1}>
-            <StatusBar style={isDark ? 'light' : 'dark'} translucent />
-
+        <View style={[s.container, { backgroundColor: C.background }]}>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            
             {/* Header */}
-            <View style={s.header}>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    style={[s.backBtn, isDark ? s.backBtnDark : s.backBtnLight]}
-                >
-                    <Xmark width={18} height={18} color={isDark ? '#cbd5e1' : '#0f172a'} />
+            <View style={[s.header, { paddingTop: insets.top + Spacing.sm }]}>
+                <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+                    <Ionicons name="close" size={24} color={C.text} />
                 </TouchableOpacity>
-                <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>Subscription</Text>
-                <View style={s.headerSpacer} />
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={s.flex1}>
-                <Animated.View entering={FadeInDown.delay(100).duration(500)} style={s.contentPadding}>
-                    <Text style={[isDark ? s.textWhite : s.textSlate900, s.heroTitle]}>
-                        Ready for <Text style={s.textBrandPrimary}>Skeeme Elite?</Text>
-                    </Text>
-                    <Text style={[isDark ? s.textIndigo200 : s.textSlate500, s.heroSubtitle]}>
-                        Select a plan to unlock advanced AI models and priority processing.
-                    </Text>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scrollContent}>
+                
+                {/* Title */}
+                <Text style={[s.title, { color: C.text }]}>Upgrade Skeeme</Text>
+                <Text style={[s.subtitle, { color: C.textSecondary }]}>
+                    Unlock unlimited features, priority AI models, and advance your studying to the next level.
+                </Text>
 
-                    {/* Tab Switcher */}
-                    <View style={[s.tabSwitcher, isDark ? s.tabSwitcherDark : s.tabSwitcherLight]}>
-                        {(['standard', 'elite'] as Exclude<PlanType, 'free'>[]).map((tab) => {
-                            const isActive = activeTab === tab;
-                            return (
-                                <TouchableOpacity
-                                    key={tab}
-                                    onPress={() => setActiveTab(tab)}
-                                    activeOpacity={0.7}
-                                    style={[s.tabButton, isActive && s.tabButtonActive]}
-                                >
-                                    <Text
-                                        style={[s.tabText, isActive ? s.textWhite : (isDark ? s.textIndigo300 : s.textSlate500)]}
-                                    >
-                                        {tab}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
+                {/* Billing Cycle Toggle */}
+                <View style={[s.billingToggle, { backgroundColor: C.secondaryBackground }]}>
+                    <TouchableOpacity 
+                        onPress={() => setBillingCycle('monthly')}
+                        style={[s.toggleBtn, billingCycle === 'monthly' && { backgroundColor: C.card, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 }]}
+                    >
+                        <Text style={[s.toggleText, { color: billingCycle === 'monthly' ? C.text : C.textSecondary }]}>Monthly</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        onPress={() => setBillingCycle('yearly')}
+                        style={[s.toggleBtn, billingCycle === 'yearly' && { backgroundColor: C.card, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 }]}
+                    >
+                        <View style={s.row}>
+                            <Text style={[s.toggleText, { color: billingCycle === 'yearly' ? C.text : C.textSecondary }]}>Yearly</Text>
+                            <View style={s.saveBadge}>
+                                <Text style={s.saveBadgeText}>SAVE</Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+                </View>
 
-                    {/* Benefits Section */}
-                    <Animated.View key={activeTab} entering={FadeIn} style={[s.benefitsCard, isDark ? s.benefitsCardDark : s.benefitsCardLight]}>
-                        {isDark && (
-                            <LinearGradient
-                                colors={['rgba(139,92,246,0.1)', 'transparent']}
-                                style={s.benefitsGradient}
-                            />
-                        )}
-                        <Text style={s.benefitsLabel}>
-                            {activeTab} Features
-                        </Text>
-                        <View style={s.benefitsList}>
-                            {FEATURES[activeTab as keyof typeof FEATURES].map((feature: string, idx: number) => (
-                                <View key={idx} style={s.benefitItem}>
-                                    <View style={s.benefitIconBox}>
-                                        <Sparks width={14} height={14} color="#8B5CF6" />
+                {/* Side-by-Side Plans */}
+                <View style={s.plansRow}>
+                    {PLANS.map((plan) => {
+                        const isSelected = activePlan === plan.id;
+                        return (
+                            <TouchableOpacity
+                                key={plan.id}
+                                onPress={() => setActivePlan(plan.id as Exclude<PlanType, 'free'>)}
+                                activeOpacity={0.9}
+                                style={[
+                                    s.planCard,
+                                    { backgroundColor: C.card },
+                                    isSelected && { borderColor: '#007AFF', borderWidth: 2 }
+                                ]}
+                            >
+                                {plan.badge && (
+                                    <View style={s.popularBadge}>
+                                        <Text style={s.popularBadgeText}>{plan.badge}</Text>
                                     </View>
-                                    <Text style={[s.benefitText, isDark ? s.textIndigo100 : s.textSlate700]}>
-                                        {feature}
+                                )}
+                                <Text style={[s.planName, { color: C.text }]}>{plan.name}</Text>
+                                <View style={s.priceContainer}>
+                                    {isPromoActive(plan.id) && billingCycle === 'monthly' && (
+                                        <Text style={[s.originalPrice, { color: C.textTertiary }]}>
+                                            {currencySymbol}{plan.config.monthly?.toLocaleString()}
+                                        </Text>
+                                    )}
+                                    <Text style={[s.planPrice, { color: C.text }]}>
+                                        {currencySymbol}{(isPromoActive(plan.id) && billingCycle === 'monthly' ? plan.config.promoMonthly : plan.config[billingCycle])?.toLocaleString()}
+                                        <Text style={[s.planPeriod, { color: C.textSecondary }]}>/{billingCycle === 'monthly' ? 'mo' : 'yr'}</Text>
                                     </Text>
                                 </View>
-                            ))}
-                        </View>
-                    </Animated.View>
+                                <Text style={[s.planCredits, { color: '#007AFF' }]}>
+                                    {plan.config.credits?.toLocaleString()} Credits/mo
+                                </Text>
 
-                    {/* Billing Cards */}
-                    <View style={s.billingRow}>
-                        <CardOption
-                            title="Yearly"
-                            price={activePricing.yearly}
-                            symbol={currencySymbol}
-                            subtitle={`Billed annually`}
-                            isSelected={billingCycle === 'yearly'}
-                            onSelect={() => setBillingCycle('yearly')}
-                            badge={activePricing.save ? `${activePricing.save} OFF` : undefined}
-                            isDark={isDark}
-                        />
-                        <CardOption
-                            title="Monthly"
-                            price={isPromo ? activePricing.promoMonthly : activePricing.monthly}
-                            originalPrice={isPromo ? activePricing.monthly : undefined}
-                            symbol={currencySymbol}
-                            subtitle="Flat rate, cancel anytime"
-                            isSelected={billingCycle === 'monthly'}
-                            onSelect={() => setBillingCycle('monthly')}
-                            badge={isPromo ? 'PROMO' : undefined}
-                            isDark={isDark}
-                        />
-                    </View>
+                                <View style={s.planFeaturesWrapper}>
+                                    {plan.features.map((ft, idx) => (
+                                        <Text key={idx} style={[s.planFeatureText, { color: C.textSecondary }]}>• {ft}</Text>
+                                    ))}
+                                </View>
 
-                    {/* One-Time Top-Up Section */}
-                    <View style={s.topUpSection}>
-                        <Text style={s.topUpLabel}>
-                            Instant Top-Ups
-                        </Text>
-                        
-                        <View style={s.topUpGrid}>
-                            {(pricingConfig.credit_packs?.[currency] || []).map((pack: any) => (
-                                <TouchableOpacity 
-                                    key={pack.amount}
-                                    onPress={() => handleCreditPurchase(pack)}
-                                    activeOpacity={0.8}
-                                    disabled={purchasingPack !== null || isPurchasing}
-                                    style={[
-                                        s.topUpCard, 
-                                        isDark ? s.benefitsCardDark : s.benefitsCardLight,
-                                        (purchasingPack !== null || isPurchasing) && s.opacity50
-                                    ]}
-                                >
-                                    {purchasingPack === pack.amount ? (
-                                        <ActivityIndicator size="small" color="#8B5CF6" style={s.topUpLoading} />
-                                    ) : (
-                                        <View style={s.topUpIconBox}>
-                                            <FireFlame width={20} height={20} color="#8B5CF6" />
-                                        </View>
-                                    )}
-                                    <Text style={[isDark ? s.textWhite : s.textSlate900, s.topUpAmount]}>{pack.amount.toLocaleString()}</Text>
-                                    <Text style={[s.topUpUnit, isDark ? s.textIndigo400 : s.textSlate400]}>Credits</Text>
-                                    
-                                    <View style={[s.topUpPriceBox, isDark ? s.bgWhite10 : s.bgSlate900]}>
-                                        <Text style={s.textWhiteBold}>
-                                            {currencySymbol}{pack.price.toLocaleString(undefined, { minimumFractionDigits: currency === 'usd' ? 2 : 0 })}
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
+                                <View style={[s.checkmarkBox, isSelected ? { backgroundColor: '#007AFF', borderColor: '#007AFF' } : { borderColor: C.separator }]}>
+                                    {isSelected && <Ionicons name="checkmark" size={14} color="#FFF" />}
+                                </View>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
 
-                </Animated.View>
+                {/* Credit Packs */}
+                <Text style={[s.sectionTitle, { color: C.text }]}>Need More Credits?</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.packsScroll} contentContainerStyle={s.packsScrollContent}>
+                    {(pricingConfig.credit_packs?.[currency] || []).map((pack: any) => (
+                        <TouchableOpacity
+                            key={pack.amount}
+                            onPress={() => handleCreditPurchase(pack)}
+                            activeOpacity={0.8}
+                            disabled={purchasingPack !== null || isPurchasing}
+                            style={[s.packCard, { backgroundColor: C.card, borderColor: C.separator }, purchasingPack === pack.amount && s.opacity50]}
+                        >
+                            {purchasingPack === pack.amount ? (
+                                <ActivityIndicator size="small" color="#007AFF" style={s.packLoading} />
+                            ) : (
+                                <View style={s.packIconCircle}>
+                                    <Ionicons name="diamond" size={18} color="#007AFF" />
+                                </View>
+                            )}
+                            <Text style={[s.packAmount, { color: C.text }]}>{pack.amount.toLocaleString()}</Text>
+                            <Text style={[s.packCreditsLabel, { color: C.textSecondary }]}>Credits</Text>
+                            <Text style={[s.packPrice, { color: C.text }]}>
+                                {currencySymbol}{pack.price.toLocaleString(undefined, { minimumFractionDigits: currency === 'usd' ? 2 : 0 })}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </ScrollView>
 
-            {/* Bottom Button */}
-            <View style={[s.footer, isDark ? s.footerDark : s.footerLight]}>
+            {/* Footer */}
+            <View style={[s.footer, { backgroundColor: C.background, paddingBottom: insets.bottom + Spacing.lg, borderTopColor: C.separator }]}>
                 <TouchableOpacity
                     onPress={handlePurchase}
                     disabled={isPurchasing || purchasingPack !== null}
-                    activeOpacity={0.9}
-                    style={[s.mainBtn, (isPurchasing || purchasingPack !== null) && s.opacity70]}
+                    activeOpacity={0.8}
+                    style={[s.subscribeBtn, (isPurchasing || purchasingPack !== null) && s.opacity70]}
                 >
-                    {isPurchasing ? (
-                        <ActivityIndicator size="small" color="#ffffff" />
+                    {isPurchasing && paymentType === 'subscription' ? (
+                        <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={s.mainBtnText}>
-                            {billingCycle === 'yearly' ? 'Start Free Trial' : 'Continue to Checkout'}
-                        </Text>
+                        <Text style={s.subscribeBtnText}>Subscribe for {selectedPriceStr}/{billingCycle === 'monthly' ? 'mo' : 'yr'}</Text>
                     )}
                 </TouchableOpacity>
 
-
-                <Text style={[s.termsText, isDark ? s.textSlate500 : s.textSlate400]}>
-                    By continuing, you agree to our Terms of Service & Privacy Policy.
-                </Text>
+                <TouchableOpacity 
+                    onPress={() => Alert.alert("Not Implemented", "Restore purchases would be linked to native IAP receipts.")}
+                    style={s.restoreBtn}
+                >
+                    <Text style={[s.restoreText, { color: C.textTertiary }]}>Restore Purchases</Text>
+                </TouchableOpacity>
             </View>
-
 
             {/* Paystack Checkout Modal */}
             {checkoutUrl && (
                 <Modal visible={true} animationType="slide" presentationStyle="pageSheet">
-                    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#0f172a' : '#f8fafc' }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16, borderBottomWidth: 1, borderBottomColor: isDark ? '#1e293b' : '#e2e8f0' }}>
+                    <SafeAreaView style={{ flex: 1, backgroundColor: C.background }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }}>
                             <TouchableOpacity onPress={() => {
                                 setCheckoutUrl(null);
-                                if (paymentRef && paymentType) {
-                                    verifyPayment(paymentRef, paymentType);
-                                }
+                                if (paymentRef && paymentType) verifyPayment(paymentRef, paymentType);
                             }}>
-                                <Text style={{ fontWeight: '700', color: '#ef4444', fontSize: 16 }}>Close & Verify</Text>
+                                <Text style={{ fontWeight: '600', color: '#007AFF', fontSize: 16 }}>Done</Text>
                             </TouchableOpacity>
                         </View>
-                        <WebView 
-                            source={{ uri: checkoutUrl }} 
-                            onNavigationStateChange={handleWebViewNavigation}
-                            startInLoadingState={true}
-                            style={{ flex: 1 }}
-                        />
+                        <WebView source={{ uri: checkoutUrl }} onNavigationStateChange={handleWebViewNavigation} startInLoadingState={true} style={{ flex: 1 }} />
                     </SafeAreaView>
                 </Modal>
             )}
-        </GlowBackground>
-    );
-}
-
-function CardOption({ title, price, originalPrice, symbol, subtitle, isSelected, onSelect, badge, isDark }: any) {
-    const priceFormatted = symbol + price.toLocaleString();
-    const originalPriceFormatted = originalPrice ? symbol + originalPrice.toLocaleString() : null;
-
-    return (
-        <TouchableOpacity
-            onPress={onSelect}
-            activeOpacity={0.8}
-            style={[
-                s.optionCard,
-                isDark ? s.benefitsCardDark : s.benefitsCardLight,
-                isSelected && (isDark ? s.optionCardActiveDark : s.optionCardActiveLight)
-            ]}
-        >
-            <View style={s.flex1}>
-                <View style={s.optionHeader}>
-                    <Text style={[s.optionTitle, isDark ? s.textWhite : s.textSlate900]}>{title}</Text>
-                    {badge && (
-                        <View style={s.badge}>
-                            <Text style={s.badgeText}>{badge}</Text>
-                        </View>
-                    )}
-                </View>
-                <Text style={[s.optionSubtitle, isDark ? s.textIndigo30080 : s.textSlate500]}>{subtitle}</Text>
-
-                <View style={s.priceRow}>
-                    <Text style={[s.priceValue, isDark ? s.textWhite : s.textBrandPrimary]}>
-                        {priceFormatted}
-                    </Text>
-                    {originalPriceFormatted && (
-                        <Text style={s.originalPrice}>
-                            {originalPriceFormatted}
-                        </Text>
-                    )}
-                    <Text style={[s.priceUnit, isDark ? s.textSlate500 : s.textSlate400]}>/ {title === 'Yearly' ? 'year' : 'month'}</Text>
-                </View>
-            </View>
-            <View
-                style={[
-                    s.radio, 
-                    isSelected ? s.radioActive : (isDark ? s.radioInactiveDark : s.radioInactiveLight)
-                ]}
-            >
-                {isSelected && <Check width={18} height={18} color="white" />}
-            </View>
-        </TouchableOpacity>
+        </View>
     );
 }
 
 const s = StyleSheet.create({
-    flex1: { flex: 1 },
+    container: { flex: 1 },
     loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    header: { paddingTop: 56, paddingHorizontal: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 },
-    backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 12, borderWidth: 1 },
-    backBtnDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
-    backBtnLight: { backgroundColor: 'white', borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-    headerTitle: { fontWeight: '700', fontSize: 18, letterSpacing: -0.5 },
-    headerSpacer: { width: 40 },
+    header: { paddingHorizontal: 16, paddingBottom: 8 },
+    backBtn: { width: 40, height: 40, justifyContent: 'center' },
     
-    contentPadding: { paddingHorizontal: 24, paddingTop: 32, paddingBottom: 32 },
-    heroTitle: { fontSize: 38, fontWeight: '900', letterSpacing: -0.5, marginBottom: 12, lineHeight: 40 },
-    heroSubtitle: { fontWeight: '500', fontSize: 16, lineHeight: 24, marginBottom: 32, opacity: 0.8 },
+    scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 120 },
+    title: { fontSize: 32, fontWeight: '800', marginBottom: 8, letterSpacing: -0.5 },
+    subtitle: { fontSize: 16, lineHeight: 22, marginBottom: 24 },
+
+    billingToggle: { flexDirection: 'row', padding: 4, borderRadius: 12, marginBottom: 32 },
+    toggleBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+    toggleText: { fontSize: 14, fontWeight: '600' },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    saveBadge: { backgroundColor: '#34C759', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+    saveBadgeText: { color: '#FFF', fontSize: 10, fontWeight: '800' },
+
+    plansRow: { flexDirection: 'row', gap: 12, marginBottom: 40 },
+    planCard: { flex: 1, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'transparent', position: 'relative' },
+    popularBadge: { position: 'absolute', top: -12, alignSelf: 'center', backgroundColor: '#007AFF', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+    popularBadgeText: { color: '#FFF', fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
     
-    textWhite: { color: 'white' },
-    textSlate900: { color: '#0f172a' },
-    textBrandPrimary: { color: '#8B5CF6' },
-    textIndigo100: { color: '#e0e7ff' },
-    textIndigo200: { color: '#c7d2fe' },
-    textIndigo300: { color: '#a5b4fc' },
-    textIndigo30080: { color: 'rgba(165,180,252,0.8)' },
-    textIndigo400: { color: '#818cf8' },
-    textSlate400: { color: '#94a3b8' },
-    textSlate500: { color: '#64748b' },
-    textSlate700: { color: '#334155' },
-    textWhiteBold: { color: 'white', fontWeight: '700', fontSize: 13 },
+    planName: { fontSize: 18, fontWeight: '700', marginBottom: 8, marginTop: 4 },
+    priceContainer: { marginBottom: 4 },
+    originalPrice: { fontSize: 14, textDecorationLine: 'line-through', marginBottom: -4 },
+    planPrice: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+    planPeriod: { fontSize: 14, fontWeight: '500' },
+    planCredits: { fontSize: 14, fontWeight: '700', marginBottom: 16 },
+    
+    planFeaturesWrapper: { gap: 6, marginBottom: 32 },
+    planFeatureText: { fontSize: 12, lineHeight: 16 },
+    
+    checkmarkBox: { position: 'absolute', bottom: 16, right: 16, width: 22, height: 22, borderRadius: 11, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
 
-    tabSwitcher: { flexDirection: 'row', padding: 6, borderRadius: 22, borderWidth: 1, marginBottom: 32 },
-    tabSwitcherDark: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
-    tabSwitcherLight: { backgroundColor: 'rgba(241,245,249,0.8)', borderColor: '#e2e8f0' },
-    tabButton: { flex: 1, paddingVertical: 16, borderRadius: 18, alignItems: 'center' },
-    tabButtonActive: { backgroundColor: '#8B5CF6', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
-    tabText: { fontWeight: '700', fontSize: 14, textTransform: 'capitalize', letterSpacing: 0.5 },
+    sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
+    packsScroll: { marginHorizontal: -16 },
+    packsScrollContent: { paddingHorizontal: 16, gap: 12 },
+    packCard: { width: 140, padding: 16, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center' },
+    packLoading: { height: 32, marginBottom: 12 },
+    packIconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0, 122, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    packAmount: { fontSize: 22, fontWeight: '800', marginBottom: 2 },
+    packCreditsLabel: { fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+    packPrice: { fontSize: 16, fontWeight: '700' },
 
-    benefitsCard: { borderRadius: 28, padding: 28, borderWidth: 1, marginBottom: 32, overflow: 'hidden' },
-    benefitsCardDark: { backgroundColor: 'rgba(49, 46, 129, 0.2)', borderColor: 'rgba(99, 102, 241, 0.2)' },
-    benefitsCardLight: { backgroundColor: 'white', borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-    benefitsGradient: { position: 'absolute', top: 0, left: 0, right: 0, height: 100 },
-    benefitsLabel: { fontSize: 12, fontWeight: '700', color: '#8B5CF6', letterSpacing: 2.4, textTransform: 'uppercase', marginBottom: 24 },
-    benefitsList: { gap: 20 },
-    benefitItem: { flexDirection: 'row', alignItems: 'center' },
-    benefitIconBox: { width: 28, height: 28, backgroundColor: 'rgba(139,92,246,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-    benefitText: { fontWeight: '600', fontSize: 15 },
-
-    billingRow: { gap: 16 },
-    optionCard: { padding: 24, borderRadius: 24, borderWidth: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    optionCardActiveDark: { backgroundColor: 'rgba(139,92,246,0.1)', borderColor: '#8B5CF6' },
-    optionCardActiveLight: { backgroundColor: 'rgba(139,92,246,0.05)', borderColor: '#8B5CF6' },
-    optionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-    optionTitle: { fontWeight: '900', fontSize: 24, letterSpacing: -0.5, marginRight: 12 },
-    optionSubtitle: { fontWeight: '600', fontSize: 13 },
-    badge: { backgroundColor: 'rgba(16, 185, 129, 0.2)', borderColor: 'rgba(16, 185, 129, 0.3)', borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
-    badgeText: { fontSize: 10, fontWeight: '700', color: '#10b981', textTransform: 'uppercase', letterSpacing: 1.2 },
-    priceRow: { flexDirection: 'row', alignItems: 'baseline', marginTop: 20 },
-    priceValue: { fontWeight: '900', fontSize: 26, letterSpacing: -0.5 },
-    originalPrice: { color: '#94a3b8', textDecorationLine: 'line-through', fontSize: 15, fontWeight: '700', marginLeft: 12 },
-    priceUnit: { fontSize: 14, fontWeight: '700', marginLeft: 4 },
-    radio: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-    radioActive: { borderColor: '#8B5CF6', backgroundColor: '#8B5CF6' },
-    radioInactiveDark: { borderColor: 'rgba(99, 102, 241, 0.3)', backgroundColor: 'transparent' },
-    radioInactiveLight: { borderColor: '#cbd5e1', backgroundColor: '#f8fafc' },
-
-    topUpSection: { marginTop: 56, marginBottom: 20 },
-    topUpLabel: { fontSize: 12, fontWeight: '700', color: '#8B5CF6', letterSpacing: 2.4, textTransform: 'uppercase', marginBottom: 24, marginLeft: 8 },
-    topUpGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-    topUpCard: { width: '48%', marginBottom: 16, padding: 20, borderRadius: 24, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-    topUpIconBox: { backgroundColor: 'rgba(139,92,246,0.1)', width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)' },
-    topUpAmount: { fontWeight: '900', fontSize: 22, letterSpacing: -0.5, marginBottom: 4 },
-    topUpUnit: { fontWeight: '700', fontSize: 10, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 },
-    topUpPriceBox: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1 },
-    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)' },
-    bgSlate900: { backgroundColor: '#0f172a', borderColor: '#0f172a' },
-    topUpLoading: { marginBottom: 16, height: 44, justifyContent: 'center' },
+    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingTop: 16, paddingHorizontal: 16, borderTopWidth: StyleSheet.hairlineWidth },
+    subscribeBtn: { backgroundColor: '#007AFF', height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    subscribeBtnText: { color: '#FFF', fontSize: 17, fontWeight: '600' },
+    restoreBtn: { alignItems: 'center', paddingVertical: 8 },
+    restoreText: { fontSize: 14 },
+    
     opacity50: { opacity: 0.5 },
     opacity70: { opacity: 0.7 },
-
-    footer: { paddingHorizontal: 24, paddingBottom: 48, paddingTop: 24, borderTopWidth: 1 },
-    footerDark: { backgroundColor: 'rgba(0,0,0,0.2)', borderTopColor: 'rgba(255,255,255,0.05)' },
-    footerLight: { backgroundColor: 'white', borderTopColor: '#f1f5f9' },
-    mainBtn: { height: 60, backgroundColor: '#8B5CF6', borderRadius: 22, alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 10 },
-    mainBtnText: { color: 'white', fontWeight: '700', fontSize: 16, letterSpacing: 0.5 },
-    restoreText: { fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' },
-    termsText: { textAlign: 'center', fontWeight: '500', fontSize: 11, marginTop: 20, paddingHorizontal: 16, lineHeight: 18 },
 });

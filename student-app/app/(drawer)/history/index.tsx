@@ -1,17 +1,17 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, ScrollView, FlatList, RefreshControl, useColorScheme, Platform, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, SectionList, RefreshControl, useColorScheme, Platform, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { 
-    Menu, Activity, MultiplePages, Page, NavArrowRight, 
+    Activity, MultiplePages, Page, NavArrowRight, 
     Search, Filter, Calendar
 } from 'iconoir-react-native';
 import { router, useNavigation } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/theme';
 
 type QuizSession = {
     id: number;
@@ -59,7 +59,7 @@ export default function StudyHistoryDashboard() {
     const [activeTab, setActiveTab] = useState<'quizzes' | 'flashcards'>('quizzes');
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const navigation = useNavigation() as any;
+    const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
 
     // Offline Cache States
@@ -118,23 +118,46 @@ export default function StudyHistoryDashboard() {
         else refetchDecks();
     }, [activeTab, refetchQuizzes, refetchDecks]);
 
+    const getSections = (items: any[]) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+
+        const groups: Record<string, any[]> = {
+            'Today': [],
+            'Yesterday': [],
+            'This Week': [],
+            'Older': []
+        };
+
+        items.forEach(item => {
+            const itemDate = new Date(item.created_at);
+            if (itemDate >= today) groups['Today'].push(item);
+            else if (itemDate >= yesterday) groups['Yesterday'].push(item);
+            else if (itemDate >= weekAgo) groups['This Week'].push(item);
+            else groups['Older'].push(item);
+        });
+
+        return [
+            { title: 'Today', data: groups['Today'] },
+            { title: 'Yesterday', data: groups['Yesterday'] },
+            { title: 'This Week', data: groups['This Week'] },
+            { title: 'Older', data: groups['Older'] }
+        ].filter(g => g.data.length > 0);
+    };
+
+    const sections = getSections(isLoading && quizzes.length === 0 && decks.length === 0 ? [] : (activeTab === 'quizzes' ? quizzes : decks));
+
     return (
-        <GlowBackground>
-            {/* Header with drawer toggle */}
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
-                <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>History</Text>
-                <TouchableOpacity
-                    onPress={() => navigation.openDrawer()}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel="Open Menu"
-                    style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
-                >
-                    <Menu width={22} height={22} color={isDark ? 'white' : 'black'} />
-                </TouchableOpacity>
+                <Text style={[s.headerTitle, { color: C.text }]}>History</Text>
+                <View style={{ width: 48 }} />
             </View>
 
-            {/* Segmented Control - Minimalist */}
             <View style={s.tabContainer}>
                 <View style={[s.tabRow, isDark ? s.tabRowDark : s.tabRowLight]}>
                     {(['quizzes', 'flashcards'] as const).map(tab => (
@@ -152,103 +175,79 @@ export default function StudyHistoryDashboard() {
                 </View>
             </View>
 
-            {/* Bottom Half Container Content */}
-            <View style={[s.contentContainer, isDark ? s.bgDark : s.bgWhite]}>
-                <FlatList<any>
-                    style={s.scrollView}
-                    contentContainerStyle={{ paddingBottom: 40 }}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+            <View style={{ flex: 1, backgroundColor: C.background, paddingHorizontal: 16 }}>
+                <SectionList
+                    sections={sections}
+                    keyExtractor={(item, index) => item.id.toString() + index}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
                     showsVerticalScrollIndicator={false}
-                    data={isLoading && quizzes.length === 0 && decks.length === 0 ? [] : (activeTab === 'quizzes' ? quizzes : decks)}
-                    keyExtractor={(item) => String(item.id)}
+                    renderSectionHeader={({ section: { title } }) => (
+                        <Text style={{ fontSize: 13, fontWeight: '800', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1, marginTop: 16, marginBottom: 16, paddingLeft: 8 }}>
+                            {title}
+                        </Text>
+                    )}
                     renderItem={({ item }) => {
-                        if (activeTab === 'quizzes') {
-                            return <QuizCard session={item as QuizSession} isDark={isDark} />;
-                        } else {
-                            return <DeckCard deck={item as FlashcardDeck} isDark={isDark} />;
-                        }
+                        if (activeTab === 'quizzes') return <QuizCard session={item as QuizSession} isDark={isDark} />;
+                        return <DeckCard deck={item as FlashcardDeck} isDark={isDark} />;
                     }}
                     ListEmptyComponent={() => {
-                        if (isLoading) {
-                            return (
-                                <View>
-                                    <View style={s.skeletonRow}>
-                                        <SkeletonLoader width={48} height={48} borderRadius={24} style={{ marginRight: 16 }} />
-                                        <View style={s.flex1}>
-                                            <SkeletonLoader width="60%" height={16} style={{ marginBottom: 8 }} />
-                                            <SkeletonLoader width="30%" height={12} />
-                                        </View>
-                                    </View>
-                                    <View style={s.skeletonRow}>
-                                        <SkeletonLoader width={48} height={48} borderRadius={24} style={{ marginRight: 16 }} />
-                                        <View style={s.flex1}>
-                                            <SkeletonLoader width="70%" height={16} style={{ marginBottom: 8 }} />
-                                            <SkeletonLoader width="40%" height={12} />
-                                        </View>
-                                    </View>
+                        if (isLoading) return null;
+                        return (
+                            <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 100 }}>
+                                <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+                                    <Page width={32} height={32} color="#8E8E93" />
                                 </View>
-                            );
-                        }
-                        if (activeTab === 'quizzes') {
-                            return (
-                                <View style={[s.emptyState, isDark ? s.emptyStateDark : s.emptyStateLight]}>
-                                    <Calendar width={40} height={40} color="#8B5CF6" style={{ opacity: 0.5 }} />
-                                    <Text style={s.emptyStateText}>
-                                        Complete a practice quiz to see results here.
-                                    </Text>
-                                </View>
-                            );
-                        } else {
-                            return (
-                                <View style={[s.emptyState, isDark ? s.emptyStateDark : s.emptyStateLight]}>
-                                    <MultiplePages width={40} height={40} color="#8B5CF6" style={{ opacity: 0.5 }} />
-                                    <Text style={s.emptyStateText}>
-                                        Generate some flashcards to start studying.
-                                    </Text>
-                                </View>
-                            );
-                        }
+                                <Text style={{ fontSize: 18, fontWeight: '700', color: isDark ? '#FFF' : '#000', marginBottom: 8 }}>No study sessions yet</Text>
+                                <Text style={{ fontSize: 15, color: '#8E8E93', textAlign: 'center', paddingHorizontal: 40 }}>
+                                    {activeTab === 'quizzes' ? 'Complete a practice quiz to see your scores here.' : 'Generate flashcards to start studying.'}
+                                </Text>
+                            </View>
+                        );
                     }}
+                    contentContainerStyle={{ paddingBottom: 60 }}
                 />
             </View>
-        </GlowBackground>
+        </View>
     );
 }
 
 function QuizCard({ session, isDark }: { session: QuizSession; isDark: boolean }) {
-    const getScoreColor = (pct: number) => {
-        if (pct >= 80) return '#8B5CF6';
-        if (pct >= 60) return '#fbbf24';
-        return '#ef4444';
-    };
+    const [expanded, setExpanded] = useState(false);
+    const pct = session.score_percentage || 0;
+    const isPass = pct >= 60;
 
     return (
         <TouchableOpacity
-            onPress={() => router.push(`/(drawer)/history/${session.id}` as any)}
-            activeOpacity={0.7}
-            style={s.card}
+            onPress={() => setExpanded(!expanded)}
+            activeOpacity={0.9}
+            style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 }}
         >
-            <View style={s.cardLeft}>
-                <View style={[s.iconBox, isDark ? s.iconBoxDark : s.iconBoxLight]}>
-                    <Calendar width={20} height={20} color={getScoreColor(session.score_percentage)} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 16 }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                        <Activity width={20} height={20} color="#007AFF" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: isDark ? '#FFF' : '#000', marginBottom: 4 }} numberOfLines={1}>{session.topic}</Text>
+                        <Text style={{ fontSize: 13, color: '#8E8E93' }}>{session.difficulty} • {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                    </View>
                 </View>
-                <View style={s.flex1}>
-                    <Text style={[s.topicText, isDark ? s.textWhite : s.textSlate900]} numberOfLines={1}>
-                        {session.topic}
-                    </Text>
-                    <Text style={[s.metaText, isDark ? s.textWhite40 : s.textSlate500]}>
-                        {new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} • {session.difficulty}
-                    </Text>
+                <View style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: isPass ? 'rgba(52, 199, 89, 0.15)' : 'rgba(255, 59, 48, 0.12)' }}>
+                    <Text style={{ fontWeight: '800', fontSize: 13, color: isPass ? '#34C759' : '#FF3B30' }}>{Math.round(pct)}%</Text>
                 </View>
             </View>
-            <View style={s.cardRight}>
-                <Text style={[s.topicText, isDark ? s.textWhite : s.textSlate900]}>
-                    {Math.round(session.score_percentage)}%
-                </Text>
-                <Text style={[s.progressText, isDark ? s.textWhite30 : s.textSlate400]}>
-                    {session.correct_answers}/{session.total_questions}
-                </Text>
-            </View>
+
+            {expanded && (
+                <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : '#E5E5EA', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View>
+                        <Text style={{ fontSize: 11, color: '#8E8E93', textTransform: 'uppercase', fontWeight: '800', letterSpacing: 1, marginBottom: 4 }}>Score</Text>
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: isDark ? '#FFF' : '#000' }}>{session.correct_answers} / {session.total_questions}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => router.push(`/(drawer)/history/${session.id}` as any)} style={{ backgroundColor: '#007AFF', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 100, justifyContent: 'center' }}>
+                        <Text style={{ color: 'white', fontWeight: '700', fontSize: 13 }}>View Details</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         </TouchableOpacity>
     );
 }
@@ -257,42 +256,33 @@ function DeckCard({ deck, isDark }: { deck: FlashcardDeck; isDark: boolean }) {
     return (
         <TouchableOpacity
             onPress={() => router.push(`/(drawer)/flashcards/${deck.id}` as any)}
-            activeOpacity={0.7}
-            style={s.card}
+            activeOpacity={0.9}
+            style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
         >
-            <View style={s.cardLeft}>
-                <View style={[s.iconBox, isDark ? s.iconBoxDark : s.iconBoxLight]}>
-                    <MultiplePages width={20} height={20} color="#8B5CF6" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 16 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                    <MultiplePages width={20} height={20} color="#007AFF" />
                 </View>
-                <View style={[s.flex1, { marginLeft: 16, justifyContent: 'center' }]}>
-                    <Text style={[s.topicText, isDark ? s.textWhite : s.textSlate900]} numberOfLines={1}>
-                        {deck.title}
-                    </Text>
-                    <Text style={[s.metaText, isDark ? s.textWhite40 : s.textSlate500]}>
-                        {new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </Text>
+                <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: isDark ? '#FFF' : '#000', marginBottom: 4 }} numberOfLines={1}>{deck.title}</Text>
+                    <Text style={{ fontSize: 13, color: '#8E8E93' }}>{new Date(deck.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                 </View>
             </View>
-            <View style={s.cardRight}>
-                <Text style={[s.topicText, isDark ? s.textWhite : s.textSlate900]}>
-                    {deck.flashcards_count}
-                </Text>
-                <Text style={[s.progressText, isDark ? s.textWhite30 : s.textSlate400]}>
-                    Cards
-                </Text>
+            <View style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(0, 122, 255, 0.1)' }}>
+                <Text style={{ fontWeight: '800', fontSize: 13, color: '#007AFF' }}>{deck.flashcards_count} Cards</Text>
             </View>
         </TouchableOpacity>
     );
 }
 
 const s = StyleSheet.create({
-    header: { paddingHorizontal: 24, paddingBottom: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    header: { paddingHorizontal: 16, paddingBottom: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     headerTitle: { fontSize: 32, fontWeight: '700', letterSpacing: -1 },
     menuBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
     menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
     menuBtnLight: { backgroundColor: '#F1F5F9' },
 
-    tabContainer: { paddingHorizontal: 24, marginBottom: 32 },
+    tabContainer: { paddingHorizontal: 16, marginBottom: 32 },
     tabRow: { flexDirection: 'row', padding: 4, borderRadius: 999 },
     tabRowDark: { backgroundColor: '#13151B' },
     tabRowLight: { backgroundColor: '#F1F5F9' },
@@ -302,8 +292,8 @@ const s = StyleSheet.create({
     tabText: { fontWeight: '700', fontSize: 12, textTransform: 'capitalize' },
 
     contentContainer: { flex: 1, borderTopLeftRadius: 40, borderTopRightRadius: 40, paddingHorizontal: 24, paddingTop: 32 },
-    bgDark: { backgroundColor: '#090A0F' },
-    bgWhite: { backgroundColor: 'white' },
+    bgDark: { backgroundColor: '#000000' },
+    bgWhite: { backgroundColor: '#F2F2F7' },
     scrollView: { flex: 1 },
 
     skeletonRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
@@ -318,8 +308,8 @@ const s = StyleSheet.create({
     cardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 16 },
     cardRight: { alignItems: 'flex-end' },
     iconBox: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-    iconBoxDark: { backgroundColor: '#13151B' },
-    iconBoxLight: { backgroundColor: '#F8FAFC' },
+    iconBoxDark: { backgroundColor: '#1C1C1E' },
+    iconBoxLight: { backgroundColor: '#F2F2F7' },
     topicText: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
     metaText: { fontSize: 13 },
     progressText: { fontSize: 11, fontWeight: '500', marginTop: 2 },

@@ -9,7 +9,7 @@ import {
     ShareAndroid, Trophy, WarningTriangle,
     Notes, InfoCircle, Leaf, LightBulb, 
     Rocket, List, Group, CheckCircle,
-    Download, Menu, Xmark
+    Download, Xmark
 } from 'iconoir-react-native';
 import { useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { api } from '@/lib/api';
@@ -24,13 +24,13 @@ import { generateQuizHTML } from '@/lib/pdfGenerator';
 import CreditStatusBar from '@/components/CreditStatusBar';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 
+import * as Haptics from 'expo-haptics';
 import { QuizMode, Difficulty, FormatType, Question } from '@/components/quiz/QuizTypes';
 import { MCQCard } from '@/components/quiz/MCQCard';
 import { TheoryCard } from '@/components/quiz/TheoryCard';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GlowBackground } from '@/components/ui/GlowBackground';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Colors, Spacing, Radius } from '@/constants/theme';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & OPTIONS
@@ -61,6 +61,7 @@ export default function GenerateQuizScreen() {
     const isDark = colorScheme === 'dark';
     const bgColor = isDark ? '#121212' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#121212';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const navigation = useNavigation() as any;
 
     // Setup state
@@ -80,6 +81,8 @@ export default function GenerateQuizScreen() {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
     const [theoryResults, setTheoryResults] = useState<Record<number, boolean>>({});
+    const [currentQIndex, setCurrentQIndex] = useState(0);
+    const [isRevealed, setIsRevealed] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const viewShotRef = useRef<View>(null);
 
@@ -214,7 +217,8 @@ export default function GenerateQuizScreen() {
 
         setIsLoading(true);
         setLoadingStage(mode === 'file' ? 'Analyzing Document...' : 'Analyzing Topic...');
-        setQuestions([]); setSelectedAnswers({}); setTheoryResults({});
+        setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); 
+        setCurrentQIndex(0); setIsRevealed(false);
         if (timerRef.current) clearInterval(timerRef.current);
 
         // Stage cycling logic
@@ -350,284 +354,303 @@ export default function GenerateQuizScreen() {
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
     if (questions.length === 0) {
         const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
+        const estimatedCost = parseInt(questionCount) || 10;
         
         return (
-            <GlowBackground>
-                {/* Header with drawer toggle */}
+            <View style={{ flex: 1, backgroundColor: C.background }}>
+                {/* Header */}
                 <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
-                    <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>
+                    <Text style={[s.headerTitle, { color: C.text }]}>
                         Build Quiz
                     </Text>
-                    <TouchableOpacity
-                        onPress={() => navigation.openDrawer()}
-                        activeOpacity={0.7}
-                        accessibilityRole="button"
-                        accessibilityLabel="Open Menu"
-                        style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
-                    >
-                        <Menu width={22} height={22} color={isDark ? 'white' : 'black'} />
-                    </TouchableOpacity>
                 </View>
 
                 <ScrollView 
                     style={{ flex: 1 }} 
-                    contentContainerStyle={{ padding: 24, paddingBottom: 160, paddingTop: 10 }} 
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 220, paddingTop: 10 }} 
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Glass Section: Source */}
-                    <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.sectionGlass}>
-                        <View style={s.sectionContent}>
-                            <View style={[s.toggleContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
-                                {(['topic', 'file'] as QuizMode[]).map(m => (
-                                    <TouchableOpacity 
-                                        key={m} 
-                                        onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                        style={[s.toggleButton, mode === m && (isDark ? s.toggleActiveDark : s.toggleActiveLight)]}
-                                    >
-                                        <Text style={[s.toggleText, mode === m ? { color: isDark ? '#fff' : '#0f172a' } : { color: '#94a3b8' }]}>
-                                            {m}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
-                            {mode === 'topic' ? (
-                                <TextInput
-                                    style={[s.input, isDark ? s.inputDark : s.inputLight]}
-                                    placeholder="e.g. Nigerian History, Algebra..."
-                                    placeholderTextColor="#94a3b8"
-                                    value={topic}
-                                    onChangeText={setTopic}
-                                />
-                            ) : (
-                                <TouchableOpacity
-                                    onPress={handleFileSelect}
-                                    disabled={isProcessingFile}
-                                    activeOpacity={0.7}
-                                    style={[s.uploadBox, isDark ? s.uploadBoxDark : s.uploadBoxLight]}
+                    {/* Segmented Control */}
+                    <View style={[s.segmentedControl, { backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA' }]}>
+                        {(['topic', 'file'] as QuizMode[]).map(m => {
+                            const isSelected = mode === m;
+                            return (
+                                <TouchableOpacity 
+                                    key={m} 
+                                    onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
+                                    style={[s.segmentBtn, isSelected && [s.segmentActive, { backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF' }]]}
                                 >
-                                    {isProcessingFile ? (
-                                        <View style={s.centered}>
-                                            <ActivityIndicator size="small" color="#8B5CF6" />
-                                            <Text style={s.processingText}>Analyzing document...</Text>
-                                        </View>
-                                    ) : selectedFile ? (
-                                        <>
-                                            <View style={s.uploadIconActive}>
-                                                <Page width={18} height={18} color="#A78BFA" />
-                                            </View>
-                                            <Text style={[s.fileName, { color: isDark ? '#fff' : '#0f172a' }]}>{selectedFile.name}</Text>
-                                            <Text style={s.fileReady}>Ready to generate</Text>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <View style={[s.uploadIconEmpty, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC' }]}>
-                                                <Upload width={18} height={18} color={isDark ? '#cbd5e1' : '#94a3b8'} />
-                                            </View>
-                                            <Text style={[s.uploadPlaceholder, { color: isDark ? '#94a3b8' : '#64748b' }]}>Tap to upload PDF/DOCX</Text>
-                                            <Text style={s.uploadSubtext}>max 5MB • extractable text</Text>
-                                        </>
-                                    )}
+                                    <Text style={[s.segmentText, isSelected ? { color: C.text, fontWeight: '600' } : { color: '#8E8E93' }]}>
+                                        {m === 'topic' ? 'By Topic' : 'From File'}
+                                    </Text>
                                 </TouchableOpacity>
-                            )}
+                            );
+                        })}
+                    </View>
+
+                    {/* Input Area */}
+                    {mode === 'topic' ? (
+                        <View style={[s.card, { backgroundColor: C.card, marginBottom: 24 }]}>
+                            <TextInput
+                                style={[s.textInput, { color: C.text }]}
+                                placeholder="E.g. Cell Biology, World War II..."
+                                placeholderTextColor="#8E8E93"
+                                value={topic}
+                                onChangeText={setTopic}
+                            />
                         </View>
-                    </BlurView>
-
-                    {/* Glass Section: Configuration */}
-                    <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.sectionGlass}>
-                        <View style={s.sectionContent}>                            
-                            <View style={{ marginBottom: 24 }}>
-                                <Text style={s.subLabel}>Number of Questions</Text>
-                                <TextInput
-                                    style={[s.input, isDark ? s.inputDark : s.inputLight]}
-                                    keyboardType="number-pad" 
-                                    value={questionCount} 
-                                    onChangeText={setQuestionCount}
-                                    onBlur={() => {
-                                        const val = parseInt(questionCount);
-                                        if (isNaN(val) || val < 10) setQuestionCount('10');
-                                        else if (val > 30) setQuestionCount('30');
-                                    }}
-                                />
-                            </View>
-
-                            <Text style={s.subLabel}>Difficulty Level</Text>
-                            <View style={{ marginBottom: 24 }}>
-                                {DIFFICULTY_OPTIONS.map((opt) => (
-                                    <TouchableOpacity
-                                        key={opt.key}
-                                        onPress={() => setDifficulty(opt.key as Difficulty)}
-                                        activeOpacity={0.8}
-                                        style={[s.difficultyCard, { 
-                                            borderColor: difficulty === opt.key ? '#8B5CF6' : 'rgba(255,255,255,0.05)',
-                                            backgroundColor: difficulty === opt.key ? 'rgba(139,92,246,0.1)' : 'rgba(255,255,255,0.05)'
-                                        }]}
-                                    >
-                                        <View style={[s.iconBox, { backgroundColor: difficulty === opt.key ? '#8B5CF6' : 'rgba(255,255,255,0.05)' }]}>
-                                            <opt.icon width={18} height={18} color={difficulty === opt.key ? '#fff' : '#A78BFA'} />
-                                        </View>
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={[s.cardTitle, { color: isDark ? '#fff' : '#0f172a' }]}>{opt.label}</Text>
-                                            <Text style={s.cardDesc}>{opt.desc}</Text>
-                                        </View>
-                                        {difficulty === opt.key && (
-                                            <CheckCircle width={18} height={18} color="#A78BFA" />
-                                        )}
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
-                            <Text style={s.subLabel}>Question Format</Text>
-                            <View>
-                                {FORMAT_OPTIONS.map((opt) => (
-                                    <TouchableOpacity
-                                        key={opt.key}
-                                        onPress={() => setFormat(opt.key as FormatType)}
-                                        activeOpacity={0.8}
-                                        style={[s.difficultyCard, { 
-                                            borderColor: format === opt.key ? '#8B5CF6' : 'rgba(255,255,255,0.05)',
-                                            backgroundColor: format === opt.key ? 'rgba(139,92,246,0.1)' : 'rgba(255,255,255,0.05)'
-                                        }]}
-                                    >
-                                        <View style={[s.iconBox, { backgroundColor: format === opt.key ? '#8B5CF6' : 'rgba(255,255,255,0.05)' }]}>
-                                            <opt.icon width={18} height={18} color={format === opt.key ? '#fff' : '#A78BFA'} />
-                                        </View>
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={[s.cardTitle, { color: isDark ? '#fff' : '#0f172a' }]}>{opt.label}</Text>
-                                            <Text style={s.cardDesc}>{opt.desc}</Text>
-                                        </View>
-                                        {format === opt.key && (
-                                            <CheckCircle width={18} height={18} color="#A78BFA" />
-                                        )}
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-                    </BlurView>
-
-                    {/* Timer Glass Section */}
-                    <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.sectionGlass}>
-                        <View style={s.sectionContent}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                <View style={{ flex: 1, marginRight: 16 }}>
-                                    <Text style={[s.cardTitle, { color: isDark ? '#fff' : '#0f172a' }]}>Strict Timer</Text>
-                                    <Text style={s.cardDesc}>Auto-submit when time expires</Text>
+                    ) : (
+                        <TouchableOpacity
+                            onPress={handleFileSelect}
+                            disabled={isProcessingFile}
+                            activeOpacity={0.7}
+                            style={[s.card, s.uploadBox, { backgroundColor: C.card, marginBottom: 24 }]}
+                        >
+                            {isProcessingFile ? (
+                                <View style={s.centered}>
+                                    <ActivityIndicator size="small" color="#007AFF" />
+                                    <Text style={[s.processingText, { color: '#007AFF' }]}>Analyzing document...</Text>
                                 </View>
-                                <TouchableOpacity onPress={() => setTimerEnabled(!timerEnabled)}
-                                    style={[{ width: 48, height: 28, borderRadius: 14, justifyContent: 'center', padding: 4 }, { backgroundColor: timerEnabled ? '#8B5CF6' : (isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0') }]}>
-                                    <Animated.View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff', transform: [{ translateX: timerEnabled ? 20 : 0 }] }} />
+                            ) : selectedFile ? (
+                                <>
+                                    <Page width={32} height={32} color="#007AFF" style={{ marginBottom: 12 }} />
+                                    <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
+                                    <Text style={[s.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Upload width={32} height={32} color="#8E8E93" style={{ marginBottom: 12 }} />
+                                    <Text style={[s.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
+                                    <Text style={[s.uploadSub, { color: '#8E8E93' }]}>Maximum 5MB</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    )}
+
+                    {/* Number of Questions (Stepper) */}
+                    <Text style={s.sectionTitle}>NUMBER OF QUESTIONS</Text>
+                    <View style={[s.card, s.stepperCard, { backgroundColor: C.card }]}>
+                        <Text style={[s.stepperLabel, { color: C.text }]}>Questions</Text>
+                        <View style={s.stepperControls}>
+                            <TouchableOpacity 
+                                style={[s.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}
+                                onPress={() => setQuestionCount(prev => String(Math.max(10, parseInt(prev) - 5)))}
+                            >
+                                <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>-</Text>
+                            </TouchableOpacity>
+                            <Text style={[s.stepperValue, { color: C.text }]}>{questionCount}</Text>
+                            <TouchableOpacity 
+                                style={[s.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}
+                                onPress={() => setQuestionCount(prev => String(Math.min(30, parseInt(prev) + 5)))}
+                            >
+                                <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>+</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* Difficulty */}
+                    <Text style={s.sectionTitle}>DIFFICULTY</Text>
+                    <View style={{ gap: 12, marginBottom: 24 }}>
+                        {DIFFICULTY_OPTIONS.map(opt => {
+                            const isSelected = difficulty === opt.key;
+                            return (
+                                <TouchableOpacity
+                                    key={opt.key}
+                                    onPress={() => setDifficulty(opt.key as Difficulty)}
+                                    activeOpacity={0.8}
+                                    style={[s.card, s.optionCard, { backgroundColor: C.card, borderColor: isSelected ? '#007AFF' : 'transparent', borderWidth: 2 }]}
+                                >
+                                    <View style={[s.iconBoxRow, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
+                                        <opt.icon width={18} height={18} color="#007AFF" />
+                                    </View>
+                                    <View style={{ flex: 1, marginLeft: 16 }}>
+                                        <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
+                                        <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
+                                    </View>
+                                    {isSelected && <CheckCircle width={22} height={22} color="#007AFF" />}
                                 </TouchableOpacity>
-                            </View>
+                            );
+                        })}
+                    </View>
 
-                            {timerEnabled && (
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 12 }}>
-                                    <TextInput
-                                        style={[s.input, isDark ? s.inputDark : s.inputLight, { flex: 1 }]}
-                                        keyboardType="number-pad" 
-                                        value={timerMinutes} 
-                                        onChangeText={setTimerMinutes} 
-                                        placeholder="10" 
-                                        placeholderTextColor="#94a3b8"
-                                    />
-                                    <Text style={[s.toggleText, { color: '#94a3b8', width: 48, textAlign: 'center' }]}>mins</Text>
-                                </View>
-                            )}
-                        </View>
-                    </BlurView>
+                    {/* Format */}
+                    <Text style={s.sectionTitle}>QUESTION FORMAT</Text>
+                    <View style={{ gap: 12, marginBottom: 24 }}>
+                        {FORMAT_OPTIONS.map(opt => {
+                            const isSelected = format === opt.key;
+                            return (
+                                <TouchableOpacity
+                                    key={opt.key}
+                                    onPress={() => setFormat(opt.key as FormatType)}
+                                    activeOpacity={0.8}
+                                    style={[s.card, s.optionCard, { backgroundColor: C.card, borderColor: isSelected ? '#007AFF' : 'transparent', borderWidth: 2 }]}
+                                >
+                                    <View style={[s.iconBoxRow, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
+                                        <opt.icon width={18} height={18} color="#007AFF" />
+                                    </View>
+                                    <View style={{ flex: 1, marginLeft: 16 }}>
+                                        <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
+                                        <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
+                                    </View>
+                                    {isSelected && <CheckCircle width={22} height={22} color="#007AFF" />}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
                 </ScrollView>
 
                 {/* Glassmorphic Sticky Footer */}
                 <BlurView 
-                    intensity={80} 
+                    intensity={100} 
                     tint={isDark ? "dark" : "light"} 
-                    style={[s.footer, { paddingBottom: insets.bottom || 24, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+                    style={[s.formFooter, { paddingBottom: 24, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
                 >
                     {isLoading ? (
-                        <View style={[s.loadingBanner, { backgroundColor: 'rgba(139,92,246,0.05)', borderColor: 'rgba(139,92,246,0.2)' }]}>
-                            <View style={{ marginBottom: 16 }}>
-                                <ActivityIndicator size="small" color="#A78BFA" />
-                            </View>
-                            <Text style={[s.stageText, { color: '#A78BFA' }]}>{loadingStage}</Text>
-                            <Text style={{ textAlign: 'center', color: '#64748b', fontSize: 11, fontWeight: '500', paddingHorizontal: 8 }}>
-                                Usually takes 15-30s.
-                            </Text>
-                            <View style={{ flexDirection: 'row', gap: 6, marginTop: 16, width: '100%', paddingHorizontal: 8 }}>
-                                {PROGRESS_STAGES.map((st, i) => {
-                                    const stages = mode === 'file' ? LOADING_STAGES_FILE : LOADING_STAGES_TOPIC;
-                                    const currentIdx = stages.indexOf(loadingStage);
-                                    const isComplete = i < currentIdx;
-                                    const isActive = i === currentIdx;
-                                    return (
-                                        <View key={i} style={{ flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                                            {(isComplete || isActive) && (
-                                                <View style={{ height: '100%', width: isComplete ? '100%' : '60%', backgroundColor: isComplete ? '#8B5CF6' : 'rgba(139,92,246,0.6)' }} />
-                                            )}
-                                        </View>
-                                    );
-                                })}
-                            </View>
+                        <View style={s.loadingContainer}>
+                            <ActivityIndicator size="small" color="#007AFF" style={{ marginBottom: 12 }} />
+                            <Text style={[s.loadingText, { color: C.text }]}>{loadingStage}</Text>
                         </View>
-                    ) : canGenerate ? (
-                        <>
-                            <TouchableOpacity
-                                onPress={handleGenerate}
-                                activeOpacity={0.8}
-                                style={s.generateBtn}
-                            >
-                                <LinearGradient
-                                    colors={['#8B5CF6', '#6366F1']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    style={s.generateBtnContent}
-                                >
-                                    <Sparks width={18} height={18} color="#fff" />
-                                    <Text style={s.btnText}>Generate Quiz</Text>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                            <Text style={s.costText}>
-                                Estimated Cost: {parseInt(questionCount) || 10} Credits | Max 5MB
+                    ) : (
+                        <TouchableOpacity
+                            onPress={handleGenerate}
+                            disabled={!canGenerate}
+                            activeOpacity={0.8}
+                            style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : '#A2C9F4' }]}
+                        >
+                            <Text style={s.generatePillText}>
+                                Generate Quiz • {estimatedCost} Credits
                             </Text>
-                        </>
-                    ) : null}
+                        </TouchableOpacity>
+                    )}
                 </BlurView>
-            </GlowBackground>
+            </View>
         );
     }
 
     // ── QUIZ VIEW ───────────────────────────────────────────────────────────────
-    if (questions.length > 0 && totalAnswered < questions.length) {
-        return (
-            <GlowBackground>
-                {/* Progress Header */}
-                <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={[s.quizHeader, { paddingTop: Math.max(insets.top, 8) }]}>
-                    <View style={s.quizHeaderContent}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <View style={[s.quizNumBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}>
-                                <Text style={[s.quizNumText, { color: isDark ? '#fff' : '#0f172a' }]}>{totalAnswered + 1}</Text>
-                            </View>
-                            <Text style={s.quizProgressLabel}>Question {totalAnswered + 1} of {questions.length}</Text>
-                        </View>
-                        
-                        {timerEnabled && timeLeft > 0 && (
-                            <View style={[s.timerBadge, timeLeft < 60 ? s.timerCritical : (isDark ? s.timerDark : s.timerLight)]}>
-                                <Text style={[s.timerValue, timeLeft < 60 ? { color: '#f87171' } : (isDark ? { color: '#cbd5e1' } : { color: '#475569' })]}>
-                                    {formatTime(timeLeft)}
-                                </Text>
-                            </View>
-                        )}
-                    </View>
-                </BlurView>
+    if (questions.length > 0 && currentQIndex < questions.length) {
+        const q = questions[currentQIndex];
+        const isTheory = q.question_type === 'essay';
+        const rawProgressPct = (currentQIndex / questions.length) * 100;
+        const hasSelectedAction = isTheory ? theoryResults[currentQIndex] !== undefined : selectedAnswers[currentQIndex] !== undefined;
 
-                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
-                    {questions.map((q, qi) =>
-                        q.question_type === 'multiple_choice' ? (
-                            <MCQCard key={qi} q={q} qi={qi} onAnswer={handleMCQAnswer} selectedAnswer={selectedAnswers[qi]} quizFinished={false} />
-                        ) : (
-                            <TheoryCard key={qi} q={q} qi={qi} onGraded={handleTheoryGraded} />
-                        )
+        const handleNextPress = () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            if (!isRevealed && !isTheory) {
+                // Reveal the answer logic for MCQ
+                setIsRevealed(true);
+            } else {
+                // Move to next question
+                setIsRevealed(false);
+                setCurrentQIndex(p => p + 1);
+            }
+        };
+
+        return (
+            <View style={{ flex: 1, backgroundColor: C.background }}>
+                {/* Thin Progress line at safe area boundary */}
+                <View style={{ paddingTop: insets.top, backgroundColor: C.background }}>
+                    <View style={{ width: '100%', height: 4, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
+                        <Animated.View style={{ width: `${rawProgressPct}%`, height: '100%', backgroundColor: '#007AFF' }} />
+                    </View>
+                </View>
+
+                {/* Progress Text overlay */}
+                <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                        Question {currentQIndex + 1} of {questions.length}
+                    </Text>
+                    
+                    {timerEnabled && timeLeft > 0 && (
+                        <Text style={[{ fontSize: 13, fontWeight: '700' }, timeLeft < 60 ? { color: '#FF3B30' } : { color: '#8E8E93' }]}>
+                            {formatTime(timeLeft)}
+                        </Text>
+                    )}
+                </View>
+
+                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 180 }} showsVerticalScrollIndicator={false}>
+                    {/* Centered Large Question Card */}
+                    <View style={{ backgroundColor: C.card, borderRadius: 16, padding: 24, marginBottom: 32, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 16, elevation: 4 }}>
+                        <Text style={{ fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 32, textAlign: 'center' }}>
+                            {q.question_text}
+                        </Text>
+                    </View>
+
+                    {/* Stacked Options */}
+                    {!isTheory ? (
+                        <View style={{ gap: 12 }}>
+                            {q.options.map((opt, oi) => {
+                                const isSelected = selectedAnswers[currentQIndex] === opt;
+                                const isCorrectOpt = opt === q.correct_answer;
+                                
+                                let bgColor = C.card;
+                                let borderColor = 'transparent';
+                                let textColor = C.text;
+                                let icon = null;
+
+                                if (isRevealed) {
+                                    if (isCorrectOpt) {
+                                        borderColor = '#34C759';
+                                        textColor = '#34C759';
+                                        icon = <CheckCircle width={22} height={22} color="#34C759" />;
+                                    } else if (isSelected && !isCorrectOpt) {
+                                        borderColor = '#FF3B30';
+                                        textColor = '#FF3B30';
+                                        icon = <Xmark width={22} height={22} color="#FF3B30" />;
+                                    }
+                                } else if (isSelected) {
+                                    borderColor = '#007AFF';
+                                    textColor = '#007AFF';
+                                    icon = <CheckCircle width={22} height={22} color="#007AFF" />;
+                                }
+
+                                return (
+                                    <TouchableOpacity
+                                        key={oi}
+                                        activeOpacity={isRevealed ? 1 : 0.8}
+                                        onPress={() => {
+                                            if (!isRevealed) {
+                                                Haptics.selectionAsync();
+                                                setSelectedAnswers(p => ({ ...p, [currentQIndex]: opt }));
+                                            }
+                                        }}
+                                        style={{
+                                            flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16,
+                                            backgroundColor: bgColor, borderWidth: 2, borderColor: borderColor,
+                                            shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2
+                                        }}
+                                    >
+                                        <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: textColor }}>{opt}</Text>
+                                        {icon}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    ) : (
+                        <TheoryCard key={currentQIndex} q={q} qi={currentQIndex} onGraded={(qi, correct) => {
+                            setTheoryResults(p => ({ ...p, [qi]: correct }));
+                        }} />
                     )}
                 </ScrollView>
-            </GlowBackground>
+
+                {/* Sticky Active Quiz Next Button */}
+                <BlurView intensity={100} tint={isDark ? 'dark' : 'light'} style={{ position: 'absolute', bottom: 90, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' }}>
+                    <TouchableOpacity
+                        disabled={!hasSelectedAction}
+                        onPress={handleNextPress}
+                        activeOpacity={0.8}
+                        style={{
+                            width: '100%', height: 56, borderRadius: 100, 
+                            backgroundColor: hasSelectedAction ? '#007AFF' : (isDark ? '#2C2C2E' : '#E5E5EA'),
+                            alignItems: 'center', justifyContent: 'center'
+                        }}
+                    >
+                        <Text style={{ color: hasSelectedAction ? 'white' : '#8E8E93', fontWeight: '700', fontSize: 16, letterSpacing: -0.2 }}>
+                            {isTheory ? (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question') : (!isRevealed ? 'Check Answer' : (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question'))}
+                        </Text>
+                    </TouchableOpacity>
+                </BlurView>
+            </View>
         );
     }
 
@@ -642,26 +665,26 @@ export default function GenerateQuizScreen() {
     const remark = getRemark(percentage);
 
     return (
-        <GlowBackground>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 160, paddingTop: insets.top + 20 }} showsVerticalScrollIndicator={false}>
                 {/* Score Header Glass Card */}
                 <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.resultsHeader}>
                     <View style={s.resultsIconBox}>
-                        <remark.icon width={36} height={36} color="#A78BFA" />
+                        <remark.icon width={36} height={36} color={C.primary} />
                     </View>
-                    <Text style={s.resultsTitle}>{remark.title}</Text>
-                    <Text style={[s.scoreValue, { color: isDark ? '#fff' : '#0f172a' }]}>{percentage}%</Text>
+                    <Text style={[s.resultsTitle, { color: C.primary }]}>{remark.title}</Text>
+                    <Text style={[s.scoreValue, { color: C.text }]}>{percentage}%</Text>
                     <Text style={s.resultsSubtitle}>{remark.subtitle}</Text>
 
                     {/* Meta Info */}
                     <View style={s.resultsMeta}>
                         <View style={s.metaCard}>
                             <CheckCircle width={16} height={16} color="#4ADE80" />
-                            <Text style={[s.metaText, { color: isDark ? '#cbd5e1' : '#334155' }]}>{correctCount} OK</Text>
+                            <Text style={[s.metaText, { color: C.textSecondary }]}>{correctCount} OK</Text>
                         </View>
                         <View style={s.metaCard}>
-                            <Timer width={16} height={16} color="#A78BFA" />
-                            <Text style={[s.metaText, { color: isDark ? '#cbd5e1' : '#334155' }]}>
+                            <Timer width={16} height={16} color={C.primary} />
+                            <Text style={[s.metaText, { color: C.textSecondary }]}>
                                 {timerEnabled ? formatTime(((parseInt(timerMinutes) || 10) * 60) - timeLeft) : 'No Timer'}
                             </Text>
                         </View>
@@ -688,7 +711,7 @@ export default function GenerateQuizScreen() {
                                 )}
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={[s.reviewQuestion, { color: isDark ? '#fff' : '#0f172a' }]} numberOfLines={1}>{q.question_text}</Text>
+                                <Text style={[s.reviewQuestion, { color: C.text }]} numberOfLines={1}>{q.question_text}</Text>
                                 <Text style={s.reviewMeta} numberOfLines={1}>
                                     {isTheory ? (isCorrect ? "Mastered" : "Review Topic") : (isCorrect ? `Correct Answer` : `Missed Question`)}
                                 </Text>
@@ -710,9 +733,9 @@ export default function GenerateQuizScreen() {
 
             {/* Actions Footer */}
             <BlurView 
-                intensity={80} 
+                intensity={100} 
                 tint={isDark ? "dark" : "light"} 
-                style={[s.footer, { paddingBottom: insets.bottom || 24, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+                style={[s.footer, { paddingBottom: insets.bottom + 85, paddingHorizontal: 24, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
             >
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
                     <TouchableOpacity
@@ -722,11 +745,11 @@ export default function GenerateQuizScreen() {
                         style={[s.shareBtn, isDark ? s.shareBtnDark : s.shareBtnLight]}
                     >
                         {isSharing ? (
-                            <ActivityIndicator size="small" color="#A78BFA" />
+                            <ActivityIndicator size="small" color={C.primary} />
                         ) : (
                             <>
-                                <ShareAndroid width={18} height={18} color={isDark ? '#fff' : '#0f172a'} />
-                                <Text style={[s.actionBtnText, { color: isDark ? '#fff' : '#0f172a' }]}>Share</Text>
+                                <ShareAndroid width={18} height={18} color={C.text} />
+                                <Text style={[s.actionBtnText, { color: C.text }]}>Share</Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -735,14 +758,9 @@ export default function GenerateQuizScreen() {
                         onPress={handleExportPDF}
                         disabled={isExporting}
                         activeOpacity={0.8}
-                        style={s.exportBtn}
+                        style={[s.exportBtn, { backgroundColor: C.primary }]}
                     >
-                        <LinearGradient
-                            colors={['#8B5CF6', '#6366F1']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={s.exportBtnContent}
-                        >
+                        <View style={s.exportBtnContent}>
                             {isExporting ? (
                                 <ActivityIndicator size="small" color="white" />
                             ) : (
@@ -751,62 +769,61 @@ export default function GenerateQuizScreen() {
                                     <Text style={s.exportBtnText}>Export</Text>
                                 </>
                             )}
-                        </LinearGradient>
+                        </View>
                     </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity
                     onPress={() => { setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); if (timerRef.current) clearInterval(timerRef.current); }}
                     activeOpacity={0.8}
-                    style={[s.returnBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}
+                    style={[s.returnBtn, { backgroundColor: isDark ? C.card : '#F2F2F7' }]}
                 >
-                    <Text style={[s.actionBtnText, { color: isDark ? '#fff' : '#0f172a' }]}>Return Home</Text>
+                    <Text style={[s.actionBtnText, { color: C.text }]}>Return Home</Text>
                 </TouchableOpacity>
             </BlurView>
 
             <RewardModal isVisible={isRewardModalVisible} onClose={() => setIsRewardModalVisible(false)} reward={rewardData} />
             <OutOfCreditsModal visible={showOutOfCredits} onDismiss={() => setShowOutOfCredits(false)} featureAttempted="quiz" />
-        </GlowBackground>
+        </View>
     );
 }
 
 const s = StyleSheet.create({
-    sectionGlass: { borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: 24 },
-    sectionContent: { padding: 16 },
-    sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, color: '#94a3b8', marginBottom: 16, marginLeft: 4 },
-    toggleContainer: { flexDirection: 'row', borderRadius: 16, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-    toggleButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12 },
-    toggleActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
-    toggleActiveLight: { backgroundColor: '#fff', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
-    toggleText: { fontSize: 13, fontWeight: '700', textTransform: 'capitalize' },
-    input: { height: 56, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', borderRadius: 16, paddingHorizontal: 20, fontSize: 15, fontWeight: '500' },
-    inputDark: { backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff' },
-    inputLight: { backgroundColor: '#fff', color: '#0f172a' },
-    uploadBox: { borderStyle: 'dashed', borderWidth: 2, borderRadius: 20, padding: 24, alignItems: 'center' },
-    uploadBoxDark: { borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' },
-    uploadBoxLight: { borderColor: '#E2E8F0', backgroundColor: '#fff' },
-    centered: { alignItems: 'center', paddingVertical: 8 },
-    processingText: { fontSize: 13, fontWeight: '600', color: '#A78BFA', marginTop: 16 },
-    uploadIconActive: { backgroundColor: 'rgba(139,92,246,0.2)', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-    fileName: { fontSize: 14, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
-    fileReady: { fontSize: 11, fontWeight: '700', color: '#A78BFA', textTransform: 'uppercase', letterSpacing: 1 },
-    uploadIconEmpty: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-    uploadPlaceholder: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
-    uploadSubtext: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
-    // Configuration
-    subLabel: { fontSize: 12, fontWeight: '500', color: '#94a3b8', marginBottom: 8, marginLeft: 4 },
-    difficultyCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 10 },
-    iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-    cardTitle: { fontSize: 14, fontWeight: '700' },
-    cardDesc: { fontSize: 10, fontWeight: '500', color: '#64748b' },
-    // Footer
-    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
-    generateBtn: { borderRadius: 16, overflow: 'hidden' },
-    generateBtnContent: { paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
-    btnText: { color: '#fff', fontWeight: '900', fontSize: 15, marginLeft: 8 },
-    costText: { textAlign: 'center', color: '#94a3b8', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 16 },
-    loadingBanner: { borderRadius: 28, padding: 20, borderWidth: 2, alignItems: 'center', overflow: 'hidden' },
-    stageText: { fontSize: 18, fontWeight: '900', letterSpacing: -0.5, marginBottom: 4, textAlign: 'center' },
+    // ── Setup Layout Components ──
+    segmentedControl: { flexDirection: 'row', borderRadius: 24, padding: 4, marginBottom: 24 },
+    segmentBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 20 },
+    segmentActive: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+    segmentText: { fontSize: 14 },
+    
+    card: { borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+    textInput: { fontSize: 16, fontWeight: '500', padding: 4 },
+    
+    uploadBox: { alignItems: 'center', justifyContent: 'center', paddingVertical: 32 },
+    uploadTitle: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
+    uploadSub: { fontSize: 13, fontWeight: '500' },
+    centered: { alignItems: 'center' },
+    processingText: { marginTop: 12, fontSize: 14, fontWeight: '600' },
+
+    sectionTitle: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 12, marginLeft: 8 },
+
+    stepperCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
+    stepperLabel: { fontSize: 16, fontWeight: '600' },
+    stepperControls: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    stepperBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    stepperBtnText: { fontSize: 24, fontWeight: '400', lineHeight: 28 },
+    stepperValue: { fontSize: 18, fontWeight: '700', minWidth: 24, textAlign: 'center' },
+
+    optionCard: { flexDirection: 'row', alignItems: 'center' },
+    iconBoxRow: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    optionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
+    optionDesc: { fontSize: 13, fontWeight: '400' },
+
+    // Footer actions
+    formFooter: { position: 'absolute', bottom: 90, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1, borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' },
+    generatePillButton: { width: '100%', borderRadius: 100, paddingVertical: 18, alignItems: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+    generatePillText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+    loadingContainer: { alignItems: 'center', paddingVertical: 12 },
+    loadingText: { fontSize: 15, fontWeight: '600' },
 
     // Shared Styles
     header: { paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -817,6 +834,7 @@ const s = StyleSheet.create({
     textWhite: { color: 'white' },
     textSlate900: { color: '#0f172a' },
     sectionHeader: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, color: '#94a3b8', marginBottom: 16, marginLeft: 4 },
+    footer: { paddingVertical: 16 },
 
     // Quiz View
     quizHeader: { paddingTop: 60, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
@@ -833,9 +851,9 @@ const s = StyleSheet.create({
     quizNumText: { fontWeight: '600', fontSize: 13 },
     quizProgressLabel: { color: '#94a3b8', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 },
     // Results View
-    resultsHeader: { borderRadius: 32, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', padding: 32, alignItems: 'center', marginBottom: 32 },
-    resultsIconBox: { width: 80, height: 80, backgroundColor: 'rgba(139,92,246,0.2)', borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)' },
-    resultsTitle: { color: '#A78BFA', fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 },
+    resultsHeader: { borderRadius: 32, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(60,60,67,0.12)', padding: 32, alignItems: 'center', marginBottom: 32 },
+    resultsIconBox: { width: 80, height: 80, backgroundColor: 'rgba(0,122,255,0.12)', borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 1, borderColor: 'rgba(0,122,255,0.15)' },
+    resultsTitle: { fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 },
     scoreValue: { fontSize: 48, fontWeight: '900', letterSpacing: -2 },
     resultsSubtitle: { color: '#64748b', fontWeight: '500', fontSize: 14, marginTop: 8, textAlign: 'center', paddingHorizontal: 16, lineHeight: 20 },
     resultsMeta: { flexDirection: 'row', marginTop: 32, gap: 12, width: '100%' },

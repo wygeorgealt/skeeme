@@ -4,14 +4,18 @@ import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Acti
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { Xmark, Google, Apple } from 'iconoir-react-native';
 import { PasswordField } from '@/components/ui/PasswordField';
-import { GlowBackground } from '@/components/ui/GlowBackground';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { IosPillButton } from '@/components/ui/IosPillButton';
+import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 
 export default function LoginScreen() {
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { login, storedEmail } = useAuthStore();
 
     const [email, setEmail] = useState('');
@@ -21,31 +25,15 @@ export default function LoginScreen() {
     const [passwordError, setPasswordError] = useState('');
     const [failedAttempts, setFailedAttempts] = useState(0);
 
-    // Pre-fill stored email from previous session
     useEffect(() => {
         if (storedEmail) setEmail(storedEmail);
     }, [storedEmail]);
 
-    const clearErrors = () => {
-        setEmailError('');
-        setPasswordError('');
-    };
-
     const handleLogin = async () => {
-        clearErrors();
-
-        if (!email.trim()) {
-            setEmailError('Please enter your email address.');
-            return;
-        }
-        if (!password) {
-            setPasswordError('Please enter your password.');
-            return;
-        }
-        if (failedAttempts >= 5) {
-            setPasswordError('Too many attempts. Please wait a moment before trying again.');
-            return;
-        }
+        setEmailError(''); setPasswordError('');
+        if (!email.trim()) return setEmailError('Please enter your email address.');
+        if (!password) return setPasswordError('Please enter your password.');
+        if (failedAttempts >= 5) return setPasswordError('Too many attempts. Please wait a moment.');
 
         setIsLoading(true);
         try {
@@ -66,194 +54,118 @@ export default function LoginScreen() {
             } else if (status === 429) {
                 setPasswordError('Too many attempts. Please wait 1 minute.');
             } else {
-                setPasswordError('Something went wrong. Check your connection and try again.');
+                setPasswordError('Something went wrong. Check your connection.');
             }
         } finally {
             setIsLoading(false);
         }
     };
 
-    const placeholderColor = isDark ? "#475569" : "#94a3b8";
-
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={s.flex1}
-        >
-            <GlowBackground useSafeArea>
-                <View style={s.header}>
-                    <TouchableOpacity
-                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
-                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-                    >
-                        <Xmark width={28} height={28} color={isDark ? '#fff' : '#000'} />
-                    </TouchableOpacity>
-                </View>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+            <View style={{ flex: 1, backgroundColor: C.background }}>
+                {/* Close button */}
+                <TouchableOpacity
+                    onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
+                    style={[s.closeBtn, { top: insets.top + 8 }]}
+                    hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                >
+                    <Ionicons name="close" size={20} color={C.textSecondary} />
+                </TouchableOpacity>
 
-                <ScrollView 
-                    style={s.flex1}
-                    contentContainerStyle={s.scrollContent}
+                <ScrollView
+                    contentContainerStyle={[s.scroll, { paddingTop: insets.top + 72 }]}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    <View style={s.heroSection}>
-                        <Text style={[isDark ? s.textWhite : s.textSlate900, s.heroTitle]}>
-                            Log in.
-                        </Text>
-                        <Text style={[isDark ? s.textSlate400 : s.textSlate500, s.heroSubtitle]}>
-                            Enter your details to access your dashboard.
-                        </Text>
+                    {/* Logo */}
+                    <View style={[s.logoCircle, { backgroundColor: C.primary + '18' }]}>
+                        <Ionicons name="school" size={32} color={C.primary} />
                     </View>
 
-                {/* Social Login 
-                <View style={s.socialRow}>
-                    <TouchableOpacity
-                        activeOpacity={0.9}
-                        style={[s.socialBtn, isDark ? s.socialBtnDark : s.socialBtnLight]}
-                    >
-                        <Google width={18} height={18} color={isDark ? '#fff' : '#000'} />
-                        <Text style={[s.fontBold, s.textSmall, isDark ? s.textWhite : s.textSlate900, { marginLeft: 12 }]}>Continue with Google</Text>
-                    </TouchableOpacity>
+                    <Text style={[s.title, { color: C.text }]}>Welcome back</Text>
+                    <Text style={[s.subtitle, { color: C.textSecondary }]}>Sign in to continue to Skeeme</Text>
 
-                    {Platform.OS === 'ios' && (
-                        <TouchableOpacity
-                            activeOpacity={0.9}
-                            style={[s.socialBtn, isDark ? s.bgWhite : s.bgSlate900]}
-                        >
-                            <Apple width={18} height={18} color={isDark ? '#000' : '#fff'} />
-                            <Text style={[s.fontBold, s.textSmall, { marginLeft: 12 }, isDark ? s.textBlack : s.textWhite]}>Continue with Apple</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-                */}
-
-                {/* Divider 
-                <View style={s.dividerContainer}>
-                    <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
-                    <Text style={[s.dividerText, isDark ? s.textSlate600 : s.textSlate400]}>or use email</Text>
-                    <View style={[s.dividerLine, isDark ? s.bgSlate800 : s.bgSlate100]} />
-                </View>
-                */}
-
-                {/* Email */}
-                <View style={s.inputContainer}>
-                    <View style={[s.inputWrapper, isDark ? s.bgSlate900 : s.bgTransparent, isDark ? s.borderSlate800 : s.borderSlate200, emailError ? s.borderRed500 : null]}>
-                        <TextInput
-                            style={[s.flex1, s.fontMedium, s.textSmall, s.inputHeight, { color: isDark ? 'white' : 'black' }]}
-                            placeholder="Email address"
-                            placeholderTextColor={placeholderColor}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            value={email}
-                            onChangeText={(t) => { setEmail(t); setEmailError(''); }}
-                        />
+                    <View style={[s.groupedList, { backgroundColor: C.card }]}>
+                        <View style={s.groupedRow}>
+                            <Text style={[s.groupedLabel, { color: C.text }]}>Email</Text>
+                            <TextInput
+                                style={[s.groupedInput, { color: C.text }]}
+                                placeholder="you@example.com"
+                                placeholderTextColor={C.textTertiary}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                autoComplete="email"
+                                value={email}
+                                onChangeText={t => { setEmail(t); setEmailError(''); }}
+                            />
+                        </View>
+                        <View style={[s.separator, { backgroundColor: C.separator }]} />
+                        <View style={s.groupedRow}>
+                            <Text style={[s.groupedLabel, { color: C.text }]}>Password</Text>
+                            <PasswordField
+                                value={password}
+                                onChangeText={(t: string) => { setPassword(t); setPasswordError(''); }}
+                                style={{ flex: 1, paddingRight: 4 }}
+                                inputStyle={s.groupedInput}
+                                placeholder="Required"
+                            />
+                        </View>
                     </View>
-                    {emailError ? <Text style={s.errorText}>{emailError}</Text> : null}
-                </View>
 
-                {/* Password */}
-                <View style={s.passwordContainer}>
-                    <PasswordField
-                        value={password}
-                        onChangeText={(t: string) => { setPassword(t); setPasswordError(''); }}
-                    />
-                    <View style={s.passwordFooter}>
-                        {passwordError ? (
-                            <Text style={s.errorTextSmall}>{passwordError}</Text>
-                        ) : <View />}
-                        <TouchableOpacity onPress={() => router.push('/forgot-password')}>
-                            <Text style={s.forgotPasswordText}>Forgot password?</Text>
+                    {/* Footer / Errors */}
+                    <View style={s.listFooter}>
+                        <View style={{ flex: 1 }}>
+                            {(!!emailError || !!passwordError) && (
+                                <Text style={[s.errorFooter, { color: C.destructive }]}>
+                                    {emailError || passwordError}
+                                </Text>
+                            )}
+                        </View>
+                        <TouchableOpacity onPress={() => router.push('/forgot-password')} activeOpacity={0.7}>
+                            <Text style={[s.forgotLink, { color: C.primary }]}>Forgot Password?</Text>
                         </TouchableOpacity>
                     </View>
-                </View>
 
-                <View style={s.spacer} />
+                    <View style={{ height: Spacing.md }} />
 
-                {/* Login Button */}
-                <View style={s.btnContainer}>
-                    <TouchableOpacity
+                    <IosPillButton
+                        label="Sign In"
                         onPress={handleLogin}
-                        disabled={isLoading}
-                        activeOpacity={0.9}
-                        style={[s.mainBtn, isLoading && s.opacity70]}
-                    >
-                        {isLoading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={s.mainBtnText}>Sign In</Text>
-                        )}
+                        loading={isLoading}
+                        fullWidth
+                        size="lg"
+                    />
+
+                    <TouchableOpacity onPress={() => router.push('/signup')} style={s.signupRow}>
+                        <Text style={[s.signupText, { color: C.textSecondary }]}>
+                            New to Skeeme?{' '}
+                            <Text style={[s.signupText, { color: C.primary, fontWeight: '600' }]}>Create account</Text>
+                        </Text>
                     </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity onPress={() => router.push('/signup')} style={s.signupLink}>
-                    <Text style={[isDark ? s.textSlate400 : s.textSlate500, s.fontBold, s.textSmall]}>
-                        New to Skeeme? <Text style={s.textBrandPrimary}>Create account</Text>
-                    </Text>
-                </TouchableOpacity>
-
-                {/* DEV ONLY Reset Removed */}
-            </ScrollView>
-            </GlowBackground>
+                </ScrollView>
+            </View>
         </KeyboardAvoidingView>
     );
 }
 
 const s = StyleSheet.create({
-    flex1: { flex: 1 },
-    header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, flexDirection: 'row', alignItems: 'center' },
-    scrollContent: { paddingHorizontal: 40, paddingTop: 16 },
-    heroSection: { marginBottom: 40 },
-    heroTitle: { fontSize: 40, fontWeight: '700', letterSpacing: -1, lineHeight: 46, marginBottom: 12 },
-    heroSubtitle: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
+    closeBtn: { position: 'absolute', right: Spacing.lg, zIndex: 10, width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+    scroll: { paddingHorizontal: Spacing.xl, paddingBottom: 48 },
+    logoCircle: { width: 72, height: 72, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xl, alignSelf: 'center' },
+    title: { fontSize: FontSize.title1, fontWeight: '700', letterSpacing: -0.5, textAlign: 'center', marginBottom: Spacing.xs },
+    subtitle: { fontSize: FontSize.subhead, textAlign: 'center', marginBottom: Spacing.xl },
     
-    socialRow: { gap: 12, marginBottom: 32 },
-    socialBtn: { height: 52, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', borderWidth: 1 },
-    socialBtnDark: { backgroundColor: 'transparent', borderColor: '#1e293b' },
-    socialBtnLight: { backgroundColor: 'white', borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+    groupedList: { borderRadius: 10, overflow: 'hidden' },
+    groupedRow: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingRight: 12 },
+    groupedLabel: { width: 100, fontSize: 16, fontWeight: '400', paddingLeft: 16 },
+    groupedInput: { flex: 1, fontSize: 16, height: 44 },
+    separator: { height: StyleSheet.hairlineWidth, marginLeft: 16 },
     
-    bgWhite: { backgroundColor: 'white' },
-    bgSlate900: { backgroundColor: '#0f172a' },
-    bgSlate800: { backgroundColor: '#1e293b' },
-    bgSlate100: { backgroundColor: '#f1f5f9' },
-    bgTransparent: { backgroundColor: 'transparent' },
-    
-    textWhite: { color: 'white' },
-    textBlack: { color: 'black' },
-    textSlate900: { color: '#0f172a' },
-    textSlate400: { color: '#94a3b8' },
-    textSlate500: { color: '#64748b' },
-    textSlate600: { color: '#475569' },
-    textBrandPrimary: { color: '#8B5CF6' },
-    
-    fontBold: { fontWeight: '700' },
-    fontMedium: { fontWeight: '500' },
-    textSmall: { fontSize: 14 },
-    textTiny: { fontSize: 10 },
-    
-    dividerContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 32 },
-    dividerLine: { flex: 1, height: 0.5 },
-    dividerText: { paddingHorizontal: 20, fontWeight: '700', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5 },
-    
-    inputContainer: { marginBottom: 4 },
-    inputWrapper: { borderRadius: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
-    inputHeight: { height: 48 },
-    borderSlate800: { borderColor: '#1e293b' },
-    borderSlate200: { borderColor: '#e2e8f0' },
-    borderRed500: { borderColor: '#ef4444' },
-    errorText: { color: '#ef4444', fontSize: 12, fontWeight: '500', marginTop: 6, marginLeft: 4 },
-    
-    passwordContainer: { marginBottom: 4, marginTop: 12 },
-    passwordFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingHorizontal: 4 },
-    errorTextSmall: { color: '#ef4444', fontSize: 12, fontWeight: '500', flex: 1 },
-    forgotPasswordText: { color: '#8B5CF6', fontWeight: '700', fontSize: 12 },
-    
-    spacer: { marginTop: 24 },
-    btnContainer: { marginTop: 20 },
-    mainBtn: { width: '100%', height: 52, backgroundColor: '#8B5CF6', borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 5 },
-    mainBtnText: { fontWeight: '700', fontSize: 15, color: 'white', letterSpacing: 0.5 },
-    opacity70: { opacity: 0.7 },
-    
-    signupLink: { marginTop: 40, marginBottom: 32, alignItems: 'center' },
-    devReset: { marginBottom: 40, alignItems: 'center' },
-    devResetText: { color: '#ef4444', fontSize: 12, fontWeight: '700' },
+    listFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingHorizontal: 16, minHeight: 20 },
+    errorFooter: { fontSize: 13, fontWeight: '400' },
+    forgotLink: { fontSize: 13, fontWeight: '500' },
+
+    signupRow: { marginTop: Spacing.xl, alignItems: 'center' },
+    signupText: { fontSize: FontSize.subhead },
 });

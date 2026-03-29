@@ -4,8 +4,7 @@ import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, N
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { GlowBackground } from '@/components/ui/GlowBackground';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Colors } from '@/constants/theme';
 import { 
     Sparks, CheckCircle, WarningTriangle, 
     NavArrowLeft, NavArrowRight, Check, Restart
@@ -93,40 +92,25 @@ const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: 
     });
 
     const CardSide = ({ type, text, footer, rotateY }: any) => (
-        <BlurView
-            intensity={isDark ? 40 : 60}
-            tint={isDark ? 'dark' : 'light'}
-            style={[s.glassCard, s.glassBorderBack]}
-        >
-            <LinearGradient
-                colors={['rgba(139, 92, 246, 0.15)', 'rgba(99, 102, 241, 0.15)']}
-                style={StyleSheet.absoluteFill}
-            />
-            
-            <View style={s.cardHeader}>
-                <View style={[s.typeBadge, { backgroundColor: '#8B5CF6' }]}>
-                    <Text style={[s.typeBadgeText, { color: 'white' }]}>{type}</Text>
-                </View>
-                {type === 'QUESTION' ? (
-                    <Sparks width={20} height={20} color="#C4B5FD" />
-                ) : (
-                    <CheckCircle width={20} height={20} color="#10B981" />
-                )}
+        <View style={{ flex: 1, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderRadius: 24, padding: 32, justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 8 }}>
+            <View style={{ position: 'absolute', top: 24, left: 24, right: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1 }}>{type}</Text>
+                {type === 'QUESTION' ? <Sparks width={20} height={20} color="#007AFF" /> : <CheckCircle width={20} height={20} color="#34C759" />}
             </View>
-            
-            <View style={s.cardContent}>
+
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <MathText
                     content={text}
-                    color={isDark ? 'white' : '#0f172a'}
+                    color={isDark ? '#FFF' : '#000'}
                     fontSize={type === 'QUESTION' ? 26 : 20}
-                    containerStyle={s.mathTextContainer}
+                    containerStyle={{ width: '100%' }}
                 />
             </View>
-            
-            <View style={s.cardFooterTextPos}>
-                <Text style={[s.cardFooterText, isDark ? s.textWhite40 : s.textSlate400]}>{footer}</Text>
+
+            <View style={{ position: 'absolute', bottom: 24, left: 0, right: 0, alignItems: 'center' }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#C7C7CC', textTransform: 'uppercase', letterSpacing: 1.5 }}>{footer}</Text>
             </View>
-        </BlurView>
+        </View>
     );
 
     return (
@@ -284,7 +268,7 @@ export default function StudyDeckScreen() {
     };
 
     if (error && !deck) return (
-        <GlowBackground isRoot={true}>
+        <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#F2F2F7' }}>
             <View style={s.errorCenter}>
                 <WarningTriangle width={64} height={64} color="#ef4444" />
                 <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Deck not found</Text>
@@ -292,16 +276,16 @@ export default function StudyDeckScreen() {
                     We couldn't load this flashcard deck. It might have been deleted or there was a connection issue.
                 </Text>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
-                    <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.blueBtnGradient}>
+                    <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF' }]}>
                         <Text style={s.btnTextLarge}>Go Back</Text>
-                    </LinearGradient>
+                    </View>
                 </TouchableOpacity>
             </View>
-        </GlowBackground>
+        </View>
     );
 
     if (isLoading && !deck) return (
-        <GlowBackground isRoot={true}>
+        <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#F2F2F7' }}>
             <View style={s.loadingWrapper}>
                 <SkeletonLoader width={120} height={16} style={{ marginBottom: 12, borderRadius: 8 }} />
                 <SkeletonLoader width="60%" height={32} style={{ marginBottom: 48, borderRadius: 12 }} />
@@ -310,27 +294,27 @@ export default function StudyDeckScreen() {
                     <SkeletonLoader width="60%" height={24} style={{ borderRadius: 6 }} />
                 </View>
             </View>
-        </GlowBackground>
+        </View>
     );
 
     if (!deck || !deck.flashcards) return (
-        <GlowBackground isRoot={true}>
+        <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#F2F2F7' }}>
             <View style={s.errorCenter}>
                 <Text style={s.noCardsText}>No cards found in this deck.</Text>
                 <TouchableOpacity onPress={() => router.back()} style={s.mt4}>
                     <Text style={s.goBackTextPrimary}>Go Back</Text>
                 </TouchableOpacity>
             </View>
-        </GlowBackground>
+        </View>
     );
 
     if (isComplete) return (
-        <GlowBackground isRoot={true}>
+        <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#F2F2F7' }}>
             <View style={s.successCenter}>
                 <View style={s.successIconBox}>
-                    <LinearGradient colors={['#8B5CF6', '#6366F1']} style={s.successIconGradient}>
+                    <View style={[s.successIconGradient, { backgroundColor: '#007AFF' }]}>
                         <Check width={48} height={48} color="white" strokeWidth={3} />
-                    </LinearGradient>
+                    </View>
                 </View>
                 <Text style={[s.successTitle, isDark ? s.textWhite : s.textSlate900]}>Session Complete!</Text>
                 <Text style={s.successSubtitle}>You've mastered all {deck.flashcards.length} cards in this set. Great job!</Text>
@@ -344,54 +328,42 @@ export default function StudyDeckScreen() {
                     </TouchableOpacity>
                     
                     <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={s.flex1}>
-                        <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.blueBtnGradient}>
+                        <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF' }]}>
                             <Text style={s.btnTextLarge}>Finish</Text>
-                        </LinearGradient>
+                        </View>
                     </TouchableOpacity>
                 </View>
             </View>
-        </GlowBackground>
+        </View>
     );
 
     const progressWidth = cards.length > 0 ? `${((currentIndex + 1) / cards.length) * 100}%` : '0%';
 
     return (
-        <GlowBackground isRoot={true}>
+        <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#F2F2F7' }}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
             
             {/* Header */}
-            <View style={s.headerRow}>
+            <View style={[s.headerRow, { paddingBottom: 16 }]}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.backBtn, isDark ? s.bgWhite10 : s.bgWhite60]}>
                     <NavArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <View style={s.headerTextContainer}>
-                    <Text style={[s.headerLabel, isDark ? s.textWhite40 : s.textSlate400]}>STUDYING</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                        {currentIndex + 1} of {cards.length}
+                    </Text>
                     <View style={s.flexRowGap2}>
-                        <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900, { maxWidth: SCREEN_WIDTH * 0.5 }]} numberOfLines={1}>
+                        <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900, { maxWidth: SCREEN_WIDTH * 0.5, marginTop: 4 }]} numberOfLines={1}>
                             {deck?.title || 'Study Deck'}
                         </Text>
                         {isLoading && (
                              <Animated.View style={syncAnimatedStyle}>
-                                <Sparks width={14} height={14} color="#8B5CF6" />
+                                <Sparks width={14} height={14} color="#007AFF" />
                             </Animated.View>
                         )}
                     </View>
                 </View>
                 <View style={s.size10} />
-            </View>
-
-            {/* Progress Container */}
-            <View style={s.progressContainer}>
-                <View style={[s.progressBarBg, isDark ? s.bgWhite5 : s.bgSlate200]}>
-                    <Animated.View style={[s.progressBarFill, { width: progressWidth as any }]}>
-                        <LinearGradient 
-                            colors={['#8B5CF6', '#6366F1']} 
-                            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} 
-                            style={StyleSheet.absoluteFill} 
-                        />
-                    </Animated.View>
-                </View>
-                <Text style={s.progressText}>{currentIndex + 1} / {cards.length}</Text>
             </View>
 
             {/* Main Pager */}
@@ -412,50 +384,24 @@ export default function StudyDeckScreen() {
                 ))}
             </ScrollView>
 
-            {/* Footer Navigation */}
-            <View style={s.footer}>
-                <View style={s.controlsRow}>
-                    <TouchableOpacity
-                        onPress={prevCard}
-                        disabled={currentIndex === 0}
-                        activeOpacity={0.7}
-                        style={[s.navIconBtn, currentIndex === 0 ? s.opacity0 : (isDark ? s.bgWhite10 : s.bgWhite60)]}
-                    >
-                        <NavArrowLeft width={24} height={24} color={isDark ? 'white' : '#0f172a'} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={nextCard}
-                        activeOpacity={0.9}
-                        style={s.mainActionBtn}
-                    >
-                        <BlurView intensity={isDark ? 50 : 80} tint={isDark ? 'dark' : 'light'} style={s.mainActionBlur}>
-                             <LinearGradient
-                                colors={currentIndex === cards.length - 1 ? ['#22c55e', '#16a34a'] : ['#8B5CF6', '#6366F1']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={s.mainActionGradient}
-                            >
-                                <Text style={s.mainActionLabel}>
-                                    {currentIndex === cards.length - 1 ? 'Finish Set' : 'Next Card'}
-                                </Text>
-                                {currentIndex === cards.length - 1 ? (
-                                    <Check width={20} height={20} color="white" strokeWidth={3} />
-                                ) : (
-                                    <NavArrowRight width={20} height={20} color="white" strokeWidth={3} />
-                                )}
-                            </LinearGradient>
-                        </BlurView>
-                    </TouchableOpacity>
-                </View>
+            {/* Bottom Progress Dots */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginVertical: 24 }}>
+                {cards.map((_: any, idx: number) => (
+                    <View key={idx} style={{ 
+                        width: currentIndex === idx ? 8 : 6, 
+                        height: currentIndex === idx ? 8 : 6, 
+                        borderRadius: 4, 
+                        backgroundColor: currentIndex === idx ? '#007AFF' : (isDark ? '#3A3A3C' : '#D1D1D6') 
+                    }} />
+                ))}
             </View>
-        </GlowBackground>
+        </View>
     );
 }
 
 const s = StyleSheet.create({
     flex1: { flex: 1 },
-    headerRow: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerRow: { paddingHorizontal: 16, paddingTop: 60, paddingBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     headerTextContainer: { flex: 1, alignItems: 'center', marginHorizontal: 12 },
     headerLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 2, marginBottom: 4 },
     headerTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
@@ -464,7 +410,7 @@ const s = StyleSheet.create({
     bgWhite60: { backgroundColor: 'rgba(255,255,255,0.6)' },
     size10: { width: 44 },
     
-    progressContainer: { paddingHorizontal: 24, alignItems: 'center', gap: 12 },
+    progressContainer: { paddingHorizontal: 16, alignItems: 'center', gap: 12 },
     progressBarBg: { height: 6, width: 100, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 3, overflow: 'hidden' },
     bgWhite5: { backgroundColor: 'rgba(255,255,255,0.05)' },
     bgSlate200: { backgroundColor: 'rgba(0,0,0,0.05)' },
@@ -475,15 +421,15 @@ const s = StyleSheet.create({
     pagerContent: { paddingVertical: 20 },
     
     cardContainer: { height: SCREEN_HEIGHT * 0.55, marginVertical: 10 },
-    cardBase: { flex: 1, borderRadius: 40, overflow: 'hidden' },
-    glassCard: { flex: 1, borderRadius: 40, padding: 32, justifyContent: 'center', borderBottomWidth: 4 },
-    glassBorderDark: { borderColor: 'rgba(255,255,255,0.1)', borderBottomColor: 'rgba(139, 92, 246, 0.3)' },
-    glassBorderLight: { borderColor: 'rgba(0,0,0,0.05)', borderBottomColor: 'rgba(139, 92, 246, 0.15)' },
-    glassBorderBack: { borderColor: 'rgba(139, 92, 246, 0.2)', borderBottomColor: 'rgba(139, 92, 246, 0.4)' },
+    cardBase: { flex: 1, borderRadius: 16, overflow: 'hidden' },
+    glassCard: { flex: 1, borderRadius: 16, padding: 32, justifyContent: 'center', borderBottomWidth: 4 },
+    glassBorderDark: { borderColor: 'rgba(255,255,255,0.1)', borderBottomColor: 'rgba(0,122,255,0.3)' },
+    glassBorderLight: { borderColor: 'rgba(0,0,0,0.05)', borderBottomColor: 'rgba(0,122,255,0.15)' },
+    glassBorderBack: { borderColor: 'rgba(0,122,255,0.2)', borderBottomColor: 'rgba(0,122,255,0.4)' },
     
     cardHeader: { position: 'absolute', top: 32, left: 32, right: 32, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 },
-    typeBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(139, 92, 246, 0.1)' },
-    typeBadgeText: { fontSize: 10, fontWeight: '900', color: '#8B5CF6', letterSpacing: 1 },
+    typeBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(0,122,255,0.1)' },
+    typeBadgeText: { fontSize: 10, fontWeight: '900', color: '#007AFF', letterSpacing: 1 },
     
     cardContent: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 40 },
     mathTextContainer: { width: '100%' },
@@ -492,7 +438,7 @@ const s = StyleSheet.create({
     cardFooterText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
     cardBackFooterText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
 
-    footer: { paddingHorizontal: 24, paddingBottom: 50, paddingTop: 20 },
+    footer: { paddingHorizontal: 16, paddingBottom: 50, paddingTop: 20 },
     controlsRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     navIconBtn: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
     mainActionBtn: { flex: 1, height: 64, borderRadius: 32, overflow: 'hidden' },
@@ -501,8 +447,8 @@ const s = StyleSheet.create({
     mainActionLabel: { color: 'white', fontWeight: '800', fontSize: 16, letterSpacing: -0.2 },
     opacity0: { opacity: 0 },
 
-    successCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
-    successIconBox: { width: 100, height: 100, borderRadius: 50, marginBottom: 32, padding: 8, backgroundColor: 'rgba(139, 92, 246, 0.1)' },
+    successCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
+    successIconBox: { width: 100, height: 100, borderRadius: 50, marginBottom: 32, padding: 8, backgroundColor: 'rgba(0,122,255,0.1)' },
     successIconGradient: { flex: 1, borderRadius: 42, alignItems: 'center', justifyContent: 'center' },
     successTitle: { fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 12, letterSpacing: -1 },
     successSubtitle: { fontSize: 16, fontWeight: '500', color: '#94a3b8', textAlign: 'center', lineHeight: 24, marginBottom: 40 },
@@ -518,11 +464,11 @@ const s = StyleSheet.create({
     errorTitle: { fontSize: 20, fontWeight: '900', marginTop: 24, marginBottom: 8 },
     errorSubtitle: { fontSize: 15, color: '#64748b', textAlign: 'center', lineHeight: 22, marginBottom: 32 },
     noCardsText: { fontSize: 16, color: '#64748b', fontWeight: '600' },
-    goBackTextPrimary: { color: '#8B5CF6', fontWeight: '800', fontSize: 15 },
+    goBackTextPrimary: { color: '#007AFF', fontWeight: '800', fontSize: 15 },
     mt4: { marginTop: 16 },
 
-    loadingWrapper: { flex: 1, paddingHorizontal: 24, paddingTop: 100 },
-    loadingPlaceholder: { width: '100%', aspectRatio: 3/4, borderRadius: 40, padding: 32, justifyContent: 'center' },
+    loadingWrapper: { flex: 1, paddingHorizontal: 16, paddingTop: 100 },
+    loadingPlaceholder: { width: '100%', aspectRatio: 3/4, borderRadius: 16, padding: 32, justifyContent: 'center' },
     bgGrayDark: { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
     bgWhite: { backgroundColor: 'rgba(255, 255, 255, 0.4)' },
     flexRowGap2: { flexDirection: 'row', alignItems: 'center', gap: 8 },

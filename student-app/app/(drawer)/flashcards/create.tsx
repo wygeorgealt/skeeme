@@ -6,15 +6,14 @@ import {
 import { 
     Page, Upload, Sparks, NavArrowLeft
 } from 'iconoir-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { router, useNavigation } from 'expo-router';
+import { router } from 'expo-router';
+import { Colors } from '@/constants/theme';
 import * as DocumentPicker from 'expo-document-picker';
 import { useQueryClient } from '@tanstack/react-query';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 
 import { RewardModal } from '@/components/RewardModal';
 
@@ -27,7 +26,7 @@ export default function GenerateFlashcardScreen() {
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const navigation = useNavigation() as any;
+    const C = Colors[isDark ? 'dark' : 'light'];
 
     const [mode, setMode] = useState<QuizMode>('topic');
     const [topic, setTopic] = useState('');
@@ -142,7 +141,7 @@ export default function GenerateFlashcardScreen() {
     const PROGRESS_STAGES = ['Analyzing', 'Extracting', 'Generating', 'Finalizing'];
 
     return (
-        <GlowBackground isRoot={true}>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             {/* Custom Header */}
             <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
@@ -191,16 +190,16 @@ export default function GenerateFlashcardScreen() {
                             >
                                 {isProcessingFile ? (
                                     <View style={s.centered}>
-                                        <ActivityIndicator size="small" color="#8B5CF6" />
+                                        <ActivityIndicator size="small" color={C.primary} />
                                         <Text style={s.processingText}>Analyzing document...</Text>
                                     </View>
                                 ) : selectedFile ? (
                                     <>
                                         <View style={s.uploadIconActive}>
-                                            <Page width={18} height={18} color="#A78BFA" />
+                                            <Page width={18} height={18} color={C.primary} />
                                         </View>
                                         <Text style={[s.fileName, { color: isDark ? '#fff' : '#0f172a' }]}>{selectedFile.name}</Text>
-                                        <Text style={s.fileReady}>Ready to generate</Text>
+                                        <Text style={[s.fileReady, { color: C.primary }]}>Ready to generate</Text>
                                     </>
                                 ) : (
                                     <>
@@ -243,12 +242,12 @@ export default function GenerateFlashcardScreen() {
                                     onPress={() => setDifficulty(d)}
                                     activeOpacity={0.8}
                                     style={[s.difficultyCard, { 
-                                        borderColor: difficulty === d ? '#8B5CF6' : 'rgba(255,255,255,0.05)',
-                                        backgroundColor: difficulty === d ? 'rgba(139,92,246,0.1)' : 'rgba(255,255,255,0.05)'
+                                        borderColor: difficulty === d ? C.primary : 'rgba(255,255,255,0.05)',
+                                        backgroundColor: difficulty === d ? (isDark ? 'rgba(0,122,255,0.1)' : 'rgba(0,122,255,0.06)') : 'rgba(255,255,255,0.05)'
                                     }]}
                                 >
-                                    <View style={[s.iconBox, { backgroundColor: difficulty === d ? '#8B5CF6' : 'rgba(255,255,255,0.05)' }]}>
-                                        <Sparks width={18} height={18} color={difficulty === d ? '#fff' : '#A78BFA'} />
+                                    <View style={[s.iconBox, { backgroundColor: difficulty === d ? C.primary : 'rgba(255,255,255,0.05)' }]}>
+                                        <Sparks width={18} height={18} color={difficulty === d ? '#fff' : C.primary} />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={[s.cardTitle, { color: isDark ? '#fff' : '#0f172a' }]}>
@@ -259,7 +258,7 @@ export default function GenerateFlashcardScreen() {
                                         </Text>
                                     </View>
                                     {difficulty === d && (
-                                        <View style={s.checkCircle}>
+                                        <View style={[s.checkCircle, { backgroundColor: C.primary }]}>
                                             <Sparks width={14} height={14} color="white" />
                                         </View>
                                     )}
@@ -277,11 +276,11 @@ export default function GenerateFlashcardScreen() {
                 style={[s.footer, { paddingBottom: Math.max(insets.bottom, 24), borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
             >
                 {isLoading ? (
-                    <View style={[s.loadingBanner, { backgroundColor: 'rgba(139,92,246,0.05)', borderColor: 'rgba(139,92,246,0.2)' }]}>
+                    <View style={[s.loadingBanner, { backgroundColor: isDark ? 'rgba(0,122,255,0.05)' : 'rgba(0,122,255,0.02)', borderColor: isDark ? 'rgba(0,122,255,0.2)' : 'rgba(0,122,255,0.1)' }]}>
                         <View style={{ marginBottom: 16 }}>
-                            <ActivityIndicator size="small" color="#A78BFA" />
+                            <ActivityIndicator size="small" color={C.primary} />
                         </View>
-                        <Text style={[s.stageText, { color: '#A78BFA' }]}>{loadingStage}</Text>
+                        <Text style={[s.stageText, { color: C.primary }]}>{loadingStage}</Text>
                         <Text style={{ textAlign: 'center', color: '#64748b', fontSize: 11, fontWeight: '500', paddingHorizontal: 8 }}>
                             Usually takes 15-30s.
                         </Text>
@@ -294,7 +293,7 @@ export default function GenerateFlashcardScreen() {
                                 return (
                                     <View key={i} style={{ flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.1)' }}>
                                         {(isComplete || isActive) && (
-                                            <View style={{ height: '100%', width: isComplete ? '100%' : '60%', backgroundColor: isComplete ? '#8B5CF6' : 'rgba(139,92,246,0.6)' }} />
+                                            <View style={{ height: '100%', width: isComplete ? '100%' : '60%', backgroundColor: isComplete ? C.primary : (isDark ? 'rgba(0,122,255,0.6)' : 'rgba(0,122,255,0.4)') }} />
                                         )}
                                     </View>
                                 );
@@ -308,15 +307,10 @@ export default function GenerateFlashcardScreen() {
                             activeOpacity={0.8}
                             style={s.generateBtn}
                         >
-                            <LinearGradient
-                                colors={['#8B5CF6', '#6366F1']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={s.generateBtnContent}
-                            >
+                            <View style={[s.generateBtnContent, { backgroundColor: C.primary }]}>
                                 <Sparks width={18} height={18} color="#fff" />
                                 <Text style={s.btnText}>Generate Set</Text>
-                            </LinearGradient>
+                            </View>
                         </TouchableOpacity>
                         <Text style={s.costTextLower}>
                             Estimated Cost: {parseInt(cardCount) || 5} Credits | Max 5MB
@@ -337,7 +331,7 @@ export default function GenerateFlashcardScreen() {
                 }}
                 reward={rewardData}
             />
-        </GlowBackground>
+        </View>
     );
 }
 
@@ -363,10 +357,10 @@ const s = StyleSheet.create({
     uploadCardDark: { borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' },
     uploadCardLight: { borderColor: '#E2E8F0', backgroundColor: '#fff' },
     centered: { alignItems: 'center', paddingVertical: 8 },
-    processingText: { fontSize: 13, fontWeight: '600', color: '#A78BFA', marginTop: 16 },
-    uploadIconActive: { backgroundColor: 'rgba(139,92,246,0.2)', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    processingText: { fontSize: 13, fontWeight: '600', color: '#007AFF', marginTop: 16 },
+    uploadIconActive: { backgroundColor: 'rgba(0,122,255,0.1)', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
     fileName: { fontSize: 14, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
-    fileReady: { fontSize: 11, fontWeight: '700', color: '#A78BFA', textTransform: 'uppercase', letterSpacing: 1 },
+    fileReady: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
     uploadIconEmpty: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
     uploadPlaceholder: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
     uploadSubtext: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
@@ -375,7 +369,7 @@ const s = StyleSheet.create({
     iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
     cardTitle: { fontSize: 14, fontWeight: '700' },
     cardDesc: { fontSize: 10, fontWeight: '500', color: '#64748b' },
-    checkCircle: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center' },
+    checkCircle: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
     footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
     generateBtn: { borderRadius: 16, overflow: 'hidden' },
     generateBtnContent: { height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },

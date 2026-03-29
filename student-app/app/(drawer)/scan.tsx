@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import {
-    NavArrowLeft, Menu, Scanning, Camera,
+    NavArrowLeft, Scanning, Camera,
     Album, Sparks, Page, Type
 } from 'iconoir-react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,9 +20,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useAuthStore } from '@/store/authStore';
 import { Stack, useRouter } from 'expo-router';
+import { Colors, Spacing, Radius } from '@/constants/theme';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { MathText } from '@/components/ui/MathText';
@@ -45,7 +45,7 @@ export default function ScanScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const router = useRouter();
-    const navigation = useNavigation() as any;
+    const C = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
 
     const { user, updateUser } = useAuthStore();
     const [permission, requestPermission] = useCameraPermissions();
@@ -223,58 +223,55 @@ export default function ScanScreen() {
                     <View style={{ flex: 1 }} />
                 ) : !permission.granted ? (
                     <View style={s.permissionContainer}>
-                        <Scanning width={64} height={64} color="#8B5CF6" style={{ marginBottom: 24 }} />
-                        <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>Camera Access Needed</Text>
+                        <Scanning width={64} height={64} color={C.primary} style={{ marginBottom: 24 }} />
+                        <Text style={[s.heroTitle, { color: C.text }]}>Camera Access Needed</Text>
                         <Text style={[s.heroDesc, { paddingHorizontal: 40 }]}>
                             Skeeme needs your camera to scan equations and past questions instantly.
                         </Text>
-                        <TouchableOpacity onPress={requestPermission} style={[s.primaryBtnShadow, { width: 200 }]}>
-                            <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtnGradient}>
+                        <TouchableOpacity onPress={requestPermission} style={[s.primaryBtnShadow, { width: 200, backgroundColor: C.primary }]}>
+                            <View style={s.primaryBtnGradient}>
                                 <Text style={s.primaryBtnText}>Grant Access</Text>
-                            </LinearGradient>
+                            </View>
                         </TouchableOpacity>
                     </View>
                 ) : (
                     <View style={StyleSheet.absoluteFill}>
                         <CameraView style={StyleSheet.absoluteFill} facing="back" ref={cameraRef} enableTorch={enableTorch} />
                         
-                        <View style={StyleSheet.absoluteFill}>
-                            <View style={[s.overlayHeader, { paddingTop: Math.max(insets.top, 16) }]}>
+                        <View style={[StyleSheet.absoluteFill, { justifyContent: 'space-between' }]}>
+                            {/* Top Semi-transparent Overlay */}
+                            <View style={[s.topChrome, { paddingTop: Math.max(insets.top, 16) }]}>
                                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={s.overlayTopBtn}>
-                                    <NavArrowLeft width={22} height={22} color="white" />
+                                    <NavArrowLeft width={28} height={28} color="white" />
                                 </TouchableOpacity>
-                                <View style={{ width: 44 }} />
+                                <TouchableOpacity onPress={() => setEnableTorch(!enableTorch)} activeOpacity={0.7} style={s.overlayTopBtn}>
+                                    <Ionicons name={enableTorch ? "flash" : "flash-off"} size={22} color="white" />
+                                </TouchableOpacity>
                             </View>
 
-                            <View style={s.overlayDimmedFlex} />
-
-                            <View style={s.cropRow}>
-                                <View style={s.overlayDimmedSide} />
-                                <View style={s.cropBox}>
+                            {/* Center Viewfinder */}
+                            <View style={s.centerViewfinder}>
+                                <View style={s.viewfinderBox}>
                                     <View style={s.cropCornerTL} />
                                     <View style={s.cropCornerTR} />
                                     <View style={s.cropCornerBL} />
                                     <View style={s.cropCornerBR} />
                                 </View>
-                                <View style={s.overlayDimmedSide} />
+                                <Text style={s.instructionText}>Position your question in the frame</Text>
                             </View>
 
-                            <View style={s.overlayDimmedFlexBottom}>
-                                <View style={s.captureControls}>
-                                    <TouchableOpacity onPress={() => setEnableTorch(!enableTorch)} activeOpacity={0.8} style={s.secondaryActionCircle}>
-                                        <Ionicons name={enableTorch ? "flash" : "flash-off"} size={22} color="#333" />
-                                    </TouchableOpacity>
+                            {/* Bottom Semi-transparent Overlay */}
+                            <View style={[s.bottomChrome, { paddingBottom: Math.max(insets.bottom, 32) + 90 }]}>
+                                <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={s.galleryBtn}>
+                                    <Ionicons name="images" size={24} color="white" />
+                                </TouchableOpacity>
 
-                                    <TouchableOpacity onPress={handleCapture} activeOpacity={0.8} style={s.mainCaptureOuter}>
-                                        <View style={s.mainCaptureInner}>
-                                            <MathText content="" color="white" fontSize={18} />
-                                        </View>
-                                    </TouchableOpacity>
+                                <TouchableOpacity onPress={handleCapture} activeOpacity={0.8} style={s.shutterOuter}>
+                                    <View style={s.shutterInner} />
+                                </TouchableOpacity>
 
-                                    <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={s.secondaryActionCircle}>
-                                        <Ionicons name="images-outline" size={22} color="#333" />
-                                    </TouchableOpacity>
-                                </View>
+                                {/* Empty view to balance the gallery button for centered flex layout */}
+                                <View style={{ width: 44, height: 44 }} />
                             </View>
                         </View>
                     </View>
@@ -284,17 +281,15 @@ export default function ScanScreen() {
     }
 
     return (
-        <GlowBackground isRoot={true}>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             <Stack.Screen options={{ headerShown: false }} />
             
             <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
-                <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={[s.headerBtn, isDark ? s.headerBtnDark : s.headerBtnLight]}>
-                    <NavArrowLeft width={20} height={20} color={isDark ? 'white' : 'black'} />
+                <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
+                    <NavArrowLeft width={20} height={20} color={C.text} />
                 </TouchableOpacity>
-                <Text style={[s.headerTitle, { color: isDark ? 'white' : 'black' }]}>Results</Text>
-                <TouchableOpacity onPress={() => navigation.openDrawer()} activeOpacity={0.7} style={[s.headerBtn, isDark ? s.headerBtnDark : s.headerBtnLight]}>
-                    <Menu width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
-                </TouchableOpacity>
+                <Text style={[s.headerTitle, { color: C.text }]}>Results</Text>
+                <View style={{ width: 44 }} />
             </View>
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
@@ -307,18 +302,18 @@ export default function ScanScreen() {
                         {loading ? (
                             <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={s.loadingCard}>
                                 <View style={s.spinnerBox}>
-                                    <ActivityIndicator size="large" color="#8B5CF6" />
+                                    <ActivityIndicator size="large" color={C.primary} />
                                 </View>
                                 <Text style={[s.loadingStage, isDark ? s.textWhite : s.textSlate900]}>{loadingStage || 'Processing...'}</Text>
                                 <Text style={s.loadingSub}>Skeeme AI is working hard</Text>
                             </BlurView>
                         ) : (
                             <View style={s.fullBtnGroup}>
-                                <TouchableOpacity onPress={handleSolve} activeOpacity={0.8} style={s.primaryBtnShadow}>
-                                    <LinearGradient colors={['#8B5CF6', '#6366F1']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtnGradient}>
+                                <TouchableOpacity onPress={handleSolve} activeOpacity={0.8} style={[s.primaryBtnShadow, { backgroundColor: C.primary }]}>
+                                    <View style={s.primaryBtnGradient}>
                                         <Sparks width={18} height={18} color="#fff" />
                                         <Text style={s.fullBtnText}>Solve Everything</Text>
-                                    </LinearGradient>
+                                    </View>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={resetScan} activeOpacity={0.8} style={[s.fullSecondaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}>
                                     <Text style={[s.retakeText, isDark ? s.textWhite : s.textSlate600]}>Retake Photo</Text>
@@ -340,7 +335,7 @@ export default function ScanScreen() {
                         {/* Metadata Bar: Credits Used + Accuracy */}
                         <View style={[s.metaBar, isDark ? s.cardDark : s.cardLight]}>
                             <View style={s.metaItem}>
-                                <Sparks width={16} height={16} color="#8B5CF6" />
+                                <Sparks width={16} height={16} color={C.primary} />
                                 <Text style={[s.metaLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Credits Used</Text>
                                 <Text style={[s.metaValue, isDark ? s.textWhite : s.textSlate900]}>{lastScanCost ?? '—'}</Text>
                             </View>
@@ -469,7 +464,7 @@ export default function ScanScreen() {
                 <View style={[s.slimFooter, isDark ? s.slimFooterDark : s.slimFooterLight]}>
                     <TouchableOpacity onPress={handleExport} disabled={loading} activeOpacity={0.7} style={s.slimFooterBtn}>
                         {loading ? (
-                            <ActivityIndicator size="small" color="#8B5CF6" />
+                            <ActivityIndicator size="small" color={C.primary} />
                         ) : (
                             <>
                                 <Page width={18} height={18} color={isDark ? '#cbd5e1' : '#64748b'} />
@@ -484,13 +479,13 @@ export default function ScanScreen() {
                     </TouchableOpacity>
                 </View>
             )}
-        </GlowBackground>
+        </View>
     );
 }
 
 const s = StyleSheet.create({
     permissionContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 16 },
     headerBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     headerBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
     headerBtnLight: { backgroundColor: 'rgba(255,255,255,0.6)' },
@@ -499,26 +494,26 @@ const s = StyleSheet.create({
     heroTitle: { fontSize: 24, fontWeight: '900', marginBottom: 12, textAlign: 'center', letterSpacing: -1 },
     heroDesc: { color: '#64748b', textAlign: 'center', fontWeight: '600', fontSize: 14, marginBottom: 30, lineHeight: 22 },
     
-    primaryBtnShadow: { height: 56, borderRadius: 16, overflow: 'hidden', elevation: 8, shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+    primaryBtnShadow: { height: 56, borderRadius: 16, overflow: 'hidden', elevation: 8, shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, alignItems: 'center', justifyContent: 'center' },
     primaryBtnGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
     primaryBtnText: { color: 'white', fontWeight: '800', fontSize: 16, letterSpacing: -0.3 },
 
     // Live Camera Overlays
-    overlayHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, paddingBottom: 16, backgroundColor: 'rgba(0,0,0,0.5)' },
-    overlayTopBtn: { width: 44, height: 44, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-    overlayDimmedFlex: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
-    overlayDimmedFlexBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end', paddingBottom: 60 },
-    cropRow: { flexDirection: 'row', height: CROP_BOX_HEIGHT },
-    overlayDimmedSide: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
-    cropBox: { width: CROP_BOX_WIDTH, height: CROP_BOX_HEIGHT, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' },
-    cropCornerTL: { position: 'absolute', top: -2, left: -2, width: 24, height: 24, borderTopWidth: 4, borderLeftWidth: 4, borderColor: 'white', borderTopLeftRadius: 16 },
-    cropCornerTR: { position: 'absolute', top: -2, right: -2, width: 24, height: 24, borderTopWidth: 4, borderRightWidth: 4, borderColor: 'white', borderTopRightRadius: 16 },
-    cropCornerBL: { position: 'absolute', bottom: -2, left: -2, width: 24, height: 24, borderBottomWidth: 4, borderLeftWidth: 4, borderColor: 'white', borderBottomLeftRadius: 16 },
-    cropCornerBR: { position: 'absolute', bottom: -2, right: -2, width: 24, height: 24, borderBottomWidth: 4, borderRightWidth: 4, borderColor: 'white', borderBottomRightRadius: 16 },
-    captureControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 40 },
-    mainCaptureOuter: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: 'black', shadowOffset: {width: 0, height: 8}, shadowOpacity: 0.5, shadowRadius: 12 },
-    mainCaptureInner: { width: 66, height: 66, borderRadius: 33, backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center' },
-    secondaryActionCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center' },
+    topChrome: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16, backgroundColor: 'rgba(0,0,0,0.45)' },
+    overlayTopBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+    
+    centerViewfinder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    viewfinderBox: { width: CROP_BOX_WIDTH, height: CROP_BOX_HEIGHT, backgroundColor: 'transparent', marginBottom: 24 },
+    cropCornerTL: { position: 'absolute', top: -2, left: -2, width: 32, height: 32, borderTopWidth: 4, borderLeftWidth: 4, borderColor: 'white' },
+    cropCornerTR: { position: 'absolute', top: -2, right: -2, width: 32, height: 32, borderTopWidth: 4, borderRightWidth: 4, borderColor: 'white' },
+    cropCornerBL: { position: 'absolute', bottom: -2, left: -2, width: 32, height: 32, borderBottomWidth: 4, borderLeftWidth: 4, borderColor: 'white' },
+    cropCornerBR: { position: 'absolute', bottom: -2, right: -2, width: 32, height: 32, borderBottomWidth: 4, borderRightWidth: 4, borderColor: 'white' },
+    instructionText: { color: 'white', fontSize: 13, fontWeight: '600', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width: 0, height: 1}, textShadowRadius: 4 },
+
+    bottomChrome: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 32, paddingTop: 24, backgroundColor: 'rgba(0,0,0,0.45)' },
+    shutterOuter: { width: 72, height: 72, borderRadius: 36, backgroundColor: 'transparent', borderWidth: 4, borderColor: 'white', alignItems: 'center', justifyContent: 'center' },
+    shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: '#007AFF' },
+    galleryBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
     // Preview (before solve)
     previewContainer: { alignItems: 'center' },
@@ -536,8 +531,8 @@ const s = StyleSheet.create({
     // === Minimalistic Results (Gauth-inspired) ===
 
     // Card containers
-    cardDark: { backgroundColor: '#1a1c24', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
-    cardLight: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#f1f5f9' },
+    cardDark: { backgroundColor: '#1C1C1E', borderWidth: 1, borderColor: 'rgba(84,84,88,0.4)' },
+    cardLight: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: 'rgba(60,60,67,0.12)' },
 
     // Captured image bar
     capturedImageBar: { borderRadius: 16, overflow: 'hidden', marginBottom: 12 },
@@ -551,10 +546,10 @@ const s = StyleSheet.create({
     metaDivider: { width: 1, height: 32, backgroundColor: 'rgba(148,163,184,0.2)' },
 
     // Answer cards
-    answerCard: { borderRadius: 16, padding: 20, marginBottom: 16 },
+    answerCard: { borderRadius: 16, padding: 16, marginBottom: 16 },
     answerHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-    qBadge: { backgroundColor: 'rgba(139,92,246,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-    qBadgeText: { color: '#8B5CF6', fontWeight: '900', fontSize: 12 },
+    qBadge: { backgroundColor: 'rgba(0,122,255,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+    qBadgeText: { color: '#007AFF', fontWeight: '900', fontSize: 12 },
     topicLabel: { fontSize: 13, fontWeight: '600' },
 
     // Divider
@@ -564,22 +559,22 @@ const s = StyleSheet.create({
 
     // Answer label ( ≡ Answer )
     answerLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-    answerLabelIcon: { fontSize: 18, color: '#8B5CF6', fontWeight: '900' },
+    answerLabelIcon: { fontSize: 18, color: '#007AFF', fontWeight: '900' },
     answerLabelText: { fontSize: 16, fontWeight: '800' },
 
     // Steps
     stepsBlock: { marginBottom: 16 },
     stepItem: { flexDirection: 'row', marginBottom: 14 },
     stepCircle: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 },
-    stepCircleDark: { backgroundColor: 'rgba(139,92,246,0.15)' },
-    stepCircleLight: { backgroundColor: 'rgba(139,92,246,0.08)' },
-    stepCircleText: { color: '#8B5CF6', fontWeight: '800', fontSize: 11 },
+    stepCircleDark: { backgroundColor: 'rgba(0,122,255,0.15)' },
+    stepCircleLight: { backgroundColor: 'rgba(0,122,255,0.08)' },
+    stepCircleText: { color: '#007AFF', fontWeight: '800', fontSize: 11 },
 
     // Final answer box
     finalBox: { borderRadius: 12, padding: 16, marginBottom: 16 },
-    finalBoxDark: { backgroundColor: 'rgba(139,92,246,0.08)' },
-    finalBoxLight: { backgroundColor: '#faf5ff' },
-    finalLabel: { color: '#8B5CF6', fontWeight: '800', fontSize: 13, marginBottom: 6 },
+    finalBoxDark: { backgroundColor: 'rgba(0,122,255,0.08)' },
+    finalBoxLight: { backgroundColor: '#EFF6FF' },
+    finalLabel: { color: '#007AFF', fontWeight: '800', fontSize: 13, marginBottom: 6 },
 
     // Explanation
     explanationBlock: { marginBottom: 16, paddingTop: 4 },
@@ -593,7 +588,7 @@ const s = StyleSheet.create({
     feedbackBtnLight: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0' },
     feedbackBtnIcon: { fontSize: 16 },
     feedbackBtnText: { fontSize: 13, fontWeight: '700' },
-    feedbackDone: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: 'rgba(139,92,246,0.08)', borderRadius: 12 },
+    feedbackDone: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: 'rgba(0,122,255,0.08)', borderRadius: 12 },
     feedbackDoneIcon: { fontSize: 18 },
     feedbackDoneText: { fontSize: 13, fontWeight: '700' },
 
@@ -603,8 +598,8 @@ const s = StyleSheet.create({
 
     // Slim footer
     slimFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, paddingBottom: 36, borderTopWidth: 1 },
-    slimFooterDark: { backgroundColor: '#0f1017', borderTopColor: 'rgba(255,255,255,0.06)' },
-    slimFooterLight: { backgroundColor: '#ffffff', borderTopColor: '#f1f5f9' },
+    slimFooterDark: { backgroundColor: '#000000', borderTopColor: 'rgba(84,84,88,0.4)' },
+    slimFooterLight: { backgroundColor: '#ffffff', borderTopColor: 'rgba(60,60,67,0.12)' },
     slimFooterBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 24, paddingVertical: 10 },
     slimFooterBtnText: { fontSize: 14, fontWeight: '700' },
     slimFooterDivider: { width: 1, height: 20 },
