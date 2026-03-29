@@ -36,8 +36,15 @@ class SendInvoiceEmail implements ShouldQueue
                 return;
             }
 
-            // Get the school email
-            $schoolEmail = $invoice->school->email;
+            // Get the recipient email — school invoice or student direct purchase
+            $school = $invoice->school;
+
+            if (!$school) {
+                \Log::info('No school associated with invoice (likely B2C student purchase), skipping invoice email.', ['invoice_id' => $invoice->id]);
+                return;
+            }
+
+            $schoolEmail = $school->email;
 
             if (!$schoolEmail) {
                 \Log::warning('School email not found for invoice', ['invoice_id' => $invoice->id]);
