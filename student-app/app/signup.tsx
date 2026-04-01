@@ -94,11 +94,6 @@ export default function SignupScreen() {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Logo */}
-                    <View style={[s.logoCircle, { backgroundColor: C.primary + '18' }]}>
-                        <Ionicons name="school" size={32} color={C.primary} />
-                    </View>
-
                     <Text style={[s.title, { color: C.text }]}>Create account</Text>
                     <Text style={[s.subtitle, { color: C.textSecondary }]}>Join Skeeme and study 5× faster</Text>
 

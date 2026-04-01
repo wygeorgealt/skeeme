@@ -1,48 +1,32 @@
 import { Text } from '@/components/ui/Text';
-import { useState, useRef } from 'react';
-import { View, TouchableOpacity, ScrollView, Dimensions, useColorScheme, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
+import { useState, useRef, useEffect } from 'react';
+import { View, TouchableOpacity, ScrollView, Dimensions, StyleSheet, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Check, NavArrowRight } from 'iconoir-react-native';
+import LottieView from 'lottie-react-native';
 
 const { width, height } = Dimensions.get('window');
 
 const SLIDES = [
     {
         id: 1,
-        title: 'Snap a Photo of Any Problem',
+        title: 'Snap a Photo',
         description: 'Get step-by-step solutions instantly. Skeeme breaks down complex questions to help you understand.',
-        image: require('@/assets/images/slide1.png'),
-        bgColor: '#007AFF',
-        textColor: '#ffffff',
-        accentBg: '#ffffff',
-        accentIcon: '#007AFF',
+        animation: require('@/assets/lottie/scan.json'),
     },
     {
         id: 2,
         title: 'Quiz & Flashcards',
         description: 'Generate custom quizzes and flashcards instantly from your notes, slides, and textbooks.',
-        image: require('@/assets/images/slide2.png'),
-        bgColor: '#ffffff',
-        bgColorDark: '#1C1C1E',
-        textColor: '#111111',
-        textColorDark: '#ffffff',
-        accentBg: '#007AFF',
-        accentIcon: '#ffffff',
+        animation: require('@/assets/lottie/quiz.json'),
     },
     {
         id: 3,
-        title: 'Your Complete Ecosystem',
+        title: 'Your Ecosystem',
         description: 'Your complete study workspace to track progress, revisit missed questions, and ace exams.',
-        image: require('@/assets/images/slide3.png'),
-        bgColor: '#34C759',
-        textColor: '#ffffff',
-        accentBg: '#ffffff',
-        accentIcon: '#34C759',
+        animation: require('@/assets/lottie/ecosystem.json'),
     }
 ];
-
 
 export default function WelcomeScreen() {
     const router = useRouter();
@@ -50,6 +34,7 @@ export default function WelcomeScreen() {
     const isDark = colorScheme === 'dark';
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollRef = useRef<ScrollView>(null);
+    const lottieRefs = useRef<(LottieView | null)[]>([]);
 
     const handleScroll = (event: any) => {
         const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -57,37 +42,43 @@ export default function WelcomeScreen() {
         if (newIndex !== currentIndex) setCurrentIndex(newIndex);
     };
 
+    // Play animation heavily on focus
+    useEffect(() => {
+        lottieRefs.current.forEach((ref, index) => {
+            if (index === currentIndex) {
+                ref?.play();
+            } else {
+                ref?.pause();
+            }
+        });
+    }, [currentIndex]);
+
     const goNext = () => {
         if (currentIndex < SLIDES.length - 1) {
             scrollRef.current?.scrollTo({ x: (currentIndex + 1) * width, animated: true });
         } else {
-            router.push('/signup');
+            router.push('/(onboarding)/education');
         }
     };
 
-    const currentSlide = SLIDES[currentIndex];
-
-    // Slide 2 uses dark mode bg variant; others are always the same
-    const getSlideBg = (slide: typeof SLIDES[0]) => {
-        if (slide.id === 2 && isDark && (slide as any).bgColorDark) {
-            return (slide as any).bgColorDark;
-        }
-        return slide.bgColor;
-    };
-
-    const getSlideText = (slide: typeof SLIDES[0]) => {
-        if (slide.id === 2 && isDark && (slide as any).textColorDark) {
-            return (slide as any).textColorDark;
-        }
-        return slide.textColor;
-    };
-
-    // Status bar: dark icons on slide 2 light mode, white on everything else
-    const statusBarStyle = currentIndex === 1 && !isDark ? 'dark' : 'light';
+    const bgColor = isDark ? '#000000' : '#FFFFFF';
+    const textColor = isDark ? '#FFFFFF' : '#000000';
+    const subtextColor = isDark ? '#8E8E93' : '#6E6E73';
+    const dotActiveColor = isDark ? '#FFFFFF' : '#000000';
+    const dotInactiveColor = isDark ? '#3A3A3C' : '#D1D1D6';
 
     return (
-        <View style={{ flex: 1, backgroundColor: getSlideBg(currentSlide) }}>
-            <StatusBar style={statusBarStyle} animated />
+        <View style={{ flex: 1, backgroundColor: bgColor }}>
+            <StatusBar style={isDark ? 'light' : 'dark'} animated />
+
+            {/* Skip Button (Top Right) */}
+            <TouchableOpacity 
+                style={[styles.skipBtn, { top: 60 }]} 
+                onPress={() => router.push('/login')}
+                activeOpacity={0.7}
+            >
+                <Text style={styles.skipText}>Skip</Text>
+            </TouchableOpacity>
 
             <ScrollView
                 ref={scrollRef}
@@ -100,46 +91,38 @@ export default function WelcomeScreen() {
                 style={{ flex: 1 }}
             >
                 {SLIDES.map((slide, index) => {
-                    const slideBg = getSlideBg(slide);
-                    const slideText = getSlideText(slide);
-
                     return (
-                        <View key={slide.id} style={[styles.slide, { backgroundColor: slideBg }]}>
-
-                            {/* Full-bleed image fills the top portion of the slide */}
-                            <View style={styles.imageContainer}>
-                                <Image
-                                    source={slide.image}
-                                    style={styles.image}
-                                    resizeMode="cover"
+                        <View key={slide.id} style={styles.slide}>
+                            
+                            {/* Lottie Animation Area */}
+                            <View style={styles.animationContainer}>
+                                <LottieView
+                                    ref={ref => (lottieRefs.current[index] = ref)}
+                                    source={slide.animation}
+                                    style={styles.lottie}
+                                    autoPlay={index === 0}
+                                    loop
                                 />
                             </View>
 
-                            {/* Text Section pinned at the bottom */}
+                            {/* Text Section */}
                             <View style={styles.textSection}>
-                                <Text style={[styles.title, { color: slideText }]}>
+                                <Text style={[styles.title, { color: textColor }]}>
                                     {slide.title}
                                 </Text>
-                                <Text style={[styles.description, { color: slideText, opacity: 0.8 }]}>
+                                <Text style={[styles.description, { color: subtextColor }]}>
                                     {slide.description}
                                 </Text>
                             </View>
-
                         </View>
                     );
                 })}
             </ScrollView>
 
-            {/* Bottom Actions — overlaid above everything */}
+            {/* Bottom Actions */}
             <View style={styles.footer}>
-                {/* Skip */}
-                <TouchableOpacity onPress={() => router.push('/login')} style={styles.skipBtn}>
-                    <Text style={[styles.skipText, { color: getSlideText(currentSlide) }]}>
-                        Skip
-                    </Text>
-                </TouchableOpacity>
-
-                {/* Progress Dots */}
+                
+                {/* Pagination Dots */}
                 <View style={styles.dotsContainer}>
                     {SLIDES.map((_, i) => (
                         <View
@@ -147,27 +130,25 @@ export default function WelcomeScreen() {
                             style={[
                                 styles.dot,
                                 {
-                                    backgroundColor: getSlideText(currentSlide),
-                                    width: i === currentIndex ? 32 : 8,
-                                    opacity: i === currentIndex ? 1 : 0.2,
+                                    backgroundColor: i === currentIndex ? dotActiveColor : dotInactiveColor,
+                                    width: i === currentIndex ? 24 : 8,
                                 }
                             ]}
                         />
                     ))}
                 </View>
 
-                {/* Next / Finish FAB */}
+                {/* Primary Action Button */}
                 <TouchableOpacity
                     onPress={goNext}
-                    style={[styles.fab, { backgroundColor: currentSlide.accentBg }]}
-                    activeOpacity={0.9}
+                    style={styles.primaryBtn}
+                    activeOpacity={0.8}
                 >
-                    {currentIndex === SLIDES.length - 1 ? (
-                        <Check width={32} height={32} color={currentSlide.accentIcon} />
-                    ) : (
-                        <NavArrowRight width={32} height={32} color={currentSlide.accentIcon} />
-                    )}
+                    <Text style={styles.primaryBtnText}>
+                        {currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Continue'}
+                    </Text>
                 </TouchableOpacity>
+
             </View>
         </View>
     );
@@ -177,77 +158,76 @@ const styles = StyleSheet.create({
     slide: {
         width,
         height,
-        flexDirection: 'column',
+        alignItems: 'center',
+        paddingTop: 100,
     },
-    imageContainer: {
-        flex: 1.1,
-        overflow: 'hidden',
+    skipBtn: {
+        position: 'absolute',
+        right: 24,
+        zIndex: 10,
+        padding: 8,
     },
-    image: {
-        width,
+    skipText: {
+        fontSize: 17,
+        fontWeight: '500',
+        color: '#007AFF', // Standard iOS Blue
+    },
+    animationContainer: {
+        width: width * 0.85,
+        height: width * 0.85,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 40,
+    },
+    lottie: {
+        width: '100%',
         height: '100%',
     },
     textSection: {
         paddingHorizontal: 32,
-        paddingTop: 24,
-        paddingBottom: 120,
+        alignItems: 'center',
     },
     title: {
-        fontSize: 48,
-        fontWeight: '900',
-        letterSpacing: -1.5,
-        lineHeight: 52,
+        fontSize: 34,
+        fontWeight: '800',
+        letterSpacing: 0.41,
+        textAlign: 'center',
         marginBottom: 16,
     },
     description: {
         fontSize: 17,
-        fontWeight: '600',
-        lineHeight: 26,
-        paddingRight: 12,
+        fontWeight: '400',
+        lineHeight: 24,
+        textAlign: 'center',
     },
     footer: {
         position: 'absolute',
-        bottom: 60,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 40,
-        flexDirection: 'row',
+        bottom: 50,
+        width: '100%',
+        paddingHorizontal: 24,
         alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    skipBtn: {
-        paddingVertical: 12,
-        paddingRight: 12,
-    },
-    skipText: {
-        fontSize: 15,
-        fontWeight: '800',
-        textTransform: 'uppercase',
-        letterSpacing: 1,
     },
     dotsContainer: {
         flexDirection: 'row',
-        alignItems: 'center',
         gap: 8,
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        justifyContent: 'center',
+        marginBottom: 32,
     },
     dot: {
-        height: 6,
-        borderRadius: 3,
+        height: 8,
+        borderRadius: 4,
     },
-    fab: {
-        width: 72,
-        height: 72,
-        borderRadius: 24,
+    primaryBtn: {
+        backgroundColor: '#007AFF',
+        width: '100%',
+        height: 56,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 5,
+    },
+    primaryBtnText: {
+        color: '#FFFFFF',
+        fontSize: 17,
+        fontWeight: '600',
+        letterSpacing: -0.41,
     },
 });

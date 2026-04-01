@@ -78,11 +78,6 @@ export default function LoginScreen() {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Logo */}
-                    <View style={[s.logoCircle, { backgroundColor: C.primary + '18' }]}>
-                        <Ionicons name="school" size={32} color={C.primary} />
-                    </View>
-
                     <Text style={[s.title, { color: C.text }]}>Welcome back</Text>
                     <Text style={[s.subtitle, { color: C.textSecondary }]}>Sign in to continue to Skeeme</Text>
 

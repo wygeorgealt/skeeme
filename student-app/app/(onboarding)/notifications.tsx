@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, Platform, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';
@@ -10,8 +10,8 @@ import * as Notifications from 'expo-notifications';
 
 const REASONS = [
     { icon: Trophy, text: 'Approaching a credit reward milestone' },
-    { icon: FireFlame, text: 'Streak about to reset' },
-    { icon: BatteryWarning, text: 'Credits running low' },
+    { icon: FireFlame, text: 'Keep your study streak alive' },
+    { icon: BatteryWarning, text: 'Credits running low warning' },
 ];
 
 export default function NotificationsScreen() {
@@ -40,96 +40,88 @@ export default function NotificationsScreen() {
         router.replace('/(drawer)');
     };
 
+    const bgColor = isDark ? '#000000' : '#F2F2F7';
+    const cardColor = isDark ? '#1C1C1E' : '#FFFFFF';
+    const textColor = isDark ? '#FFFFFF' : '#000000';
+    const subtextColor = isDark ? '#8E8E93' : '#8E8E93';
+    const iconColor = '#007AFF';
+    const separatorColor = isDark ? '#38383A' : '#C6C6C8';
+
     return (
-        <View style={[s.flex1, isDark ? s.bgDark : s.bgLight]}>
+        <SafeAreaView style={[s.container, { backgroundColor: bgColor }]}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            <Animated.View entering={FadeInDown.duration(800).delay(100)} style={s.headerSection}>
-                <View style={[s.iconBox, isDark ? s.iconBoxDark : s.iconBoxLight]}>
-                    <Bell width={28} height={28} color="#8B5CF6" />
-                </View>
-                <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>
-                    Stay on track.
-                </Text>
-                <Text style={[s.heroSubtitle, isDark ? s.textSlate400 : s.textSlate500]}>
-                    Skeeme can remind you before your streak resets or when your AI context is ready.
-                </Text>
-            </Animated.View>
+            <View style={s.content}>
+                
+                <Animated.View entering={FadeInDown.duration(600).delay(100)} style={s.headerSection}>
+                    <View style={s.bellCircle}>
+                        <Bell width={40} height={40} color="#FFFFFF" strokeWidth={2} />
+                    </View>
 
-            {/* Notification reasons */}
-            <View style={s.reasonsGap}>
-                {REASONS.map((reason, i) => (
-                    <Animated.View key={i} entering={FadeInDown.duration(600).delay(300 + i * 150)}>
-                        <View style={[s.reasonCard, isDark ? s.reasonCardDark : s.reasonCardLight]}>
-                             <View style={[s.reasonIconBox, isDark ? s.bgSlate800 : s.bgSlate50]}>
-                                <reason.icon width={18} height={18} color={isDark ? '#94a3b8' : '#64748b'} />
-                            </View>
-                            <Text style={[s.reasonText, isDark ? s.textSlate200 : s.textSlate700]}>{reason.text}</Text>
-                        </View>
-                    </Animated.View>
-                ))}
-            </View>
-
-            {/* Buttons */}
-            <View style={s.footer}>
-                <Animated.View entering={FadeInUp.duration(600).delay(800)} style={s.btnGap}>
-                    <TouchableOpacity
-                        onPress={handleEnable}
-                        activeOpacity={0.9}
-                        style={s.mainBtn}
-                    >
-                        <Text style={s.mainBtnText}>Enable Notifications</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={handleSkip}
-                        activeOpacity={0.7}
-                        style={s.skipBtn}
-                    >
-                        <Text style={[s.skipBtnText, isDark ? s.textSlate500 : s.textSlate400]}>Maybe later</Text>
-                    </TouchableOpacity>
+                    <Text style={[s.heroTitle, { color: textColor }]}>
+                        Stay on Track
+                    </Text>
+                    <Text style={[s.heroSubtitle, { color: subtextColor }]}>
+                        Skeeme works best when it can remind you to keep studying.
+                    </Text>
                 </Animated.View>
+
+                {/* Benefits List */}
+                <Animated.View entering={FadeInDown.duration(600).delay(300)} style={[s.listContainer, { backgroundColor: cardColor }]}>
+                    {REASONS.map((reason, index) => {
+                        const isLast = index === REASONS.length - 1;
+                        return (
+                            <View key={index} style={[s.listItem, !isLast && { borderBottomColor: separatorColor, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+                                <View style={[s.iconBox, { backgroundColor: isDark ? '#2C2C2E' : '#E8F0FE' }]}>
+                                    <reason.icon width={22} height={22} color={iconColor} strokeWidth={2} />
+                                </View>
+                                <Text style={[s.reasonText, { color: textColor }]}>{reason.text}</Text>
+                            </View>
+                        );
+                    })}
+                </Animated.View>
+
             </View>
-        </View>
+
+            {/* Bottom Actions */}
+            <Animated.View entering={FadeInUp.duration(600).delay(500)} style={s.footer}>
+                <TouchableOpacity
+                    onPress={handleEnable}
+                    activeOpacity={0.8}
+                    style={s.primaryBtn}
+                >
+                    <Text style={s.primaryBtnText}>Enable Notifications</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    onPress={handleSkip}
+                    activeOpacity={0.7}
+                    style={s.skipBtn}
+                >
+                    <Text style={s.skipBtnText}>Not Now</Text>
+                </TouchableOpacity>
+            </Animated.View>
+        </SafeAreaView>
     );
 }
 
 const s = StyleSheet.create({
-    flex1: { flex: 1, paddingHorizontal: 24, paddingTop: 64, paddingBottom: 24 },
-    bgDark: { backgroundColor: '#0f0f11' },
-    bgLight: { backgroundColor: '#fafafa' },
+    container: { flex: 1 },
+    content: { flex: 1, paddingHorizontal: 20, paddingTop: 40 },
     
-    headerSection: { marginBottom: 40 },
-    iconBox: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 24, borderWidth: 1 },
-    iconBoxLight: { backgroundColor: 'white', borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 5 },
-    iconBoxDark: { backgroundColor: '#0f172a', borderColor: '#1e293b' },
+    headerSection: { alignItems: 'center', marginBottom: 40 },
+    bellCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#007AFF', alignItems: 'center', justifyContent: 'center', marginBottom: 24, shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
+    heroTitle: { fontSize: 34, fontWeight: '800', letterSpacing: 0.41, marginBottom: 12, textAlign: 'center' },
+    heroSubtitle: { fontSize: 17, fontWeight: '400', lineHeight: 22, textAlign: 'center', paddingHorizontal: 16 },
     
-    heroTitle: { fontSize: 40, fontWeight: '700', letterSpacing: -1, lineHeight: 46, marginBottom: 12 },
-    heroSubtitle: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
+    listContainer: { borderRadius: 10, overflow: 'hidden' },
+    listItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingRight: 16, marginLeft: 16 },
+    iconBox: { width: 40, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    reasonText: { flex: 1, fontSize: 17, fontWeight: '500' },
     
-    reasonsGap: { gap: 16 },
-    reasonCard: { flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 24, borderWidth: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-    reasonCardLight: { borderColor: '#f8fafc', backgroundColor: 'white' },
-    reasonCardDark: { borderColor: '#1e293b', backgroundColor: 'rgba(15, 23, 42, 0.5)' },
-    
-    reasonIconBox: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 20 },
-    bgSlate800: { backgroundColor: '#1e293b' },
-    bgSlate50: { backgroundColor: '#f8fafc' },
-    
-    textWhite: { color: 'white' },
-    textSlate900: { color: '#0f172a' },
-    textSlate700: { color: '#334155' },
-    textSlate500: { color: '#64748b' },
-    textSlate400: { color: '#94a3b8' },
-    textSlate200: { color: '#e2e8f0' },
-    
-    reasonText: { flex: 1, fontWeight: '700', fontSize: 15 },
-    
-    footer: { marginTop: 'auto', paddingTop: 32 },
-    btnGap: { gap: 16 },
-    mainBtn: { height: 56, backgroundColor: '#8B5CF6', borderRadius: 24, alignItems: 'center', justifyContent: 'center', shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 5 },
-    mainBtnText: { fontWeight: '700', fontSize: 15, color: 'white', letterSpacing: 0.5 },
-    
-    skipBtn: { height: 56, alignItems: 'center', justifyContent: 'center' },
-    skipBtnText: { fontWeight: '700', fontSize: 14 },
+    footer: { paddingHorizontal: 20, paddingBottom: 24 },
+    primaryBtn: { backgroundColor: '#007AFF', height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '600', letterSpacing: -0.41 },
+    skipBtn: { height: 50, alignItems: 'center', justifyContent: 'center' },
+    skipBtnText: { color: '#007AFF', fontSize: 17, fontWeight: '500' },
 });

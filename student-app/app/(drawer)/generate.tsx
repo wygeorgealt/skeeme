@@ -579,7 +579,7 @@ export default function GenerateQuizScreen() {
                     {/* Stacked Options */}
                     {!isTheory ? (
                         <View style={{ gap: 12 }}>
-                            {q.options.map((opt, oi) => {
+                            {q.options?.map((opt, oi) => {
                                 const isSelected = selectedAnswers[currentQIndex] === opt;
                                 const isCorrectOpt = opt === q.correct_answer;
                                 
