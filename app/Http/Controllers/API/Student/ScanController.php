@@ -29,6 +29,7 @@ class ScanController extends Controller
     public function solve(Request $request)
     {
         $idempotencyKey = $request->header('Idempotency-Key') ?? $request->input('idempotency_key');
+        $requestId = $idempotencyKey ?? (string) Str::uuid();
         if ($idempotencyKey && Cache::has("idempotency_{$idempotencyKey}")) {
             Log::info("Scan & Solve: Idempotency cache hit", ['key' => $idempotencyKey]);
             return response()->json(Cache::get("idempotency_{$idempotencyKey}"));
@@ -78,6 +79,7 @@ class ScanController extends Controller
             Log::info('Processing Scan & Solve Synchronously...', ['user_id' => $user->id]);
             
             $useDeepseek = Cache::get('use_deepseek_fallback', false);
+            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-3-5-haiku-20241022';
 
             // Dynamic Timeout based on Network Quality Header
             $networkType = $request->header('X-Network-Type');
@@ -100,6 +102,7 @@ class ScanController extends Controller
                 if (!$useDeepseek) {
                     Log::warning("Claude Vision API Failed! Circuit Breaker tripped. Failing over to DeepSeek. Error: " . $e->getMessage());
                     Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
+                    $modelUsed = 'deepseek-chat';
                     $result = $this->deepseek->solveFromImage($request->input('image'));
                 } else {
                     throw $e;
@@ -115,15 +118,18 @@ class ScanController extends Controller
 
             // 6. Deduct Usage (Atomic)
             if (!$user->is_unlimited) {
-                DB::transaction(function() use ($user, $finalCost, $solutionsCount) {
+                DB::transaction(function() use ($user, $finalCost, $solutionsCount, $modelUsed, $requestId) {
                     $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
                     $lockedUser->decrement('credits', $finalCost);
                     
                     try {
                         $lockedUser->transactions()->create([
                             'type' => 'usage',
+                            'action_type' => 'scan_solve',
                             'amount' => -$finalCost,
                             'description' => "Scan & Solve: " . $solutionsCount . " questions processed",
+                            'model_used' => $modelUsed ?? 'claude-3-5-haiku-20241022',
+                            'request_id' => $requestId,
                         ]);
                     } catch (\Exception $e) {
                         Log::error("Failed to log scan transaction: " . $e->getMessage());

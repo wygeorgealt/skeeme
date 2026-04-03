@@ -5,60 +5,60 @@ import { Platform } from 'react-native';
 export const Colors = {
   light: {
     // Backgrounds
-    background: '#F2F2F7',
+    background: 'transparent', // Let GlowBackground shine through seamlessly
     card: '#FFFFFF',
-    cardSecondary: '#F2F2F7',
+    cardSecondary: '#F8FAFF', // Slightly tinted white
     // Text
-    text: '#111111',
-    textSecondary: '#6E6E73',
-    textTertiary: '#AEAEB2',
+    text: '#0F172A', // Deep slate for better contrast than true black
+    textSecondary: '#64748B',
+    textTertiary: '#94A3B8',
     // Brand / Primary
     primary: '#007AFF',
+    primaryLight: '#E5F1FF',
     // Semantic
     destructive: '#FF3B30',
     success: '#34C759',
+    successLight: '#E8F5E9',
     warning: '#FF9500',
     // Separators
-    separator: 'rgba(60,60,67,0.12)',
-    separatorOpaque: '#C6C6C8',
-    // Tab bar
-    tabBar: 'rgba(255,255,255,0.80)',
-    tabBarBorder: 'rgba(60,60,67,0.12)',
+    separator: 'rgba(15,23,42,0.06)',
+    separatorOpaque: '#E2E8F0',
+    // Effects
+    glassBorder: 'rgba(0,0,0,0.04)',
+    glassBackground: 'rgba(255,255,255,0.85)',
     // Icon
-    icon: '#6E6E73',
+    icon: '#64748B',
     iconActive: '#007AFF',
-    // Legacy tint
-    tint: '#007AFF',
-    tabIconDefault: '#6E6E73',
+    tabIconDefault: '#64748B',
     tabIconSelected: '#007AFF',
   },
   dark: {
-    // Backgrounds
-    background: '#000000',
-    card: '#1C1C1E',
-    cardSecondary: '#2C2C2E',
+    // Backgrounds (Silvery Liquid Dark)
+    background: 'transparent', // Let GlowBackground shine through seamlessly
+    card: 'rgba(255, 255, 255, 0.03)', // Translucent glass effect
+    cardSecondary: 'rgba(255, 255, 255, 0.06)',
     // Text
     text: '#FFFFFF',
-    textSecondary: '#A1A1A6',
-    textTertiary: '#636366',
+    textSecondary: '#A1A1AA',
+    textTertiary: '#71717A',
     // Brand / Primary
     primary: '#0A84FF',
+    primaryLight: 'rgba(10, 132, 255, 0.15)',
     // Semantic
     destructive: '#FF453A',
     success: '#30D158',
+    successLight: 'rgba(48, 209, 88, 0.15)',
     warning: '#FFD60A',
     // Separators
-    separator: 'rgba(84,84,88,0.40)',
-    separatorOpaque: '#38383A',
-    // Tab bar
-    tabBar: 'rgba(28,28,30,0.80)',
-    tabBarBorder: 'rgba(84,84,88,0.40)',
+    separator: 'rgba(255, 255, 255, 0.06)',
+    separatorOpaque: '#27272A',
+    // Effects (The Liquid Silver Magic)
+    glassBorder: 'rgba(255, 255, 255, 0.12)', // Shiny inner borders
+    glassBackground: 'rgba(24, 24, 27, 0.65)',
     // Icon
-    icon: '#A1A1A6',
+    icon: '#A1A1AA',
     iconActive: '#0A84FF',
-    // Legacy tint
-    tint: '#0A84FF',
-    tabIconDefault: '#A1A1A6',
+    tabIconDefault: '#A1A1AA',
     tabIconSelected: '#0A84FF',
   },
 };

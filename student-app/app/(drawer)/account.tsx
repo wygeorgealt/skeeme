@@ -8,7 +8,18 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { 
+    EditPencil, 
+    Sparkles, 
+    Rhombus, 
+    ArrowUpCircle, 
+    MagicWand, 
+    Bell, 
+    HelpCircle, 
+    ShieldCheck, 
+    DocumentText,
+    NavArrowRight
+} from 'iconoir-react-native';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
 import { Modal } from 'react-native';
@@ -47,7 +58,7 @@ const s = StyleSheet.create({
     profileEmail: { fontSize: 15 },
 
     row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingRight: 16 },
-    rowIcon: { width: 30, height: 30, borderRadius: 7, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+    rowIcon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
     rowLabel: { flex: 1, fontSize: 16, fontWeight: '400' },
     rowValue: { fontSize: 16, marginRight: 8 },
 
@@ -56,10 +67,10 @@ const s = StyleSheet.create({
 
 // ─── Settings Row ─────────────────────────────────────────────────────────────
 function SettingsRow({
-    icon, iconBg, label, value, onPress, isLast = false, isDark, destructive = false,
+    icon: Icon, iconBg, label, value, onPress, isLast = false, isDark, destructive = false,
     hasSwitch = false, switchValue = false, onSwitch = () => {}
 }: {
-    icon?: string; iconBg?: string; label: string; value?: string;
+    icon?: React.ElementType; iconBg?: string; label: string; value?: string;
     onPress?: () => void; isLast?: boolean; isDark: boolean; destructive?: boolean;
     hasSwitch?: boolean; switchValue?: boolean; onSwitch?: (val: boolean) => void;
 }) {
@@ -70,19 +81,24 @@ function SettingsRow({
             activeOpacity={hasSwitch ? 1 : 0.7}
             style={[s.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }]}
         >
-            {icon && iconBg && (
+            {Icon && iconBg && (
                 <View style={[s.rowIcon, { backgroundColor: iconBg }]}>
-                    <Ionicons name={icon as any} size={18} color="#fff" />
+                    <Icon width={18} height={18} color="#fff" strokeWidth={2.5} />
                 </View>
             )}
-            <Text style={[s.rowLabel, { color: destructive ? C.destructive : C.text, marginLeft: icon ? 0 : 16, textAlign: destructive ? 'center' : 'left' }]} numberOfLines={1}>
+            <Text style={[s.rowLabel, { color: destructive ? C.destructive : C.text, marginLeft: Icon ? 0 : 16, textAlign: destructive ? 'center' : 'left' }]} numberOfLines={1}>
                 {label}
             </Text>
             {value ? <Text style={[s.rowValue, { color: C.textSecondary }]}>{value}</Text> : null}
             {hasSwitch ? (
-                <Switch value={switchValue} onValueChange={onSwitch} />
+                <Switch 
+                    value={switchValue} 
+                    onValueChange={onSwitch}
+                    trackColor={{ false: '#767577', true: '#34C759' }}
+                    thumbColor={Platform.OS === 'ios' ? undefined : '#f4f3f4'}
+                />
             ) : (
-                !!onPress && !destructive && <Ionicons name="chevron-forward" size={16} color={C.textTertiary} />
+                !!onPress && !destructive && <NavArrowRight width={18} height={18} color={C.textTertiary} strokeWidth={2} />
             )}
         </TouchableOpacity>
     );
@@ -92,7 +108,7 @@ function SettingsRow({
 function GroupedCard({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
     const C = Colors[isDark ? 'dark' : 'light'];
     return (
-        <View style={[{ backgroundColor: C.card, borderRadius: Radius.lg, overflow: 'hidden', marginBottom: 24 }]}>
+        <View style={[{ backgroundColor: C.card, borderRadius: Radius.lg, overflow: 'hidden', marginBottom: 24, borderWidth: 1, borderColor: isDark ? C.glassBorder : 'transparent' }]}>
             <View style={{ paddingLeft: 16 }}>
                 {children}
             </View>
@@ -157,7 +173,7 @@ export default function AccountScreen() {
                             )}
                         </View>
                         <View style={[s.editBadge, { borderColor: C.background }]}>
-                            <Ionicons name="pencil" size={14} color="#FFF" />
+                            <EditPencil width={14} height={14} color="#FFF" strokeWidth={2.5} />
                         </View>
                     </TouchableOpacity>
                     <Text style={[s.profileName, { color: C.text }]}>{user.name}</Text>
@@ -168,19 +184,19 @@ export default function AccountScreen() {
                 <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Account</Text>
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon="sparkles" iconBg="#007AFF"
+                        icon={Sparkles} iconBg="#007AFF"
                         label="Current Plan"
                         value={user.is_unlimited ? 'Unlimited Pro' : 'Free Academic'}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="diamond" iconBg="#34C759"
+                        icon={Rhombus} iconBg="#34C759"
                         label="Credits Remaining"
                         value={user.is_unlimited ? '∞' : `${user.credits}`}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="arrow-up-circle" iconBg="#FF9500"
+                        icon={ArrowUpCircle} iconBg="#FF9500"
                         label="Upgrade Plan"
                         onPress={() => router.push('/upgrade')}
                         isLast={true}
@@ -192,13 +208,13 @@ export default function AccountScreen() {
                 <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Preferences</Text>
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon="color-wand" iconBg="#5E5CE6"
+                        icon={MagicWand} iconBg="#5E5CE6"
                         label="AI Preferences"
                         onPress={() => router.push('/preferences')}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="notifications" iconBg="#FF2D55"
+                        icon={Bell} iconBg="#FF2D55"
                         label="Notifications"
                         hasSwitch={true}
                         switchValue={notificationsEnabled}
@@ -227,19 +243,19 @@ export default function AccountScreen() {
                 <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Support</Text>
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon="help-circle" iconBg="#8E8E93"
+                        icon={HelpCircle} iconBg="#8E8E93"
                         label="Help & FAQ"
                         onPress={() => router.push('/support')}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="shield-checkmark" iconBg="#8E8E93"
+                        icon={ShieldCheck} iconBg="#8E8E93"
                         label="Privacy Policy"
                         onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/privacy')}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="document-text" iconBg="#8E8E93"
+                        icon={DocumentText} iconBg="#8E8E93"
                         label="Terms of Service"
                         onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/terms')}
                         isLast={true}
@@ -266,8 +282,8 @@ export default function AccountScreen() {
                 presentationStyle="pageSheet"
                 onRequestClose={() => setAvatarModalVisible(false)}
             >
-                <View style={{ flex: 1, backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator, backgroundColor: C.card }}>
+                <View style={{ flex: 1, backgroundColor: isDark ? 'transparent' : '#F2F2F7' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator, backgroundColor: C.background }}>
                         <Text style={{ fontSize: 17, fontWeight: '600', color: C.text }}>Choose Avatar</Text>
                         <TouchableOpacity onPress={() => setAvatarModalVisible(false)}>
                             <Text style={{ fontSize: 17, color: C.primary, fontWeight: '600' }}>Done</Text>
@@ -283,7 +299,7 @@ export default function AccountScreen() {
                                     disabled={updatingAvatar}
                                     style={{ 
                                         width: 80, height: 80, borderRadius: 40,
-                                        backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA',
+                                        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#E5E5EA',
                                         overflow: 'hidden',
                                         borderWidth: (user.avatar === url || user.avatar_url === url) ? 3 : 0,
                                         borderColor: C.primary

@@ -40,6 +40,9 @@ export function IosCard({
                     shadowOpacity: isDark ? 0 : 0.06,
                     shadowRadius: 8,
                     elevation: isDark ? 0 : 2,
+                    // Dark mode glass borders
+                    borderWidth: 1,
+                    borderColor: isDark ? C.glassBorder : 'transparent',
                 },
                 style,
             ]}

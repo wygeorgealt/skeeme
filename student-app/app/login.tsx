@@ -6,9 +6,11 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Xmark } from 'iconoir-react-native';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
+import { GlowBackground } from '@/components/ui/GlowBackground';
+import { StatusBar } from 'expo-status-bar';
 
 export default function LoginScreen() {
     const scheme = useColorScheme();
@@ -62,24 +64,30 @@ export default function LoginScreen() {
     };
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-            <View style={{ flex: 1, backgroundColor: C.background }}>
+        <GlowBackground style={s.flex1}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.flex1}>
+                <StatusBar style={isDark ? "light" : "dark"} />
+                
                 {/* Close button */}
-                <TouchableOpacity
-                    onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
-                    style={[s.closeBtn, { top: insets.top + 8 }]}
-                    hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-                >
-                    <Ionicons name="close" size={20} color={C.textSecondary} />
-                </TouchableOpacity>
+                <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+                    <TouchableOpacity
+                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
+                        style={[s.closeBtn, { backgroundColor: C.card }]}
+                        hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                    >
+                        <Xmark width={20} height={20} color={C.text} strokeWidth={2.5} />
+                    </TouchableOpacity>
+                </View>
 
                 <ScrollView
-                    contentContainerStyle={[s.scroll, { paddingTop: insets.top + 72 }]}
+                    contentContainerStyle={s.scrollContent}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    <Text style={[s.title, { color: C.text }]}>Welcome back</Text>
-                    <Text style={[s.subtitle, { color: C.textSecondary }]}>Sign in to continue to Skeeme</Text>
+                    <View style={s.heroSection}>
+                        <Text style={[s.title, { color: C.text }]}>Welcome back</Text>
+                        <Text style={[s.subtitle, { color: C.textSecondary }]}>Sign in to continue to Skeeme</Text>
+                    </View>
 
                     <View style={[s.groupedList, { backgroundColor: C.card }]}>
                         <View style={s.groupedRow}>
@@ -101,8 +109,8 @@ export default function LoginScreen() {
                             <PasswordField
                                 value={password}
                                 onChangeText={(t: string) => { setPassword(t); setPasswordError(''); }}
-                                style={{ flex: 1, paddingRight: 4 }}
-                                inputStyle={s.groupedInput}
+                                style={{ flex: 1 }}
+                                inputStyle={[s.groupedInput, { color: C.text }]}
                                 placeholder="Required"
                             />
                         </View>
@@ -122,7 +130,7 @@ export default function LoginScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    <View style={{ height: Spacing.md }} />
+                    <View style={{ height: Spacing.xl }} />
 
                     <IosPillButton
                         label="Sign In"
@@ -135,32 +143,36 @@ export default function LoginScreen() {
                     <TouchableOpacity onPress={() => router.push('/signup')} style={s.signupRow}>
                         <Text style={[s.signupText, { color: C.textSecondary }]}>
                             New to Skeeme?{' '}
-                            <Text style={[s.signupText, { color: C.primary, fontWeight: '600' }]}>Create account</Text>
+                            <Text style={[s.signupText, { color: C.primary, fontWeight: '700' }]}>Create account</Text>
                         </Text>
                     </TouchableOpacity>
                 </ScrollView>
-            </View>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </GlowBackground>
     );
 }
 
 const s = StyleSheet.create({
-    closeBtn: { position: 'absolute', right: Spacing.lg, zIndex: 10, width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-    scroll: { paddingHorizontal: Spacing.xl, paddingBottom: 48 },
-    logoCircle: { width: 72, height: 72, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xl, alignSelf: 'center' },
-    title: { fontSize: FontSize.title1, fontWeight: '700', letterSpacing: -0.5, textAlign: 'center', marginBottom: Spacing.xs },
-    subtitle: { fontSize: FontSize.subhead, textAlign: 'center', marginBottom: Spacing.xl },
+    flex1: { flex: 1 },
+    header: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm },
+    closeBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-end' },
     
-    groupedList: { borderRadius: 10, overflow: 'hidden' },
-    groupedRow: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingRight: 12 },
-    groupedLabel: { width: 100, fontSize: 16, fontWeight: '400', paddingLeft: 16 },
-    groupedInput: { flex: 1, fontSize: 16, height: 44 },
+    scrollContent: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl, paddingBottom: 48 },
+    
+    heroSection: { marginBottom: Spacing.xxl },
+    title: { fontSize: FontSize.largeTitle, fontWeight: '800', letterSpacing: -1, textAlign: 'center', marginBottom: Spacing.xs },
+    subtitle: { fontSize: FontSize.body, textAlign: 'center', opacity: 0.8 },
+    
+    groupedList: { borderRadius: Radius.lg, overflow: 'hidden' },
+    groupedRow: { flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingRight: 8 },
+    groupedLabel: { width: 100, fontSize: 16, fontWeight: '500', paddingLeft: 16 },
+    groupedInput: { flex: 1, fontSize: 16, height: 56 },
     separator: { height: StyleSheet.hairlineWidth, marginLeft: 16 },
     
-    listFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingHorizontal: 16, minHeight: 20 },
-    errorFooter: { fontSize: 13, fontWeight: '400' },
-    forgotLink: { fontSize: 13, fontWeight: '500' },
+    listFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingHorizontal: 4, minHeight: 20 },
+    errorFooter: { fontSize: 13, fontWeight: '500' },
+    forgotLink: { fontSize: 13, fontWeight: '600' },
 
-    signupRow: { marginTop: Spacing.xl, alignItems: 'center' },
+    signupRow: { marginTop: Spacing.xxl, alignItems: 'center' },
     signupText: { fontSize: FontSize.subhead },
 });

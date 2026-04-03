@@ -3,7 +3,7 @@
     @if($this->subscription_expired || ($this->days_left && $this->days_left <= 7) || $this->student_limit_reached || $this->stats['pending_lecturers'] > 0)
     <div class="relative overflow-hidden rounded-xl border border-amber-200/50 bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 p-6 shadow-lg dark:border-amber-900/30 dark:from-amber-950/40 dark:via-orange-950/40 dark:to-rose-950/40">
         <div class="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-gradient-to-b from-amber-200 to-transparent opacity-20 dark:from-amber-700/30"></div>
-        @php use ToneGabes\Filament\Icons\Enums\Phosphor; @endphp
+
         <div class="relative z-10">
             <div class="mb-4 flex items-center gap-3">
                 <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50">
@@ -48,7 +48,7 @@
             <div class="relative z-10">
                 <div class="mb-4 flex items-center justify-between">
                         <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg skeeme-icon-wrap">
-                            <x-icon :name="Phosphor::Users->getLabel()" class="skeeme-icon skeeme-icon-lg text-white" />
+                            <x-icon :name="\ToneGabes\Filament\Icons\Enums\Phosphor::Users->getLabel()" class="skeeme-icon skeeme-icon-lg text-white" />
                         </div>
                 </div>
                 <h3 class="text-sm font-medium text-blue-600 dark:text-blue-400">Total Students</h3>
@@ -71,7 +71,7 @@
             <div class="relative z-10">
                 <div class="mb-4 flex items-center justify-between">
                         <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg skeeme-icon-wrap">
-                            <x-icon :name="Phosphor::Chalkboard->getLabel()" class="skeeme-icon skeeme-icon-lg text-white" />
+                            <x-icon :name="\ToneGabes\Filament\Icons\Enums\Phosphor::Chalkboard->getLabel()" class="skeeme-icon skeeme-icon-lg text-white" />
                         </div>
                 </div>
                 <h3 class="text-sm font-medium text-purple-600 dark:text-purple-400">Total Lecturers</h3>
@@ -97,7 +97,7 @@
             <div class="relative z-10">
                 <div class="mb-4 flex items-center justify-between">
                         <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 shadow-lg skeeme-icon-wrap">
-                            <x-icon :name="Phosphor::Books->getLabel()" class="skeeme-icon skeeme-icon-lg text-white" />
+                            <x-icon :name="\ToneGabes\Filament\Icons\Enums\Phosphor::Books->getLabel()" class="skeeme-icon skeeme-icon-lg text-white" />
                         </div>
                 </div>
                 <h3 class="text-sm font-medium text-cyan-600 dark:text-cyan-400">Total Classes</h3>
@@ -116,7 +116,7 @@
             <div class="relative z-10">
                 <div class="mb-4 flex items-center justify-between">
                         <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 shadow-lg skeeme-icon-wrap">
-                            <x-icon :name="Phosphor::ChartBar->getLabel()" class="skeeme-icon skeeme-icon-lg text-white" />
+                            <x-icon :name="\ToneGabes\Filament\Icons\Enums\Phosphor::ChartBar->getLabel()" class="skeeme-icon skeeme-icon-lg text-white" />
                         </div>
 
     {{-- scoped icon sizing to prevent global svg rules from breaking widget layout --}}

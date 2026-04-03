@@ -112,7 +112,7 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: tailwindScheme === 'dark' ? '#100921' : '#fafafa' }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: tailwindScheme === 'dark' ? '#09090B' : '#E9F1FE' }}>
       <GlowBackground isRoot={true}>
       <View style={{ flex: 1, backgroundColor: 'transparent' }}>
       <QueryProvider>

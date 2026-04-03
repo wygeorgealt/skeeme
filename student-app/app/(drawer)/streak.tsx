@@ -34,7 +34,7 @@ export default function StreakScreen() {
                 }
             }
         } catch (error) {
-            console.error('Sharing failed', error);
+            if (__DEV__) console.error('Sharing failed', error);
         }
     };
     
@@ -196,7 +196,7 @@ const s = StyleSheet.create({
     scrollView: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
     statsRow: { flexDirection: 'row', gap: 16, marginBottom: 32 },
     statCard: { flex: 1, borderRadius: 24, padding: 24, borderWidth: 1 },
-    statCardDark: { backgroundColor: '#13151B', borderColor: 'transparent' },
+    statCardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' },
     statCardLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
     statLabel: { color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, fontSize: 10, marginBottom: 12 },
     statValueRow: { flexDirection: 'row', alignItems: 'baseline' },
@@ -218,7 +218,7 @@ const s = StyleSheet.create({
     protectionCard: { padding: 24, borderRadius: 24, borderWidth: 1, marginBottom: 32 },
     protectionEliteDark: { backgroundColor: 'rgba(0,122,255,0.1)', borderColor: 'rgba(0,122,255,0.2)' },
     protectionEliteLight: { backgroundColor: 'rgba(0,122,255,0.05)', borderColor: 'rgba(0,122,255,0.1)' },
-    protectionBasicDark: { backgroundColor: '#13151B', borderColor: 'transparent' },
+    protectionBasicDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' },
     protectionBasicLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
     protectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
     protectionIconBox: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

@@ -46,7 +46,7 @@ export async function registerForPushNotificationsAsync(authToken?: string | nul
                 Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
             
             if (!projectId) {
-                console.warn('EAS Project ID not found. Ensure app.json has extra.eas.projectId defined.');
+                if (__DEV__) console.warn('EAS Project ID not found. Ensure app.json has extra.eas.projectId defined.');
             }
             
             token = (await Notifications.getExpoPushTokenAsync({
@@ -65,7 +65,7 @@ export async function registerForPushNotificationsAsync(authToken?: string | nul
                 if (__DEV__) console.log('Got push token but user not logged in. Will sync later:', token);
             }
         } catch (e) {
-            console.error('Push Token Error:', e);
+            if (__DEV__) console.error('Push Token Error:', e);
         }
     } else {
         if (__DEV__) console.log('Must use physical device for Push Notifications');

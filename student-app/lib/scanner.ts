@@ -23,18 +23,20 @@ export type SolveResponse = {
 export const scannerService = {
     /**
      * Solves a question using a base64 image or a File/Blob (multipart).
-     * Addresses "File uploads going directly to your server" by being ready for 
-     * future multipart/presigned URL shifts.
+     * Sends an idempotency key per attempt to prevent duplicate credit deductions.
      */
     solve: async (image: string | any, mode: 'base64' | 'multipart' = 'base64'): Promise<SolveResponse> => {
+        const idempotencyKey = crypto.randomUUID();
+        const idempotencyHeaders = { 'Idempotency-Key': idempotencyKey };
+
         if (mode === 'base64') {
-            return await apiStandard.post<SolveResponse>('scan/solve', { image });
+            return await apiStandard.post<SolveResponse>('scan/solve', { image }, { headers: idempotencyHeaders });
         } else {
             // Multipart support for better performance with large files
             const formData = new FormData();
             formData.append('image', image);
             return await apiStandard.post<SolveResponse>('scan/solve', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data', ...idempotencyHeaders }
             });
         }
     }

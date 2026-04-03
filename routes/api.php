@@ -122,19 +122,21 @@ Route::group(['prefix' => 'v1'], function () {
 
     // Student Mobile App API
     Route::group(['prefix' => 'student', 'middleware' => 'throttle:api'], function () {
-        Route::post('login', [\App\Http\Controllers\API\Student\AuthController::class, 'login']);
-        Route::post('register', [\App\Http\Controllers\API\Student\AuthController::class, 'register']);
-        Route::post('oauth/{provider}', [\App\Http\Controllers\API\Student\AuthController::class, 'handleOAuthLogin']);
+        // Authentication Endpoints (Strictly Throttled: 60/min)
+        Route::group(['middleware' => 'throttle:auth'], function () {
+            Route::post('login', [\App\Http\Controllers\API\Student\AuthController::class, 'login']);
+            Route::post('register', [\App\Http\Controllers\API\Student\AuthController::class, 'register']);
+            Route::post('oauth/{provider}', [\App\Http\Controllers\API\Student\AuthController::class, 'handleOAuthLogin']);
+            Route::post('auth/reset-password', [\App\Http\Controllers\API\Student\AuthController::class, 'resetPassword']);
+            Route::post('auth/verify-account', [\App\Http\Controllers\API\Student\AuthController::class, 'verifyAccount']);
+        });
 
-        // OTP & Auth Flow (Strictly Throttled)
+        // OTP & Auth Flow (Strictly Throttled: 5/5mins)
         Route::group(['middleware' => 'throttle:otp'], function () {
             Route::post('otp/send', [\App\Http\Controllers\API\OtpController::class, 'send']);
             Route::post('otp/verify', [\App\Http\Controllers\API\OtpController::class, 'verify']);
             Route::post('otp/resend', [\App\Http\Controllers\API\OtpController::class, 'resend']);
         });
-
-        Route::post('auth/reset-password', [\App\Http\Controllers\API\Student\AuthController::class, 'resetPassword']);
-        Route::post('auth/verify-account', [\App\Http\Controllers\API\Student\AuthController::class, 'verifyAccount']);
 
         Route::group(['middleware' => 'auth:sanctum'], function () {
             Route::post('logout', [\App\Http\Controllers\API\Student\AuthController::class, 'logout']);

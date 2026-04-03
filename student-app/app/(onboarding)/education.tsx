@@ -4,7 +4,9 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { GraduationCap, Book, Flask, Medal, Check } from 'iconoir-react-native';
+import { GraduationCap, Book, Flask, Medal, CheckCircle } from 'iconoir-react-native';
+import { GlowBackground } from '@/components/ui/GlowBackground';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const LEVELS = [
     { key: 'high_school', label: 'High School', icon: GraduationCap, desc: 'Secondary / A-Levels' },
@@ -15,6 +17,7 @@ const LEVELS = [
 
 export default function EducationScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const { setOnboardingStep, setOnboardingData } = useAuthStore();
@@ -35,99 +38,134 @@ export default function EducationScreen() {
         }
     };
 
-    const bgColor = isDark ? '#000000' : '#F2F2F7';
-    const cardColor = isDark ? '#1C1C1E' : '#FFFFFF';
     const textColor = isDark ? '#FFFFFF' : '#000000';
-    const subtextColor = isDark ? '#8E8E93' : '#8E8E93';
-    const iconColor = isDark ? '#FFFFFF' : '#000000';
-    const separatorColor = isDark ? '#38383A' : '#C6C6C8';
+    const subtextColor = isDark ? '#8E8E93' : '#6E6E73';
+    const iconColor = '#007AFF';
 
     return (
-        <SafeAreaView style={[s.container, { backgroundColor: bgColor }]}>
-            
-            <View style={s.headerSection}>
-                <Animated.View entering={FadeInDown.duration(600).delay(100)}>
-                    <Text style={[s.heroTitle, { color: textColor }]}>
-                        Academic Level
-                    </Text>
-                    <Text style={[s.heroSubtitle, { color: subtextColor }]}>
-                        This helps us calibrate the AI to your specific learning stage.
-                    </Text>
-                </Animated.View>
-            </View>
+        <GlowBackground style={{ flex: 1 }}>
+            <SafeAreaView style={s.container}>
+                
+                <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
+                    <Animated.View entering={FadeInDown.duration(600).delay(100)}>
+                        <Text style={[s.heroTitle, { color: textColor }]}>
+                            Academic Level
+                        </Text>
+                        <Text style={[s.heroSubtitle, { color: subtextColor }]}>
+                            This helps us calibrate the AI to your specific learning stage.
+                        </Text>
+                    </Animated.View>
+                </View>
 
-            <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
-                <Animated.View entering={FadeInDown.duration(600).delay(200)} style={[s.listContainer, { backgroundColor: cardColor }]}>
-                    {LEVELS.map((level, index) => {
-                        const isSelected = selected === level.key;
-                        const isLast = index === LEVELS.length - 1;
+                <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+                    <View style={s.optionsGap}>
+                        {LEVELS.map((level, index) => {
+                            const isSelected = selected === level.key;
+                            const Icon = level.icon;
 
-                        return (
-                            <TouchableOpacity
-                                key={level.key}
-                                onPress={() => handleSelect(level.key)}
-                                activeOpacity={0.7}
-                            >
-                                <View style={[s.listItem, !isLast && { borderBottomColor: separatorColor, borderBottomWidth: StyleSheet.hairlineWidth }]}>
-                                    
-                                    <View style={s.listItemLeft}>
-                                        <View style={[s.iconBox, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
-                                            <level.icon width={22} height={22} color={iconColor} />
+                            return (
+                                <Animated.View 
+                                    key={level.key}
+                                    entering={FadeInDown.duration(600).delay(200 + index * 100)}
+                                >
+                                    <TouchableOpacity
+                                        onPress={() => handleSelect(level.key)}
+                                        activeOpacity={0.8}
+                                        style={[
+                                            s.card, 
+                                            isDark ? s.cardDark : s.cardLight,
+                                            isSelected && s.cardSelected
+                                        ]}
+                                    >
+                                        <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
+                                            <Icon width={22} height={22} color={iconColor} />
                                         </View>
                                         <View style={s.textStack}>
                                             <Text style={[s.optionLabel, { color: textColor }]}>{level.label}</Text>
                                             <Text style={[s.optionDesc, { color: subtextColor }]}>{level.desc}</Text>
                                         </View>
-                                    </View>
-
-                                    <View style={s.listItemRight}>
                                         {isSelected && (
-                                            <Check width={24} height={24} color="#007AFF" strokeWidth={3} />
+                                            <CheckCircle width={24} height={24} color="#007AFF" />
                                         )}
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </Animated.View>
-            </ScrollView>
+                                    </TouchableOpacity>
+                                </Animated.View>
+                            );
+                        })}
+                    </View>
+                </ScrollView>
 
-            {/* Bottom Button */}
-            <View style={s.footer}>
-                <TouchableOpacity
-                    onPress={handleNext}
-                    disabled={!selected}
-                    activeOpacity={0.8}
-                    style={[s.primaryBtn, !selected && s.primaryBtnDisabled]}
-                >
-                    <Text style={[s.primaryBtnText, !selected && { color: 'rgba(255,255,255,0.5)' }]}>Continue</Text>
-                </TouchableOpacity>
-            </View>
-        </SafeAreaView>
+                {/* Bottom Button */}
+                <View style={[s.footer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+                    <TouchableOpacity
+                        onPress={handleNext}
+                        disabled={!selected}
+                        activeOpacity={0.8}
+                        style={[s.primaryBtn, !selected && s.primaryBtnDisabled]}
+                    >
+                        <Text style={[s.primaryBtnText, !selected && { color: 'rgba(255,255,255,0.5)' }]}>
+                            Continue
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        </GlowBackground>
     );
 }
 
 const s = StyleSheet.create({
     container: { flex: 1 },
-    headerSection: { paddingHorizontal: 20, paddingTop: 40, paddingBottom: 24 },
-    heroTitle: { fontSize: 34, fontWeight: '800', letterSpacing: 0.41, marginBottom: 8 },
-    heroSubtitle: { fontSize: 17, fontWeight: '400', lineHeight: 22 },
+    headerSection: { paddingHorizontal: 24, paddingBottom: 24 },
+    heroTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1, marginBottom: 8 },
+    heroSubtitle: { fontSize: 17, fontWeight: '500', lineHeight: 24, opacity: 0.8 },
     
-    scrollContent: { paddingHorizontal: 20, paddingBottom: 100 },
-    listContainer: { borderRadius: 10, overflow: 'hidden' },
+    scrollContent: { paddingHorizontal: 24, paddingBottom: 120 },
+    optionsGap: { gap: 12 },
+
+    // Glass Card System
+    card: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        padding: 16, 
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    cardLight: { 
+        backgroundColor: '#FFFFFF', 
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 4 }, 
+        shadowOpacity: 0.05, 
+        shadowRadius: 12, 
+        elevation: 3,
+        borderColor: 'rgba(0,0,0,0.05)',
+    },
+    cardDark: { 
+        backgroundColor: 'rgba(255,255,255,0.05)', 
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    cardSelected: {
+        borderColor: '#007AFF',
+        borderWidth: 2,
+    },
     
-    listItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingRight: 16, marginLeft: 16 },
-    listItemLeft: { flexDirection: 'row', alignItems: 'center' },
+    iconBox: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    textStack: { flex: 1, justifyContent: 'center' },
+    optionLabel: { fontSize: 17, fontWeight: '700', marginBottom: 2 },
+    optionDesc: { fontSize: 13, fontWeight: '500' },
     
-    iconBox: { width: 40, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-    textStack: { justifyContent: 'center' },
-    optionLabel: { fontSize: 17, fontWeight: '500', marginBottom: 2 },
-    optionDesc: { fontSize: 13, fontWeight: '400' },
-    
-    listItemRight: { width: 24, alignItems: 'flex-end' },
-    
-    footer: { position: 'absolute', bottom: 40, left: 20, right: 20 },
-    primaryBtn: { backgroundColor: '#007AFF', height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-    primaryBtnDisabled: { backgroundColor: '#B0D4FF' },
-    primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '600', letterSpacing: -0.41 },
+    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24 },
+    primaryBtn: { 
+        backgroundColor: '#007AFF', 
+        height: 56, 
+        borderRadius: 100, 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        shadowColor: '#007AFF',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    primaryBtnDisabled: { backgroundColor: '#A2C9F4' },
+    primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', letterSpacing: -0.41 },
 });

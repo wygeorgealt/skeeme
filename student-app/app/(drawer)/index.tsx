@@ -1,8 +1,18 @@
 import { Text } from '@/components/ui/Text';
 import { View, ScrollView, RefreshControl, useColorScheme, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
-import { GraduationCap, Activity, FireFlame, Trophy, MultiplePages } from 'iconoir-react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { 
+    GraduationCap, 
+    Activity, 
+    FireFlame, 
+    Trophy, 
+    MultiplePages, 
+    NavArrowRight, 
+    Sparks, 
+    Flash, 
+    Clock,
+    Book
+} from 'iconoir-react-native';
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import { useCallback, useState, useEffect } from 'react';
@@ -11,17 +21,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TutorialModal } from '@/components/ui/TutorialModal';
 import * as SecureStore from 'expo-secure-store';
 import { IosCard } from '@/components/ui/IosCard';
-import { IosPillButton } from '@/components/ui/IosPillButton';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
-import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop, Circle } from 'react-native-svg';
-import { LinearGradient } from 'expo-linear-gradient';
 
 // ─── Quick action data ────────────────────────────────────────────────────────
 const QUICK_ACTIONS = [
-    { label: 'Quiz', icon: 'school-outline', route: '/generate', color: '#007AFF' },
-    { label: 'Flashcards', icon: 'albums-outline', route: '/flashcards', color: '#34C759' },
-    { label: 'History', icon: 'time-outline', route: '/history', color: '#FF9500' },
-    { label: 'Streak', icon: 'flame-outline', route: '/streak', color: '#FF3B30' },
+    { label: 'Quiz', icon: Book, route: '/generate', color: '#007AFF' },
+    { label: 'Flashcards', icon: MultiplePages, route: '/flashcards', color: '#34C759' },
+    { label: 'History', icon: Clock, route: '/history', color: '#FF9500' },
+    { label: 'Streak', icon: FireFlame, route: '/streak', color: '#FF3B30' },
 ] as const;
 
 // ─── 7-Day Streak Calendar ───────────────────────────────────────────────────
@@ -53,7 +60,7 @@ function StreakCalendar({ data, isDark }: { data: any[]; isDark: boolean }) {
                             borderColor: !active && isToday ? C.primary : 'transparent'
                         }}>
                             {active ? (
-                                <FireFlame width={16} height={16} color="#FFF" />
+                                <FireFlame width={16} height={16} color="#FFF" strokeWidth={2.5} />
                             ) : (
                                 <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: C.textTertiary }} />
                             )}
@@ -75,8 +82,6 @@ export default function DashboardScreen() {
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
     const queryClient = useQueryClient();
-
-    const isFreePlan = !user?.is_unlimited && (!user?.plan_name || user?.plan_name === 'free');
 
     useEffect(() => {
         SecureStore.getItemAsync('tutorial_seen').then((seen) => {
@@ -121,13 +126,6 @@ export default function DashboardScreen() {
 
     if (!user) return null;
 
-    const greeting = () => {
-        const h = new Date().getHours();
-        if (h < 12) return 'Good morning';
-        if (h < 18) return 'Good afternoon';
-        return 'Good evening';
-    };
-
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
             <ScrollView
@@ -156,28 +154,31 @@ export default function DashboardScreen() {
                                 onPress={() => router.push('/upgrade')}
                                 style={[s.upgradePill, { backgroundColor: C.primary }]}
                             >
-                                <Ionicons name="sparkles" size={14} color="#FFF" />
+                                <Sparks width={14} height={14} color="#FFF" strokeWidth={2.5} />
                                 <Text style={s.upgradeText}>Upgrade</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
 
                     <View style={s.quickRow}>
-                        {QUICK_ACTIONS.map((action) => (
-                            <TouchableOpacity
-                                key={action.route}
-                                onPress={() => router.push(action.route)}
-                                activeOpacity={0.7}
-                                style={s.quickItem}
-                            >
-                                <View style={[s.quickIcon, { backgroundColor: action.color + '12' }]}>
-                                    <View style={[styles.innerCircle, { backgroundColor: action.color + '10' }]}>
-                                        <Ionicons name={action.icon as any} size={22} color={action.color} />
+                        {QUICK_ACTIONS.map((action) => {
+                            const IconComp = action.icon;
+                            return (
+                                <TouchableOpacity
+                                    key={action.route}
+                                    onPress={() => router.push(action.route)}
+                                    activeOpacity={0.7}
+                                    style={s.quickItem}
+                                >
+                                    <View style={[s.quickIcon, { backgroundColor: action.color + '12' }]}>
+                                        <View style={[styles.innerCircle, { backgroundColor: action.color + '10' }]}>
+                                            <IconComp width={24} height={24} color={action.color} strokeWidth={2.5} />
+                                        </View>
                                     </View>
-                                </View>
-                                <Text style={[s.quickLabel, { color: C.textSecondary }]}>{action.label}</Text>
-                            </TouchableOpacity>
-                        ))}
+                                    <Text style={[s.quickLabel, { color: C.textSecondary }]}>{action.label}</Text>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
                 </IosCard>
 
@@ -185,14 +186,14 @@ export default function DashboardScreen() {
                 <View style={s.statsRow}>
                     <IosCard style={{ flex: 1 }} padding="md">
                         <View style={[s.statIconBox, { backgroundColor: '#FFD60A15' }]}>
-                            <Ionicons name="flash" size={16} color="#FFD60A" />
+                            <Flash width={16} height={16} color="#FFD60A" strokeWidth={2.5} />
                         </View>
                         <Text style={[s.statNum, { color: C.text }]}>{user.credits_spent_this_week ?? 0}</Text>
                         <Text style={[s.statDesc, { color: C.textSecondary }]}>Credits Spent</Text>
                     </IosCard>
                     <IosCard style={{ flex: 1 }} padding="md">
                         <View style={[s.statIconBox, { backgroundColor: '#007AFF15' }]}>
-                            <GraduationCap width={16} height={16} color="#007AFF" />
+                            <GraduationCap width={16} height={16} color="#007AFF" strokeWidth={2.5} />
                         </View>
                         <Text style={[s.statNum, { color: C.text }]}>{user.study_sessions_this_week ?? 0}</Text>
                         <Text style={[s.statDesc, { color: C.textSecondary }]}>Study Sessions</Text>
@@ -206,7 +207,7 @@ export default function DashboardScreen() {
                             <Text style={[s.activityTitle, { color: C.text }]}>Weekly Activity</Text>
                             <Text style={[s.activitySub, { color: C.textSecondary }]}>Your study momentum</Text>
                         </View>
-                        <Activity color={C.primary} width={20} height={20} />
+                        <Activity color={C.primary} width={20} height={20} strokeWidth={2} />
                     </View>
                     <View style={{ height: 10 }} />
                     <StreakCalendar data={user.weekly_activity_points ?? []} isDark={isDark} />
@@ -221,26 +222,26 @@ export default function DashboardScreen() {
                 <IosCard padding="none" style={{ marginBottom: Spacing.lg }}>
                     <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.7}>
                         <View style={[s.streakIcon, { backgroundColor: '#FF3B3015' }]}>
-                            <FireFlame width={18} height={18} color="#FF3B30" />
+                            <FireFlame width={18} height={18} color="#FF3B30" strokeWidth={2.5} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={[s.streakTitle, { color: C.text }]}>Current Streak</Text>
                             <Text style={[s.streakSub, { color: C.textSecondary }]}>Keep the fire alive</Text>
                         </View>
                         <Text style={[s.streakCount, { color: C.text }]}>{user.streak?.current_streak ?? 0}</Text>
-                        <Ionicons name="chevron-forward" size={16} color={C.textTertiary} style={{ marginLeft: 4 }} />
+                        <NavArrowRight width={18} height={18} color={C.textTertiary} strokeWidth={2} style={{ marginLeft: 4 }} />
                     </TouchableOpacity>
                     <View style={[s.divider, { backgroundColor: C.separator }]} />
                     <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.7}>
                         <View style={[s.streakIcon, { backgroundColor: '#FF950015' }]}>
-                            <Trophy width={18} height={18} color="#FF9500" />
+                            <Trophy width={18} height={18} color="#FF9500" strokeWidth={2.5} />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={[s.streakTitle, { color: C.text }]}>Longest Streak</Text>
                             <Text style={[s.streakSub, { color: C.textSecondary }]}>Your personal best</Text>
                         </View>
                         <Text style={[s.streakCount, { color: C.text }]}>{user.streak?.longest_streak ?? 0}</Text>
-                        <Ionicons name="chevron-forward" size={16} color={C.textTertiary} style={{ marginLeft: 4 }} />
+                        <NavArrowRight width={18} height={18} color={C.textTertiary} strokeWidth={2} style={{ marginLeft: 4 }} />
                     </TouchableOpacity>
                 </IosCard>
             </ScrollView>

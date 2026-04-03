@@ -1,16 +1,22 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, useColorScheme, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, useColorScheme, StyleSheet, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { NavArrowLeft, Mail } from 'iconoir-react-native';
 import { StatusBar } from 'expo-status-bar';
+import { GlowBackground } from '@/components/ui/GlowBackground';
+import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IosPillButton } from '@/components/ui/IosPillButton';
 
 export default function OtpScreen() {
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { email, type } = useLocalSearchParams<{ email: string, type: 'verification' | 'password_reset' }>();
 
     const [code, setCode] = useState(['', '', '', '', '', '']);
@@ -92,7 +98,7 @@ export default function OtpScreen() {
                 const { login } = useAuthStore.getState();
                 await login(authedUser, authToken);
 
-                router.replace('/(onboarding)/streak-intro');
+                router.replace('/(drawer)');
             } else {
                 router.replace(`/new-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`);
             }
@@ -103,7 +109,7 @@ export default function OtpScreen() {
             if (msg.includes('Too many') || msg.includes('expired')) {
                 setCode(['', '', '', '', '', '']);
                 inputs.current[0]?.focus();
-                setCountdown(0); // Activate resend immediately
+                setCountdown(0);
             }
         } finally {
             setIsLoading(false);
@@ -112,7 +118,6 @@ export default function OtpScreen() {
 
     const handleResend = async () => {
         if (countdown > 0) return;
-        
         setIsLoading(true);
         setErrorMsg('');
         setResendSuccess('');
@@ -128,43 +133,42 @@ export default function OtpScreen() {
             if (error.response?.status === 429) {
                 setCountdown(error.response.data.cooldown || 60);
             } else {
-                setErrorMsg('Failed to resend code. Please try again later.');
+                setErrorMsg('Failed to resend code.');
             }
         } finally {
             setIsLoading(false);
         }
     };
 
-    const headline = type === 'verification' ? 'Verify your email' : 'Check your email';
-
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[s.flex1, isDark ? s.bgDark : s.bgLight]}>
-            <StatusBar style={isDark ? "light" : "dark"} />
+        <GlowBackground style={s.flex1}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.flex1}>
+                <StatusBar style={isDark ? "light" : "dark"} />
 
-            <View style={s.header}>
-                <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
-                    <NavArrowLeft width={28} height={28} color={isDark ? '#fff' : '#000'} />
-                </TouchableOpacity>
-            </View>
-
-            <View style={s.content}>
-                <View style={[s.iconBox, isDark ? s.bgBrandPrimary10 : s.bgBrandPrimary10]}>
-                    <Mail width={32} height={32} color="#8B5CF6" />
+                <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+                    <TouchableOpacity onPress={() => router.back()}>
+                        <View style={[s.backBtn, { backgroundColor: C.card }]}>
+                            <NavArrowLeft width={24} height={24} color={C.text} strokeWidth={2.5} />
+                        </View>
+                    </TouchableOpacity>
                 </View>
 
-                <View style={s.heroSection}>
-                    <Text style={[s.heroTitle, isDark ? s.textWhite : s.textSlate900]}>
-                        {headline}.
-                    </Text>
-                    <Text style={[s.heroSubtitle, isDark ? s.textSlate400 : s.textSlate500]}>
-                        We sent a 6-digit code to <Text style={[s.textBold, isDark ? s.textWhite : s.textSlate900]}>{email}</Text>.
-                    </Text>
-                </View>
+                <ScrollView 
+                    contentContainerStyle={s.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={[s.iconCircle, { backgroundColor: C.primaryLight }]}>
+                        <Mail width={32} height={32} color={C.primary} strokeWidth={2} />
+                    </View>
 
-                <View style={s.otpRow}>
-                    {code.map((digit, index) => {
-                        const hasValue = digit !== '';
-                        return (
+                    <Text style={[s.title, { color: C.text }]}>Check your email</Text>
+                    <Text style={[s.subtitle, { color: C.textSecondary }]}>
+                        We've sent a 6-digit code to <Text style={{ color: C.text, fontWeight: '700' }}>{email}</Text>.
+                    </Text>
+
+                    <View style={s.otpRow}>
+                        {code.map((digit, index) => (
                             <TextInput
                                 key={index}
                                 ref={el => { inputs.current[index] = el; }}
@@ -176,87 +180,71 @@ export default function OtpScreen() {
                                 selectTextOnFocus
                                 style={[
                                     s.otpInput,
-                                    isDark ? s.textWhite : s.textSlate900,
-                                    {
-                                        backgroundColor: isDark ? '#0f0f11' : 'transparent',
-                                        borderColor: hasValue ? (isDark ? '#fff' : '#000') : (isDark ? '#1e293b' : '#e2e8f0'),
-                                        borderWidth: hasValue ? 2 : 1,
+                                    { 
+                                        color: C.text,
+                                        backgroundColor: C.card,
+                                        borderColor: digit ? C.primary : 'transparent',
+                                        borderWidth: digit ? 2 : 0,
                                     }
                                 ]}
                             />
-                        );
-                    })}
-                </View>
-
-                {isLoading && (
-                    <View style={s.loaderContainer}>
-                        <ActivityIndicator color="#8B5CF6" />
+                        ))}
                     </View>
-                )}
 
-                {errorMsg ? (
-                    <View style={[s.alert, isDark ? s.alertErrorDark : s.alertErrorLight]}>
-                        <Text style={[s.alertText, isDark ? s.textRed400 : s.textRed600]}>{errorMsg}</Text>
+                    {errorMsg ? (
+                        <View style={[s.alert, { backgroundColor: C.destructive + '15', borderColor: C.destructive + '30' }]}>
+                            <Text style={{ color: C.destructive, fontSize: 13, textAlign: 'center', fontWeight: '500' }}>{errorMsg}</Text>
+                        </View>
+                    ) : null}
+
+                    {resendSuccess ? (
+                        <View style={[s.alert, { backgroundColor: C.successLight, borderColor: C.success + '30' }]}>
+                            <Text style={{ color: C.success, fontSize: 13, textAlign: 'center', fontWeight: '500' }}>{resendSuccess}</Text>
+                        </View>
+                    ) : null}
+
+                    <View style={s.resendContainer}>
+                        <Text style={[s.resendText, { color: C.textSecondary }]}>Didn't receive the code?</Text>
+                        <TouchableOpacity onPress={handleResend} disabled={countdown > 0 || isLoading}>
+                            <Text style={[s.resendLink, { color: countdown > 0 ? C.textTertiary : C.primary }]}>
+                                {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend code'}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
-                ) : null}
 
-                {resendSuccess ? (
-                    <View style={s.alertSuccess}>
-                        <Text style={s.textBrandPrimarySmall}>{resendSuccess}</Text>
-                    </View>
-                ) : null}
+                    <View style={{ height: Spacing.xl }} />
 
-                <View style={s.resendRow}>
-                    <Text style={[s.resendText, isDark ? s.textSlate400 : s.textSlate500]}>Didn't get it?</Text>
-                    <TouchableOpacity onPress={handleResend} disabled={countdown > 0 || isLoading}>
-                        <Text style={[s.resendLink, countdown > 0 ? s.textSlate400 : s.textBrandPrimary]}>
-                            {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </KeyboardAvoidingView>
+                    <IosPillButton
+                        label="Verify Code"
+                        onPress={() => verifyCode(code.join(''))}
+                        loading={isLoading}
+                        fullWidth
+                        size="lg"
+                    />
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </GlowBackground>
     );
 }
 
 const s = StyleSheet.create({
     flex1: { flex: 1 },
-    bgDark: { backgroundColor: '#0f0f11' },
-    bgLight: { backgroundColor: '#fafafa' },
+    header: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm },
+    backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+
+    scrollContent: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl, paddingBottom: 48, alignItems: 'center' },
     
-    header: { paddingHorizontal: 20, paddingTop: 64, paddingBottom: 8, flexDirection: 'row', alignItems: 'center' },
-    content: { flex: 1, paddingHorizontal: 40, paddingTop: 40 },
+    iconCircle: { width: 72, height: 72, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xl },
     
-    iconBox: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-    bgBrandPrimary10: { backgroundColor: 'rgba(139, 92, 246, 0.1)' },
+    title: { fontSize: FontSize.largeTitle, fontWeight: '800', letterSpacing: -1, textAlign: 'center', marginBottom: Spacing.sm },
+    subtitle: { fontSize: FontSize.body, textAlign: 'center', lineHeight: 24, paddingHorizontal: 16, marginBottom: Spacing.xxl },
     
-    heroSection: { marginBottom: 32 },
-    heroTitle: { fontSize: 40, fontWeight: '700', letterSpacing: -1, lineHeight: 46, marginBottom: 12 },
-    heroSubtitle: { fontSize: 15, fontWeight: '500', lineHeight: 22 },
-    textBold: { fontWeight: '700' },
+    otpRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', gap: 10, marginBottom: Spacing.xl },
+    otpInput: { width: (SCREEN_W - (Spacing.xl * 2) - 50) / 6, height: 60, borderRadius: Radius.md, textAlign: 'center', fontSize: 24, fontWeight: '700' },
     
-    textWhite: { color: 'white' },
-    textSlate900: { color: '#0f172a' },
-    textSlate400: { color: '#94a3b8' },
-    textSlate500: { color: '#64748b' },
+    alert: { width: '100%', padding: 16, borderRadius: Radius.md, borderWidth: 1, marginBottom: Spacing.lg },
     
-    otpRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 32 },
-    otpInput: { width: 48, height: 56, textAlign: 'center', fontSize: 20, fontWeight: '700', borderRadius: 18 },
-    
-    loaderContainer: { alignItems: 'center', marginBottom: 20 },
-    
-    alert: { padding: 16, borderRadius: 12, marginBottom: 20, borderWidth: 1 },
-    alertErrorLight: { backgroundColor: '#fef2f2', borderColor: '#fee2e2' },
-    alertErrorDark: { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.2)' },
-    alertText: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
-    textRed600: { color: '#dc2626' },
-    textRed400: { color: '#f87171' },
-    
-    alertSuccess: { backgroundColor: 'rgba(139, 92, 246, 0.1)', borderColor: 'rgba(139, 92, 246, 0.2)', borderWidth: 1, padding: 16, borderRadius: 12, marginBottom: 20 },
-    textBrandPrimarySmall: { color: '#8B5CF6', fontSize: 13, fontWeight: '500', textAlign: 'center' },
-    
-    resendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20 },
-    resendText: { fontWeight: '700', fontSize: 12, marginRight: 8 },
-    resendLink: { fontWeight: '900', fontSize: 12 },
-    textBrandPrimary: { color: '#8B5CF6' },
+    resendContainer: { alignItems: 'center', marginBottom: Spacing.xl },
+    resendText: { fontSize: 13, marginBottom: 4 },
+    resendLink: { fontSize: 15, fontWeight: '700' },
 });

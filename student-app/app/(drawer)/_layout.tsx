@@ -2,7 +2,7 @@ import { Tabs, router, usePathname } from 'expo-router';
 import { View, TouchableOpacity, StyleSheet, useColorScheme, Platform, Alert } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Home, User, Camera } from 'iconoir-react-native';
 import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -10,13 +10,17 @@ import { useEffect } from 'react';
 import { registerForPushNotificationsAsync } from '@/lib/notifications';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
-const HomeIcon = ({ color, size }: any) => <Ionicons name="home" size={size} color={color} />;
-const HomeOutlineIcon = ({ color, size }: any) => <Ionicons name="home-outline" size={size} color={color} />;
-const GridIcon = ({ color, size }: any) => <Ionicons name="grid" size={size} color={color} />;
-const GridOutlineIcon = ({ color, size }: any) => <Ionicons name="grid-outline" size={size} color={color} />;
-const PersonIcon = ({ color, size }: any) => <Ionicons name="person" size={size} color={color} />;
-const PersonOutlineIcon = ({ color, size }: any) => <Ionicons name="person-outline" size={size} color={color} />;
-const CameraIcon = ({ color, size }: any) => <Ionicons name="camera" size={size} color={color} />;
+const HomeIcon = ({ color, size, focused }: any) => (
+    <Home width={size} height={size} color={color} strokeWidth={focused ? 2.5 : 2} />
+);
+
+const PersonIcon = ({ color, size, focused }: any) => (
+    <User width={size} height={size} color={color} strokeWidth={focused ? 2.5 : 2} />
+);
+
+const CameraIcon = ({ color, size }: any) => (
+    <Camera width={size} height={size} color={color} strokeWidth={2.5} />
+);
 
 // ─── Scan FAB (center elevated button) ───────────────────────────────────────
 function ScanTabButton({ onPress }: { onPress?: () => void }) {
@@ -72,14 +76,14 @@ function TabBar({ state, descriptors, navigation }: any) {
     return (
         <View style={bar.outerWrap}>
             <BlurView
-                intensity={isDark ? 50 : 80}
+                intensity={isDark ? 80 : 80}
                 tint={isDark ? 'dark' : 'light'}
                 style={[
                     bar.blurBase, 
                     { 
                         paddingBottom: Math.max(insets.bottom, 12),
-                        backgroundColor: isDark ? 'rgba(28,28,30,0.85)' : 'rgba(255,255,255,0.85)',
-                        borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
+                        backgroundColor: isDark ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.65)',
+                        borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
                     }
                 ]}
             >
@@ -200,7 +204,7 @@ export default function TabLayout() {
             screenOptions={{
                 headerShown: false,
                 // Background under the tab bar
-                sceneStyle: { backgroundColor: C.background },
+                sceneStyle: { backgroundColor: 'transparent' },
             }}
         >
             <Tabs.Screen
@@ -208,7 +212,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Home',
                     tabBarIcon: ({ color, size, focused }) =>
-                        focused ? <HomeIcon color={color} size={size} /> : <HomeOutlineIcon color={color} size={size} />,
+                        <HomeIcon color={color} size={size} focused={focused} />,
                 }}
             />
             <Tabs.Screen
@@ -230,7 +234,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Me',
                     tabBarIcon: ({ color, size, focused }) =>
-                        focused ? <PersonIcon color={color} size={size} /> : <PersonOutlineIcon color={color} size={size} />,
+                        <PersonIcon color={color} size={size} focused={focused} />,
                 }}
             />
 

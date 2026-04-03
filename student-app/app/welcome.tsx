@@ -1,11 +1,12 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, ScrollView, Dimensions, StyleSheet, useColorScheme } from 'react-native';
+import { View, TouchableOpacity, ScrollView, Dimensions, StyleSheet, useColorScheme, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import LottieView from 'lottie-react-native';
+import { GlowBackground } from '@/components/ui/GlowBackground';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const SLIDES = [
     {
@@ -42,7 +43,6 @@ export default function WelcomeScreen() {
         if (newIndex !== currentIndex) setCurrentIndex(newIndex);
     };
 
-    // Play animation heavily on focus
     useEffect(() => {
         lottieRefs.current.forEach((ref, index) => {
             if (index === currentIndex) {
@@ -61,120 +61,124 @@ export default function WelcomeScreen() {
         }
     };
 
-    const bgColor = isDark ? '#000000' : '#FFFFFF';
     const textColor = isDark ? '#FFFFFF' : '#000000';
     const subtextColor = isDark ? '#8E8E93' : '#6E6E73';
     const dotActiveColor = isDark ? '#FFFFFF' : '#000000';
-    const dotInactiveColor = isDark ? '#3A3A3C' : '#D1D1D6';
+    const dotInactiveColor = isDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.25)';
 
     return (
-        <View style={{ flex: 1, backgroundColor: bgColor }}>
+        <GlowBackground style={{ flex: 1 }}>
             <StatusBar style={isDark ? 'light' : 'dark'} animated />
 
-            {/* Skip Button (Top Right) */}
-            <TouchableOpacity 
-                style={[styles.skipBtn, { top: 60 }]} 
-                onPress={() => router.push('/login')}
-                activeOpacity={0.7}
-            >
-                <Text style={styles.skipText}>Skip</Text>
-            </TouchableOpacity>
-
-            <ScrollView
-                ref={scrollRef}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onScroll={handleScroll}
-                scrollEventThrottle={16}
-                bounces={false}
-                style={{ flex: 1 }}
-            >
-                {SLIDES.map((slide, index) => {
-                    return (
-                        <View key={slide.id} style={styles.slide}>
-                            
-                            {/* Lottie Animation Area */}
-                            <View style={styles.animationContainer}>
-                                <LottieView
-                                    ref={ref => (lottieRefs.current[index] = ref)}
-                                    source={slide.animation}
-                                    style={styles.lottie}
-                                    autoPlay={index === 0}
-                                    loop
-                                />
-                            </View>
-
-                            {/* Text Section */}
-                            <View style={styles.textSection}>
-                                <Text style={[styles.title, { color: textColor }]}>
-                                    {slide.title}
-                                </Text>
-                                <Text style={[styles.description, { color: subtextColor }]}>
-                                    {slide.description}
-                                </Text>
-                            </View>
-                        </View>
-                    );
-                })}
-            </ScrollView>
-
-            {/* Bottom Actions */}
-            <View style={styles.footer}>
-                
-                {/* Pagination Dots */}
-                <View style={styles.dotsContainer}>
-                    {SLIDES.map((_, i) => (
-                        <View
-                            key={i}
-                            style={[
-                                styles.dot,
-                                {
-                                    backgroundColor: i === currentIndex ? dotActiveColor : dotInactiveColor,
-                                    width: i === currentIndex ? 24 : 8,
-                                }
-                            ]}
-                        />
-                    ))}
-                </View>
-
-                {/* Primary Action Button */}
-                <TouchableOpacity
-                    onPress={goNext}
-                    style={styles.primaryBtn}
-                    activeOpacity={0.8}
+            <SafeAreaView style={{ flex: 1 }}>
+                {/* Skip Button (Top Right) */}
+                <TouchableOpacity 
+                    style={styles.skipBtn} 
+                    onPress={() => router.push('/login')}
+                    activeOpacity={0.7}
                 >
-                    <Text style={styles.primaryBtnText}>
-                        {currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Continue'}
-                    </Text>
+                    <Text style={styles.skipText}>Skip</Text>
                 </TouchableOpacity>
 
-            </View>
-        </View>
+                <ScrollView
+                    ref={scrollRef}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    onScroll={handleScroll}
+                    scrollEventThrottle={16}
+                    bounces={false}
+                    style={{ flex: 1 }}
+                >
+                    {SLIDES.map((slide, index) => {
+                        return (
+                            <View key={slide.id} style={styles.slide}>
+                                
+                                {/* Lottie Animation Area - Centered Flex */}
+                                <View style={styles.animationContainer}>
+                                    <LottieView
+                                        ref={ref => { lottieRefs.current[index] = ref; }}
+                                        source={slide.animation}
+                                        style={styles.lottie}
+                                        autoPlay={index === 0}
+                                        loop
+                                        resizeMode="contain"
+                                    />
+                                </View>
+
+                                {/* Text Section */}
+                                <View style={styles.textSection}>
+                                    <Text style={[styles.title, { color: textColor }]}>
+                                        {slide.title}
+                                    </Text>
+                                    <Text style={[styles.description, { color: subtextColor }]}>
+                                        {slide.description}
+                                    </Text>
+                                </View>
+                            </View>
+                        );
+                    })}
+                </ScrollView>
+
+                {/* Bottom Actions */}
+                <View style={styles.footer}>
+                    
+                    {/* Pagination Dots */}
+                    <View style={styles.dotsContainer}>
+                        {SLIDES.map((_, i) => (
+                            <View
+                                key={i}
+                                style={[
+                                    styles.dot,
+                                    {
+                                        backgroundColor: i === currentIndex ? dotActiveColor : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'),
+                                        width: i === currentIndex ? 24 : 8,
+                                    }
+                                ]}
+                            />
+                        ))}
+                    </View>
+
+                    {/* Primary Action Button */}
+                    <TouchableOpacity
+                        onPress={goNext}
+                        style={styles.primaryBtn}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.primaryBtnText}>
+                            {currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Continue'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        </GlowBackground>
     );
 }
 
 const styles = StyleSheet.create({
     slide: {
         width,
-        height,
+        flex: 1,
         alignItems: 'center',
-        paddingTop: 100,
+        justifyContent: 'center',
+        paddingHorizontal: 32,
     },
     skipBtn: {
         position: 'absolute',
         right: 24,
+        top: 10,
         zIndex: 10,
         padding: 8,
     },
     skipText: {
         fontSize: 17,
-        fontWeight: '500',
+        fontWeight: '600',
         color: '#007AFF', // Standard iOS Blue
     },
     animationContainer: {
-        width: width * 0.85,
-        height: width * 0.85,
+        width: '100%',
+        aspectRatio: 1,
+        maxHeight: '45%',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 40,
@@ -184,27 +188,28 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     textSection: {
-        paddingHorizontal: 32,
+        width: '100%',
         alignItems: 'center',
+        marginBottom: 60, // Space before the footer area
     },
     title: {
         fontSize: 34,
         fontWeight: '800',
-        letterSpacing: 0.41,
+        letterSpacing: -0.5,
         textAlign: 'center',
         marginBottom: 16,
     },
     description: {
         fontSize: 17,
-        fontWeight: '400',
+        fontWeight: '500',
         lineHeight: 24,
         textAlign: 'center',
+        opacity: 0.8,
     },
     footer: {
-        position: 'absolute',
-        bottom: 50,
         width: '100%',
         paddingHorizontal: 24,
+        paddingBottom: 24,
         alignItems: 'center',
     },
     dotsContainer: {
@@ -220,14 +225,19 @@ const styles = StyleSheet.create({
         backgroundColor: '#007AFF',
         width: '100%',
         height: 56,
-        borderRadius: 16,
+        borderRadius: 100, // Pill shape
         alignItems: 'center',
         justifyContent: 'center',
+        shadowColor: '#007AFF',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
     },
     primaryBtnText: {
         color: '#FFFFFF',
         fontSize: 17,
-        fontWeight: '600',
+        fontWeight: '700',
         letterSpacing: -0.41,
     },
 });

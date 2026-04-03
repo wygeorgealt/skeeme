@@ -28,7 +28,7 @@ export const identifyUser = async (userId: string) => {
   try {
     await Purchases.logIn(userId);
   } catch (e) {
-    console.error("RevenueCat Login Error:", e);
+    if (__DEV__) console.error("RevenueCat Login Error:", e);
   }
 };
 

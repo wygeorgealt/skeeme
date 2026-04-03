@@ -9,9 +9,11 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { NavArrowLeft } from 'iconoir-react-native';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
+import { GlowBackground } from '@/components/ui/GlowBackground';
+import { StatusBar } from 'expo-status-bar';
 
 export default function SignupScreen() {
     const scheme = useColorScheme();
@@ -19,7 +21,6 @@ export default function SignupScreen() {
     const C = Colors[isDark ? 'dark' : 'light'];
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const params = useLocalSearchParams<{ from?: string }>();
     const { login, onboardingData } = useAuthStore();
 
     const [name, setName] = useState('');
@@ -78,24 +79,30 @@ export default function SignupScreen() {
     };
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-            <View style={{ flex: 1, backgroundColor: C.background }}>
-                {/* Back button */}
-                <TouchableOpacity
-                    onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
-                    style={[s.backBtn, { top: insets.top + 8 }]}
-                    hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-                >
-                    <Ionicons name="chevron-back" size={20} color={C.textSecondary} />
-                </TouchableOpacity>
+        <GlowBackground style={s.flex1}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.flex1}>
+                <StatusBar style={isDark ? "light" : "dark"} />
+
+                {/* Header with Back Button */}
+                <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+                    <TouchableOpacity
+                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
+                        style={[s.backBtn, { backgroundColor: C.card }]}
+                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                    >
+                        <NavArrowLeft width={24} height={24} color={C.text} strokeWidth={2.5} />
+                    </TouchableOpacity>
+                </View>
 
                 <ScrollView
-                    contentContainerStyle={[s.scroll, { paddingTop: insets.top + 72 }]}
+                    contentContainerStyle={s.scrollContent}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    <Text style={[s.title, { color: C.text }]}>Create account</Text>
-                    <Text style={[s.subtitle, { color: C.textSecondary }]}>Join Skeeme and study 5× faster</Text>
+                    <View style={s.heroSection}>
+                        <Text style={[s.title, { color: C.text }]}>Create account</Text>
+                        <Text style={[s.subtitle, { color: C.textSecondary }]}>Join Skeeme and study 5× faster</Text>
+                    </View>
 
                     <View style={[s.groupedList, { backgroundColor: C.card }]}>
                         <View style={s.groupedRow}>
@@ -128,14 +135,14 @@ export default function SignupScreen() {
                             <PasswordField
                                 value={password}
                                 onChangeText={(t: string) => { setPassword(t); setPasswordError(''); }}
-                                style={{ flex: 1, paddingRight: 4 }}
-                                inputStyle={s.groupedInput}
+                                style={{ flex: 1 }}
+                                inputStyle={[s.groupedInput, { color: C.text }]}
                                 placeholder="Required"
                             />
                         </View>
                     </View>
 
-                    {/* Footer / Errors */}
+                    {/* Footer / Errors / Strength */}
                     <View style={s.listFooter}>
                         {(!!nameError || !!emailError || !!passwordError) ? (
                             <View style={{ flex: 1 }}>
@@ -143,7 +150,7 @@ export default function SignupScreen() {
                                 {emailError === 'exists' ? (
                                     <Text style={[s.errorFooter, { color: C.destructive }]}>
                                         Account already exists.{' '}
-                                        <Text onPress={() => router.push('/login')} style={{ color: C.primary, fontWeight: '600' }}>Log in →</Text>
+                                        <Text onPress={() => router.push('/login')} style={{ color: C.primary, fontWeight: '700' }}>Log in →</Text>
                                     </Text>
                                 ) : !!emailError && (
                                     <Text style={[s.errorFooter, { color: C.destructive }]}>{emailError}</Text>
@@ -151,8 +158,8 @@ export default function SignupScreen() {
                                 {!!passwordError && <Text style={[s.errorFooter, { color: C.destructive }]}>{passwordError}</Text>}
                             </View>
                         ) : password.length > 0 ? (
-                            <View style={s.strengthRow}>
-                                <View style={[s.strengthTrack, { backgroundColor: C.cardSecondary, flex: 1 }]}>
+                            <View style={s.strengthArea}>
+                                <View style={[s.strengthTrack, { backgroundColor: C.separator }]}>
                                     <View style={{ width: `${strength.pct}%`, height: '100%', backgroundColor: strength.color, borderRadius: 4 }} />
                                 </View>
                                 <Text style={[s.strengthLabel, { color: strength.color }]}>{strength.label}</Text>
@@ -160,14 +167,20 @@ export default function SignupScreen() {
                         ) : <View style={{ height: 20 }} />}
                     </View>
 
-                    <View style={{ height: Spacing.md }} />
+                    <View style={{ height: Spacing.xl }} />
 
-                    <IosPillButton label="Create Account" onPress={handleSignup} loading={isLoading} fullWidth size="lg" />
+                    <IosPillButton 
+                        label="Create Account" 
+                        onPress={handleSignup} 
+                        loading={isLoading} 
+                        fullWidth 
+                        size="lg" 
+                    />
 
                     <TouchableOpacity onPress={() => router.push('/login')} style={s.loginRow}>
                         <Text style={[s.signupText, { color: C.textSecondary }]}>
                             Already have an account?{' '}
-                            <Text style={[s.signupText, { color: C.primary, fontWeight: '600' }]}>Log in</Text>
+                            <Text style={[s.signupText, { color: C.primary, fontWeight: '700' }]}>Log in</Text>
                         </Text>
                     </TouchableOpacity>
 
@@ -175,30 +188,36 @@ export default function SignupScreen() {
                         By creating an account you agree to our Terms of Service and Privacy Policy.
                     </Text>
                 </ScrollView>
-            </View>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </GlowBackground>
     );
 }
 
 const s = StyleSheet.create({
-    backBtn: { position: 'absolute', left: Spacing.lg, zIndex: 10, width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-    scroll: { paddingHorizontal: Spacing.xl, paddingBottom: 48 },
-    logoCircle: { width: 72, height: 72, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.xl, alignSelf: 'center' },
-    title: { fontSize: FontSize.title1, fontWeight: '700', letterSpacing: -0.5, textAlign: 'center', marginBottom: Spacing.xs },
-    subtitle: { fontSize: FontSize.subhead, textAlign: 'center', marginBottom: Spacing.xl },
+    flex1: { flex: 1 },
+    header: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm },
+    backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
     
-    groupedList: { borderRadius: 10, overflow: 'hidden' },
-    groupedRow: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingRight: 12 },
-    groupedLabel: { width: 100, fontSize: 16, fontWeight: '400', paddingLeft: 16 },
-    groupedInput: { flex: 1, fontSize: 16, height: 44 },
+    scrollContent: { paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl, paddingBottom: 48 },
+    
+    heroSection: { marginBottom: Spacing.xxl },
+    title: { fontSize: FontSize.largeTitle, fontWeight: '800', letterSpacing: -1, textAlign: 'center', marginBottom: Spacing.xs },
+    subtitle: { fontSize: FontSize.body, textAlign: 'center', opacity: 0.8 },
+    
+    groupedList: { borderRadius: Radius.lg, overflow: 'hidden' },
+    groupedRow: { flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingRight: 8 },
+    groupedLabel: { width: 100, fontSize: 16, fontWeight: '500', paddingLeft: 16 },
+    groupedInput: { flex: 1, fontSize: 16, height: 56 },
     separator: { height: StyleSheet.hairlineWidth, marginLeft: 16 },
     
-    listFooter: { marginTop: 8, paddingHorizontal: 16, minHeight: 20 },
-    errorFooter: { fontSize: 13, fontWeight: '400', marginBottom: 4 },
-    strengthRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    strengthTrack: { height: 4, borderRadius: 4, overflow: 'hidden' },
-    strengthLabel: { fontSize: FontSize.caption2, fontWeight: '600', width: 60, textAlign: 'right' },
-    loginRow: { marginTop: Spacing.xl, alignItems: 'center' },
+    listFooter: { marginTop: 12, paddingHorizontal: 16, minHeight: 20 },
+    errorFooter: { fontSize: 13, fontWeight: '500', marginBottom: 4 },
+    
+    strengthArea: { width: '100%' },
+    strengthTrack: { height: 6, borderRadius: 3, width: '100%', overflow: 'hidden', marginBottom: 8 },
+    strengthLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+
+    loginRow: { marginTop: Spacing.xxl, alignItems: 'center' },
     signupText: { fontSize: FontSize.subhead },
-    terms: { fontSize: FontSize.caption2, textAlign: 'center', marginTop: Spacing.lg, lineHeight: 18 },
+    terms: { fontSize: FontSize.caption2, textAlign: 'center', marginTop: Spacing.xl, lineHeight: 18, paddingHorizontal: 24 },
 });

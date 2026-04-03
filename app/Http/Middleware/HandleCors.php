@@ -11,11 +11,7 @@ class HandleCors
     public function handle(Request $request, Closure $next): Response
     {
         // Allow requests from Expo web dev server and production origins
-        $allowedOrigins = [
-            'http://localhost:8081',
-            'http://localhost:19006',
-            'http://localhost:3000',
-        ];
+        $allowedOrigins = config('cors.allowed_origins', []);
 
         $origin = $request->header('Origin');
 

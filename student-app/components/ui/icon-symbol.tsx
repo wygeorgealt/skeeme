@@ -1,42 +1,50 @@
-import { Text } from '@/components/ui/Text';
-// Fallback for using MaterialIcons on Android and web.
+import { 
+  Home, 
+  Send, 
+  Code, 
+  NavArrowRight 
+} from 'iconoir-react-native';
+import React from 'react';
+import { type StyleProp, type ViewStyle } from 'react-native';
 
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
-import { ComponentProps } from 'react';
-import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
+// Mapping SF Symbol names to Iconoir components
+const MAPPING = {
+  'house.fill': Home,
+  'paperplane.fill': Send,
+  'chevron.left.forwardslash.chevron.right': Code,
+  'chevron.right': NavArrowRight,
+} as const;
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
 type IconSymbolName = keyof typeof MAPPING;
 
 /**
- * Add your SF Symbols to Material Icons mappings here.
- * - see Material Icons in the [Icons Directory](https://icons.expo.fyi).
- * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
- */
-const MAPPING = {
-  'house.fill': 'home',
-  'paperplane.fill': 'send',
-  'chevron.left.forwardslash.chevron.right': 'code',
-  'chevron.right': 'chevron-right',
-} as IconMapping;
-
-/**
- * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
- * This ensures a consistent look across platforms, and optimal resource usage.
- * Icon `name`s are based on SF Symbols and require manual mapping to Material Icons.
+ * An icon component that uses Iconoir icons for a consistent premium look.
+ * Standardized across platforms for Skeeme's design language.
  */
 export function IconSymbol({
   name,
   size = 24,
   color,
   style,
+  strokeWidth = 2.5
 }: {
   name: IconSymbolName;
   size?: number;
-  color: string | OpaqueColorValue;
-  style?: StyleProp<TextStyle>;
-  weight?: SymbolWeight;
+  color: string;
+  style?: StyleProp<ViewStyle>;
+  strokeWidth?: number;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  const IconComponent = MAPPING[name];
+  
+  if (!IconComponent) return null;
+
+  return (
+    <IconComponent 
+      width={size} 
+      height={size} 
+      color={color} 
+      strokeWidth={strokeWidth} 
+      style={style as any} 
+    />
+  );
 }

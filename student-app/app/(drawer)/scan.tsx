@@ -5,9 +5,8 @@ import {
 import { Image as ExpoImage } from 'expo-image';
 import {
     NavArrowLeft, Scanning, Camera,
-    Album, Sparks, Page, Type
+    Album, Sparks, Page, Type, Flash, FlashOff
 } from 'iconoir-react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -242,10 +241,14 @@ export default function ScanScreen() {
                             {/* Top Semi-transparent Overlay */}
                             <View style={[s.topChrome, { paddingTop: Math.max(insets.top, 16) }]}>
                                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={s.overlayTopBtn}>
-                                    <NavArrowLeft width={28} height={28} color="white" />
+                                    <NavArrowLeft width={28} height={28} color="white" strokeWidth={2.5} />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => setEnableTorch(!enableTorch)} activeOpacity={0.7} style={s.overlayTopBtn}>
-                                    <Ionicons name={enableTorch ? "flash" : "flash-off"} size={22} color="white" />
+                                    {enableTorch ? (
+                                        <Flash width={24} height={24} color="white" strokeWidth={2.5} />
+                                    ) : (
+                                        <FlashOff width={24} height={24} color="white" strokeWidth={2.5} />
+                                    )}
                                 </TouchableOpacity>
                             </View>
 
@@ -263,7 +266,7 @@ export default function ScanScreen() {
                             {/* Bottom Semi-transparent Overlay */}
                             <View style={[s.bottomChrome, { paddingBottom: Math.max(insets.bottom, 32) + 90 }]}>
                                 <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={s.galleryBtn}>
-                                    <Ionicons name="images" size={24} color="white" />
+                                    <Album width={28} height={28} color="white" strokeWidth={2.5} />
                                 </TouchableOpacity>
 
                                 <TouchableOpacity onPress={handleCapture} activeOpacity={0.8} style={s.shutterOuter}>
@@ -286,7 +289,7 @@ export default function ScanScreen() {
             
             <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
-                    <NavArrowLeft width={20} height={20} color={C.text} />
+                    <NavArrowLeft width={20} height={20} color={C.text} strokeWidth={2.5} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Results</Text>
                 <View style={{ width: 44 }} />
@@ -311,7 +314,7 @@ export default function ScanScreen() {
                             <View style={s.fullBtnGroup}>
                                 <TouchableOpacity onPress={handleSolve} activeOpacity={0.8} style={[s.primaryBtnShadow, { backgroundColor: C.primary }]}>
                                     <View style={s.primaryBtnGradient}>
-                                        <Sparks width={18} height={18} color="#fff" />
+                                        <Sparks width={18} height={18} color="#fff" strokeWidth={2.5} />
                                         <Text style={s.fullBtnText}>Solve Everything</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -335,13 +338,13 @@ export default function ScanScreen() {
                         {/* Metadata Bar: Credits Used + Accuracy */}
                         <View style={[s.metaBar, isDark ? s.cardDark : s.cardLight]}>
                             <View style={s.metaItem}>
-                                <Sparks width={16} height={16} color={C.primary} />
+                                <Sparks width={16} height={16} color={C.primary} strokeWidth={2.5} />
                                 <Text style={[s.metaLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Credits Used</Text>
                                 <Text style={[s.metaValue, isDark ? s.textWhite : s.textSlate900]}>{lastScanCost ?? '—'}</Text>
                             </View>
                             <View style={s.metaDivider} />
                             <View style={s.metaItem}>
-                                <Sparks width={16} height={16} color="#10b981" />
+                                <Sparks width={16} height={16} color="#10b981" strokeWidth={2.5} />
                                 <Text style={[s.metaLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Accuracy</Text>
                                 <Text style={[s.metaValue, isDark ? s.textWhite : s.textSlate900]}>High</Text>
                             </View>
@@ -461,23 +464,23 @@ export default function ScanScreen() {
 
             {/* Slim Bottom Actions */}
             {!!(results.length > 0) && (
-                <View style={[s.slimFooter, isDark ? s.slimFooterDark : s.slimFooterLight]}>
+                <BlurView intensity={isDark ? 80 : 100} tint={isDark ? "dark" : "light"} style={[s.slimFooter, isDark ? s.slimFooterDark : s.slimFooterLight]}>
                     <TouchableOpacity onPress={handleExport} disabled={loading} activeOpacity={0.7} style={s.slimFooterBtn}>
                         {loading ? (
                             <ActivityIndicator size="small" color={C.primary} />
                         ) : (
                             <>
-                                <Page width={18} height={18} color={isDark ? '#cbd5e1' : '#64748b'} />
+                                <Page width={18} height={18} color={isDark ? '#cbd5e1' : '#64748b'} strokeWidth={2.5} />
                                 <Text style={[s.slimFooterBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>Export</Text>
                             </>
                         )}
                     </TouchableOpacity>
                     <View style={[s.slimFooterDivider, isDark ? s.dividerDark : s.dividerLight]} />
                     <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={s.slimFooterBtn}>
-                        <Camera width={18} height={18} color={isDark ? '#cbd5e1' : '#64748b'} />
+                        <Camera width={18} height={18} color={isDark ? '#cbd5e1' : '#64748b'} strokeWidth={2.5} />
                         <Text style={[s.slimFooterBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>New Scan</Text>
                     </TouchableOpacity>
-                </View>
+                </BlurView>
             )}
         </View>
     );
@@ -531,11 +534,11 @@ const s = StyleSheet.create({
     // === Minimalistic Results (Gauth-inspired) ===
 
     // Card containers
-    cardDark: { backgroundColor: '#1C1C1E', borderWidth: 1, borderColor: 'rgba(84,84,88,0.4)' },
-    cardLight: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: 'rgba(60,60,67,0.12)' },
+    cardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+    cardLight: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: 'rgba(60,60,67,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
 
     // Captured image bar
-    capturedImageBar: { borderRadius: 16, overflow: 'hidden', marginBottom: 12 },
+    capturedImageBar: { borderRadius: 20, overflow: 'hidden', marginBottom: 16 },
     capturedThumb: { width: '100%', height: 160 },
 
     // Metadata bar (Credits Used + Accuracy)
@@ -546,7 +549,7 @@ const s = StyleSheet.create({
     metaDivider: { width: 1, height: 32, backgroundColor: 'rgba(148,163,184,0.2)' },
 
     // Answer cards
-    answerCard: { borderRadius: 16, padding: 16, marginBottom: 16 },
+    answerCard: { borderRadius: 24, padding: 20, marginBottom: 16 },
     answerHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
     qBadge: { backgroundColor: 'rgba(0,122,255,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
     qBadgeText: { color: '#007AFF', fontWeight: '900', fontSize: 12 },
@@ -598,8 +601,8 @@ const s = StyleSheet.create({
 
     // Slim footer
     slimFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, paddingBottom: 36, borderTopWidth: 1 },
-    slimFooterDark: { backgroundColor: '#000000', borderTopColor: 'rgba(84,84,88,0.4)' },
-    slimFooterLight: { backgroundColor: '#ffffff', borderTopColor: 'rgba(60,60,67,0.12)' },
+    slimFooterDark: { backgroundColor: 'rgba(0,0,0,0.6)', borderTopColor: 'rgba(255,255,255,0.08)' },
+    slimFooterLight: { backgroundColor: 'rgba(255,255,255,0.85)', borderTopColor: 'rgba(60,60,67,0.08)' },
     slimFooterBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 24, paddingVertical: 10 },
     slimFooterBtnText: { fontSize: 14, fontWeight: '700' },
     slimFooterDivider: { width: 1, height: 20 },

@@ -10,6 +10,7 @@ export const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Accept-Encoding': 'gzip, deflate, br',
     },
 });
 
@@ -28,7 +29,7 @@ api.interceptors.request.use(
                 config.headers['X-Network-Generation'] = (netInfo.details as any)?.cellularGeneration || 'unknown';
             }
         } catch (e) {
-            console.error('[API] Failed to fetch network info', e);
+            if (__DEV__) console.error('[API] Failed to fetch network info', e);
         }
 
         if (__DEV__) {
@@ -85,7 +86,7 @@ api.interceptors.response.use(
             if (__DEV__) console.warn(`[API] Network error on ${url}. Retrying (${config.retryCount}/${MAX_RETRIES})...`);
             
             // Backoff delay
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * config.retryCount));
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(2, config.retryCount - 1)));
             return api(config);
         }
 

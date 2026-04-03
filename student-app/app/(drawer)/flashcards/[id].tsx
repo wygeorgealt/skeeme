@@ -92,7 +92,7 @@ const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: 
     });
 
     const CardSide = ({ type, text, footer, rotateY }: any) => (
-        <View style={{ flex: 1, backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderRadius: 24, padding: 32, justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 8 }}>
+        <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderRadius: 24, padding: 32, justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 8, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent' }}>
             <View style={{ position: 'absolute', top: 24, left: 24, right: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1 }}>{type}</Text>
                 {type === 'QUESTION' ? <Sparks width={20} height={20} color="#007AFF" /> : <CheckCircle width={20} height={20} color="#34C759" />}
@@ -268,7 +268,7 @@ export default function StudyDeckScreen() {
     };
 
     if (error && !deck) return (
-        <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#F2F2F7' }}>
+        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.errorCenter}>
                 <WarningTriangle width={64} height={64} color="#ef4444" />
                 <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Deck not found</Text>
@@ -285,7 +285,7 @@ export default function StudyDeckScreen() {
     );
 
     if (isLoading && !deck) return (
-        <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#F2F2F7' }}>
+        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.loadingWrapper}>
                 <SkeletonLoader width={120} height={16} style={{ marginBottom: 12, borderRadius: 8 }} />
                 <SkeletonLoader width="60%" height={32} style={{ marginBottom: 48, borderRadius: 12 }} />
@@ -298,7 +298,7 @@ export default function StudyDeckScreen() {
     );
 
     if (!deck || !deck.flashcards) return (
-        <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#F2F2F7' }}>
+        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.errorCenter}>
                 <Text style={s.noCardsText}>No cards found in this deck.</Text>
                 <TouchableOpacity onPress={() => router.back()} style={s.mt4}>
@@ -309,7 +309,7 @@ export default function StudyDeckScreen() {
     );
 
     if (isComplete) return (
-        <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#F2F2F7' }}>
+        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.successCenter}>
                 <View style={s.successIconBox}>
                     <View style={[s.successIconGradient, { backgroundColor: '#007AFF' }]}>
@@ -340,7 +340,7 @@ export default function StudyDeckScreen() {
     const progressWidth = cards.length > 0 ? `${((currentIndex + 1) / cards.length) * 100}%` : '0%';
 
     return (
-        <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#F2F2F7' }}>
+        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
             
             {/* Header */}

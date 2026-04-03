@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, useColorScheme, Alert, ActivityIndicator, StyleSheet, Modal, SafeAreaView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Xmark, Check, Rhombus } from 'iconoir-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -161,7 +161,7 @@ export default function UpgradeScreen() {
             {/* Header */}
             <View style={[s.header, { paddingTop: insets.top + Spacing.sm }]}>
                 <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-                    <Ionicons name="close" size={24} color={C.text} />
+                    <Xmark width={24} height={24} color={C.text} strokeWidth={2.5} />
                 </TouchableOpacity>
             </View>
 
@@ -174,7 +174,7 @@ export default function UpgradeScreen() {
                 </Text>
 
                 {/* Billing Cycle Toggle */}
-                <View style={[s.billingToggle, { backgroundColor: C.secondaryBackground }]}>
+                <View style={[s.billingToggle, { backgroundColor: C.cardSecondary }]}>
                     <TouchableOpacity 
                         onPress={() => setBillingCycle('monthly')}
                         style={[s.toggleBtn, billingCycle === 'monthly' && { backgroundColor: C.card, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 }]}
@@ -237,7 +237,7 @@ export default function UpgradeScreen() {
                                 </View>
 
                                 <View style={[s.checkmarkBox, isSelected ? { backgroundColor: '#007AFF', borderColor: '#007AFF' } : { borderColor: C.separator }]}>
-                                    {isSelected && <Ionicons name="checkmark" size={14} color="#FFF" />}
+                                    {isSelected && <Check width={14} height={14} color="#FFF" strokeWidth={3} />}
                                 </View>
                             </TouchableOpacity>
                         );
@@ -259,7 +259,7 @@ export default function UpgradeScreen() {
                                 <ActivityIndicator size="small" color="#007AFF" style={s.packLoading} />
                             ) : (
                                 <View style={s.packIconCircle}>
-                                    <Ionicons name="diamond" size={18} color="#007AFF" />
+                                    <Rhombus width={18} height={18} color="#007AFF" strokeWidth={2.5} />
                                 </View>
                             )}
                             <Text style={[s.packAmount, { color: C.text }]}>{pack.amount.toLocaleString()}</Text>

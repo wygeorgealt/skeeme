@@ -4,7 +4,8 @@ import {
     ActivityIndicator, Alert, useColorScheme, StyleSheet
 } from 'react-native';
 import { 
-    Page, Upload, Sparks, NavArrowLeft
+    Page, Upload, Sparks, NavArrowLeft,
+    Leaf, LightBulb, Rocket, CheckCircle
 } from 'iconoir-react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,7 +22,7 @@ type QuizMode = 'topic' | 'file';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 export default function GenerateFlashcardScreen() {
-    const { updateUser } = useAuthStore();
+    const { user, updateUser } = useAuthStore();
     const queryClient = useQueryClient();
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
@@ -51,6 +52,11 @@ export default function GenerateFlashcardScreen() {
             });
             if (!r.canceled && r.assets?.length) {
                 const asset = r.assets[0];
+                if (asset.size && asset.size > 5 * 1024 * 1024) {
+                    Alert.alert('File too large', 'Please upload a file smaller than 5MB. Ensure it contains extractable text.');
+                    return;
+                }
+
                 setIsProcessingFile(true);
                 setTimeout(() => {
                     setSelectedFile(asset);
@@ -68,9 +74,12 @@ export default function GenerateFlashcardScreen() {
     const handleGenerate = async () => {
         if (mode === 'topic' && !topic.trim()) return Alert.alert('Required', 'Please enter a topic.');
         if (mode === 'file' && !selectedFile) return Alert.alert('Required', 'Please select a document.');
-
-        const count = parseInt(cardCount);
-        if (isNaN(count) || count < 5 || count > 50) return Alert.alert('Invalid Count', 'Please request 5 to 50 cards.');
+        
+        const count = parseInt(cardCount) || 10;
+        if (!user?.is_unlimited && (user?.credits ?? 0) < count) {
+            Alert.alert('Insufficient Credits', 'You need more credits to generate this deck.');
+            return;
+        }
 
         setIsLoading(true);
         setLoadingStage(mode === 'file' ? 'Analyzing Document...' : 'Analyzing Topic...');
@@ -96,13 +105,15 @@ export default function GenerateFlashcardScreen() {
                 } as any);
                 fd.append('card_count', cardCount);
                 fd.append('difficulty', difficulty);
-                response = await api.post('flashcards/generate', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                const idempotencyKey = crypto.randomUUID();
+                response = await api.post('flashcards/generate', fd, { headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': idempotencyKey } });
             } else {
+                const idempotencyKey = crypto.randomUUID();
                 response = await api.post('flashcards/generate', {
                     topic,
                     card_count: count,
                     difficulty
-                });
+                }, { headers: { 'Idempotency-Key': idempotencyKey } });
             }
 
             if (response.data.remaining_credits !== undefined) {
@@ -135,188 +146,154 @@ export default function GenerateFlashcardScreen() {
     };
 
     const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
-
-    const LOADING_STAGES_FILE = ['Reading material...', 'Identifying key concepts...', 'Creating cards...', 'Reviewing content...', 'Almost ready...'];
-    const LOADING_STAGES_TOPIC = ['Analyzing Topic...', 'Researching Context...', 'Drafting cards...', 'Finalizing deck...', 'Almost ready...'];
-    const PROGRESS_STAGES = ['Analyzing', 'Extracting', 'Generating', 'Finalizing'];
+    const estimatedCost = parseInt(cardCount) || 10;
 
     return (
-        <View style={{ flex: 1, backgroundColor: C.background }}>
-            {/* Custom Header */}
+        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+            {/* Header */}
             <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
-                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
-                    <NavArrowLeft width={20} height={20} color={isDark ? 'white' : '#1e293b'} />
-                </TouchableOpacity>
-                <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900]}>Create Deck</Text>
-                <View style={{ width: 44 }} />
+                <Text style={[s.headerTitle, { color: C.text }]}>
+                    Create Deck
+                </Text>
             </View>
 
             <ScrollView 
                 style={{ flex: 1 }} 
-                contentContainerStyle={{ padding: 24, paddingBottom: 160, paddingTop: 10 }} 
+                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 220, paddingTop: 10 }} 
                 showsVerticalScrollIndicator={false}
             >
-                {/* Glass Section: Source */}
-                <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.sectionGlass}>
-                    <View style={s.sectionContent}>
-                        <View style={[s.toggleContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
-                            {(['topic', 'file'] as QuizMode[]).map(m => (
-                                <TouchableOpacity 
-                                    key={m} 
-                                    onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                    style={[s.toggleButton, mode === m && (isDark ? s.toggleActiveDark : s.toggleActiveLight)]}
-                                >
-                                    <Text style={[s.toggleText, mode === m ? { color: isDark ? '#fff' : '#0f172a' } : { color: '#94a3b8' }]}>
-                                        {m}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-
-                        {mode === 'topic' ? (
-                            <TextInput
-                                style={[s.input, isDark ? s.inputDark : s.inputLight]}
-                                placeholder="e.g. Nigerian History, Algebra..."
-                                placeholderTextColor="#94a3b8"
-                                value={topic}
-                                onChangeText={setTopic}
-                            />
-                        ) : (
-                            <TouchableOpacity
-                                onPress={handleFileSelect}
-                                disabled={isProcessingFile}
-                                activeOpacity={0.7}
-                                style={[s.uploadCard, isDark ? s.uploadCardDark : s.uploadCardLight]}
+                {/* Segmented Control */}
+                <View style={[s.segmentedControl, isDark ? s.segmentedControlDark : s.segmentedControlLight]}>
+                    {(['topic', 'file'] as QuizMode[]).map(m => {
+                        const isSelected = mode === m;
+                        return (
+                            <TouchableOpacity 
+                                key={m} 
+                                onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
+                                style={[s.segmentBtn, isSelected && (isDark ? s.segmentBtnActiveDark : s.segmentBtnActiveLight)]}
                             >
-                                {isProcessingFile ? (
-                                    <View style={s.centered}>
-                                        <ActivityIndicator size="small" color={C.primary} />
-                                        <Text style={s.processingText}>Analyzing document...</Text>
-                                    </View>
-                                ) : selectedFile ? (
-                                    <>
-                                        <View style={s.uploadIconActive}>
-                                            <Page width={18} height={18} color={C.primary} />
-                                        </View>
-                                        <Text style={[s.fileName, { color: isDark ? '#fff' : '#0f172a' }]}>{selectedFile.name}</Text>
-                                        <Text style={[s.fileReady, { color: C.primary }]}>Ready to generate</Text>
-                                    </>
-                                ) : (
-                                    <>
-                                        <View style={[s.uploadIconEmpty, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC' }]}>
-                                            <Upload width={18} height={18} color={isDark ? '#cbd5e1' : '#94a3b8'} />
-                                        </View>
-                                        <Text style={[s.uploadPlaceholder, { color: isDark ? '#94a3b8' : '#64748b' }]}>Tap to upload PDF/DOCX</Text>
-                                        <Text style={s.uploadSubtext}>max 5MB • extractable text</Text>
-                                    </>
-                                )}
+                                <Text style={[s.segmentText, isSelected ? { color: C.text, fontWeight: '700' } : { color: C.textTertiary, fontWeight: '500' }]}>
+                                    {m === 'topic' ? 'By Topic' : 'From File'}
+                                </Text>
                             </TouchableOpacity>
+                        );
+                    })}
+                </View>
+
+                {/* Input Area */}
+                {mode === 'topic' ? (
+                    <View style={[s.card, { backgroundColor: C.card, marginBottom: 24 }]}>
+                        <TextInput
+                            style={[s.textInput, { color: C.text }]}
+                            placeholder="E.g. Cell Biology, World War II..."
+                            placeholderTextColor="#8E8E93"
+                            value={topic}
+                            onChangeText={setTopic}
+                        />
+                    </View>
+                ) : (
+                    <TouchableOpacity
+                        onPress={handleFileSelect}
+                        disabled={isProcessingFile}
+                        activeOpacity={0.7}
+                        style={[s.card, s.uploadBox, { backgroundColor: C.card, marginBottom: 24 }]}
+                    >
+                        {isProcessingFile ? (
+                            <View style={s.centered}>
+                                <ActivityIndicator size="small" color="#007AFF" />
+                                <Text style={[s.processingText, { color: '#007AFF' }]}>Analyzing document...</Text>
+                            </View>
+                        ) : selectedFile ? (
+                            <>
+                                <Page width={32} height={32} color="#007AFF" style={{ marginBottom: 12 }} />
+                                <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
+                                <Text style={[s.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
+                            </>
+                        ) : (
+                            <>
+                                <Upload width={32} height={32} color="#8E8E93" style={{ marginBottom: 12 }} />
+                                <Text style={[s.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
+                                <Text style={[s.uploadSub, { color: '#8E8E93' }]}>Maximum 5MB</Text>
+                            </>
                         )}
-                    </View>
-                </BlurView>
+                    </TouchableOpacity>
+                )}
 
-                {/* Glass Section: Configuration */}
-                <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.sectionGlass}>
-                    <View style={s.sectionContent}>
-                        
-                        <View style={{ marginBottom: 24 }}>
-                            <Text style={s.subLabel}>Number of Cards (5-50)</Text>
-                            <TextInput
-                                style={[s.input, isDark ? s.inputDark : s.inputLight]}
-                                keyboardType="number-pad" 
-                                value={cardCount} 
-                                onChangeText={setCardCount}
-                                onBlur={() => {
-                                    const val = parseInt(cardCount);
-                                    if (isNaN(val) || val < 5) setCardCount('5');
-                                    else if (val > 50) setCardCount('50');
-                                }}
-                            />
-                        </View>
-
-                        <Text style={s.subLabel}>Difficulty Level</Text>
-                        <View>
-                            {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
-                                <TouchableOpacity
-                                    key={d}
-                                    onPress={() => setDifficulty(d)}
-                                    activeOpacity={0.8}
-                                    style={[s.difficultyCard, { 
-                                        borderColor: difficulty === d ? C.primary : 'rgba(255,255,255,0.05)',
-                                        backgroundColor: difficulty === d ? (isDark ? 'rgba(0,122,255,0.1)' : 'rgba(0,122,255,0.06)') : 'rgba(255,255,255,0.05)'
-                                    }]}
-                                >
-                                    <View style={[s.iconBox, { backgroundColor: difficulty === d ? C.primary : 'rgba(255,255,255,0.05)' }]}>
-                                        <Sparks width={18} height={18} color={difficulty === d ? '#fff' : C.primary} />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[s.cardTitle, { color: isDark ? '#fff' : '#0f172a' }]}>
-                                            {d.charAt(0).toUpperCase() + d.slice(1)}
-                                        </Text>
-                                        <Text style={s.cardDesc}>
-                                            {d === 'easy' ? 'Focus on fundamentals' : d === 'medium' ? 'Comprehensive coverage' : 'Deep analytical questions'}
-                                        </Text>
-                                    </View>
-                                    {difficulty === d && (
-                                        <View style={[s.checkCircle, { backgroundColor: C.primary }]}>
-                                            <Sparks width={14} height={14} color="white" />
-                                        </View>
-                                    )}
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                {/* Number of Cards (Stepper) */}
+                <Text style={s.sectionTitle}>NUMBER OF CARDS</Text>
+                <View style={[s.card, s.stepperCard, { backgroundColor: C.card }]}>
+                    <Text style={[s.stepperLabel, { color: C.text }]}>Cards</Text>
+                    <View style={s.stepperControls}>
+                        <TouchableOpacity 
+                            style={[s.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}
+                            onPress={() => setCardCount(prev => String(Math.max(5, parseInt(prev) - 5)))}
+                        >
+                            <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>-</Text>
+                        </TouchableOpacity>
+                        <Text style={[s.stepperValue, { color: C.text }]}>{cardCount}</Text>
+                        <TouchableOpacity 
+                            style={[s.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}
+                            onPress={() => setCardCount(prev => String(Math.min(50, parseInt(prev) + 5)))}
+                        >
+                            <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>+</Text>
+                        </TouchableOpacity>
                     </View>
-                </BlurView>
+                </View>
+
+                {/* Difficulty */}
+                <Text style={s.sectionTitle}>DIFFICULTY</Text>
+                <View style={{ gap: 12, marginBottom: 24 }}>
+                    {[
+                        { key: 'easy', label: 'Easy', icon: Leaf, desc: 'Focus on fundamentals' },
+                        { key: 'medium', label: 'Medium', icon: LightBulb, desc: 'Comprehensive coverage' },
+                        { key: 'hard', label: 'Hard', icon: Rocket, desc: 'Deep analytical questions' },
+                    ].map(opt => {
+                        const isSelected = difficulty === opt.key;
+                        const Icon = opt.icon;
+                        return (
+                            <TouchableOpacity
+                                key={opt.key}
+                                onPress={() => setDifficulty(opt.key as Difficulty)}
+                                activeOpacity={0.8}
+                                style={[s.card, s.optionCard, { backgroundColor: C.card, borderColor: isSelected ? '#007AFF' : 'transparent', borderWidth: 2 }]}
+                            >
+                                <View style={[s.iconBoxRow, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
+                                    <Icon width={18} height={18} color="#007AFF" />
+                                </View>
+                                <View style={{ flex: 1, marginLeft: 16 }}>
+                                    <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
+                                    <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
+                                </View>
+                                {isSelected && <CheckCircle width={22} height={22} color="#007AFF" />}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
             </ScrollView>
 
             {/* Glassmorphic Sticky Footer */}
             <BlurView 
-                intensity={80} 
+                intensity={100} 
                 tint={isDark ? "dark" : "light"} 
-                style={[s.footer, { paddingBottom: Math.max(insets.bottom, 24), borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+                style={[s.formFooter, { paddingBottom: 24, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
             >
                 {isLoading ? (
-                    <View style={[s.loadingBanner, { backgroundColor: isDark ? 'rgba(0,122,255,0.05)' : 'rgba(0,122,255,0.02)', borderColor: isDark ? 'rgba(0,122,255,0.2)' : 'rgba(0,122,255,0.1)' }]}>
-                        <View style={{ marginBottom: 16 }}>
-                            <ActivityIndicator size="small" color={C.primary} />
-                        </View>
-                        <Text style={[s.stageText, { color: C.primary }]}>{loadingStage}</Text>
-                        <Text style={{ textAlign: 'center', color: '#64748b', fontSize: 11, fontWeight: '500', paddingHorizontal: 8 }}>
-                            Usually takes 15-30s.
-                        </Text>
-                        <View style={{ flexDirection: 'row', gap: 6, marginTop: 16, width: '100%', paddingHorizontal: 8 }}>
-                            {PROGRESS_STAGES.map((st, i) => {
-                                const stages = mode === 'file' ? LOADING_STAGES_FILE : LOADING_STAGES_TOPIC;
-                                const currentIdx = stages.indexOf(loadingStage);
-                                const isComplete = i < currentIdx;
-                                const isActive = i === currentIdx;
-                                return (
-                                    <View key={i} style={{ flex: 1, height: 6, borderRadius: 3, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                                        {(isComplete || isActive) && (
-                                            <View style={{ height: '100%', width: isComplete ? '100%' : '60%', backgroundColor: isComplete ? C.primary : (isDark ? 'rgba(0,122,255,0.6)' : 'rgba(0,122,255,0.4)') }} />
-                                        )}
-                                    </View>
-                                );
-                            })}
-                        </View>
+                    <View style={s.loadingContainer}>
+                        <ActivityIndicator size="small" color="#007AFF" style={{ marginBottom: 12 }} />
+                        <Text style={[s.loadingText, { color: C.text }]}>{loadingStage}</Text>
                     </View>
-                ) : canGenerate ? (
-                    <>
-                        <TouchableOpacity
-                            onPress={handleGenerate}
-                            activeOpacity={0.8}
-                            style={s.generateBtn}
-                        >
-                            <View style={[s.generateBtnContent, { backgroundColor: C.primary }]}>
-                                <Sparks width={18} height={18} color="#fff" />
-                                <Text style={s.btnText}>Generate Set</Text>
-                            </View>
-                        </TouchableOpacity>
-                        <Text style={s.costTextLower}>
-                            Estimated Cost: {parseInt(cardCount) || 5} Credits | Max 5MB
+                ) : (
+                    <TouchableOpacity
+                        onPress={handleGenerate}
+                        disabled={!canGenerate}
+                        activeOpacity={0.8}
+                        style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : '#A2C9F4' }]}
+                    >
+                        <Text style={s.generatePillText}>
+                            Generate Set • {estimatedCost} Credits
                         </Text>
-                    </>
-                ) : null}
+                    </TouchableOpacity>
+                )}
             </BlurView>
 
             <RewardModal
@@ -336,47 +313,51 @@ export default function GenerateFlashcardScreen() {
 }
 
 const s = StyleSheet.create({
-    header: { paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    headerTitle: { fontSize: 24, fontWeight: '900', letterSpacing: -1 },
-    menuBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-    menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
-    menuBtnLight: { backgroundColor: 'rgba(255,255,255,0.6)' },
+    header: { paddingHorizontal: 24, paddingBottom: 24 },
+    headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1 },
 
-    sectionGlass: { borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: 24 },
-    sectionContent: { padding: 16 },
-    sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, color: '#94a3b8', marginBottom: 16, marginLeft: 4 },
-    toggleContainer: { flexDirection: 'row', borderRadius: 16, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-    toggleButton: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12 },
-    toggleActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
-    toggleActiveLight: { backgroundColor: '#fff', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
-    toggleText: { fontSize: 13, fontWeight: '700', textTransform: 'capitalize' },
-    input: { height: 56, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', borderRadius: 16, paddingHorizontal: 20, fontSize: 15, fontWeight: '500' },
-    inputDark: { backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff' },
-    inputLight: { backgroundColor: '#fff', color: '#0f172a' },
-    uploadCard: { borderStyle: 'dashed', borderWidth: 2, borderRadius: 20, padding: 24, alignItems: 'center' },
-    uploadCardDark: { borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' },
-    uploadCardLight: { borderColor: '#E2E8F0', backgroundColor: '#fff' },
-    centered: { alignItems: 'center', paddingVertical: 8 },
-    processingText: { fontSize: 13, fontWeight: '600', color: '#007AFF', marginTop: 16 },
-    uploadIconActive: { backgroundColor: 'rgba(0,122,255,0.1)', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-    fileName: { fontSize: 14, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
-    fileReady: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-    uploadIconEmpty: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-    uploadPlaceholder: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
-    uploadSubtext: { fontSize: 11, fontWeight: '600', color: '#94a3b8' },
-    subLabel: { fontSize: 12, fontWeight: '500', color: '#94a3b8', marginBottom: 8, marginLeft: 4 },
-    difficultyCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 10 },
-    iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-    cardTitle: { fontSize: 14, fontWeight: '700' },
-    cardDesc: { fontSize: 10, fontWeight: '500', color: '#64748b' },
-    checkCircle: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
-    generateBtn: { borderRadius: 16, overflow: 'hidden' },
-    generateBtnContent: { height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-    btnText: { color: 'white', fontWeight: '900', fontSize: 16, marginLeft: 10 },
-    costTextLower: { textAlign: 'center', color: '#94a3b8', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 16 },
-    loadingBanner: { borderTopWidth: 0, padding: 20, borderRadius: 24, borderWidth: 1 },
-    stageText: { textAlign: 'center', fontWeight: '800', fontSize: 18, marginBottom: 4 },
-    textWhite: { color: 'white' },
-    textSlate900: { color: '#0f172a' },
+    // Segmented Pill Control
+    segmentedControl: { flexDirection: 'row', borderRadius: 999, padding: 4, marginBottom: 24 },
+    segmentedControlLight: { backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: '#FFFFFF' },
+    segmentedControlDark: { backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+    segmentBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 999 },
+    segmentBtnActiveLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
+    segmentBtnActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
+    segmentText: { fontSize: 14, letterSpacing: -0.2 },
+
+    sectionTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginTop: 12, marginBottom: 12, paddingLeft: 4, color: '#8E8E93' },
+
+    // Input Cards
+    card: { borderRadius: 24, padding: 16 },
+    textInput: { height: 28, fontSize: 17, fontWeight: '500' },
+    
+    uploadBox: { borderStyle: 'dashed', borderWidth: 2, borderColor: '#C7C7CC', alignItems: 'center', justifyContent: 'center', paddingVertical: 32 },
+    uploadTitle: { fontSize: 17, fontWeight: '700', marginBottom: 4 },
+    uploadSub: { fontSize: 13, fontWeight: '500' },
+
+    // Stepper
+    stepperCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
+    stepperLabel: { fontSize: 17, fontWeight: '600' },
+    stepperControls: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    stepperBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    stepperBtnText: { fontSize: 24, fontWeight: '400', lineHeight: 28 },
+    stepperValue: { fontSize: 17, fontWeight: '700', minWidth: 24, textAlign: 'center' },
+
+    // Difficulty Options
+    optionCard: { flexDirection: 'row', alignItems: 'center', padding: 12 },
+    iconBoxRow: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    optionTitle: { fontSize: 17, fontWeight: '700', marginBottom: 2 },
+    optionDesc: { fontSize: 13, fontWeight: '500' },
+
+    // Footer
+    formFooter: { position: 'absolute', bottom: 90, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
+    generatePillButton: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+    generatePillText: { color: 'white', fontWeight: '700', fontSize: 16, letterSpacing: -0.2 },
+    
+    loadingContainer: { alignItems: 'center', justifyContent: 'center' },
+    loadingText: { fontSize: 14, fontWeight: '600' },
+
+    // Helpers
+    centered: { alignItems: 'center', justifyContent: 'center' },
+    processingText: { fontSize: 13, fontWeight: '600', marginTop: 12 },
 });

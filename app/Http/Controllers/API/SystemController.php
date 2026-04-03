@@ -13,6 +13,13 @@ class SystemController extends Controller
      */
     public function getPricing()
     {
-        return response()->json(SystemSetting::getPricingConfig());
+        // Cache the pricing config for 1 hour (3600 seconds)
+        // This is highly cacheable and doesn't change often
+        $pricingConfig = \Illuminate\Support\Facades\Cache::remember('system_pricing_config', 3600, function () {
+            return SystemSetting::getPricingConfig();
+        });
+
+        return response()->json($pricingConfig)
+            ->header('Cache-Control', 'public, max-age=3600');
     }
 }

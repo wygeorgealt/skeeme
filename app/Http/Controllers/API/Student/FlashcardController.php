@@ -33,12 +33,27 @@ class FlashcardController extends Controller
      */
     public function index(Request $request)
     {
-        $decks = FlashcardDeck::where('user_id', $request->user()->id)
-            ->withCount('flashcards')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $limit = min((int) $request->input('limit', 20), 50); // cap at 50
+        $cursor = $request->input('cursor');
 
-        return response()->json(['data' => $decks]);
+        $query = FlashcardDeck::where('user_id', $request->user()->id)
+            ->withCount('flashcards')
+            ->orderBy('id', 'desc');
+
+        if ($cursor) {
+            $query->where('id', '<', $cursor);
+        }
+
+        // Fetch limit + 1 to determine if there are more results
+        $decks = $query->take($limit + 1)->get();
+
+        $nextCursor = null;
+        if ($decks->count() > $limit) {
+            $decks->pop();
+            $nextCursor = $decks->last()->id;
+        }
+
+        return response()->json(['data' => $decks, 'next_cursor' => $nextCursor]);
     }
 
     /**
@@ -61,6 +76,7 @@ class FlashcardController extends Controller
     public function generate(Request $request)
     {
         $idempotencyKey = $request->header('Idempotency-Key') ?? $request->input('idempotency_key');
+        $requestId = $idempotencyKey ?? (string) Str::uuid();
         if ($idempotencyKey && Cache::has("idempotency_{$idempotencyKey}")) {
             Log::info("Flashcard Generation: Idempotency cache hit", ['key' => $idempotencyKey]);
             return response()->json(Cache::get("idempotency_{$idempotencyKey}"));
@@ -164,6 +180,7 @@ class FlashcardController extends Controller
         // 4. Generate Synchronously (Circuit Breaker implementation)
         try {
             $useDeepseek = Cache::get('use_deepseek_fallback', false);
+            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-3-5-haiku-20241022';
             
             // Dynamic Timeout based on Network Quality Header
             $networkType = $request->header('X-Network-Type');
@@ -195,6 +212,7 @@ class FlashcardController extends Controller
                 if (!$useDeepseek) {
                     Log::warning("Claude API unavailable for Flashcards. Circuit Breaker tripped → routing to DeepSeek. Reason: " . $e->getMessage());
                     Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
+                    $modelUsed = 'deepseek-chat';
                     
                     $cardsData = $this->deepseek->generateFlashcards(
                         [$sourceContent],
@@ -212,7 +230,7 @@ class FlashcardController extends Controller
             }
 
             // 5. Save to DB (Atomic Transaction)
-            $deck = DB::transaction(function() use ($cardsData, $user, $title, $sourceType, $totalCost) {
+            $deck = DB::transaction(function() use ($cardsData, $user, $title, $sourceType, $totalCost, $modelUsed, $requestId) {
                 $deck = FlashcardDeck::create([
                     'user_id' => $user->id,
                     'title' => $title,
@@ -240,8 +258,11 @@ class FlashcardController extends Controller
                     try {
                         $lockedUser->transactions()->create([
                             'type' => 'usage',
+                            'action_type' => 'flashcard_generation',
                             'amount' => -$totalCost,
                             'description' => "Generating Flashcard Deck: " . $title,
+                            'model_used' => $modelUsed ?? 'claude-3-5-haiku-20241022',
+                            'request_id' => $requestId,
                         ]);
                     } catch (\Exception $e) {
                         Log::error("Failed to log flashcard transaction: " . $e->getMessage());

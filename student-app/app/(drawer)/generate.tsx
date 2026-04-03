@@ -239,9 +239,11 @@ export default function GenerateQuizScreen() {
                 fd.append('question_count', questionCount);
                 fd.append('difficulty', difficulty);
                 questionTypes.forEach((t, i) => fd.append(`question_types[${i}]`, t));
-                response = await api.post('quizzes/generate', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                const idempotencyKey = crypto.randomUUID();
+                response = await api.post('quizzes/generate', fd, { headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': idempotencyKey } });
             } else {
-                response = await api.post('quizzes/generate', { topic, question_count: parseInt(questionCount), question_types: questionTypes, difficulty });
+                const idempotencyKey = crypto.randomUUID();
+                response = await api.post('quizzes/generate', { topic, question_count: parseInt(questionCount), question_types: questionTypes, difficulty }, { headers: { 'Idempotency-Key': idempotencyKey } });
             }
             setQuestions(response.data.questions);
             if (response.data.remaining_credits !== undefined) {
@@ -357,7 +359,7 @@ export default function GenerateQuizScreen() {
         const estimatedCost = parseInt(questionCount) || 10;
         
         return (
-            <View style={{ flex: 1, backgroundColor: C.background }}>
+            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
                 {/* Header */}
                 <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
                     <Text style={[s.headerTitle, { color: C.text }]}>
@@ -371,16 +373,16 @@ export default function GenerateQuizScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Segmented Control */}
-                    <View style={[s.segmentedControl, { backgroundColor: isDark ? '#1C1C1E' : '#E5E5EA' }]}>
+                    <View style={[s.segmentedControl, isDark ? s.segmentedControlDark : s.segmentedControlLight]}>
                         {(['topic', 'file'] as QuizMode[]).map(m => {
                             const isSelected = mode === m;
                             return (
                                 <TouchableOpacity 
                                     key={m} 
                                     onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                    style={[s.segmentBtn, isSelected && [s.segmentActive, { backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF' }]]}
+                                    style={[s.segmentBtn, isSelected && (isDark ? s.segmentBtnActiveDark : s.segmentBtnActiveLight)]}
                                 >
-                                    <Text style={[s.segmentText, isSelected ? { color: C.text, fontWeight: '600' } : { color: '#8E8E93' }]}>
+                                    <Text style={[s.segmentText, isSelected ? { color: C.text, fontWeight: '700' } : { color: C.textTertiary, fontWeight: '500' }]}>
                                         {m === 'topic' ? 'By Topic' : 'From File'}
                                     </Text>
                                 </TouchableOpacity>
@@ -547,9 +549,9 @@ export default function GenerateQuizScreen() {
         };
 
         return (
-            <View style={{ flex: 1, backgroundColor: C.background }}>
+            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
                 {/* Thin Progress line at safe area boundary */}
-                <View style={{ paddingTop: insets.top, backgroundColor: C.background }}>
+                <View style={{ paddingTop: insets.top, backgroundColor: 'transparent' }}>
                     <View style={{ width: '100%', height: 4, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
                         <Animated.View style={{ width: `${rawProgressPct}%`, height: '100%', backgroundColor: '#007AFF' }} />
                     </View>
@@ -582,26 +584,35 @@ export default function GenerateQuizScreen() {
                             {q.options?.map((opt, oi) => {
                                 const isSelected = selectedAnswers[currentQIndex] === opt;
                                 const isCorrectOpt = opt === q.correct_answer;
+                                const letters = ['A', 'B', 'C', 'D', 'E'];
+                                const letter = letters[oi] || `${oi + 1}`;
                                 
-                                let bgColor = C.card;
-                                let borderColor = 'transparent';
+                                let bgColor = isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF';
+                                let borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
                                 let textColor = C.text;
+                                let letterBg = isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9';
+                                let letterColor = C.textSecondary;
                                 let icon = null;
 
                                 if (isRevealed) {
                                     if (isCorrectOpt) {
                                         borderColor = '#34C759';
                                         textColor = '#34C759';
-                                        icon = <CheckCircle width={22} height={22} color="#34C759" />;
+                                        letterBg = 'rgba(52,199,89,0.1)';
+                                        letterColor = '#34C759';
+                                        icon = <CheckCircle width={20} height={20} color="#34C759" />;
                                     } else if (isSelected && !isCorrectOpt) {
                                         borderColor = '#FF3B30';
                                         textColor = '#FF3B30';
-                                        icon = <Xmark width={22} height={22} color="#FF3B30" />;
+                                        letterBg = 'rgba(255,59,48,0.1)';
+                                        letterColor = '#FF3B30';
+                                        icon = <Xmark width={20} height={20} color="#FF3B30" />;
                                     }
                                 } else if (isSelected) {
                                     borderColor = '#007AFF';
                                     textColor = '#007AFF';
-                                    icon = <CheckCircle width={22} height={22} color="#007AFF" />;
+                                    letterBg = '#007AFF';
+                                    letterColor = '#FFFFFF';
                                 }
 
                                 return (
@@ -615,11 +626,14 @@ export default function GenerateQuizScreen() {
                                             }
                                         }}
                                         style={{
-                                            flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16,
-                                            backgroundColor: bgColor, borderWidth: 2, borderColor: borderColor,
+                                            flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 20,
+                                            backgroundColor: bgColor, borderWidth: 1, borderColor: borderColor,
                                             shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2
                                         }}
                                     >
+                                        <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: letterBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                            <Text style={{ fontSize: 13, fontWeight: '800', color: letterColor }}>{letter}</Text>
+                                        </View>
                                         <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: textColor }}>{opt}</Text>
                                         {icon}
                                     </TouchableOpacity>
@@ -665,7 +679,7 @@ export default function GenerateQuizScreen() {
     const remark = getRemark(percentage);
 
     return (
-        <View style={{ flex: 1, backgroundColor: C.background }}>
+        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 160, paddingTop: insets.top + 20 }} showsVerticalScrollIndicator={false}>
                 {/* Score Header Glass Card */}
                 <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.resultsHeader}>
@@ -790,50 +804,53 @@ export default function GenerateQuizScreen() {
 
 const s = StyleSheet.create({
     // ── Setup Layout Components ──
-    segmentedControl: { flexDirection: 'row', borderRadius: 24, padding: 4, marginBottom: 24 },
-    segmentBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 20 },
-    segmentActive: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-    segmentText: { fontSize: 14 },
+    segmentedControl: { flexDirection: 'row', borderRadius: 999, padding: 4, marginBottom: 24 },
+    segmentedControlLight: { backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: '#FFFFFF' },
+    segmentedControlDark: { backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+    segmentBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 999 },
+    segmentBtnActiveLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
+    segmentBtnActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
+    segmentText: { fontSize: 14, letterSpacing: -0.2 },
     
-    card: { borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-    textInput: { fontSize: 16, fontWeight: '500', padding: 4 },
+    card: { borderRadius: 20, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 16, elevation: 2, borderWidth: 1, borderColor: 'transparent' },
+    textInput: { fontSize: 16, fontWeight: '600', padding: 8 },
     
-    uploadBox: { alignItems: 'center', justifyContent: 'center', paddingVertical: 32 },
-    uploadTitle: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
+    uploadBox: { alignItems: 'center', justifyContent: 'center', paddingVertical: 36, borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(0,122,255,0.3)' },
+    uploadTitle: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
     uploadSub: { fontSize: 13, fontWeight: '500' },
     centered: { alignItems: 'center' },
     processingText: { marginTop: 12, fontSize: 14, fontWeight: '600' },
 
-    sectionTitle: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 12, marginLeft: 8 },
+    sectionTitle: { fontSize: 12, fontWeight: '800', letterSpacing: 1.2, marginBottom: 12, marginLeft: 8, color: '#94a3b8' },
 
     stepperCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
     stepperLabel: { fontSize: 16, fontWeight: '600' },
     stepperControls: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-    stepperBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    stepperBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,122,255,0.1)' },
     stepperBtnText: { fontSize: 24, fontWeight: '400', lineHeight: 28 },
-    stepperValue: { fontSize: 18, fontWeight: '700', minWidth: 24, textAlign: 'center' },
+    stepperValue: { fontSize: 18, fontWeight: '800', minWidth: 24, textAlign: 'center' },
 
     optionCard: { flexDirection: 'row', alignItems: 'center' },
-    iconBoxRow: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-    optionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
-    optionDesc: { fontSize: 13, fontWeight: '400' },
+    iconBoxRow: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,122,255,0.1)' },
+    optionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
+    optionDesc: { fontSize: 13, fontWeight: '500' },
 
     // Footer actions
-    formFooter: { position: 'absolute', bottom: 90, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1, borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' },
-    generatePillButton: { width: '100%', borderRadius: 100, paddingVertical: 18, alignItems: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
-    generatePillText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+    formFooter: { position: 'absolute', bottom: 90, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
+    generatePillButton: { width: '100%', borderRadius: 100, paddingVertical: 18, alignItems: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
+    generatePillText: { color: '#FFF', fontSize: 16, fontWeight: '800', letterSpacing: -0.2 },
     loadingContainer: { alignItems: 'center', paddingVertical: 12 },
-    loadingText: { fontSize: 15, fontWeight: '600' },
+    loadingText: { fontSize: 15, fontWeight: '700' },
 
     // Shared Styles
-    header: { paddingHorizontal: 20, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    headerTitle: { fontSize: 26, fontWeight: '700', letterSpacing: -1 },
-    menuBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    header: { paddingHorizontal: 24, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1 },
+    menuBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
     menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
-    menuBtnLight: { backgroundColor: '#F1F5F9' },
+    menuBtnLight: { backgroundColor: '#F8FAFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
     textWhite: { color: 'white' },
     textSlate900: { color: '#0f172a' },
-    sectionHeader: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, color: '#94a3b8', marginBottom: 16, marginLeft: 4 },
+    sectionHeader: { fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1.2, color: '#94a3b8', marginBottom: 16, marginLeft: 4 },
     footer: { paddingVertical: 16 },
 
     // Quiz View
