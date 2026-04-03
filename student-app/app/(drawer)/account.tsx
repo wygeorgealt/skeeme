@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-    View, ScrollView, TouchableOpacity, Alert,
+    View, ScrollView, TouchableOpacity, Alert, TextInput,
     Platform, useColorScheme, Image, StyleSheet, Switch
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
@@ -141,6 +141,26 @@ export default function AccountScreen() {
         }
     };
 
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [deletePassword, setDeletePassword] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDeleteAccount = async () => {
+        setIsDeleting(true);
+        try {
+            await api.delete('profile', { data: { password: deletePassword } });
+            setDeleteModalVisible(false);
+            Alert.alert("Account Deleted", "Your account has been deleted permanently.");
+            logout();
+            router.replace('/login');
+        } catch (error: any) {
+            const msg = error.response?.data?.message || 'Failed to delete account. Please check your password.';
+            Alert.alert('Error', msg);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const handleSignOut = () => {
         Alert.alert('Sign Out', 'Are you sure you want to log out?', [
             { text: 'Cancel', style: 'cancel' },
@@ -270,6 +290,22 @@ export default function AccountScreen() {
                         onPress={handleSignOut}
                         isLast={true}
                         isDark={isDark}
+                    />
+                </GroupedCard>
+
+                {/* ── Section 5: Danger Zone ── */}
+                <Text style={[s.sectionLabel, { color: C.destructive }]}>Danger Zone</Text>
+                <GroupedCard isDark={isDark}>
+                    <SettingsRow
+                        label="Delete Account"
+                        onPress={() => {
+                            Alert.alert("Permanent Action", "Are you sure you want to permanently delete your account?", [
+                                { text: "Cancel", style: "cancel" },
+                                { text: "Delete Account", style: "destructive", onPress: () => setDeleteModalVisible(true) }
+                            ]);
+                        }}
+                        isLast={true}
+                        isDark={isDark}
                         destructive={true}
                     />
                 </GroupedCard>
@@ -310,6 +346,50 @@ export default function AccountScreen() {
                             ))}
                         </View>
                     </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Account Deletion Modal */}
+            <Modal
+                visible={deleteModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setDeleteModalVisible(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
+                    <View style={{ backgroundColor: C.card, borderRadius: 16, padding: 24 }}>
+                        <Text style={{ fontSize: 20, fontWeight: '700', color: C.text, marginBottom: 8 }}>Verify Deletion</Text>
+                        <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 24 }}>
+                            If you used an email/password to sign up, please enter your password to confirm. If you used Google or Apple, leave this blank and tap Delete.
+                        </Text>
+                        
+                        <View style={{ backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7', borderRadius: 8, paddingHorizontal: 12, marginBottom: 24, paddingVertical: Platform.OS === 'ios' ? 12 : 4 }}>
+                            <TextInput
+                                placeholder="Account Password (optional for Google/Apple users)"
+                                placeholderTextColor={C.textTertiary}
+                                value={deletePassword}
+                                onChangeText={setDeletePassword}
+                                secureTextEntry
+                                style={{ color: C.text, fontSize: 16 }}
+                            />
+                        </View>
+
+                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <TouchableOpacity 
+                                style={{ flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA', alignItems: 'center' }}
+                                onPress={() => { setDeleteModalVisible(false); setDeletePassword(''); }}
+                            >
+                                <Text style={{ color: C.text, fontWeight: '600', fontSize: 16 }}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={{ flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: C.destructive, alignItems: 'center', opacity: isDeleting ? 0.7 : 1 }}
+                                onPress={handleDeleteAccount}
+                                disabled={isDeleting}
+                            >
+                                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>{isDeleting ? 'Deleting...' : 'Delete'}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
             </Modal>
         </View>

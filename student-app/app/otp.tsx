@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, useColorScheme, StyleSheet, ScrollView } from 'react-native';
+import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard, useColorScheme, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -98,7 +98,8 @@ export default function OtpScreen() {
                 const { login } = useAuthStore.getState();
                 await login(authedUser, authToken);
 
-                router.replace('/(drawer)');
+                // Show Paywall/Upgrade screen immediately after account creation
+                router.replace('/upgrade');
             } else {
                 router.replace(`/new-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`);
             }
@@ -226,6 +227,8 @@ export default function OtpScreen() {
         </GlowBackground>
     );
 }
+
+const SCREEN_W = Dimensions.get('window').width;
 
 const s = StyleSheet.create({
     flex1: { flex: 1 },

@@ -19,12 +19,19 @@ class IndividualSubscription extends Model
         'start_date',
         'expiry_date',
         'status', // active, inactive, expired
+        'is_trial',
+        'trial_ends_at',
+        'paystack_authorization',
+        'auto_renew',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'start_date' => 'date',
         'expiry_date' => 'date',
+        'is_trial' => 'boolean',
+        'trial_ends_at' => 'datetime',
+        'auto_renew' => 'boolean',
     ];
 
     // Plan constants for students
@@ -95,7 +102,15 @@ class IndividualSubscription extends Model
      */
     public function isValid(): bool
     {
-        return $this->status === 'active' && !$this->isExpired();
+        return ($this->status === 'active' || $this->isInTrial()) && !$this->isExpired();
+    }
+
+    /**
+     * Check if subscription is currently in a trial period
+     */
+    public function isInTrial(): bool
+    {
+        return $this->is_trial && $this->trial_ends_at && $this->trial_ends_at->isFuture();
     }
 
     /**

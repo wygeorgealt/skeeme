@@ -27,7 +27,10 @@ class PaystackService
     public function initializePayment(
         Invoice $invoice,
         string $email,
-        string $metadata = null
+        string $metadata = null,
+        string $planCode = null,
+        string $startDate = null,
+        array $channels = null
     ): array {
         try {
             // Convert amount to the smallest unit (kobo for most currencies)
@@ -44,14 +47,11 @@ class PaystackService
             // For other currencies, you may need to adjust based on your Paystack account
             $currency = strtoupper($invoice->currency);
 
-            $response = Http::withHeaders([
-                'Authorization' => "Bearer {$this->secretKey}",
-                'Content-Type' => 'application/json',
-            ])->when(!app()->isProduction(), function ($http) {
-                return $http->withoutVerifying();
-            }) // Only disable SSL verification for dev/test environments
-            ->post(($this->baseUrl ?? 'https://api.paystack.co') . "/transaction/initialize", [
-                'email' => $email,
+            // Sanitize email for Paystack (it rejects .test TLDs used in local dev)
+            $paystackEmail = str_replace('.test', '.com', $email);
+
+            $payload = [
+                'email' => $paystackEmail,
                 'amount' => $amountInSmallestUnit,
                 'currency' => $currency,
                 'metadata' => [
@@ -62,7 +62,26 @@ class PaystackService
                     'invoice_number' => $invoice->invoice_number,
                     'custom_metadata' => $metadata,
                 ],
-            ]);
+            ];
+
+            if ($planCode) {
+                $payload['plan'] = $planCode;
+            }
+
+            if ($startDate) {
+                $payload['start_date'] = $startDate;
+            }
+
+            if ($channels) {
+                $payload['channels'] = $channels;
+            }
+
+            $response = Http::withHeaders([
+                'Authorization' => "Bearer {$this->secretKey}",
+                'Content-Type' => 'application/json',
+            ])->when(!app()->isProduction(), function ($http) {
+                return $http->withoutVerifying();
+            })->post(($this->baseUrl ?? 'https://api.paystack.co') . "/transaction/initialize", $payload);
 
             if (!$response->successful()) {
                 Log::error('Paystack initialization failed', [
@@ -78,11 +97,6 @@ class PaystackService
 
             if (!$data['status']) {
                 throw new \Exception($data['message'] ?? 'Payment initialization failed');
-            }
-
-            // Store authorization URL in payment record if exists
-            if (isset($data['data']['authorization_url'])) {
-                // Will be stored when payment record is created
             }
 
             return [

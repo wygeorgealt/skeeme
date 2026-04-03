@@ -42,7 +42,7 @@ export default function StyleScreen() {
 
     const handleNext = () => {
         if (selected) {
-            router.push('/(onboarding)/create-account');
+            router.push('/(onboarding)/birthday');
         }
     };
 

@@ -150,13 +150,15 @@ export default function DashboardScreen() {
                             </Text>
                         </View>
                         <View style={s.heroActions}>
-                            <TouchableOpacity 
-                                onPress={() => router.push('/upgrade')}
-                                style={[s.upgradePill, { backgroundColor: C.primary }]}
-                            >
-                                <Sparks width={14} height={14} color="#FFF" strokeWidth={2.5} />
-                                <Text style={s.upgradeText}>Upgrade</Text>
-                            </TouchableOpacity>
+                            {user.plan_name?.toLowerCase() !== 'elite' && (
+                                <TouchableOpacity 
+                                    onPress={() => router.push('/upgrade')}
+                                    style={[s.upgradePill, { backgroundColor: C.primary }]}
+                                >
+                                    <Sparks width={14} height={14} color="#FFF" strokeWidth={2.5} />
+                                    <Text style={s.upgradeText}>Upgrade</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
 

@@ -63,15 +63,17 @@ class ProfileController extends Controller
      */
     public function destroyAccount(Request $request)
     {
-        $request->validate([
-            'password' => 'required|string',
-        ]);
-
         $user = $request->user();
 
-        // Verify password before deletion
-        if (!Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Incorrect password. Account deletion cancelled.'], 403);
+        // If the user did not sign up via a social provider, verify their password
+        if (!$user->provider) {
+            $request->validate([
+                'password' => 'required|string',
+            ]);
+
+            if (!Hash::check($request->password, $user->password)) {
+                return response()->json(['message' => 'Incorrect password. Account deletion cancelled.'], 403);
+            }
         }
 
         // 1. Revoke all API tokens

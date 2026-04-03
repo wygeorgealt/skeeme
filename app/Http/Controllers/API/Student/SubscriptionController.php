@@ -32,33 +32,47 @@ class SubscriptionController extends Controller
         $user = $request->user();
         $plan = $request->plan;
         $cycle = $request->cycle;
+        $isTrial = $request->boolean('is_trial', false);
 
         // Dynamic Pricing
         $pricing = \App\Models\SystemSetting::getPricingConfig();
-
-        if (isset($pricing['promos'][$plan . '_end']) && $cycle === 'monthly' && now()->lt(\Illuminate\Support\Carbon::parse($pricing['promos'][$plan . '_end']))) {
-            $amount = $pricing['ngn'][$plan]['promoMonthly'];
-            Log::info('Promo Price Applied', ['user_id' => $user->id, 'plan' => $plan, 'amount' => $amount]);
-        } else {
-            $amount = $pricing['ngn'][$plan][$cycle];
+        // Validate trial eligibility: Only Elite Monthly is allowed a trial
+        $isTrial = $request->boolean('is_trial', false);
+        $currency = 'NGN'; 
+        if ($isTrial && ($plan !== 'elite' || $cycle !== 'monthly')) {
+            return response()->json(['message' => 'Trial is only available for the Elite Monthly plan.'], 400);
         }
-        $currency = 'NGN'; // Default to NGN as per Paystack request for local students
+
+        if ($isTrial) {
+            $amount = $pricing['ngn']['verification_amount'] ?? 100; 
+        } else {
+            if (isset($pricing['promos'][$plan . '_end']) && $cycle === 'monthly' && now()->lt(\Illuminate\Support\Carbon::parse($pricing['promos'][$plan . '_end']))) {
+                $amount = $pricing['ngn'][$plan]['promoMonthly'];
+            } else {
+                $amount = $pricing['ngn'][$plan][$cycle];
+            }
+        }
 
         try {
             // 1. Create Invoice
             $invoice = Invoice::create([
                 'user_id' => $user->id,
                 'invoice_number' => Invoice::generateInvoiceNumber(),
-                'plan_name' => "Skeeme " . ucfirst($plan) . " ($cycle)",
+                'plan_name' => "Skeeme " . ucfirst($plan) . " ($cycle)" . ($isTrial ? " [Trial]" : ""),
                 'amount' => $amount,
                 'currency' => $currency,
                 'invoice_date' => now(),
                 'due_date' => now()->addDays(1),
                 'status' => 'pending',
-                'description' => "Subscription to Skeeme ".ucfirst($plan)." ($cycle)",
+                'description' => $isTrial ? "Card verification for 3rd-Day Free Trial" : "Subscription to Skeeme ".ucfirst($plan)." ($cycle)",
             ]);
 
             // 2. Initialize Paystack
+            // We DO NOT pass planCode or startDate here because we want to control the amount 
+            // from our admin dashboard (Paystack Plans have static amounts).
+            // Define payment channels: For trials, we MUST have a card for future billing
+            $channels = $isTrial ? ['card'] : ['card', 'bank', 'ussd', 'qr', 'transfer'];
+
             $paymentData = $this->paystack->initializePayment(
                 $invoice,
                 $user->email,
@@ -66,8 +80,13 @@ class SubscriptionController extends Controller
                     'type' => 'student_subscription',
                     'user_id' => $user->id,
                     'plan' => $plan,
-                    'cycle' => $cycle
-                ])
+                    'cycle' => $cycle,
+                    'is_trial' => $isTrial,
+                    'intended_amount' => $pricing['ngn'][$plan][$cycle]
+                ]),
+                null,
+                null,
+                $channels
             );
 
             // 3. Create Payment Record (Pending)
@@ -127,6 +146,17 @@ class SubscriptionController extends Controller
             $verification = $this->paystack->verifyPayment($reference);
 
             if ($verification['status'] && $verification['data']['status'] === 'success') {
+                // Capture authorization code for future recurring billing or trial end
+                $authData = $verification['data']['authorization'] ?? [];
+                $currentMetadata = is_array($payment->metadata) ? $payment->metadata : json_decode($payment->metadata ?? '[]', true);
+                
+                $payment->metadata = array_merge($currentMetadata, [
+                    'authorization_code' => $authData['authorization_code'] ?? null,
+                    'last_4' => $authData['last_4'] ?? null,
+                    'brand' => $authData['brand'] ?? null,
+                ]);
+                $payment->save();
+
                 $payment->markAsCompleted($reference);
                 
                 return response()->json([
@@ -297,5 +327,31 @@ class SubscriptionController extends Controller
                 'message' => 'Could not verify your payment. Please contact support if your credits do not appear.'
             ], 500);
         }
+    }
+    /**
+     * Cancel the auto-renewal of a subscription.
+     */
+    public function cancel(Request $request)
+    {
+        $user = $request->user();
+        $subscription = \App\Models\IndividualSubscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->first();
+
+        if (!$subscription) {
+            return response()->json(['message' => 'No active subscription found to cancel.'], 404);
+        }
+
+        if (!$subscription->auto_renew) {
+            return response()->json(['message' => 'Subscription is already set to expire without renewal.'], 400);
+        }
+
+        $subscription->update(['auto_renew' => false]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Auto-renewal has been disabled. Your benefits will continue until ' . $subscription->expiry_date->format('M d, Y') . '.',
+            'subscription' => $subscription
+        ]);
     }
 }

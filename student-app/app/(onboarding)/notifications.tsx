@@ -21,7 +21,7 @@ export default function NotificationsScreen() {
     const { setOnboardingStep, completeOnboarding } = useAuthStore();
 
     useEffect(() => {
-        setOnboardingStep(8);
+        setOnboardingStep(7);
     }, []);
 
     const handleEnable = async () => {

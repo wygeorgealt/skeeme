@@ -122,6 +122,8 @@ Route::group(['prefix' => 'v1'], function () {
 
     // Student Mobile App API
     Route::group(['prefix' => 'student', 'middleware' => 'throttle:api'], function () {
+        Route::post('webhooks/paystack', [\App\Http\Controllers\Webhooks\PaystackWebhookController::class, 'handle']);
+
         // Authentication Endpoints (Strictly Throttled: 60/min)
         Route::group(['middleware' => 'throttle:auth'], function () {
             Route::post('login', [\App\Http\Controllers\API\Student\AuthController::class, 'login']);
@@ -155,6 +157,7 @@ Route::group(['prefix' => 'v1'], function () {
             // Checkouts & Subscriptions
             Route::post('subscriptions/checkout', [StudentSubscriptionController::class, 'checkout']);
             Route::get('subscriptions/verify/{reference}', [StudentSubscriptionController::class, 'verify']);
+            Route::post('subscriptions/cancel', [StudentSubscriptionController::class, 'cancel']);
             
             Route::post('credits/checkout', [\App\Http\Controllers\API\Student\SubscriptionController::class, 'checkoutCredits']);
             Route::get('credits/verify/{reference}', [\App\Http\Controllers\API\Student\SubscriptionController::class, 'verifyCredits']);

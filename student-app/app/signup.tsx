@@ -61,6 +61,9 @@ export default function SignupScreen() {
                 ...(onboardingData?.education_level && { education_level: onboardingData.education_level }),
                 ...(onboardingData?.field_of_study && { field_of_study: onboardingData.field_of_study }),
                 ...(onboardingData?.learning_style && { learning_style: onboardingData.learning_style }),
+                ...(onboardingData?.dob_month && { dob_month: onboardingData.dob_month }),
+                ...(onboardingData?.dob_year && { dob_year: onboardingData.dob_year }),
+                ...(onboardingData?.age && { age: onboardingData.age }),
             });
             router.replace({ pathname: '/otp', params: { email: email.trim().toLowerCase(), type: 'verification' } });
         } catch (error: any) {

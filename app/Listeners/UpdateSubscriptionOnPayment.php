@@ -45,37 +45,52 @@ class UpdateSubscriptionOnPayment
         if ($payment->user_id && (str_contains($invoice->plan_name, 'Standard') || str_contains($invoice->plan_name, 'Elite') || str_contains($invoice->plan_name, 'Unlimited'))) {
             $user = $payment->user;
             if ($user && $user->role === 'student') {
-                $isElite = str_contains($invoice->plan_name, 'Elite');
-                $creditsToAdd = $isElite ? 12500 : 5000;
+                // Parse metadata
+                $metadata = is_array($payment->metadata) ? $payment->metadata : json_decode($payment->metadata ?? '[]', true);
+                $isTrial = $metadata['is_trial'] ?? false;
+                $intendedPlan = $metadata['plan'] ?? (str_contains($invoice->plan_name, 'Elite') ? 'Elite' : 'Standard');
+                $isYearly = ($metadata['cycle'] ?? '') === 'yearly' || str_contains($invoice->plan_name, 'yearly');
+                
+                $isElite = strtolower($intendedPlan) === 'elite';
                 $planName = $isElite ? 'Elite' : 'Standard';
                 
-                // Determine billing cycle from invoice
-                $isYearly = str_contains($invoice->plan_name, 'yearly');
-                $duration = $isYearly ? 366 : 31;
+                // Trial logic
+                $trialEndsAt = $isTrial ? now()->addDays(3) : null;
+                $duration = $isTrial ? 3 : ($isYearly ? 366 : 31);
+                
+                // Credits: Elite gets 20k, Standard gets 6k (From SystemSetting)
+                $pricing = \App\Models\SystemSetting::getPricingConfig();
+                $creditsToAdd = $pricing['ngn'][strtolower($planName)]['credits'] ?? ($isElite ? 20000 : 6000);
 
                 $user->update([
                     'is_unlimited_student' => true,
                     'credits' => min(999999, $user->credits + $creditsToAdd),
-                    'last_credit_refill_at' => now(), // Set initial refill date
+                    'last_credit_refill_at' => now(), 
                 ]);
+
+                $authCode = $metadata['authorization_code'] ?? null;
 
                 // Create or update subscription record
                 \App\Models\IndividualSubscription::updateOrCreate(
-                    ['user_id' => $user->id, 'status' => 'active'],
+                    ['user_id' => $user->id],
                     [
                         'plan_name' => $planName,
                         'billing_cycle' => $isYearly ? 'yearly' : 'monthly',
-                        'price' => $payment->amount,
+                        'price' => $payment->amount, // Stores the verification/initial price paid
                         'start_date' => now(),
                         'expiry_date' => now()->addDays($duration),
-                        'status' => 'active'
+                        'status' => 'active',
+                        'is_trial' => $isTrial,
+                        'trial_ends_at' => $trialEndsAt,
+                        'paystack_authorization' => $authCode,
                     ]
                 );
 
-                Log::info('Student Subscription Activated/Renewed', [
+                Log::info('Student Subscription Activated/Renewed (Dynamic)', [
                     'user_id' => $user->id, 
                     'plan' => $planName, 
-                    'credits_added' => $creditsToAdd
+                    'is_trial' => $isTrial,
+                    'auth_captured' => !empty($authCode)
                 ]);
 
                 // Send Upgrade Confirmation Email

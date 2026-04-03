@@ -19,8 +19,24 @@ class SystemSetting extends Model
     {
         $defaults = [
             'ngn' => [
-                'standard' => ['monthly' => 3500, 'yearly' => 25000, 'promoMonthly' => 2600, 'credits' => 6000, 'weekly' => 1500],
-                'elite' => ['monthly' => 5000, 'yearly' => 50000, 'promoMonthly' => 3700, 'credits' => 20000, 'weekly' => 5000]
+                'standard' => [
+                    'monthly' => 3500, 
+                    'yearly' => 25000, 
+                    'promoMonthly' => 2600, 
+                    'credits' => 6000, 
+                    'weekly' => 1500,
+                    'monthly_plan_code' => 'PLN_standard_monthly',
+                    'yearly_plan_code' => 'PLN_standard_yearly'
+                ],
+                'elite' => [
+                    'monthly' => 5000, 
+                    'yearly' => 50000, 
+                    'promoMonthly' => 3700, 
+                    'credits' => 20000, 
+                    'weekly' => 5000,
+                    'monthly_plan_code' => 'PLN_elite_monthly',
+                    'yearly_plan_code' => 'PLN_elite_yearly'
+                ]
             ],
             'usd' => [
                 'standard' => ['monthly' => 4.99, 'yearly' => 39.99, 'promoMonthly' => 3.4, 'credits' => 6000, 'weekly' => 1500],

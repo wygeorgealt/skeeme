@@ -12,7 +12,12 @@ Artisan::command('inspire', function () {
 // Schedule subscription auto-renewal job to run daily at 2 AM
 Schedule::job(new SubscriptionRenewalJob)
     ->dailyAt('02:00')
-    ->description('Process auto-renewal for subscriptions expiring within 3 days');
+    ->description('Process auto-renewal for school subscriptions expiring within 3 days');
+
+// Schedule student dynamic subscription billing (Trial ends and renewals)
+Schedule::command('app:process-subscription-billing')
+    ->dailyAt('02:30')
+    ->description('Process trial ends and recurring billing for individual student subscriptions');
 
 // Schedule weekly credit refill based on user subscription (checks daily)
 Schedule::command('app:refill-student-credits')
