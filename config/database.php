@@ -63,6 +63,9 @@ return [
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') !== null 
                     ? filter_var(env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT'), FILTER_VALIDATE_BOOLEAN) 
                     : null,
+                PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', false) !== null 
+                    ? filter_var(env('DB_PERSISTENT', false), FILTER_VALIDATE_BOOLEAN) 
+                    : false,
             ], fn($value) => ! is_null($value)) : [],
         ],
 
