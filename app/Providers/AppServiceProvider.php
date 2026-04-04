@@ -109,7 +109,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('otp', function (Request $request) {
-            return Limit::perFiveMinutes(5)->by($request->ip());
+            return Limit::perMinutes(5, 5)->by($request->ip());
         });
     }
 
