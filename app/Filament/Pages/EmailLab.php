@@ -59,8 +59,8 @@ class EmailLab extends Page implements HasForms
                             ->label('Test Email Address')
                             ->email()
                             ->default(auth()->user()->email)
-                            ->visible(fn (\Closure $get) => $get('target_audience') === 'test')
-                            ->required(fn (\Closure $get) => $get('target_audience') === 'test'),
+                            ->visible(fn ($get) => $get('target_audience') === 'test')
+                            ->required(fn ($get) => $get('target_audience') === 'test'),
 
                         TextInput::make('subject')
                             ->label('Email Subject')
