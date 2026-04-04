@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView, ScrollView, TextInput } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
@@ -9,6 +9,8 @@ import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { IosPillButton } from '@/components/ui/IosPillButton';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { calculateAge, formatDateDisplay } from '@/utils/dateUtils';
 
 export default function BirthdayScreen() {
     const router = useRouter();
@@ -19,26 +21,40 @@ export default function BirthdayScreen() {
     
     const { setOnboardingStep, setOnboardingData, onboardingData } = useAuthStore();
     
-    const [month, setMonth] = useState(onboardingData.dob_month?.toString() || '');
-    const [year, setYear] = useState(onboardingData.dob_year?.toString() || '');
-    const [age, setAge] = useState(onboardingData.age?.toString() || '');
+    // Default to 18 years ago if no date exists
+    const initialDate = onboardingData.dob_year && onboardingData.dob_month 
+        ? new Date(onboardingData.dob_year, onboardingData.dob_month - 1, 1)
+        : new Date(new Date().getFullYear() - 18, 0, 1);
+
+    const [date, setDate] = useState<Date>(initialDate);
+    const [age, setAge] = useState<number>(calculateAge(initialDate));
+    const [showPicker, setShowPicker] = useState(Platform.OS === 'ios'); // iOS shows inline/modal by default
 
     useEffect(() => {
         setOnboardingStep(5);
     }, []);
 
-    const handleNext = async () => {
-        if (month && year && age) {
-            await setOnboardingData({ 
-                dob_month: parseInt(month, 10), 
-                dob_year: parseInt(year, 10), 
-                age: parseInt(age, 10) 
-            });
-            router.push('/(onboarding)/create-account');
+    const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        if (Platform.OS === 'android') {
+            setShowPicker(false);
+        }
+        
+        if (selectedDate) {
+            setDate(selectedDate);
+            setAge(calculateAge(selectedDate));
         }
     };
 
-    const isValid = month.length > 0 && year.length === 4 && age.length > 0;
+    const handleNext = async () => {
+        await setOnboardingData({ 
+            dob_month: date.getMonth() + 1, 
+            dob_year: date.getFullYear(), 
+            age: age 
+        });
+        router.push('/(onboarding)/create-account');
+    };
+
+    const isValid = age > 0;
 
     return (
         <GlowBackground style={{ flex: 1 }}>
@@ -57,47 +73,42 @@ export default function BirthdayScreen() {
 
                 <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
                     <Animated.View entering={FadeInDown.duration(600).delay(300)} style={s.inputGroup}>
-                        <Text style={[s.label, { color: C.text }]}>Birth Month</Text>
-                        <View style={[s.inputContainer, { backgroundColor: C.card, borderColor: C.separator }]}>
+                        
+                        <Text style={[s.label, { color: C.text }]}>Your Birthday</Text>
+                        
+                        <TouchableOpacity 
+                            onPress={() => setShowPicker(true)}
+                            activeOpacity={0.7}
+                            style={[s.inputContainer, { backgroundColor: C.card, borderColor: C.separator, marginBottom: 12 }]}
+                        >
                             <Calendar width={20} height={20} color={C.primary} style={s.icon} />
-                            <TextInput
-                                placeholder="MM (e.g. 05)"
-                                placeholderTextColor={C.textTertiary}
-                                keyboardType="number-pad"
-                                maxLength={2}
-                                value={month}
-                                onChangeText={setMonth}
-                                style={[s.input, { color: C.text }]}
-                            />
+                            <Text style={[s.inputText, { color: C.text }]}>
+                                {formatDateDisplay(date)}
+                            </Text>
+                        </TouchableOpacity>
+
+                        {showPicker && (
+                            <View style={Platform.OS === 'ios' ? s.iosPickerContainer : null}>
+                                <DateTimePicker
+                                    value={date}
+                                    mode="date"
+                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                    onChange={onDateChange}
+                                    maximumDate={new Date()}
+                                    themeVariant={isDark ? 'dark' : 'light'}
+                                />
+                            </View>
+                        )}
+
+                        <View style={s.ageHighlight}>
+                            <View style={[s.ageBadge, { backgroundColor: C.primary + '20' }]}>
+                                <User width={16} height={16} color={C.primary} style={{ marginRight: 6 }} />
+                                <Text style={[s.ageText, { color: C.primary }]}>
+                                    Detected Age: {age} years old
+                                </Text>
+                            </View>
                         </View>
 
-                        <Text style={[s.label, { color: C.text, marginTop: 24 }]}>Birth Year</Text>
-                        <View style={[s.inputContainer, { backgroundColor: C.card, borderColor: C.separator }]}>
-                            <Calendar width={20} height={20} color={C.primary} style={s.icon} />
-                            <TextInput
-                                placeholder="YYYY (e.g. 2004)"
-                                placeholderTextColor={C.textTertiary}
-                                keyboardType="number-pad"
-                                maxLength={4}
-                                value={year}
-                                onChangeText={setYear}
-                                style={[s.input, { color: C.text }]}
-                            />
-                        </View>
-
-                        <Text style={[s.label, { color: C.text, marginTop: 24 }]}>Current Age</Text>
-                        <View style={[s.inputContainer, { backgroundColor: C.card, borderColor: C.separator }]}>
-                            <User width={20} height={20} color={C.primary} style={s.icon} />
-                            <TextInput
-                                placeholder="e.g. 19"
-                                placeholderTextColor={C.textTertiary}
-                                keyboardType="number-pad"
-                                maxLength={2}
-                                value={age}
-                                onChangeText={setAge}
-                                style={[s.input, { color: C.text }]}
-                            />
-                        </View>
                     </Animated.View>
                 </ScrollView>
 
@@ -134,7 +145,31 @@ const s = StyleSheet.create({
         paddingHorizontal: 16,
     },
     icon: { marginRight: 12 },
-    input: { flex: 1, fontSize: 17, fontWeight: '500' },
+    inputText: { fontSize: 17, fontWeight: '500' },
+    
+    iosPickerContainer: {
+        backgroundColor: 'transparent',
+        borderRadius: 16,
+        marginTop: 8,
+        overflow: 'hidden'
+    },
+
+    ageHighlight: {
+        marginTop: 20,
+        alignItems: 'center',
+    },
+    ageBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+    },
+    ageText: {
+        fontSize: 14,
+        fontWeight: '700',
+    },
     
     footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24 },
 });
+

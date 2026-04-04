@@ -126,6 +126,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasOne(StudyStreak::class);
     }
 
+    public function quizSessions()
+    {
+        return $this->hasMany(QuizSession::class);
+    }
+
     public function streakFreezes()
     {
         return $this->hasMany(StreakFreeze::class);

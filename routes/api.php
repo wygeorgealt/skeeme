@@ -49,21 +49,6 @@ Route::group(['prefix' => 'v1'], function () {
     // Public endpoints
     Route::post('/webhooks/zoom', [\App\Http\Controllers\Webhooks\ZoomWebhookController::class, 'handle']);
     Route::post('/webhooks/revenuecat', [\App\Http\Controllers\API\Webhooks\RevenueCatWebhookController::class, 'handle']);
-    
-    // TEMPORARY: Production Database Cleanup (Visit https://skeeme.com/api/v1/system/cleanup-db?secret=SkeemeSecret2026)
-    Route::get('/system/cleanup-db', function (Request $request) {
-        if ($request->get('secret') !== 'SkeemeSecret2026') {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-        
-        try {
-            \Illuminate\Support\Facades\Artisan::call('app:cleanup-production', ['--force' => true]);
-            $output = \Illuminate\Support\Facades\Artisan::output();
-            return response()->json(['message' => 'Cleanup successful!', 'output' => $output]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Cleanup failed!', 'message' => $e->getMessage()], 500);
-        }
-    });
 
     // Authenticated routes
     Route::group(['middleware' => ['auth:sanctum', 'throttle:api']], function () {

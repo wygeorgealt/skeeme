@@ -24,6 +24,7 @@ export default function OtpScreen() {
     const [errorMsg, setErrorMsg] = useState('');
     const [countdown, setCountdown] = useState(60);
     const [resendSuccess, setResendSuccess] = useState('');
+    const [focusedIndex, setFocusedIndex] = useState(0);
 
     const inputs = useRef<Array<TextInput | null>>([]);
 
@@ -176,6 +177,7 @@ export default function OtpScreen() {
                                 value={digit}
                                 onChangeText={t => handleChange(t, index)}
                                 onKeyPress={e => handleKeyPress(e, index)}
+                                onFocus={() => setFocusedIndex(index)}
                                 keyboardType="number-pad"
                                 maxLength={6}
                                 selectTextOnFocus
@@ -184,8 +186,8 @@ export default function OtpScreen() {
                                     { 
                                         color: C.text,
                                         backgroundColor: C.card,
-                                        borderColor: digit ? C.primary : 'transparent',
-                                        borderWidth: digit ? 2 : 0,
+                                        borderColor: focusedIndex === index ? C.primary : (digit ? C.primaryLight : C.separator),
+                                        borderWidth: (focusedIndex === index || digit) ? 2 : 1.5,
                                     }
                                 ]}
                             />
