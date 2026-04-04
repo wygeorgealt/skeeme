@@ -14,13 +14,15 @@ class SignupVerificationMail extends Mailable
     use Queueable, SerializesModels;
 
     public $code;
+    public $email;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $code)
+    public function __construct(string $code, string $email)
     {
         $this->code = $code;
+        $this->email = $email;
     }
 
     /**

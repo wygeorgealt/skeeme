@@ -18,7 +18,8 @@ class OtpMail extends Mailable
      * Create a new message instance.
      */
     public function __construct(
-        public string $otp
+        public string $otp,
+        public string $email
     ) {}
 
     /**
@@ -40,6 +41,7 @@ class OtpMail extends Mailable
             view: 'emails.otp',
             with: [
                 'otp' => $this->otp,
+                'email' => $this->email,
             ],
         );
     }

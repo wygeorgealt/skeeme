@@ -49,7 +49,7 @@ class ForgotPasswordController
 
         // Send OTP via email
         try {
-            Mail::mailer('resend')->to($request->email)->send(new OtpMail($otp));
+            Mail::mailer('resend')->to($request->email)->send(new OtpMail($otp, $request->email));
         } catch (\Exception $e) {
             \Log::error('Failed to send OTP email: ' . $e->getMessage());
             return back()->with('error', 'Failed to send verification code. Please try again.');
