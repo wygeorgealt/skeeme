@@ -152,7 +152,7 @@ export default function BillingHistoryScreen() {
                             </TouchableOpacity>
                         </View>
                         <Text style={[s.planTitle, isDark ? s.textWhite : s.textSlate900]}>
-                            {user?.is_unlimited ? 'Unlimited Pro' : 'Free Academic'}
+                            {user?.plan_name === 'elite' || user?.is_unlimited ? 'Skeeme Elite' : (user?.plan_name === 'standard' ? 'Skeeme Standard' : 'Skeeme Free')}
                         </Text>
                         <Text style={s.planSubtitle}>
                             {user?.is_unlimited ? 'Fully unlocked learning companion' : `${user?.credits ?? 0} Credits remaining`}

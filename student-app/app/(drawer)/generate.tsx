@@ -21,6 +21,7 @@ import * as Print from 'expo-print';
 import { ShareCard } from '@/components/ui/ShareCard';
 import { RewardModal } from '@/components/RewardModal';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
+import { generateUUID } from '@/lib/utils';
 import CreditStatusBar from '@/components/CreditStatusBar';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 
@@ -239,10 +240,10 @@ export default function GenerateQuizScreen() {
                 fd.append('question_count', questionCount);
                 fd.append('difficulty', difficulty);
                 questionTypes.forEach((t, i) => fd.append(`question_types[${i}]`, t));
-                const idempotencyKey = crypto.randomUUID();
+                const idempotencyKey = generateUUID();
                 response = await api.post('quizzes/generate', fd, { headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': idempotencyKey } });
             } else {
-                const idempotencyKey = crypto.randomUUID();
+                const idempotencyKey = generateUUID();
                 response = await api.post('quizzes/generate', { topic, question_count: parseInt(questionCount), question_types: questionTypes, difficulty }, { headers: { 'Idempotency-Key': idempotencyKey } });
             }
             setQuestions(response.data.questions);
@@ -252,6 +253,7 @@ export default function GenerateQuizScreen() {
             }
             if (timerEnabled) startTimer(parseInt(timerMinutes) || 10);
         } catch (e: any) {
+            if (__DEV__) console.error('[Quiz Generation] Error:', e);
             let msg = 'Something went wrong. Please try again.';
             const data = e.response?.data;
 

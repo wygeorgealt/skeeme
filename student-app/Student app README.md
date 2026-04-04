@@ -71,8 +71,8 @@ Skeeme runs on a simple credit system. Generating quizzes costs credits — shor
 
 | Plan | Monthly Credits | Cost |
 |---|---|---|
-| Free | 500 (auto-refilled every month) | Free |
-| Unlimited Pro | Unlimited | $4/month |
+| Skeeme Free | 500 (auto-refilled every month) | Free |
+| Skeeme Elite | Unlimited | $4/month |
 
 Free students get **500 credits per month**, automatically topped up — no payment required to start.
 
@@ -168,9 +168,9 @@ The quiz generator is the heart of Skeeme. Here's how it works end to end:
 
 ### Credit System
 - Every new student account receives **500 free credits**.
-- Credits refill to **500 automatically on the 1st of each month** for free users.
+- Credits refill to **500 automatically on the 1st of each month** for Skeeme Free users.
 - Credit cost per quiz = `base_cost + (word_count_factor × question_count_factor)`.
-- Unlimited Pro subscribers bypass the credit system entirely.
+- Skeeme Elite subscribers bypass the credit system entirely.
 
 ---
 
@@ -203,7 +203,7 @@ The quiz generator is the heart of Skeeme. Here's how it works end to end:
 - [x] Study streaks and activity heatmap
 - [x] Dark mode
 - [x] Credit system with monthly free refill
-- [x] Unlimited Pro subscription
+- [x] Skeeme Elite subscription
 
 ---
 

@@ -1,4 +1,5 @@
 import { apiStandard } from './api';
+import { generateUUID } from './utils';
 
 export type ScanResult = {
     question: string;
@@ -26,7 +27,7 @@ export const scannerService = {
      * Sends an idempotency key per attempt to prevent duplicate credit deductions.
      */
     solve: async (image: string | any, mode: 'base64' | 'multipart' = 'base64'): Promise<SolveResponse> => {
-        const idempotencyKey = crypto.randomUUID();
+        const idempotencyKey = generateUUID();
         const idempotencyHeaders = { 'Idempotency-Key': idempotencyKey };
 
         if (mode === 'base64') {

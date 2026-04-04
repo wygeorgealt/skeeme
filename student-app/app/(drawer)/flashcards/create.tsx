@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
+import { generateUUID } from '@/lib/utils';
 import { Colors } from '@/constants/theme';
 import * as DocumentPicker from 'expo-document-picker';
 import { useQueryClient } from '@tanstack/react-query';
@@ -105,10 +106,10 @@ export default function GenerateFlashcardScreen() {
                 } as any);
                 fd.append('card_count', cardCount);
                 fd.append('difficulty', difficulty);
-                const idempotencyKey = crypto.randomUUID();
+                const idempotencyKey = generateUUID();
                 response = await api.post('flashcards/generate', fd, { headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': idempotencyKey } });
             } else {
-                const idempotencyKey = crypto.randomUUID();
+                const idempotencyKey = generateUUID();
                 response = await api.post('flashcards/generate', {
                     topic,
                     card_count: count,
@@ -133,6 +134,7 @@ export default function GenerateFlashcardScreen() {
             }
 
         } catch (e: any) {
+            if (__DEV__) console.error('[Flashcard Creation] Error:', e);
             let msg = 'Failed to generate flashcards. Please try again.';
             const data = e.response?.data;
             if (data?.message) msg = data.message;

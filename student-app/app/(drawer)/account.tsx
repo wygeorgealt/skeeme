@@ -206,7 +206,7 @@ export default function AccountScreen() {
                     <SettingsRow
                         icon={Sparkles} iconBg="#007AFF"
                         label="Current Plan"
-                        value={user.is_unlimited ? 'Unlimited Pro' : 'Free Academic'}
+                        value={user.plan_name === 'elite' || user.is_unlimited ? 'Skeeme Elite' : (user.plan_name === 'standard' ? 'Skeeme Standard' : 'Skeeme Free')}
                         isDark={isDark}
                     />
                     <SettingsRow

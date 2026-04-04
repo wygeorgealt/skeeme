@@ -40,7 +40,13 @@ class PracticeQuizController extends Controller
         }
 
         set_time_limit(600); // Massive boost for 50+ page documents
-        Log::info("Quiz Generation Started", $request->except(['file']));
+        \Log::info("[AI Quiz] Generation Started", [
+            'user_id' => auth()->id(),
+            'idempotency_key' => $request->header('Idempotency-Key'),
+            'topic' => $request->input('topic'),
+            'question_count' => $request->input('question_count'),
+            'difficulty' => $request->input('difficulty')
+        ]);
 
         try {
             // Log 1: Validation
@@ -98,7 +104,7 @@ class PracticeQuizController extends Controller
             
             $totalCost = $baseCost + $weightCost;
             if ($totalCost < 10) $totalCost = 10;
-            Log::info("Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'chunks' => $chunks]);
+            \Log::info("[AI Quiz] Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'chunks' => $chunks]);
 
             // 3. Check & Lock Credits (Atomic)
             $canProceed = DB::transaction(function() use ($user, $totalCost) {
@@ -139,7 +145,7 @@ class PracticeQuizController extends Controller
 
             try {
                 if ($useDeepseek) {
-                    Log::info("Circuit Breaker Active: Auto-routing Quiz to DeepSeek.");
+                    \Log::info("[AI Quiz] Circuit Breaker Active: Auto-routing to DeepSeek.");
                     $questions = $this->deepseek->generateQuestions(
                         [$sourceContent],
                         $validated['question_count'] ?? 10,
@@ -151,7 +157,11 @@ class PracticeQuizController extends Controller
                         $user->ai_preferences
                     );
                 } else {
-                    Log::info("Calling primary AI (Claude 3.5 Haiku) for quiz generation...");
+                    \Log::info("[AI Quiz] Calling primary AI service...", [
+                        'user_id' => $user->id,
+                        'service' => 'Anthropic',
+                        'prompt_preview' => substr($sourceContent, 0, 100)
+                    ]);
                     $questions = $this->aiService->generateQuestions(
                         [$sourceContent],
                         $validated['question_count'] ?? 10,
@@ -184,8 +194,11 @@ class PracticeQuizController extends Controller
             }
 
             if (empty($questions)) {
+                \Log::error("[AI Quiz] AI returned empty questions array");
                 throw new \Exception('AI returned no questions. Please try a different topic or document.');
             }
+            
+            \Log::info("[AI Quiz] Success! Questions generated.", ['count' => count($questions)]);
 
             // 6. Deduct Usage (Atomic) - Only AFTER successful generation
             if (!$user->is_unlimited_student) {
@@ -255,7 +268,10 @@ class PracticeQuizController extends Controller
             Log::warning("Validation Failed", $e->errors());
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            Log::error("API Quiz Gen Critical Error: " . $e->getMessage());
+            \Log::error("[AI Quiz] Critical Error: " . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'trace' => substr($e->getTraceAsString(), 0, 500)
+            ]);
             
             $message = $e->getMessage();
             if (str_contains(strtolower($message), 'failed') || 
