@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
 
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
@@ -12,6 +13,8 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Mail;
+use App\Models\User;
+use App\Mail\DynamicBulkMail;
 
 class EmailLab extends Page implements HasForms
 {
@@ -36,26 +39,43 @@ class EmailLab extends Page implements HasForms
     {
         return $schema
             ->schema([
-                Section::make('Email Configuration')
-                    ->description('Test your system emails here.')
+                Section::make('Bulk Email Composer')
+                    ->description('Send custom bulk emails using the new minimalist aesthetic.')
                     ->schema([
-                        TextInput::make('email')
-                            ->label('Recipient Email')
-                            ->email()
-                            ->required(),
-                        
-                        Select::make('template')
-                            ->label('Email Template')
+                        Select::make('target_audience')
+                            ->label('Target Audience')
                             ->options([
-                                'welcome' => 'Welcome Email',
-                                'welcome_admin' => 'Welcome Admin Email',
-                                'invoice' => 'Invoice Email',
-                                'payment_confirmation' => 'Payment Confirmation',
-                                'lecturer_approval' => 'Lecturer Approval Notification',
-                                'contact_message' => 'Contact Message (Original)',
+                                'test' => 'Test (My Email)',
+                                'all_users' => 'All Users',
+                                'students' => 'All Students',
+                                'new_users' => 'New Users (Last 7 Days)',
+                                'random_10' => 'Random 10 Users',
                             ])
+                            ->default('test')
                             ->required()
-                            ->native(false),
+                            ->reactive(),
+
+                        TextInput::make('test_email')
+                            ->label('Test Email Address')
+                            ->email()
+                            ->default(auth()->user()->email)
+                            ->visible(fn (\Closure $get) => $get('target_audience') === 'test')
+                            ->required(fn (\Closure $get) => $get('target_audience') === 'test'),
+
+                        TextInput::make('subject')
+                            ->label('Email Subject')
+                            ->required()
+                            ->columnSpanFull(),
+
+                        TextInput::make('header')
+                            ->label('Email Bold Header')
+                            ->required()
+                            ->columnSpanFull(),
+                        
+                        RichEditor::make('body')
+                            ->label('Email Body')
+                            ->required()
+                            ->columnSpanFull(),
                     ])->columns(2),
             ])
             ->statePath('data');
@@ -64,18 +84,41 @@ class EmailLab extends Page implements HasForms
     public function sendTest(): void
     {
         $state = $this->form->getState();
-        $email = $state['email'];
-        $template = $state['template'];
+        $audience = $state['target_audience'];
+        $subject = $state['subject'];
+        $header = $state['header'];
+        $body = $state['body'];
 
         try {
-            $mailable = $this->getMailable($template);
-            
-            Mail::mailer('resend')->to($email)->send($mailable);
+            $mailable = new DynamicBulkMail($subject, $header, $body);
+
+            $recipients = match ($audience) {
+                'test' => collect([ (object)['email' => $state['test_email']] ]),
+                'all_users' => User::all(['email']),
+                'students' => User::where('role', 'student')->get(['email']),
+                'new_users' => User::where('created_at', '>=', now()->subDays(7))->get(['email']),
+                'random_10' => User::inRandomOrder()->limit(10)->get(['email']),
+            };
+
+            if ($recipients->isEmpty()) {
+                 Notification::make()->title('No users found for target audience')->warning()->send();
+                 return;
+            }
+
+            foreach ($recipients as $recipient) {
+                // If it's test, send synchronously so we see errors immediately
+                if ($audience === 'test') {
+                    Mail::mailer('resend')->to($recipient->email)->send($mailable);
+                } else {
+                    Mail::mailer('resend')->to($recipient->email)->queue($mailable);
+                }
+            }
 
             Notification::make()
-                ->title('Email Sent!')
+                ->title("Email queued for " . $recipients->count() . " recipient(s)!")
                 ->success()
                 ->send();
+                
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Error Sending Email')
@@ -83,40 +126,5 @@ class EmailLab extends Page implements HasForms
                 ->danger()
                 ->send();
         }
-    }
-
-    protected function getMailable(string $template)
-    {
-        $user = \App\Models\User::first() ?? \App\Models\User::factory()->create();
-        
-        return match ($template) {
-            'welcome' => new \App\Mail\WelcomeEmail($user, 'Skeeme Test Academy'),
-            'welcome_admin' => new \App\Mail\WelcomeAdminEmail($user, 'Skeeme Test Academy'),
-            'invoice' => new \App\Mail\InvoiceEmail(
-                $invoice = (\App\Models\Invoice::first() ?? \App\Models\Invoice::factory()->create()),
-                'test@example.com',
-                'Test Invoice Subject'
-            ),
-            'payment_confirmation' => new \App\Mail\PaymentConfirmationEmail(
-                $invoice ?? \App\Models\Invoice::first() ?? \App\Models\Invoice::factory()->create(),
-                $user->school ?? \App\Models\School::first() ?? \App\Models\School::factory()->create(),
-                '5000',
-                now()->toFormattedDateString(),
-                'INV-12345'
-            ),
-            'lecturer_approval' => new \App\Mail\LecturerApprovalNotificationEmail(
-                $user,
-                $user->school ?? \App\Models\School::first() ?? \App\Models\School::factory()->create(),
-                'System Admin',
-                config('app.url') . '/login'
-            ),
-            'contact_message' => new \App\Mail\ContactMessage([
-                'name' => 'Test User',
-                'email' => 'test@user.com',
-                'subject' => 'Help needed!',
-                'message' => 'This is a test message from the Email Lab.'
-            ]),
-            default => throw new \Exception('Unknown template'),
-        };
     }
 }

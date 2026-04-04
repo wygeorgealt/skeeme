@@ -17,9 +17,10 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
-use App\Mail\PromotionalMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Collection;
+use App\Mail\DynamicBulkMail;
+use Filament\Forms\Components\RichEditor;
 
 class UsersTable
 {
@@ -107,35 +108,22 @@ class UsersTable
                     ->icon('heroicon-o-paper-airplane')
                     ->color('info')
                     ->form([
-                        Select::make('template')
-                            ->options([
-                                'welcome_v2' => 'Marketing: Welcome (Modern)',
-                                'stats_v2' => 'Marketing: Weekly Stats',
-                                'announcement_v2' => 'Marketing: Announcement',
-                                'survey_v2' => 'Marketing: Survey Request',
-                                'subscription_v2' => 'Marketing: Billing Confirmed',
-                                'upgrade_confirmation' => 'App: Upgrade Confirmed (Elite/Standard)',
-                                'welcome' => 'App: Welcome (Warm/Family Tone)',
-                            ])
-                            ->required()
-                            ->reactive()
-                            ->afterStateUpdated(fn ($state, callable $set) => $set('subject', match($state) {
-                                'welcome_v2' => 'Welcome to the future of learning!',
-                                'stats_v2' => 'Your Weekly Skeeme Growth Report',
-                                'announcement_v2' => 'Big news from the Skeeme team',
-                                'survey_v2' => 'We value your feedback',
-                                'subscription_v2' => 'Subscription Confirmed',
-                                'upgrade_confirmation' => 'Congratulations! Your Upgrade is Confirmed 🚀',
-                                'welcome' => 'Welcome to the Skeeme family! ❤️',
-                                default => 'A message from Skeeme',
-                            })),
                         TextInput::make('subject')
+                            ->label('Email Subject')
                             ->required()
                             ->default('A message from Skeeme'),
+                        TextInput::make('header')
+                            ->label('Email Bold Header')
+                            ->required()
+                            ->default('Important Update'),
+                        RichEditor::make('body')
+                            ->label('Email Body')
+                            ->required()
+                            ->default('<p>Hello there,</p>'),
                     ])
                     ->action(function (User $record, array $data) {
                         try {
-                            Mail::mailer('resend')->to($record->email)->send(new PromotionalMail($record, $data['template'], $data['subject']));
+                            Mail::mailer('resend')->to($record->email)->send(new DynamicBulkMail($data['subject'], $data['header'], $data['body']));
                             Notification::make()
                                 ->title('Email sent successfully')
                                 ->success()
@@ -157,35 +145,24 @@ class UsersTable
                         ->label('Send Bulk Email')
                         ->icon('heroicon-o-paper-airplane')
                         ->form([
-                            Select::make('template')
-                                ->options([
-                                    'welcome_v2' => 'Marketing: Welcome (Modern)',
-                                    'stats_v2' => 'Marketing: Weekly Stats',
-                                    'announcement_v2' => 'Marketing: Announcement',
-                                    'survey_v2' => 'Marketing: Survey Request',
-                                    'subscription_v2' => 'Marketing: Billing Confirmed',
-                                    'upgrade_confirmation' => 'App: Upgrade Confirmed (Elite/Standard)',
-                                    'welcome' => 'App: Welcome (Warm/Family Tone)',
-                                ])
-                                ->required()
-                                ->reactive()
-                                ->afterStateUpdated(fn ($state, callable $set) => $set('subject', match($state) {
-                                    'welcome_v2' => 'Welcome to the future of learning!',
-                                    'stats_v2' => 'Your Weekly Skeeme Growth Report',
-                                    'announcement_v2' => 'Big news from the Skeeme team',
-                                    'survey_v2' => 'We value your feedback',
-                                    'subscription_v2' => 'Subscription Confirmed',
-                                    'upgrade_confirmation' => 'Congratulations! Your Upgrade is Confirmed 🚀',
-                                    'welcome' => 'Welcome to the Skeeme family! ❤️',
-                                    default => 'A message from Skeeme',
-                                })),
                             TextInput::make('subject')
+                                ->label('Email Subject')
                                 ->required()
                                 ->default('A message from Skeeme'),
+                            TextInput::make('header')
+                                ->label('Email Bold Header')
+                                ->required()
+                                ->default('Important Update'),
+                            RichEditor::make('body')
+                                ->label('Email Body')
+                                ->required()
+                                ->default('<p>Hello there,</p>'),
                         ])
                         ->action(function (Collection $records, array $data) {
-                            $records->each(function (User $user) use ($data) {
-                                Mail::mailer('resend')->to($user->email)->queue(new PromotionalMail($user, $data['template'], $data['subject']));
+                            $mailable = new DynamicBulkMail($data['subject'], $data['header'], $data['body']);
+                            
+                            $records->each(function (User $user) use ($mailable) {
+                                Mail::mailer('resend')->to($user->email)->queue($mailable);
                             });
 
                             Notification::make()
