@@ -52,7 +52,7 @@ export default function SupportScreen() {
             style={{ flex: 1, backgroundColor: C.background }}
         >
             <StatusBar style={isDark ? 'light' : 'dark'} />
-            
+
             {/* Header */}
             <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
                 <TouchableOpacity
@@ -76,7 +76,8 @@ export default function SupportScreen() {
                     How can we help?
                 </Text>
                 <Text style={[s.heroSubtitle, { color: C.textSecondary }]}>
-                    Describe the issue or feedback below. We will reply to your registered email address.
+                    Describe the issue or feedback below. You can also reach us directly at{' '}
+                    <Text style={{ fontWeight: '700', color: C.primary }}>noreply@contact.skeeme.com</Text>
                 </Text>
 
                 <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>

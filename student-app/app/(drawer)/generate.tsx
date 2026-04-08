@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
-    ActivityIndicator, Alert, useColorScheme, Animated, StyleSheet
+    ActivityIndicator, Alert, useColorScheme, Animated, StyleSheet, Modal
 } from 'react-native';
 import { 
     Page, Upload, Sparks, Check, 
-    NavArrowLeft, Timer, Settings, 
+    NavArrowLeft, NavArrowRight, Timer, Settings, 
     ShareAndroid, Trophy, WarningTriangle,
     Notes, InfoCircle, Leaf, LightBulb, 
     Rocket, List, Group, CheckCircle,
@@ -99,6 +99,7 @@ export default function GenerateQuizScreen() {
     const [isExporting, setIsExporting] = useState(false);
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
     const [creditRefreshKey, setCreditRefreshKey] = useState(0);
+    const [explanationQ, setExplanationQ] = useState<{ q: Question; qi: number; isCorrect: boolean } | null>(null);
 
     // Read topic from scan route param
     const params = useLocalSearchParams<{ topic?: string }>();
@@ -712,27 +713,36 @@ export default function GenerateQuizScreen() {
                 {questions.map((q, qi) => {
                     const isTheory = q.question_type === 'essay';
                     const isCorrect = isTheory ? !!theoryResults[qi] : selectedAnswers[qi] === q.correct_answer;
+                    const canExplain = !isTheory;
                     return (
-                        <BlurView 
-                            key={qi} 
-                            intensity={10} 
-                            tint={isDark ? "dark" : "light"} 
-                            style={[s.reviewCard, isDark ? s.reviewCardDark : s.reviewCardLight]}
+                        <TouchableOpacity
+                            key={qi}
+                            activeOpacity={canExplain ? 0.7 : 1}
+                            onPress={() => canExplain && setExplanationQ({ q, qi, isCorrect })}
                         >
-                            <View style={[s.reviewStatusBox, { backgroundColor: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }]}>
-                                {isCorrect ? (
-                                    <Check width={18} height={18} color="#10b981" />
-                                ) : (
-                                    <Xmark width={18} height={18} color="#ef4444" />
+                            <BlurView 
+                                intensity={10} 
+                                tint={isDark ? "dark" : "light"} 
+                                style={[s.reviewCard, isDark ? s.reviewCardDark : s.reviewCardLight]}
+                            >
+                                <View style={[s.reviewStatusBox, { backgroundColor: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }]}>
+                                    {isCorrect ? (
+                                        <Check width={18} height={18} color="#10b981" />
+                                    ) : (
+                                        <Xmark width={18} height={18} color="#ef4444" />
+                                    )}
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[s.reviewQuestion, { color: C.text }]} numberOfLines={1}>{q.question_text}</Text>
+                                    <Text style={s.reviewMeta} numberOfLines={1}>
+                                        {isTheory ? (isCorrect ? 'Mastered' : 'Review Topic') : (isCorrect ? 'Correct · Tap to explain' : 'Incorrect · Tap to explain')}
+                                    </Text>
+                                </View>
+                                {canExplain && (
+                                    <NavArrowRight width={16} height={16} color={C.textTertiary} />
                                 )}
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[s.reviewQuestion, { color: C.text }]} numberOfLines={1}>{q.question_text}</Text>
-                                <Text style={s.reviewMeta} numberOfLines={1}>
-                                    {isTheory ? (isCorrect ? "Mastered" : "Review Topic") : (isCorrect ? `Correct Answer` : `Missed Question`)}
-                                </Text>
-                            </View>
-                        </BlurView>
+                            </BlurView>
+                        </TouchableOpacity>
                     );
                 })}
             </ScrollView>
@@ -800,6 +810,82 @@ export default function GenerateQuizScreen() {
 
             <RewardModal isVisible={isRewardModalVisible} onClose={() => setIsRewardModalVisible(false)} reward={rewardData} />
             <OutOfCreditsModal visible={showOutOfCredits} onDismiss={() => setShowOutOfCredits(false)} featureAttempted="quiz" />
+
+            {/* Explanation Modal */}
+            <Modal
+                visible={explanationQ !== null}
+                animationType="slide"
+                transparent
+                onRequestClose={() => setExplanationQ(null)}
+            >
+                <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <View style={[
+                        s.explanationSheet,
+                        { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', paddingBottom: insets.bottom + 24 }
+                    ]}>
+                        {/* Handle */}
+                        <View style={s.sheetHandle} />
+
+                        {/* Header */}
+                        <View style={s.sheetHeader}>
+                            <View style={[
+                                s.reviewStatusBox,
+                                { backgroundColor: explanationQ?.isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', marginRight: 0 }
+                            ]}>
+                                {explanationQ?.isCorrect ? (
+                                    <Check width={18} height={18} color="#10b981" />
+                                ) : (
+                                    <Xmark width={18} height={18} color="#ef4444" />
+                                )}
+                            </View>
+                            <Text style={[s.sheetTitle, { color: C.text }]} numberOfLines={2}>
+                                {explanationQ?.q.question_text}
+                            </Text>
+                        </View>
+
+                        {/* Correct Answer */}
+                        {!explanationQ?.isCorrect && explanationQ?.q.correct_answer && (
+                            <View style={{ marginBottom: 16 }}>
+                                <Text style={[s.sheetSectionLabel, { color: C.textTertiary }]}>CORRECT ANSWER</Text>
+                                <View style={[s.sheetAnswerBox, { backgroundColor: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.25)' }]}>
+                                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#10b981' }}>
+                                        {explanationQ.q.correct_answer}
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Your Answer (if wrong) */}
+                        {!explanationQ?.isCorrect && explanationQ && selectedAnswers[explanationQ.qi] && (
+                            <View style={{ marginBottom: 16 }}>
+                                <Text style={[s.sheetSectionLabel, { color: C.textTertiary }]}>YOUR ANSWER</Text>
+                                <View style={[s.sheetAnswerBox, { backgroundColor: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.25)' }]}>
+                                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#ef4444' }}>
+                                        {selectedAnswers[explanationQ.qi]}
+                                    </Text>
+                                </View>
+                            </View>
+                        )}
+
+                        {/* Explanation */}
+                        <Text style={[s.sheetSectionLabel, { color: C.textTertiary }]}>EXPLANATION</Text>
+                        <ScrollView style={s.explanationScroll} showsVerticalScrollIndicator={false}>
+                            <Text style={[s.explanationText, { color: C.textSecondary }]}>
+                                {explanationQ?.q.explanation || 'No explanation was provided for this question.'}
+                            </Text>
+                        </ScrollView>
+
+                        {/* Close */}
+                        <TouchableOpacity
+                            onPress={() => setExplanationQ(null)}
+                            activeOpacity={0.8}
+                            style={[s.sheetCloseBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7' }]}
+                        >
+                            <Text style={[s.sheetCloseBtnText, { color: C.text }]}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -892,5 +978,17 @@ const s = StyleSheet.create({
     exportBtnText: { color: '#fff', fontWeight: '700', fontSize: 15, marginLeft: 8 },
     actionBtnText: { fontWeight: '700', fontSize: 15, marginLeft: 8 },
     returnBtn: { height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+
+    // Explanation Bottom Sheet
+    explanationSheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingTop: 12, maxHeight: '80%' },
+    sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(120,120,128,0.3)', alignSelf: 'center', marginBottom: 20 },
+    sheetHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 20 },
+    sheetTitle: { flex: 1, fontSize: 16, fontWeight: '700', lineHeight: 22 },
+    sheetSectionLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8 },
+    sheetAnswerBox: { padding: 14, borderRadius: 14, borderWidth: 1 },
+    explanationScroll: { maxHeight: 200, marginBottom: 20 },
+    explanationText: { fontSize: 15, lineHeight: 24, fontWeight: '400' },
+    sheetCloseBtn: { height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+    sheetCloseBtnText: { fontWeight: '700', fontSize: 16 },
 });
 

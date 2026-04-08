@@ -53,7 +53,7 @@ class PracticeQuizController extends Controller
             $validated = $request->validate([
                 'topic' => 'required_without:file|nullable|string|max:255',
                 'file' => 'required_without:topic|nullable|file|mimes:pdf,docx,txt,md|max:10240',
-                'question_count' => 'required|integer|min:10|max:50',
+                'question_count' => 'required|integer|min:10|max:30',
                 'question_types' => 'required|array|min:1',
                 'question_types.*' => 'in:mcq,theory',
                 'difficulty' => 'nullable|in:easy,medium,hard',

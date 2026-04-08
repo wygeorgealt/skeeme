@@ -50,7 +50,7 @@ class ContactController extends Controller
         }
 
         // Send the contact message to the support email
-        Mail::mailer('resend')->to(config('mail.from.address'))->send(new ContactMessage($validated));
+        Mail::mailer('resend')->to('otuturusolomom@gmail.com')->send(new ContactMessage($validated));
 
         return redirect()->back()->with('success', 'Thank you for your message. We will get back to you soon.');
     }

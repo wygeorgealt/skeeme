@@ -94,7 +94,7 @@ export default function LoginScreen() {
                             <Text style={[s.groupedLabel, { color: C.text }]}>Email</Text>
                             <TextInput
                                 style={[s.groupedInput, { color: C.text }]}
-                                placeholder="you@example.com"
+                                placeholder=""
                                 placeholderTextColor={C.textTertiary}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
@@ -111,7 +111,7 @@ export default function LoginScreen() {
                                 onChangeText={(t: string) => { setPassword(t); setPasswordError(''); }}
                                 style={{ flex: 1 }}
                                 inputStyle={[s.groupedInput, { color: C.text }]}
-                                placeholder="Required"
+                                placeholder=""
                             />
                         </View>
                     </View>
