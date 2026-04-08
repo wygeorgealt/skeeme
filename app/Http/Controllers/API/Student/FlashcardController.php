@@ -179,7 +179,12 @@ class FlashcardController extends Controller
 
         // 4. Generate Synchronously (Circuit Breaker implementation)
         try {
-            $useDeepseek = Cache::get('use_deepseek_fallback', false);
+            $activeProvider = Cache::get('skeeme:active_ai_provider', 'claude');
+            if ($activeProvider === 'none') {
+                throw new \Exception('Skeeme AI is currently undergoing scheduled maintenance. Please try again later.');
+            }
+
+            $useDeepseek = ($activeProvider === 'deepseek') || Cache::get('use_deepseek_fallback', false);
             $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-3-5-haiku-20241022';
             
             // Dynamic Timeout based on Network Quality Header

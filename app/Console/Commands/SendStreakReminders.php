@@ -35,7 +35,7 @@ class SendStreakReminders extends Command
             ->whereHas('studyStreak', function ($query) use ($today) {
                 // Must have a streak greater than 0 and the streak was last updated yesterday.
                 $query->where('current_streak', '>', 0)
-                      ->where('last_activity_date', '=', $today->copy()->subDay()->toDateString());
+                      ->where('last_study_date', '=', $today->copy()->subDay()->toDateString());
             })
             ->whereDoesntHave('quizSessions', function ($query) use ($today) {
                 // Ignore users who have already taken a quiz today.

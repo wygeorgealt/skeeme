@@ -54,6 +54,20 @@ Schedule::command('app:cleanup-pending-students')
     ->hourly()
     ->description('Deletes student accounts that have been in pending status for more than 2 hours');
 
+// AI provider health check — every 2.5 hours
+// Split into two cron entries since cron can't express 150-minute intervals
+Schedule::command('app:ai-health-check')
+    ->cron('0 0,5,10,15,20 * * *')
+    ->description('AI health check (on the hour)');
+Schedule::command('app:ai-health-check')
+    ->cron('30 2,7,12,17,22 * * *')
+    ->description('AI health check (on the half-hour)');
+
+// Reengagement Campaign: Nudge students who have been inactive for 7, 14, or 30 days
+Schedule::command('app:send-reengagement-campaign')
+    ->dailyAt('12:00')
+    ->description('Send push notifications to inactive students');
+
 use Mailtrap\Helper\ResponseHelper;
 use Mailtrap\MailtrapClient;
 use Mailtrap\Mime\MailtrapEmail;
@@ -94,7 +108,7 @@ Artisan::command('send-test-emails {email}', function ($email) {
     $this->line('✓ Welcome Email sent');
 
     // 2. OTP Mail
-    \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\OtpMail('984231'));
+    \Illuminate\Support\Facades\Mail::to($email)->send(new \App\Mail\OtpMail('984231', $email));
     $this->line('✓ OTP Email sent');
 
     // 3. Invoice Email

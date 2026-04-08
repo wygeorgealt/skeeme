@@ -132,7 +132,15 @@ class PracticeQuizController extends Controller
                 if ($type === 'theory') $types[] = 'essay';
             }
 
-            $useDeepseek = Cache::get('use_deepseek_fallback', false);
+            // --- AI Provider Baseline (Fast Routing) ---
+            $activeProvider = Cache::get('skeeme:active_ai_provider', 'claude');
+            
+            if ($activeProvider === 'none') {
+                \Log::error("[AI Quiz] Global AI Outage active. Rejecting request instantly.");
+                throw new \Exception('Skeeme AI is currently undergoing scheduled maintenance. Please try again later.');
+            }
+
+            $useDeepseek = ($activeProvider === 'deepseek') || Cache::get('use_deepseek_fallback', false);
             $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-3-5-haiku-20241022';
             
             // Dynamic Timeout based on Network Quality Header
@@ -296,7 +304,11 @@ class PracticeQuizController extends Controller
         ]);
 
         try {
-            $useDeepseek = Cache::get('use_deepseek_fallback', false);
+            $activeProvider = Cache::get('skeeme:active_ai_provider', 'claude');
+            if ($activeProvider === 'none') {
+                throw new \Exception('Skeeme AI is currently undergoing scheduled maintenance. Please try again later.');
+            }
+            $useDeepseek = ($activeProvider === 'deepseek') || Cache::get('use_deepseek_fallback', false);
             
             $networkType = $request->header('X-Network-Type');
             $timeout = ($networkType === 'cellular') ? 15 : 30;
