@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, useColorScheme, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
-import { Eye, EyeClosed } from 'iconoir-react-native';
+import { Eye, EyeClosed } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
 
 interface PasswordFieldProps {

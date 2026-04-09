@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import { View, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Compass, Home } from 'iconoir-react-native';
+import { Compass, Home } from 'lucide-react-native';
 
 export default function NotFoundScreen() {
     return (

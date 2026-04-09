@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Modal, Dimensions, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Camera, Book, Flash, NavArrowRight, Check } from 'iconoir-react-native';
+import { Camera, Book, Zap, ChevronRight, Check } from 'lucide-react-native';
 import Animated, { FadeIn, FadeOut, SlideInRight, SlideOutLeft } from 'react-native-reanimated';
 
 const { width, height } = Dimensions.get('window');
@@ -17,7 +17,7 @@ const slides = [
         id: 1,
         title: "Welcome to Skeeme",
         description: "The AI tutor that helps you study 5x faster. Let's show you the ropes.",
-        icon: <Flash width={48} height={48} color="#8B5CF6" />,
+        icon: <Zap width={48} height={48} color="#8B5CF6" />,
         color: "#8B5CF6"
     },
     {
@@ -29,7 +29,7 @@ const slides = [
     },
     {
         id: 3,
-        title: "Master Your Notes",
+        title: "Master Your NotepadText",
         description: "Convert your files into interactive Quizzes and Flashcards. Study smarter, not harder.",
         icon: <Book width={48} height={48} color="#8B5CF6" />,
         color: "#8B5CF6"
@@ -99,7 +99,7 @@ export function TutorialModal({ visible, onDismiss }: TutorialModalProps) {
                         {currentSlide === slides.length - 1 ? (
                             <Check width={20} height={20} color="white" />
                         ) : (
-                            <NavArrowRight width={20} height={20} color="white" />
+                            <ChevronRight width={20} height={20} color="white" />
                         )}
                     </TouchableOpacity>
 

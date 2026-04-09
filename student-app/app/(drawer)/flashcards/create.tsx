@@ -3,10 +3,7 @@ import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
     ActivityIndicator, Alert, useColorScheme, StyleSheet
 } from 'react-native';
-import { 
-    Page, Upload, Sparks, NavArrowLeft,
-    Leaf, LightBulb, Rocket, CheckCircle
-} from 'iconoir-react-native';
+import { FileText, Upload, Sparkles, ChevronLeft, Leaf, Lightbulb, Rocket, CircleCheck } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
@@ -207,7 +204,7 @@ export default function GenerateFlashcardScreen() {
                             </View>
                         ) : selectedFile ? (
                             <>
-                                <Page width={32} height={32} color="#007AFF" style={{ marginBottom: 12 }} />
+                                <FileText width={32} height={32} color="#007AFF" style={{ marginBottom: 12 }} />
                                 <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
                                 <Text style={[s.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
                             </>
@@ -247,7 +244,7 @@ export default function GenerateFlashcardScreen() {
                 <View style={{ gap: 12, marginBottom: 24 }}>
                     {[
                         { key: 'easy', label: 'Easy', icon: Leaf, desc: 'Focus on fundamentals' },
-                        { key: 'medium', label: 'Medium', icon: LightBulb, desc: 'Comprehensive coverage' },
+                        { key: 'medium', label: 'Medium', icon: Lightbulb, desc: 'Comprehensive coverage' },
                         { key: 'hard', label: 'Hard', icon: Rocket, desc: 'Deep analytical questions' },
                     ].map(opt => {
                         const isSelected = difficulty === opt.key;
@@ -266,7 +263,7 @@ export default function GenerateFlashcardScreen() {
                                     <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
                                     <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
                                 </View>
-                                {isSelected && <CheckCircle width={22} height={22} color="#007AFF" />}
+                                {isSelected && <CircleCheck width={22} height={22} color="#007AFF" />}
                             </TouchableOpacity>
                         );
                     })}

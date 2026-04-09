@@ -3,14 +3,7 @@ import {
     View, Text, TextInput, TouchableOpacity, ScrollView,
     ActivityIndicator, Alert, useColorScheme, Animated, StyleSheet, Modal
 } from 'react-native';
-import { 
-    Page, Upload, Sparks, Check, 
-    NavArrowLeft, NavArrowRight, Timer, Settings, 
-    ShareAndroid, Trophy, WarningTriangle,
-    Notes, InfoCircle, Leaf, LightBulb, 
-    Rocket, List, Group, CheckCircle,
-    Download, Xmark
-} from 'iconoir-react-native';
+import { FileText, Upload, Sparkles, Check, ChevronLeft, ChevronRight, Timer, Settings, Share2, Trophy, TriangleAlert, NotepadText, Info, Leaf, Lightbulb, Rocket, List, Users, CircleCheck, Download, X } from 'lucide-react-native';
 import { useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -38,14 +31,14 @@ import { Colors, Spacing, Radius } from '@/constants/theme';
 // ══════════════════════════════════════════════════════════════════════════════
 const DIFFICULTY_OPTIONS = [
     { key: 'easy', label: 'Easy', icon: Leaf, desc: 'Focus on fundamentals' },
-    { key: 'medium', label: 'Medium', icon: LightBulb, desc: 'Comprehensive coverage' },
+    { key: 'medium', label: 'Medium', icon: Lightbulb, desc: 'Comprehensive coverage' },
     { key: 'hard', label: 'Hard', icon: Rocket, desc: 'Deep analytical questions' },
 ];
 
 const FORMAT_OPTIONS = [
     { key: 'mcq', label: 'MCQ', icon: List, desc: 'Multiple choice questions' },
-    { key: 'theory', label: 'Theory', icon: Notes, desc: 'Essay & analysis' },
-    { key: 'both', label: 'Mixed', icon: Group, desc: 'Combination of both' },
+    { key: 'theory', label: 'Theory', icon: NotepadText, desc: 'Essay & analysis' },
+    { key: 'both', label: 'Mixed', icon: Users, desc: 'Combination of both' },
 ];
 
 const LOADING_STAGES_FILE = ['Analyzing Document...', 'Extracting Context...', 'Generating Questions...', 'Finalizing Quiz...', 'Almost Ready...'];
@@ -324,7 +317,7 @@ export default function GenerateQuizScreen() {
             const res = await api.post('quizzes/history', payload);
             setIsSaved(true);
             
-            // Refresh user stats for the dashboard
+            // RefreshCcw user stats for the dashboard
             const userRes = await api.get('me');
             if (userRes.data) {
                 updateUser(userRes.data);
@@ -418,7 +411,7 @@ export default function GenerateQuizScreen() {
                                 </View>
                             ) : selectedFile ? (
                                 <>
-                                    <Page width={32} height={32} color="#007AFF" style={{ marginBottom: 12 }} />
+                                    <FileText width={32} height={32} color="#007AFF" style={{ marginBottom: 12 }} />
                                     <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
                                     <Text style={[s.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
                                 </>
@@ -472,7 +465,7 @@ export default function GenerateQuizScreen() {
                                         <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
                                         <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
                                     </View>
-                                    {isSelected && <CheckCircle width={22} height={22} color="#007AFF" />}
+                                    {isSelected && <CircleCheck width={22} height={22} color="#007AFF" />}
                                 </TouchableOpacity>
                             );
                         })}
@@ -497,7 +490,7 @@ export default function GenerateQuizScreen() {
                                         <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
                                         <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
                                     </View>
-                                    {isSelected && <CheckCircle width={22} height={22} color="#007AFF" />}
+                                    {isSelected && <CircleCheck width={22} height={22} color="#007AFF" />}
                                 </TouchableOpacity>
                             );
                         })}
@@ -603,13 +596,13 @@ export default function GenerateQuizScreen() {
                                         textColor = '#34C759';
                                         letterBg = 'rgba(52,199,89,0.1)';
                                         letterColor = '#34C759';
-                                        icon = <CheckCircle width={20} height={20} color="#34C759" />;
+                                        icon = <CircleCheck width={20} height={20} color="#34C759" />;
                                     } else if (isSelected && !isCorrectOpt) {
                                         borderColor = '#FF3B30';
                                         textColor = '#FF3B30';
                                         letterBg = 'rgba(255,59,48,0.1)';
                                         letterColor = '#FF3B30';
-                                        icon = <Xmark width={20} height={20} color="#FF3B30" />;
+                                        icon = <X width={20} height={20} color="#FF3B30" />;
                                     }
                                 } else if (isSelected) {
                                     borderColor = '#007AFF';
@@ -642,6 +635,28 @@ export default function GenerateQuizScreen() {
                                     </TouchableOpacity>
                                 );
                             })}
+
+                            {isRevealed && (() => {
+                                // Strip AI's baked-in affirmative prefixes since this card handles the state
+                                let cleanExpl = q.explanation || `The correct answer is: ${q.correct_answer}. Keep practicing!`;
+                                cleanExpl = cleanExpl.replace(/^(correct|perfect|yes|exactly|that is correct|right|spot on)[,!\.]\s*/i, '');
+                                // Capitalize first letter if it was lowercased by the strip
+                                cleanExpl = cleanExpl.charAt(0).toUpperCase() + cleanExpl.slice(1);
+
+                                return (
+                                    <View style={{ marginTop: 16, marginBottom: 24, padding: 16, backgroundColor: isDark ? 'rgba(0,122,255,0.1)' : '#F0F8FF', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,122,255,0.3)' }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                            <Lightbulb width={20} height={20} color="#007AFF" />
+                                            <Text style={{ marginLeft: 8, fontSize: 16, fontWeight: '700', color: '#007AFF' }}>
+                                                {selectedAnswers[currentQIndex] === q.correct_answer ? 'Spot on! 🎉' : 'Nice try, but not quite! 🤔'}
+                                            </Text>
+                                        </View>
+                                        <Text style={{ fontSize: 15, color: C.text, lineHeight: 22 }}>
+                                            {cleanExpl}
+                                        </Text>
+                                    </View>
+                                );
+                            })()}
                         </View>
                     ) : (
                         <TheoryCard key={currentQIndex} q={q} qi={currentQIndex} onGraded={(qi, correct) => {
@@ -675,9 +690,9 @@ export default function GenerateQuizScreen() {
     const percentage = Math.round((correctCount / questions.length) * 100);
     const getRemark = (pct: number) => {
         if (pct >= 90) return { title: "GENIUS!", subtitle: "You've completely mastered this topic!", icon: Trophy };
-        if (pct >= 75) return { title: "WELL DONE!", subtitle: "Excellent performance, keep it up!", icon: CheckCircle };
-        if (pct >= 50) return { title: "SOLID EFFORT!", subtitle: "Good job, but there's room to grow.", icon: InfoCircle };
-        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: WarningTriangle };
+        if (pct >= 75) return { title: "WELL DONE!", subtitle: "Excellent performance, keep it up!", icon: CircleCheck };
+        if (pct >= 50) return { title: "SOLID EFFORT!", subtitle: "Good job, but there's room to grow.", icon: Info };
+        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: TriangleAlert };
     };
     const remark = getRemark(percentage);
 
@@ -696,7 +711,7 @@ export default function GenerateQuizScreen() {
                     {/* Meta Info */}
                     <View style={s.resultsMeta}>
                         <View style={s.metaCard}>
-                            <CheckCircle width={16} height={16} color="#4ADE80" />
+                            <CircleCheck width={16} height={16} color="#4ADE80" />
                             <Text style={[s.metaText, { color: C.textSecondary }]}>{correctCount} OK</Text>
                         </View>
                         <View style={s.metaCard}>
@@ -729,7 +744,7 @@ export default function GenerateQuizScreen() {
                                     {isCorrect ? (
                                         <Check width={18} height={18} color="#10b981" />
                                     ) : (
-                                        <Xmark width={18} height={18} color="#ef4444" />
+                                        <X width={18} height={18} color="#ef4444" />
                                     )}
                                 </View>
                                 <View style={{ flex: 1 }}>
@@ -739,7 +754,7 @@ export default function GenerateQuizScreen() {
                                     </Text>
                                 </View>
                                 {canExplain && (
-                                    <NavArrowRight width={16} height={16} color={C.textTertiary} />
+                                    <ChevronRight width={16} height={16} color={C.textTertiary} />
                                 )}
                             </BlurView>
                         </TouchableOpacity>
@@ -774,7 +789,7 @@ export default function GenerateQuizScreen() {
                             <ActivityIndicator size="small" color={C.primary} />
                         ) : (
                             <>
-                                <ShareAndroid width={18} height={18} color={C.text} />
+                                <Share2 width={18} height={18} color={C.text} />
                                 <Text style={[s.actionBtnText, { color: C.text }]}>Share</Text>
                             </>
                         )}
@@ -791,7 +806,7 @@ export default function GenerateQuizScreen() {
                                 <ActivityIndicator size="small" color="white" />
                             ) : (
                                 <>
-                                    <Page width={18} height={18} color="white" />
+                                    <FileText width={18} height={18} color="white" />
                                     <Text style={s.exportBtnText}>Export</Text>
                                 </>
                             )}
@@ -835,7 +850,7 @@ export default function GenerateQuizScreen() {
                                 {explanationQ?.isCorrect ? (
                                     <Check width={18} height={18} color="#10b981" />
                                 ) : (
-                                    <Xmark width={18} height={18} color="#ef4444" />
+                                    <X width={18} height={18} color="#ef4444" />
                                 )}
                             </View>
                             <Text style={[s.sheetTitle, { color: C.text }]} numberOfLines={2}>

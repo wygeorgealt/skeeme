@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import React from 'react';
 import { View, TouchableOpacity, useColorScheme, Share, Platform } from 'react-native';
-import { FireFlame, ShareAndroid } from 'iconoir-react-native';
+import { Flame, Share2 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
 
@@ -84,7 +84,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
                 {/* Icon */}
                 <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF620', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
-                    <FireFlame width={28} height={28} color="#8B5CF6" />
+                    <Flame width={28} height={28} color="#8B5CF6" />
                 </View>
 
                 {/* Copy */}
@@ -146,7 +146,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                             gap: 6,
                         }}
                     >
-                        <ShareAndroid width={16} height={16} color={isDark ? '#CBD5E1' : '#475569'} />
+                        <Share2 width={16} height={16} color={isDark ? '#CBD5E1' : '#475569'} />
                         <Text style={{ color: isDark ? '#CBD5E1' : '#475569', fontSize: 13, fontWeight: '700' }}>
                             Refer a friend
                         </Text>

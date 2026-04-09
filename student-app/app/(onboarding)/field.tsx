@@ -4,18 +4,18 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Flask, Tools, BookStack, Suitcase, Page, Plus, ViewGrid, CheckCircle } from 'iconoir-react-native';
+import { FlaskConical, PenTool, Library, Briefcase, FileText, Plus, LayoutGrid, CircleCheck } from 'lucide-react-native';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const FIELDS = [
-    { key: 'sciences', label: 'Sciences', icon: Flask },
-    { key: 'engineering', label: 'Engineering', icon: Tools },
-    { key: 'humanities', label: 'Humanities', icon: BookStack },
-    { key: 'business', label: 'Business', icon: Suitcase },
-    { key: 'law', label: 'Law', icon: Page },
+    { key: 'sciences', label: 'Sciences', icon: FlaskConical },
+    { key: 'engineering', label: 'Engineering', icon: PenTool },
+    { key: 'humanities', label: 'Humanities', icon: Library },
+    { key: 'business', label: 'Business', icon: Briefcase },
+    { key: 'law', label: 'Law', icon: FileText },
     { key: 'medicine', label: 'Medicine', icon: Plus },
-    { key: 'other', label: 'Other', icon: ViewGrid },
+    { key: 'other', label: 'Other', icon: LayoutGrid },
 ];
 
 export default function FieldScreen() {
@@ -85,7 +85,7 @@ export default function FieldScreen() {
                                         </View>
                                         <Text style={[s.optionLabel, { color: textColor }]}>{field.label}</Text>
                                         {isSelected && (
-                                            <CheckCircle width={24} height={24} color="#007AFF" />
+                                            <CircleCheck width={24} height={24} color="#007AFF" />
                                         )}
                                     </TouchableOpacity>
                                 </Animated.View>

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SunLight, Compass, CheckCircle } from 'iconoir-react-native';
+import { Sun, Compass, CircleCheck } from 'lucide-react-native';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,7 +13,7 @@ const STYLES = [
         key: 'simple',
         label: 'Simple & Clear',
         desc: "Break it down like I'm new to this topic.",
-        icon: SunLight,
+        icon: Sun,
     },
     {
         key: 'detailed',
@@ -93,7 +93,7 @@ export default function StyleScreen() {
                                             <Text style={[s.optionDesc, { color: subtextColor }]}>{style.desc}</Text>
                                         </View>
                                         {isSelected && (
-                                            <CheckCircle width={26} height={26} color="#007AFF" />
+                                            <CircleCheck width={26} height={26} color="#007AFF" />
                                         )}
                                     </TouchableOpacity>
                                 </Animated.View>

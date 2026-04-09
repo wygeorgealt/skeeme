@@ -8,18 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { 
-    EditPencil, 
-    Sparkles, 
-    Rhombus, 
-    ArrowUpCircle, 
-    MagicWand, 
-    Bell, 
-    HelpCircle, 
-    ShieldCheck, 
-    DocumentText,
-    NavArrowRight
-} from 'iconoir-react-native';
+import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
 import { Modal } from 'react-native';
@@ -67,10 +56,10 @@ const s = StyleSheet.create({
 
 // ─── Settings Row ─────────────────────────────────────────────────────────────
 function SettingsRow({
-    icon: Icon, iconBg, label, value, onPress, isLast = false, isDark, destructive = false,
+    icon, iconBg, label, value, onPress, isLast = false, isDark, destructive = false,
     hasSwitch = false, switchValue = false, onSwitch = () => {}
 }: {
-    icon?: React.ElementType; iconBg?: string; label: string; value?: string;
+    icon?: IconSymbolName; iconBg?: string; label: string; value?: string;
     onPress?: () => void; isLast?: boolean; isDark: boolean; destructive?: boolean;
     hasSwitch?: boolean; switchValue?: boolean; onSwitch?: (val: boolean) => void;
 }) {
@@ -81,12 +70,12 @@ function SettingsRow({
             activeOpacity={hasSwitch ? 1 : 0.7}
             style={[s.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }]}
         >
-            {Icon && iconBg && (
+            {icon && iconBg && (
                 <View style={[s.rowIcon, { backgroundColor: iconBg }]}>
-                    <Icon width={18} height={18} color="#fff" strokeWidth={2.5} />
+                    <IconSymbol name={icon} size={18} color="#fff" />
                 </View>
             )}
-            <Text style={[s.rowLabel, { color: destructive ? C.destructive : C.text, marginLeft: Icon ? 0 : 16, textAlign: destructive ? 'center' : 'left' }]} numberOfLines={1}>
+            <Text style={[s.rowLabel, { color: destructive ? C.destructive : C.text, marginLeft: icon ? 0 : 16, textAlign: destructive ? 'center' : 'left' }]} numberOfLines={1}>
                 {label}
             </Text>
             {value ? <Text style={[s.rowValue, { color: C.textSecondary }]}>{value}</Text> : null}
@@ -98,7 +87,7 @@ function SettingsRow({
                     thumbColor={Platform.OS === 'ios' ? undefined : '#f4f3f4'}
                 />
             ) : (
-                !!onPress && !destructive && <NavArrowRight width={18} height={18} color={C.textTertiary} strokeWidth={2} />
+                !!onPress && !destructive && <IconSymbol name="chevron.right" size={18} color={C.textTertiary} />
             )}
         </TouchableOpacity>
     );
@@ -193,7 +182,7 @@ export default function AccountScreen() {
                             )}
                         </View>
                         <View style={[s.editBadge, { borderColor: C.background }]}>
-                            <EditPencil width={14} height={14} color="#FFF" strokeWidth={2.5} />
+                            <IconSymbol name="pencil" size={14} color="#FFF" />
                         </View>
                     </TouchableOpacity>
                     <Text style={[s.profileName, { color: C.text }]}>{user.name}</Text>
@@ -204,19 +193,19 @@ export default function AccountScreen() {
                 <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Account</Text>
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon={Sparkles} iconBg="#007AFF"
+                        icon="sparkles" iconBg="#007AFF"
                         label="Current Plan"
                         value={user.plan_name === 'elite' || user.is_unlimited ? 'Skeeme Elite' : (user.plan_name === 'standard' ? 'Skeeme Standard' : 'Skeeme Free')}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon={Rhombus} iconBg="#34C759"
+                        icon="diamond.fill" iconBg="#34C759"
                         label="Credits Remaining"
                         value={user.is_unlimited ? '∞' : `${user.credits}`}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon={ArrowUpCircle} iconBg="#FF9500"
+                        icon="arrow.up.circle.fill" iconBg="#FF9500"
                         label="Upgrade Plan"
                         onPress={() => router.push('/upgrade')}
                         isLast={true}
@@ -228,13 +217,13 @@ export default function AccountScreen() {
                 <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Preferences</Text>
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon={MagicWand} iconBg="#5E5CE6"
+                        icon="wand.and.stars" iconBg="#5E5CE6"
                         label="AI Preferences"
                         onPress={() => router.push('/preferences')}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon={Bell} iconBg="#FF2D55"
+                        icon="bell.fill" iconBg="#FF2D55"
                         label="Notifications"
                         hasSwitch={true}
                         switchValue={notificationsEnabled}
@@ -263,19 +252,19 @@ export default function AccountScreen() {
                 <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Support</Text>
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon={HelpCircle} iconBg="#8E8E93"
+                        icon="questionmark.circle" iconBg="#8E8E93"
                         label="Help & FAQ"
                         onPress={() => router.push('/support')}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon={ShieldCheck} iconBg="#8E8E93"
+                        icon="shield.check.fill" iconBg="#8E8E93"
                         label="Privacy Policy"
                         onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/privacy')}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon={DocumentText} iconBg="#8E8E93"
+                        icon="doc.text.fill" iconBg="#8E8E93"
                         label="Terms of Service"
                         onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/terms')}
                         isLast={true}
@@ -360,12 +349,12 @@ export default function AccountScreen() {
                     <View style={{ backgroundColor: C.card, borderRadius: 16, padding: 24 }}>
                         <Text style={{ fontSize: 20, fontWeight: '700', color: C.text, marginBottom: 8 }}>Verify Deletion</Text>
                         <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 24 }}>
-                            If you used an email/password to sign up, please enter your password to confirm. If you used Google or Apple, leave this blank and tap Delete.
+                            If you used an email/password to sign up, please enter your password to confirm. If you used GoogleIcon or AppleIcon, leave this blank and tap Delete.
                         </Text>
                         
                         <View style={{ backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7', borderRadius: 8, paddingHorizontal: 12, marginBottom: 24, paddingVertical: Platform.OS === 'ios' ? 12 : 4 }}>
                             <TextInput
-                                placeholder="Account Password (optional for Google/Apple users)"
+                                placeholder="Account Password (optional for GoogleIcon/AppleIcon users)"
                                 placeholderTextColor={C.textTertiary}
                                 value={deletePassword}
                                 onChangeText={setDeletePassword}

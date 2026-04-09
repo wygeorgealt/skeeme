@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { NavArrowLeft, Mail } from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -60,7 +60,7 @@ export default function SupportScreen() {
                     activeOpacity={0.7}
                     style={[s.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}
                 >
-                    <NavArrowLeft width={24} height={24} color={C.text} />
+                    <IconSymbol name="chevron.left" size={24} color={C.text} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Support</Text>
                 <View style={{ width: 44 }} />
@@ -112,7 +112,7 @@ export default function SupportScreen() {
                             <ActivityIndicator color="white" />
                         ) : (
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Mail width={18} height={18} color="white" />
+                                <IconSymbol name="envelope.fill" size={18} color="white" />
                                 <View style={{ width: 10 }} />
                                 <Text style={s.submitBtnText}>Send Message</Text>
                             </View>

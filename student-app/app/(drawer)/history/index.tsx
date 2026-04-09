@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/Text';
 import { View, TouchableOpacity, SectionList, RefreshControl, useColorScheme, Platform, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { Activity, MultiplePages, Page } from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { router } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -199,7 +199,7 @@ export default function StudyHistoryDashboard() {
                         return (
                             <View style={s.emptyContainer}>
                                 <View style={[s.emptyIconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
-                                    <Page width={32} height={32} color={C.textTertiary} />
+                                    <IconSymbol name="doc.text.fill" size={32} color={C.textTertiary} />
                                 </View>
                                 <Text style={[s.emptyTitle, { color: C.text }]}>No history yet</Text>
                                 <Text style={[s.emptySub, { color: C.textSecondary }]}>
@@ -235,7 +235,7 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
         >
             <View style={s.cardBody}>
                 <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight]}>
-                    <Activity width={20} height={20} color={C.primary} strokeWidth={2} />
+                    <IconSymbol name="activity" size={20} color={C.primary} />
                 </View>
                 <View style={s.cardContent}>
                     <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{session.topic}</Text>
@@ -272,7 +272,7 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
         >
             <View style={s.cardBody}>
                 <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight]}>
-                    <MultiplePages width={20} height={20} color={C.primary} strokeWidth={2} />
+                    <IconSymbol name="doc.on.doc.fill" size={20} color={C.primary} />
                 </View>
                 <View style={s.cardContent}>
                     <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{deck.title}</Text>

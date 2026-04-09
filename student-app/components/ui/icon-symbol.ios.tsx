@@ -1,23 +1,10 @@
-import { 
-  Home, 
-  Send, 
-  Code, 
-  NavArrowRight 
-} from 'iconoir-react-native';
+import { SymbolView, SymbolWeight } from 'expo-symbols';
 import React from 'react';
 import { type StyleProp, type ViewStyle } from 'react-native';
-
-const MAPPING = {
-  'house.fill': Home,
-  'paperplane.fill': Send,
-  'chevron.left.forwardslash.chevron.right': Code,
-  'chevron.right': NavArrowRight,
-} as const;
-
-type IconSymbolName = keyof typeof MAPPING;
+import { IconSymbolName } from './icon-symbol';
 
 /**
- * iOS implementation of IconSymbol using Iconoir for project-wide consistency.
+ * iOS implementation of IconSymbol using native SF Symbols (expo-symbols).
  */
 export function IconSymbol({
   name,
@@ -32,17 +19,25 @@ export function IconSymbol({
   style?: StyleProp<ViewStyle>;
   strokeWidth?: number;
 }) {
-  const IconComponent = MAPPING[name];
-  
-  if (!IconComponent) return null;
+  // Map strokeWidth to SF Symbol weights loosely
+  let weight: SymbolWeight = 'regular';
+  if (strokeWidth >= 3) weight = 'bold';
+  else if (strokeWidth >= 2.5) weight = 'semibold';
+  else if (strokeWidth <= 1.5) weight = 'light';
 
   return (
-    <IconComponent 
-      width={size} 
-      height={size} 
-      color={color} 
-      strokeWidth={strokeWidth} 
-      style={style as any} 
+    <SymbolView
+      name={name}
+      size={size}
+      tintColor={color}
+      weight={weight}
+      style={[
+        {
+          width: size,
+          height: size,
+        },
+        style,
+      ]}
     />
   );
 }

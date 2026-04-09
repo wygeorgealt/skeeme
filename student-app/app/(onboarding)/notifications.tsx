@@ -5,12 +5,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { Bell, Trophy, FireFlame, BatteryWarning } from 'iconoir-react-native';
+import { Bell, Trophy, Flame, BatteryWarning } from 'lucide-react-native';
 import * as Notifications from 'expo-notifications';
 
 const REASONS = [
     { icon: Trophy, text: 'Approaching a credit reward milestone' },
-    { icon: FireFlame, text: 'Keep your study streak alive' },
+    { icon: Flame, text: 'Keep your study streak alive' },
     { icon: BatteryWarning, text: 'Credits running low warning' },
 ];
 

@@ -5,10 +5,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Colors } from '@/constants/theme';
-import { 
-    Sparks, CheckCircle, WarningTriangle, 
-    NavArrowLeft, NavArrowRight, Check, Restart
-} from 'iconoir-react-native';
+import { Sparkles, CircleCheck, TriangleAlert, ChevronLeft, ChevronRight, Check, RotateCcw } from 'lucide-react-native';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { MathText } from '@/components/ui/MathText';
 import { useAuthStore } from '@/store/authStore';
@@ -95,7 +92,7 @@ const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: 
         <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderRadius: 24, padding: 32, justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 8, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent' }}>
             <View style={{ position: 'absolute', top: 24, left: 24, right: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1 }}>{type}</Text>
-                {type === 'QUESTION' ? <Sparks width={20} height={20} color="#007AFF" /> : <CheckCircle width={20} height={20} color="#34C759" />}
+                {type === 'QUESTION' ? <Sparkles width={20} height={20} color="#007AFF" /> : <CircleCheck width={20} height={20} color="#34C759" />}
             </View>
 
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -233,7 +230,7 @@ export default function StudyDeckScreen() {
                 completed_at: new Date().toISOString(),
             });
 
-            // Refresh user stats for the dashboard
+            // RefreshCcw user stats for the dashboard
             const userRes = await api.get('me');
             if (userRes.data) {
                 updateUser(userRes.data);
@@ -270,7 +267,7 @@ export default function StudyDeckScreen() {
     if (error && !deck) return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.errorCenter}>
-                <WarningTriangle width={64} height={64} color="#ef4444" />
+                <TriangleAlert width={64} height={64} color="#ef4444" />
                 <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Deck not found</Text>
                 <Text style={s.errorSubtitle}>
                     We couldn't load this flashcard deck. It might have been deleted or there was a connection issue.
@@ -322,7 +319,7 @@ export default function StudyDeckScreen() {
                 <View style={s.successActions}>
                     <TouchableOpacity onPress={restartSession} activeOpacity={0.8} style={s.flex1}>
                         <View style={[s.outlineBtn, isDark ? s.outlineBtnDark : s.outlineBtnLight]}>
-                            <Restart width={20} height={20} color={isDark ? 'white' : '#0f172a'} />
+                            <RotateCcw width={20} height={20} color={isDark ? 'white' : '#0f172a'} />
                             <Text style={[s.outlineBtnText, isDark ? s.textWhite : s.textSlate900]}>Retake</Text>
                         </View>
                     </TouchableOpacity>
@@ -346,7 +343,7 @@ export default function StudyDeckScreen() {
             {/* Header */}
             <View style={[s.headerRow, { paddingBottom: 16 }]}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.backBtn, isDark ? s.bgWhite10 : s.bgWhite60]}>
-                    <NavArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
+                    <ChevronLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <View style={s.headerTextContainer}>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -358,7 +355,7 @@ export default function StudyDeckScreen() {
                         </Text>
                         {isLoading && (
                              <Animated.View style={syncAnimatedStyle}>
-                                <Sparks width={14} height={14} color="#007AFF" />
+                                <Sparkles width={14} height={14} color="#007AFF" />
                             </Animated.View>
                         )}
                     </View>

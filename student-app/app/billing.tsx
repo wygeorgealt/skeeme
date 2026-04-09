@@ -3,7 +3,7 @@ import { View, ScrollView, TouchableOpacity, RefreshControl, Alert, useColorSche
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Stack, router } from 'expo-router';
-import { WarningTriangle, Refresh, Sparks, Page, Download } from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useCallback, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useAuthStore } from '@/store/authStore';
@@ -108,7 +108,7 @@ export default function BillingHistoryScreen() {
             ) : error ? (
                 <View style={s.errorContainer}>
                     <View style={[s.errorIconBox, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
-                        <WarningTriangle width={40} height={40} color="#ef4444" />
+                        <IconSymbol name="exclamationmark.triangle.fill" size={40} color="#ef4444" />
                     </View>
                     <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Unable to load</Text>
                     <Text style={s.errorSubtitle}>
@@ -118,7 +118,7 @@ export default function BillingHistoryScreen() {
                         onPress={() => refetch()}
                         style={s.retryBtn}
                     >
-                        <Refresh width={18} height={18} color="white" />
+                        <IconSymbol name="arrow.clockwise" size={18} color="white" />
                         <Text style={s.retryBtnText}>Try Again</Text>
                     </TouchableOpacity>
                 </View>
@@ -129,7 +129,7 @@ export default function BillingHistoryScreen() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={isDark ? 'white' : '#121212'} />}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Page Header */}
+                    {/* FileText Header */}
                     <View style={s.pageHeader}>
                         <Text style={[s.pageTitle, isDark ? s.textWhite : s.textSlate900]}>Billing</Text>
                         <Text style={s.pageSubtitle}>
@@ -142,7 +142,7 @@ export default function BillingHistoryScreen() {
                     <View style={[s.planCard, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
                         <View style={s.planHeaderRow}>
                             <View style={[s.planIconBox, user?.is_unlimited ? s.bgBrandSoft : (isDark ? s.bgSlate800 : s.bgSlate100)]}>
-                                <Sparks width={18} height={18} color={user?.is_unlimited ? "#8B5CF6" : "#94a3b8"} />
+                                <IconSymbol name="sparkles" size={18} color={user?.is_unlimited ? "#8B5CF6" : "#94a3b8"} />
                             </View>
                             <TouchableOpacity
                                 onPress={() => router.push('/upgrade')}
@@ -164,7 +164,7 @@ export default function BillingHistoryScreen() {
                     {data?.data?.length === 0 ? (
                         <View style={[s.emptyContainer, isDark ? s.bgDarkCardSoft : s.bgWhite, !isDark && s.borderSlate100]}>
                             <View style={[s.emptyIconBox, isDark ? s.bgSlate800 : s.bgSlate50]}>
-                                <Page width={32} height={32} color={isDark ? '#cbd5e1' : '#64748b'} />
+                                <IconSymbol name="doc.text.fill" size={32} color={isDark ? '#cbd5e1' : '#64748b'} />
                             </View>
                             <Text style={[s.emptyTitle, isDark ? s.textWhite : s.textSlate900]}>No Invoices</Text>
                             <Text style={s.emptySubtitle}>
@@ -196,7 +196,7 @@ export default function BillingHistoryScreen() {
                                     activeOpacity={0.7}
                                     style={[s.downloadBtn, isDark ? s.bgDarkCardSoft : s.bgSlate50, !isDark && s.borderSlate200]}
                                 >
-                                    <Download width={18} height={18} color={isDark ? 'white' : '#121212'} />
+                                    <IconSymbol name="square.and.arrow.down.fill" size={18} color={isDark ? 'white' : '#121212'} />
                                 </TouchableOpacity>
                             </View>
                         ))

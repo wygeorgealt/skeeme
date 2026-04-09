@@ -4,9 +4,10 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Google, Apple } from 'iconoir-react-native';
+
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
 
 export default function CreateAccountScreen() {
     const router = useRouter();
@@ -52,8 +53,8 @@ export default function CreateAccountScreen() {
                                 activeOpacity={0.8}
                                 style={[s.socialBtn, { backgroundColor: btnAppleBg }]}
                             >
-                                <Apple width={20} height={20} color={btnAppleText} />
-                                <Text style={[s.socialBtnText, { color: btnAppleText }]}>Continue with Apple</Text>
+                                <AppleIcon width={20} height={20} color={btnAppleText} />
+                                <Text style={[s.socialBtnText, { color: btnAppleText }]}>Continue with AppleIcon</Text>
                             </TouchableOpacity>
                         )}
 
@@ -62,8 +63,8 @@ export default function CreateAccountScreen() {
                             activeOpacity={0.8}
                             style={[s.socialBtn, isDark ? s.googleDark : s.googleLight]}
                         >
-                            <Google width={20} height={20} color={textColor} />
-                            <Text style={[s.socialBtnText, { color: textColor }]}>Continue with Google</Text>
+                            <GoogleIcon width={20} height={20} color={textColor} />
+                            <Text style={[s.socialBtnText, { color: textColor }]}>Continue with GoogleIcon</Text>
                         </TouchableOpacity>
 
                         <View style={s.dividerRow}>

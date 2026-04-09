@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, useColorScheme, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
-import { NavArrowLeft } from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { StatusBar } from 'expo-status-bar';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
@@ -56,7 +56,7 @@ export default function ForgotPasswordScreen() {
                         style={[s.backBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     >
-                        <NavArrowLeft width={24} height={24} color={C.text} strokeWidth={2.5} />
+                        <IconSymbol name="chevron.left" size={24} color={C.text} />
                     </TouchableOpacity>
                 </View>
 

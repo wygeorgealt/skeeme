@@ -1,18 +1,7 @@
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Text } from '@/components/ui/Text';
 import { View, ScrollView, RefreshControl, useColorScheme, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
-import { 
-    GraduationCap, 
-    Activity, 
-    FireFlame, 
-    Trophy, 
-    MultiplePages, 
-    NavArrowRight, 
-    Sparks, 
-    Flash, 
-    Clock,
-    Book
-} from 'iconoir-react-native';
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import { useCallback, useState, useEffect } from 'react';
@@ -23,12 +12,11 @@ import * as SecureStore from 'expo-secure-store';
 import { IosCard } from '@/components/ui/IosCard';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 
-// ─── Quick action data ────────────────────────────────────────────────────────
 const QUICK_ACTIONS = [
-    { label: 'Quiz', icon: Book, route: '/generate', color: '#007AFF' },
-    { label: 'Flashcards', icon: MultiplePages, route: '/flashcards', color: '#34C759' },
-    { label: 'History', icon: Clock, route: '/history', color: '#FF9500' },
-    { label: 'Streak', icon: FireFlame, route: '/streak', color: '#FF3B30' },
+    { label: 'Quiz', icon: 'book.fill', route: '/generate', color: '#007AFF' },
+    { label: 'Flashcards', icon: 'doc.on.doc.fill', route: '/flashcards', color: '#34C759' },
+    { label: 'History', icon: 'clock.fill', route: '/history', color: '#FF9500' },
+    { label: 'Streak', icon: 'flame.fill', route: '/streak', color: '#FF3B30' },
 ] as const;
 
 // ─── 7-Day Streak Calendar ───────────────────────────────────────────────────
@@ -60,7 +48,7 @@ function StreakCalendar({ data, isDark }: { data: any[]; isDark: boolean }) {
                             borderColor: !active && isToday ? C.primary : 'transparent'
                         }}>
                             {active ? (
-                                <FireFlame width={16} height={16} color="#FFF" strokeWidth={2.5} />
+                                <IconSymbol name="flame.fill" size={16} color="#FFF" />
                             ) : (
                                 <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: C.textTertiary }} />
                             )}
@@ -155,7 +143,7 @@ export default function DashboardScreen() {
                                     onPress={() => router.push('/upgrade')}
                                     style={[s.upgradePill, { backgroundColor: C.primary }]}
                                 >
-                                    <Sparks width={14} height={14} color="#FFF" strokeWidth={2.5} />
+                                    <IconSymbol name="sparkles" size={14} color="#FFF" />
                                     <Text style={s.upgradeText}>Upgrade</Text>
                                 </TouchableOpacity>
                             )}
@@ -174,7 +162,7 @@ export default function DashboardScreen() {
                                 >
                                     <View style={[s.quickIcon, { backgroundColor: action.color + '12' }]}>
                                         <View style={[styles.innerCircle, { backgroundColor: action.color + '10' }]}>
-                                            <IconComp width={24} height={24} color={action.color} strokeWidth={2.5} />
+                                            <IconSymbol name={action.icon as any} size={24} color={action.color} />
                                         </View>
                                     </View>
                                     <Text style={[s.quickLabel, { color: C.textSecondary }]}>{action.label}</Text>
@@ -188,14 +176,14 @@ export default function DashboardScreen() {
                 <View style={s.statsRow}>
                     <IosCard style={{ flex: 1 }} padding="md">
                         <View style={[s.statIconBox, { backgroundColor: '#FFD60A15' }]}>
-                            <Flash width={16} height={16} color="#FFD60A" strokeWidth={2.5} />
+                            <IconSymbol name="bolt.fill" size={16} color="#FFD60A" />
                         </View>
                         <Text style={[s.statNum, { color: C.text }]}>{user.credits_spent_this_week ?? 0}</Text>
                         <Text style={[s.statDesc, { color: C.textSecondary }]}>Credits Spent</Text>
                     </IosCard>
                     <IosCard style={{ flex: 1 }} padding="md">
                         <View style={[s.statIconBox, { backgroundColor: '#007AFF15' }]}>
-                            <GraduationCap width={16} height={16} color="#007AFF" strokeWidth={2.5} />
+                            <IconSymbol name="graduationcap.fill" size={16} color="#007AFF" />
                         </View>
                         <Text style={[s.statNum, { color: C.text }]}>{user.study_sessions_this_week ?? 0}</Text>
                         <Text style={[s.statDesc, { color: C.textSecondary }]}>Study Sessions</Text>
@@ -209,10 +197,23 @@ export default function DashboardScreen() {
                             <Text style={[s.activityTitle, { color: C.text }]}>Weekly Activity</Text>
                             <Text style={[s.activitySub, { color: C.textSecondary }]}>Your study momentum</Text>
                         </View>
-                        <Activity color={C.primary} width={20} height={20} strokeWidth={2} />
+                        <IconSymbol name="activity" color={C.primary} size={20} />
                     </View>
                     <View style={{ height: 10 }} />
-                    <StreakCalendar data={user.weekly_activity_points ?? []} isDark={isDark} />
+                    <StreakCalendar data={
+                        Array.from({ length: 7 }).map((_, i) => {
+                            const today = new Date();
+                            const currentDay = (today.getDay() + 6) % 7; // Monday = 0
+                            const startOfWeek = new Date(today);
+                            startOfWeek.setDate(today.getDate() - currentDay + i);
+                            
+                            // Format to YYYY-MM-DD local time
+                            const tzoffset = startOfWeek.getTimezoneOffset() * 60000;
+                            const localISOTime = (new Date(startOfWeek.getTime() - tzoffset)).toISOString().slice(0, 10);
+                            
+                            return heatmapDates.includes(localISOTime) ? 1 : 0;
+                        })
+                    } isDark={isDark} />
                     <View style={{ height: 10 }} />
                 </IosCard>
 
@@ -224,26 +225,26 @@ export default function DashboardScreen() {
                 <IosCard padding="none" style={{ marginBottom: Spacing.lg }}>
                     <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.7}>
                         <View style={[s.streakIcon, { backgroundColor: '#FF3B3015' }]}>
-                            <FireFlame width={18} height={18} color="#FF3B30" strokeWidth={2.5} />
+                            <IconSymbol name="flame.fill" size={18} color="#FF3B30" />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={[s.streakTitle, { color: C.text }]}>Current Streak</Text>
                             <Text style={[s.streakSub, { color: C.textSecondary }]}>Keep the fire alive</Text>
                         </View>
                         <Text style={[s.streakCount, { color: C.text }]}>{user.streak?.current_streak ?? 0}</Text>
-                        <NavArrowRight width={18} height={18} color={C.textTertiary} strokeWidth={2} style={{ marginLeft: 4 }} />
+                        <IconSymbol name="chevron.right" size={18} color={C.textTertiary} style={{ marginLeft: 4 }} />
                     </TouchableOpacity>
                     <View style={[s.divider, { backgroundColor: C.separator }]} />
                     <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.7}>
                         <View style={[s.streakIcon, { backgroundColor: '#FF950015' }]}>
-                            <Trophy width={18} height={18} color="#FF9500" strokeWidth={2.5} />
+                            <IconSymbol name="trophy.fill" size={18} color="#FF9500" />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={[s.streakTitle, { color: C.text }]}>Longest Streak</Text>
                             <Text style={[s.streakSub, { color: C.textSecondary }]}>Your personal best</Text>
                         </View>
                         <Text style={[s.streakCount, { color: C.text }]}>{user.streak?.longest_streak ?? 0}</Text>
-                        <NavArrowRight width={18} height={18} color={C.textTertiary} strokeWidth={2} style={{ marginLeft: 4 }} />
+                        <IconSymbol name="chevron.right" size={18} color={C.textTertiary} style={{ marginLeft: 4 }} />
                     </TouchableOpacity>
                 </IosCard>
             </ScrollView>

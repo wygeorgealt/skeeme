@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { View, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, useColorScheme, StyleSheet, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
-import { Xmark, Key } from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { StatusBar } from 'expo-status-bar';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { GlowBackground } from '@/components/ui/GlowBackground';
@@ -76,7 +76,7 @@ export default function NewPasswordScreen() {
                 <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity onPress={() => router.replace('/login')}>
                         <View style={[s.backBtn, { backgroundColor: C.card }]}>
-                            <Xmark width={24} height={24} color={C.text} strokeWidth={2.5} />
+                            <IconSymbol name="xmark" size={24} color={C.text} />
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -87,7 +87,7 @@ export default function NewPasswordScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={[s.iconCircle, { backgroundColor: C.primaryLight }]}>
-                        <Key width={32} height={32} color={C.primary} strokeWidth={2} />
+                        <IconSymbol name="key.fill" size={32} color={C.primary} />
                     </View>
 
                     <Text style={[s.title, { color: C.text }]}>Security</Text>

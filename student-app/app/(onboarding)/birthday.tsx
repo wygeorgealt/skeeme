@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Calendar, User } from 'iconoir-react-native';
+import { Calendar, User } from 'lucide-react-native';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';

@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FireFlame, Trophy, Sparks } from 'iconoir-react-native';
+import { Flame, Trophy, Sparkles } from 'lucide-react-native';
 
 const GRADIENTS = [
     ['#FF5F6D', '#FFC371'], // Sweet Morning (Orange/Yellow)
@@ -43,7 +43,7 @@ export const ShareCard = ({ type, data, viewShotRef }: ShareCardProps) => {
                     {/* Watermark/Background Graphic */}
                     <View style={styles.watermark}>
                         {type === 'streak' ? (
-                            <FireFlame width={280} height={280} color="rgba(255,255,255,0.12)" />
+                            <Flame width={280} height={280} color="rgba(255,255,255,0.12)" />
                         ) : (
                             <Trophy width={280} height={280} color="rgba(255,255,255,0.12)" />
                         )}
@@ -74,7 +74,7 @@ export const ShareCard = ({ type, data, viewShotRef }: ShareCardProps) => {
 
                     <View style={styles.footer}>
                         <View style={styles.brandRow}>
-                            <Sparks width={20} height={20} color="white" strokeWidth={2.5} />
+                            <Sparkles width={20} height={20} color="white" strokeWidth={2.5} />
                             <Text style={styles.brandName}>skeeme</Text>
                         </View>
                     </View>

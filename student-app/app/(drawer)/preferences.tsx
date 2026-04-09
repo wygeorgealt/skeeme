@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, useColorScheme, StyleSheet } from 'react-native';
-import { Sparks, Check, GraduationCap, Book, Medal, Suitcase } from 'iconoir-react-native';
+import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { router, useNavigation } from 'expo-router';
@@ -11,12 +11,12 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
 
-const LEVELS = [
-    { key: 'high_school', label: 'High School', icon: GraduationCap },
-    { key: 'undergraduate', label: 'Undergraduate', icon: Book },
-    { key: 'masters', label: 'Masters / Graduate', icon: Medal },
-    { key: 'professional', label: 'Professional', icon: Suitcase },
-] as const;
+const LEVELS: { key: string; label: string; icon: IconSymbolName }[] = [
+    { key: 'high_school', label: 'High School', icon: 'graduationcap.fill' },
+    { key: 'undergraduate', label: 'Undergraduate', icon: 'book.fill' },
+    { key: 'masters', label: 'Masters / Graduate', icon: 'medal.fill' },
+    { key: 'professional', label: 'Professional', icon: 'briefcase.fill' },
+];
 
 const STYLES = [
     { key: 'simple', label: 'Simple & Easy', desc: 'Everyday language, no jargon' },
@@ -86,9 +86,9 @@ export default function PreferencesScreen() {
                                 !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator || (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') }
                             ]}
                         >
-                            {Icon && (
+                            {item.icon && (
                                 <View style={[s.iconBoxRow, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
-                                    <Icon width={20} height={20} color="#007AFF" />
+                                    <IconSymbol name={item.icon} size={20} color="#007AFF" />
                                 </View>
                             )}
                             <View style={s.cardContent}>
@@ -101,7 +101,7 @@ export default function PreferencesScreen() {
                             </View>
                             {isSelected && (
                                 <View style={s.checkCircleFilled}>
-                                    <Check width={24} height={24} color="#007AFF" />
+                                    <IconSymbol name="checkmark" size={24} color="#007AFF" />
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -166,7 +166,7 @@ export default function PreferencesScreen() {
                                         <Text style={[s.cardTitle, { color: C.text }]}>{item.label}</Text>
                                         <Text style={[s.cardDesc, { color: '#8E8E93' }]}>{item.desc}</Text>
                                     </View>
-                                    {isSelected && <Check width={24} height={24} color="#007AFF" />}
+                                    {isSelected && <IconSymbol name="checkmark" size={24} color="#007AFF" />}
                                 </TouchableOpacity>
                             );
                         })}

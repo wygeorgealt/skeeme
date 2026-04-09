@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import { View, ScrollView, TouchableOpacity, useColorScheme, ActivityIndicator, Platform, StyleSheet } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Snow, NavArrowLeft, Sparks, CheckCircle, GraduationCap, Book, Medal, Suitcase } from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useState, useEffect, useRef } from 'react';
@@ -77,7 +77,7 @@ export default function StreakScreen() {
 
             <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
-                    <NavArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
+                    <IconSymbol name="chevron.left" size={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Streak</Text>
                 <View style={{ width: 44 }} />
@@ -109,7 +109,7 @@ export default function StreakScreen() {
                         activeOpacity={0.8}
                         style={[s.shareBtn, isDark ? s.bgWhite10 : s.bgWhite]}
                     >
-                        <Sparks width={18} height={18} color={C.primary} style={{ marginRight: 8 }} />
+                        <IconSymbol name="sparkles" size={18} color={C.primary} style={{ marginRight: 8 }} />
                         <Text style={[s.shareBtnText, { color: C.primary }]}>Share Milestone</Text>
                     </TouchableOpacity>
                 )}
@@ -122,7 +122,7 @@ export default function StreakScreen() {
                 ]}>
                     <View style={s.protectionHeader}>
                         <View style={[s.protectionIconBox, isDark ? s.protectionIconBoxDark : s.protectionIconBoxLight]}>
-                            <Snow width={18} height={18} color={C.primary} />
+                            <IconSymbol name="snowflake" size={18} color={C.primary} />
                         </View>
                         {!isElite ? (
                             <View style={[s.badge, isDark ? s.badgeDark : s.badgeLight]}>

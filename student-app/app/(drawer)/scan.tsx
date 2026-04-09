@@ -3,10 +3,7 @@ import {
     View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Dimensions
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import {
-    NavArrowLeft, Scanning, Camera,
-    Album, Sparks, Page, Type, Flash, FlashOff
-} from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -155,9 +152,9 @@ export default function ScanScreen() {
         }
 
         setLoading(true);
-        setLoadingStage('Scanning image...');
+        setLoadingStage('Scan image...');
 
-        const stages = ['Scanning image...', 'Reading handwriting...', 'Detecting questions...', 'AI Solving...', 'Double checking...', 'Finalizing results...'];
+        const stages = ['Scan image...', 'Reading handwriting...', 'Detecting questions...', 'AI Solving...', 'Double checking...', 'Finalizing results...'];
         let stageIdx = 0;
         const stageInterval = setInterval(() => {
             stageIdx = Math.min(stageIdx + 1, stages.length - 1);
@@ -222,7 +219,7 @@ export default function ScanScreen() {
                     <View style={{ flex: 1 }} />
                 ) : !permission.granted ? (
                     <View style={s.permissionContainer}>
-                        <Scanning width={64} height={64} color={C.primary} style={{ marginBottom: 24 }} />
+                        <IconSymbol name="viewfinder" size={64} color={C.primary} style={{ marginBottom: 24 }} />
                         <Text style={[s.heroTitle, { color: C.text }]}>Camera Access Needed</Text>
                         <Text style={[s.heroDesc, { paddingHorizontal: 40 }]}>
                             Skeeme needs your camera to scan equations and past questions instantly.
@@ -241,13 +238,13 @@ export default function ScanScreen() {
                             {/* Top Semi-transparent Overlay */}
                             <View style={[s.topChrome, { paddingTop: Math.max(insets.top, 16) }]}>
                                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={s.overlayTopBtn}>
-                                    <NavArrowLeft width={28} height={28} color="white" strokeWidth={2.5} />
+                                    <IconSymbol name="chevron.left" size={28} color="white" />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => setEnableTorch(!enableTorch)} activeOpacity={0.7} style={s.overlayTopBtn}>
                                     {enableTorch ? (
-                                        <Flash width={24} height={24} color="white" strokeWidth={2.5} />
+                                        <IconSymbol name="bolt.fill" size={24} color="white" />
                                     ) : (
-                                        <FlashOff width={24} height={24} color="white" strokeWidth={2.5} />
+                                        <IconSymbol name="bolt.slash.fill" size={24} color="white" />
                                     )}
                                 </TouchableOpacity>
                             </View>
@@ -266,7 +263,7 @@ export default function ScanScreen() {
                             {/* Bottom Semi-transparent Overlay */}
                             <View style={[s.bottomChrome, { paddingBottom: Math.max(insets.bottom, 32) + 90 }]}>
                                 <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={s.galleryBtn}>
-                                    <Album width={28} height={28} color="white" strokeWidth={2.5} />
+                                    <IconSymbol name="photo.on.rectangle" size={28} color="white" />
                                 </TouchableOpacity>
 
                                 <TouchableOpacity onPress={handleCapture} activeOpacity={0.8} style={s.shutterOuter}>
@@ -289,7 +286,7 @@ export default function ScanScreen() {
             
             <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
-                    <NavArrowLeft width={20} height={20} color={C.text} strokeWidth={2.5} />
+                    <IconSymbol name="chevron.left" size={20} color={C.text} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Results</Text>
                 <View style={{ width: 44 }} />
@@ -314,7 +311,7 @@ export default function ScanScreen() {
                             <View style={s.fullBtnGroup}>
                                 <TouchableOpacity onPress={handleSolve} activeOpacity={0.8} style={[s.primaryBtnShadow, { backgroundColor: C.primary }]}>
                                     <View style={s.primaryBtnGradient}>
-                                        <Sparks width={18} height={18} color="#fff" strokeWidth={2.5} />
+                                        <IconSymbol name="sparkles" size={18} color="#fff" />
                                         <Text style={s.fullBtnText}>Solve Everything</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -338,13 +335,13 @@ export default function ScanScreen() {
                         {/* Metadata Bar: Credits Used + Accuracy */}
                         <View style={[s.metaBar, isDark ? s.cardDark : s.cardLight]}>
                             <View style={s.metaItem}>
-                                <Sparks width={16} height={16} color={C.primary} strokeWidth={2.5} />
+                                <IconSymbol name="sparkles" size={16} color={C.primary} />
                                 <Text style={[s.metaLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Credits Used</Text>
                                 <Text style={[s.metaValue, isDark ? s.textWhite : s.textSlate900]}>{lastScanCost ?? '—'}</Text>
                             </View>
                             <View style={s.metaDivider} />
                             <View style={s.metaItem}>
-                                <Sparks width={16} height={16} color="#10b981" strokeWidth={2.5} />
+                                <IconSymbol name="sparkles" size={16} color="#10b981" />
                                 <Text style={[s.metaLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Accuracy</Text>
                                 <Text style={[s.metaValue, isDark ? s.textWhite : s.textSlate900]}>High</Text>
                             </View>
@@ -470,14 +467,14 @@ export default function ScanScreen() {
                             <ActivityIndicator size="small" color={C.primary} />
                         ) : (
                             <>
-                                <Page width={18} height={18} color={isDark ? '#cbd5e1' : '#64748b'} strokeWidth={2.5} />
+                                <IconSymbol name="doc.text.fill" size={18} color={isDark ? '#cbd5e1' : '#64748b'} />
                                 <Text style={[s.slimFooterBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>Export</Text>
                             </>
                         )}
                     </TouchableOpacity>
                     <View style={[s.slimFooterDivider, isDark ? s.dividerDark : s.dividerLight]} />
                     <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={s.slimFooterBtn}>
-                        <Camera width={18} height={18} color={isDark ? '#cbd5e1' : '#64748b'} strokeWidth={2.5} />
+                        <IconSymbol name="camera.fill" size={18} color={isDark ? '#cbd5e1' : '#64748b'} />
                         <Text style={[s.slimFooterBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>New Scan</Text>
                     </TouchableOpacity>
                 </BlurView>

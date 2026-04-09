@@ -9,7 +9,7 @@ import { QueryProvider } from '@/components/QueryProvider';
 import { useColorScheme as useNativeColorScheme, LogBox, View, TouchableOpacity, TextStyle, Platform } from 'react-native';
 import { cssInterop, useColorScheme as useTailwindColorScheme } from 'nativewind';
 import { LinearGradient } from 'expo-linear-gradient';
-import { WarningTriangle, Refresh } from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import AnimatedSplash from '@/components/AnimatedSplash';
 import Animated, { FadeOut } from 'react-native-reanimated';
 import { NetworkStatus } from '@/components/NetworkStatus';
@@ -178,7 +178,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: isDark ? '#0f0f11' : '#fafafa' }}>
-      <WarningTriangle width={48} height={48} color="#ef4444" />
+      <IconSymbol name="exclamationmark.triangle.fill" size={48} color="#ef4444" />
       <Text style={{ fontSize: 20, fontWeight: '900', color: isDark ? 'white' : '#0f172a', marginTop: 20, marginBottom: 8, textAlign: 'center' }}>
         Something went wrong.
       </Text>
@@ -189,7 +189,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         onPress={retry}
         style={{ backgroundColor: isDark ? 'white' : '#0f172a', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}
       >
-        <Refresh width={18} height={18} color={isDark ? '#121212' : 'white'} />
+        <IconSymbol name="arrow.clockwise" size={18} color={isDark ? '#121212' : 'white'} />
         <Text style={{ color: isDark ? '#0f172a' : 'white', fontWeight: 'bold', marginLeft: 8 }}>Try Again</Text>
       </TouchableOpacity>
     </View>

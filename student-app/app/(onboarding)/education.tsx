@@ -4,14 +4,14 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { GraduationCap, Book, Flask, Medal, CheckCircle } from 'iconoir-react-native';
+import { GraduationCap, Book, FlaskConical, Medal, CircleCheck } from 'lucide-react-native';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const LEVELS = [
     { key: 'high_school', label: 'High School', icon: GraduationCap, desc: 'Secondary / A-Levels' },
     { key: 'undergraduate', label: 'Undergraduate', icon: Book, desc: "Bachelor's degree" },
-    { key: 'masters_phd', label: 'Masters / PhD', icon: Flask, desc: 'Postgraduate research' },
+    { key: 'masters_phd', label: 'Masters / PhD', icon: FlaskConical, desc: 'Postgraduate research' },
     { key: 'professional', label: 'Professional Cert', icon: Medal, desc: 'ICAN, ACCA, PMP, etc.' },
 ];
 
@@ -85,7 +85,7 @@ export default function EducationScreen() {
                                             <Text style={[s.optionDesc, { color: subtextColor }]}>{level.desc}</Text>
                                         </View>
                                         {isSelected && (
-                                            <CheckCircle width={24} height={24} color="#007AFF" />
+                                            <CircleCheck width={24} height={24} color="#007AFF" />
                                         )}
                                     </TouchableOpacity>
                                 </Animated.View>

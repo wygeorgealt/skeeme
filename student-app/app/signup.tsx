@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { NavArrowLeft } from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { GlowBackground } from '@/components/ui/GlowBackground';
@@ -93,7 +93,7 @@ export default function SignupScreen() {
                         style={[s.backBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     >
-                        <NavArrowLeft width={24} height={24} color={C.text} strokeWidth={2.5} />
+                        <IconSymbol name="chevron.left" size={24} color={C.text} />
                     </TouchableOpacity>
                 </View>
 

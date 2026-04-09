@@ -102,8 +102,7 @@ class DeepseekAIService
                         'temperature' => 0.5,
                         'max_tokens' => $calculatedMaxTokens,
                         'response_format' => ['type' => 'json_object']
-                    ],
-                    'timeout' => $this->timeout,
+                    ]
                 ]
             );
 
@@ -484,7 +483,7 @@ PROMPT;
         if ($includeVisuals) {
             $visualsInstruction = "\nVISUALS: You can include VERY SIMPLE SVG diagrams (geometry/graphs) or LaTeX math. 
             RULES FOR SVG: MUST be <svg viewBox='0 0 300 100' preserveAspectRatio='xMidYMid meet' ...>. No width/height attributes. Keep paths simple.
-            RULES FOR MATH: MUST wrap all math in $$...$$ (e.g. $$x^2$$).";
+            RULES FOR MATH: MUST wrap all math in $$...$$ (e.g. \$\$x^2\$\$).";
         }
 
         // Build personalization instructions from user preferences
@@ -790,7 +789,7 @@ PROMPT;
         // 2. Fallback to OCR.space Engine 2
         try {
             \Log::info('Attempting OCR with OCR.space (Fallback)...');
-            $fallbackClient = new \GuzzleHttp\Client(['timeout' => 15]);
+            $fallbackClient = new Client(['timeout' => 15]);
             $response = $fallbackClient->post('https://api.ocr.space/parse/image', [
                 'headers' => [
                     'apikey' => 'helloworld',

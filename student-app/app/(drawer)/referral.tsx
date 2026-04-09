@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/Text';
 import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, useColorScheme, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { router } from 'expo-router';
-import { NavArrowLeft, Gift } from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useState, useEffect } from 'react';
@@ -33,11 +33,11 @@ export default function ReferralScreen() {
             const res = await api.post('referral/redeem', { code: code.trim().toUpperCase() });
             Alert.alert('Success!', res.data.message || '100 Credits added to your account!');
             setCode('');
-            // Refresh user credits
+            // RefreshCcw user credits
             const userRes = await api.get('me');
             if (userRes.data) updateUser(userRes.data);
             
-            // Refresh stats
+            // RefreshCcw stats
             const statsRes = await api.get('referral/stats');
             if(statsRes.data) setStats(prev => ({...prev, total_referred: statsRes.data.total_referred, credits_earned: statsRes.data.credits_earned}));
             
@@ -55,7 +55,7 @@ export default function ReferralScreen() {
             {/* Header */}
             <View style={s.header}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
-                    <NavArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
+                    <IconSymbol name="chevron.left" size={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <View style={s.headerTextContainer}>
                     <Text style={[s.headerTitle, { color: C.text }]}>Rewards</Text>
@@ -69,7 +69,7 @@ export default function ReferralScreen() {
                 {/* Redeem Section */}
                 <View style={[s.sectionCard, isDark ? s.sectionCardDark : s.sectionCardLight]}>
                     <View style={s.iconBox}>
-                        <Gift width={18} height={18} color={C.primary} />
+                        <IconSymbol name="gift.fill" size={18} color={C.primary} />
                     </View>
                     <Text style={[s.sectionTitle, { color: C.text }]}>Redeem an Invitation</Text>
                     <Text style={s.sectionDesc}>

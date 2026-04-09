@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, useColorScheme } from 'react-native';
-import { Star, WarningTriangle, Sparks } from 'iconoir-react-native';
+import { Star, TriangleAlert, Sparkles } from 'lucide-react-native';
 import { api } from '@/lib/api';
 import { Question, TheoryResult } from './QuizTypes';
 import { MathText } from '../ui/MathText';
@@ -77,7 +77,7 @@ export function TheoryCard({
                                         {isVeryCorrect ? (
                                             <Star width={18} height={18} color="#fff" />
                                         ) : (
-                                            <WarningTriangle width={18} height={18} color="#fff" />
+                                            <TriangleAlert width={18} height={18} color="#fff" />
                                         )}
                                     </View>
                                     <View>
@@ -122,7 +122,7 @@ export function TheoryCard({
                                 <ActivityIndicator color={C.textTertiary} size="small" />
                             ) : (
                                 <>
-                                    <Sparks width={18} height={18} color="#fff" />
+                                    <Sparkles width={18} height={18} color="#fff" />
                                     <Text style={s.submitBtnText}>Mark Answer</Text>
                                 </>
                             )}

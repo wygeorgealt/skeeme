@@ -1,7 +1,8 @@
 import { Text } from '@/components/ui/Text';
 import { View, StyleSheet, Image, ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Apple, Google } from 'iconoir-react-native';
+import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
+
 
 interface QuizShareCardProps {
     topic: string;
@@ -120,8 +121,8 @@ export const QuizShareCard = ({ topic, percentage, strength, focusArea }: QuizSh
                     <View style={styles.footerTop}>
                         <Text style={styles.availableText}>Available on iOS & Android</Text>
                         <View style={styles.storeIcons}>
-                            <Apple width={18} height={18} color="white" />
-                            <Google width={18} height={18} color="white" />
+                            <AppleIcon width={18} height={18} color="white" />
+                            <GoogleIcon width={18} height={18} color="white" />
                         </View>
                     </View>
                     <View style={styles.footerBottomPill}>

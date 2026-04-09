@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
-import { CheckCircle, XmarkCircle, Check, Xmark, NavArrowLeft, Refresh } from 'iconoir-react-native';
+import { CircleCheck, XCircle, Check, X, ChevronLeft, RefreshCcw } from 'lucide-react-native';
 import { QuizFlipCard } from './QuizFlipCard';
 import { Question } from './QuizTypes';
 import { MathText } from '../ui/MathText';
@@ -94,8 +94,8 @@ export function MCQCard({
                             style={[s.optionBtn, styles.container]}
                         >
                             <Text style={[s.optionText, styles.text]}>{opt}</Text>
-                            {styles.icon === 'checkmark-circle' && <CheckCircle width={18} height={18} color={styles.iconColor} />}
-                            {styles.icon === 'close-circle' && <XmarkCircle width={18} height={18} color={styles.iconColor} />}
+                            {styles.icon === 'checkmark-circle' && <CircleCheck width={18} height={18} color={styles.iconColor} />}
+                            {styles.icon === 'close-circle' && <XCircle width={18} height={18} color={styles.iconColor} />}
                         </TouchableOpacity>
                     );
                 })}
@@ -108,7 +108,7 @@ export function MCQCard({
                         {isCorrect ? (
                             <Check width={14} height={14} color={C.success} />
                         ) : (
-                            <Xmark width={14} height={14} color={C.destructive} />
+                            <X width={14} height={14} color={C.destructive} />
                         )}
                         <Text style={[s.statusText, { color: isCorrect ? C.success : C.destructive }]}>
                             {isCorrect ? 'Correct' : 'Incorrect'}
@@ -120,7 +120,7 @@ export function MCQCard({
                         activeOpacity={0.8}
                         style={[s.explainBtn, { backgroundColor: isDark ? '#FFF' : '#000' }]}
                     >
-                        <Refresh width={16} height={16} color={isDark ? '#000' : '#FFF'} style={{ marginRight: 8 }} />
+                        <RefreshCcw width={16} height={16} color={isDark ? '#000' : '#FFF'} style={{ marginRight: 8 }} />
                         <Text style={[s.explainBtnText, { color: isDark ? '#000' : '#FFF' }]}>Flip for Explanation</Text>
                     </TouchableOpacity>
                 </View>
@@ -131,7 +131,7 @@ export function MCQCard({
     const back = (
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
             <TouchableOpacity onPress={() => setFlipped(false)} style={s.backBtn}>
-                <NavArrowLeft width={18} height={18} color={C.text} />
+                <ChevronLeft width={18} height={18} color={C.text} />
                 <Text style={[s.backText, { color: C.text }]}>Back</Text>
             </TouchableOpacity>
             

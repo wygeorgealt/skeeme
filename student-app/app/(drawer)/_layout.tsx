@@ -2,25 +2,14 @@ import { Tabs, router, usePathname } from 'expo-router';
 import { View, TouchableOpacity, StyleSheet, useColorScheme, Platform, Alert } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Home, User, Camera } from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useEffect } from 'react';
 import { registerForPushNotificationsAsync } from '@/lib/notifications';
 
-// ─── Icons ───────────────────────────────────────────────────────────────────
-const HomeIcon = ({ color, size, focused }: any) => (
-    <Home width={size} height={size} color={color} strokeWidth={focused ? 2.5 : 2} />
-);
-
-const PersonIcon = ({ color, size, focused }: any) => (
-    <User width={size} height={size} color={color} strokeWidth={focused ? 2.5 : 2} />
-);
-
-const CameraIcon = ({ color, size }: any) => (
-    <Camera width={size} height={size} color={color} strokeWidth={2.5} />
-);
+// ─── Icons logic moved to TabBar / TabLayout for simplicity with IconSymbol ───
 
 // ─── Scan FAB (center elevated button) ───────────────────────────────────────
 function ScanTabButton({ onPress }: { onPress?: () => void }) {
@@ -37,7 +26,7 @@ function ScanTabButton({ onPress }: { onPress?: () => void }) {
             accessibilityLabel="Scan"
         >
             <View style={[fab.circle, { backgroundColor: C.primary }]}>
-                <CameraIcon color="#FFFFFF" size={26} />
+                <IconSymbol name="camera.fill" color="#FFFFFF" size={26} />
             </View>
         </TouchableOpacity>
     );
@@ -211,8 +200,8 @@ export default function TabLayout() {
                 name="index"
                 options={{
                     title: 'Home',
-                    tabBarIcon: ({ color, size, focused }) =>
-                        <HomeIcon color={color} size={size} focused={focused} />,
+                    tabBarIcon: ({ color, size }) =>
+                        <IconSymbol name="house.fill" color={color} size={size} />,
                 }}
             />
             <Tabs.Screen
@@ -220,7 +209,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Scan',
                     // Icon handled by ScanTabButton inside TabBar
-                    tabBarIcon: ({ color, size }) => <CameraIcon color={color} size={size} />,
+                    tabBarIcon: ({ color, size }) => <IconSymbol name="camera.fill" color={color} size={size} />,
                 }}
             />
             <Tabs.Screen
@@ -233,8 +222,8 @@ export default function TabLayout() {
                 name="account"
                 options={{
                     title: 'Me',
-                    tabBarIcon: ({ color, size, focused }) =>
-                        <PersonIcon color={color} size={size} focused={focused} />,
+                    tabBarIcon: ({ color, size }) =>
+                        <IconSymbol name="person.fill" color={color} size={size} />,
                 }}
             />
 

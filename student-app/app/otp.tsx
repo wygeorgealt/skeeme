@@ -4,7 +4,7 @@ import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Acti
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { NavArrowLeft, Mail } from 'iconoir-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { StatusBar } from 'expo-status-bar';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
@@ -150,7 +150,7 @@ export default function OtpScreen() {
                 <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity onPress={() => router.back()}>
                         <View style={[s.backBtn, { backgroundColor: C.card }]}>
-                            <NavArrowLeft width={24} height={24} color={C.text} strokeWidth={2.5} />
+                            <IconSymbol name="chevron.left" size={24} color={C.text} />
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -161,7 +161,7 @@ export default function OtpScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={[s.iconCircle, { backgroundColor: C.primaryLight }]}>
-                        <Mail width={32} height={32} color={C.primary} strokeWidth={2} />
+                        <IconSymbol name="envelope.fill" size={32} color={C.primary} />
                     </View>
 
                     <Text style={[s.title, { color: C.text }]}>Check your email</Text>
