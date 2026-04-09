@@ -21,7 +21,7 @@ import Animated, {
     withRepeat
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/lib/haptics';
 import { ActivityIndicator } from 'react-native';
 import { Flashcard as Card, FlashcardDeck } from '@/types';
 
@@ -58,7 +58,7 @@ const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: 
     }, [card.id, flipAnim]);
 
     const handleFlip = useCallback(() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        haptics.impactAsync();
         scaleAnim.value = withTiming(0.97, { duration: 100 }, () => {
             scaleAnim.value = withSpring(1);
         });
@@ -198,12 +198,12 @@ export default function StudyDeckScreen() {
     const nextCard = () => {
         if (!deck?.flashcards) return;
         if (currentIndex < deck.flashcards.length - 1) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            haptics.impactAsync();
             const nextIndex = currentIndex + 1;
             scrollRef.current?.scrollTo({ x: nextIndex * SCREEN_WIDTH, animated: true });
             // The scroll listener will update the index to ensure smooth transition
         } else {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            haptics.notificationAsync('success' as any);
             setIsComplete(true);
         }
     };
@@ -211,7 +211,7 @@ export default function StudyDeckScreen() {
     const prevCard = () => {
         if (!deck?.flashcards) return;
         if (currentIndex > 0) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            haptics.impactAsync();
             const prevIndex = currentIndex - 1;
             scrollRef.current?.scrollTo({ x: prevIndex * SCREEN_WIDTH, animated: true });
             // The scroll listener will update the index
@@ -249,7 +249,7 @@ export default function StudyDeckScreen() {
     }, [isComplete]);
 
     const restartSession = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        haptics.impactAsync();
         setIsComplete(false);
         setCurrentIndex(0);
         scrollRef.current?.scrollTo({ x: 0, animated: false });

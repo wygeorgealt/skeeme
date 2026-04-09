@@ -18,7 +18,7 @@ import { generateUUID } from '@/lib/utils';
 import CreditStatusBar from '@/components/CreditStatusBar';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/lib/haptics';
 import { QuizMode, Difficulty, FormatType, Question } from '@/components/quiz/QuizTypes';
 import { MCQCard } from '@/components/quiz/MCQCard';
 import { TheoryCard } from '@/components/quiz/TheoryCard';
@@ -32,12 +32,12 @@ import { Colors, Spacing, Radius } from '@/constants/theme';
 const DIFFICULTY_OPTIONS = [
     { key: 'easy', label: 'Easy', icon: 'leaf.fill' as IconSymbolName, desc: 'Focus on fundamentals' },
     { key: 'medium', label: 'Medium', icon: 'lightbulb.fill' as IconSymbolName, desc: 'Comprehensive coverage' },
-    { key: 'hard', label: 'Hard', icon: 'rocket.fill' as IconSymbolName, desc: 'Deep analytical questions' },
+    { key: 'hard', label: 'Hard', icon: 'flame.fill' as IconSymbolName, desc: 'Deep analytical questions' },
 ];
 
 const FORMAT_OPTIONS = [
     { key: 'mcq', label: 'MCQ', icon: 'list.bullet' as IconSymbolName, desc: 'Multiple choice questions' },
-    { key: 'theory', label: 'Theory', icon: 'notepad' as IconSymbolName, desc: 'Essay & analysis' },
+    { key: 'theory', label: 'Theory', icon: 'doc.text.fill' as IconSymbolName, desc: 'Essay & analysis' },
     { key: 'both', label: 'Mixed', icon: 'person.2.fill' as IconSymbolName, desc: 'Combination of both' },
 ];
 
@@ -554,7 +554,7 @@ export default function GenerateQuizScreen() {
         const hasSelectedAction = isTheory ? theoryResults[currentQIndex] !== undefined : selectedAnswers[currentQIndex] !== undefined;
 
         const handleNextPress = () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            haptics.impactAsync();
             if (!isRevealed && !isTheory) {
                 // Reveal the answer logic for MCQ
                 setIsRevealed(true);
@@ -638,7 +638,7 @@ export default function GenerateQuizScreen() {
                                         activeOpacity={isRevealed ? 1 : 0.8}
                                         onPress={() => {
                                             if (!isRevealed) {
-                                                Haptics.selectionAsync();
+                                                haptics.selectionAsync();
                                                 setSelectedAnswers(p => ({ ...p, [currentQIndex]: opt }));
                                             }
                                         }}

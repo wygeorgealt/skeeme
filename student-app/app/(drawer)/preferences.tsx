@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { router, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/lib/haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
 
@@ -77,7 +77,7 @@ export default function PreferencesScreen() {
                         <TouchableOpacity
                             key={item.key}
                             onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                haptics.impactAsync();
                                 onSelect(isSelected ? '' : item.key);
                             }}
                             activeOpacity={0.8}
@@ -153,7 +153,7 @@ export default function PreferencesScreen() {
                                 <TouchableOpacity
                                     key={item.key}
                                     onPress={() => {
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        haptics.impactAsync();
                                         setStyle(isSelected ? '' : item.key);
                                     }}
                                     activeOpacity={0.8}

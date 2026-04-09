@@ -230,6 +230,14 @@ export default function AccountScreen() {
                         onSwitch={setNotificationsEnabled}
                         isDark={isDark}
                     />
+                    <SettingsRow
+                        icon="sparkles" iconBg="#FF9500"
+                        label="Haptic Feedback"
+                        hasSwitch={true}
+                        switchValue={useAuthStore().hapticsEnabled}
+                        onSwitch={(val) => useAuthStore.getState().setHapticsEnabled(val)}
+                        isDark={isDark}
+                    />
                     <View style={{ paddingVertical: 12, paddingRight: 16 }}>
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                             {(['light', 'dark', 'system'] as const).map((t) => (
@@ -258,7 +266,7 @@ export default function AccountScreen() {
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="shield.check.fill" iconBg="#8E8E93"
+                        icon="checkmark.circle.fill" iconBg="#8E8E93"
                         label="Privacy Policy"
                         onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/privacy')}
                         isDark={isDark}

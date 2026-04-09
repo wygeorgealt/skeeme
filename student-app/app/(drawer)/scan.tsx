@@ -6,7 +6,7 @@ import { Image as ExpoImage } from 'expo-image';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/lib/haptics';
 import Animated, { 
     useSharedValue, 
     withRepeat, 
@@ -100,7 +100,7 @@ export default function ScanScreen() {
     const handleCapture = async () => {
         if (!cameraRef.current) return;
         try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            haptics.impactAsync();
             const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
             
             if (photo) {
@@ -414,7 +414,7 @@ export default function ScanScreen() {
                                             <View style={s.feedbackBtns}>
                                                 <TouchableOpacity 
                                                     onPress={() => {
-                                                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                                        haptics.notificationAsync('success' as any);
                                                         setFeedback(prev => ({ ...prev, [index]: 'helpful' }));
                                                     }}
                                                     activeOpacity={0.7} 
@@ -425,7 +425,7 @@ export default function ScanScreen() {
                                                 </TouchableOpacity>
                                                 <TouchableOpacity 
                                                     onPress={() => {
-                                                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                                                        haptics.notificationAsync('warning' as any);
                                                         setFeedback(prev => ({ ...prev, [index]: 'unhelpful' }));
                                                     }}
                                                     activeOpacity={0.7} 

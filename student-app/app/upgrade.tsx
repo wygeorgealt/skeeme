@@ -46,12 +46,19 @@ export default function UpgradeScreen() {
         );
     }
 
+    const isPromoActive = (planId: string) => {
+        const promoEnd = pricingConfig.promos?.[`${planId}_end`];
+        if (!promoEnd) return false;
+        return new Date(promoEnd) > new Date();
+    };
+
     const PLANS = [
         {
             id: 'standard',
             name: 'Standard',
-            tag: 'Popular',
+            tag: isPromoActive('standard') ? 'Special Offer' : 'Popular',
             priceMonthly: pricingConfig[currency]?.standard?.monthly,
+            promoMonthly: pricingConfig[currency]?.standard?.promoMonthly,
             priceYearly: pricingConfig[currency]?.standard?.yearly,
             credits: pricingConfig[currency]?.standard?.credits,
             hasTrial: false,
@@ -59,8 +66,9 @@ export default function UpgradeScreen() {
         {
             id: 'elite',
             name: 'Elite',
-            tag: '3-Day Free Trial',
+            tag: isPromoActive('elite') ? 'Limited Deal' : '3-Day Free Trial',
             priceMonthly: pricingConfig[currency]?.elite?.monthly,
+            promoMonthly: pricingConfig[currency]?.elite?.promoMonthly,
             priceYearly: pricingConfig[currency]?.elite?.yearly,
             credits: pricingConfig[currency]?.elite?.credits,
             hasTrial: true,
@@ -68,8 +76,9 @@ export default function UpgradeScreen() {
     ];
 
     const currentPricing = pricingConfig[currency]?.[activePlan] || {};
-    const displayPrice = billingCycle === 'monthly' ? currentPricing.monthly : currentPricing.yearly;
-    const isTrialEligible = activePlan === 'elite' && billingCycle === 'monthly';
+    const isPromo = billingCycle === 'monthly' && isPromoActive(activePlan);
+    const displayPrice = isPromo ? currentPricing.promoMonthly : (billingCycle === 'monthly' ? currentPricing.monthly : currentPricing.yearly);
+    const isTrialEligible = activePlan === 'elite' && billingCycle === 'monthly' && !isPromo;
 
     const handlePurchase = async () => {
         setIsPurchasing(true);
@@ -182,7 +191,8 @@ export default function UpgradeScreen() {
                     <View style={s.plansContainer}>
                         {PLANS.map((plan) => {
                             const isSelected = activePlan === plan.id;
-                            const price = billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly;
+                            const isPromo = billingCycle === 'monthly' && isPromoActive(plan.id);
+                            const price = isPromo ? plan.promoMonthly : (billingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly);
                             return (
                                 <TouchableOpacity 
                                     key={plan.id}
@@ -196,10 +206,17 @@ export default function UpgradeScreen() {
                                         </View>
                                     )}
                                     <Text style={[s.planName, { color: C.text }]}>Skeeme {plan.name}</Text>
-                                    <Text style={[s.planPrice, { color: C.text }]}>
-                                        {currencySymbol}{price?.toLocaleString()}
-                                        <Text style={[s.planPeriod, { color: C.textTertiary }]}>{billingCycle === 'monthly' ? '/mo' : '/yr'}</Text>
-                                    </Text>
+                                    <View>
+                                        {isPromoActive(plan.id) && billingCycle === 'monthly' && (
+                                            <Text style={[s.originalPrice, { color: C.textTertiary }]}>
+                                                {currencySymbol}{plan.priceMonthly?.toLocaleString()}
+                                            </Text>
+                                        )}
+                                        <Text style={[s.planPrice, { color: C.text }]}>
+                                            {currencySymbol}{price?.toLocaleString()}
+                                            <Text style={[s.planPeriod, { color: C.textTertiary }]}>{billingCycle === 'monthly' ? '/mo' : '/yr'}</Text>
+                                        </Text>
+                                    </View>
                                     <View style={s.planCreditsRow}>
                                         <IconSymbol name="diamond.fill" size={14} color="#007AFF" />
                                         <Text style={s.planCreditsText}>{plan.credits?.toLocaleString()} Credits Monthly</Text>
@@ -317,6 +334,7 @@ const s = StyleSheet.create({
     planTagText: { color: '#FFF', fontSize: 10, fontWeight: '900' },
     planName: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
     planPrice: { fontSize: 32, fontWeight: '900', marginBottom: 8 },
+    originalPrice: { fontSize: 16, textDecorationLine: 'line-through', marginBottom: -4, fontWeight: '600' },
     planPeriod: { fontSize: 16, fontWeight: '500' },
     planCreditsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     planCreditsText: { fontSize: 14, color: '#007AFF', fontWeight: '700' },

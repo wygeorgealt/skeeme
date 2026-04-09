@@ -10,7 +10,7 @@ import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/lib/haptics';
 import { FlashcardDeck } from '@/types';
 import { Swipeable } from 'react-native-gesture-handler';
 
@@ -105,7 +105,7 @@ export default function FlashcardsDashboard() {
     const deleteMutation = useMutation({
         mutationFn: (id: number) => api.delete(`flashcards/decks/${id}`),
         onSuccess: () => {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            haptics.notificationAsync('success' as any);
             queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
         },
         onError: (error: any) => {
@@ -114,14 +114,14 @@ export default function FlashcardsDashboard() {
     });
 
     const onRefresh = useCallback(async () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        haptics.impactAsync();
         setRefreshing(true);
         await refetch();
         setRefreshing(false);
     }, [refetch]);
 
     const handleDelete = (id: number, title: string) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        haptics.impactAsync();
         Alert.alert(
             "Delete Deck",
             `Are you sure you want to delete "${title}"?`,
@@ -133,7 +133,7 @@ export default function FlashcardsDashboard() {
     };
 
     const handleDeckPress = (id: number) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        haptics.impactAsync();
         router.push(`/(drawer)/flashcards/${id}` as any);
     };
 
@@ -162,7 +162,7 @@ export default function FlashcardsDashboard() {
                         <View style={s.createBtnWrapper}>
                             <TouchableOpacity
                                 onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    haptics.impactAsync();
                                     router.push('/(drawer)/flashcards/create');
                                 }}
                                 activeOpacity={0.8}

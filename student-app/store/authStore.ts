@@ -29,6 +29,9 @@ interface AuthState {
     showCreditsModal: boolean;
     creditsModalFeature: 'scan' | 'quiz' | 'flashcard' | null;
     toggleCreditsModal: (show: boolean, feature?: 'scan' | 'quiz' | 'flashcard' | null) => void;
+    // Haptics
+    hapticsEnabled: boolean;
+    setHapticsEnabled: (enabled: boolean) => Promise<void>;
 }
 
 // Secure storage for sensitive data (tokens)
@@ -105,6 +108,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     onboardingComplete: false,
     showCreditsModal: false,
     creditsModalFeature: null,
+    hapticsEnabled: true,
 
     fetchPricingConfig: async () => {
         try {
@@ -142,6 +146,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             await standardStorage.setItem('onboarding_complete', 'true');
             await standardStorage.deleteItem('onboarding_step');
             await standardStorage.deleteItem('onboarding_data');
+        } catch (e) {}
+    },
+
+    setHapticsEnabled: async (enabled: boolean) => {
+        set({ hapticsEnabled: enabled });
+        try {
+            await standardStorage.setItem('haptics_enabled', String(enabled));
         } catch (e) {}
     },
 
@@ -221,8 +232,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             }
 
             if (token && userStr) {
+                const haptics = await standardStorage.getItem('haptics_enabled');
                 // Optimistically set user from cache for instant UI
-                set({ token, user: JSON.parse(userStr), theme: themeStr || 'system', onboardingComplete: true, isLoading: false });
+                set({ 
+                    token, 
+                    user: JSON.parse(userStr), 
+                    theme: themeStr || 'system', 
+                    hapticsEnabled: haptics === null ? true : haptics === 'true',
+                    onboardingComplete: true, 
+                    isLoading: false 
+                });
 
                 // C5: Validate token in background — if expired, force logout
                 try {
@@ -255,9 +274,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 const obStep = await standardStorage.getItem('onboarding_step');
                 const obData = await standardStorage.getItem('onboarding_data');
                 const savedEmail = await standardStorage.getItem('stored_email');
-
+                const haptics = await standardStorage.getItem('haptics_enabled');
+ 
                 set({
                     theme: themeStr || 'system',
+                    hapticsEnabled: haptics === null ? true : haptics === 'true',
                     onboardingComplete: obComplete === 'true',
                     onboardingStep: obStep ? parseInt(obStep, 10) : 0,
                     onboardingData: obData ? JSON.parse(obData) : {},

@@ -89,12 +89,18 @@ class SystemSetting extends Model
      */
     public static function set(string $key, $value, ?string $description = null)
     {
-        return self::updateOrCreate(
+        $setting = self::updateOrCreate(
             ['key' => $key],
             [
                 'value' => $value,
                 'description' => $description
             ]
         );
+
+        if ($key === 'pricing') {
+            \Illuminate\Support\Facades\Cache::forget('system_pricing_config');
+        }
+
+        return $setting;
     }
 }
