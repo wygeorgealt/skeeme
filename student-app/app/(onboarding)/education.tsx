@@ -4,15 +4,15 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { GraduationCap, Book, FlaskConical, Medal, CircleCheck } from 'lucide-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const LEVELS = [
-    { key: 'high_school', label: 'High School', icon: GraduationCap, desc: 'Secondary / A-Levels' },
-    { key: 'undergraduate', label: 'Undergraduate', icon: Book, desc: "Bachelor's degree" },
-    { key: 'masters_phd', label: 'Masters / PhD', icon: FlaskConical, desc: 'Postgraduate research' },
-    { key: 'professional', label: 'Professional Cert', icon: Medal, desc: 'ICAN, ACCA, PMP, etc.' },
+    { key: 'high_school', label: 'High School', icon: 'graduationcap.fill', desc: 'Secondary / A-Levels' },
+    { key: 'undergraduate', label: 'Undergraduate', icon: 'book.fill', desc: "Bachelor's degree" },
+    { key: 'masters_phd', label: 'Masters / PhD', icon: 'flask.fill', desc: 'Postgraduate research' },
+    { key: 'professional', label: 'Professional Cert', icon: 'medal.fill', desc: 'ICAN, ACCA, PMP, etc.' },
 ];
 
 export default function EducationScreen() {
@@ -61,7 +61,7 @@ export default function EducationScreen() {
                     <View style={s.optionsGap}>
                         {LEVELS.map((level, index) => {
                             const isSelected = selected === level.key;
-                            const Icon = level.icon;
+                            const iconName = level.icon;
 
                             return (
                                 <Animated.View 
@@ -78,14 +78,14 @@ export default function EducationScreen() {
                                         ]}
                                     >
                                         <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                                            <Icon width={22} height={22} color={iconColor} />
+                                            <IconSymbol name={iconName as any} size={22} color={iconColor} />
                                         </View>
                                         <View style={s.textStack}>
                                             <Text style={[s.optionLabel, { color: textColor }]}>{level.label}</Text>
                                             <Text style={[s.optionDesc, { color: subtextColor }]}>{level.desc}</Text>
                                         </View>
                                         {isSelected && (
-                                            <CircleCheck width={24} height={24} color="#007AFF" />
+                                            <IconSymbol name="checkmark.circle.fill" size={24} color="#007AFF" />
                                         )}
                                     </TouchableOpacity>
                                 </Animated.View>

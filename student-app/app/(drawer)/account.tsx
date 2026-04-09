@@ -275,6 +275,7 @@ export default function AccountScreen() {
                 {/* ── Section 4: Log Out ── */}
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
+                        icon="arrow.right.to.line" iconBg="#8E8E93"
                         label="Log Out"
                         onPress={handleSignOut}
                         isLast={true}
@@ -286,6 +287,7 @@ export default function AccountScreen() {
                 <Text style={[s.sectionLabel, { color: C.destructive }]}>Danger Zone</Text>
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
+                        icon="trash.fill" iconBg="#FF3B30"
                         label="Delete Account"
                         onPress={() => {
                             Alert.alert("Permanent Action", "Are you sure you want to permanently delete your account?", [

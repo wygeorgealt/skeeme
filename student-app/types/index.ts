@@ -117,6 +117,8 @@ export interface QuizQuestion {
     options?: string[];
     correct_answer: string;
     explanation: string;
+    explanation_right?: string;
+    explanation_wrong?: string;
     difficulty_level?: string;
 }
 

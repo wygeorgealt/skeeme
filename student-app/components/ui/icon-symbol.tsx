@@ -66,7 +66,9 @@ import {
   Eye,
   EyeClosed,
   NotepadText,
-  HelpCircle
+  HelpCircle,
+  LogOut,
+  Trash2
 } from 'lucide-react-native';
 import React from 'react';
 import { type StyleProp, type ViewStyle } from 'react-native';
@@ -141,6 +143,8 @@ export const MAPPING = {
   'eye.slash.fill': EyeClosed,
   'notepad': NotepadText,
   'questionmark.circle': HelpCircle,
+  'arrow.right.to.line': LogOut,
+  'trash.fill': Trash2,
 } as const;
 
 export type IconSymbolName = keyof typeof MAPPING;

@@ -5,13 +5,13 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { Bell, Trophy, Flame, BatteryWarning } from 'lucide-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import * as Notifications from 'expo-notifications';
 
 const REASONS = [
-    { icon: Trophy, text: 'Approaching a credit reward milestone' },
-    { icon: Flame, text: 'Keep your study streak alive' },
-    { icon: BatteryWarning, text: 'Credits running low warning' },
+    { icon: 'trophy.fill' as const, text: 'Approaching a credit reward milestone' },
+    { icon: 'flame.fill' as const, text: 'Keep your study streak alive' },
+    { icon: 'exclamationmark.triangle.fill' as const, text: 'Credits running low warning' },
 ];
 
 export default function NotificationsScreen() {
@@ -55,7 +55,7 @@ export default function NotificationsScreen() {
                 
                 <Animated.View entering={FadeInDown.duration(600).delay(100)} style={s.headerSection}>
                     <View style={s.bellCircle}>
-                        <Bell width={40} height={40} color="#FFFFFF" strokeWidth={2} />
+                        <IconSymbol name="bell.fill" size={40} color="#FFFFFF" />
                     </View>
 
                     <Text style={[s.heroTitle, { color: textColor }]}>
@@ -73,7 +73,7 @@ export default function NotificationsScreen() {
                         return (
                             <View key={index} style={[s.listItem, !isLast && { borderBottomColor: separatorColor, borderBottomWidth: StyleSheet.hairlineWidth }]}>
                                 <View style={[s.iconBox, { backgroundColor: isDark ? '#2C2C2E' : '#E8F0FE' }]}>
-                                    <reason.icon width={22} height={22} color={iconColor} strokeWidth={2} />
+                                    <IconSymbol name={reason.icon as any} size={22} color={iconColor} />
                                 </View>
                                 <Text style={[s.reasonText, { color: textColor }]}>{reason.text}</Text>
                             </View>

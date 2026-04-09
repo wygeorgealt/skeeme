@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, useColorScheme, Alert, ActivityIndicator, StyleSheet, Modal, SafeAreaView, Dimensions } from 'react-native';
-import { X, Check, Diamond, Star, Sparkles, Zap, Users, ShieldCheck } from 'lucide-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -143,7 +143,7 @@ export default function UpgradeScreen() {
                 {/* Premium Header */}
                 <LinearGradient colors={['#007AFF', '#0A84FF']} style={[s.premiumHeader, { paddingTop: insets.top + 20 }]}>
                     <TouchableOpacity onPress={() => router.back()} style={s.closeBtn}>
-                        <X width={24} height={24} color="#FFF" />
+                        <IconSymbol name="xmark" size={24} color="#FFF" />
                     </TouchableOpacity>
                     <View style={s.plusBadge}>
                         <Text style={s.plusBadgeText}>Upgrade</Text>
@@ -152,8 +152,8 @@ export default function UpgradeScreen() {
                     <Text style={s.headerSubtitle}>Supercharge your learning with AI-powered study tools</Text>
                     
                     {/* Floating icons for high-fidelity look */}
-                    <View style={s.sparklesLeft}><Sparkles width={20} height={20} color="rgba(255,255,255,0.4)" /></View>
-                    <View style={s.sparklesRight}><Star width={24} height={24} color="rgba(255,255,255,0.4)" /></View>
+                    <View style={s.sparklesLeft}><IconSymbol name="sparkles" size={20} color="rgba(255,255,255,0.4)" /></View>
+                    <View style={s.sparklesRight}><IconSymbol name="star.fill" size={24} color="rgba(255,255,255,0.4)" /></View>
                 </LinearGradient>
 
                 <View style={s.content}>
@@ -201,7 +201,7 @@ export default function UpgradeScreen() {
                                         <Text style={[s.planPeriod, { color: C.textTertiary }]}>{billingCycle === 'monthly' ? '/mo' : '/yr'}</Text>
                                     </Text>
                                     <View style={s.planCreditsRow}>
-                                        <Diamond width={14} height={14} color="#007AFF" />
+                                        <IconSymbol name="diamond.fill" size={14} color="#007AFF" />
                                         <Text style={s.planCreditsText}>{plan.credits?.toLocaleString()} Credits Monthly</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -235,7 +235,7 @@ export default function UpgradeScreen() {
                                 onPress={() => handleCreditPurchase(pack)}
                                 style={[s.packCard, { backgroundColor: C.card, borderColor: C.separator }]}
                             >
-                                <Zap width={20} height={20} color="#FFD60A" />
+                                <IconSymbol name="bolt.fill" size={20} color="#FFD60A" />
                                 <Text style={[s.packAmount, { color: C.text }]}>{pack.amount.toLocaleString()}</Text>
                                 <Text style={[s.packPrice, { color: C.textSecondary }]}>{currencySymbol}{pack.price.toLocaleString()}</Text>
                             </TouchableOpacity>

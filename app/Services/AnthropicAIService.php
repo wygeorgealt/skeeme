@@ -543,7 +543,7 @@ INPUT (Notes or Topic): {$notesText}
 Format: JSON only. Expand on topic or extract from notes.
 Language: YOU MUST detect the language of the provided material and generate the entire output in that EXACT same language. Use simple, natural language appropriate for the detected tongue.
 Math: Use proper Unicode characters for math (e.g. sec²(x), x³, √x). Do NOT use raw caret signs like sec^2.
-Schema: [{"q":"text","t":"MC|TF|SA|ES|FB","d":"E|M|H","o":["A","B"],"c":"A","x":"why"}]
+Schema: [{"q":"text","t":"MC|TF|SA|ES|FB","d":"E|M|H","o":["A","B"],"c":"A","xr":"targeted feedback if correct","xw":"targeted feedback if wrong"}]
 PROMPT;
     }
 
@@ -651,6 +651,8 @@ PROMPT;
                 'topic' => $q['topic'] ?? 'General',
                 'learning_objective' => $q['learning_objective'] ?? '',
                 'explanation' => $q['x'] ?? $q['explanation'] ?? '',
+                'explanation_right' => $q['xr'] ?? $q['explanation_right'] ?? '',
+                'explanation_wrong' => $q['xw'] ?? $q['explanation_wrong'] ?? '',
                 'options' => $q['o'] ?? $q['options'] ?? [],
                 'correct_answer' => $q['c'] ?? $q['correct_answer'] ?? '',
             ];

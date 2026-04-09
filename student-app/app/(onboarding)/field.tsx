@@ -4,18 +4,18 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { FlaskConical, PenTool, Library, Briefcase, FileText, Plus, LayoutGrid, CircleCheck } from 'lucide-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const FIELDS = [
-    { key: 'sciences', label: 'Sciences', icon: FlaskConical },
-    { key: 'engineering', label: 'Engineering', icon: PenTool },
-    { key: 'humanities', label: 'Humanities', icon: Library },
-    { key: 'business', label: 'Business', icon: Briefcase },
-    { key: 'law', label: 'Law', icon: FileText },
-    { key: 'medicine', label: 'Medicine', icon: Plus },
-    { key: 'other', label: 'Other', icon: LayoutGrid },
+    { key: 'sciences', label: 'Sciences', icon: 'flask.fill' },
+    { key: 'engineering', label: 'Engineering', icon: 'wrench.and.screwdriver.fill' },
+    { key: 'humanities', label: 'Humanities', icon: 'book.fill' },
+    { key: 'business', label: 'Business', icon: 'briefcase.fill' },
+    { key: 'law', label: 'Law', icon: 'doc.text.fill' },
+    { key: 'medicine', label: 'Medicine', icon: 'cross.fill' },
+    { key: 'other', label: 'Other', icon: 'square.grid.2x2.fill' },
 ];
 
 export default function FieldScreen() {
@@ -64,7 +64,7 @@ export default function FieldScreen() {
                     <View style={s.optionsGap}>
                         {FIELDS.map((field, index) => {
                             const isSelected = selected === field.key;
-                            const Icon = field.icon;
+                            const iconName = field.icon;
 
                             return (
                                 <Animated.View 
@@ -81,11 +81,11 @@ export default function FieldScreen() {
                                         ]}
                                     >
                                         <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                                            <Icon width={20} height={20} color={iconColor} />
+                                            <IconSymbol name={iconName as any} size={20} color={iconColor} />
                                         </View>
                                         <Text style={[s.optionLabel, { color: textColor }]}>{field.label}</Text>
                                         {isSelected && (
-                                            <CircleCheck width={24} height={24} color="#007AFF" />
+                                            <IconSymbol name="checkmark.circle.fill" size={24} color="#007AFF" />
                                         )}
                                     </TouchableOpacity>
                                 </Animated.View>

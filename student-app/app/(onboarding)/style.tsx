@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Sun, Compass, CircleCheck } from 'lucide-react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,13 +13,13 @@ const STYLES = [
         key: 'simple',
         label: 'Simple & Clear',
         desc: "Break it down like I'm new to this topic.",
-        icon: Sun,
+        icon: 'sun.max.fill',
     },
     {
         key: 'detailed',
         label: 'Detailed & Academic',
         desc: 'Give me the full exam-level answer.',
-        icon: Compass,
+        icon: 'compass.drawing',
     },
 ];
 
@@ -69,7 +69,7 @@ export default function StyleScreen() {
                     <View style={s.optionsGap}>
                         {STYLES.map((style, index) => {
                             const isSelected = selected === style.key;
-                            const Icon = style.icon;
+                            const iconName = style.icon;
 
                             return (
                                 <Animated.View 
@@ -86,14 +86,14 @@ export default function StyleScreen() {
                                         ]}
                                     >
                                         <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                                            <Icon width={24} height={24} color={iconColor} />
+                                            <IconSymbol name={iconName as any} size={24} color={iconColor} />
                                         </View>
                                         <View style={s.textStack}>
                                             <Text style={[s.optionLabel, { color: textColor }]}>{style.label}</Text>
                                             <Text style={[s.optionDesc, { color: subtextColor }]}>{style.desc}</Text>
                                         </View>
                                         {isSelected && (
-                                            <CircleCheck width={26} height={26} color="#007AFF" />
+                                            <IconSymbol name="checkmark.circle.fill" size={26} color="#007AFF" />
                                         )}
                                     </TouchableOpacity>
                                 </Animated.View>
