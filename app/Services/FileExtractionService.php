@@ -69,9 +69,14 @@ class FileExtractionService
      */
     protected function extractFromPdf(string $filePath): string
     {
-        $parser = new PdfParser();
-        $pdf = $parser->parseFile($filePath);
-        return $pdf->getText();
+        try {
+            $parser = new PdfParser();
+            $pdf = $parser->parseFile($filePath);
+            return $pdf->getText();
+        } catch (\Exception $e) {
+            Log::warning("FileExtractionService: PDFParser failed (" . $e->getMessage() . "), falling back to OCR if available.");
+            return "";
+        }
     }
 
     /**
@@ -79,17 +84,53 @@ class FileExtractionService
      */
     protected function extractFromDocx(string $filePath): string
     {
-        $phpWord = WordIOFactory::load($filePath);
+        $useErrors = libxml_use_internal_errors(true);
+        $phpWord = null;
+        try {
+            $phpWord = WordIOFactory::load($filePath);
+        } catch (\Exception $e) {
+            Log::warning("FileExtractionService: PHPWord failed to load DOCX (" . $e->getMessage() . "), using ZipArchive fallback.");
+            return $this->extractDocxTextFallback($filePath);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($useErrors);
+        }
+
         $text = '';
-        foreach ($phpWord->getSections() as $section) {
-            foreach ($section->getElements() as $element) {
-                if (method_exists($element, 'getText')) {
-                    $text .= $element->getText() . " ";
-                } elseif (method_exists($element, 'getElements')) {
-                    // Handle nested elements like tables or lists if necessary
-                    $text .= $this->extractNestedText($element);
+        if ($phpWord) {
+            foreach ($phpWord->getSections() as $section) {
+                foreach ($section->getElements() as $element) {
+                    if (method_exists($element, 'getText')) {
+                        $text .= $element->getText() . " ";
+                    } elseif (method_exists($element, 'getElements')) {
+                        // Handle nested elements like tables or lists if necessary
+                        $text .= $this->extractNestedText($element);
+                    }
                 }
             }
+        }
+        return $text;
+    }
+
+    /**
+     * Fallback to extract text directly from DOCX XML if PHPWord fails.
+     */
+    protected function extractDocxTextFallback(string $filePath): string
+    {
+        $text = '';
+        $zip = new \ZipArchive();
+        if ($zip->open($filePath) === true) {
+            if (($index = $zip->locateName('word/document.xml')) !== false) {
+                $xml = $zip->getFromIndex($index);
+                // Ensure spaces between paragraphs
+                $xml = str_replace('</w:p>', " </w:p>\n", $xml);
+                // Replace tabs
+                $xml = str_replace('<w:tab/>', "\t", $xml);
+                $text = strip_tags($xml);
+            }
+            $zip->close();
+        } else {
+            Log::error("FileExtractionService: ZipArchive failed to open DOCX at {$filePath}");
         }
         return $text;
     }
