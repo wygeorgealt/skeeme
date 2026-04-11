@@ -290,7 +290,7 @@ class DeepseekAIService
                             ],
                         ],
                         'temperature' => 0.5,
-                        'max_tokens' => max(1000, $numberOfCards * 200),
+                        'max_tokens' => min(8192, max(1000, $numberOfCards * 200)),
                         'response_format' => ['type' => 'json_object'],
                     ],
                 ]
