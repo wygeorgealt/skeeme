@@ -302,29 +302,44 @@ You are a world-class tutor solving exam papers. Look at this image carefully.
 
 Your job:
 1. Identify ALL questions or sub-questions (e.g., 1a, 1b, Question 2, c, d) present in the image.
-2. Classify each question as either "calculation" or "theory".
-3. Solve EVERY single one accordingly.
+2. Solve EVERY single one with a detailed, flowing explanation.
 
-CLASSIFICATION RULES:
-- "calculation": Any question requiring mathematical operations, derivations, equations, numerical answers, proofs, balancing equations, or step-by-step problem solving.
-- "theory": Any question asking to explain, define, describe, compare, discuss, list, or analyze a concept.
+RESPONSE FORMAT:
+For EVERY question, provide:
+- "question": Reconstruct the question text from the image.
+- "topic": The subject area (e.g. "Algebra", "Chemistry", "Physics").
+- "type": "calculation" or "theory".
+- "solution": The final answer only. Bold it, e.g. "**D. I and II only**" or "**\$125\$**".
+- "steps": [] (always empty array).
+- "explanation": A complete, flowing explanation (see EXPLANATION STYLE below).
+- "summary": "" (leave empty).
 
-RESPONSE RULES BY TYPE:
-- For "calculation" questions:
-  - Provide numbered "steps" showing the full working.
-  - Provide a "solution" with the final answer.
-  - Use proper Unicode math symbols (e.g. x², √x, ∫, π, θ). NEVER use raw caret notation like x^2.
-  - ALWAYS format fractions as LaTeX block fractions "\frac{numerator}{denominator}". NEVER use slashes (like 1/2 or a/b).
+EXPLANATION STYLE (CRITICAL — follow this exactly):
+Write the explanation as a **single flowing document**, like a textbook solution. NOT numbered steps. NOT bullet points only. Write natural paragraphs that walk through the reasoning.
 
-- For "theory" questions:
-  - Provide an "explanation" field with a well-structured answer using bullet points (•) and clear paragraphs. Include simple examples where helpful.
-  - Provide a "summary" field with a one-line takeaway.
-  - Leave "steps" as an empty array and "solution" as empty string.
+Structure your explanation like this:
+- Start with a brief context sentence about what the question is asking.
+- Show the working/reasoning as flowing prose with inline math.
+- Use **bold** for key conclusions (e.g. "**Therefore, Statement I is true.**").
+- Use bullet points (•) ONLY for listing options or short items.
+- Use \$...\$ for inline math and \$\$...\$\$ for standalone equations.
+- Separate logical sections with blank lines (double newline).
+- End with a clear, bold conclusion.
+
+Example explanation style:
+"This is a multiple-choice question that requires analyzing the relationship between Fahrenheit and Celsius temperature scales.\n\nThe formula given is \$C = \\frac{5}{9}(F - 32)\$\n\n• **Option A: I only**\n• **Option B: II only**\n• **Option C: III only**\n• **Option D: I and II only**\n\nLet's analyze each statement:\n\n**Statement I:** A temperature increase of \$1\$ degree Fahrenheit is equivalent to a temperature increase of \$\\frac{5}{9}\$ degree Celsius.\n\nTo verify, consider a change in Fahrenheit, \$\\Delta F\$, and the corresponding change in Celsius, \$\\Delta C\$.\n\nFrom the formula, we can express \$C\$ in terms of \$F\$. If \$F_1\$ and \$C_1\$ are initial temperatures, and \$F_2\$ and \$C_2\$ are final temperatures, then:\n\n\$\$\\Delta C = \\frac{5}{9} \\Delta F\$\$\n\nIf \$\\Delta F = 1\$ degree Fahrenheit, then \$\\Delta C = \\frac{5}{9} \\times 1 = \\frac{5}{9}\$ degree Celsius.\n\n**Therefore, Statement I is true.**\n\nBased on the analysis, statements I and II are true, while statement III is false.\n\nSo **Option D is correct.**"
+
+MATH FORMATTING RULES:
+- ALL math expressions MUST be wrapped in dollar-sign delimiters.
+- Use \$...\$ for inline math (e.g. \$x^2 + 1\$, \$\\frac{1}{2}\$).
+- Use \$\$...\$\$ for important standalone equations on their own line.
+- NEVER write raw LaTeX commands like \\frac{}{} without wrapping them in \$ or \$\$.
+- Use LaTeX inside the delimiters: \$\\frac{a}{b}\$ for fractions, \$x^2\$ for superscripts, \$x_1\$ for subscripts.
 
 GENERAL RULES:
-- If a question has sub-parts (a, b, c), treat them as separate items in the list.
+- If a question has sub-parts (a, b, c), treat them as separate items in the results list.
 - Use ultra-simple English.
-- Use proper Unicode for all math symbols.
+- Write thorough, detailed explanations. Do NOT be brief.
 
 Return JSON only in this format:
 {
@@ -333,19 +348,10 @@ Return JSON only in this format:
       "question": "reconstructed question text",
       "topic": "subject area",
       "type": "calculation",
-      "solution": "final answer",
-      "steps": ["step 1...", "step 2..."],
-      "explanation": "",
-      "summary": ""
-    },
-    {
-      "question": "reconstructed question text",
-      "topic": "subject area",
-      "type": "theory",
-      "solution": "",
+      "solution": "**final answer**",
       "steps": [],
-      "explanation": "• Key point one\n• Key point two\n\nFor example, ...",
-      "summary": "One-line takeaway"
+      "explanation": "Full flowing explanation as described above...",
+      "summary": ""
     }
   ]
 }
@@ -355,7 +361,7 @@ PROMPT;
                 'headers' => $this->buildHeaders(),
                 'json' => [
                     'model' => $this->model,
-                    'max_tokens' => 4096,
+                    'max_tokens' => 8192,
                     'system' => 'You are a world-class tutor solving exam papers. Return only JSON.',
                     'messages' => [
                         [

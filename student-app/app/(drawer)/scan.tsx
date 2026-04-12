@@ -24,6 +24,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { MathText } from '@/components/ui/MathText';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import * as Clipboard from 'expo-clipboard';
 
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
@@ -181,6 +182,11 @@ export default function ScanScreen() {
         }
     };
 
+    const handleCopy = async (text: string) => {
+        await Clipboard.setStringAsync(text);
+        haptics.notificationAsync('success' as any);
+    };
+
     const handleExport = async () => {
         if (results.length === 0) return;
         setLoading(true);
@@ -331,54 +337,67 @@ export default function ScanScreen() {
                         {/* Solutions */}
                         {results.map((item, index) => (
                             <View key={index} style={[s.answerCard, isDark ? s.cardDark : s.cardLight]}>
-                                {/* Question Header */}
-                                <View style={s.answerHeader}>
-                                    <View style={s.qBadge}>
-                                        <Text style={s.qBadgeText}>Q{index + 1}</Text>
+                                {/* Question Section */}
+                                <View style={s.sectionHeaderRow}>
+                                    <View style={s.sectionTitleContainer}>
+                                        <Text style={[s.sectionLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Question</Text>
                                     </View>
                                     {!!item.topic && (
-                                        <Text style={[s.topicLabel, isDark ? s.textSlate400d : s.textSlate500l]}>{item.topic}</Text>
+                                        <View style={s.topicPill}>
+                                            <Text style={s.topicPillText}>{item.topic}</Text>
+                                        </View>
                                     )}
                                 </View>
+                                <MathText content={item.question} color={isDark ? '#e2e8f0' : '#1e293b'} fontSize={15} containerStyle={{ marginBottom: 24 }} />
 
-                                {/* Question Text */}
-                                <MathText content={item.question} color={isDark ? '#e2e8f0' : '#0f172a'} fontSize={16} containerStyle={{ marginBottom: 20 }} />
-
-                                {/* Divider */}
-                                <View style={[s.answerDivider, isDark ? s.dividerDark : s.dividerLight]} />
-
-                                {/* Answer Label */}
-                                <View style={s.answerLabelRow}>
-                                    <Text style={s.answerLabelIcon}>≡</Text>
-                                    <Text style={[s.answerLabelText, isDark ? s.textWhite : s.textSlate900]}>Answer</Text>
+                                {/* Answer Section */}
+                                <View style={[s.sectionDivider, isDark ? s.dividerDark : s.dividerLight]} />
+                                <View style={s.sectionHeaderRow}>
+                                    <View style={s.answerIconRow}>
+                                        <IconSymbol name="checkmark.circle.fill" size={18} color="#10b981" />
+                                        <Text style={[s.sectionTitle, isDark ? s.textWhite : s.textSlate900]}>Answer</Text>
+                                    </View>
+                                    <TouchableOpacity 
+                                        onPress={() => handleCopy(item.solution || item.summary || '')}
+                                        style={s.copyBtn}
+                                        activeOpacity={0.6}
+                                    >
+                                        <IconSymbol name="doc.on.doc.fill" size={14} color={isDark ? '#94a3b8' : '#64748b'} />
+                                        <Text style={s.copyBtnText}>Copy</Text>
+                                    </TouchableOpacity>
                                 </View>
-
-                                {/* Step-by-step Solution */}
-                                {!!(item.steps && item.steps.length > 0) && (
-                                    <View style={s.stepsBlock}>
-                                        {item.steps.map((step, i) => (
-                                            <View key={i} style={s.stepItem}>
-                                                <View style={[s.stepCircle, isDark ? s.stepCircleDark : s.stepCircleLight]}>
-                                                    <Text style={s.stepCircleText}>{i + 1}</Text>
-                                                </View>
-                                                <MathText content={step} color={isDark ? '#cbd5e1' : '#334155'} fontSize={15} containerStyle={{ flex: 1 }} />
-                                            </View>
-                                        ))}
+                                {!!(item.solution || item.summary) && (
+                                    <View style={[s.answerHighlight, isDark ? s.answerHighlightDark : s.answerHighlightLight]}>
+                                        <MathText 
+                                            content={item.solution || item.summary || ''} 
+                                            color={isDark ? '#f1f5f9' : '#0f172a'} 
+                                            fontSize={17} 
+                                            containerStyle={{ paddingVertical: 4 }} 
+                                        />
                                     </View>
                                 )}
 
-                                {/* Final Answer */}
-                                <View style={[s.finalBox, isDark ? s.finalBoxDark : s.finalBoxLight]}>
-                                    <Text style={s.finalLabel}>Answer:</Text>
-                                    <MathText content={item.solution || item.summary || ''} color={isDark ? 'white' : '#0f172a'} fontSize={16} />
-                                </View>
+                                {/* Explanation Section — Gauth-style flowing document */}
+                                {!!(item.explanation || item.steps?.length) && (
+                                    <>
+                                        <View style={[s.sectionDivider, isDark ? s.dividerDark : s.dividerLight]} />
+                                        <View style={s.sectionHeaderRow}>
+                                            <Text style={[s.sectionTitle, isDark ? s.textWhite : s.textSlate900]}>Explanation</Text>
+                                        </View>
 
-                                {/* Explanation (if present) */}
-                                {!!item.explanation && (
-                                    <View style={s.explanationBlock}>
-                                        <MathText content={item.explanation} color={isDark ? '#94a3b8' : '#64748b'} fontSize={14} />
-                                    </View>
+                                        <MathText 
+                                            content={
+                                                item.explanation 
+                                                    ? item.explanation 
+                                                    : (item.steps && item.steps.length > 0 ? item.steps.join('\n\n') : '')
+                                            } 
+                                            color={isDark ? '#cbd5e1' : '#334155'} 
+                                            fontSize={15} 
+                                            containerStyle={{ marginBottom: 12 }} 
+                                        />
+                                    </>
                                 )}
+
 
                                 {/* Feedback Row */}
                                 <View style={s.feedbackRow}>
@@ -526,8 +545,30 @@ const s = StyleSheet.create({
     metaValue: { fontSize: 18, fontWeight: '900', letterSpacing: -0.5 },
     metaDivider: { width: 1, height: 32, backgroundColor: 'rgba(148,163,184,0.2)' },
 
-    // Answer cards
-    answerCard: { borderRadius: 24, padding: 20, marginBottom: 16 },
+    // Answer cards — Gauth-inspired clean document layout
+    answerCard: { borderRadius: 24, padding: 24, marginBottom: 16 },
+
+    // Section layout
+    sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+    sectionLabel: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+    sectionTitle: { fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
+    answerIconRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+
+    copyBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(148,163,184,0.1)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+    copyBtnText: { fontSize: 11, fontWeight: '700', color: '#64748b' },
+
+    topicPill: { backgroundColor: 'rgba(0,122,255,0.08)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+    topicPillText: { color: '#007AFF', fontWeight: '700', fontSize: 11, letterSpacing: 0.3 },
+
+    // Section divider (thin, spacious)
+    sectionDivider: { height: 1, marginTop: 4, marginBottom: 16, opacity: 0.6 },
+
+    // Answer highlight box
+    answerHighlight: { borderRadius: 12, paddingHorizontal: 12, marginBottom: 12 },
+    answerHighlightLight: { backgroundColor: 'rgba(16,185,129,0.04)', borderLeftWidth: 3, borderLeftColor: '#10b981' },
+    answerHighlightDark: { backgroundColor: 'rgba(16,185,129,0.08)', borderLeftWidth: 3, borderLeftColor: '#10b981' },
+
+    // Legacy styles kept for compatibility
     answerHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
     qBadge: { backgroundColor: 'rgba(0,122,255,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
     qBadgeText: { color: '#007AFF', fontWeight: '900', fontSize: 12 },
@@ -543,7 +584,7 @@ const s = StyleSheet.create({
     answerLabelIcon: { fontSize: 18, color: '#007AFF', fontWeight: '900' },
     answerLabelText: { fontSize: 16, fontWeight: '800' },
 
-    // Steps
+    // Steps (legacy)
     stepsBlock: { marginBottom: 16 },
     stepItem: { flexDirection: 'row', marginBottom: 14 },
     stepCircle: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 },
@@ -551,7 +592,7 @@ const s = StyleSheet.create({
     stepCircleLight: { backgroundColor: 'rgba(0,122,255,0.08)' },
     stepCircleText: { color: '#007AFF', fontWeight: '800', fontSize: 11 },
 
-    // Final answer box
+    // Final answer box (legacy)
     finalBox: { borderRadius: 12, padding: 16, marginBottom: 16 },
     finalBoxDark: { backgroundColor: 'rgba(0,122,255,0.08)' },
     finalBoxLight: { backgroundColor: '#EFF6FF' },
@@ -560,10 +601,16 @@ const s = StyleSheet.create({
     // Explanation
     explanationBlock: { marginBottom: 16, paddingTop: 4 },
 
+    // Branding Watermark
+    cardBranding: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 4, marginBottom: 16, opacity: 0.8 },
+    cardBrandingText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2 },
+
+    sectionTitleContainer: { flex: 1 },
+
     // Feedback
-    feedbackRow: { alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(148,163,184,0.1)' },
+    feedbackRow: { alignItems: 'center', paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(148,163,184,0.1)' },
+    feedbackBtns: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     feedbackPrompt: { fontSize: 13, fontWeight: '600', marginBottom: 12 },
-    feedbackBtns: { flexDirection: 'row', gap: 12 },
     feedbackBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
     feedbackBtnDark: { backgroundColor: 'rgba(255,255,255,0.06)' },
     feedbackBtnLight: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0' },
