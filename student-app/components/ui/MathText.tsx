@@ -38,25 +38,45 @@ export function MathText({
             font-size: ${fontSize}px;
             word-wrap: break-word;
             overflow: hidden; /* Hide scrollbars */
-            line-height: 1.5;
+            line-height: 1.6;
           }
           #math-container {
             padding: 2px 0;
             display: inline-block;
             min-width: 100%;
+            white-space: pre-wrap; /* Crucial for AI paragraph layout and newlines */
           }
           .katex { font-size: 1.1em; }
-          .katex-display { margin: 0.5em 0; }
+          /* Left align block equations like Gauth/Photomath */
+          .katex-display { 
+              text-align: left !important; 
+              margin: 0.7em 0; 
+          }
+          .katex-display > .katex {
+              text-align: left !important;
+              display: inline-block;
+          }
+          strong {
+              font-weight: 700;
+              color: ${color === '#121212' || color === '#0f172a' ? '#000000' : '#FFFFFF'}; /* Enhance contrast for bold text */
+          }
         </style>
       </head>
       <body>
-        <div id="math-container">${content}</div>
+        <div id="math-container"></div>
         <script>
+          // Safe injection preserving all newlines and quotes
+          const rawContent = decodeURIComponent("${encodeURIComponent(content)}");
+          // Simple markdown bold to strong tag
+          let formattedContent = rawContent.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');
+          document.getElementById('math-container').innerHTML = formattedContent;
+
           let lastHeight = 0;
           function sendHeight() {
             const container = document.getElementById('math-container');
+            if (!container) return;
             const newHeight = container.offsetHeight;
-            if (newHeight !== lastHeight && newHeight > 0) {
+            if (Math.abs(newHeight - lastHeight) > 1 && newHeight > 0) {
               lastHeight = newHeight;
               window.ReactNativeWebView.postMessage(JSON.stringify({ height: newHeight }));
             }
@@ -71,13 +91,13 @@ export function MathText({
                 renderMathInElement(document.getElementById('math-container'), {
                 delimiters: [
                     {left: '$$', right: '$$', display: true},
+                    {left: '\\\\[', right: '\\\\]', display: true},
                     {left: '$', right: '$', display: false},
-                    {left: '\\\\(', right: '\\\\)', display: false},
-                    {left: '\\\\[', right: '\\\\]', display: true}
+                    {left: '\\\\(', right: '\\\\)', display: false}
                 ],
                 throwOnError: false
                 });
-                sendHeight(); // Send height again after math renders
+                setTimeout(sendHeight, 50); // Send height again after math renders
             }
           });
 

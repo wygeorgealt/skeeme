@@ -13,6 +13,7 @@ import { generateUUID } from '@/lib/utils';
 import { Colors } from '@/constants/theme';
 import * as DocumentPicker from 'expo-document-picker';
 import { useQueryClient } from '@tanstack/react-query';
+import { posthog } from '@/lib/posthog';
 
 import { RewardModal } from '@/components/RewardModal';
 
@@ -121,6 +122,15 @@ export default function GenerateFlashcardScreen() {
             queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
 
             const deckId = response.data.data?.id;
+
+            try {
+                posthog.capture('flashcards_generated', {
+                    difficulty,
+                    card_count: count,
+                    mode,
+                    cost: estimatedCost
+                });
+            } catch(e) { /* ignore tracking errs */ }
 
             if (response.data.reward?.earned) {
                 setRewardData(response.data.reward);

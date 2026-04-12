@@ -29,6 +29,7 @@ import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { generateScanHTML } from '@/lib/pdfGenerator';
 import { scannerService, ScanResult } from '@/lib/scanner';
+import { posthog } from '@/lib/posthog';
 
 const BASE_SCAN_COST = 2;
 const COST_PER_SOLUTION = 4;
@@ -105,35 +106,24 @@ export default function ScanScreen() {
             
             if (photo) {
                 setLoading(true);
-                setLoadingStage('Cropping...');
+                setLoadingStage('Preparing image...');
 
-                // Calculate crop coordinates relative to image size
-                const screenHeight = Dimensions.get('window').height;
-                const headerHeight = 44 + Math.max(insets.top, 16);
-                const remainingHeight = screenHeight - headerHeight;
-                const topFlexHeight = (remainingHeight - CROP_BOX_HEIGHT) / 2;
-                
-                const cropTop = headerHeight + topFlexHeight;
-                const cropLeft = (width - CROP_BOX_WIDTH) / 2;
-
-                // Scale to image dimensions
-                const scaleX = photo.width / width;
-                const scaleY = photo.height / screenHeight;
-
-                const originX = cropLeft * scaleX;
-                const originY = cropTop * scaleY;
-                const cropWidth = CROP_BOX_WIDTH * scaleX;
-                const cropHeight = CROP_BOX_HEIGHT * scaleY;
-
+                // Resize and compress, do not crop (avoids aspect ratio mismatch bugs)
                 const manipulated = await manipulateAsync(
                     photo.uri,
-                    [{ crop: { originX, originY, width: cropWidth, height: cropHeight } }],
+                    [{ resize: { width: 1080 } }],
                     { compress: 0.7, format: SaveFormat.JPEG, base64: true }
                 );
 
                 setImageUri(manipulated.uri);
                 setImageBase64(manipulated.base64 || null);
-                setLoading(false);
+                
+                // Immediately start solving instead of waiting for a button click
+                if (manipulated.base64) {
+                    await handleSolve(manipulated.base64);
+                } else {
+                    setLoading(false);
+                }
             }
         } catch (e) {
             if (__DEV__) console.warn('Capture failed', e);
@@ -142,8 +132,9 @@ export default function ScanScreen() {
         }
     };
 
-    const handleSolve = async () => {
-        if (!imageBase64) return;
+    const handleSolve = async (directBase64?: string) => {
+        const targetBase64 = directBase64 || imageBase64;
+        if (!targetBase64) return;
 
         const minCost = BASE_SCAN_COST + COST_PER_SOLUTION;
         if (!user?.is_unlimited && (user?.credits ?? 0) < minCost) {
@@ -162,10 +153,17 @@ export default function ScanScreen() {
         }, 2500);
 
         try {
-            const data = await scannerService.solve(imageBase64, 'base64');
+            const data = await scannerService.solve(targetBase64, 'base64');
             setImageBase64(null);
             setResults(data.results || []);
             setLastScanCost(data.cost);
+            
+            try {
+                posthog.capture('scan_solved', {
+                    questions_found: data.results?.length || 0,
+                    cost: data.cost
+                });
+            } catch(e) { /* ignore */ }
             
             const userRes = await api.get('me');
             if (userRes.data) {
@@ -192,6 +190,7 @@ export default function ScanScreen() {
             const html = generateScanHTML(results);
             const { uri } = await Print.printToFileAsync({ html, base64: false });
             await Sharing.shareAsync(uri);
+            try { posthog.capture('scan_exported'); } catch(e) {}
         } catch (err) {
             if (__DEV__) console.warn('PDF Export failed', err);
             Alert.alert('Export Failed', 'Could not generate PDF report.');
@@ -251,13 +250,7 @@ export default function ScanScreen() {
 
                             {/* Center Viewfinder */}
                             <View style={s.centerViewfinder}>
-                                <View style={s.viewfinderBox}>
-                                    <View style={s.cropCornerTL} />
-                                    <View style={s.cropCornerTR} />
-                                    <View style={s.cropCornerBL} />
-                                    <View style={s.cropCornerBR} />
-                                </View>
-                                <Text style={s.instructionText}>Position your question in the frame</Text>
+                                <Text style={s.instructionText}>Take a clear photo of your questions</Text>
                             </View>
 
                             {/* Bottom Semi-transparent Overlay */}
@@ -299,7 +292,7 @@ export default function ScanScreen() {
                             <ExpoImage source={{ uri: imageUri }} style={s.previewImage} contentFit="cover" />
                         </BlurView>
 
-                        {loading ? (
+                        {loading && (
                             <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={s.loadingCard}>
                                 <View style={s.spinnerBox}>
                                     <ActivityIndicator size="large" color={C.primary} />
@@ -307,18 +300,6 @@ export default function ScanScreen() {
                                 <Text style={[s.loadingStage, isDark ? s.textWhite : s.textSlate900]}>{loadingStage || 'Processing...'}</Text>
                                 <Text style={s.loadingSub}>Skeeme AI is working hard</Text>
                             </BlurView>
-                        ) : (
-                            <View style={s.fullBtnGroup}>
-                                <TouchableOpacity onPress={handleSolve} activeOpacity={0.8} style={[s.primaryBtnShadow, { backgroundColor: C.primary }]}>
-                                    <View style={s.primaryBtnGradient}>
-                                        <IconSymbol name="sparkles" size={18} color="#fff" />
-                                        <Text style={s.fullBtnText}>Solve Everything</Text>
-                                    </View>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={resetScan} activeOpacity={0.8} style={[s.fullSecondaryBtnGlass, isDark ? s.bgWhite10 : s.bgWhite60]}>
-                                    <Text style={[s.retakeText, isDark ? s.textWhite : s.textSlate600]}>Retake Photo</Text>
-                                </TouchableOpacity>
-                            </View>
                         )}
                     </View>
                 )}

@@ -17,6 +17,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { GlowBackground } from '@/components/ui/GlowBackground';
 import { ShakeReporter } from '@/components/ShakeReporter';
 import { useFonts } from 'expo-font';
+import { PostHogProvider } from 'posthog-react-native';
+import { posthog } from '@/lib/posthog';
 
 cssInterop(LinearGradient, {
   className: 'style',
@@ -101,6 +103,14 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, isLoading]);
 
+  // Track page views in PostHog automatically
+  useEffect(() => {
+    if (segments.length > 0) {
+      const currentRoute = segments.join('/');
+      posthog.screen(currentRoute);
+    }
+  }, [segments]);
+
   const storeTheme = useAuthStore((state) => state.theme);
 
   useEffect(() => {
@@ -115,6 +125,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: tailwindScheme === 'dark' ? '#09090B' : '#E9F1FE' }}>
       <GlowBackground isRoot={true}>
       <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+      <PostHogProvider client={posthog}>
       <QueryProvider>
         <ThemeProvider value={{
           ...(tailwindScheme === 'dark' ? DarkTheme : DefaultTheme),
@@ -153,6 +164,7 @@ export default function RootLayout() {
           <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
         </ThemeProvider>
       </QueryProvider>
+      </PostHogProvider>
       </View>
       </GlowBackground>
     </GestureHandlerRootView>

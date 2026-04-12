@@ -27,7 +27,7 @@ class CreditCostCalculator
 
         // Scan & Solve
         if (Str::contains($path, 'scan/solve')) {
-            return $rates['scan_solve'] ?? 15;
+            return $rates['scan_solve'] ?? 25;
         }
 
         // Quiz Builder

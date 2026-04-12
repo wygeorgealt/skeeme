@@ -89,7 +89,7 @@ export default function CreditStatusBar({ activeAction, onSummaryLoaded, refresh
 
     const color = getColor();
 
-    const rates = pricingConfig?.rates || { scan_solve: 15, quiz_base: 1, flashcard_base: 1 };
+    const rates = pricingConfig?.rates || { scan_solve: 25, quiz_base: 1, flashcard_base: 1 };
 
     // Inline action cost estimate
     const actionInfo: Record<string, { cost: string; remaining: number; label: string }> = {

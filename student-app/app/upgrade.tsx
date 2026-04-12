@@ -11,6 +11,7 @@ import { Colors, Spacing, FontSize } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { posthog } from '@/lib/posthog';
 
 const { width } = Dimensions.get('window');
 
@@ -82,6 +83,11 @@ export default function UpgradeScreen() {
 
     const handlePurchase = async () => {
         setIsPurchasing(true);
+        posthog.capture('upgrade_checkout_started', {
+            plan: activePlan,
+            cycle: billingCycle,
+            is_trial: isTrialEligible,
+        });
         try {
             const res = await api.post('subscriptions/checkout', {
                 plan: activePlan,
@@ -103,6 +109,10 @@ export default function UpgradeScreen() {
 
     const handleCreditPurchase = async (pack: any) => {
         setPurchasingPack(pack.amount);
+        posthog.capture('credit_checkout_started', {
+            pack_amount: pack.amount,
+            price: pack.price
+        });
         try {
             const res = await api.post('credits/checkout', { amount: pack.amount });
             if (res.data?.authorization_url && res.data?.reference) {
@@ -123,6 +133,7 @@ export default function UpgradeScreen() {
             const endpoint = type === 'subscription' ? `subscriptions/verify/${reference}` : `credits/verify/${reference}`;
             const res = await api.get(endpoint);
             if (res.data?.status === 'success') {
+                posthog.capture('payment_successful', { payment_type: type });
                 await useAuthStore.getState().checkAuth();
                 Alert.alert("Success", "Welcome to Skeeme!");
                 router.replace('/(drawer)');

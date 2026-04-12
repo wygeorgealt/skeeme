@@ -679,6 +679,7 @@ RESPONSE RULES BY TYPE:
   - Provide numbered "steps" showing the full working.
   - Provide a "solution" with the final answer.
   - Use proper Unicode math symbols (e.g. x², √x, ∫, π, θ). NEVER use raw caret notation like x^2.
+  - ALWAYS format fractions as LaTeX block fractions "\frac{numerator}{denominator}". NEVER use slashes (like 1/2 or a/b).
 
 - For "theory" questions:
   - Provide an "explanation" field with a well-structured answer using bullet points (•) and clear paragraphs. Include simple examples where helpful.

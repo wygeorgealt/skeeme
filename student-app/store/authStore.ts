@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Platform } from 'react-native';
 
 import { User, PricingConfig } from '@/types';
+import { posthog } from '@/lib/posthog';
 
 interface AuthState {
     user: User | null;
@@ -180,6 +181,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
             await secureStorage.setItem('auth_token', token);
             await standardStorage.setItem('auth_user', JSON.stringify(user));
+            try {
+                posthog.identify(String(user.id), {
+                    email: user.email,
+                    name: user.name,
+                });
+            } catch (e) { /* ignore */ }
         } catch (e) {
             if (__DEV__) console.error('Failed to save auth state', e);
         }
@@ -203,6 +210,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
             await secureStorage.deleteItem('auth_token');
             await standardStorage.deleteItem('auth_user');
+            try { posthog.reset(); } catch (e) { /* ignore */ }
         } catch (e) {
             if (__DEV__) console.error('Failed to clear auth state', e);
         }
@@ -233,15 +241,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
             if (token && userStr) {
                 const haptics = await standardStorage.getItem('haptics_enabled');
+                const user = JSON.parse(userStr);
                 // Optimistically set user from cache for instant UI
                 set({ 
                     token, 
-                    user: JSON.parse(userStr), 
+                    user, 
                     theme: themeStr || 'system', 
                     hapticsEnabled: haptics === null ? true : haptics === 'true',
                     onboardingComplete: true, 
                     isLoading: false 
                 });
+
+                try {
+                    posthog.identify(String(user.id), {
+                        email: user.email,
+                        name: user.name,
+                    });
+                } catch (e) { /* ignore */ }
 
                 // C5: Validate token in background — if expired, force logout
                 try {
@@ -265,6 +281,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                         set({ user: null, token: null });
                         await secureStorage.deleteItem('auth_token');
                         await standardStorage.deleteItem('auth_user');
+                        try { posthog.reset(); } catch (e) { /* ignore */ }
                     }
                     // Network errors are ignored — user keeps cached data
                 }

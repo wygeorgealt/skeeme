@@ -61,7 +61,7 @@ class SystemSetting extends Model
                 ]
             ],
             'rates' => [
-                'scan_solve' => 15,
+                'scan_solve' => 25,
                 'quiz_base' => 1,
                 'quiz_weight' => 5, // per 500 words
                 'flashcard_base' => 1,
