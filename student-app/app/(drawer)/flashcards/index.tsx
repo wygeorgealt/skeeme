@@ -188,7 +188,7 @@ export default function FlashcardsDashboard() {
                 renderItem={({ item: deck }) => {
                     const renderRightActions = () => (
                         <TouchableOpacity 
-                            style={{ backgroundColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', width: 80, marginBottom: 16, borderTopRightRadius: 20, borderBottomRightRadius: 20 }}
+                            style={{ backgroundColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', width: 90, height: '100%', borderTopRightRadius: 16, borderBottomRightRadius: 16 }}
                             onPress={() => handleDelete(deck.id, deck.title)}
                         >
                             <Trash2 width={24} height={24} color="white" />
@@ -196,11 +196,11 @@ export default function FlashcardsDashboard() {
                     );
 
                     return (
-                        <Swipeable renderRightActions={renderRightActions} overshootRight={false} containerStyle={{ marginBottom: 16 }}>
+                        <Swipeable renderRightActions={renderRightActions} overshootRight={false} containerStyle={{ marginBottom: 16, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }, android: { elevation: 3 } }) }}>
                             <TouchableOpacity
                                 onPress={() => handleDeckPress(deck.id)}
                                 activeOpacity={0.9}
-                                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent' }}
+                                style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent' }}
                             >
                                 <View style={{ flex: 1, marginRight: 16 }}>
                                     <Text style={{ fontSize: 18, fontWeight: '700', color: isDark ? '#FFF' : '#000', marginBottom: 6 }} numberOfLines={2}>{deck.title}</Text>

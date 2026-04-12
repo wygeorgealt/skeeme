@@ -51,16 +51,18 @@ class ScanController extends Controller
         }
 
         $user = $request->user();
-        $baseCost = 2; // Flat fee for OCR scanning
-        $costPerSolution = 4; // Fee per question solved
+        
+        // Use the Flat Rate "Buffer Average" strategy (Option A)
+        $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
+        $scanCost = $pricingConfig['rates']['scan_solve'] ?? 25;
 
         Log::info('Scan & Solve: Credit Check Passed', ['user_id' => $user->id]);
 
         // 3. Preliminary Check & Lock Credits (Atomic)
-        $canProceed = DB::transaction(function() use ($user, $baseCost, $costPerSolution) {
+        $canProceed = DB::transaction(function() use ($user, $scanCost) {
             $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
             
-            if (!$lockedUser->is_unlimited && $lockedUser->credits < ($baseCost + $costPerSolution)) {
+            if (!$lockedUser->is_unlimited && $lockedUser->credits < $scanCost) {
                 return false;
             }
             return true;
@@ -68,8 +70,8 @@ class ScanController extends Controller
 
         if (!$canProceed) {
             return response()->json([
-                'message' => "Insufficient credits. You need at least 6 credits for a basic scan.",
-                'required' => 6,
+                'message' => "Insufficient credits. You need at least {$scanCost} credits for a scan.",
+                'required' => $scanCost,
                 'available' => $user->credits,
             ], 403);
         }
@@ -117,9 +119,8 @@ class ScanController extends Controller
             $solutions = $result['results'] ?? [];
             $solutionsCount = count($solutions);
             
-            // 5. Calculate Final Cost
-            $finalCost = $baseCost + ($solutionsCount * $costPerSolution);
-            if ($solutionsCount === 0) $finalCost = $baseCost;
+            // 5. Final Cost (Flat Rate)
+            $finalCost = $scanCost;
 
             // 6. Deduct Usage (Atomic)
             if (!$user->is_unlimited) {

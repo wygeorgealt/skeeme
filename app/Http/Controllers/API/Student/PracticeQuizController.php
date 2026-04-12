@@ -98,9 +98,12 @@ class PracticeQuizController extends Controller
                 ], 422);
             }
 
-            $baseCost = $validated['question_count'] * 1; 
+            $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
+            $rates = $pricingConfig['rates'] ?? [];
+
+            $baseCost = $validated['question_count'] * ($rates['quiz_base'] ?? 1); 
             $chunks = (int) ceil($wordCount / 500); 
-            $weightCost = $chunks * 5; // 5 credits per 500 words
+            $weightCost = $chunks * ($rates['quiz_weight'] ?? 5);
             
             $totalCost = $baseCost + $weightCost;
             if ($totalCost < 10) $totalCost = 10;

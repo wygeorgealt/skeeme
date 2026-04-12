@@ -144,6 +144,9 @@ class FlashcardController extends Controller
             ], 422);
         }
 
+        $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
+        $rates = $pricingConfig['rates'] ?? [];
+
         $costPerQuestion = match($validated['difficulty'] ?? 'medium') {
             'easy' => 0.5,
             'medium' => 1,
@@ -152,10 +155,12 @@ class FlashcardController extends Controller
             default => 1,
         };
         
+        $baseCostPerCard = ($rates['flashcard_base'] ?? 1) * $costPerQuestion;
+
         $chunks = (int) ceil($wordCount / 500);
-        $baseContentCost = $chunks * 5; // 5 credits per 500 words
+        $baseContentCost = $chunks * ($rates['flashcard_weight'] ?? 5);
         
-        $totalCost = (int) ceil(($validated['card_count'] * $costPerQuestion) + $baseContentCost);
+        $totalCost = (int) ceil(($validated['card_count'] * $baseCostPerCard) + $baseContentCost);
         Log::info("Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'chunks' => $chunks]);
 
         // 3. Check & Lock Credits (Atomic)

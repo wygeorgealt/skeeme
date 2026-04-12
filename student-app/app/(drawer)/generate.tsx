@@ -537,7 +537,7 @@ export default function GenerateQuizScreen() {
                             style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : '#A2C9F4' }]}
                         >
                             <Text style={s.generatePillText}>
-                                Generate Quiz • {estimatedCost} Credits
+                                Generate Quiz
                             </Text>
                         </TouchableOpacity>
                     )}

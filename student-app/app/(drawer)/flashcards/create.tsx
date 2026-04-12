@@ -299,7 +299,7 @@ export default function GenerateFlashcardScreen() {
                         style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : '#A2C9F4' }]}
                     >
                         <Text style={s.generatePillText}>
-                            Generate Set • {estimatedCost} Credits
+                            Generate Set
                         </Text>
                     </TouchableOpacity>
                 )}
