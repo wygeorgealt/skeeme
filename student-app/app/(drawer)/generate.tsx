@@ -536,9 +536,9 @@ export default function GenerateQuizScreen() {
                             activeOpacity={0.8}
                             style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : '#A2C9F4' }]}
                         >
-                            <Text style={s.generatePillText}>
-                                Generate Quiz
-                            </Text>
+                                <Text style={s.generatePillText}>
+                                    Generate Quiz
+                                </Text>
                         </TouchableOpacity>
                     )}
                 </BlurView>

@@ -298,9 +298,9 @@ export default function GenerateFlashcardScreen() {
                         activeOpacity={0.8}
                         style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : '#A2C9F4' }]}
                     >
-                        <Text style={s.generatePillText}>
-                            Generate Set
-                        </Text>
+                            <Text style={s.generatePillText}>
+                                Generate Set
+                            </Text>
                     </TouchableOpacity>
                 )}
             </BlurView>

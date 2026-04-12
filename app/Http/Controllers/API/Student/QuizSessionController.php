@@ -115,4 +115,13 @@ class QuizSessionController extends Controller
             'reward' => $streakResult['reward']
         ], 201);
     }
+    /**
+     * Delete a quiz session
+     */
+    public function destroy(Request $request, $id)
+    {
+        $session = QuizSession::where('user_id', $request->user()->id)->findOrFail($id);
+        $session->delete();
+        return response()->json(['message' => 'Quiz session deleted.']);
+    }
 }

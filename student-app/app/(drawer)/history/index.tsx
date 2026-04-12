@@ -1,13 +1,16 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, SectionList, RefreshControl, useColorScheme, Platform, StyleSheet } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { View, TouchableOpacity, SectionList, RefreshControl, useColorScheme, Platform, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Trash2 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
+import { haptics } from '@/lib/haptics';
+import { Swipeable } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 
 type QuizSession = {
@@ -52,6 +55,7 @@ const storage = {
 };
 
 export default function StudyHistoryDashboard() {
+    const queryClient = useQueryClient();
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'quizzes' | 'flashcards'>('quizzes');
     
@@ -97,6 +101,7 @@ export default function StudyHistoryDashboard() {
     });
 
     const onRefresh = useCallback(async () => {
+        haptics.impactAsync();
         setRefreshing(true);
         try {
             if (activeTab === 'quizzes') await refetchQuizzes();
@@ -104,6 +109,38 @@ export default function StudyHistoryDashboard() {
         } catch { }
         setRefreshing(false);
     }, [refetchQuizzes, refetchDecks, activeTab]);
+
+    const deleteMutation = useMutation({
+        mutationFn: async ({ id, type }: { id: number; type: 'quiz' | 'flashcard' }) => {
+            const url = type === 'quiz' ? `quizzes/history/${id}` : `flashcards/decks/${id}`;
+            return api.delete(url);
+        },
+        onSuccess: (_, variables) => {
+            haptics.notificationAsync('success' as any);
+            const queryKey = variables.type === 'quiz' ? ['quiz-history'] : ['flashcard-history'];
+            queryClient.invalidateQueries({ queryKey });
+            
+            // Cross-invalidate the flashcard library if we delete a deck from here
+            if (variables.type === 'flashcard') {
+                queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
+            }
+        },
+        onError: (err: any) => {
+            Alert.alert('Delete Failed', err.response?.data?.message || 'Could not delete entry.');
+        }
+    });
+
+    const handleDelete = (id: number, title: string, type: 'quiz' | 'flashcard') => {
+        haptics.impactAsync();
+        Alert.alert(
+            "Delete Item",
+            `Are you sure you want to delete "${title}"?`,
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate({ id, type }) }
+            ]
+        );
+    };
 
     const quizzes = quizSessions || cachedQuizzes;
     const decks = flashcardDecks || cachedDecks;
@@ -157,22 +194,29 @@ export default function StudyHistoryDashboard() {
                 <View style={[s.segmentContainer, isDark ? s.segmentContainerDark : s.segmentContainerLight]}>
                     {(['quizzes', 'flashcards'] as const).map(tab => {
                         const isActive = activeTab === tab;
+                        const Icon = tab === 'quizzes' ? 'book.fill' : 'doc.on.doc.fill';
                         return (
                             <TouchableOpacity
                                 key={tab}
-                                onPress={() => setActiveTab(tab)}
+                                onPress={() => {
+                                    haptics.impactAsync();
+                                    setActiveTab(tab);
+                                }}
                                 activeOpacity={0.9}
                                 style={[
                                     s.segmentPill,
                                     isActive && (isDark ? s.segmentPillActiveDark : s.segmentPillActiveLight)
                                 ]}
                             >
-                                <Text style={[
-                                    s.segmentText,
-                                    isActive ? { color: C.text, fontWeight: '700' } : { color: C.textTertiary, fontWeight: '500' }
-                                ]}>
-                                    {tab === 'quizzes' ? 'Quizzes' : 'Flashcards'}
-                                </Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                    <IconSymbol name={Icon as any} size={14} color={isActive ? (isDark ? '#FFF' : '#000') : C.textTertiary} />
+                                    <Text style={[
+                                        s.segmentText,
+                                        isActive ? { color: C.text, fontWeight: '700' } : { color: C.textTertiary, fontWeight: '500' }
+                                    ]}>
+                                        {tab === 'quizzes' ? 'Quizzes' : 'Flashcards'}
+                                    </Text>
+                                </View>
                             </TouchableOpacity>
                         );
                     })}
@@ -191,8 +235,62 @@ export default function StudyHistoryDashboard() {
                         </Text>
                     )}
                     renderItem={({ item }) => {
-                        if (activeTab === 'quizzes') return <QuizCard session={item as QuizSession} isDark={isDark} C={C} />;
-                        return <DeckCard deck={item as FlashcardDeck} isDark={isDark} C={C} />;
+                        const isQuiz = activeTab === 'quizzes';
+                        const id = item.id;
+                        const title = isQuiz ? (item as QuizSession).topic : (item as FlashcardDeck).title;
+
+                        const renderRightActions = () => (
+                            <View style={{ width: 90 }}>
+                                <TouchableOpacity 
+                                    activeOpacity={0.7}
+                                    style={{ 
+                                        backgroundColor: '#FF3B30', 
+                                        flexDirection: 'row',
+                                        justifyContent: 'flex-end',
+                                        alignItems: 'center', 
+                                        width: 200,
+                                        height: '100%', 
+                                        position: 'absolute',
+                                        right: 0,
+                                    }}
+                                    onPress={() => handleDelete(id, title, isQuiz ? 'quiz' : 'flashcard')}
+                                >
+                                    <View style={{ width: 90, height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Trash2 width={22} height={22} color="white" />
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+                        );
+
+                        return (
+                            <Swipeable 
+                                renderRightActions={renderRightActions} 
+                                overshootRight={false} 
+                                containerStyle={{ 
+                                    marginBottom: 12, 
+                                    borderRadius: 24,
+                                    overflow: 'hidden',
+                                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                    ...Platform.select({
+                                        ios: {
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 4 },
+                                            shadowOpacity: 0.03,
+                                            shadowRadius: 12,
+                                        },
+                                        android: {
+                                            elevation: 2
+                                        }
+                                    })
+                                }}
+                            >
+                                {isQuiz ? (
+                                    <QuizCard session={item as QuizSession} isDark={isDark} C={C} />
+                                ) : (
+                                    <DeckCard deck={item as FlashcardDeck} isDark={isDark} C={C} />
+                                )}
+                            </Swipeable>
+                        );
                     }}
                     ListEmptyComponent={() => {
                         if (isLoading) return null;
@@ -235,7 +333,7 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
         >
             <View style={s.cardBody}>
                 <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight]}>
-                    <IconSymbol name="activity" size={20} color={C.primary} />
+                    <IconSymbol name="book.fill" size={20} color={C.primary} />
                 </View>
                 <View style={s.cardContent}>
                     <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{session.topic}</Text>
@@ -255,7 +353,10 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                         <Text style={[s.expandedValue, { color: C.text }]}>{session.correct_answers} / {session.total_questions}</Text>
                     </View>
                     <TouchableOpacity onPress={() => router.push(`/(drawer)/history/${session.id}` as any)} activeOpacity={0.8} style={s.actionPill}>
-                        <Text style={s.actionPillText}>View Details</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                             <Text style={s.actionPillText}>View Details</Text>
+                             <IconSymbol name="chevron.right" size={14} color="#FFFFFF" />
+                        </View>
                     </TouchableOpacity>
                 </View>
             )}
@@ -272,7 +373,7 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
         >
             <View style={s.cardBody}>
                 <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight]}>
-                    <IconSymbol name="doc.on.doc.fill" size={20} color={C.primary} />
+                    <IconSymbol name="doc.text.fill" size={20} color={C.primary} />
                 </View>
                 <View style={s.cardContent}>
                     <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{deck.title}</Text>
@@ -306,9 +407,9 @@ const s = StyleSheet.create({
     sectionHeader: { fontSize: 12, fontWeight: '800', letterSpacing: 1.2, marginTop: 16, marginBottom: 16, paddingLeft: 4 },
 
     // Card Glass Design
-    card: { borderRadius: 24, marginBottom: 12, padding: 16 },
+    card: { borderRadius: 24, padding: 16 },
     cardLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.03, shadowRadius: 16, elevation: 3 },
-    cardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+    cardDark: { backgroundColor: '#1C1C1E', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
     cardBody: { flexDirection: 'row', alignItems: 'center' },
     
     iconWrapper: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 14 },

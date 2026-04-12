@@ -104,9 +104,19 @@ export default function FlashcardsDashboard() {
 
     const deleteMutation = useMutation({
         mutationFn: (id: number) => api.delete(`flashcards/decks/${id}`),
-        onSuccess: () => {
+        onSuccess: (_, deletedId) => {
             haptics.notificationAsync('success' as any);
+            
+            // 1. Optimistic UI update: Filter local state
+            setAllDecks(prev => prev.filter(d => d.id !== deletedId));
+            
+            // 2. Update FileSystem cache
+            const updatedCache = (allDecks || []).filter(d => d.id !== deletedId);
+            storage.setItem('cache_flashcard_decks', JSON.stringify(updatedCache));
+            
+            // 3. Invalidate queries for fresh data and cross-page sync
             queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
+            queryClient.invalidateQueries({ queryKey: ['flashcard-history'] });
         },
         onError: (error: any) => {
             Alert.alert('Delete Failed', error.response?.data?.message || 'Could not delete deck. Please try again.');
@@ -116,6 +126,8 @@ export default function FlashcardsDashboard() {
     const onRefresh = useCallback(async () => {
         haptics.impactAsync();
         setRefreshing(true);
+        setPage(1);
+        setHasMore(true);
         await refetch();
         setRefreshing(false);
     }, [refetch]);
@@ -187,16 +199,30 @@ export default function FlashcardsDashboard() {
                 }
                 renderItem={({ item: deck }) => {
                     const renderRightActions = () => (
-                        <TouchableOpacity 
-                            style={{ backgroundColor: '#FF3B30', justifyContent: 'center', alignItems: 'center', width: 90, height: '100%', borderTopRightRadius: 16, borderBottomRightRadius: 16 }}
-                            onPress={() => handleDelete(deck.id, deck.title)}
-                        >
-                            <Trash2 width={24} height={24} color="white" />
-                        </TouchableOpacity>
+                        <View style={{ width: 90 }}>
+                            <TouchableOpacity 
+                                activeOpacity={0.7}
+                                style={{ 
+                                    backgroundColor: '#FF3B30', 
+                                    flexDirection: 'row',
+                                    justifyContent: 'flex-end',
+                                    alignItems: 'center', 
+                                    width: 200,
+                                    height: '100%', 
+                                    position: 'absolute',
+                                    right: 0,
+                                }}
+                                onPress={() => handleDelete(deck.id, deck.title)}
+                            >
+                                <View style={{ width: 90, height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Trash2 width={22} height={22} color="white" />
+                                </View>
+                            </TouchableOpacity>
+                        </View>
                     );
 
                     return (
-                        <Swipeable renderRightActions={renderRightActions} overshootRight={false} containerStyle={{ marginBottom: 16, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }, android: { elevation: 3 } }) }}>
+                        <Swipeable renderRightActions={renderRightActions} overshootRight={false} containerStyle={{ marginBottom: 16, borderRadius: 16, overflow: 'hidden', backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }, android: { elevation: 3 } }) }}>
                             <TouchableOpacity
                                 onPress={() => handleDeckPress(deck.id)}
                                 activeOpacity={0.9}

@@ -172,6 +172,7 @@ Route::group(['prefix' => 'v1'], function () {
                 Route::get('/', [\App\Http\Controllers\API\Student\QuizSessionController::class, 'index']);
                 Route::post('/', [\App\Http\Controllers\API\Student\QuizSessionController::class, 'store']);
                 Route::get('{id}', [\App\Http\Controllers\API\Student\QuizSessionController::class, 'show']);
+                Route::delete('{id}', [\App\Http\Controllers\API\Student\QuizSessionController::class, 'destroy']);
             });
 
             Route::group(['prefix' => 'flashcards'], function () {
