@@ -1,5 +1,5 @@
 import { Tabs, router, usePathname } from 'expo-router';
-import { View, TouchableOpacity, StyleSheet, useColorScheme, Platform, Alert } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, useColorScheme, Platform, Alert } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -11,121 +11,119 @@ import { registerForPushNotificationsAsync } from '@/lib/notifications';
 
 // ─── Icons logic moved to TabBar / TabLayout for simplicity with IconSymbol ───
 
-// ─── Scan FAB (center elevated button) ───────────────────────────────────────
-function ScanTabButton({ onPress }: { onPress?: () => void }) {
-    const scheme = useColorScheme();
-    const isDark = scheme === 'dark';
-    const C = Colors[isDark ? 'dark' : 'light'];
-
-    return (
-        <TouchableOpacity
-            onPress={onPress}
-            activeOpacity={0.85}
-            style={fab.wrapper}
-            accessibilityRole="button"
-            accessibilityLabel="Scan"
-        >
-            <View style={[fab.circle, { backgroundColor: C.primary }]}>
-                <IconSymbol name="camera.fill" color="#FFFFFF" size={26} />
-            </View>
-        </TouchableOpacity>
-    );
-}
-
-const fab = StyleSheet.create({
-    wrapper: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%',
-    },
-    circle: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#007AFF',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 10,
-        elevation: 8,
-        position: 'absolute',
-        bottom: 24, // Floating identically over the baseline
-    },
-});
-
-// ─── Custom glass tab bar ─────────────────────────────────────────────────────
+// ─── Custom glass tab bar with center camera FAB ─────────────────────────────
 function TabBar({ state, descriptors, navigation }: any) {
     const insets = useSafeAreaInsets();
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
 
+    // Find scan route to get its onPress
+    const scanRouteIndex = state.routes.findIndex((r: any) => r.name === 'scan');
+    const scanOnPress = () => {
+        if (scanRouteIndex !== -1) {
+            const event = navigation.emit({
+                type: 'tabPress',
+                target: state.routes[scanRouteIndex].key,
+                canPreventDefault: true,
+            });
+            if (state.index !== scanRouteIndex && !event.defaultPrevented) {
+                navigation.navigate('scan');
+            }
+        }
+    };
+
+    // Filter to only visible tabs (Home + Account)
+    const visibleRoutes = state.routes
+        .map((route: any, index: number) => ({ route, index }))
+        .filter(({ route }: any) => {
+            const { options } = descriptors[route.key];
+            return options.href !== null && route.name !== 'scan';
+        });
+
     return (
-        <View style={bar.outerWrap}>
+        <View style={bar.outerWrap} pointerEvents="box-none">
+            {/* The bar itself */}
             <BlurView
                 intensity={isDark ? 80 : 80}
                 tint={isDark ? 'dark' : 'light'}
                 style={[
-                    bar.blurBase, 
-                    { 
-                        paddingBottom: Math.max(insets.bottom, 12),
-                        backgroundColor: isDark ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.65)',
-                        borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
-                    }
+                    bar.blurBase,
+                    {
+                        paddingBottom: Math.max(insets.bottom, 16),
+                        backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.7)',
+                        borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                    },
                 ]}
             >
-                {state.routes.map((route: any, index: number) => {
+                {/* Left tab (Home) */}
+                {visibleRoutes[0] && (() => {
+                    const { route, index } = visibleRoutes[0];
                     const { options } = descriptors[route.key];
-                    
-                    // Prevent hidden routes from rendering invisibly and pushing layout
-                    if (options.href === null || options.tabBarItemStyle?.display === 'none') {
-                        return null;
-                    }
-
                     const isFocused = state.index === index;
-                    const isScan = route.name === 'scan';
-
-                    const onPress = () => {
-                        const event = navigation.emit({
-                            type: 'tabPress',
-                            target: route.key,
-                            canPreventDefault: true,
-                        });
-                        if (!isFocused && !event.defaultPrevented) {
-                            navigation.navigate(route.name);
-                        }
-                    };
-
-                    if (isScan) {
-                        return <ScanTabButton key={route.key} onPress={onPress} />;
-                    }
-
-                    const label =
-                        options.tabBarLabel !== undefined
-                            ? options.tabBarLabel
-                            : options.title !== undefined
-                            ? options.title
-                            : route.name;
-
-                    const iconColor = isFocused ? C.iconActive : C.icon;
-
+                    const iconColor = isFocused ? C.primary : (isDark ? '#6b7280' : '#9ca3af');
+                    const label = options.title ?? route.name;
                     return (
                         <TouchableOpacity
                             key={route.key}
-                            onPress={onPress}
+                            onPress={() => {
+                                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                                if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
+                            }}
                             activeOpacity={0.7}
-                            style={bar.tab}
+                            style={bar.sideTab}
                             accessibilityRole="button"
                             accessibilityLabel={String(label)}
                             accessibilityState={isFocused ? { selected: true } : {}}
                         >
-                            {options.tabBarIcon?.({ color: iconColor, size: 24, focused: isFocused })}
+                            <IconSymbol name="house.fill" color={iconColor} size={24} />
+                            <Text style={[bar.tabLabel, { color: iconColor }]}>{label}</Text>
                         </TouchableOpacity>
                     );
-                })}
+                })()}
+
+                {/* Center spacer for the FAB */}
+                <View style={bar.centerSpacer} />
+
+                {/* Right tab (Profile/Me) */}
+                {visibleRoutes[1] && (() => {
+                    const { route, index } = visibleRoutes[1];
+                    const { options } = descriptors[route.key];
+                    const isFocused = state.index === index;
+                    const iconColor = isFocused ? C.primary : (isDark ? '#6b7280' : '#9ca3af');
+                    const label = options.title ?? route.name;
+                    return (
+                        <TouchableOpacity
+                            key={route.key}
+                            onPress={() => {
+                                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                                if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
+                            }}
+                            activeOpacity={0.7}
+                            style={bar.sideTab}
+                            accessibilityRole="button"
+                            accessibilityLabel={String(label)}
+                            accessibilityState={isFocused ? { selected: true } : {}}
+                        >
+                            <IconSymbol name="person.fill" color={iconColor} size={24} />
+                            <Text style={[bar.tabLabel, { color: iconColor }]}>{label}</Text>
+                        </TouchableOpacity>
+                    );
+                })()}
             </BlurView>
+
+            {/* Camera FAB — absolutely positioned, always centered, never animates */}
+            <TouchableOpacity
+                onPress={scanOnPress}
+                activeOpacity={0.85}
+                style={[bar.fabOuter, { bottom: Math.max(insets.bottom, 16) + 16 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Scan"
+            >
+                <View style={[bar.fabCircle, { backgroundColor: C.primary }]}>
+                    <IconSymbol name="camera.fill" color="#FFFFFF" size={28} />
+                </View>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -136,29 +134,51 @@ const bar = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        justifyContent: 'flex-end',
-        pointerEvents: 'box-none',
     },
     blurBase: {
         flexDirection: 'row',
-        alignItems: 'center',
-        paddingTop: 16,
-        paddingHorizontal: 24,
+        alignItems: 'flex-end',
+        paddingTop: 14,
+        paddingHorizontal: 32,
         borderTopWidth: 1,
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
-        width: '100%',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 10,
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        overflow: 'hidden',
     },
-    tab: {
+    sideTab: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 12, // Identical vertical baseline
+        gap: 4,
+        paddingVertical: 8,
+    },
+    tabLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        letterSpacing: 0.1,
+    },
+    centerSpacer: {
+        width: 80, // space reserved for the FAB
+    },
+    // Camera FAB
+    fabOuter: {
+        position: 'absolute',
+        alignSelf: 'center',
+        left: '50%',
+        marginLeft: -34, // half of 68
+        zIndex: 10,
+    },
+    fabCircle: {
+        width: 68,
+        height: 68,
+        borderRadius: 34,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#007AFF',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.4,
+        shadowRadius: 14,
+        elevation: 12,
     },
 });
 
@@ -181,7 +201,7 @@ export default function TabLayout() {
         // Defer push token registration
         const timer = setTimeout(() => {
             if (token) {
-                registerForPushNotificationsAsync(token).catch(() => {});
+                registerForPushNotificationsAsync(token).catch(() => { });
             }
         }, 500);
         return () => clearTimeout(timer);
@@ -213,12 +233,6 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="generate"
-                options={{
-                    href: null, // Hiding Quiz tab natively
-                }}
-            />
-            <Tabs.Screen
                 name="account"
                 options={{
                     title: 'Me',
@@ -232,7 +246,6 @@ export default function TabLayout() {
             <Tabs.Screen name="history" options={{ href: null }} />
             <Tabs.Screen name="preferences" options={{ href: null }} />
             <Tabs.Screen name="streak" options={{ href: null }} />
-            <Tabs.Screen name="referral" options={{ href: null }} />
             <Tabs.Screen name="support" options={{ href: null }} />
         </Tabs>
     );

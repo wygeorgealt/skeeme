@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import {
     View, TextInput, TouchableOpacity, KeyboardAvoidingView,
-    Platform, ActivityIndicator, useColorScheme, StyleSheet, ScrollView, Alert
+    Platform, ActivityIndicator, useColorScheme, StyleSheet, ScrollView, Alert, Image
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as ImagePicker from 'expo-image-picker';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -21,7 +22,24 @@ export default function SupportScreen() {
     const insets = useSafeAreaInsets();
 
     const [message, setMessage] = useState('');
+    const [screenshot, setScreenshot] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const pickImage = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.7,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            setScreenshot(result.assets[0].uri);
+        }
+    };
+
+    const removeScreenshot = () => {
+        setScreenshot(null);
+    };
 
     const handleSubmit = async () => {
         if (!message.trim()) {
@@ -34,7 +52,27 @@ export default function SupportScreen() {
 
         setIsSubmitting(true);
         try {
-            await api.post('support/contact', { message: message.trim() });
+            const formData = new FormData();
+            formData.append('message', message.trim());
+
+            if (screenshot) {
+                const filename = screenshot.split('/').pop() || 'screenshot.jpg';
+                const match = /\.(\w+)$/.exec(filename);
+                const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+                formData.append('screenshot', {
+                    uri: screenshot,
+                    name: filename,
+                    type,
+                } as any);
+            }
+
+            await api.post('support/contact', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
             Alert.alert('Message Sent', 'Our support team will get back to you shortly.', [
                 { text: 'Okay', onPress: () => router.back() }
             ]);
@@ -102,6 +140,35 @@ export default function SupportScreen() {
                         onChangeText={setMessage}
                     />
 
+                    {/* Screenshot Attachment */}
+                    <Text style={[s.inputLabel, { color: C.textSecondary }]}>Screenshot (optional)</Text>
+                    {screenshot ? (
+                        <View style={s.screenshotPreview}>
+                            <Image source={{ uri: screenshot }} style={s.screenshotImage} resizeMode="cover" />
+                            <TouchableOpacity
+                                onPress={removeScreenshot}
+                                activeOpacity={0.7}
+                                style={s.removeScreenshotBtn}
+                            >
+                                <IconSymbol name="xmark.circle.fill" size={24} color="#ef4444" />
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            onPress={pickImage}
+                            activeOpacity={0.7}
+                            style={[
+                                s.attachBtn,
+                                { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', borderColor: C.separator }
+                            ]}
+                        >
+                            <IconSymbol name="photo.on.rectangle" size={22} color={isDark ? '#6b7280' : '#94a3b8'} />
+                            <Text style={[s.attachBtnText, { color: isDark ? '#9ca3af' : '#64748b' }]}>
+                                Add a screenshot
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+
                     <TouchableOpacity
                         onPress={handleSubmit}
                         disabled={isSubmitting}
@@ -141,7 +208,43 @@ const s = StyleSheet.create({
     inputLabel: { fontSize: 13, fontWeight: '600', marginBottom: 12, marginLeft: 4 },
     textArea: { height: 160, borderRadius: 16, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, fontSize: 16, fontWeight: '500', borderWidth: StyleSheet.hairlineWidth, marginBottom: 24 },
 
+    // Screenshot attachment
+    attachBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        height: 56,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderStyle: 'dashed',
+        marginBottom: 24,
+    },
+    attachBtnText: { fontSize: 15, fontWeight: '600' },
+
+    screenshotPreview: {
+        position: 'relative',
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginBottom: 24,
+    },
+    screenshotImage: {
+        width: '100%',
+        height: 200,
+        borderRadius: 16,
+    },
+    removeScreenshotBtn: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
     submitBtn: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
     submitBtnText: { fontWeight: '700', fontSize: 16, color: '#fff' },
 });
-

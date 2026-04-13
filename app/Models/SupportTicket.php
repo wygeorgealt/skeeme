@@ -13,6 +13,7 @@ class SupportTicket extends Model
         'assigned_to',
         'title',
         'description',
+        'screenshot_path',
         'priority',
         'status',
         'category',

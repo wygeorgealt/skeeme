@@ -68,7 +68,14 @@ import {
   NotepadText,
   HelpCircle,
   LogOut,
-  Trash2
+  Trash2,
+  Cpu,
+  CreditCard,
+  ThumbsUp,
+  ThumbsDown,
+  ArrowRight,
+  PlusCircle,
+  Shapes
 } from 'lucide-react-native';
 import React from 'react';
 import { type StyleProp, type ViewStyle } from 'react-native';
@@ -145,6 +152,17 @@ export const MAPPING = {
   'questionmark.circle': HelpCircle,
   'arrow.right.to.line': LogOut,
   'trash.fill': Trash2,
+  'sparkles.rectangle.stack.fill': Shapes,
+  'cpu': Cpu,
+  'creditcard.fill': CreditCard,
+  'checkmark.shield.fill': ShieldCheck,
+  'list.bullet.indent': List,
+  'doc.on.doc': Files,
+  'hand.thumbsup': ThumbsUp,
+  'hand.thumbsdown': ThumbsDown,
+  'arrow.right': ArrowRight,
+  'camera': Camera,
+  'plus.circle.fill': PlusCircle,
 } as const;
 
 export type IconSymbolName = keyof typeof MAPPING;
