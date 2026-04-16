@@ -109,7 +109,11 @@ class SystemSetting extends Model
                 ]
             ],
             'rates' => [
-                'scan_solve' => 25,
+                // Flat costs per action (tiered by plan)
+                'scan_solve' => ['free' => 50, 'paid' => 25],
+                'quiz_flat' => ['free' => 30, 'paid' => 30],
+                'flashcard_flat' => ['free' => 30, 'paid' => 25],
+                // Legacy dynamic weights (kept for backward compat)
                 'quiz_base' => 1,
                 'quiz_weight' => 5, // per 500 words
                 'flashcard_base' => 1,

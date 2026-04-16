@@ -5,6 +5,7 @@ namespace App\Services;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class DeepseekAIService
 {
@@ -52,7 +53,7 @@ class DeepseekAIService
             $cacheKey = $this->generateCacheKey($notes, $numberOfQuestions, $difficulty, $questionTypes, $prompt, $includeVisuals);
             if (Cache::has($cacheKey)) {
                 $questions = Cache::get($cacheKey);
-                \Log::info('Redis Cache Hit: Questions retrieved from cache.', [
+                Log::info('Redis Cache Hit: Questions retrieved from cache.', [
                     'cache_key' => $cacheKey,
                     'questions_count' => count($questions),
                     'estimated_time_saved' => '15-30s (AI API Bypass)'
@@ -332,7 +333,7 @@ class DeepseekAIService
             return $decoded;
 
         } catch (\Exception $e) {
-            \Log::error('Flashcard Generation Error: ' . $e->getMessage(), [
+            Log::error('Flashcard Generation Error: ' . $e->getMessage(), [
                 'prompt_preview' => substr($optimizedPrompt, 0, 200),
                 'error' => $e->getMessage()
             ]);
@@ -407,7 +408,7 @@ PROMPT;
             $data = json_decode($response->getBody()->getContents(), true);
             return $data['choices'][0]['message']['content'] ?? "I'm sorry, I couldn't generate a response.";
         } catch (\Exception $e) {
-            \Log::error('Text Generation Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Text Generation Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return "I'm having trouble connecting to my brain right now. Please try again later.";
         }
     }
@@ -568,7 +569,7 @@ PROMPT;
                 }
             }
             if (!empty($salvagedData)) {
-                \Log::warning('DeepseekAIService: JSON was truncated, but salvaged ' . count($salvagedData) . ' valid questions.');
+                Log::warning('DeepseekAIService: JSON was truncated, but salvaged ' . count($salvagedData) . ' valid questions.');
                 return $this->formatQuestions($salvagedData);
             }
         }
@@ -648,62 +649,35 @@ PROMPT;
             set_time_limit(300);
 
             // ── Step 1: OCR the image ──
-            \Log::info('Step 1: Running OCR on image...');
+            Log::info('Step 1: Running OCR on image...');
             $extractedText = $this->ocrFromBase64($base64Image);
 
             if (empty(trim($extractedText))) {
                 throw new \Exception('Could not read any text from the image. Please try a clearer photo.');
             }
 
-            \Log::info('OCR Success', ['text_length' => strlen($extractedText), 'preview' => substr($extractedText, 0, 100)]);
+            Log::info('OCR Success', ['text_length' => strlen($extractedText), 'preview' => substr($extractedText, 0, 100)]);
 
             // ── Step 2: Solve with DeepSeek ──
-            \Log::info('Step 2: Solving with DeepSeek...');
+            Log::info('Step 2: Solving with DeepSeek...');
 
             $prompt = <<<PROMPT
-The student took a photo of an exam paper or question sheet. Here is the text extracted via OCR:
+You are a world-class tutor solving exam papers. The student took a photo of an exam paper and the text below was extracted via OCR.
 
 "{$extractedText}"
 
-Your job:
+**Your job:**
 1. Identify ALL questions or sub-questions (e.g., 1a, 1b, Question 2, c, d) present in the text.
-2. Solve EVERY single one with a detailed, flowing explanation.
+2. Solve EVERY single one with a clear, well-structured explanation.
+3. Treat each sub-part as a **separate item** in the results list.
 
-RESPONSE FORMAT:
-For EVERY question, provide:
-- "question": Reconstruct the question text from the OCR output.
-- "topic": The subject area (e.g. "Algebra", "Chemistry", "Physics").
-- "type": "calculation" or "theory".
-- "solution": The final answer only. Bold it, e.g. "**D. I and II only**" or "**\$125\$**".
-- "steps": [] (always empty array).
-- "explanation": A complete, flowing explanation (see EXPLANATION STYLE below).
-- "summary": "" (leave empty).
+---
 
-EXPLANATION STYLE (CRITICAL — follow this exactly):
-Write the explanation as a **single flowing document**, like a textbook solution. NOT numbered steps. NOT bullet points only. Write natural paragraphs that walk through the reasoning.
+## Response Format
 
-Structure your explanation like this:
-- Start with a brief context sentence about what the question is asking.
-- Show the working/reasoning as flowing prose with inline math.
-- Use **bold** for key conclusions (e.g. "**Therefore, Statement I is true.**").
-- Use bullet points (•) ONLY for listing options or short items.
-- Use \$...\$ for inline math and \$\$...\$\$ for standalone equations.
-- Separate logical sections with blank lines (double newline).
-- End with a clear, bold conclusion.
+Return **JSON only** — no preamble, no commentary, nothing outside the JSON block:
 
-MATH FORMATTING RULES:
-- ALL math expressions MUST be wrapped in dollar-sign delimiters.
-- Use \$...\$ for inline math (e.g. \$x^2 + 1\$, \$\\frac{1}{2}\$).
-- Use \$\$...\$\$ for important standalone equations on their own line.
-- NEVER write raw LaTeX commands like \\frac{}{} without wrapping them in \$ or \$\$.
-
-GENERAL RULES:
-- If a question has sub-parts (a, b, c), treat them as separate items in the results list.
-- Reconstruct mangled OCR text intelligently (e.g., "dy dx" -> "dy/dx").
-- Use ultra-simple English.
-- Write thorough, detailed explanations. Do NOT be brief.
-
-Return JSON only in this format:
+```json
 {
   "results": [
     {
@@ -712,11 +686,56 @@ Return JSON only in this format:
       "type": "calculation",
       "solution": "**final answer**",
       "steps": [],
-      "explanation": "Full flowing explanation...",
+      "explanation": "...",
       "summary": ""
     }
   ]
 }
+```
+
+Field definitions:
+
+- **`question`** — Reconstruct the full question text from the OCR output (fix any OCR mangling intelligently, e.g., "dy dx" -> "dy/dx").
+- **`topic`** — Subject area (e.g., "Algebra", "Chemistry", "Mechanics").
+- **`type`** — Either `"calculation"` or `"theory"`.
+- **`solution`** — Final answer only, bolded. E.g., `"**D. I and II only**"` or `"**\$125\$**"`.
+- **`steps`** — Always an empty array: `[]`.
+- **`explanation`** — See Explanation Style below.
+- **`summary`** — Always an empty string: `""`.
+
+---
+
+## Explanation Style
+
+Write the explanation as **flowing prose**, like a concise textbook solution. No numbered steps. Natural paragraphs only.
+
+Structure every explanation like this:
+- Open with a brief sentence stating what the question asks.
+- Walk through the reasoning as flowing prose with inline math embedded naturally — keep it focused, no unnecessary padding.
+- Use **bold** for key conclusions (e.g., `**Therefore, Statement I is true.**`).
+- Use bullet points (`•`) only when listing options or short parallel items.
+- Separate logical sections with a blank line (`\n\n`).
+- End with a clear, bold conclusion stating the final answer.
+- If the question involves a diagram, graph, or table, reference it briefly and move directly into the solution.
+
+Good paragraphing and spacing is essential — write like Gauth AI: clear, direct, well-spaced, not bloated.
+
+---
+
+## Math Formatting Rules
+
+- All math expressions must be wrapped in `\$...\$` delimiters — never raw LaTeX outside delimiters.
+- Use `\$...\$` for inline math and for standalone equations that deserve their own line.
+- Use proper LaTeX inside delimiters: `\$\frac{a}{b}\$`, `\$x^2\$`, `\$x_1\$`.
+
+---
+
+## General Rules
+
+- Use simple, clear English throughout.
+- Be thorough but concise — explain every reasoning step without adding unnecessary information.
+- Never skip a question or sub-question visible in the text.
+- Output **only** the JSON object. Nothing else.
 PROMPT;
 
 
@@ -780,21 +799,21 @@ PROMPT;
     {
         // 1. Try Google Cloud Vision (Managed, high-accuracy)
         try {
-            \Log::info('Attempting OCR with Google Cloud Vision...');
+            Log::info('Attempting OCR with Google Cloud Vision...');
             $visionResult = $this->visionService->ocr($base64Image);
             
             if ($visionResult['success'] && !empty(trim($visionResult['text']))) {
-                \Log::info('Google Cloud Vision Success.');
+                Log::info('Google Cloud Vision Success.');
                 return $visionResult['text'];
             }
-            \Log::warning('Google Vision returned empty results, falling back to OCR.space');
+            Log::warning('Google Vision returned empty results, falling back to OCR.space');
         } catch (\Exception $e) {
-            \Log::error('Google Vision failed: ' . $e->getMessage() . '. Falling back.');
+            Log::error('Google Vision failed: ' . $e->getMessage() . '. Falling back.');
         }
 
         // 2. Fallback to OCR.space Engine 2
         try {
-            \Log::info('Attempting OCR with OCR.space (Fallback)...');
+            Log::info('Attempting OCR with OCR.space (Fallback)...');
             $fallbackClient = new Client(['timeout' => 15]);
             $response = $fallbackClient->post('https://api.ocr.space/parse/image', [
                 'headers' => [
@@ -827,10 +846,10 @@ PROMPT;
             }
 
             if (isset($data['ErrorMessage'])) {
-                \Log::error('OCR.space Error (Engine 1 Fallback): ' . implode(', ', (array) $data['ErrorMessage']));
+                Log::error('OCR.space Error (Engine 1 Fallback): ' . implode(', ', (array) $data['ErrorMessage']));
             }
         } catch (\Exception $e) {
-            \Log::error('OCR.space Engine 1 Fallback Exception: ' . $e->getMessage());
+            Log::error('OCR.space Engine 1 Fallback Exception: ' . $e->getMessage());
         }
 
         return '';
@@ -859,7 +878,7 @@ PROMPT;
 
             return $response->getStatusCode() === 200;
         } catch (\Exception $e) {
-            \Log::error('Deepseek connection test failed: ' . $e->getMessage());
+            Log::error('Deepseek connection test failed: ' . $e->getMessage());
             return false;
         }
     }
@@ -896,7 +915,7 @@ PROMPT;
             $data = json_decode($response->getBody()->getContents(), true);
             return $data['choices'][0]['message']['content'] ?? $text;
         } catch (\Exception $e) {
-            \Log::error('Translation Error: ' . $e->getMessage());
+            Log::error('Translation Error: ' . $e->getMessage());
             return $text;
         }
     }
@@ -906,7 +925,7 @@ PROMPT;
      */
     protected function handleApiException(\Exception $e, string $context): \Exception
     {
-        \Log::error("Deepseek {$context} Error: " . $e->getMessage());
+        Log::error("Deepseek {$context} Error: " . $e->getMessage());
         
         if ($e instanceof RequestException && $e->hasResponse()) {
             $statusCode = $e->getResponse()->getStatusCode();

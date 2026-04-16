@@ -146,21 +146,12 @@ class FlashcardController extends Controller
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
         $rates = $pricingConfig['rates'] ?? [];
 
-        $costPerQuestion = match ($validated['difficulty'] ?? 'medium') {
-            'easy' => 0.5,
-            'medium' => 1,
-            'hard' => 1.5,
-            'mixed' => 1.2,
-            default => 1,
-        };
+        // Flat tiered cost based on subscription plan
+        $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
+        $flashcardRates = $rates['flashcard_flat'] ?? ['free' => 30, 'paid' => 25];
+        $totalCost = is_array($flashcardRates) ? ($flashcardRates[$planTier] ?? 25) : $flashcardRates;
 
-        $baseCostPerCard = ($rates['flashcard_base'] ?? 1) * $costPerQuestion;
-
-        $chunks = (int) ceil($wordCount / 500);
-        $baseContentCost = $chunks * ($rates['flashcard_weight'] ?? 5);
-
-        $totalCost = (int) ceil(($validated['card_count'] * $baseCostPerCard) + $baseContentCost);
-        Log::info("Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'chunks' => $chunks]);
+        Log::info("Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'plan' => $planTier]);
 
         // 3. Check & Lock Credits (Atomic)
         $canProceed = DB::transaction(function () use ($user, $totalCost) {

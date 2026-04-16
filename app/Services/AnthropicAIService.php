@@ -303,50 +303,20 @@ class AnthropicAIService
             Log::info('Claude Vision: Processing image directly (native OCR)...');
 
             $solvePrompt = <<<PROMPT
-You are a world-class tutor solving exam papers. Look at this image carefully.
+You are a world-class tutor solving exam papers. Look at the attached image carefully.
 
-Your job:
+**Your job:**
 1. Identify ALL questions or sub-questions (e.g., 1a, 1b, Question 2, c, d) present in the image.
-2. Solve EVERY single one with a detailed, flowing explanation.
+2. Solve EVERY single one with a clear, well-structured explanation.
+3. Treat each sub-part as a **separate item** in the results list.
 
-RESPONSE FORMAT:
-For EVERY question, provide:
-- "question": Reconstruct the question text from the image.
-- "topic": The subject area (e.g. "Algebra", "Chemistry", "Physics").
-- "type": "calculation" or "theory".
-- "solution": The final answer only. Bold it, e.g. "**D. I and II only**" or "**\$125\$**".
-- "steps": [] (always empty array).
-- "explanation": A complete, flowing explanation (see EXPLANATION STYLE below).
-- "summary": "" (leave empty).
+---
 
-EXPLANATION STYLE (CRITICAL — follow this exactly):
-Write the explanation as a **single flowing document**, like a textbook solution. NOT numbered steps. NOT bullet points only. Write natural paragraphs that walk through the reasoning.
+## Response Format
 
-Structure your explanation like this:
-- Start with a brief context sentence about what the question is asking.
-- Show the working/reasoning as flowing prose with inline math.
-- Use **bold** for key conclusions (e.g. "**Therefore, Statement I is true.**").
-- Use bullet points (•) ONLY for listing options or short items.
-- Use \$...\$ for inline math and \$\$...\$\$ for standalone equations.
-- Separate logical sections with blank lines (double newline).
-- End with a clear, bold conclusion.
+Return **JSON only** — no preamble, no commentary, nothing outside the JSON block:
 
-Example explanation style:
-"This is a multiple-choice question that requires analyzing the relationship between Fahrenheit and Celsius temperature scales.\n\nThe formula given is \$C = \\frac{5}{9}(F - 32)\$\n\n• **Option A: I only**\n• **Option B: II only**\n• **Option C: III only**\n• **Option D: I and II only**\n\nLet's analyze each statement:\n\n**Statement I:** A temperature increase of \$1\$ degree Fahrenheit is equivalent to a temperature increase of \$\\frac{5}{9}\$ degree Celsius.\n\nTo verify, consider a change in Fahrenheit, \$\\Delta F\$, and the corresponding change in Celsius, \$\\Delta C\$.\n\nFrom the formula, we can express \$C\$ in terms of \$F\$. If \$F_1\$ and \$C_1\$ are initial temperatures, and \$F_2\$ and \$C_2\$ are final temperatures, then:\n\n\$\$\\Delta C = \\frac{5}{9} \\Delta F\$\$\n\nIf \$\\Delta F = 1\$ degree Fahrenheit, then \$\\Delta C = \\frac{5}{9} \\times 1 = \\frac{5}{9}\$ degree Celsius.\n\n**Therefore, Statement I is true.**\n\nBased on the analysis, statements I and II are true, while statement III is false.\n\nSo **Option D is correct.**"
-
-MATH FORMATTING RULES:
-- ALL math expressions MUST be wrapped in dollar-sign delimiters.
-- Use \$...\$ for inline math (e.g. \$x^2 + 1\$, \$\\frac{1}{2}\$).
-- Use \$\$...\$\$ for important standalone equations on their own line.
-- NEVER write raw LaTeX commands like \\frac{}{} without wrapping them in \$ or \$\$.
-- Use LaTeX inside the delimiters: \$\\frac{a}{b}\$ for fractions, \$x^2\$ for superscripts, \$x_1\$ for subscripts.
-
-GENERAL RULES:
-- If a question has sub-parts (a, b, c), treat them as separate items in the results list.
-- Use ultra-simple English.
-- Write thorough, detailed explanations. Do NOT be brief.
-
-Return JSON only in this format:
+```json
 {
   "results": [
     {
@@ -355,11 +325,56 @@ Return JSON only in this format:
       "type": "calculation",
       "solution": "**final answer**",
       "steps": [],
-      "explanation": "Full flowing explanation as described above...",
+      "explanation": "...",
       "summary": ""
     }
   ]
 }
+```
+
+Field definitions:
+
+- **`question`** — Reconstruct the full question text exactly as it appears in the image.
+- **`topic`** — Subject area (e.g., "Algebra", "Chemistry", "Mechanics").
+- **`type`** — Either `"calculation"` or `"theory"`.
+- **`solution`** — Final answer only, bolded. E.g., `"**D. I and II only**"` or `"**\$125\$**"`.
+- **`steps`** — Always an empty array: `[]`.
+- **`explanation`** — See Explanation Style below.
+- **`summary`** — Always an empty string: `""`.
+
+---
+
+## Explanation Style
+
+Write the explanation as **flowing prose**, like a concise textbook solution. No numbered steps. Natural paragraphs only.
+
+Structure every explanation like this:
+- Open with a brief sentence stating what the question asks.
+- Walk through the reasoning as flowing prose with inline math embedded naturally — keep it focused, no unnecessary padding.
+- Use **bold** for key conclusions (e.g., `**Therefore, Statement I is true.**`).
+- Use bullet points (`•`) only when listing options or short parallel items.
+- Separate logical sections with a blank line (`\n\n`).
+- End with a clear, bold conclusion stating the final answer.
+- If the question involves a diagram, graph, or table, reference it briefly and move directly into the solution.
+
+Good paragraphing and spacing is essential — write like Gauth AI: clear, direct, well-spaced, not bloated.
+
+---
+
+## Math Formatting Rules
+
+- All math expressions must be wrapped in `\$...\$` delimiters — never raw LaTeX outside delimiters.
+- Use `\$...\$` for inline math and for standalone equations that deserve their own line.
+- Use proper LaTeX inside delimiters: `\$\frac{a}{b}\$`, `\$x^2\$`, `\$x_1\$`.
+
+---
+
+## General Rules
+
+- Use simple, clear English throughout.
+- Be thorough but concise — explain every reasoning step without adding unnecessary information.
+- Never skip a question or sub-question visible in the image.
+- Output **only** the JSON object. Nothing else.
 PROMPT;
 
             $response = $this->client->post($this->baseUrl, [

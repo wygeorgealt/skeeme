@@ -101,13 +101,12 @@ class PracticeQuizController extends Controller
             $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
             $rates = $pricingConfig['rates'] ?? [];
 
-            $baseCost = $validated['question_count'] * ($rates['quiz_base'] ?? 1);
-            $chunks = (int) ceil($wordCount / 500);
-            $weightCost = $chunks * ($rates['quiz_weight'] ?? 5);
+            // Flat tiered cost based on subscription plan
+            $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
+            $quizRates = $rates['quiz_flat'] ?? ['free' => 30, 'paid' => 30];
+            $totalCost = is_array($quizRates) ? ($quizRates[$planTier] ?? 30) : $quizRates;
 
-            $totalCost = $baseCost + $weightCost;
-            if ($totalCost < 10) $totalCost = 10;
-            Log::info("[AI Quiz] Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'chunks' => $chunks]);
+            Log::info("[AI Quiz] Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'plan' => $planTier]);
 
             // 3. Check & Lock Credits (Atomic)
             $canProceed = DB::transaction(function () use ($user, $totalCost) {

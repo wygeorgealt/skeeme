@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Services\FileExtractionService;
+use Illuminate\Support\Facades\Log;
 
 class CreditCostCalculator
 {
@@ -16,6 +17,29 @@ class CreditCostCalculator
     }
 
     /**
+     * Resolve the plan tier for the authenticated user.
+     */
+    protected function getPlanTier(Request $request): string
+    {
+        $user = $request->user();
+        if (!$user || !method_exists($user, 'getStudentPlan')) {
+            return 'free';
+        }
+        return $user->getStudentPlan() === 'free' ? 'free' : 'paid';
+    }
+
+    /**
+     * Read a tiered rate value (supports both old flat int and new array format).
+     */
+    protected function tieredRate(mixed $rate, string $planTier, int $fallback): int
+    {
+        if (is_array($rate)) {
+            return (int) ($rate[$planTier] ?? $fallback);
+        }
+        return (int) ($rate ?? $fallback);
+    }
+
+    /**
      * Calculate the credit cost for a given request.
      */
     public function calculate(Request $request): int
@@ -24,20 +48,21 @@ class CreditCostCalculator
 
         $config = \App\Models\SystemSetting::getPricingConfig();
         $rates = $config['rates'] ?? [];
+        $planTier = $this->getPlanTier($request);
 
         // Scan & Solve
         if (Str::contains($path, 'scan/solve')) {
-            return $rates['scan_solve'] ?? 25;
+            return $this->tieredRate($rates['scan_solve'] ?? null, $planTier, 25);
         }
 
         // Quiz Builder
         if (Str::contains($path, 'quizzes/generate')) {
-            return $this->calculateQuizCost($request, $rates);
+            return $this->tieredRate($rates['quiz_flat'] ?? null, $planTier, 30);
         }
 
         // Flashcards
         if (Str::contains($path, 'flashcards/generate')) {
-            return $this->calculateFlashcardCost($request, $rates);
+            return $this->tieredRate($rates['flashcard_flat'] ?? null, $planTier, 25);
         }
 
         // Theory Grading
@@ -46,48 +71,6 @@ class CreditCostCalculator
         }
 
         return 0;
-    }
-
-    /**
-     * Quiz cost: base per question + weight per 500 words.
-     */
-    protected function calculateQuizCost(Request $request, array $rates): int
-    {
-        $count = (int) $request->input('question_count', 10);
-        $baseCost = $count * ($rates['quiz_base'] ?? 1);
-        
-        $content = $this->getOrExtractContent($request);
-        $wordCount = str_word_count($content);
-        $chunks = (int) ceil($wordCount / 500); 
-        $weightCost = $chunks * ($rates['quiz_weight'] ?? 5);
-        
-        return (int) max(10, $baseCost + $weightCost);
-    }
-
-    /**
-     * Flashcard cost: dynamic per-difficulty + weight per 500 words.
-     */
-    protected function calculateFlashcardCost(Request $request, array $rates): int
-    {
-        $count = (int) $request->input('card_count', 10);
-        $difficulty = $request->input('difficulty', 'medium');
-        
-        $multiplier = match($difficulty) {
-            'easy' => 0.5,
-            'medium' => 1,
-            'hard' => 1.5,
-            'mixed' => 1.2,
-            default => 1,
-        };
-        
-        $baseCostPerCard = ($rates['flashcard_base'] ?? 1) * $multiplier;
-        
-        $content = $this->getOrExtractContent($request);
-        $wordCount = str_word_count($content);
-        $chunks = (int) ceil($wordCount / 500);
-        $weightCost = $chunks * ($rates['flashcard_weight'] ?? 5);
-        
-        return (int) ceil(($count * $baseCostPerCard) + $weightCost);
     }
 
     /**
@@ -106,7 +89,7 @@ class CreditCostCalculator
             $extracted = $this->extractionService->extractText($file->getRealPath(), $file->getClientOriginalExtension());
             
             if (!$extracted || empty(trim($extracted))) {
-                \Log::error("CreditCostCalculator: Extraction failed or empty content.");
+                Log::error("CreditCostCalculator: Extraction failed or empty content.");
                 throw new \Exception("Could not extract content from the uploaded file for credit assessment.");
             }
             

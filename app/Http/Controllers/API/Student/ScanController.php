@@ -54,7 +54,9 @@ class ScanController extends Controller
 
         // Use the Flat Rate "Buffer Average" strategy (Option A)
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
-        $scanCost = $pricingConfig['rates']['scan_solve'] ?? 25;
+        $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
+        $scanRates = $pricingConfig['rates']['scan_solve'] ?? ['free' => 50, 'paid' => 25];
+        $scanCost = is_array($scanRates) ? ($scanRates[$planTier] ?? 25) : $scanRates;
 
         Log::info('Scan & Solve: Credit Check Passed', ['user_id' => $user->id]);
 
