@@ -62,7 +62,7 @@ class FlashcardController extends Controller
     public function show(Request $request, $id)
     {
         $deck = FlashcardDeck::where('user_id', $request->user()->id)
-            ->with(['flashcards' => function($q) {
+            ->with(['flashcards' => function ($q) {
                 $q->orderBy('order_column');
             }])
             ->findOrFail($id);
@@ -91,7 +91,7 @@ class FlashcardController extends Controller
             'card_count'     => 'required|integer|min:5|max:50',
             'difficulty'     => 'nullable|string|in:easy,medium,hard,mixed',
         ]);
-        
+
         Log::info("Validation Passed");
 
         if (empty($validated['topic']) && !$request->hasFile('file')) {
@@ -110,7 +110,7 @@ class FlashcardController extends Controller
             $file = $request->file('file');
             // Decode URL-encoded names (e.g. "My%20File.pdf" -> "My File")
             $title = urldecode(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
-            
+
             try {
                 $sourceContent = $this->extractionService->extractText($file->getPathname(), $file->getClientOriginalExtension());
                 if (empty(trim($sourceContent))) {
@@ -118,13 +118,12 @@ class FlashcardController extends Controller
                     return response()->json(['message' => 'Could not extract text from this file. Try a different document.'], 422);
                 }
                 Log::info("Text Extracted", ['length' => strlen($sourceContent)]);
-                
+
                 // Upload to R2 for persistent storage
-                $safeName = time() . '_' . \Str::slug($title) . '.' . $file->getClientOriginalExtension();
+                $safeName = time() . '_' . Str::slug($title) . '.' . $file->getClientOriginalExtension();
                 Log::info("Uploading to R2...", ['name' => $safeName]);
                 $r2Path = $file->storeAs('student-uploads/flashcards/' . $user->id, $safeName, config('filesystems.default'));
                 Log::info("R2 Upload Success", ['path' => $r2Path]);
-                
             } catch (\Exception $e) {
                 Log::error("File extraction failed in Flashcards: " . $e->getMessage());
                 return response()->json(['message' => 'Failed to read file: ' . $e->getMessage()], 422);
@@ -147,26 +146,26 @@ class FlashcardController extends Controller
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
         $rates = $pricingConfig['rates'] ?? [];
 
-        $costPerQuestion = match($validated['difficulty'] ?? 'medium') {
+        $costPerQuestion = match ($validated['difficulty'] ?? 'medium') {
             'easy' => 0.5,
             'medium' => 1,
             'hard' => 1.5,
             'mixed' => 1.2,
             default => 1,
         };
-        
+
         $baseCostPerCard = ($rates['flashcard_base'] ?? 1) * $costPerQuestion;
 
         $chunks = (int) ceil($wordCount / 500);
         $baseContentCost = $chunks * ($rates['flashcard_weight'] ?? 5);
-        
+
         $totalCost = (int) ceil(($validated['card_count'] * $baseCostPerCard) + $baseContentCost);
         Log::info("Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'chunks' => $chunks]);
 
         // 3. Check & Lock Credits (Atomic)
-        $canProceed = DB::transaction(function() use ($user, $totalCost) {
+        $canProceed = DB::transaction(function () use ($user, $totalCost) {
             $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
-            
+
             if (!$lockedUser->is_unlimited && $lockedUser->credits < $totalCost) {
                 return false;
             }
@@ -193,16 +192,16 @@ class FlashcardController extends Controller
             }
 
             $useDeepseek = ($activeProvider === 'deepseek');
-            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-3-5-haiku-20241022';
-            
+            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-sonnet-4-5';
+
             // Dynamic Timeout based on Network Quality Header
             $networkType = $request->header('X-Network-Type');
             $networkGen = $request->header('X-Network-Generation');
             $timeout = ($networkType === 'cellular' && in_array($networkGen, ['2g', '3g', 'edge'])) ? 30 : 60;
-            
+
             $this->aiService->setTimeout($timeout);
             $this->deepseek->setTimeout($timeout + 60);
-            
+
             try {
                 if ($useDeepseek) {
                     Log::info("Circuit Breaker Active: Auto-routing Flashcards to DeepSeek.");
@@ -231,7 +230,7 @@ class FlashcardController extends Controller
                     Log::warning("Claude API unavailable for Flashcards. Circuit Breaker tripped → routing to DeepSeek. Reason: " . $e->getMessage());
                     Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
                     $modelUsed = 'deepseek-chat';
-                    
+
                     $cardsData = $this->deepseek->generateFlashcards(
                         [$sourceContent],
                         (int) ($validated['card_count'] ?? 10),
@@ -248,7 +247,7 @@ class FlashcardController extends Controller
             }
 
             // 5. Save to DB (Atomic Transaction)
-            $deck = DB::transaction(function() use ($cardsData, $user, $title, $sourceType, $totalCost, $modelUsed, $requestId) {
+            $deck = DB::transaction(function () use ($cardsData, $user, $title, $sourceType, $totalCost, $modelUsed, $requestId) {
                 $deck = FlashcardDeck::create([
                     'user_id' => $user->id,
                     'title' => $title,
@@ -272,14 +271,14 @@ class FlashcardController extends Controller
                 if (!$user->is_unlimited) {
                     $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
                     $lockedUser->decrement('credits', $totalCost);
-                    
+
                     try {
                         $lockedUser->transactions()->create([
                             'type' => 'usage',
                             'action_type' => 'flashcard_generation',
                             'amount' => -$totalCost,
                             'description' => "Generating Flashcard Deck: " . $title,
-                            'model_used' => $modelUsed ?? 'claude-3-5-haiku-20241022',
+                            'model_used' => $modelUsed ?? 'claude-sonnet-4-5',
                             'request_id' => $requestId,
                         ]);
                     } catch (\Exception $e) {
@@ -305,7 +304,6 @@ class FlashcardController extends Controller
             }
 
             return response()->json($responseData);
-
         } catch (\Exception $e) {
             Log::error("Flashcard generation failed: " . $e->getMessage());
             $message = $e->getMessage();

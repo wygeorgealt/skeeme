@@ -68,7 +68,7 @@ class PracticeQuizController extends Controller
                 Log::info("Processing File Upload");
                 $file = $request->file('file');
                 $tempPath = $file->getRealPath();
-                
+
                 // Extract text immediately for AI analysis
                 $sourceContent = $this->extractionService->extractText($tempPath, $file->getClientOriginalExtension());
                 if (!$sourceContent) {
@@ -101,18 +101,18 @@ class PracticeQuizController extends Controller
             $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
             $rates = $pricingConfig['rates'] ?? [];
 
-            $baseCost = $validated['question_count'] * ($rates['quiz_base'] ?? 1); 
-            $chunks = (int) ceil($wordCount / 500); 
+            $baseCost = $validated['question_count'] * ($rates['quiz_base'] ?? 1);
+            $chunks = (int) ceil($wordCount / 500);
             $weightCost = $chunks * ($rates['quiz_weight'] ?? 5);
-            
+
             $totalCost = $baseCost + $weightCost;
             if ($totalCost < 10) $totalCost = 10;
             Log::info("[AI Quiz] Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'chunks' => $chunks]);
 
             // 3. Check & Lock Credits (Atomic)
-            $canProceed = DB::transaction(function() use ($user, $totalCost) {
+            $canProceed = DB::transaction(function () use ($user, $totalCost) {
                 $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
-                
+
                 if (!$lockedUser->is_unlimited_student && $lockedUser->credits < $totalCost) {
                     return false;
                 }
@@ -139,20 +139,20 @@ class PracticeQuizController extends Controller
             $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
             $activeProvider = $aiConfig['provider'];
             $isManualOverride = $aiConfig['is_manual'] ?? false;
-            
+
             if ($activeProvider === 'none') {
                 Log::error("[AI Quiz] Global AI Outage active. Rejecting request instantly.");
                 throw new \Exception('Skeeme AI is currently undergoing scheduled maintenance. Please try again later.');
             }
 
             $useDeepseek = ($activeProvider === 'deepseek');
-            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-3-5-haiku-20241022';
-            
+            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-sonnet-4-5';
+
             // Dynamic Timeout based on Network Quality Header
             $networkType = $request->header('X-Network-Type');
             $networkGen = $request->header('X-Network-Generation');
             $timeout = ($networkType === 'cellular' && in_array($networkGen, ['2g', '3g', 'edge'])) ? 30 : 60;
-            
+
             $this->aiService->setTimeout($timeout);
             $this->deepseek->setTimeout($timeout + 60); // Give fallback more room (120s max)
 
@@ -215,22 +215,22 @@ class PracticeQuizController extends Controller
                 Log::error("[AI Quiz] AI returned empty questions array");
                 throw new \Exception('AI returned no questions. Please try a different topic or document.');
             }
-            
+
             Log::info("[AI Quiz] Success! Questions generated.", ['count' => count($questions)]);
 
             // 6. Deduct Usage (Atomic) - Only AFTER successful generation
             if (!$user->is_unlimited_student) {
-                DB::transaction(function() use ($user, $totalCost, $validated, $modelUsed, $requestId) {
+                DB::transaction(function () use ($user, $totalCost, $validated, $modelUsed, $requestId) {
                     $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
                     $lockedUser->decrement('credits', $totalCost);
-                    
+
                     try {
                         $lockedUser->transactions()->create([
                             'type' => 'usage',
                             'action_type' => 'quiz_generation',
                             'amount' => -$totalCost,
                             'description' => "Practice Quiz: " . ($validated['question_count'] ?? 10) . " questions on " . ($validated['topic'] ?? 'File'),
-                            'model_used' => $modelUsed ?? 'claude-3-5-haiku-20241022',
+                            'model_used' => $modelUsed ?? 'claude-sonnet-4-5',
                             'request_id' => $requestId,
                         ]);
                     } catch (\Exception $e) {
@@ -281,7 +281,6 @@ class PracticeQuizController extends Controller
             }
 
             return response()->json($responseData);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::warning("Validation Failed", $e->errors());
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
@@ -290,11 +289,13 @@ class PracticeQuizController extends Controller
                 'user_id' => Auth::id(),
                 'trace' => substr($e->getTraceAsString(), 0, 500)
             ]);
-            
+
             $message = $e->getMessage();
-            if (str_contains(strtolower($message), 'failed') || 
-                str_contains(strtolower($message), 'error 28') || 
-                str_contains(strtolower($message), 'exception')) {
+            if (
+                str_contains(strtolower($message), 'failed') ||
+                str_contains(strtolower($message), 'error 28') ||
+                str_contains(strtolower($message), 'exception')
+            ) {
                 $message = "Skeeme is down, Please try again later.";
             }
 
@@ -322,7 +323,7 @@ class PracticeQuizController extends Controller
                 throw new \Exception('Skeeme AI is currently undergoing scheduled maintenance. Please try again later.');
             }
             $useDeepseek = ($activeProvider === 'deepseek');
-            
+
             $networkType = $request->header('X-Network-Type');
             $timeout = ($networkType === 'cellular') ? 15 : 30;
             $this->aiService->setTimeout($timeout);
@@ -365,4 +366,3 @@ class PracticeQuizController extends Controller
         }
     }
 }
-

@@ -13,7 +13,7 @@ class AnthropicAIService
     protected $apiKey;
     protected $version = '2023-06-01';
     protected $baseUrl = 'https://api.anthropic.com/v1/messages';
-    protected $model = 'claude-haiku-4-5-20251001';
+    protected $model = 'claude-sonnet-4-5';
     protected $timeout = 60; // Default 60s for backend generation
 
     public function __construct()
@@ -21,7 +21,7 @@ class AnthropicAIService
         $this->apiKey = config('services.anthropic.api_key');
         // We use a high default in client, but can override per-request
         $this->client = new Client([
-            'timeout' => 120, 
+            'timeout' => 120,
             'connect_timeout' => 10,
         ]);
     }
@@ -33,7 +33,7 @@ class AnthropicAIService
     }
 
     /**
-     * Generate questions using Claude 4.5 Haiku
+     * Generate questions using Claude 4.5 Sonnet
      * Production-hardened: dynamic tokens, personalization, language detection, cache logging
      */
     public function generateQuestions(
@@ -48,9 +48,9 @@ class AnthropicAIService
     ): array {
         try {
             set_time_limit(300);
-            
+
             if ($progressCallback) $progressCallback(10);
-            
+
             // Check cache first (24 hour TTL) - ELIMINATES REDUNDANT API CALLS
             $cacheKey = $this->generateCacheKey('q', $notes, $numberOfQuestions, $difficulty, $questionTypes, $prompt, $includeVisuals);
             if (Cache::has($cacheKey)) {
@@ -63,7 +63,7 @@ class AnthropicAIService
                 if ($progressCallback) $progressCallback(100);
                 return $questions;
             }
-            
+
             if ($progressCallback) $progressCallback(30);
 
             // Sanitize inputs for UTF-8
@@ -71,12 +71,17 @@ class AnthropicAIService
             $sanitizedPrompt = $this->sanitizeUtf8($prompt);
 
             $optimizedPrompt = $this->buildOptimizedPrompt(
-                $sanitizedNotes, $numberOfQuestions, $difficulty, 
-                $questionTypes, $sanitizedPrompt, $includeVisuals, $aiPreferences
+                $sanitizedNotes,
+                $numberOfQuestions,
+                $difficulty,
+                $questionTypes,
+                $sanitizedPrompt,
+                $includeVisuals,
+                $aiPreferences
             );
 
             if ($progressCallback) $progressCallback(50);
-            
+
             // Dynamic max_tokens based on count (~350 tokens per question to prevent truncation)
             $calculatedMaxTokens = min(8192, max(1500, $numberOfQuestions * 350));
 
@@ -98,13 +103,13 @@ class AnthropicAIService
 
             $data = json_decode($response->getBody()->getContents(), true);
             $content = $data['content'][0]['text'] ?? '';
-            
+
             $questions = $this->parseQuestionsFromResponse($content);
 
             if ($progressCallback) $progressCallback(95);
 
             Cache::put($cacheKey, $questions, now()->addHours(24));
-            
+
             return $questions;
         } catch (\Exception $e) {
             throw $this->handleApiException($e, 'Questions');
@@ -149,7 +154,7 @@ class AnthropicAIService
 
             $data = json_decode($response->getBody()->getContents(), true);
             $content = $data['content'][0]['text'] ?? '[]';
-            
+
             // Robust JSON parsing (same as DeepSeek)
             $content = preg_replace('/```(?:json)?|```/', '', $content);
             $decoded = json_decode(trim($content), true);
@@ -199,13 +204,13 @@ class AnthropicAIService
     }
 
     /**
-     * Translate text using Claude 4.5 Haiku
+     * Translate text using y
      */
     public function translateText(string $text, string $targetLanguage): string
     {
         try {
             $systemPrompt = "You are a professional translator. Translate the provided text to {$targetLanguage}. Return ONLY the translated text.";
-            
+
             $response = $this->client->post($this->baseUrl, [
                 'headers' => $this->buildHeaders(),
                 'json' => [
@@ -226,7 +231,7 @@ class AnthropicAIService
     }
 
     /**
-     * Grade a theory/essay answer using Claude 4.5 Haiku
+     * Grade a theory/essay answer using Claude 4.5 Sonnet
      * Enhanced with rubric support and detailed analysis (parity with DeepSeek)
      */
     public function gradeTheoryAnswer(
@@ -288,13 +293,13 @@ class AnthropicAIService
 
     /**
      * Solve questions from a scanned image using Claude's native vision (no external OCR needed)
-     * Claude 4.5 Haiku natively reads images — superior to OCR.space/Google Vision pipeline
+     * Claude 4.5 Sonnet natively reads images — superior to OCR.space/Google Vision pipeline
      */
     public function solveFromImage(string $base64Image): array
     {
         try {
             set_time_limit(300);
-            
+
             Log::info('Claude Vision: Processing image directly (native OCR)...');
 
             $solvePrompt = <<<PROMPT
@@ -426,11 +431,11 @@ PROMPT;
     protected function handleApiException(\Exception $e, string $context): \Exception
     {
         Log::error("Anthropic {$context} Error: " . $e->getMessage());
-        
+
         if ($e instanceof RequestException && $e->hasResponse()) {
             $statusCode = $e->getResponse()->getStatusCode();
             $body = $e->getResponse()->getBody()->getContents();
-            
+
             if ($statusCode === 429) {
                 return new \Exception("Skeeme is currently experiencing high demand. Please try again in a few moments.");
             }
@@ -441,7 +446,7 @@ PROMPT;
                 return new \Exception("Skeeme is down, Please try again later.");
             }
         }
-        
+
         if (str_contains($e->getMessage(), 'cURL error 28')) {
             return new \Exception("The AI took too long to respond. Please try again or break down your request into smaller parts.");
         }
@@ -498,22 +503,33 @@ PROMPT;
      * 5. Cache identical requests (100% token saving on reuse)
      */
     protected function buildOptimizedPrompt(
-        array $notes, int $count, string $diff, array $types, 
-        string $userPrompt, bool $visuals, ?array $prefs
+        array $notes,
+        int $count,
+        string $diff,
+        array $types,
+        string $userPrompt,
+        bool $visuals,
+        ?array $prefs
     ): string {
         // Abbreviate question types
         $typeMap = [
-            'multiple_choice' => 'MC', 'true_false' => 'TF', 'short_answer' => 'SA',
-            'essay' => 'ES', 'fill_blank' => 'FB',
+            'multiple_choice' => 'MC',
+            'true_false' => 'TF',
+            'short_answer' => 'SA',
+            'essay' => 'ES',
+            'fill_blank' => 'FB',
         ];
         $typesText = implode('/', array_map(fn($t) => $typeMap[$t] ?? 'MC', $types));
-        
+
         // Compress material
         $notesText = preg_replace('/\s+/', ' ', implode("\n", $notes));
-        
+
         // Abbreviate difficulty
-        $diffShort = match($diff) {
-            'easy' => 'E', 'medium' => 'M', 'hard' => 'H', default => 'E/M/H',
+        $diffShort = match ($diff) {
+            'easy' => 'E',
+            'medium' => 'M',
+            'hard' => 'H',
+            default => 'E/M/H',
         };
 
         $focusSection = !empty($userPrompt) ? "\nFOCUS: {$userPrompt}" : '';
@@ -560,9 +576,12 @@ PROMPT;
     protected function buildFlashcardPrompt(array $notes, int $numberOfCards, string $difficulty, string $userPrompt = ''): string
     {
         $notesText = preg_replace('/\s+/', ' ', implode("\n", $notes));
-        
-        $diffShort = match($difficulty) {
-            'easy' => 'E', 'medium' => 'M', 'hard' => 'H', default => 'E/M/H',
+
+        $diffShort = match ($difficulty) {
+            'easy' => 'E',
+            'medium' => 'M',
+            'hard' => 'H',
+            default => 'E/M/H',
         };
 
         $focusSection = !empty($userPrompt) ? "\nFOCUS: {$userPrompt}" : '';
@@ -647,7 +666,7 @@ PROMPT;
         return array_map(function ($q) use ($typeMap, $diffMap) {
             $type = $q['t'] ?? $q['question_type'] ?? 'MC';
             $type = $typeMap[$type] ?? $this->mapQuestionType($type);
-            
+
             $diff = $q['d'] ?? $q['difficulty_level'] ?? 'M';
             $diff = $diffMap[$diff] ?? 'medium';
 
@@ -672,9 +691,12 @@ PROMPT;
     protected function mapQuestionType(string $type): string
     {
         $mapping = [
-            'mcq' => 'multiple_choice', 'multiple_choice' => 'multiple_choice',
-            'true_false' => 'true_false', 'short_answer' => 'short_answer',
-            'essay' => 'essay', 'fill_blank' => 'fill_blank',
+            'mcq' => 'multiple_choice',
+            'multiple_choice' => 'multiple_choice',
+            'true_false' => 'true_false',
+            'short_answer' => 'short_answer',
+            'essay' => 'essay',
+            'fill_blank' => 'fill_blank',
         ];
         return $mapping[strtolower($type)] ?? 'multiple_choice';
     }

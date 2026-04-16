@@ -36,7 +36,7 @@ class ScanController extends Controller
         }
 
         set_time_limit(240); // 4 minutes
-        
+
         Log::info('Scan & Solve Request Received', [
             'user_id' => $request->user()?->id,
             'image_size' => strlen($request->input('image', '')),
@@ -51,7 +51,7 @@ class ScanController extends Controller
         }
 
         $user = $request->user();
-        
+
         // Use the Flat Rate "Buffer Average" strategy (Option A)
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
         $scanCost = $pricingConfig['rates']['scan_solve'] ?? 25;
@@ -59,9 +59,9 @@ class ScanController extends Controller
         Log::info('Scan & Solve: Credit Check Passed', ['user_id' => $user->id]);
 
         // 3. Preliminary Check & Lock Credits (Atomic)
-        $canProceed = DB::transaction(function() use ($user, $scanCost) {
+        $canProceed = DB::transaction(function () use ($user, $scanCost) {
             $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
-            
+
             if (!$lockedUser->is_unlimited && $lockedUser->credits < $scanCost) {
                 return false;
             }
@@ -79,7 +79,7 @@ class ScanController extends Controller
         try {
             // 4. Generate Synchronously (Circuit Breaker implementation)
             Log::info('Processing Scan & Solve Synchronously...', ['user_id' => $user->id]);
-            
+
             $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
             $activeProvider = $aiConfig['provider'];
             $isManualOverride = $aiConfig['is_manual'] ?? false;
@@ -89,14 +89,14 @@ class ScanController extends Controller
             }
 
             $useDeepseek = ($activeProvider === 'deepseek');
-            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-3-5-haiku-20241022';
+            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-sonnet-4-5';
 
             // Dynamic Timeout based on Network Quality Header
             $networkType = $request->header('X-Network-Type');
             $networkGen = $request->header('X-Network-Generation');
             // Give Vision a bit more time because images are large
             $timeout = ($networkType === 'cellular' && in_array($networkGen, ['2g', '3g', 'edge'])) ? 30 : 60;
-            
+
             $this->aiService->setTimeout($timeout);
             $this->deepseek->setTimeout($timeout + 60);
 
@@ -126,23 +126,23 @@ class ScanController extends Controller
 
             $solutions = $result['results'] ?? [];
             $solutionsCount = count($solutions);
-            
+
             // 5. Final Cost (Flat Rate)
             $finalCost = $scanCost;
 
             // 6. Deduct Usage (Atomic)
             if (!$user->is_unlimited) {
-                DB::transaction(function() use ($user, $finalCost, $solutionsCount, $modelUsed, $requestId) {
+                DB::transaction(function () use ($user, $finalCost, $solutionsCount, $modelUsed, $requestId) {
                     $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
                     $lockedUser->decrement('credits', $finalCost);
-                    
+
                     try {
                         $lockedUser->transactions()->create([
                             'type' => 'usage',
                             'action_type' => 'scan_solve',
                             'amount' => -$finalCost,
                             'description' => "Scan & Solve: " . $solutionsCount . " questions processed",
-                            'model_used' => $modelUsed ?? 'claude-3-5-haiku-20241022',
+                            'model_used' => $modelUsed ?? 'claude-sonnet-4-5',
                             'request_id' => $requestId,
                         ]);
                     } catch (\Exception $e) {
@@ -170,14 +170,15 @@ class ScanController extends Controller
             }
 
             return response()->json($responseData);
-
         } catch (\Exception $e) {
             Log::error("API Quiz Gen Critical Error: " . $e->getMessage());
-            
+
             $message = $e->getMessage();
-            if (str_contains(strtolower($message), 'failed') || 
-                str_contains(strtolower($message), 'error 28') || 
-                str_contains(strtolower($message), 'exception')) {
+            if (
+                str_contains(strtolower($message), 'failed') ||
+                str_contains(strtolower($message), 'error 28') ||
+                str_contains(strtolower($message), 'exception')
+            ) {
                 $message = "Skeeme is down, Please try again later.";
             }
             return response()->json(['message' => $message], 500);

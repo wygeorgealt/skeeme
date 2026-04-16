@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('transactions', function (Blueprint $table) {
             // Granular action type (quiz_generation, flashcard_generation, scan_solve, etc.)
             $table->string('action_type')->nullable()->after('type');
-            // AI model used for the operation (claude-3-5-haiku-20241022, deepseek-chat, etc.)
+            // AI model used for the operation (claude-sonnet-4-5, deepseek-chat, etc.)
             $table->string('model_used')->nullable()->after('action_type');
             // Idempotency / correlation key for dedup and support tracing
             $table->string('request_id')->nullable()->after('model_used')->index();

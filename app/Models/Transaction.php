@@ -16,7 +16,7 @@ class Transaction extends Model
         'action_type', // quiz_generation, flashcard_generation, scan_solve, ai_grading, referral_bonus, signup_bonus
         'amount',      // integer (positive for credits added, negative for credits used)
         'description',
-        'model_used',  // claude-3-5-haiku-20241022, deepseek-chat, etc.
+        'model_used',  // claude-sonnet-4-5, deepseek-chat, etc.
         'request_id',  // idempotency / correlation key
         'metadata',
     ];
