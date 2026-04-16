@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { StatusBar } from 'expo-status-bar';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,7 +41,7 @@ export default function ForgotPasswordScreen() {
     };
 
     return (
-        <GlowBackground style={s.flex1}>
+        <View style={s.flex1}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={s.flex1}
@@ -103,7 +102,7 @@ export default function ForgotPasswordScreen() {
                     />
                 </ScrollView>
             </KeyboardAvoidingView>
-        </GlowBackground>
+        </View>
     );
 }
 

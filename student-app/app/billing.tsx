@@ -9,7 +9,6 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { useAuthStore } from '@/store/authStore';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 
 interface Invoice {
     id: number;
@@ -88,7 +87,7 @@ export default function BillingHistoryScreen() {
     };
 
     return (
-        <GlowBackground>
+        <View>
             <Stack.Screen
                 options={{
                     title: 'Billing History',
@@ -204,7 +203,7 @@ export default function BillingHistoryScreen() {
                     <View style={{ height: 40 }} />
                 </ScrollView>
             )}
-        </GlowBackground>
+        </View>
     );
 }
 

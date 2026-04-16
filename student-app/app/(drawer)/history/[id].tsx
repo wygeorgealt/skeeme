@@ -13,7 +13,6 @@ import { ShareCard } from '@/components/ui/ShareCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import * as Print from 'expo-print';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { MathText } from '@/components/ui/MathText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -222,7 +221,7 @@ export default function QuizHistoryDetailScreen() {
     };
 
     if (isLoading && !session) return (
-        <GlowBackground isRoot={true}>
+        <View style={{ flex: 1, backgroundColor: bgColor }}>
             <Stack.Screen options={{ headerShown: false }} />
             <View style={[s.topControls, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity onPress={() => router.back()} style={s.backBtnSkeleton}>
@@ -245,7 +244,7 @@ export default function QuizHistoryDetailScreen() {
                     </View>
                 ))}
             </View>
-        </GlowBackground>
+        </View>
     );
 
     if (!session) return null;
@@ -260,7 +259,7 @@ export default function QuizHistoryDetailScreen() {
     const remark = getRemark(session.score_percentage);
 
     return (
-        <GlowBackground isRoot={true}>
+        <View style={{ flex: 1, backgroundColor: bgColor }}>
             <Stack.Screen options={{ headerShown: false }} />
 
             <ShareCard
@@ -372,7 +371,7 @@ export default function QuizHistoryDetailScreen() {
                     )}
                 </TouchableOpacity>
             </View>
-        </GlowBackground>
+        </View>
     );
 }
 

@@ -1,9 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { useState } from 'react';
-import {
-    View, TextInput, TouchableOpacity, KeyboardAvoidingView,
-    Platform, ScrollView, useColorScheme, StyleSheet
-} from 'react-native';
+import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useColorScheme, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -12,7 +9,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { StatusBar } from 'expo-status-bar';
 
 export default function SignupScreen() {
@@ -82,14 +78,14 @@ export default function SignupScreen() {
     };
 
     return (
-        <GlowBackground style={s.flex1}>
+        <View style={s.flex1}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.flex1}>
                 <StatusBar style={isDark ? "light" : "dark"} />
 
                 {/* Header with Back Button */}
                 <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity
-                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
+                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/entry')}
                         style={[s.backBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     >
@@ -192,7 +188,7 @@ export default function SignupScreen() {
                     </Text>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </GlowBackground>
+        </View>
     );
 }
 

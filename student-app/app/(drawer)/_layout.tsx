@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useEffect } from 'react';
 import { registerForPushNotificationsAsync } from '@/lib/notifications';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, SharedValue } from 'react-native-reanimated';
 
 // ─── Icons logic moved to TabBar / TabLayout for simplicity with IconSymbol ───
 
@@ -32,6 +33,29 @@ function TabBar({ state, descriptors, navigation }: any) {
             }
         }
     };
+
+    // ── Camera FAB fold animation ──────────────────────────────────────────
+    const currentRouteName = state.routes[state.index]?.name;
+    const isMainTab = ['index', 'account'].includes(currentRouteName);
+
+    // Shared value: 0 = prominent (main tabs), 1 = folded (sub-pages)
+    const foldProgress = useSharedValue(isMainTab ? 0 : 1);
+
+    useEffect(() => {
+        foldProgress.value = withSpring(isMainTab ? 0 : 1, {
+            damping: 16,
+            stiffness: 140,
+            mass: 0.8,
+        });
+    }, [isMainTab]);
+
+    const fabAnimatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateY: foldProgress.value * 22 },
+            { scale: 1 - foldProgress.value * 0.22 },
+        ],
+        opacity: 1 - foldProgress.value * 0.15,
+    }));
 
     // Filter to only visible tabs (Home + Account)
     const visibleRoutes = state.routes
@@ -112,18 +136,21 @@ function TabBar({ state, descriptors, navigation }: any) {
                 })()}
             </BlurView>
 
-            {/* Camera FAB — absolutely positioned, always centered, never animates */}
-            <TouchableOpacity
-                onPress={scanOnPress}
-                activeOpacity={0.85}
-                style={[bar.fabOuter, { bottom: Math.max(insets.bottom, 16) + 16 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Scan"
-            >
-                <View style={[bar.fabCircle, { backgroundColor: C.primary }]}>
-                    <IconSymbol name="camera.fill" color="#FFFFFF" size={28} />
-                </View>
-            </TouchableOpacity>
+            {/* Camera FAB — folds into bar on sub-pages, springs out on main tabs */}
+            <View style={[bar.fabOuter, { bottom: Math.max(insets.bottom, 16) + 16 }]} pointerEvents="box-none">
+                <Animated.View style={fabAnimatedStyle} pointerEvents="box-none">
+                    <TouchableOpacity
+                        onPress={scanOnPress}
+                        activeOpacity={0.85}
+                        accessibilityRole="button"
+                        accessibilityLabel="Scan"
+                    >
+                        <View style={[bar.fabCircle, { backgroundColor: C.primary }]}>
+                            <IconSymbol name="camera.fill" color="#FFFFFF" size={28} />
+                        </View>
+                    </TouchableOpacity>
+                </Animated.View>
+            </View>
         </View>
     );
 }

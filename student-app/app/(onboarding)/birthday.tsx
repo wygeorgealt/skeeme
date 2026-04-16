@@ -1,11 +1,10 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView, ScrollView, Platform } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView, ScrollView, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { IosPillButton } from '@/components/ui/IosPillButton';
@@ -46,18 +45,26 @@ export default function BirthdayScreen() {
     };
 
     const handleNext = async () => {
+        if (age < 13) {
+            Alert.alert(
+                'Age Requirement',
+                'You must be at least 13 years old to use Skeeme. Please check your date of birth and try again.',
+                [{ text: 'OK', style: 'default' }]
+            );
+            return;
+        }
         await setOnboardingData({ 
             dob_month: date.getMonth() + 1, 
             dob_year: date.getFullYear(), 
             age: age 
         });
-        router.push('/(onboarding)/create-account');
+        router.push('/(onboarding)/notifications');
     };
 
-    const isValid = age > 0;
+    const isValid = age >= 13;
 
     return (
-        <GlowBackground style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
             <SafeAreaView style={s.container}>
                 
                 <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
@@ -122,7 +129,7 @@ export default function BirthdayScreen() {
                     />
                 </View>
             </SafeAreaView>
-        </GlowBackground>
+        </View>
     );
 }
 

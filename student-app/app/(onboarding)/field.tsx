@@ -5,8 +5,8 @@ import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/theme';
 
 const FIELDS = [
     { key: 'sciences', label: 'Sciences', icon: 'flask.fill' },
@@ -23,6 +23,7 @@ export default function FieldScreen() {
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const { setOnboardingStep, setOnboardingData } = useAuthStore();
     const [selected, setSelected] = useState<string | null>(null);
 
@@ -37,7 +38,7 @@ export default function FieldScreen() {
 
     const handleNext = () => {
         if (selected) {
-            router.push('/(onboarding)/style');
+            router.push('/(onboarding)/birthday');
         }
     };
 
@@ -46,7 +47,7 @@ export default function FieldScreen() {
     const iconColor = '#007AFF';
 
     return (
-        <GlowBackground style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: C.secondaryBackground }}>
             <SafeAreaView style={s.container}>
                 
                 <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
@@ -108,7 +109,7 @@ export default function FieldScreen() {
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
-        </GlowBackground>
+        </View>
     );
 }
 
@@ -140,8 +141,8 @@ const s = StyleSheet.create({
         borderColor: 'rgba(0,0,0,0.05)',
     },
     cardDark: { 
-        backgroundColor: 'rgba(255,255,255,0.05)', 
-        borderColor: 'rgba(255,255,255,0.1)',
+        backgroundColor: '#1C1C1E', 
+        borderColor: 'rgba(255,255,255,0.08)',
     },
     cardSelected: {
         borderColor: '#007AFF',

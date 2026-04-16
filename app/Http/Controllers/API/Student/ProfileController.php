@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -37,6 +38,51 @@ class ProfileController extends Controller
                 'phone_number' => $user->phone_number,
                 'credits' => $user->credits,
                 'is_unlimited' => $user->is_unlimited_student,
+            ]
+        ]);
+    }
+
+    /**
+     * Handle the submission of onboarding data
+     */
+    public function completeOnboarding(Request $request)
+    {
+        $validated = $request->validate([
+            'education_level' => 'nullable|string',
+            'field_of_study' => 'nullable|string',
+            'dob_month' => 'nullable|integer|between:1,12',
+            'dob_year' => 'nullable|integer',
+            'age' => 'nullable|integer',
+        ]);
+
+        $user = $request->user();
+
+        if (isset($validated['dob_year']) && isset($validated['dob_month'])) {
+            $user->dob = $validated['dob_year'] . '-' . str_pad($validated['dob_month'], 2, '0', STR_PAD_LEFT) . '-01';
+        }
+        
+        if (isset($validated['age'])) {
+            $user->age = $validated['age'];
+        }
+
+        $aiPreferences = $user->ai_preferences ?? [];
+        if (isset($validated['education_level'])) {
+            $aiPreferences['education_level'] = $validated['education_level'];
+        }
+        if (isset($validated['field_of_study'])) {
+            $aiPreferences['field_of_study'] = $validated['field_of_study'];
+        }
+        
+        $user->ai_preferences = $aiPreferences;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Onboarding completed successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'ai_preferences' => $user->ai_preferences,
             ]
         ]);
     }

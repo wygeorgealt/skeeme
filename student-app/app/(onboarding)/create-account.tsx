@@ -5,7 +5,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
 
@@ -26,7 +25,7 @@ export default function CreateAccountScreen() {
     const btnAppleText = isDark ? '#000000' : '#FFFFFF';
 
     return (
-        <GlowBackground style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
             <SafeAreaView style={s.container}>
                 <ScrollView 
                     contentContainerStyle={[s.content, { paddingTop: Math.max(insets.top, 40) }]} 
@@ -85,7 +84,7 @@ export default function CreateAccountScreen() {
 
                 </ScrollView>
             </SafeAreaView>
-        </GlowBackground>
+        </View>
     );
 }
 

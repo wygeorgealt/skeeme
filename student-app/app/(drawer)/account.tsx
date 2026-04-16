@@ -1,8 +1,5 @@
 import { useState } from 'react';
-import {
-    View, ScrollView, TouchableOpacity, Alert, TextInput,
-    Platform, useColorScheme, Image, StyleSheet, Switch
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, Alert, TextInput, Platform, useColorScheme, Image, StyleSheet, Switch } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -111,7 +108,7 @@ export default function AccountScreen() {
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
 
-    const { user, login, logout, theme, setTheme } = useAuthStore();
+    const { user, login, logout, theme, setTheme, hapticsEnabled } = useAuthStore();
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [avatarModalVisible, setAvatarModalVisible] = useState(false);
     const [updatingAvatar, setUpdatingAvatar] = useState(false);
@@ -194,19 +191,13 @@ export default function AccountScreen() {
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
                         icon="sparkles" iconBg="#007AFF"
-                        label="Current Plan"
+                        label="Subscription"
                         value={user.plan_name === 'elite' || user.is_unlimited ? 'Skeeme Elite' : (user.plan_name === 'standard' ? 'Skeeme Standard' : 'Skeeme Free')}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="diamond.fill" iconBg="#34C759"
-                        label="Credits Remaining"
-                        value={user.is_unlimited ? '∞' : `${user.credits}`}
-                        isDark={isDark}
-                    />
-                    <SettingsRow
                         icon="arrow.up.circle.fill" iconBg="#FF9500"
-                        label="Upgrade Plan"
+                        label="Upgrade"
                         onPress={() => router.push('/upgrade')}
                         isLast={true}
                         isDark={isDark}
@@ -218,7 +209,7 @@ export default function AccountScreen() {
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
                         icon="wand.and.stars" iconBg="#5E5CE6"
-                        label="AI Preferences"
+                        label="Personalization"
                         onPress={() => router.push('/preferences')}
                         isDark={isDark}
                     />
@@ -234,7 +225,7 @@ export default function AccountScreen() {
                         icon="sparkles" iconBg="#FF9500"
                         label="Haptic Feedback"
                         hasSwitch={true}
-                        switchValue={useAuthStore().hapticsEnabled}
+                        switchValue={hapticsEnabled}
                         onSwitch={(val) => useAuthStore.getState().setHapticsEnabled(val)}
                         isDark={isDark}
                     />
@@ -261,7 +252,7 @@ export default function AccountScreen() {
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
                         icon="questionmark.circle" iconBg="#8E8E93"
-                        label="Help & FAQ"
+                        label="Report Issue"
                         onPress={() => router.push('/support')}
                         isDark={isDark}
                     />

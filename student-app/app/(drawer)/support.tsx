@@ -1,8 +1,5 @@
 import { useState } from 'react';
-import {
-    View, TextInput, TouchableOpacity, KeyboardAvoidingView,
-    Platform, ActivityIndicator, useColorScheme, StyleSheet, ScrollView, Alert, Image
-} from 'react-native';
+import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, useColorScheme, StyleSheet, ScrollView, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';

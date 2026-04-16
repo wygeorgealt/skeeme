@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-    TouchableOpacity,
-    Text,
-    StyleSheet,
-    useColorScheme,
-    ActivityIndicator,
-    ViewStyle,
-    TextStyle,
-} from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, useColorScheme, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
 import { Colors, FontSize, Spacing, Radius } from '@/constants/theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';

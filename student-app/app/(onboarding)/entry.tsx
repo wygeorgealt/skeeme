@@ -48,13 +48,10 @@ export default function HookScreen() {
                             </Text>
                             {' '}to learn how we collect, use and share your data and are at least 13 years of age.
                         </Text>
-                        <Text style={[s.poweredBy, { color: isDark ? '#636366' : '#AEAEB2' }]}>
-                            Skeeme AI's responses are powered by artificial intelligence and may sometimes be inaccurate.
-                        </Text>
                     </View>
 
                     <TouchableOpacity
-                        onPress={() => router.push('/welcome')}
+                        onPress={() => router.push('/(onboarding)/auth-select')}
                         activeOpacity={0.8}
                         style={s.mainBtn}
                     >

@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import {
-    View, Text, TextInput, TouchableOpacity, ScrollView,
-    ActivityIndicator, Alert, useColorScheme, Animated, StyleSheet, Modal
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, Animated, StyleSheet, Modal } from 'react-native';
 import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
 import { useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { api } from '@/lib/api';

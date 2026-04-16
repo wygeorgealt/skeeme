@@ -1,7 +1,5 @@
 import { useState, useRef } from 'react';
-import {
-    View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Dimensions
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Dimensions } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { BlurView } from 'expo-blur';

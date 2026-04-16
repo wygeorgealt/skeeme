@@ -6,7 +6,6 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { StatusBar } from 'expo-status-bar';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IosPillButton } from '@/components/ui/IosPillButton';
@@ -143,7 +142,7 @@ export default function OtpScreen() {
     };
 
     return (
-        <GlowBackground style={s.flex1}>
+        <View style={s.flex1}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.flex1}>
                 <StatusBar style={isDark ? "light" : "dark"} />
 
@@ -226,7 +225,7 @@ export default function OtpScreen() {
                     />
                 </ScrollView>
             </KeyboardAvoidingView>
-        </GlowBackground>
+        </View>
     );
 }
 

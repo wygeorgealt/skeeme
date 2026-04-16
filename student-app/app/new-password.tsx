@@ -6,7 +6,6 @@ import { api } from '@/lib/api';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { StatusBar } from 'expo-status-bar';
 import { PasswordField } from '@/components/ui/PasswordField';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IosPillButton } from '@/components/ui/IosPillButton';
@@ -69,7 +68,7 @@ export default function NewPasswordScreen() {
     };
 
     return (
-        <GlowBackground style={s.flex1}>
+        <View style={s.flex1}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.flex1}>
                 <StatusBar style={isDark ? "light" : "dark"} />
 
@@ -145,7 +144,7 @@ export default function NewPasswordScreen() {
                     />
                 </ScrollView>
             </KeyboardAvoidingView>
-        </GlowBackground>
+        </View>
     );
 }
 

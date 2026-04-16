@@ -9,7 +9,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { StatusBar } from 'expo-status-bar';
 
 export default function LoginScreen() {
@@ -64,14 +63,14 @@ export default function LoginScreen() {
     };
 
     return (
-        <GlowBackground style={s.flex1}>
+        <View style={s.flex1}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.flex1}>
                 <StatusBar style={isDark ? "light" : "dark"} />
                 
                 {/* Close button */}
                 <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity
-                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/hook')}
+                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/entry')}
                         style={[s.closeBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
                     >
@@ -148,7 +147,7 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
-        </GlowBackground>
+        </View>
     );
 }
 

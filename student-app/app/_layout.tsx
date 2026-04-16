@@ -6,23 +6,19 @@ import '../global.css';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { QueryProvider } from '@/components/QueryProvider';
-import { useColorScheme as useNativeColorScheme, LogBox, View, TouchableOpacity, TextStyle, Platform } from 'react-native';
+import { View, useColorScheme as useNativeColorScheme, LogBox, TouchableOpacity, TextStyle, Platform } from 'react-native';
 import { cssInterop, useColorScheme as useTailwindColorScheme } from 'nativewind';
-import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import AnimatedSplash from '@/components/AnimatedSplash';
 import Animated, { FadeOut } from 'react-native-reanimated';
 import { NetworkStatus } from '@/components/NetworkStatus';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { ShakeReporter } from '@/components/ShakeReporter';
 import { useFonts } from 'expo-font';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '@/lib/posthog';
 
-cssInterop(LinearGradient, {
-  className: 'style',
-});
+
 
 
 // Fix NativeWind v4 crash on Animated components
@@ -77,20 +73,29 @@ export default function RootLayout() {
     const currentSegment = segments[0] as string;
     const isPublicRoute = publicRoutes.includes(currentSegment);
 
-    if (user && isPublicRoute) {
-      // Logged in user on a public route → send home
-      router.replace('/(drawer)');
-    } else if (!user && !isPublicRoute) {
-      // Not logged in → decide where to send them
-      if (storedEmail) {
-        // Had a previous session → login with pre-filled email
-        router.replace('/login');
-      } else if (!onboardingComplete) {
-        // Fresh install or incomplete onboarding → start from the beginning
-        router.replace('/(onboarding)/hook');
+    if (user) {
+      if (!onboardingComplete) {
+        // New user has signed in/up, but hasn't completed personalization.
+        // Keep them in the onboarding directory.
+        if (currentSegment !== '(onboarding)') {
+          router.replace('/(onboarding)/education');
+        }
       } else {
-        // Completed onboarding but no user (logged out) → login
-        router.replace('/login');
+        // Pre-existing user completed everything. Send home if on public routes.
+        if (isPublicRoute || !currentSegment) {
+          router.replace('/(drawer)');
+        }
+      }
+    } else {
+      // Not logged in
+      if (!isPublicRoute) {
+        if (storedEmail) {
+          router.replace('/login');
+        } else if (!onboardingComplete) {
+          router.replace('/(onboarding)/entry');
+        } else {
+          router.replace('/login');
+        }
       }
     }
   }, [user, isLoading, segments, router, onboardingComplete, onboardingStep, storedEmail]);
@@ -122,8 +127,8 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: tailwindScheme === 'dark' ? '#09090B' : '#E9F1FE' }}>
-      <GlowBackground isRoot={true}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: tailwindScheme === 'dark' ? '#000000' : '#FFFFFF' }}>
+      <View style={{ flex: 1 }}>
       <View style={{ flex: 1, backgroundColor: 'transparent' }}>
       <PostHogProvider client={posthog}>
       <QueryProvider>
@@ -166,7 +171,7 @@ export default function RootLayout() {
       </QueryProvider>
       </PostHogProvider>
       </View>
-      </GlowBackground>
+      </View>
     </GestureHandlerRootView>
   );
 }

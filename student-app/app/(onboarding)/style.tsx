@@ -5,7 +5,6 @@ import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STYLES = [
@@ -51,7 +50,7 @@ export default function StyleScreen() {
     const iconColor = '#007AFF';
 
     return (
-        <GlowBackground style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
             <SafeAreaView style={s.container}>
                 
                 <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
@@ -116,7 +115,7 @@ export default function StyleScreen() {
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
-        </GlowBackground>
+        </View>
     );
 }
 

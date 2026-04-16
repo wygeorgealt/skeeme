@@ -1,127 +1,199 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Colors } from '@/constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import * as Notifications from 'expo-notifications';
+import { api } from '@/lib/api';
 
-const REASONS = [
-    { icon: 'trophy.fill' as const, text: 'Approaching a credit reward milestone' },
-    { icon: 'flame.fill' as const, text: 'Keep your study streak alive' },
-    { icon: 'exclamationmark.triangle.fill' as const, text: 'Credits running low warning' },
-];
+// Placeholder screen recording video — replace with your actual notification demo
+const NOTIFICATION_VIDEO = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4';
 
-export default function NotificationsScreen() {
+export default function NotificationScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
-    const { setOnboardingStep, completeOnboarding } = useAuthStore();
+    const C = Colors[isDark ? 'dark' : 'light'];
+    const { setOnboardingStep, completeOnboarding, onboardingData, user } = useAuthStore();
 
     useEffect(() => {
-        setOnboardingStep(7);
+        setOnboardingStep(6);
     }, []);
 
-    const handleEnable = async () => {
+    const player = useVideoPlayer(NOTIFICATION_VIDEO, (player) => {
+        player.loop = true;
+        player.muted = true;
+        player.play();
+    });
+
+    const submitOnboarding = async () => {
+        // Send personalization data to the backend
         try {
-            const { status } = await Notifications.requestPermissionsAsync();
-            if (__DEV__) console.log('[Onboarding] Notification permission:', status);
+            await api.post('me/onboarding', {
+                education_level: onboardingData.education_level,
+                field_of_study: onboardingData.field_of_study,
+                dob_month: onboardingData.dob_month,
+                dob_year: onboardingData.dob_year,
+                age: onboardingData.age,
+            });
         } catch (e) {
-            if (__DEV__) console.error('[Onboarding] Failed to request notifications', e);
+            if (__DEV__) console.warn('Failed to submit onboarding data', e);
         }
         await completeOnboarding();
         router.replace('/(drawer)');
     };
 
-    const handleSkip = async () => {
-        await completeOnboarding();
-        router.replace('/(drawer)');
+    const handleEnableNotifications = async () => {
+        try {
+            const { status } = await Notifications.requestPermissionsAsync();
+            if (__DEV__) console.log('Notification permission:', status);
+        } catch (e) {
+            if (__DEV__) console.warn('Notification permission failed', e);
+        }
+        await submitOnboarding();
     };
 
-    const bgColor = isDark ? '#000000' : '#F2F2F7';
-    const cardColor = isDark ? '#1C1C1E' : '#FFFFFF';
-    const textColor = isDark ? '#FFFFFF' : '#000000';
-    const subtextColor = isDark ? '#8E8E93' : '#8E8E93';
-    const iconColor = '#007AFF';
-    const separatorColor = isDark ? '#38383A' : '#C6C6C8';
+    const handleSkip = async () => {
+        await submitOnboarding();
+    };
 
     return (
-        <SafeAreaView style={[s.container, { backgroundColor: bgColor }]}>
-            <StatusBar style={isDark ? 'light' : 'dark'} />
+        <View style={[s.container, { backgroundColor: C.background }]}>
+            <SafeAreaView style={s.safeArea}>
 
-            <View style={s.content}>
-                
-                <Animated.View entering={FadeInDown.duration(600).delay(100)} style={s.headerSection}>
-                    <View style={s.bellCircle}>
-                        <IconSymbol name="bell.fill" size={40} color="#FFFFFF" />
+                {/* Video Preview */}
+                <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.videoSection}>
+                    <View style={[s.phoneFrame, { backgroundColor: C.card, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                        <VideoView
+                            player={player}
+                            style={s.video}
+                            nativeControls={false}
+                            contentFit="cover"
+                        />
                     </View>
+                </Animated.View>
 
-                    <Text style={[s.heroTitle, { color: textColor }]}>
-                        Stay on Track
+                {/* Text */}
+                <Animated.View entering={FadeInDown.duration(600).delay(400)} style={s.textSection}>
+                    <Text style={[s.title, { color: C.text }]}>
+                        Never miss a study session
                     </Text>
-                    <Text style={[s.heroSubtitle, { color: subtextColor }]}>
-                        Skeeme works best when it can remind you to keep studying.
+                    <Text style={[s.subtitle, { color: C.textSecondary }]}>
+                        Get smart reminders and tips to keep you on track. You can change this later in Settings.
                     </Text>
                 </Animated.View>
 
-                {/* Benefits List */}
-                <Animated.View entering={FadeInDown.duration(600).delay(300)} style={[s.listContainer, { backgroundColor: cardColor }]}>
-                    {REASONS.map((reason, index) => {
-                        const isLast = index === REASONS.length - 1;
-                        return (
-                            <View key={index} style={[s.listItem, !isLast && { borderBottomColor: separatorColor, borderBottomWidth: StyleSheet.hairlineWidth }]}>
-                                <View style={[s.iconBox, { backgroundColor: isDark ? '#2C2C2E' : '#E8F0FE' }]}>
-                                    <IconSymbol name={reason.icon as any} size={22} color={iconColor} />
-                                </View>
-                                <Text style={[s.reasonText, { color: textColor }]}>{reason.text}</Text>
-                            </View>
-                        );
-                    })}
+                {/* Buttons */}
+                <Animated.View entering={FadeInDown.duration(600).delay(600)} style={[s.footer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+                    <TouchableOpacity
+                        onPress={handleEnableNotifications}
+                        activeOpacity={0.8}
+                        style={s.primaryBtn}
+                    >
+                        <IconSymbol name="bell.fill" size={18} color="#FFFFFF" />
+                        <Text style={s.primaryBtnText}>Enable Notifications</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={handleSkip}
+                        activeOpacity={0.7}
+                        style={s.skipBtn}
+                    >
+                        <Text style={[s.skipBtnText, { color: C.textSecondary }]}>Not now</Text>
+                    </TouchableOpacity>
                 </Animated.View>
-
-            </View>
-
-            {/* Bottom Actions */}
-            <Animated.View entering={FadeInUp.duration(600).delay(500)} style={s.footer}>
-                <TouchableOpacity
-                    onPress={handleEnable}
-                    activeOpacity={0.8}
-                    style={s.primaryBtn}
-                >
-                    <Text style={s.primaryBtnText}>Enable Notifications</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    onPress={handleSkip}
-                    activeOpacity={0.7}
-                    style={s.skipBtn}
-                >
-                    <Text style={s.skipBtnText}>Not Now</Text>
-                </TouchableOpacity>
-            </Animated.View>
-        </SafeAreaView>
+            </SafeAreaView>
+        </View>
     );
 }
 
 const s = StyleSheet.create({
     container: { flex: 1 },
-    content: { flex: 1, paddingHorizontal: 20, paddingTop: 40 },
-    
-    headerSection: { alignItems: 'center', marginBottom: 40 },
-    bellCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#007AFF', alignItems: 'center', justifyContent: 'center', marginBottom: 24, shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
-    heroTitle: { fontSize: 34, fontWeight: '800', letterSpacing: 0.41, marginBottom: 12, textAlign: 'center' },
-    heroSubtitle: { fontSize: 17, fontWeight: '400', lineHeight: 22, textAlign: 'center', paddingHorizontal: 16 },
-    
-    listContainer: { borderRadius: 10, overflow: 'hidden' },
-    listItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingRight: 16, marginLeft: 16 },
-    iconBox: { width: 40, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-    reasonText: { flex: 1, fontSize: 17, fontWeight: '500' },
-    
-    footer: { paddingHorizontal: 20, paddingBottom: 24 },
-    primaryBtn: { backgroundColor: '#007AFF', height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-    primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '600', letterSpacing: -0.41 },
-    skipBtn: { height: 50, alignItems: 'center', justifyContent: 'center' },
-    skipBtnText: { color: '#007AFF', fontSize: 17, fontWeight: '500' },
+    safeArea: { flex: 1 },
+
+    // Video Section
+    videoSection: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 40,
+        paddingTop: 24,
+    },
+    phoneFrame: {
+        width: 240,
+        height: 420,
+        borderRadius: 32,
+        borderWidth: 1,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.1,
+        shadowRadius: 24,
+        elevation: 8,
+    },
+    video: {
+        width: '100%',
+        height: '100%',
+    },
+
+    // Text
+    textSection: {
+        paddingHorizontal: 32,
+        alignItems: 'center',
+        marginBottom: 32,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: '800',
+        letterSpacing: -0.5,
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    subtitle: {
+        fontSize: 17,
+        fontWeight: '400',
+        lineHeight: 24,
+        textAlign: 'center',
+    },
+
+    // Footer
+    footer: {
+        paddingHorizontal: 24,
+        gap: 12,
+    },
+    primaryBtn: {
+        backgroundColor: '#007AFF',
+        height: 56,
+        borderRadius: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        shadowColor: '#007AFF',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    primaryBtnText: {
+        color: '#FFFFFF',
+        fontSize: 17,
+        fontWeight: '600',
+        letterSpacing: -0.41,
+    },
+    skipBtn: {
+        height: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    skipBtnText: {
+        fontSize: 17,
+        fontWeight: '600',
+    },
 });

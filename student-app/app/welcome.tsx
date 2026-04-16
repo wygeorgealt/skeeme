@@ -4,7 +4,6 @@ import { View, TouchableOpacity, ScrollView, Dimensions, StyleSheet, useColorSch
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import LottieView from 'lottie-react-native';
-import { GlowBackground } from '@/components/ui/GlowBackground';
 
 const { width } = Dimensions.get('window');
 
@@ -57,7 +56,7 @@ export default function WelcomeScreen() {
         if (currentIndex < SLIDES.length - 1) {
             scrollRef.current?.scrollTo({ x: (currentIndex + 1) * width, animated: true });
         } else {
-            router.push('/(onboarding)/education');
+            router.push('/signup');
         }
     };
 
@@ -67,7 +66,7 @@ export default function WelcomeScreen() {
     const dotInactiveColor = isDark ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.25)';
 
     return (
-        <GlowBackground style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
             <StatusBar style={isDark ? 'light' : 'dark'} animated />
 
             <SafeAreaView style={{ flex: 1 }}>
@@ -151,7 +150,7 @@ export default function WelcomeScreen() {
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
-        </GlowBackground>
+        </View>
     );
 }
 

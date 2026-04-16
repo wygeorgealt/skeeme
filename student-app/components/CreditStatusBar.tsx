@@ -28,6 +28,7 @@ export default function CreditStatusBar({ activeAction, onSummaryLoaded, refresh
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const [summary, setSummary] = useState<CreditSummary | null>(null);
+    const { pricingConfig } = require('@/store/authStore').useAuthStore();
 
     const fetchSummary = useCallback(async () => {
         try {
@@ -78,7 +79,6 @@ export default function CreditStatusBar({ activeAction, onSummaryLoaded, refresh
     const { current_credits, credit_percentage, estimated_actions_remaining, weekly_refresh_in_days } = summary;
 
     // Color coding based on percentage
-    const { pricingConfig } = require('@/store/authStore').useAuthStore();
 
     // Color coding based on percentage
     const getColor = () => {

@@ -1,8 +1,5 @@
 import { useState } from 'react';
-import {
-    View, Text, TextInput, TouchableOpacity, ScrollView,
-    ActivityIndicator, Alert, useColorScheme, StyleSheet
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet } from 'react-native';
 import { FileText, Upload, Sparkles, ChevronLeft, Leaf, Lightbulb, Rocket, CircleCheck } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
