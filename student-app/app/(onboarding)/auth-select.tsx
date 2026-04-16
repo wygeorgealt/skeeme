@@ -1,16 +1,16 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform, SafeAreaView } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform, Dimensions, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
-import { useEffect, useRef } from 'react';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { useEffect } from 'react';
+import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withDelay, withSpring } from 'react-native-reanimated';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as SystemUI from 'expo-system-ui';
 
-// Placeholder video - replace with your actual scan demo video
-const HERO_VIDEO = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4';
+const HERO_VIDEO = require('../../assets/videos/hero_scan.mp4');
 
 export default function AuthSelectScreen() {
     const router = useRouter();
@@ -21,7 +21,16 @@ export default function AuthSelectScreen() {
     const { setOnboardingStep } = useAuthStore();
 
     useEffect(() => {
-        setOnboardingStep(2);
+        setOnboardingStep(1);
+    }, []);
+
+    // Make the native status bar area match the video's dark tone
+    useEffect(() => {
+        SystemUI.setBackgroundColorAsync('#2C1810');
+        return () => {
+            // Revert to theme color when leaving this screen
+            SystemUI.setBackgroundColorAsync(isDark ? '#000000' : '#F2F2F7');
+        };
     }, []);
 
     const player = useVideoPlayer(HERO_VIDEO, (player) => {
@@ -30,11 +39,26 @@ export default function AuthSelectScreen() {
         player.play();
     });
 
+    const SCREEN_H = Dimensions.get('screen').height;
+    const videoHeight = useSharedValue(SCREEN_H);
+
+    useEffect(() => {
+        videoHeight.value = withDelay(2000, withSpring(SCREEN_H * 0.55, { damping: 15, stiffness: 100 }));
+    }, []);
+
+    const animatedVideoStyle = useAnimatedStyle(() => {
+        return {
+            height: videoHeight.value,
+        };
+    });
+
+    const openLink = (url: string) => Linking.openURL(url);
+
     return (
         <View style={[s.container, { backgroundColor: C.background }]}>
 
             {/* Hero Video Area */}
-            <View style={s.videoContainer}>
+            <Animated.View style={[s.videoContainer, animatedVideoStyle]}>
                 <VideoView
                     player={player}
                     style={StyleSheet.absoluteFill}
@@ -51,13 +75,13 @@ export default function AuthSelectScreen() {
                 <View style={[s.videoFade, { 
                     backgroundColor: C.background 
                 }]} />
-            </View>
+            </Animated.View>
 
             {/* Content Section */}
             <View style={[s.contentArea, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
                 <View style={s.spacer} />
 
-                <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.textSection}>
+                <Animated.View entering={FadeInDown.duration(600).delay(2200)} style={s.textSection}>
                     <Text style={[s.title, { color: C.text }]}>
                         Study smarter,{'\n'}not harder
                     </Text>
@@ -67,7 +91,7 @@ export default function AuthSelectScreen() {
                 </Animated.View>
 
                 {/* Auth Buttons */}
-                <Animated.View entering={FadeInDown.duration(600).delay(400)} style={s.buttonsSection}>
+                <Animated.View entering={FadeInDown.duration(600).delay(2400)} style={s.buttonsSection}>
 
                     {/* Continue with Google */}
                     <TouchableOpacity
@@ -112,12 +136,27 @@ export default function AuthSelectScreen() {
 
                     {/* Continue with Email */}
                     <TouchableOpacity
-                        onPress={() => router.push('/welcome')}
+                        onPress={() => router.push('/signup')}
                         activeOpacity={0.8}
                         style={s.emailBtn}
                     >
                         <Text style={s.emailBtnText}>Continue with Email</Text>
                     </TouchableOpacity>
+
+                    {/* Terms of Service */}
+                    <View style={s.termsContainer}>
+                        <Text style={[s.termsText, { color: C.textTertiary }]}>
+                            By continuing, you agree to our{' '}
+                            <Text style={[s.linkText, { color: '#007AFF' }]} onPress={() => openLink('https://skeeme.com/terms')}>
+                                Terms of Service
+                            </Text>
+                            , and confirm you have read our{' '}
+                            <Text style={[s.linkText, { color: '#007AFF' }]} onPress={() => openLink('https://skeeme.com/privacy')}>
+                                Privacy Policy
+                            </Text>
+                            .
+                        </Text>
+                    </View>
 
                 </Animated.View>
             </View>
@@ -134,7 +173,6 @@ const s = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        height: '55%',
         overflow: 'hidden',
     },
     videoOverlay: {
@@ -237,5 +275,20 @@ const s = StyleSheet.create({
         fontSize: 17,
         color: 'white',
         letterSpacing: -0.41,
+    },
+    
+    // Terms
+    termsContainer: {
+        marginTop: 16,
+        alignItems: 'center',
+        paddingHorizontal: 8,
+    },
+    termsText: {
+        fontSize: 13,
+        lineHeight: 18,
+        textAlign: 'center',
+    },
+    linkText: {
+        fontWeight: '600',
     },
 });

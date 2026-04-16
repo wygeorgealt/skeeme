@@ -85,7 +85,7 @@ export default function SignupScreen() {
                 {/* Header with Back Button */}
                 <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity
-                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/entry')}
+                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/auth-select')}
                         style={[s.backBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     >

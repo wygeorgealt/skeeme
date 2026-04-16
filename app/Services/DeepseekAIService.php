@@ -32,6 +32,91 @@ class DeepseekAIService
     }
 
     /**
+     * Pre-summarize long documents into key concepts to reduce token costs.
+     * Only triggers when content exceeds the word threshold.
+     * Uses DeepSeek (cheapest model) for the summarization pass.
+     *
+     * Cost math: A 10-page doc ≈ 5000 words ≈ 7000 tokens.
+     * Summarization reduces to ~1500 words ≈ 2000 tokens.
+     * Net savings: ~5000 tokens per generation call.
+     */
+    public function condenseMaterial(string $content, int $targetCards = 10, string $context = 'flashcards'): string
+    {
+        $wordCount = str_word_count($content);
+
+        // Below threshold — raw text is fine, no API call needed
+        if ($wordCount < 3000) {
+            return $content;
+        }
+
+        Log::info("[AI Condense] Pre-summarizing material", [
+            'original_words' => $wordCount,
+            'context' => $context,
+        ]);
+
+        $contextInstruction = $context === 'flashcards'
+            ? "Extract the {$targetCards} most important concepts, definitions, formulas, and facts that would make good flashcards."
+            : "Extract the {$targetCards} most important concepts, facts, and testable points that would make good quiz questions.";
+
+        $prompt = <<<PROMPT
+Condense the following study material into KEY CONCEPTS ONLY.
+{$contextInstruction}
+
+Rules:
+- Output ONLY the extracted key points as a numbered list
+- Keep each point to 1-2 sentences max
+- Preserve exact technical terms, formulas, and definitions
+- Preserve the original language of the material
+- No introductions, no summaries, no filler
+
+MATERIAL:
+{$content}
+PROMPT;
+
+        try {
+            $response = $this->client->post(
+                $this->baseUrl . '/chat/completions',
+                [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $this->apiKey,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'timeout' => 30,
+                    'json' => [
+                        'model' => 'deepseek-chat',
+                        'messages' => [
+                            ['role' => 'system', 'content' => 'Extract key concepts from study material. Be concise.'],
+                            ['role' => 'user', 'content' => $prompt],
+                        ],
+                        'temperature' => 0.2,
+                        'max_tokens' => 2000,
+                    ],
+                ]
+            );
+
+            $data = json_decode($response->getBody()->getContents(), true);
+            $condensed = $data['choices'][0]['message']['content'] ?? '';
+
+            if (!empty(trim($condensed))) {
+                $newWordCount = str_word_count($condensed);
+                Log::info("[AI Condense] Success", [
+                    'original_words' => $wordCount,
+                    'condensed_words' => $newWordCount,
+                    'reduction' => round((1 - $newWordCount / $wordCount) * 100) . '%',
+                ]);
+                return $condensed;
+            }
+        } catch (\Exception $e) {
+            Log::warning("[AI Condense] Summarization failed, using raw text", [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // Fallback: return original content if summarization fails
+        return $content;
+    }
+
+    /**
      * Generate questions using Deepseek AI with caching to reduce token usage
      */
     public function generateQuestions(

@@ -75,7 +75,8 @@ import {
   ThumbsDown,
   ArrowRight,
   PlusCircle,
-  Shapes
+  Shapes,
+  Apple
 } from 'lucide-react-native';
 import React from 'react';
 import { type StyleProp, type ViewStyle } from 'react-native';
@@ -83,6 +84,7 @@ import { type StyleProp, type ViewStyle } from 'react-native';
 // Mapping SF Symbol names to Lucide icons
 export const MAPPING = {
   'house.fill': Home,
+  'apple.logo': Apple,
   'paperplane.fill': Send,
   'chevron.left.forwardslash.chevron.right': Code,
   'chevron.right': ChevronRight,

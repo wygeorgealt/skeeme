@@ -70,7 +70,7 @@ export default function LoginScreen() {
                 {/* Close button */}
                 <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity
-                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/entry')}
+                        onPress={() => router.canGoBack() ? router.back() : router.replace('/(onboarding)/auth-select')}
                         style={[s.closeBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
                     >

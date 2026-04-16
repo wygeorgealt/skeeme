@@ -17,6 +17,7 @@ import { ShakeReporter } from '@/components/ShakeReporter';
 import { useFonts } from 'expo-font';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '@/lib/posthog';
+import * as SystemUI from 'expo-system-ui';
 
 
 
@@ -87,15 +88,9 @@ export default function RootLayout() {
         }
       }
     } else {
-      // Not logged in
+      // Not logged in — always start at auth-select
       if (!isPublicRoute) {
-        if (storedEmail) {
-          router.replace('/login');
-        } else if (!onboardingComplete) {
-          router.replace('/(onboarding)/entry');
-        } else {
-          router.replace('/login');
-        }
+        router.replace('/(onboarding)/auth-select');
       }
     }
   }, [user, isLoading, segments, router, onboardingComplete, onboardingStep, storedEmail]);
@@ -122,14 +117,21 @@ export default function RootLayout() {
     setTailwindScheme(storeTheme || 'system');
   }, [storeTheme, setTailwindScheme]);
 
+  // Set the NATIVE iOS root view background to match the theme.
+  // This is the layer underneath React Native — the white/black strip
+  // behind the status bar is this native view showing through.
+  const rootBg = tailwindScheme === 'dark' ? '#000000' : '#F2F2F7';
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(rootBg);
+  }, [rootBg]);
+
   if (!fontsLoaded || isLoading) {
     return null;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: tailwindScheme === 'dark' ? '#000000' : '#FFFFFF' }}>
-      <View style={{ flex: 1 }}>
-      <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: rootBg }}>
+      <View style={{ flex: 1, backgroundColor: rootBg }}>
       <PostHogProvider client={posthog}>
       <QueryProvider>
         <ThemeProvider value={{
@@ -170,7 +172,6 @@ export default function RootLayout() {
         </ThemeProvider>
       </QueryProvider>
       </PostHogProvider>
-      </View>
       </View>
     </GestureHandlerRootView>
   );

@@ -132,6 +132,15 @@ class FlashcardController extends Controller
             Log::info("Processing Topic", ['topic' => $sourceContent]);
         }
 
+        // 1b. Pre-summarize long documents to reduce AI token costs
+        if ($sourceType === 'file' && str_word_count($sourceContent) >= 3000) {
+            $sourceContent = $this->deepseek->condenseMaterial(
+                $sourceContent,
+                (int) ($validated['card_count'] ?? 10),
+                'flashcards'
+            );
+        }
+
         // 2. Calculate dynamic cost
         $wordCount = str_word_count($sourceContent);
 

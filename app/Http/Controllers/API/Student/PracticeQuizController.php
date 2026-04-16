@@ -87,6 +87,15 @@ class PracticeQuizController extends Controller
                 Log::info("Processing Topic", ['topic' => $sourceContent]);
             }
 
+            // 1b. Pre-summarize long documents to reduce AI token costs
+            if ($request->hasFile('file') && str_word_count($sourceContent) >= 3000) {
+                $sourceContent = $this->deepseek->condenseMaterial(
+                    $sourceContent,
+                    $validated['question_count'] ?? 10,
+                    'quiz'
+                );
+            }
+
             // 2. Calculate Dynamic Cost
             $wordCount = str_word_count($sourceContent);
 
