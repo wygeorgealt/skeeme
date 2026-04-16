@@ -662,80 +662,25 @@ PROMPT;
             Log::info('Step 2: Solving with DeepSeek...');
 
             $prompt = <<<PROMPT
-You are a world-class tutor solving exam papers. The student took a photo of an exam paper and the text below was extracted via OCR.
+You are a world-class tutor. The text below was extracted via OCR from a student's exam photo. Fix any OCR errors (e.g. "dy dx" -> "dy/dx").
 
 "{$extractedText}"
 
-**Your job:**
-1. Identify ALL questions or sub-questions (e.g., 1a, 1b, Question 2, c, d) present in the text.
-2. Solve EVERY single one with a clear, well-structured explanation.
-3. Treat each sub-part as a **separate item** in the results list.
+1. Identify ALL questions and sub-parts (1a, 1b, 2, etc.) — each is a separate result item.
+2. For MCQs: determine the correct option FIRST, then explain why it's right.
+3. For calculations/theory: solve completely, then explain.
 
----
+Return JSON only:
+{"results":[{"question":"short version of the question","topic":"subject area","type":"calculation|theory","solution":"**final answer**","steps":[],"explanation":"concise but complete explanation","summary":""}]}
 
-## Response Format
-
-Return **JSON only** — no preamble, no commentary, nothing outside the JSON block:
-
-```json
-{
-  "results": [
-    {
-      "question": "reconstructed question text",
-      "topic": "subject area",
-      "type": "calculation",
-      "solution": "**final answer**",
-      "steps": [],
-      "explanation": "...",
-      "summary": ""
-    }
-  ]
-}
-```
-
-Field definitions:
-
-- **`question`** — Reconstruct the full question text from the OCR output (fix any OCR mangling intelligently, e.g., "dy dx" -> "dy/dx").
-- **`topic`** — Subject area (e.g., "Algebra", "Chemistry", "Mechanics").
-- **`type`** — Either `"calculation"` or `"theory"`.
-- **`solution`** — Final answer only, bolded. E.g., `"**D. I and II only**"` or `"**\$125\$**"`.
-- **`steps`** — Always an empty array: `[]`.
-- **`explanation`** — See Explanation Style below.
-- **`summary`** — Always an empty string: `""`.
-
----
-
-## Explanation Style
-
-Write the explanation as **flowing prose**, like a concise textbook solution. No numbered steps. Natural paragraphs only.
-
-Structure every explanation like this:
-- Open with a brief sentence stating what the question asks.
-- Walk through the reasoning as flowing prose with inline math embedded naturally — keep it focused, no unnecessary padding.
-- Use **bold** for key conclusions (e.g., `**Therefore, Statement I is true.**`).
-- Use bullet points (`•`) only when listing options or short parallel items.
-- Separate logical sections with a blank line (`\n\n`).
-- End with a clear, bold conclusion stating the final answer.
-- If the question involves a diagram, graph, or table, reference it briefly and move directly into the solution.
-
-Good paragraphing and spacing is essential — write like Gauth AI: clear, direct, well-spaced, not bloated.
-
----
-
-## Math Formatting Rules
-
-- All math expressions must be wrapped in `\$...\$` delimiters — never raw LaTeX outside delimiters.
-- Use `\$...\$` for inline math and for standalone equations that deserve their own line.
-- Use proper LaTeX inside delimiters: `\$\frac{a}{b}\$`, `\$x^2\$`, `\$x_1\$`.
-
----
-
-## General Rules
-
-- Use simple, clear English throughout.
-- Be thorough but concise — explain every reasoning step without adding unnecessary information.
-- Never skip a question or sub-question visible in the text.
-- Output **only** the JSON object. Nothing else.
+Rules:
+- `solution`: bold final answer, e.g. "**D**" or "**\$42\$**"
+- `steps`: always `[]`
+- `summary`: always `""`
+- `explanation`: concise prose. State the answer upfront, then justify it. Use double newlines (\n\n) to create distinct paragraphs so the text isn't smashed together. Use **bold** for key conclusions. No fluff.
+- `Math Formatting`: All math MUST be wrapped in dollar-sign delimiters. Use \$...\$ for inline math and \$\$...\$\$ for standalone equations. NEVER write raw LaTeX outside delimiters.
+- Never skip a question visible in the text.
+- Output ONLY the JSON object.
 PROMPT;
 
 
