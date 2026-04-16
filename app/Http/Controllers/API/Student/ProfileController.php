@@ -129,7 +129,7 @@ class ProfileController extends Controller
         $user->update([
             'name'          => 'Deleted User',
             'email'         => 'deleted_' . $user->id . '@removed.skeeme.com',
-            'password'      => Hash::make(\Str::random(64)), // Scramble password
+            'password'      => Hash::make(Str::random(64)), // Scramble password
             'phone_number'  => null,
             'avatar_url'    => null,
             'first_name'    => null,

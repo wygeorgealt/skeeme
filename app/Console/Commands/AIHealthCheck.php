@@ -19,6 +19,12 @@ class AIHealthCheck extends Command
     {
         $this->info('🔍 Starting AI health check...');
 
+        $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
+        if ($aiConfig['is_manual']) {
+            $this->warn('⚠️ Manual Override is ACTIVE (' . strtoupper($aiConfig['provider']) . '). Skipping auto-health check.');
+            return self::SUCCESS;
+        }
+
         $claudeError = null;
         $deepseekError = null;
 

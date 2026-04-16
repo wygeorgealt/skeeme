@@ -184,12 +184,15 @@ class FlashcardController extends Controller
 
         // 4. Generate Synchronously (Circuit Breaker implementation)
         try {
-            $activeProvider = Cache::get('skeeme:active_ai_provider', 'claude');
+            $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
+            $activeProvider = $aiConfig['provider'];
+            $isManualOverride = $aiConfig['is_manual'] ?? false;
+
             if ($activeProvider === 'none') {
                 throw new \Exception('Skeeme AI is currently undergoing scheduled maintenance. Please try again later.');
             }
 
-            $useDeepseek = ($activeProvider === 'deepseek') || Cache::get('use_deepseek_fallback', false);
+            $useDeepseek = ($activeProvider === 'deepseek');
             $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-3-5-haiku-20241022';
             
             // Dynamic Timeout based on Network Quality Header
@@ -219,6 +222,11 @@ class FlashcardController extends Controller
                     );
                 }
             } catch (\Exception $e) {
+                if ($isManualOverride) {
+                    \App\Models\SystemSetting::triggerManualFailureAlert($activeProvider, 'Flashcard Generation', $e->getMessage());
+                    throw $e;
+                }
+
                 if (!$useDeepseek) {
                     Log::warning("Claude API unavailable for Flashcards. Circuit Breaker tripped → routing to DeepSeek. Reason: " . $e->getMessage());
                     Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));

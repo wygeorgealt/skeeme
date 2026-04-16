@@ -63,8 +63,9 @@ class SystemHealthController extends Controller
                 $data['status'] = 'Degraded (Integrity Failure)';
             }
 
-            // AI Fallback Check
-            $data['ai_fallback_active'] = Cache::get('use_deepseek_fallback', false);
+            // AI Provider Check
+            $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
+            $data['ai_fallback_active'] = $aiConfig['provider'] === 'deepseek' && !$aiConfig['is_manual'];
 
             // Queue Check
             $data['queue_size'] = Queue::size('default');
@@ -79,7 +80,9 @@ class SystemHealthController extends Controller
                 'Clients' => $redisInfo['connected_clients'] ?? 'N/A',
                 'Uptime' => ($redisInfo['uptime_in_days'] ?? '0') . ' days',
                 'Version' => $redisInfo['redis_version'] ?? 'N/A',
-                'AI Engine' => $data['ai_fallback_active'] ? 'DeepSeek (Backup)' : 'Claude 3.5 (Primary)'
+                'AI Engine' => $aiConfig['is_manual'] 
+                    ? strtoupper($aiConfig['provider']) . ' [MANUAL OVERRIDE]' 
+                    : ($data['ai_fallback_active'] ? 'DeepSeek (Fallback Backup)' : 'Claude 3.5 (Primary)')
             ];
 
             // 4. Verdict

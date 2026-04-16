@@ -15,6 +15,54 @@ class SystemSetting extends Model
         'value' => 'json',
     ];
 
+    /**
+     * Determine the active AI Provider based on Manual Override vs. Cache
+     */
+    public static function getActiveAIProvider(): array
+    {
+        $aiConfig = self::get('ai_config', [
+            'manual_override_enabled' => false,
+            'manual_provider_choice' => 'claude',
+        ]);
+
+        if ($aiConfig['manual_override_enabled'] ?? false) {
+            return [
+                'provider' => $aiConfig['manual_provider_choice'] ?? 'claude',
+                'is_manual' => true,
+            ];
+        }
+
+        // Automated normal cache lookup
+        $provider = \Illuminate\Support\Facades\Cache::get('skeeme:active_ai_provider', 'claude');
+        $fallbackActive = \Illuminate\Support\Facades\Cache::get('use_deepseek_fallback', false);
+
+        return [
+            // If the circuit breaker tripped, force deepseek
+            'provider' => $fallbackActive ? 'deepseek' : $provider,
+            'is_manual' => false,
+        ];
+    }
+
+    /**
+     * Send an email alert to the admin if a manually forced AI model fails.
+     */
+    public static function triggerManualFailureAlert(string $provider, string $context, string $errorDetails): void
+    {
+        try {
+            \Illuminate\Support\Facades\Log::critical("Manual Override Model ({$provider}) Failed during {$context}!", ['error' => $errorDetails]);
+            \Illuminate\Support\Facades\Mail::raw(
+                "Manual AI Override for {$provider} failed during {$context}.\n\nError details:\n{$errorDetails}",
+                function ($message) use ($provider) {
+                    $message->to('otuturusolomom@gmail.com')
+                            ->subject("🚨 AI Alert: Manual " . strtoupper($provider) . " is DOWN")
+                            ->from(config('mail.from.address'), config('mail.from.name'));
+                }
+            );
+        } catch (\Throwable $th) {
+            // Suppress mail errors to prevent blocking the catch block completely
+        }
+    }
+
     public static function getPricingConfig()
     {
         $defaults = [

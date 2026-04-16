@@ -40,8 +40,8 @@ class PracticeQuizController extends Controller
         }
 
         set_time_limit(600); // Massive boost for 50+ page documents
-        \Log::info("[AI Quiz] Generation Started", [
-            'user_id' => auth()->id(),
+        Log::info("[AI Quiz] Generation Started", [
+            'user_id' => Auth::id(),
             'idempotency_key' => $request->header('Idempotency-Key'),
             'topic' => $request->input('topic'),
             'question_count' => $request->input('question_count'),
@@ -78,7 +78,7 @@ class PracticeQuizController extends Controller
                 Log::info("Text Extracted", ['length' => strlen($sourceContent)]);
 
                 // Upload to R2 for persistent storage
-                $safeName = time() . '_' . \Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+                $safeName = time() . '_' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
                 Log::info("Uploading to R2...", ['name' => $safeName]);
                 $r2Path = $file->storeAs('student-uploads/quizzes/' . $user->id, $safeName, config('filesystems.default'));
                 Log::info("R2 Upload Success", ['path' => $r2Path]);
@@ -107,7 +107,7 @@ class PracticeQuizController extends Controller
             
             $totalCost = $baseCost + $weightCost;
             if ($totalCost < 10) $totalCost = 10;
-            \Log::info("[AI Quiz] Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'chunks' => $chunks]);
+            Log::info("[AI Quiz] Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'chunks' => $chunks]);
 
             // 3. Check & Lock Credits (Atomic)
             $canProceed = DB::transaction(function() use ($user, $totalCost) {
@@ -136,14 +136,16 @@ class PracticeQuizController extends Controller
             }
 
             // --- AI Provider Baseline (Fast Routing) ---
-            $activeProvider = Cache::get('skeeme:active_ai_provider', 'claude');
+            $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
+            $activeProvider = $aiConfig['provider'];
+            $isManualOverride = $aiConfig['is_manual'] ?? false;
             
             if ($activeProvider === 'none') {
-                \Log::error("[AI Quiz] Global AI Outage active. Rejecting request instantly.");
+                Log::error("[AI Quiz] Global AI Outage active. Rejecting request instantly.");
                 throw new \Exception('Skeeme AI is currently undergoing scheduled maintenance. Please try again later.');
             }
 
-            $useDeepseek = ($activeProvider === 'deepseek') || Cache::get('use_deepseek_fallback', false);
+            $useDeepseek = ($activeProvider === 'deepseek');
             $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-3-5-haiku-20241022';
             
             // Dynamic Timeout based on Network Quality Header
@@ -156,7 +158,7 @@ class PracticeQuizController extends Controller
 
             try {
                 if ($useDeepseek) {
-                    \Log::info("[AI Quiz] Circuit Breaker Active: Auto-routing to DeepSeek.");
+                    Log::info("[AI Quiz] Circuit Breaker Active: Auto-routing to DeepSeek.");
                     $questions = $this->deepseek->generateQuestions(
                         [$sourceContent],
                         $validated['question_count'] ?? 10,
@@ -168,7 +170,7 @@ class PracticeQuizController extends Controller
                         $user->ai_preferences
                     );
                 } else {
-                    \Log::info("[AI Quiz] Calling primary AI service...", [
+                    Log::info("[AI Quiz] Calling primary AI service...", [
                         'user_id' => $user->id,
                         'service' => 'Anthropic',
                         'prompt_preview' => substr($sourceContent, 0, 100)
@@ -185,6 +187,11 @@ class PracticeQuizController extends Controller
                     );
                 }
             } catch (\Exception $e) {
+                if ($isManualOverride) {
+                    \App\Models\SystemSetting::triggerManualFailureAlert($activeProvider, 'Practice Quiz Generation', $e->getMessage());
+                    throw $e; // Bubble up to outer catch for standard "Skeeme is down" 500
+                }
+
                 if (!$useDeepseek) {
                     Log::warning("Claude API Failed! Circuit Breaker tripped. Failing over to DeepSeek. Error: " . $e->getMessage());
                     Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
@@ -205,11 +212,11 @@ class PracticeQuizController extends Controller
             }
 
             if (empty($questions)) {
-                \Log::error("[AI Quiz] AI returned empty questions array");
+                Log::error("[AI Quiz] AI returned empty questions array");
                 throw new \Exception('AI returned no questions. Please try a different topic or document.');
             }
             
-            \Log::info("[AI Quiz] Success! Questions generated.", ['count' => count($questions)]);
+            Log::info("[AI Quiz] Success! Questions generated.", ['count' => count($questions)]);
 
             // 6. Deduct Usage (Atomic) - Only AFTER successful generation
             if (!$user->is_unlimited_student) {
@@ -279,8 +286,8 @@ class PracticeQuizController extends Controller
             Log::warning("Validation Failed", $e->errors());
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
         } catch (\Exception $e) {
-            \Log::error("[AI Quiz] Critical Error: " . $e->getMessage(), [
-                'user_id' => auth()->id(),
+            Log::error("[AI Quiz] Critical Error: " . $e->getMessage(), [
+                'user_id' => Auth::id(),
                 'trace' => substr($e->getTraceAsString(), 0, 500)
             ]);
             
@@ -307,11 +314,14 @@ class PracticeQuizController extends Controller
         ]);
 
         try {
-            $activeProvider = Cache::get('skeeme:active_ai_provider', 'claude');
+            $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
+            $activeProvider = $aiConfig['provider'];
+            $isManualOverride = $aiConfig['is_manual'] ?? false;
+
             if ($activeProvider === 'none') {
                 throw new \Exception('Skeeme AI is currently undergoing scheduled maintenance. Please try again later.');
             }
-            $useDeepseek = ($activeProvider === 'deepseek') || Cache::get('use_deepseek_fallback', false);
+            $useDeepseek = ($activeProvider === 'deepseek');
             
             $networkType = $request->header('X-Network-Type');
             $timeout = ($networkType === 'cellular') ? 15 : 30;
@@ -325,6 +335,11 @@ class PracticeQuizController extends Controller
                     $result = $this->aiService->gradeTheoryAnswer($validated['question_text'], $validated['student_answer'], $validated['model_answer'] ?? '', [], 10.0);
                 }
             } catch (\Exception $e) {
+                if ($isManualOverride) {
+                    \App\Models\SystemSetting::triggerManualFailureAlert($activeProvider, 'Practice Quiz Grading', $e->getMessage());
+                    throw $e;
+                }
+
                 if (!$useDeepseek) {
                     Log::warning("Claude API Failed on Grading! Circuit Breaker tripped. Error: " . $e->getMessage());
                     Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));

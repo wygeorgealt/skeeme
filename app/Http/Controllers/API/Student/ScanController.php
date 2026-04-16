@@ -80,12 +80,15 @@ class ScanController extends Controller
             // 4. Generate Synchronously (Circuit Breaker implementation)
             Log::info('Processing Scan & Solve Synchronously...', ['user_id' => $user->id]);
             
-            $activeProvider = Cache::get('skeeme:active_ai_provider', 'claude');
+            $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
+            $activeProvider = $aiConfig['provider'];
+            $isManualOverride = $aiConfig['is_manual'] ?? false;
+
             if ($activeProvider === 'none') {
                 throw new \Exception('Skeeme AI is currently undergoing scheduled maintenance. Please try again later.');
             }
 
-            $useDeepseek = ($activeProvider === 'deepseek') || Cache::get('use_deepseek_fallback', false);
+            $useDeepseek = ($activeProvider === 'deepseek');
             $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-3-5-haiku-20241022';
 
             // Dynamic Timeout based on Network Quality Header
@@ -106,6 +109,11 @@ class ScanController extends Controller
                     $result = $this->aiService->solveFromImage($request->input('image'));
                 }
             } catch (\Exception $e) {
+                if ($isManualOverride) {
+                    \App\Models\SystemSetting::triggerManualFailureAlert($activeProvider, 'Scan & Solve Generation', $e->getMessage());
+                    throw $e;
+                }
+
                 if (!$useDeepseek) {
                     Log::warning("Claude Vision API Failed! Circuit Breaker tripped. Failing over to DeepSeek. Error: " . $e->getMessage());
                     Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
