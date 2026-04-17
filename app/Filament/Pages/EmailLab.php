@@ -13,6 +13,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Mail\DynamicBulkMail;
 
@@ -30,8 +31,11 @@ class EmailLab extends Page implements HasForms
 
     public function mount(): void
     {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+        
         $this->form->fill([
-            'email' => auth()->user()->email,
+            'test_email' => $user?->email,
         ]);
     }
 
@@ -46,6 +50,7 @@ class EmailLab extends Page implements HasForms
                             ->label('Target Audience')
                             ->options([
                                 'test' => 'Test (My Email)',
+                                'custom' => 'Custom Email Address(es)',
                                 'all_users' => 'All Users',
                                 'students' => 'All Students',
                                 'new_users' => 'New Users (Last 7 Days)',
@@ -58,9 +63,20 @@ class EmailLab extends Page implements HasForms
                         TextInput::make('test_email')
                             ->label('Test Email Address')
                             ->email()
-                            ->default(auth()->user()->email)
+                            ->default(function () {
+                                /** @var \App\Models\User|null $user */
+                                $user = Auth::user();
+                                return $user?->email;
+                            })
                             ->visible(fn ($get) => $get('target_audience') === 'test')
                             ->required(fn ($get) => $get('target_audience') === 'test'),
+
+                        TextInput::make('custom_emails')
+                            ->label('Custom Email Address(es)')
+                            ->placeholder('e.g. jdoe@example.com, another@test.com')
+                            ->visible(fn ($get) => $get('target_audience') === 'custom')
+                            ->required(fn ($get) => $get('target_audience') === 'custom')
+                            ->columnSpanFull(),
 
                         TextInput::make('subject')
                             ->label('Email Subject')
@@ -94,6 +110,7 @@ class EmailLab extends Page implements HasForms
 
             $recipients = match ($audience) {
                 'test' => collect([ (object)['email' => $state['test_email']] ]),
+                'custom' => collect(array_map(fn($e) => (object)['email' => trim($e)], explode(',', $state['custom_emails']))),
                 'all_users' => User::all(['email']),
                 'students' => User::where('role', 'student')->get(['email']),
                 'new_users' => User::where('created_at', '>=', now()->subDays(7))->get(['email']),
