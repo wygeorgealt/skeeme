@@ -30,7 +30,6 @@ class ContactMessage extends Mailable
     public function build()
     {
         return $this->subject('New Contact Inquiry: ' . $this->data['subject'])
-                    ->from($this->data['email'], $this->data['name'])
                     ->replyTo($this->data['email'], $this->data['name'])
                     ->view('emails.contact-message');
     }
