@@ -1,26 +1,23 @@
-@extends('layouts.student_auth')
+@extends('layouts.skeeme_email')
 
 @section('content')
-<h1 style="font-size: 28px; font-weight: 700; color: #111827; letter-spacing: -0.02em; margin: 0 0 16px;">Reset your password</h1>
-
-<p style="font-size: 16px; color: #374151; line-height: 1.6; margin: 0 0 24px;">
-    We received a request to reset the password for your Skeeme account associated with 
-    <span style="color: #2563eb; font-weight: 600;">{{ $email ?? '' }}</span>. 
-    Enter the code below in your open browser window to continue.
+<h1 style="font-size: 28px; font-weight: 800; color: #1a1a1a; letter-spacing: -0.03em; margin: 0 0 8px; text-align: center;">Reset your password</h1>
+<p style="font-size: 15px; color: #6b7280; text-align: center; margin: 0 0 32px; line-height: 1.6;">
+    We received a reset request for <span style="color: #1a1a1a; font-weight: 600;">{{ $email ?? '' }}</span>
 </p>
 
-<!-- OTP Display -->
-<div style="font-size: 42px; font-weight: 800; color: #111827; letter-spacing: 8px; margin: 0 0 40px; font-family: 'Outfit', sans-serif;">
-    {{ $code }}
+<!-- OTP Code -->
+<div class="code-box" style="background-color: #F3F4F6; border-radius: 12px; padding: 24px; text-align: center; margin: 0 0 32px;">
+    <div style="font-size: 40px; font-weight: 800; color: #1a1a1a; letter-spacing: 10px; font-family: 'Inter', monospace;">{{ $code }}</div>
 </div>
 
-<hr style="border: none; border-top: 1px solid #f3f4f6; margin: 0 0 24px;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr><td class="divider" style="border-top: 1px solid #E5E7EB; padding: 0;"></td></tr>
+</table>
 
-<p style="font-size: 14px; color: #4b5563; margin: 0 0 12px; font-weight: 500;">
-    This code expires in 10 minutes.
-</p>
+<p style="font-size: 13px; color: #6b7280; margin: 24px 0 8px; font-weight: 600;">This code expires in 10 minutes.</p>
 
-<p style="font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0;">
+<p style="font-size: 12px; color: #9ca3af; line-height: 1.6; margin: 0;">
     If you didn't request a password reset for Skeeme, you can safely ignore this email. Someone else might have typed your email address by mistake.
 </p>
 @endsection

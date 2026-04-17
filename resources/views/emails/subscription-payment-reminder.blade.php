@@ -1,127 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subscription Renewal Reminder</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; line-height: 1.6; color: #1a1a1a; }
-        .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
-        .header { background: #ffffff; padding: 30px 20px; text-align: center; }
-        .logo { height: 50px; margin-bottom: 20px; }
-        .hero {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            padding: 60px 20px;
-            text-align: center;
-            color: white;
-        }
-        .hero h2 { font-size: 28px; font-weight: 700; margin-bottom: 10px; }
-        .hero p { font-size: 16px; font-weight: 400; opacity: 0.95; }
-        .content { padding: 40px 20px; }
-        .card {
-            border-left: 4px solid #667eea;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .card h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #1a1a1a; }
-        .card p { font-size: 14px; color: #4a4a4a; line-height: 1.8; }
-        .detail-box {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .detail-row {
-            padding: 10px 0;
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-        }
-        .detail-label { font-weight: 600; color: #667eea; }
-        .button-container { text-align: center; margin: 30px 0; }
-        .button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 14px 40px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
-            display: inline-block;
-        }
-        .button:hover { opacity: 0.95; }
-        .footer {
-            background: #f8f9fa;
-            padding: 30px 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-            border-top: 1px solid #e0e0e0;
-        }
-        .footer a { color: #667eea; text-decoration: none; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <img src="https://skeeme.ng/images/logo.png" alt="Skeeme Logo" class="logo">
-        </div>
+@extends('layouts.skeeme_email')
 
-        <div class="hero">
-            <h2>Subscription Renewal Coming ⏰</h2>
-            <p>Your subscription renews in {{ $daysRemaining }} days</p>
-        </div>
+@section('content')
+<h1 style="font-size: 28px; font-weight: 800; color: #1a1a1a; letter-spacing: -0.03em; margin: 0 0 8px; text-align: center;">Renewal coming up</h1>
+<p style="font-size: 15px; color: #6b7280; text-align: center; margin: 0 0 32px; line-height: 1.6;">
+    Your subscription renews in <strong style="color: #1a1a1a;">{{ $daysRemaining }} days</strong>.
+</p>
 
-        <div class="content">
-            <div class="card">
-                <h3>Hello there!</h3>
-                <p>Your {{ $planName }} plan subscription will automatically renew in <strong>{{ $daysRemaining }} days</strong>. Here's a summary of what's included.</p>
-            </div>
+<!-- Subscription Card -->
+<div class="card" style="background-color: #F9FAFB; border: 1px solid #F3F4F6; border-radius: 16px; padding: 28px; margin: 0 0 32px;">
+    <p style="font-size: 11px; font-weight: 800; color: #8B5CF6; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 20px;">Subscription Details</p>
+    
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 14px;">
+        <tr>
+            <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #E5E7EB;">Plan</td>
+            <td style="padding: 10px 0; text-align: right; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #E5E7EB;">{{ $planName }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #E5E7EB;">Renewal Amount</td>
+            <td style="padding: 10px 0; text-align: right; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #E5E7EB;">{{ $renewalAmount }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; color: #6b7280;">Renewal Date</td>
+            <td style="padding: 10px 0; text-align: right; color: #1a1a1a; font-weight: 600;">{{ $subscription->expires_at->format('M d, Y') }}</td>
+        </tr>
+    </table>
+</div>
 
-            <div class="detail-box">
-                <div class="detail-row">
-                    <span class="detail-label">Plan:</span>
-                    <strong>{{ $planName }}</strong>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Renewal Amount:</span>
-                    <strong>{{ $renewalAmount }}</strong>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Renewal Date:</span>
-                    <strong>{{ $subscription->expires_at->format('M d, Y') }}</strong>
-                </div>
-            </div>
+<!-- What's included -->
+<div class="card" style="background-color: #F9FAFB; border: 1px solid #F3F4F6; border-radius: 16px; padding: 28px; margin: 0 0 32px;">
+    <p style="font-size: 11px; font-weight: 800; color: #8B5CF6; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 16px;">What's included</p>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td style="padding: 6px 0; font-size: 14px; color: #374151;">✓ &nbsp;Full course management system</td></tr>
+        <tr><td style="padding: 6px 0; font-size: 14px; color: #374151;">✓ &nbsp;Student assessment tools</td></tr>
+        <tr><td style="padding: 6px 0; font-size: 14px; color: #374151;">✓ &nbsp;Advanced reporting</td></tr>
+        <tr><td style="padding: 6px 0; font-size: 14px; color: #374151;">✓ &nbsp;Priority support</td></tr>
+    </table>
+</div>
 
-            <div class="card">
-                <h3>What's included:</h3>
-                <ul style="list-style: none; padding: 0;">
-                    <li style="padding: 8px 0;">✓ Full course management system</li>
-                    <li style="padding: 8px 0;">✓ Student assessment tools</li>
-                    <li style="padding: 8px 0;">✓ Advanced reporting</li>
-                    <li style="padding: 8px 0;">✓ Priority support</li>
-                </ul>
-            </div>
+<!-- CTA -->
+<div style="text-align: center; margin: 0 0 32px;">
+    <a href="{{ route('settings.subscription-billing') }}" style="display: inline-block; background-color: #1a1a1a; color: #ffffff; padding: 14px 32px; border-radius: 10px; font-weight: 700; font-size: 14px; text-decoration: none;">Manage Subscription</a>
+</div>
 
-            <div class="button-container">
-                <a href="{{ route('settings.subscription-billing') }}" class="button">Manage Subscription</a>
-            </div>
-
-            <div class="card">
-                <h3>Need help?</h3>
-                <p>Questions about your subscription? Our support team is ready to assist. Contact us anytime!</p>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>&copy; 2026 Skeeme. All rights reserved.</p>
-            <p><a href="https://skeeme.ng/support">Support Center</a> | <a href="https://skeeme.ng/pricing">View Plans</a></p>
-        </div>
-    </div>
-</body>
-</html>
+<p style="font-size: 13px; color: #9ca3af; line-height: 1.6; margin: 0; text-align: center;">
+    Questions about your subscription? Simply reply to this email.
+</p>
+@endsection

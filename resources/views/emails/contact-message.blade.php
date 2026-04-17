@@ -1,30 +1,31 @@
-@extends('layouts.email')
+@extends('layouts.skeeme_email')
 
 @section('content')
-<div style="text-align: center; margin-bottom: 30px;">
-    <h1 style="color: #ffffff; font-size: 24px; font-weight: 900; margin-bottom: 8px;">New Support Inquiry</h1>
-    <p style="color: #a1a1aa; font-size: 14px;">A user has submitted a request via the Skeeme contact form.</p>
+<h1 style="font-size: 24px; font-weight: 800; color: #1a1a1a; letter-spacing: -0.02em; margin: 0 0 8px; text-align: center;">New Support Inquiry</h1>
+<p style="font-size: 14px; color: #6b7280; text-align: center; margin: 0 0 32px;">A user submitted a request via the Skeeme contact form.</p>
+
+<!-- Sender Card -->
+<div class="card" style="background-color: #F9FAFB; border: 1px solid #F3F4F6; border-radius: 16px; padding: 28px; margin: 0 0 32px;">
+    <p style="font-size: 11px; font-weight: 800; color: #8B5CF6; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 12px;">Sender Details</p>
+    <p style="margin: 0; color: #1a1a1a; font-size: 17px; font-weight: 700;">{{ $data['name'] }}</p>
+    <p style="margin: 4px 0 0 0; color: #6b7280; font-size: 14px;">{{ $data['email'] }}</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 20px;">
+        <tr><td class="divider" style="border-top: 1px solid #E5E7EB;"></td></tr>
+    </table>
+
+    <p style="font-size: 11px; font-weight: 800; color: #8B5CF6; text-transform: uppercase; letter-spacing: 1.5px; margin: 20px 0 8px;">Subject</p>
+    <p style="margin: 0; color: #1a1a1a; font-size: 15px; font-weight: 600; line-height: 1.6;">{{ $data['subject'] }}</p>
 </div>
 
-<div style="background: linear-gradient(145deg, #1e1e2d, #16161f); padding: 32px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-    <div style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-        <p style="margin: 0 0 12px 0; color: #6366f1; font-weight: 900; text-transform: uppercase; font-size: 10px; letter-spacing: 2px;">Sender Details</p>
-        <p style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 800;">{{ $data['name'] }}</p>
-        <p style="margin: 4px 0 0 0; color: #71717a; font-size: 14px;">{{ $data['email'] }}</p>
-    </div>
-
-    <div>
-        <p style="margin: 0 0 12px 0; color: #6366f1; font-weight: 900; text-transform: uppercase; font-size: 10px; letter-spacing: 2px;">Subject</p>
-        <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 700; line-height: 1.6;">{{ $data['subject'] }}</p>
-    </div>
-</div>
-
-<p style="color: #a1a1aa; font-weight: 900; text-transform: uppercase; font-size: 10px; letter-spacing: 2px; margin-bottom: 16px;">Message Body</p>
-<div style="background-color: rgba(0,0,0,0.2); padding: 32px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.03); color: #d4d4d8; line-height: 1.8; font-size: 15px;">
+<!-- Message Body -->
+<p style="font-size: 11px; font-weight: 800; color: #8B5CF6; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 12px;">Message</p>
+<div style="background-color: #F9FAFB; padding: 24px; border-radius: 12px; border: 1px solid #F3F4F6; color: #374151; line-height: 1.8; font-size: 14px; margin: 0 0 32px;">
     {!! nl2br(e($data['message'])) !!}
 </div>
 
-<div class="button-container" style="margin-top: 40px; text-align: center;">
-    <a href="mailto:{{ $data['email'] }}" class="button" style="background: #6366f1; color: #ffffff; padding: 16px 32px; border-radius: 16px; font-weight: 900; text-decoration: none; font-size: 14px; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);">Reply to User</a>
+<!-- CTA -->
+<div style="text-align: center;">
+    <a href="mailto:{{ $data['email'] }}" style="display: inline-block; background-color: #1a1a1a; color: #ffffff; padding: 14px 32px; border-radius: 10px; font-weight: 700; font-size: 14px; text-decoration: none;">Reply to User</a>
 </div>
 @endsection

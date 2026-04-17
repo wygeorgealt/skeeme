@@ -1,50 +1,55 @@
-@extends('layouts.email')
+@extends('layouts.skeeme_email')
 
 @section('content')
-    <div style="text-align: center; font-size: 50px; margin-bottom: 20px;">💳</div>
-    <h1>Invoice Received</h1>
-    <p>Thank you for your payment. Your receipt and invoice details are provided below. This is your official confirmation of purchase.</p>
+<h1 style="font-size: 28px; font-weight: 800; color: #1a1a1a; letter-spacing: -0.03em; margin: 0 0 8px; text-align: center;">Invoice received</h1>
+<p style="font-size: 15px; color: #6b7280; text-align: center; margin: 0 0 32px; line-height: 1.6;">
+    Your official receipt and invoice details.
+</p>
 
-    <div style="background: #27272a; padding: 25px; border-radius: 12px; margin: 30px 0; border-left: 4px solid #6366f1;">
-        <h3 style="margin: 0 0 20px 0; font-size: 14px; font-weight: 700; color: #ffffff;">Invoice Details</h3>
-        
-        <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
-            <tr style="border-bottom: 1px solid #3f3f46;">
-                <td style="padding: 12px 0; color: #a1a1aa; font-weight: 600;">Invoice Number</td>
-                <td style="padding: 12px 0; text-align: right; color: #ffffff; font-weight: 600;">#{{ $invoice->invoice_number }}</td>
-            </tr>
-            <tr style="border-bottom: 1px solid #3f3f46;">
-                <td style="padding: 12px 0; color: #a1a1aa; font-weight: 600;">Invoice Date</td>
-                <td style="padding: 12px 0; text-align: right; color: #ffffff; font-weight: 600;">{{ $invoice->invoice_date->format('M d, Y') }}</td>
-            </tr>
-            <tr>
-                <td style="padding: 12px 0; color: #a1a1aa; font-weight: 600;">Status</td>
-                <td style="padding: 12px 0; text-align: right;">
-                    <span style="background-color: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 4px; font-weight: 600; font-size: 11px; text-transform: uppercase;">{{ $invoice->status }}</span>
-                </td>
-            </tr>
-        </table>
-    </div>
+<!-- Invoice Details Card -->
+<div class="card" style="background-color: #F9FAFB; border: 1px solid #F3F4F6; border-radius: 16px; padding: 28px; margin: 0 0 24px;">
+    <p style="font-size: 11px; font-weight: 800; color: #8B5CF6; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 20px;">Invoice Details</p>
+    
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 14px;">
+        <tr>
+            <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #E5E7EB;">Invoice Number</td>
+            <td style="padding: 10px 0; text-align: right; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #E5E7EB;">#{{ $invoice->invoice_number }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #E5E7EB;">Date</td>
+            <td style="padding: 10px 0; text-align: right; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #E5E7EB;">{{ $invoice->invoice_date->format('M d, Y') }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; color: #6b7280;">Status</td>
+            <td style="padding: 10px 0; text-align: right;">
+                <span style="background-color: #DCFCE7; color: #166534; padding: 4px 12px; border-radius: 100px; font-weight: 700; font-size: 11px; text-transform: uppercase;">{{ $invoice->status }}</span>
+            </td>
+        </tr>
+    </table>
+</div>
 
-    <div style="margin: 35px 0;">
-        <h3 style="margin: 0 0 20px 0; font-size: 14px; font-weight: 700; color: #ffffff;">Order Summary</h3>
-        <table style="width: 100%; border-collapse: collapse;">
-            <tr style="border-bottom: 2px solid #6366f1;">
-                <td style="padding: 12px; color: #ffffff; font-weight: 600; text-align: left;">Plan</td>
-                <td style="padding: 12px; color: #ffffff; font-weight: 600; text-align: right;">Amount</td>
-            </tr>
-            <tr>
-                <td style="padding: 12px; color: #a1a1aa; text-align: left;">{{ $invoice->plan_name ?? 'Course/Subscription' }}</td>
-                <td style="padding: 12px; color: #ffffff; text-align: right; font-weight: 700;">{{ \App\Models\Subscription::getCurrencySymbol($invoice->currency ?? 'NGN') }}{{ number_format($invoice->amount, 2) }}</td>
-            </tr>
-        </table>
-    </div>
+<!-- Order Summary -->
+<div class="card" style="background-color: #F9FAFB; border: 1px solid #F3F4F6; border-radius: 16px; padding: 28px; margin: 0 0 32px;">
+    <p style="font-size: 11px; font-weight: 800; color: #8B5CF6; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 20px;">Order Summary</p>
+    
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 14px;">
+        <tr>
+            <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #E5E7EB;">{{ $invoice->plan_name ?? 'Subscription' }}</td>
+            <td style="padding: 10px 0; text-align: right; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #E5E7EB;">{{ \App\Models\Subscription::getCurrencySymbol($invoice->currency ?? 'NGN') }}{{ number_format($invoice->amount, 2) }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0; color: #1a1a1a; font-weight: 700;">Total</td>
+            <td style="padding: 10px 0; text-align: right; color: #1a1a1a; font-weight: 800; font-size: 18px;">{{ \App\Models\Subscription::getCurrencySymbol($invoice->currency ?? 'NGN') }}{{ number_format($invoice->amount, 2) }}</td>
+        </tr>
+    </table>
+</div>
 
-    <div class="button-container">
-        <a href="{{ $paymentLink ?? config('app.url') . '/dashboard' }}" class="button">View Full Receipt</a>
-    </div>
+<!-- CTA -->
+<div style="text-align: center; margin: 0 0 32px;">
+    <a href="{{ $paymentLink ?? config('app.url') . '/dashboard' }}" style="display: inline-block; background-color: #1a1a1a; color: #ffffff; padding: 14px 32px; border-radius: 10px; font-weight: 700; font-size: 14px; text-decoration: none;">View Full Receipt</a>
+</div>
 
-    <p style="font-size: 13px; color: #71717a; margin-top: 40px; text-align: center;">
-        Save this email for your records. If you have any billing questions, please contact our support team.
-    </p>
+<p style="font-size: 12px; color: #9ca3af; line-height: 1.6; margin: 0; text-align: center;">
+    Save this email for your records. For billing questions, simply reply to this email.
+</p>
 @endsection

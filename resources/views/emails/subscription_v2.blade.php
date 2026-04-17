@@ -1,37 +1,40 @@
-@extends('layouts.email_master')
+@extends('layouts.skeeme_email')
+
+@section('hero')
+<h1 class="hero-title" style="font-size: 36px; font-weight: 800; color: #1a1a1a; letter-spacing: -0.03em; margin: 0 0 8px; line-height: 1.15;">
+    Subscription<br><em style="font-style: italic;">confirmed</em> ✓
+</h1>
+@endsection
 
 @section('content')
-<div class="badge">Billing</div>
-<h1>You're all set. Subscription confirmed.</h1>
-<p>
-    Hi {{ $user->first_name ?? 'there' }},<br><br>
-    Welcome to the premium tier! Your subscription to Skeeme has been successfully confirmed. You now have full access to our advanced AI tools and unlimited study insights.
+<p style="font-size: 15px; color: #4b5563; line-height: 1.7; margin: 0 0 32px;">
+    Hi {{ $user->first_name ?? 'there' }}, welcome to the premium tier! You now have full access to our advanced AI tools and unlimited study insights.
 </p>
 
-<div class="glass-box" style="padding: 32px;">
-    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+<!-- Plan Card -->
+<div class="card" style="background-color: #F9FAFB; border: 1px solid #F3F4F6; border-radius: 16px; padding: 28px; margin: 0 0 32px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 14px;">
         <tr>
-            <td style="padding-bottom: 12px; border-bottom: 1px solid #E2E8F0;">
-                <span style="font-size: 12px; color: #94A3B8; font-weight: 700; text-transform: uppercase;">Plan Type</span><br>
-                <span style="font-size: 18px; font-weight: 800; color: #1E293B;">{{ $planName ?? 'Skeeme Premium' }}</span>
-            </td>
+            <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #E5E7EB;">Plan</td>
+            <td style="padding: 10px 0; text-align: right; color: #1a1a1a; font-weight: 700; font-size: 17px; border-bottom: 1px solid #E5E7EB;">{{ $planName ?? 'Skeeme Premium' }}</td>
         </tr>
         <tr>
-            <td style="padding-top: 12px;">
-                <span style="font-size: 12px; color: #94A3B8; font-weight: 700; text-transform: uppercase;">Next Billing Date</span><br>
-                <span style="font-size: 14px; font-weight: 600; color: #475569;">{{ $nextBillingDate ?? 'Next Month' }}</span>
-            </td>
+            <td style="padding: 10px 0; color: #6b7280;">Next Billing Date</td>
+            <td style="padding: 10px 0; text-align: right; color: #1a1a1a; font-weight: 600;">{{ $nextBillingDate ?? 'Next Month' }}</td>
         </tr>
     </table>
 </div>
 
-<p>Ready to put your premium credits to use? Start your next intensive study session now.</p>
+<p style="font-size: 15px; color: #4b5563; line-height: 1.7; margin: 0 0 32px;">
+    Ready to put your premium credits to use? Start your next intensive study session now.
+</p>
 
-<div style="margin-top: 40px;">
-    <a href="{{ config('app.url') }}/dashboard" class="btn">Explore Premium Features</a>
+<!-- CTA -->
+<div style="text-align: center; margin: 0 0 32px;">
+    <a href="{{ config('app.url') }}/dashboard" style="display: inline-block; background-color: #1a1a1a; color: #ffffff; padding: 14px 32px; border-radius: 10px; font-weight: 700; font-size: 14px; text-decoration: none;">Explore Premium Features</a>
 </div>
 
-<p style="margin-top: 48px; font-size: 14px; color: #94A3B8;">
-    You can manage your subscription and download invoices anytime from your <a href="{{ config('app.url') }}/settings/billing" style="color: #6366F1; text-decoration: none;">Account Settings</a>.
+<p style="font-size: 13px; color: #9ca3af; line-height: 1.6; margin: 0; text-align: center;">
+    You can manage your subscription anytime from your <a href="{{ config('app.url') }}/settings/billing" style="color: #8B5CF6; font-weight: 600;">Account Settings</a>.
 </p>
 @endsection
