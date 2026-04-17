@@ -16,15 +16,27 @@ class DynamicBulkMail extends Mailable
     public $headerText;
     public $bodyHtml;
     public $subjectText;
+    public $template;
+    public $ctaText;
+    public $ctaUrl;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $subjectText, string $headerText, string $bodyHtml)
-    {
+    public function __construct(
+        string $subjectText,
+        string $headerText,
+        string $bodyHtml,
+        string $template = 'standard',
+        ?string $ctaText = null,
+        ?string $ctaUrl = null,
+    ) {
         $this->subjectText = $subjectText;
         $this->headerText = $headerText;
         $this->bodyHtml = $bodyHtml;
+        $this->template = $template;
+        $this->ctaText = $ctaText;
+        $this->ctaUrl = $ctaUrl;
     }
 
     /**

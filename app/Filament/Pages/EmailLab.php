@@ -7,6 +7,7 @@ use Filament\Pages\Page;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Forms\Contracts\HasForms;
@@ -36,6 +37,8 @@ class EmailLab extends Page implements HasForms
         
         $this->form->fill([
             'test_email' => $user?->email,
+            'template' => 'standard',
+            'has_cta' => false,
         ]);
     }
 
@@ -43,18 +46,19 @@ class EmailLab extends Page implements HasForms
     {
         return $schema
             ->schema([
-                Section::make('Bulk Email Composer')
-                    ->description('Send custom bulk emails using the new minimalist aesthetic.')
+                Section::make('Email Lab')
+                    ->description('Compose and send engagement emails using the Skeeme design system.')
                     ->schema([
+                        // ── Audience ──
                         Select::make('target_audience')
                             ->label('Target Audience')
                             ->options([
-                                'test' => 'Test (My Email)',
-                                'custom' => 'Custom Email Address(es)',
-                                'all_users' => 'All Users',
-                                'students' => 'All Students',
-                                'new_users' => 'New Users (Last 7 Days)',
-                                'random_10' => 'Random 10 Users',
+                                'test' => '🧪 Test (My Email)',
+                                'custom' => '📩 Custom Email Address(es)',
+                                'all_users' => '👥 All Users',
+                                'students' => '🎓 All Students',
+                                'new_users' => '🆕 New Users (Last 7 Days)',
+                                'random_10' => '🎲 Random 10 Users',
                             ])
                             ->default('test')
                             ->required()
@@ -78,20 +82,63 @@ class EmailLab extends Page implements HasForms
                             ->required(fn ($get) => $get('target_audience') === 'custom')
                             ->columnSpanFull(),
 
+                        // ── Template ──
+                        Select::make('template')
+                            ->label('Email Template')
+                            ->options([
+                                'standard' => '📝 Standard — Clean header + body',
+                                'announcement' => '📢 Announcement — Big hero headline + body',
+                                'survey' => '📊 Survey/Feedback — Hero headline + body + CTA',
+                            ])
+                            ->default('standard')
+                            ->required()
+                            ->reactive()
+                            ->helperText('Choose the email style. "Announcement" and "Survey" display the header as a large hero title.'),
+
+                        // ── Content ──
                         TextInput::make('subject')
                             ->label('Email Subject')
                             ->required()
+                            ->placeholder('e.g. New features just dropped! 🚀')
                             ->columnSpanFull(),
 
                         TextInput::make('header')
-                            ->label('Email Bold Header')
+                            ->label(fn ($get) => match ($get('template')) {
+                                'announcement', 'survey' => 'Hero Headline (supports line breaks with <br>)',
+                                default => 'Email Bold Header',
+                            })
                             ->required()
+                            ->placeholder(fn ($get) => match ($get('template')) {
+                                'announcement' => 'e.g. Fresh out of the lab ✨',
+                                'survey' => 'e.g. One quick question for you',
+                                default => 'e.g. Hey Skeemers!',
+                            })
                             ->columnSpanFull(),
                         
                         RichEditor::make('body')
                             ->label('Email Body')
                             ->required()
                             ->columnSpanFull(),
+
+                        // ── CTA Button (optional) ──
+                        Toggle::make('has_cta')
+                            ->label('Add a CTA Button')
+                            ->default(false)
+                            ->reactive()
+                            ->columnSpanFull(),
+
+                        TextInput::make('cta_text')
+                            ->label('Button Text')
+                            ->placeholder('e.g. Open Skeeme, Take the Survey, Learn More')
+                            ->visible(fn ($get) => $get('has_cta'))
+                            ->required(fn ($get) => $get('has_cta')),
+
+                        TextInput::make('cta_url')
+                            ->label('Button URL')
+                            ->url()
+                            ->placeholder('https://skeeme.com/...')
+                            ->visible(fn ($get) => $get('has_cta'))
+                            ->required(fn ($get) => $get('has_cta')),
                     ])->columns(2),
             ])
             ->statePath('data');
@@ -104,9 +151,19 @@ class EmailLab extends Page implements HasForms
         $subject = $state['subject'];
         $header = $state['header'];
         $body = $state['body'];
+        $template = $state['template'] ?? 'standard';
+        $ctaText = ($state['has_cta'] ?? false) ? ($state['cta_text'] ?? null) : null;
+        $ctaUrl = ($state['has_cta'] ?? false) ? ($state['cta_url'] ?? null) : null;
 
         try {
-            $mailable = new DynamicBulkMail($subject, $header, $body);
+            $mailable = new DynamicBulkMail(
+                subjectText: $subject,
+                headerText: $header,
+                bodyHtml: $body,
+                template: $template,
+                ctaText: $ctaText,
+                ctaUrl: $ctaUrl,
+            );
 
             $recipients = match ($audience) {
                 'test' => collect([ (object)['email' => $state['test_email']] ]),
