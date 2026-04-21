@@ -8,13 +8,14 @@ use App\Http\Controllers\RoleSelectionController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\IntegrationController;
+use Illuminate\Support\Facades\Log;
 
 /* ------------------------------------------------------------------ */
 /* Public routes                                                      */
 /* ------------------------------------------------------------------ */
 Route::get('/', [LandingController::class, 'index'])->name('home');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
-Route::post('/contact', [ContactController::class, 'store'])->name('contact.store')->middleware('throttle:3,1');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store')->middleware('throttle:1,10080');
 
 Route::get('/book-demo', [\App\Http\Controllers\BookDemoController::class, 'index'])->name('book-demo');
 Route::post('/book-demo', [\App\Http\Controllers\BookDemoController::class, 'store'])->name('book-demo.store');
@@ -201,7 +202,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Main dashboard - redirect based on role
     Route::get('dashboard', function () {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = request()->user();
         
         // If it's the super admin/creator, take them to the creator dashboard
         if ($user->isCreator()) {
