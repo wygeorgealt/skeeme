@@ -49,6 +49,27 @@ class ContactController extends Controller
             return redirect()->back()->with('success', 'Thank you for your message. We will get back to you soon.');
         }
 
+        // Aggressive Spam Filter: Block URLs, Cyrillic, and common spam keywords
+        $spamPatterns = [
+            '/https?:\/\//i',          // standard URLs
+            '/www\./i',                // www URLs
+            '/<a\s+href/i',            // HTML links
+            '/\[url=/i',               // BBCode links
+            '/\bseo\b/i',              // SEO spam
+            '/\bmarketing( agency)?\b/i',
+            '/crypto/i', 
+            '/bitcoin/i', 
+            '/lead generation/i', 
+            '/backlink/i',
+            '/[А-Яа-яЁё]/u'            // Cyrillic script
+        ];
+
+        foreach ($spamPatterns as $pattern) {
+            if (preg_match($pattern, $validated['message']) || preg_match($pattern, $validated['subject'])) {
+                return redirect()->back()->with('success', 'Thank you for your message. We will get back to you soon.');
+            }
+        }
+
         // Send the contact message to the support email
         Mail::mailer('resend')->to('otuturusolomom@gmail.com')->send(new ContactMessage($validated));
 

@@ -14,8 +14,7 @@ use Illuminate\Support\Facades\Log;
 /* Public routes                                                      */
 /* ------------------------------------------------------------------ */
 Route::get('/', [LandingController::class, 'index'])->name('home');
-Route::get('/contact', [ContactController::class, 'index'])->name('contact');
-Route::post('/contact', [ContactController::class, 'store'])->name('contact.store')->middleware('throttle:1,10080');
+Route::redirect('/contact', '/');
 
 Route::get('/book-demo', [\App\Http\Controllers\BookDemoController::class, 'index'])->name('book-demo');
 Route::post('/book-demo', [\App\Http\Controllers\BookDemoController::class, 'store'])->name('book-demo.store');
