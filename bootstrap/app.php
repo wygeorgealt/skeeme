@@ -41,6 +41,13 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            // Handle RouteNotFoundException (missing route name used in code)
+            if ($e instanceof \Symfony\Component\Routing\Exception\RouteNotFoundException) {
+                if (!$request->is('api/*')) {
+                    abort(404);
+                }
+            }
+
             if ($request->is('api/*')) {
                 // If it's a 500 error or a connection error, mask it with the friendly message
                 if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {

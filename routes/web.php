@@ -124,6 +124,11 @@ Route::get('/changelog', function () {
     return view('landing.changelog');
 })->name('changelog');
 
+// Blog index
+Route::get('/learn/blog', function () {
+    return view('landing.learn.blog');
+})->name('learn.blog');
+
 // Blog articles
 Route::get('/learn/blog/ai-powered-education', function () {
     return view('landing.learn.articles.ai-powered-education');
