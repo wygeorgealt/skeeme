@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRouter, useSegments, ErrorBoundaryProps, SplashScreen } from 'expo-router';
+import { Stack, useRouter, useSegments, ErrorBoundaryProps, SplashScreen, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 import { useEffect, useState } from 'react';
@@ -205,10 +205,28 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
       </Text>
       <TouchableOpacity
         onPress={retry}
-        style={{ backgroundColor: isDark ? 'white' : '#0f172a', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }}
+        style={{ backgroundColor: isDark ? 'white' : '#0f172a', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', width: '100%', justifyContent: 'center' }}
       >
-        <IconSymbol name="arrow.clockwise" size={18} color={isDark ? '#121212' : 'white'} />
+        <IconSymbol name="arrow.clockwise" size={18} color={isDark ? '#0f172a' : 'white'} />
         <Text style={{ color: isDark ? '#0f172a' : 'white', fontWeight: 'bold', marginLeft: 8 }}>Try Again</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => {
+            // Use a hard link or router push to get them to help
+            try {
+                // If the error is deep, we might need a reset or specific path
+                router.replace('/(drawer)/support');
+            } catch (e) {
+                // Fallback for extreme cases
+                retry();
+            }
+        }}
+        style={{ marginTop: 16, paddingVertical: 12 }}
+      >
+        <Text style={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: '600', fontSize: 15 }}>
+            Need help? <Text style={{ color: '#007AFF' }}>Contact Support</Text>
+        </Text>
       </TouchableOpacity>
     </View>
   );

@@ -9,6 +9,7 @@ import { Sparkles, CircleCheck, TriangleAlert, ChevronLeft, ChevronRight, Check,
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { MathText } from '@/components/ui/MathText';
 import { useAuthStore } from '@/store/authStore';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import * as SecureStore from 'expo-secure-store';
 import Animated, { 
     interpolate, 
@@ -45,6 +46,18 @@ const storage = {
 };
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const REWARD_MESSAGES = [
+    "Brilliant! You've mastered this set.",
+    "Spectacular! Your memory is getting sharper.",
+    "Fantastic! You've successfully cleared the deck.",
+    "Great work! You've crushed this study session.",
+    "Success! You've reviewed every single card.",
+    "Impressive! You've got this topic down pat.",
+    "Well done! You're making serious progress.",
+    "Excellent! Another study goal achieved.",
+    "Bravo! You've completed the entire set."
+];
 
 
 const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: boolean; isDark: boolean }) => {
@@ -99,7 +112,7 @@ const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: 
                 <MathText
                     content={text}
                     color={isDark ? '#FFF' : '#000'}
-                    fontSize={type === 'QUESTION' ? 26 : 20}
+                    fontSize={type === 'QUESTION' ? 22 : 18}
                     containerStyle={{ width: '100%' }}
                 />
             </View>
@@ -137,6 +150,7 @@ export default function StudyDeckScreen() {
     const syncAnim = useSharedValue(0);
     const { updateUser } = useAuthStore();
     const [isSavingSession, setIsSavingSession] = useState(false);
+    const [rewardMessage, setRewardMessage] = useState('');
 
     const { data: remoteDeck, isLoading, error } = useQuery({
         queryKey: ['deck', id],
@@ -204,6 +218,7 @@ export default function StudyDeckScreen() {
             // The scroll listener will update the index to ensure smooth transition
         } else {
             haptics.notificationAsync('success' as any);
+            setRewardMessage(REWARD_MESSAGES[Math.floor(Math.random() * REWARD_MESSAGES.length)]);
             setIsComplete(true);
         }
     };
@@ -314,7 +329,7 @@ export default function StudyDeckScreen() {
                     </View>
                 </View>
                 <Text style={[s.successTitle, isDark ? s.textWhite : s.textSlate900]}>Session Complete!</Text>
-                <Text style={s.successSubtitle}>You've mastered all {deck.flashcards.length} cards in this set. Great job!</Text>
+                <Text style={s.successSubtitle}>{rewardMessage || "You've mastered all " + deck.flashcards.length + " cards in this set. Great job!"}</Text>
                 
                 <View style={s.successActions}>
                     <TouchableOpacity onPress={restartSession} activeOpacity={0.8} style={s.flex1}>
@@ -382,7 +397,7 @@ export default function StudyDeckScreen() {
             </ScrollView>
 
             {/* Bottom Progress Dots */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginVertical: 24 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginVertical: 4 }}>
                 {cards.map((_: any, idx: number) => (
                     <View key={idx} style={{ 
                         width: currentIndex === idx ? 8 : 6, 
@@ -392,13 +407,44 @@ export default function StudyDeckScreen() {
                     }} />
                 ))}
             </View>
+
+            {/* Navigation Footer */}
+            <View style={s.footer}>
+                <View style={s.controlsRow}>
+                    <TouchableOpacity 
+                        onPress={prevCard} 
+                        disabled={currentIndex === 0}
+                        activeOpacity={0.7} 
+                        style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite60, currentIndex === 0 && { opacity: 0.3 }]}
+                    >
+                        <ChevronLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        onPress={nextCard} 
+                        activeOpacity={0.8} 
+                        style={s.mainActionBtn}
+                    >
+                        <View style={[s.mainActionGradient, { backgroundColor: '#007AFF' }]}>
+                            <Text style={s.mainActionLabel}>
+                                {currentIndex === cards.length - 1 ? 'Finish Deck' : 'Next Card'}
+                            </Text>
+                            <IconSymbol 
+                                name={currentIndex === cards.length - 1 ? "checkmark.circle.fill" : "chevron.right"} 
+                                size={20} 
+                                color="white" 
+                            />
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </View>
         </View>
     );
 }
 
 const s = StyleSheet.create({
     flex1: { flex: 1 },
-    headerRow: { paddingHorizontal: 16, paddingTop: 60, paddingBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerRow: { paddingHorizontal: 16, paddingTop: 60, paddingBottom: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     headerTextContainer: { flex: 1, alignItems: 'center', marginHorizontal: 12 },
     headerLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 2, marginBottom: 4 },
     headerTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
@@ -415,9 +461,9 @@ const s = StyleSheet.create({
     progressText: { fontSize: 11, fontWeight: '700', color: '#94a3b8', letterSpacing: 1 },
 
     pager: { flex: 1 },
-    pagerContent: { paddingVertical: 20 },
+    pagerContent: { paddingTop: 20, paddingBottom: 0 },
     
-    cardContainer: { height: SCREEN_HEIGHT * 0.55, marginVertical: 10 },
+    cardContainer: { height: SCREEN_HEIGHT * 0.48, marginVertical: 0 },
     cardBase: { flex: 1, borderRadius: 16, overflow: 'hidden' },
     glassCard: { flex: 1, borderRadius: 16, padding: 32, justifyContent: 'center', borderBottomWidth: 4 },
     glassBorderDark: { borderColor: 'rgba(255,255,255,0.1)', borderBottomColor: 'rgba(0,122,255,0.3)' },
@@ -435,7 +481,7 @@ const s = StyleSheet.create({
     cardFooterText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
     cardBackFooterText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
 
-    footer: { paddingHorizontal: 16, paddingBottom: 50, paddingTop: 20 },
+    footer: { paddingHorizontal: 16, paddingBottom: 120, paddingTop: 20 },
     controlsRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     navIconBtn: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
     mainActionBtn: { flex: 1, height: 64, borderRadius: 32, overflow: 'hidden' },

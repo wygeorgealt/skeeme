@@ -15,6 +15,7 @@ import * as Print from 'expo-print';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
 import { MathText } from '@/components/ui/MathText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 
 // Storage helpers
 const storage = {
@@ -270,7 +271,7 @@ export default function QuizHistoryDetailScreen() {
 
             <ScrollView 
                 style={s.scrollView} 
-                contentContainerStyle={{ paddingBottom: 140 }}
+                contentContainerStyle={{ paddingBottom: 200 }}
                 showsVerticalScrollIndicator={false}
                 bounces={false}
             >
@@ -335,7 +336,20 @@ export default function QuizHistoryDetailScreen() {
             </ScrollView>
 
             {/* Floating Action Buttons */}
-            <View style={[s.footer, isDark ? s.footerDark : s.footerLight]}>
+            <BlurView 
+                intensity={Platform.OS === 'ios' ? 80 : 0} 
+                tint={isDark ? "dark" : "light"} 
+                style={[
+                    s.footer, 
+                    isDark ? s.footerDark : s.footerLight,
+                    {
+                        bottom: 90,
+                        backgroundColor: isDark 
+                            ? (Platform.OS === 'android' ? '#090A0F' : 'rgba(9, 10, 15, 0.8)') 
+                            : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.9)')
+                    }
+                ]}
+            >
                 <TouchableOpacity
                     onPress={handleExport}
                     disabled={isExporting}
@@ -370,7 +384,7 @@ export default function QuizHistoryDetailScreen() {
                         <IconSymbol name="square.and.arrow.up" size={20} color="white" />
                     )}
                 </TouchableOpacity>
-            </View>
+            </BlurView>
         </View>
     );
 }

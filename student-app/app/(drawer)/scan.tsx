@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Dimensions, Platform } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { BlurView } from 'expo-blur';
@@ -292,12 +292,28 @@ export default function ScanScreen() {
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
                 {!!imageUri && results.length === 0 && (
                     <View style={s.previewContainer}>
-                        <BlurView intensity={isDark ? 30 : 60} tint={isDark ? 'dark' : 'light'} style={s.previewCard}>
+                        <BlurView 
+                            intensity={Platform.OS === 'ios' ? (isDark ? 30 : 60) : 0} 
+                            tint={isDark ? 'dark' : 'light'} 
+                            style={[s.previewCard, {
+                                backgroundColor: isDark 
+                                    ? (Platform.OS === 'android' ? '#1C1C1E' : 'rgba(28,28,30,0.4)') 
+                                    : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.6)')
+                            }]}
+                        >
                             <ExpoImage source={{ uri: imageUri }} style={s.previewImage} contentFit="cover" />
                         </BlurView>
 
                         {loading && (
-                            <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={s.loadingCard}>
+                            <BlurView 
+                                intensity={Platform.OS === 'ios' ? (isDark ? 40 : 80) : 0} 
+                                tint={isDark ? 'dark' : 'light'} 
+                                style={[s.loadingCard, {
+                                    backgroundColor: isDark 
+                                        ? (Platform.OS === 'android' ? '#121212' : 'rgba(18,18,18,0.7)') 
+                                        : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+                                }]}
+                            >
                                 <View style={s.spinnerBox}>
                                     <ActivityIndicator size="large" color={C.primary} />
                                 </View>
@@ -452,7 +468,20 @@ export default function ScanScreen() {
 
             {/* Slim Bottom Actions */}
             {!!(results.length > 0) && (
-                <BlurView intensity={isDark ? 80 : 100} tint={isDark ? "dark" : "light"} style={[s.slimFooter, isDark ? s.slimFooterDark : s.slimFooterLight]}>
+                <BlurView 
+                    intensity={Platform.OS === 'ios' ? (isDark ? 80 : 100) : 0} 
+                    tint={isDark ? "dark" : "light"} 
+                    style={[
+                        s.slimFooter, 
+                        isDark ? s.slimFooterDark : s.slimFooterLight,
+                        {
+                            bottom: 90,
+                            backgroundColor: isDark 
+                                ? (Platform.OS === 'android' ? '#000000' : 'rgba(0,0,0,0.8)') 
+                                : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+                        }
+                    ]}
+                >
                     <TouchableOpacity onPress={handleExport} disabled={loading} activeOpacity={0.7} style={s.slimFooterBtn}>
                         {loading ? (
                             <ActivityIndicator size="small" color={C.primary} />

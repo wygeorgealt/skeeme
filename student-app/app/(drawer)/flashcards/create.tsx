@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Platform } from 'react-native';
 import { FileText, Upload, Sparkles, ChevronLeft, Leaf, Lightbulb, Rocket, CircleCheck } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -279,9 +279,15 @@ export default function GenerateFlashcardScreen() {
 
             {/* Glassmorphic Sticky Footer */}
             <BlurView 
-                intensity={100} 
+                intensity={Platform.OS === 'ios' ? 100 : 0} 
                 tint={isDark ? "dark" : "light"} 
-                style={[s.formFooter, { paddingBottom: 24, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+                style={[s.formFooter, { 
+                    paddingBottom: 24, 
+                    borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                    backgroundColor: isDark 
+                        ? (Platform.OS === 'android' ? '#121212' : 'rgba(18,18,18,0.8)') 
+                        : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+                }]}
             >
                 {isLoading ? (
                     <View style={s.loadingContainer}>

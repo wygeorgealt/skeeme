@@ -103,7 +103,7 @@ export default function SupportScreen() {
 
             <ScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 60 }}
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 110 }}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
@@ -111,8 +111,7 @@ export default function SupportScreen() {
                     How can we help?
                 </Text>
                 <Text style={[s.heroSubtitle, { color: C.textSecondary }]}>
-                    Describe the issue or feedback below. You can also reach us directly at{' '}
-                    <Text style={{ fontWeight: '700', color: C.primary }}>noreply@contact.skeeme.com</Text>
+                    Describe the issue or feedback below
                 </Text>
 
                 <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>

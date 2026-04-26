@@ -69,13 +69,15 @@ function TabBar({ state, descriptors, navigation }: any) {
         <View style={bar.outerWrap} pointerEvents="box-none">
             {/* The bar itself */}
             <BlurView
-                intensity={isDark ? 80 : 80}
+                intensity={Platform.OS === 'ios' ? 80 : 100}
                 tint={isDark ? 'dark' : 'light'}
                 style={[
                     bar.blurBase,
                     {
                         paddingBottom: Math.max(insets.bottom, 16),
-                        backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.7)',
+                        backgroundColor: isDark 
+                            ? (Platform.OS === 'android' ? 'rgba(0,0,0,0.92)' : 'rgba(0,0,0,0.6)') 
+                            : (Platform.OS === 'android' ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)'),
                         borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
                     },
                 ]}
@@ -239,8 +241,8 @@ export default function TabLayout() {
             tabBar={(props) => <TabBar {...props} />}
             screenOptions={{
                 headerShown: false,
-                // Background under the tab bar
-                sceneStyle: { backgroundColor: 'transparent' },
+                // Background under the tab bar should be solid to avoid bleed-through
+                sceneStyle: { backgroundColor: C.background },
             }}
         >
             <Tabs.Screen

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, Animated, StyleSheet, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, Animated, StyleSheet, Modal, Platform } from 'react-native';
 import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
 import { useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { api } from '@/lib/api';
@@ -517,9 +517,15 @@ export default function GenerateQuizScreen() {
 
                 {/* Glassmorphic Sticky Footer */}
                 <BlurView 
-                    intensity={100} 
+                    intensity={Platform.OS === 'ios' ? 100 : 0} 
                     tint={isDark ? "dark" : "light"} 
-                    style={[s.formFooter, { paddingBottom: 24, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+                    style={[s.formFooter, { 
+                        paddingBottom: 24, 
+                        borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                        backgroundColor: isDark 
+                            ? (Platform.OS === 'android' ? '#121212' : 'rgba(18,18,18,0.8)') 
+                            : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+                    }]}
                 >
                     {isLoading ? (
                         <View style={s.loadingContainer}>
@@ -692,7 +698,24 @@ export default function GenerateQuizScreen() {
                 </ScrollView>
 
                 {/* Sticky Active Quiz Next Button */}
-                <BlurView intensity={100} tint={isDark ? 'dark' : 'light'} style={{ position: 'absolute', bottom: 90, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' }}>
+                <BlurView 
+                    intensity={Platform.OS === 'ios' ? 100 : 0} 
+                    tint={isDark ? 'dark' : 'light'} 
+                    style={{ 
+                        position: 'absolute', 
+                        bottom: 90, 
+                        left: 0, 
+                        right: 0, 
+                        paddingHorizontal: 24, 
+                        paddingTop: 16, 
+                        paddingBottom: 24, 
+                        borderTopWidth: 1, 
+                        borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                        backgroundColor: isDark 
+                            ? (Platform.OS === 'android' ? '#1C1C1E' : 'rgba(28,28,30,0.8)') 
+                            : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+                    }}
+                >
                     <TouchableOpacity
                         disabled={!hasSelectedAction}
                         onPress={handleNextPress}
@@ -800,9 +823,16 @@ export default function GenerateQuizScreen() {
 
             {/* Actions Footer */}
             <BlurView 
-                intensity={100} 
+                intensity={Platform.OS === 'ios' ? 100 : 0} 
                 tint={isDark ? "dark" : "light"} 
-                style={[s.footer, { paddingBottom: insets.bottom + 85, paddingHorizontal: 24, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+                style={[s.footer, { 
+                    paddingBottom: insets.bottom + 85, 
+                    paddingHorizontal: 24, 
+                    borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                    backgroundColor: isDark 
+                        ? (Platform.OS === 'android' ? '#121212' : 'rgba(18,18,18,0.8)') 
+                        : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+                }]}
             >
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
                     <TouchableOpacity
