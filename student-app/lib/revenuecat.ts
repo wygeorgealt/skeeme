@@ -33,12 +33,13 @@ export const identifyUser = async (userId: string) => {
 };
 
 /**
- * Check if user has active "unlimited" entitlement
+ * Check if user has active "Skeeme_Pro" or "Skeeme_Max" entitlement
  */
 export const isUnlimitedMember = async (): Promise<boolean> => {
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    return typeof customerInfo.entitlements.active['unlimited_access'] !== 'undefined';
+    return typeof customerInfo.entitlements.active['Skeeme_Pro'] !== 'undefined' || 
+           typeof customerInfo.entitlements.active['Skeeme_Max'] !== 'undefined';
   } catch (e) {
     return false;
   }
@@ -50,7 +51,8 @@ export const isUnlimitedMember = async (): Promise<boolean> => {
 export const restorePurchases = async (): Promise<boolean> => {
   try {
     const customerInfo = await Purchases.restorePurchases();
-    return typeof customerInfo.entitlements.active['unlimited_access'] !== 'undefined';
+    return typeof customerInfo.entitlements.active['Skeeme_Pro'] !== 'undefined' || 
+           typeof customerInfo.entitlements.active['Skeeme_Max'] !== 'undefined';
   } catch (e) {
     return false;
   }

@@ -276,9 +276,7 @@ export default function GenerateQuizScreen() {
                 msg = data.message;
             }
 
-            if (e.response?.status === 403) {
-                setShowOutOfCredits(true);
-            } else {
+            if (e.response?.status !== 402 && e.response?.status !== 403) {
                 Alert.alert('Failed', msg);
             }
         } finally {

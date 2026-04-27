@@ -33,6 +33,9 @@ interface AuthState {
     // Haptics
     hapticsEnabled: boolean;
     setHapticsEnabled: (enabled: boolean) => Promise<void>;
+    // Global Error
+    globalError: string | null;
+    setGlobalError: (error: string | null) => void;
 }
 
 // Secure storage for sensitive data (tokens)
@@ -110,6 +113,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     showCreditsModal: false,
     creditsModalFeature: null,
     hapticsEnabled: true,
+    globalError: null,
+
+    setGlobalError: (error) => set({ globalError: error }),
 
     fetchPricingConfig: async () => {
         try {

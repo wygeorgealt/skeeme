@@ -4,6 +4,7 @@ import { View, TouchableOpacity, useColorScheme, Share, Platform } from 'react-n
 import { Flame, Share2 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
+import RevenueCatUI from 'react-native-purchases-ui';
 
 interface OutOfCreditsModalProps {
     visible: boolean;
@@ -30,9 +31,14 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
     if (!visible) return null;
 
-    const handleUpgrade = () => {
+    const handleUpgrade = async () => {
         onDismiss();
-        router.push('/upgrade');
+        try {
+            await RevenueCatUI.presentPaywall();
+        } catch (e) {
+            // Fallback if the RC Paywall UI fails to load
+            router.push('/upgrade');
+        }
     };
 
     const handleShare = async () => {

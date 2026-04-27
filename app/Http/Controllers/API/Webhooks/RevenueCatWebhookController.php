@@ -49,7 +49,7 @@ class RevenueCatWebhookController extends Controller
             case 'RENEWAL':
             case 'UNCANCELLATION':
                 foreach ($entitlementIds as $eId) {
-                    $this->revenueCatService->grantEntitlement($appUserId, $eId, $event['expiration_at_ms'] ?? null);
+                    $this->revenueCatService->grantEntitlement($appUserId, $eId, $type, $event['expiration_at_ms'] ?? null);
                 }
                 break;
 

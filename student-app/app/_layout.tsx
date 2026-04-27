@@ -18,6 +18,7 @@ import { useFonts } from 'expo-font';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '@/lib/posthog';
 import * as SystemUI from 'expo-system-ui';
+import { initializeRevenueCat } from '@/lib/revenuecat';
 
 
 
@@ -62,9 +63,11 @@ export default function RootLayout() {
     hydrate();
   }, [hydrate]);
 
-  // Removed RevenueCat identification
+  // Initialize RevenueCat SDK with the authenticated user ID
   useEffect(() => {
-    // Other user-specific initializations can go here
+    if (user) {
+      initializeRevenueCat(user.id.toString());
+    }
   }, [user]);
 
   useEffect(() => {
@@ -166,6 +169,7 @@ export default function RootLayout() {
 
           {/* Global Modals */}
           <OutOfCreditsModalWrapper />
+          <GlobalErrorModalWrapper />
           <ShakeReporter />
 
           <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
@@ -186,6 +190,19 @@ function OutOfCreditsModalWrapper() {
       visible={showCreditsModal} 
       onDismiss={() => toggleCreditsModal(false)}
       featureAttempted={creditsModalFeature || 'scan'}
+    />
+  );
+}
+
+function GlobalErrorModalWrapper() {
+  const { globalError, setGlobalError } = useAuthStore();
+  const GlobalErrorModal = require('@/components/GlobalErrorModal').default;
+
+  return (
+    <GlobalErrorModal 
+      visible={globalError !== null} 
+      error={globalError}
+      onDismiss={() => setGlobalError(null)}
     />
   );
 }

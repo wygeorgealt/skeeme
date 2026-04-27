@@ -191,9 +191,7 @@ export default function ScanScreen() {
                 updateUser(userRes.data);
             }
         } catch (err: any) {
-            if (err?.response?.status === 402) {
-                setShowOutOfCredits(true);
-            } else {
+            if (err?.response?.status !== 402 && err?.response?.status !== 403) {
                 let msg = 'Failed to solve. Try a clearer photo.';
                 if (err?.response?.data?.message) msg = err.response.data.message;
                 else if (err?.message) msg = err.message;

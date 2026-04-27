@@ -12,7 +12,7 @@ class RevenueCatService
     /**
      * Handle a subscription entitlement update (Initial Purchase or Renewal)
      */
-    public function grantEntitlement(string $appUserId, string $entitlementId, ?string $expirationDate = null): bool
+    public function grantEntitlement(string $appUserId, string $entitlementId, string $eventType = 'INITIAL_PURCHASE', ?string $expirationDate = null): bool
     {
         Log::info("RevenueCat: Granting Entitlement", [
             'app_user_id' => $appUserId,
@@ -28,12 +28,18 @@ class RevenueCatService
             return false;
         }
 
-        return DB::transaction(function () use ($user, $entitlementId, $expirationDate) {
+        return DB::transaction(function () use ($user, $entitlementId, $eventType, $expirationDate) {
             // 1. Update User Status
-            // Assuming 'unlimited_access' is the ID for the main subscription
-            if ($entitlementId === 'unlimited_access') {
+            if ($entitlementId === 'Skeeme_Pro') {
                 $user->update([
-                    'is_unlimited_student' => true,
+                    'subscription_tier' => 'pro',
+                    'is_unlimited_student' => false,
+                    'rc_app_user_id' => $user->rc_app_user_id ?? $user->id,
+                ]);
+            } elseif ($entitlementId === 'Skeeme_Max') {
+                $user->update([
+                    'subscription_tier' => 'max',
+                    'is_unlimited_student' => false,
                     'rc_app_user_id' => $user->rc_app_user_id ?? $user->id,
                 ]);
             }
@@ -49,9 +55,13 @@ class RevenueCatService
                 ]
             );
 
-            // 3. Optional: Refill credits if not unlimited
-            if (!$user->is_unlimited_student) {
-                $user->increment('credits', 1000);
+            // 3. Add Credits (Only on Purchase or Renewal)
+            if (in_array($eventType, ['INITIAL_PURCHASE', 'RENEWAL'])) {
+                if ($entitlementId === 'Skeeme_Pro') {
+                    $user->increment('credits', 20000);
+                } elseif ($entitlementId === 'Skeeme_Max') {
+                    $user->increment('credits', 100000);
+                }
             }
 
             return true;
@@ -108,8 +118,8 @@ class RevenueCatService
         if (!$user) return false;
 
         return DB::transaction(function () use ($user, $entitlementId) {
-            if ($entitlementId === 'unlimited_access') {
-                $user->update(['is_unlimited_student' => false]);
+            if (in_array($entitlementId, ['Skeeme_Pro', 'Skeeme_Max'])) {
+                $user->update(['subscription_tier' => 'free', 'is_unlimited_student' => false]);
             }
 
             IndividualSubscription::where('user_id', $user->id)

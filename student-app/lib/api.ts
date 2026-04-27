@@ -70,7 +70,6 @@ api.interceptors.response.use(
         }
 
         if (error.response?.status === 402) {
-            const { useAuthStore } = require('@/store/authStore');
             useAuthStore.getState().toggleCreditsModal(true);
             return Promise.reject(error);
         }
@@ -97,11 +96,9 @@ api.interceptors.response.use(
 
         // Global fallback for 500 errors to ensure "Skeeme is down" is always shown
         if (response?.status && response.status >= 500) {
-            if (!response.data?.message) {
-                error.message = 'Skeeme is down, Please try again later.';
-                if (response.data) response.data.message = error.message;
-                else error.response.data = { message: error.message };
-            }
+            useAuthStore.getState().setGlobalError('Skeeme is currently down. Please try again later.');
+        } else if (isNetworkError && config.retryCount >= MAX_RETRIES) {
+            useAuthStore.getState().setGlobalError('Network connection lost. Please check your internet and try again.');
         }
         
         return Promise.reject(error);
