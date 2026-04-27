@@ -49,14 +49,9 @@ class CheckSufficientCredits
             return $next($request);
         }
 
-        // 3. Check Balance (Redis Cache -> DB fallback)
-        $available = Cache::get("user_credits_{$user->id}");
-        if ($available === null) {
-            $user->refresh(); // Ensure we have latest from DB
-            $available = $user->credits;
-            // Warm cache for 1 hour
-            Cache::put("user_credits_{$user->id}", $available, 3600);
-        }
+        // 3. Check Balance (No caching to prevent Admin panel desync)
+        $user->refresh(); // Ensure we have latest from DB
+        $available = $user->credits;
 
         // 4. Validate
         if ($available < $cost) {

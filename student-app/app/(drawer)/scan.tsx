@@ -10,7 +10,9 @@ import Animated, {
     withRepeat,
     withTiming,
     Easing,
-    FadeIn
+    FadeIn,
+    interpolate,
+    useAnimatedStyle
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
@@ -30,8 +32,8 @@ import { generateScanHTML } from '@/lib/pdfGenerator';
 import { scannerService, ScanResult } from '@/lib/scanner';
 import { posthog } from '@/lib/posthog';
 
-const BASE_SCAN_COST = 2;
-const COST_PER_SOLUTION = 4;
+const BASE_SCAN_COST = 50;
+const COST_PER_SOLUTION = 0;
 const { width } = Dimensions.get('window');
 const CROP_BOX_WIDTH = width * 0.85;
 const CROP_BOX_HEIGHT = 160;
@@ -56,15 +58,7 @@ export default function ScanScreen() {
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
     const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'unhelpful'>>({});
 
-    const scanAnim = useSharedValue(0);
-
-    useState(() => {
-        scanAnim.value = withRepeat(
-            withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-            -1,
-            true
-        );
-    });
+    const [progressPercent, setProgressPercent] = useState(0);
 
     const pickImage = async (useCamera: boolean) => {
         setResults([]);
@@ -92,8 +86,16 @@ export default function ScanScreen() {
         });
 
         if (!result.canceled && result.assets[0]) {
+            const base64Data = result.assets[0].base64 || null;
             setImageUri(result.assets[0].uri);
-            setImageBase64(result.assets[0].base64 || null);
+            setImageBase64(base64Data);
+
+            if (base64Data) {
+                // Yield to allow the UI to transition to the preview screen before heavy processing
+                setTimeout(() => {
+                    handleSolve(base64Data);
+                }, 50);
+            }
         }
     };
 
@@ -106,6 +108,7 @@ export default function ScanScreen() {
             if (photo) {
                 setLoading(true);
                 setLoadingStage('Preparing image...');
+                setProgressPercent(0);
 
                 // Resize and compress, do not crop (avoids aspect ratio mismatch bugs)
                 const manipulated = await manipulateAsync(
@@ -135,24 +138,43 @@ export default function ScanScreen() {
         const targetBase64 = directBase64 || imageBase64;
         if (!targetBase64) return;
 
+        let currentCredits = user?.credits ?? 0;
+        let isUnlimited = user?.is_unlimited ?? false;
+        
         const minCost = BASE_SCAN_COST + COST_PER_SOLUTION;
-        if (!user?.is_unlimited && (user?.credits ?? 0) < minCost) {
-            setShowOutOfCredits(true);
-            return;
+        if (!isUnlimited && currentCredits < minCost) {
+            // Force refresh user from API before failing, in case they just topped up
+            try {
+                const userRes = await api.get('me');
+                if (userRes.data) {
+                    updateUser(userRes.data);
+                    currentCredits = userRes.data.credits ?? 0;
+                    isUnlimited = userRes.data.is_unlimited ?? false;
+                }
+            } catch (e) {}
+
+            if (!isUnlimited && currentCredits < minCost) {
+                setShowOutOfCredits(true);
+                return;
+            }
         }
 
         setLoading(true);
         setLoadingStage('Scan image...');
+        setProgressPercent(10);
 
         const stages = ['Scan image...', 'Reading handwriting...', 'Detecting questions...', 'AI Solving...', 'Double checking...', 'Finalizing results...'];
         let stageIdx = 0;
         const stageInterval = setInterval(() => {
             stageIdx = Math.min(stageIdx + 1, stages.length - 1);
             setLoadingStage(stages[stageIdx]);
+            setProgressPercent(prev => Math.min(prev + 15, 90));
         }, 2500);
 
         try {
             const data = await scannerService.solve(targetBase64, 'base64');
+            setProgressPercent(100);
+            
             setImageBase64(null);
             setResults(data.results || []);
             setLastScanCost(data.cost);
@@ -169,10 +191,14 @@ export default function ScanScreen() {
                 updateUser(userRes.data);
             }
         } catch (err: any) {
-            let msg = 'Failed to solve. Try a clearer photo.';
-            if (err?.response?.data?.message) msg = err.response.data.message;
-            else if (err?.message) msg = err.message;
-            Alert.alert('Error', msg);
+            if (err?.response?.status === 402) {
+                setShowOutOfCredits(true);
+            } else {
+                let msg = 'Failed to solve. Try a clearer photo.';
+                if (err?.response?.data?.message) msg = err.response.data.message;
+                else if (err?.message) msg = err.message;
+                Alert.alert('Error', msg);
+            }
         } finally {
             clearInterval(stageInterval);
             setLoading(false);
@@ -301,7 +327,12 @@ export default function ScanScreen() {
                                     : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.6)')
                             }]}
                         >
-                            <ExpoImage source={{ uri: imageUri }} style={s.previewImage} contentFit="cover" />
+                            <View style={{ width: '100%', height: 350, overflow: 'hidden' }}>
+                                <ExpoImage source={{ uri: imageUri }} style={s.previewImage} contentFit="cover" />
+                                {loading && (
+                                    <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)' }]} />
+                                )}
+                            </View>
                         </BlurView>
 
                         {loading && (
@@ -314,10 +345,12 @@ export default function ScanScreen() {
                                         : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
                                 }]}
                             >
-                                <View style={s.spinnerBox}>
-                                    <ActivityIndicator size="large" color={C.primary} />
+                                <Text style={[s.loadingStage, isDark ? s.textWhite : s.textSlate900, { marginBottom: 16 }]}>{loadingStage || 'Processing...'}</Text>
+                                
+                                <View style={s.progressBarContainer}>
+                                    <View style={[s.progressBarFill, { width: `${progressPercent}%` }]} />
                                 </View>
-                                <Text style={[s.loadingStage, isDark ? s.textWhite : s.textSlate900]}>{loadingStage || 'Processing...'}</Text>
+
                                 <Text style={s.loadingSub}>Skeeme AI is working hard</Text>
                             </BlurView>
                         )}
@@ -538,11 +571,15 @@ const s = StyleSheet.create({
     // Preview (before solve)
     previewContainer: { alignItems: 'center' },
     previewCard: { width: '100%', borderRadius: 24, overflow: 'hidden', borderBottomWidth: 3, borderBottomColor: 'rgba(139, 92, 246, 0.3)' },
-    previewImage: { width: '100%', height: 350 },
-    loadingCard: { alignItems: 'center', paddingVertical: 40, width: '100%', borderRadius: 24, marginTop: 24 },
+    previewImage: { width: '100%', height: '100%' },
+    scanLineContainer: { position: 'absolute', top: 0, left: 0, right: 0, height: 60, opacity: 0.8 },
+    loadingCard: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24, width: '100%', borderRadius: 24, marginTop: 24 },
     spinnerBox: { marginBottom: 20 },
     loadingStage: { fontWeight: '800', fontSize: 17, letterSpacing: -0.5 },
-    loadingSub: { color: '#64748b', fontWeight: '600', fontSize: 13, marginTop: 4 },
+    loadingSub: { color: '#64748b', fontWeight: '600', fontSize: 13, marginTop: 12 },
+    
+    progressBarContainer: { width: '100%', height: 6, backgroundColor: 'rgba(0,122,255,0.15)', borderRadius: 3, overflow: 'hidden' },
+    progressBarFill: { height: '100%', backgroundColor: '#007AFF', borderRadius: 3 },
     fullBtnGroup: { width: '100%', gap: 12, marginTop: 24 },
     fullBtnText: { color: '#fff', fontWeight: '800', fontSize: 16, marginLeft: 10 },
     fullSecondaryBtnGlass: { height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
