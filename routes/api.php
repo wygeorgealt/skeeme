@@ -45,6 +45,23 @@ use App\Http\Controllers\API\ClassComparisonDataController;
 |
 */
 
+// ─── Health Check (used by Railway & monitoring tools) ────────────────────────
+// Railway Healthcheck URL: /api/health
+Route::get('/health', function () {
+    $status = ['app' => 'ok', 'db' => 'ok', 'timestamp' => now()->toISOString()];
+    $httpCode = 200;
+
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+    } catch (\Exception $e) {
+        $status['db'] = 'unreachable';
+        $status['db_error'] = $e->getMessage();
+        $httpCode = 503;
+    }
+
+    return response()->json($status, $httpCode);
+})->name('health');
+
 Route::group(['prefix' => 'v1'], function () {
     // Public endpoints
     Route::post('/webhooks/zoom', [\App\Http\Controllers\Webhooks\ZoomWebhookController::class, 'handle']);

@@ -58,6 +58,8 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Re-use the same connection within a request cycle for consistency
+            'sticky' => true,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') !== null 
@@ -66,6 +68,10 @@ return [
                 PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', false) !== null 
                     ? filter_var(env('DB_PERSISTENT', false), FILTER_VALIDATE_BOOLEAN) 
                     : false,
+                // Fail fast if the DB is unreachable — prevents 30s+ hangs on Railway restarts
+                PDO::ATTR_TIMEOUT => 5,
+                // Read timeout: abandon slow queries after 30s instead of timing out at the server
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET wait_timeout=28800, interactive_timeout=28800",
             ], fn($value) => ! is_null($value)) : [],
         ],
 
