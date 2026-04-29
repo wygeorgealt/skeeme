@@ -1,8 +1,9 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform, Dimensions, Linking } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform, Dimensions, Linking, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { signInWithGoogle } from '@/lib/socialAuth';
 import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withDelay, withSpring } from 'react-native-reanimated';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
@@ -18,11 +19,25 @@ export default function AuthSelectScreen() {
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
-    const { setOnboardingStep } = useAuthStore();
+    const { setOnboardingStep, login } = useAuthStore();
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
     useEffect(() => {
         setOnboardingStep(1);
     }, []);
+
+    const handleGoogleSignIn = async () => {
+        setIsGoogleLoading(true);
+        try {
+            const result = await signInWithGoogle();
+            if (result) {
+                login(result.user, result.token);
+                router.replace('/(drawer)');
+            }
+        } finally {
+            setIsGoogleLoading(false);
+        }
+    };
 
     // Make the native status bar area match the video's dark tone
     useEffect(() => {
@@ -95,18 +110,21 @@ export default function AuthSelectScreen() {
 
                     {/* Continue with Google */}
                     <TouchableOpacity
-                        onPress={() => {
-                            // TODO: Wire up expo-auth-session Google login
-                            // For now, route to email sign up
-                            router.push('/signup');
-                        }}
+                        onPress={handleGoogleSignIn}
                         activeOpacity={0.8}
-                        style={[s.authBtn, s.googleBtn]}
+                        style={[s.authBtn, s.googleBtn, { opacity: isGoogleLoading ? 0.7 : 1 }]}
+                        disabled={isGoogleLoading}
                     >
                         <View style={s.authBtnIcon}>
-                            <Text style={{ fontSize: 18 }}>G</Text>
+                            <Image 
+                                source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }} 
+                                style={{ width: 24, height: 24 }} 
+                                resizeMode="contain"
+                            />
                         </View>
-                        <Text style={[s.authBtnText, { color: '#000000' }]}>Continue with Google</Text>
+                        <Text style={[s.authBtnText, { color: '#000000' }]}>
+                            {isGoogleLoading ? 'Connecting...' : 'Continue with Google'}
+                        </Text>
                     </TouchableOpacity>
 
                     {/* Continue with Apple (iOS only) */}

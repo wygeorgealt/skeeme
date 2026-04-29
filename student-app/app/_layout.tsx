@@ -65,10 +65,10 @@ export default function RootLayout() {
 
   // Initialize RevenueCat SDK with the authenticated user ID
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       initializeRevenueCat(user.id.toString());
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (isLoading) return;

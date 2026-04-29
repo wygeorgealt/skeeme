@@ -7,12 +7,9 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { BlurView } from 'expo-blur';
 import * as Notifications from 'expo-notifications';
 import { api } from '@/lib/api';
-
-// Placeholder screen recording video — replace with your actual notification demo
-const NOTIFICATION_VIDEO = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4';
 
 export default function NotificationScreen() {
     const router = useRouter();
@@ -25,12 +22,6 @@ export default function NotificationScreen() {
     useEffect(() => {
         setOnboardingStep(6);
     }, []);
-
-    const player = useVideoPlayer(NOTIFICATION_VIDEO, (player) => {
-        player.loop = true;
-        player.muted = true;
-        player.play();
-    });
 
     const submitOnboarding = async () => {
         // Send personalization data to the backend
@@ -67,16 +58,56 @@ export default function NotificationScreen() {
         <View style={[s.container, { backgroundColor: C.background }]}>
             <SafeAreaView style={s.safeArea}>
 
-                {/* Video Preview */}
-                <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.videoSection}>
-                    <View style={[s.phoneFrame, { backgroundColor: C.card, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
-                        <VideoView
-                            player={player}
-                            style={s.video}
-                            nativeControls={false}
-                            contentFit="cover"
-                        />
-                    </View>
+                {/* Visual Illustration */}
+                <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.illustrationSection}>
+                    {/* Decorative Background Glow */}
+                    <View style={[s.glow, { backgroundColor: '#8B5CF6' }]} />
+                    
+                    {/* Mock Notification 1 */}
+                    <Animated.View 
+                        entering={FadeInDown.duration(800).delay(400).springify()}
+                        style={[s.mockNotification, { 
+                            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                            top: -30, 
+                            left: -20, 
+                            transform: [{ rotate: '-4deg' }] 
+                        }]}
+                    >
+                        <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+                        <View style={s.mockHeader}>
+                            <View style={[s.mockIconBadge, { backgroundColor: '#8B5CF6' }]}>
+                                <IconSymbol name="bell.fill" size={14} color="#FFF" />
+                            </View>
+                            <Text style={[s.mockAppName, { color: C.textSecondary }]}>Skeeme</Text>
+                            <Text style={[s.mockTime, { color: C.textSecondary }]}>now</Text>
+                        </View>
+                        <Text style={[s.mockTitle, { color: C.text }]}>Study Reminder 📚</Text>
+                        <Text style={[s.mockBody, { color: C.textSecondary }]}>Time to review your Biology flashcards. Keep your streak alive!</Text>
+                    </Animated.View>
+
+                    {/* Mock Notification 2 */}
+                    <Animated.View 
+                        entering={FadeInDown.duration(800).delay(600).springify()}
+                        style={[s.mockNotification, { 
+                            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                            top: 50, 
+                            right: -20, 
+                            transform: [{ rotate: '3deg' }] 
+                        }]}
+                    >
+                        <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+                        <View style={s.mockHeader}>
+                            <View style={[s.mockIconBadge, { backgroundColor: '#10B981' }]}>
+                                <IconSymbol name="checkmark" size={14} color="#FFF" />
+                            </View>
+                            <Text style={[s.mockAppName, { color: C.textSecondary }]}>Skeeme</Text>
+                            <Text style={[s.mockTime, { color: C.textSecondary }]}>1h ago</Text>
+                        </View>
+                        <Text style={[s.mockTitle, { color: C.text }]}>Goal Reached 🎯</Text>
+                        <Text style={[s.mockBody, { color: C.textSecondary }]}>Awesome work! You scored 100% on your Physics quiz.</Text>
+                    </Animated.View>
                 </Animated.View>
 
                 {/* Text */}
@@ -117,18 +148,28 @@ const s = StyleSheet.create({
     container: { flex: 1 },
     safeArea: { flex: 1 },
 
-    // Video Section
-    videoSection: {
+    // Illustration Section
+    illustrationSection: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 40,
-        paddingTop: 24,
+        position: 'relative',
+        minHeight: 280,
     },
-    phoneFrame: {
-        width: 240,
-        height: 420,
-        borderRadius: 32,
+    glow: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        opacity: 0.15,
+        transform: [{ scale: 1.5 }],
+    },
+    mockNotification: {
+        position: 'absolute',
+        width: 280,
+        padding: 16,
+        borderRadius: 24,
         borderWidth: 1,
         overflow: 'hidden',
         shadowColor: '#000',
@@ -137,9 +178,36 @@ const s = StyleSheet.create({
         shadowRadius: 24,
         elevation: 8,
     },
-    video: {
-        width: '100%',
-        height: '100%',
+    mockHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    mockIconBadge: {
+        width: 24,
+        height: 24,
+        borderRadius: 6,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 8,
+    },
+    mockAppName: {
+        fontSize: 13,
+        fontWeight: '600',
+        flex: 1,
+    },
+    mockTime: {
+        fontSize: 12,
+        fontWeight: '400',
+    },
+    mockTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        marginBottom: 4,
+    },
+    mockBody: {
+        fontSize: 14,
+        lineHeight: 20,
     },
 
     // Text

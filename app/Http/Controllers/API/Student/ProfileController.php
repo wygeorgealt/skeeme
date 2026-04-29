@@ -111,16 +111,7 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        // If the user did not sign up via a social provider, verify their password
-        if (!$user->provider) {
-            $request->validate([
-                'password' => 'required|string',
-            ]);
-
-            if (!Hash::check($request->password, $user->password)) {
-                return response()->json(['message' => 'Incorrect password. Account deletion cancelled.'], 403);
-            }
-        }
+        // Password check has been replaced with a frontend random word confirmation challenge.
 
         // 1. Revoke all API tokens
         $user->tokens()->delete();

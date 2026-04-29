@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, Alert, TextInput, Platform, useColorScheme, Image, StyleSheet, Switch } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '@/store/authStore';
@@ -128,19 +128,30 @@ export default function AccountScreen() {
     };
 
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-    const [deletePassword, setDeletePassword] = useState('');
+    const [deleteConfirmationCode, setDeleteConfirmationCode] = useState('');
+    const [deleteInput, setDeleteInput] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
 
+    useEffect(() => {
+        if (deleteModalVisible) {
+            // Generate a random 4-digit code e.g., DELETE-4921
+            setDeleteConfirmationCode(`DELETE-${Math.floor(1000 + Math.random() * 9000)}`);
+            setDeleteInput('');
+        }
+    }, [deleteModalVisible]);
+
     const handleDeleteAccount = async () => {
+        if (deleteInput !== deleteConfirmationCode) return;
+        
         setIsDeleting(true);
         try {
-            await api.delete('profile', { data: { password: deletePassword } });
+            await api.delete('profile');
             setDeleteModalVisible(false);
             Alert.alert("Account Deleted", "Your account has been deleted permanently.");
             logout();
             router.replace('/login');
         } catch (error: any) {
-            const msg = error.response?.data?.message || 'Failed to delete account. Please check your password.';
+            const msg = error.response?.data?.message || 'Failed to delete account. Please try again.';
             Alert.alert('Error', msg);
         } finally {
             setIsDeleting(false);
@@ -349,32 +360,32 @@ export default function AccountScreen() {
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
                     <View style={{ backgroundColor: C.card, borderRadius: 16, padding: 24 }}>
                         <Text style={{ fontSize: 20, fontWeight: '700', color: C.text, marginBottom: 8 }}>Verify Deletion</Text>
-                        <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 24 }}>
-                            If you used an email/password to sign up, please enter your password to confirm. If you used GoogleIcon or AppleIcon, leave this blank and tap Delete.
+                        <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 16 }}>
+                            This action cannot be undone. To confirm you want to permanently delete your account, type <Text style={{ fontWeight: '800', color: C.text }}>{deleteConfirmationCode}</Text> below.
                         </Text>
                         
                         <View style={{ backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7', borderRadius: 8, paddingHorizontal: 12, marginBottom: 24, paddingVertical: Platform.OS === 'ios' ? 12 : 4 }}>
                             <TextInput
-                                placeholder="Account Password (optional for GoogleIcon/AppleIcon users)"
+                                placeholder={deleteConfirmationCode}
                                 placeholderTextColor={C.textTertiary}
-                                value={deletePassword}
-                                onChangeText={setDeletePassword}
-                                secureTextEntry
-                                style={{ color: C.text, fontSize: 16 }}
+                                value={deleteInput}
+                                onChangeText={setDeleteInput}
+                                autoCapitalize="characters"
+                                style={{ color: C.text, fontSize: 16, fontWeight: '600' }}
                             />
                         </View>
 
                         <View style={{ flexDirection: 'row', gap: 12 }}>
                             <TouchableOpacity 
                                 style={{ flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA', alignItems: 'center' }}
-                                onPress={() => { setDeleteModalVisible(false); setDeletePassword(''); }}
+                                onPress={() => setDeleteModalVisible(false)}
                             >
                                 <Text style={{ color: C.text, fontWeight: '600', fontSize: 16 }}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity 
-                                style={{ flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: C.destructive, alignItems: 'center', opacity: isDeleting ? 0.7 : 1 }}
+                                style={{ flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: C.destructive, alignItems: 'center', opacity: (isDeleting || deleteInput !== deleteConfirmationCode) ? 0.5 : 1 }}
                                 onPress={handleDeleteAccount}
-                                disabled={isDeleting}
+                                disabled={isDeleting || deleteInput !== deleteConfirmationCode}
                             >
                                 <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>{isDeleting ? 'Deleting...' : 'Delete'}</Text>
                             </TouchableOpacity>

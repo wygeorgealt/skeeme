@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kantrol.skeeme",
+      "bundleIdentifier": "com.skeeme.app",
       "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Skeeme uses the camera to scan math questions or flashcard source material for AI solving.",
@@ -20,7 +20,7 @@
       }
     },
     "android": {
-      "package": "com.kantrol.skeeme",
+      "package": "com.skeeme.app",
       "versionCode": 1,
       "permissions": [
         "INTERNET",
