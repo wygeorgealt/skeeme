@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, useColorScheme, StyleSheet } from 'react-native';
-import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
+
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { router, useNavigation } from 'expo-router';
@@ -9,13 +9,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { Tick01Icon, Mortarboard01Icon, BookOpen01Icon, Medal01Icon, Briefcase01Icon } from '@hugeicons/core-free-icons';
 import { Colors } from '@/constants/theme';
 
-const LEVELS: { key: string; label: string; icon: IconSymbolName }[] = [
-    { key: 'high_school', label: 'High School', icon: 'graduationcap.fill' },
-    { key: 'undergraduate', label: 'Undergraduate', icon: 'book.fill' },
-    { key: 'masters', label: 'Masters / Graduate', icon: 'medal.fill' },
-    { key: 'professional', label: 'Professional', icon: 'briefcase.fill' },
+const LEVELS: { key: string; label: string; icon: any }[] = [
+    { key: 'high_school', label: 'High School', icon: Mortarboard01Icon },
+    { key: 'undergraduate', label: 'Undergraduate', icon: BookOpen01Icon },
+    { key: 'masters', label: 'Masters / Graduate', icon: Medal01Icon },
+    { key: 'professional', label: 'Professional', icon: Briefcase01Icon },
 ];
 
 const STYLES = [
@@ -58,7 +61,11 @@ export default function PreferencesScreen() {
 
             const res = await api.post('preferences', payload);
             updateUser({ ai_preferences: res.data.ai_preferences });
-            Alert.alert('Saved!', 'Your AI will now adapt to your preferences.');
+            Alert.alert(
+                'Saved!', 
+                'Your AI will now adapt to your preferences.',
+                [{ text: 'OK', onPress: () => router.replace('/') }]
+            );
         } catch (e: any) {
             Alert.alert('Error', e.response?.data?.message || 'Failed to save preferences.');
         } finally {
@@ -88,7 +95,7 @@ export default function PreferencesScreen() {
                         >
                             {item.icon && (
                                 <View style={[s.iconBoxRow, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
-                                    <IconSymbol name={item.icon} size={20} color="#007AFF" />
+                                    <HugeiconsIcon icon={item.icon} size={20} color="#007AFF" />
                                 </View>
                             )}
                             <View style={s.cardContent}>
@@ -101,7 +108,7 @@ export default function PreferencesScreen() {
                             </View>
                             {isSelected && (
                                 <View style={s.checkCircleFilled}>
-                                    <IconSymbol name="checkmark" size={24} color="#007AFF" />
+                                    <HugeiconsIcon icon={Tick01Icon} size={24} color="#007AFF" />
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -166,7 +173,7 @@ export default function PreferencesScreen() {
                                         <Text style={[s.cardTitle, { color: C.text }]}>{item.label}</Text>
                                         <Text style={[s.cardDesc, { color: '#8E8E93' }]}>{item.desc}</Text>
                                     </View>
-                                    {isSelected && <IconSymbol name="checkmark" size={24} color="#007AFF" />}
+                                    {isSelected && <HugeiconsIcon icon={Tick01Icon} size={24} color="#007AFF" />}
                                 </TouchableOpacity>
                             );
                         })}

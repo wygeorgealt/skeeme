@@ -9,7 +9,9 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CloudCog, CloudOff } from 'lucide-react-native';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { CloudOffIcon, CloudIcon } from '@hugeicons/core-free-icons';
+
 
 export function NetworkStatus() {
     const [isConnected, setIsConnected] = useState<boolean | null>(true);
@@ -60,10 +62,11 @@ export function NetworkStatus() {
         <Animated.View style={[styles.container, animatedStyle, { paddingHorizontal: 16 }]}>
             <View style={styles.content}>
                 {isConnected ? (
-                    <CloudCog width={18} height={18} color="white" />
+                    <HugeiconsIcon icon={CloudIcon} size={18} color="white" />
                 ) : (
-                    <CloudOff width={18} height={18} color="white" />
+                    <HugeiconsIcon icon={CloudOffIcon} size={18} color="white" />
                 )}
+
                 <Text style={styles.text}>
                     {isConnected ? "Back Online" : "No Internet Connection"}
                 </Text>

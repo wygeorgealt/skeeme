@@ -8,7 +8,6 @@ import { useAuthStore } from '@/store/authStore';
 import { QueryProvider } from '@/components/QueryProvider';
 import { View, useColorScheme as useNativeColorScheme, LogBox, TouchableOpacity, TextStyle, Platform } from 'react-native';
 import { cssInterop, useColorScheme as useTailwindColorScheme } from 'nativewind';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import AnimatedSplash from '@/components/AnimatedSplash';
 import Animated, { FadeOut } from 'react-native-reanimated';
 import { NetworkStatus } from '@/components/NetworkStatus';
@@ -18,7 +17,12 @@ import { useFonts } from 'expo-font';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '@/lib/posthog';
 import * as SystemUI from 'expo-system-ui';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { Alert01Icon, RefreshIcon } from '@hugeicons/core-free-icons';
 import { initializeRevenueCat } from '@/lib/revenuecat';
+import RevenueCatUI from 'react-native-purchases-ui';
+
 
 
 
@@ -79,18 +83,24 @@ export default function RootLayout() {
 
     if (user) {
       if (!onboardingComplete) {
-        // New user has signed in/up, but hasn't completed personalization.
-        // Keep them in the onboarding directory.
         if (currentSegment !== '(onboarding)') {
           router.replace('/(onboarding)/education');
         }
       } else {
-        // Pre-existing user completed everything. Send home if on public routes.
-        if (isPublicRoute || !currentSegment) {
-          router.replace('/(drawer)');
+        // Hard Paywall Enforcement: If onboarding is complete but user is still on 'free' plan
+        if (user.plan_name === 'free') {
+           if (currentSegment !== 'paywall') {
+              router.replace('/paywall');
+           }
+        } else {
+           if (isPublicRoute || !currentSegment || currentSegment === 'paywall') {
+             router.replace('/(drawer)');
+           }
         }
       }
     } else {
+
+
       // Not logged in — always start at auth-select
       if (!isPublicRoute) {
         router.replace('/(onboarding)/auth-select');
@@ -163,7 +173,8 @@ export default function RootLayout() {
             <Stack.Screen name="otp" options={{ headerShown: false, animation: 'slide_from_right' }} />
             <Stack.Screen name="new-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
             <Stack.Screen name="(drawer)" options={{ headerShown: false, animation: 'fade', headerTransparent: true }} />
-            <Stack.Screen name="upgrade" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', headerShown: false }} />
+            <Stack.Screen name="paywall" options={{ headerShown: false, animation: 'fade' }} />
+
             <Stack.Screen name="+not-found" />
           </Stack>
 
@@ -213,7 +224,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: isDark ? '#0f0f11' : '#fafafa' }}>
-      <IconSymbol name="exclamationmark.triangle.fill" size={48} color="#ef4444" />
+      <HugeiconsIcon icon={Alert01Icon} size={48} color="#ef4444" />
       <Text style={{ fontSize: 20, fontWeight: '900', color: isDark ? 'white' : '#0f172a', marginTop: 20, marginBottom: 8, textAlign: 'center' }}>
         Something went wrong.
       </Text>
@@ -224,7 +235,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         onPress={retry}
         style={{ backgroundColor: isDark ? 'white' : '#0f172a', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', width: '100%', justifyContent: 'center' }}
       >
-        <IconSymbol name="arrow.clockwise" size={18} color={isDark ? '#0f172a' : 'white'} />
+        <HugeiconsIcon icon={RefreshIcon} size={18} color={isDark ? '#0f172a' : 'white'} />
         <Text style={{ color: isDark ? '#0f172a' : 'white', fontWeight: 'bold', marginLeft: 8 }}>Try Again</Text>
       </TouchableOpacity>
 

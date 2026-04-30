@@ -2,7 +2,9 @@ import { Text } from '@/components/ui/Text';
 import React from 'react';
 import { Modal, View, TouchableOpacity, StyleSheet, Dimensions, useColorScheme } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Trophy } from 'lucide-react-native';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { Award01Icon } from '@hugeicons/core-free-icons';
+
 import Animated, { FadeInUp, ZoomIn, FadeOutDown } from 'react-native-reanimated';
 
 interface RewardModalProps {
@@ -43,7 +45,8 @@ export const RewardModal: React.FC<RewardModalProps> = ({ isVisible, onClose, re
                 >
                     <Animated.View entering={ZoomIn.delay(300).springify()} style={styles.iconContainer}>
                         <View style={styles.iconCircle}>
-                            <Trophy width={50} height={50} color="#FFD700" />
+                            <HugeiconsIcon icon={Award01Icon} size={50} color="#FFD700" />
+
                         </View>
                     </Animated.View>
 

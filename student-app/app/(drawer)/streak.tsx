@@ -1,13 +1,17 @@
 import { Text } from '@/components/ui/Text';
 import { View, ScrollView, TouchableOpacity, useColorScheme, ActivityIndicator, Platform, StyleSheet } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useState, useEffect, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sharing from 'expo-sharing';
 import { ShareCard } from '@/components/ui/ShareCard';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { ArrowLeft01Icon, SparklesIcon, SnowIcon } from '@hugeicons/core-free-icons';
+import RevenueCatUI from 'react-native-purchases-ui';
+
 import { Colors } from '@/constants/theme';
 
 export default function StreakScreen() {
@@ -45,7 +49,8 @@ export default function StreakScreen() {
         { title: '60 Day Streak', target: 60, reward: '500 Credits' },
     ];
 
-    const isElite = user?.plan_name === 'elite';
+    const hasProtection = user?.plan_name === 'elite' || user?.plan_name === 'standard' || user?.is_unlimited;
+
     const [freezes, setFreezes] = useState({ total_allowed: 2, used_this_month: 0 });
     const [loadingFreezes, setLoadingFreezes] = useState(true);
 
@@ -77,7 +82,7 @@ export default function StreakScreen() {
 
             <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
-                    <IconSymbol name="chevron.left" size={24} color={isDark ? 'white' : '#1e293b'} />
+                    <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Streak</Text>
                 <View style={{ width: 44 }} />
@@ -109,47 +114,57 @@ export default function StreakScreen() {
                         activeOpacity={0.8}
                         style={[s.shareBtn, isDark ? s.bgWhite10 : s.bgWhite]}
                     >
-                        <IconSymbol name="sparkles" size={18} color={C.primary} style={{ marginRight: 8 }} />
+                        <HugeiconsIcon icon={SparklesIcon} size={18} color={C.primary} style={{ marginRight: 8 }} />
                         <Text style={[s.shareBtnText, { color: C.primary }]}>Share Milestone</Text>
                     </TouchableOpacity>
                 )}
 
                 {/* Freezes */}
                 <Text style={[s.sectionLabel, isDark ? s.textSlate500 : s.textSlate400]}>Streak Protection</Text>
-                <View style={[
-                    s.protectionCard,
-                    isElite ? (isDark ? s.protectionEliteDark : s.protectionEliteLight) : (isDark ? s.protectionBasicDark : s.protectionBasicLight)
-                ]}>
-                    <View style={s.protectionHeader}>
-                        <View style={[s.protectionIconBox, isDark ? s.protectionIconBoxDark : s.protectionIconBoxLight]}>
-                            <IconSymbol name="snowflake" size={18} color={C.primary} />
+                    <View style={[
+                        s.protectionCard,
+                        hasProtection ? (isDark ? s.protectionMaxDark : s.protectionMaxLight) : (isDark ? s.protectionBasicDark : s.protectionBasicLight)
+
+                    ]}>
+                        <View style={s.protectionHeader}>
+                            <View style={[s.protectionIconBox, isDark ? s.protectionIconBoxDark : s.protectionIconBoxLight]}>
+                                <HugeiconsIcon icon={SnowIcon} size={18} color={C.primary} />
+                            </View>
+                            {!hasProtection ? (
+                                <View style={[s.badge, isDark ? s.badgeDark : s.badgeLight]}>
+                                    <Text style={[s.badgeText, isDark ? s.textSlate950 : s.textWhite]}>Pro/Max Feature</Text>
+
+                                </View>
+                            ) : loadingFreezes ? (
+                                <ActivityIndicator size="small" color={C.primary} />
+                            ) : (
+                                <View style={s.freezeAvailableBadge}>
+                                    <Text style={s.freezeAvailableText}>{freezesLeft} Available</Text>
+                                </View>
+                            )}
                         </View>
-                        {!isElite ? (
-                            <View style={[s.badge, isDark ? s.badgeDark : s.badgeLight]}>
-                                <Text style={[s.badgeText, isDark ? s.textSlate950 : s.textWhite]}>Elite Feature</Text>
-                            </View>
-                        ) : loadingFreezes ? (
-                            <ActivityIndicator size="small" color={C.primary} />
-                        ) : (
-                            <View style={s.freezeAvailableBadge}>
-                                <Text style={s.freezeAvailableText}>{freezesLeft} Available</Text>
-                            </View>
-                        )}
-                    </View>
+
                     <Text style={[s.protectionTitle, isDark ? s.textWhite : s.textSlate900]}>Peace of mind.</Text>
                     <Text style={s.protectionDesc}>
                         Streak freezes automatically protect your progress if you ever miss a day. 
                     </Text>
                     
-                    {!isElite && (
+                    {!hasProtection && (
                         <TouchableOpacity 
-                            onPress={() => router.push('/upgrade' as any)} 
+                            onPress={async () => {
+                                try {
+                                    await RevenueCatUI.presentPaywall();
+                                    await useAuthStore.getState().checkAuth();
+                                } catch (e) {}
+                            }} 
                             style={[s.upgradeBtn, { backgroundColor: C.primary }]} 
                             activeOpacity={0.9}
                         >
                             <Text style={s.upgradeBtnText}>Get Streak Protection</Text>
                         </TouchableOpacity>
+
                     )}
+
                 </View>
 
                 {/* Milestones */}
@@ -216,8 +231,9 @@ const s = StyleSheet.create({
     textIndigo600: { color: '#4F46E5' },
 
     protectionCard: { padding: 24, borderRadius: 24, borderWidth: 1, marginBottom: 32 },
-    protectionEliteDark: { backgroundColor: 'rgba(0,122,255,0.1)', borderColor: 'rgba(0,122,255,0.2)' },
-    protectionEliteLight: { backgroundColor: 'rgba(0,122,255,0.05)', borderColor: 'rgba(0,122,255,0.1)' },
+    protectionMaxDark: { backgroundColor: 'rgba(0,122,255,0.1)', borderColor: 'rgba(0,122,255,0.2)' },
+    protectionMaxLight: { backgroundColor: 'rgba(0,122,255,0.05)', borderColor: 'rgba(0,122,255,0.1)' },
+
     protectionBasicDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' },
     protectionBasicLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
     protectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },

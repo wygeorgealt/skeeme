@@ -3,12 +3,16 @@ import { View, ScrollView, TouchableOpacity, RefreshControl, Alert, useColorSche
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Stack, router } from 'expo-router';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useCallback, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useAuthStore } from '@/store/authStore';
 import * as FileSystem from 'expo-file-system/legacy';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { Alert01Icon, RefreshIcon, CircleArrowUp02Icon, DocumentCodeIcon, Download01Icon } from '@hugeicons/core-free-icons';
+import RevenueCatUI from 'react-native-purchases-ui';
 import * as Sharing from 'expo-sharing';
+
 
 interface Invoice {
     id: number;
@@ -107,7 +111,7 @@ export default function BillingHistoryScreen() {
             ) : error ? (
                 <View style={s.errorContainer}>
                     <View style={[s.errorIconBox, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
-                        <IconSymbol name="exclamationmark.triangle.fill" size={40} color="#ef4444" />
+                        <HugeiconsIcon icon={Alert01Icon} size={40} color="#ef4444" />
                     </View>
                     <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Unable to load</Text>
                     <Text style={s.errorSubtitle}>
@@ -117,7 +121,7 @@ export default function BillingHistoryScreen() {
                         onPress={() => refetch()}
                         style={s.retryBtn}
                     >
-                        <IconSymbol name="arrow.clockwise" size={18} color="white" />
+                        <HugeiconsIcon icon={RefreshIcon} size={18} color="white" />
                         <Text style={s.retryBtnText}>Try Again</Text>
                     </TouchableOpacity>
                 </View>
@@ -141,21 +145,29 @@ export default function BillingHistoryScreen() {
                     <View style={[s.planCard, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
                         <View style={s.planHeaderRow}>
                             <View style={[s.planIconBox, user?.is_unlimited ? s.bgBrandSoft : (isDark ? s.bgSlate800 : s.bgSlate100)]}>
-                                <IconSymbol name="sparkles" size={18} color={user?.is_unlimited ? "#8B5CF6" : "#94a3b8"} />
+                                <HugeiconsIcon icon={CircleArrowUp02Icon} size={18} color={user?.plan_name !== 'free' ? "#8B5CF6" : "#94a3b8"} />
+
                             </View>
                             <TouchableOpacity
-                                onPress={() => router.push('/upgrade')}
+                                onPress={async () => {
+                                    try {
+                                        await RevenueCatUI.presentPaywall();
+                                        await useAuthStore.getState().checkAuth();
+                                    } catch (e) {}
+                                }}
                                 style={[s.planBadge, isDark ? s.bgWhite : s.bgSlate950]}
                             >
                                 <Text style={[s.planBadgeText, isDark ? s.textSlate900 : s.textWhite]}>Plans</Text>
                             </TouchableOpacity>
+
                         </View>
                         <Text style={[s.planTitle, isDark ? s.textWhite : s.textSlate900]}>
-                            {user?.plan_name === 'elite' || user?.is_unlimited ? 'Skeeme Elite' : (user?.plan_name === 'standard' ? 'Skeeme Standard' : 'Skeeme Free')}
+                            {user?.plan_name === 'elite' ? 'Skeeme Max' : (user?.plan_name === 'standard' ? 'Skeeme Pro' : 'Skeeme Free')}
                         </Text>
                         <Text style={s.planSubtitle}>
-                            {user?.is_unlimited ? 'Fully unlocked learning companion' : `${user?.credits ?? 0} Credits remaining`}
+                            {`${user?.credits ?? 0} Credits remaining`}
                         </Text>
+
                     </View>
 
                     <Text style={s.sectionLabel}>Payment History</Text>
@@ -163,7 +175,7 @@ export default function BillingHistoryScreen() {
                     {data?.data?.length === 0 ? (
                         <View style={[s.emptyContainer, isDark ? s.bgDarkCardSoft : s.bgWhite, !isDark && s.borderSlate100]}>
                             <View style={[s.emptyIconBox, isDark ? s.bgSlate800 : s.bgSlate50]}>
-                                <IconSymbol name="doc.text.fill" size={32} color={isDark ? '#cbd5e1' : '#64748b'} />
+                                <HugeiconsIcon icon={DocumentCodeIcon} size={32} color={isDark ? '#cbd5e1' : '#64748b'} />
                             </View>
                             <Text style={[s.emptyTitle, isDark ? s.textWhite : s.textSlate900]}>No Invoices</Text>
                             <Text style={s.emptySubtitle}>
@@ -195,7 +207,7 @@ export default function BillingHistoryScreen() {
                                     activeOpacity={0.7}
                                     style={[s.downloadBtn, isDark ? s.bgDarkCardSoft : s.bgSlate50, !isDark && s.borderSlate200]}
                                 >
-                                    <IconSymbol name="square.and.arrow.down.fill" size={18} color={isDark ? 'white' : '#121212'} />
+                                    <HugeiconsIcon icon={Download01Icon} size={18} color={isDark ? 'white' : '#121212'} />
                                 </TouchableOpacity>
                             </View>
                         ))

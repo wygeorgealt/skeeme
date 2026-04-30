@@ -3,11 +3,14 @@ import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Acti
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius } from '@/constants/theme';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { ArrowLeft01Icon, CancelCircleIcon, Image01Icon, MailUpload02Icon } from '@hugeicons/core-free-icons';
+
 import { Text } from '@/components/ui/Text';
 
 export default function SupportScreen() {
@@ -95,7 +98,7 @@ export default function SupportScreen() {
                     activeOpacity={0.7}
                     style={[s.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}
                 >
-                    <IconSymbol name="chevron.left" size={24} color={C.text} />
+                    <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={C.text} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Support</Text>
                 <View style={{ width: 44 }} />
@@ -146,7 +149,7 @@ export default function SupportScreen() {
                                 activeOpacity={0.7}
                                 style={s.removeScreenshotBtn}
                             >
-                                <IconSymbol name="xmark.circle.fill" size={24} color="#ef4444" />
+                                <HugeiconsIcon icon={CancelCircleIcon} size={24} color="#ef4444" />
                             </TouchableOpacity>
                         </View>
                     ) : (
@@ -158,7 +161,7 @@ export default function SupportScreen() {
                                 { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', borderColor: C.separator }
                             ]}
                         >
-                            <IconSymbol name="photo.on.rectangle" size={22} color={isDark ? '#6b7280' : '#94a3b8'} />
+                            <HugeiconsIcon icon={Image01Icon} size={22} color={isDark ? '#6b7280' : '#94a3b8'} />
                             <Text style={[s.attachBtnText, { color: isDark ? '#9ca3af' : '#64748b' }]}>
                                 Add a screenshot
                             </Text>
@@ -175,7 +178,8 @@ export default function SupportScreen() {
                             <ActivityIndicator color="white" />
                         ) : (
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <IconSymbol name="envelope.fill" size={18} color="white" />
+                                <HugeiconsIcon icon={MailUpload02Icon} size={18} color="white" />
+
                                 <View style={{ width: 10 }} />
                                 <Text style={s.submitBtnText}>Send Message</Text>
                             </View>

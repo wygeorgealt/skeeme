@@ -1,4 +1,3 @@
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Text } from '@/components/ui/Text';
 import { View, ScrollView, RefreshControl, useColorScheme, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
@@ -7,16 +6,23 @@ import { api } from '@/lib/api';
 import { useCallback, useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TutorialModal } from '@/components/ui/TutorialModal';
 import * as SecureStore from 'expo-secure-store';
+
 import { IosCard } from '@/components/ui/IosCard';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { FireIcon, CircleArrowUp02Icon, Coins01Icon, TimeQuarter02Icon, Activity01Icon, ArrowRight01Icon, Medal01Icon, BookOpen01Icon, Copy01Icon, Clock01Icon } from '@hugeicons/core-free-icons';
+import RevenueCatUI from 'react-native-purchases-ui';
+
+
+
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 
 const QUICK_ACTIONS = [
-    { label: 'Quiz', icon: 'book.fill', route: '/generate', color: '#007AFF' },
-    { label: 'Flashcards', icon: 'doc.on.doc.fill', route: '/flashcards', color: '#34C759' },
-    { label: 'History', icon: 'clock.fill', route: '/history', color: '#FF9500' },
-    { label: 'Streak', icon: 'flame.fill', route: '/streak', color: '#FF3B30' },
+    { label: 'Quiz', icon: BookOpen01Icon, route: '/generate', color: '#007AFF' },
+    { label: 'Flashcards', icon: Copy01Icon, route: '/flashcards', color: '#34C759' },
+    { label: 'History', icon: Clock01Icon, route: '/history', color: '#FF9500' },
+    { label: 'Streak', icon: FireIcon, route: '/streak', color: '#FF3B30' },
 ] as const;
 
 // ─── 7-Day Streak Calendar ───────────────────────────────────────────────────
@@ -48,7 +54,7 @@ function StreakCalendar({ data, isDark }: { data: any[]; isDark: boolean }) {
                             borderColor: !active && isToday ? C.primary : 'transparent'
                         }}>
                             {active ? (
-                                <IconSymbol name="flame.fill" size={16} color="#FFF" />
+                                <HugeiconsIcon icon={FireIcon} size={16} color="#FFF" />
                             ) : (
                                 <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: C.textTertiary }} />
                             )}
@@ -64,18 +70,13 @@ function StreakCalendar({ data, isDark }: { data: any[]; isDark: boolean }) {
 export default function DashboardScreen() {
     const { user, updateUser } = useAuthStore();
     const [refreshing, setRefreshing] = useState(false);
-    const [tutorialVisible, setTutorialVisible] = useState(false);
+
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
     const queryClient = useQueryClient();
 
-    useEffect(() => {
-        SecureStore.getItemAsync('tutorial_seen').then((seen) => {
-            if (!seen) setTutorialVisible(true);
-        });
-    }, []);
 
     const { data: heatmapDates = [], isLoading: isLoadingHeatmap } = useQuery({
         queryKey: ['streak-heatmap'],
@@ -140,10 +141,17 @@ export default function DashboardScreen() {
                         <View style={s.heroActions}>
                             {user.plan_name?.toLowerCase() !== 'elite' && (
                                 <TouchableOpacity 
-                                    onPress={() => router.push('/upgrade')}
+                                    onPress={async () => {
+                                        try {
+                                            await RevenueCatUI.presentPaywall();
+                                            await useAuthStore.getState().checkAuth();
+                                        } catch (e) {}
+                                    }}
                                     style={[s.upgradePill, { backgroundColor: C.primary }]}
+
                                 >
-                                    <IconSymbol name="sparkles" size={14} color="#FFF" />
+                                    <HugeiconsIcon icon={CircleArrowUp02Icon} size={14} color="#FFF" />
+
                                     <Text style={s.upgradeText}>Upgrade</Text>
                                 </TouchableOpacity>
                             )}
@@ -162,7 +170,7 @@ export default function DashboardScreen() {
                                 >
                                     <View style={[s.quickIcon, { backgroundColor: action.color + '12' }]}>
                                         <View style={[styles.innerCircle, { backgroundColor: action.color + '10' }]}>
-                                            <IconSymbol name={action.icon as any} size={24} color={action.color} />
+                                            <HugeiconsIcon icon={action.icon} size={24} color={action.color} />
                                         </View>
                                     </View>
                                     <Text style={[s.quickLabel, { color: C.textSecondary }]}>{action.label}</Text>
@@ -176,15 +184,17 @@ export default function DashboardScreen() {
                 <View style={s.statsRow}>
                     <IosCard style={{ flex: 1 }} padding="md">
                         <View style={[s.statIconBox, { backgroundColor: '#FFD60A15' }]}>
-                            <IconSymbol name="bolt.fill" size={16} color="#FFD60A" />
+                            <HugeiconsIcon icon={Coins01Icon} size={16} color="#FFD60A" />
                         </View>
                         <Text style={[s.statNum, { color: C.text }]}>{user.credits_spent_this_week ?? 0}</Text>
                         <Text style={[s.statDesc, { color: C.textSecondary }]}>Credits Spent</Text>
                     </IosCard>
+
                     <IosCard style={{ flex: 1 }} padding="md">
                         <View style={[s.statIconBox, { backgroundColor: '#007AFF15' }]}>
-                            <IconSymbol name="graduationcap.fill" size={16} color="#007AFF" />
+                            <HugeiconsIcon icon={TimeQuarter02Icon} size={16} color="#007AFF" />
                         </View>
+
                         <Text style={[s.statNum, { color: C.text }]}>{user.study_sessions_this_week ?? 0}</Text>
                         <Text style={[s.statDesc, { color: C.textSecondary }]}>Study Sessions</Text>
                     </IosCard>
@@ -197,7 +207,7 @@ export default function DashboardScreen() {
                             <Text style={[s.activityTitle, { color: C.text }]}>Weekly Activity</Text>
                             <Text style={[s.activitySub, { color: C.textSecondary }]}>Your study momentum</Text>
                         </View>
-                        <IconSymbol name="activity" color={C.primary} size={20} />
+                        <HugeiconsIcon icon={Activity01Icon} color={C.primary} size={20} />
                     </View>
                     <View style={{ height: 10 }} />
                     <StreakCalendar data={
@@ -225,37 +235,30 @@ export default function DashboardScreen() {
                 <IosCard padding="none" style={{ marginBottom: Spacing.lg }}>
                     <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.7}>
                         <View style={[s.streakIcon, { backgroundColor: '#FF3B3015' }]}>
-                            <IconSymbol name="flame.fill" size={18} color="#FF3B30" />
+                            <HugeiconsIcon icon={FireIcon} size={18} color="#FF3B30" />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={[s.streakTitle, { color: C.text }]}>Current Streak</Text>
                             <Text style={[s.streakSub, { color: C.textSecondary }]}>Keep the fire alive</Text>
                         </View>
                         <Text style={[s.streakCount, { color: C.text }]}>{user.streak?.current_streak ?? 0}</Text>
-                        <IconSymbol name="chevron.right" size={18} color={C.textTertiary} style={{ marginLeft: 4 }} />
+                        <HugeiconsIcon icon={ArrowRight01Icon} size={18} color={C.textTertiary} style={{ marginLeft: 4 }} />
                     </TouchableOpacity>
                     <View style={[s.divider, { backgroundColor: C.separator }]} />
                     <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.7}>
                         <View style={[s.streakIcon, { backgroundColor: '#FF950015' }]}>
-                            <IconSymbol name="trophy.fill" size={18} color="#FF9500" />
+                            <HugeiconsIcon icon={Medal01Icon} size={18} color="#FF9500" />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={[s.streakTitle, { color: C.text }]}>Longest Streak</Text>
                             <Text style={[s.streakSub, { color: C.textSecondary }]}>Your personal best</Text>
                         </View>
                         <Text style={[s.streakCount, { color: C.text }]}>{user.streak?.longest_streak ?? 0}</Text>
-                        <IconSymbol name="chevron.right" size={18} color={C.textTertiary} style={{ marginLeft: 4 }} />
+                        <HugeiconsIcon icon={ArrowRight01Icon} size={18} color={C.textTertiary} style={{ marginLeft: 4 }} />
                     </TouchableOpacity>
                 </IosCard>
             </ScrollView>
 
-            <TutorialModal
-                visible={tutorialVisible}
-                onDismiss={async () => {
-                    setTutorialVisible(false);
-                    await SecureStore.setItemAsync('tutorial_seen', 'true');
-                }}
-            />
         </View>
     );
 }

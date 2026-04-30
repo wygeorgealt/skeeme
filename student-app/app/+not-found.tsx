@@ -1,7 +1,8 @@
 import { Text } from '@/components/ui/Text';
 import { View, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Compass, Home } from 'lucide-react-native';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { CompassIcon, Home01Icon } from '@hugeicons/core-free-icons';
 
 export default function NotFoundScreen() {
     return (
@@ -9,7 +10,7 @@ export default function NotFoundScreen() {
             <Stack.Screen options={{ title: 'Not Found', headerShown: false }} />
 
             <View style={s.iconBox}>
-                <Compass width={40} height={40} color="#6366f1" />
+                <HugeiconsIcon icon={CompassIcon} size={40} color="#6366f1" />
             </View>
 
             <Text style={s.title}>404</Text>
@@ -22,7 +23,7 @@ export default function NotFoundScreen() {
                 style={s.button}
                 activeOpacity={0.8}
             >
-                <Home width={18} height={18} color="white" />
+                <HugeiconsIcon icon={Home01Icon} size={18} color="white" />
                 <Text style={s.buttonText}>Go Home</Text>
             </TouchableOpacity>
         </View>

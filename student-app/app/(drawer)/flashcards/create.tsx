@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Platform } from 'react-native';
-import { FileText, Upload, Sparkles, ChevronLeft, Leaf, Lightbulb, Rocket, CircleCheck } from 'lucide-react-native';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { DocumentCodeIcon, Upload01Icon, SparklesIcon, ArrowLeft01Icon, Leaf01Icon, IdeaIcon, Rocket01Icon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
@@ -211,13 +212,13 @@ export default function GenerateFlashcardScreen() {
                             </View>
                         ) : selectedFile ? (
                             <>
-                                <FileText width={32} height={32} color="#007AFF" style={{ marginBottom: 12 }} />
+                                <HugeiconsIcon icon={DocumentCodeIcon} size={32} color="#007AFF" style={{ marginBottom: 12 }} />
                                 <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
                                 <Text style={[s.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
                             </>
                         ) : (
                             <>
-                                <Upload width={32} height={32} color="#8E8E93" style={{ marginBottom: 12 }} />
+                                <HugeiconsIcon icon={Upload01Icon} size={32} color="#8E8E93" style={{ marginBottom: 12 }} />
                                 <Text style={[s.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
                                 <Text style={[s.uploadSub, { color: '#8E8E93' }]}>Maximum 5MB</Text>
                             </>
@@ -250,9 +251,9 @@ export default function GenerateFlashcardScreen() {
                 <Text style={s.sectionTitle}>DIFFICULTY</Text>
                 <View style={{ gap: 12, marginBottom: 24 }}>
                     {[
-                        { key: 'easy', label: 'Easy', icon: Leaf, desc: 'Focus on fundamentals' },
-                        { key: 'medium', label: 'Medium', icon: Lightbulb, desc: 'Comprehensive coverage' },
-                        { key: 'hard', label: 'Hard', icon: Rocket, desc: 'Deep analytical questions' },
+                        { key: 'easy', label: 'Easy', icon: Leaf01Icon, desc: 'Focus on fundamentals' },
+                        { key: 'medium', label: 'Medium', icon: IdeaIcon, desc: 'Comprehensive coverage' },
+                        { key: 'hard', label: 'Hard', icon: Rocket01Icon, desc: 'Deep analytical questions' },
                     ].map(opt => {
                         const isSelected = difficulty === opt.key;
                         const Icon = opt.icon;
@@ -264,13 +265,13 @@ export default function GenerateFlashcardScreen() {
                                 style={[s.card, s.optionCard, { backgroundColor: C.card, borderColor: isSelected ? '#007AFF' : 'transparent', borderWidth: 2 }]}
                             >
                                 <View style={[s.iconBoxRow, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
-                                    <Icon width={18} height={18} color="#007AFF" />
+                                    <HugeiconsIcon icon={Icon} size={18} color="#007AFF" />
                                 </View>
                                 <View style={{ flex: 1, marginLeft: 16 }}>
                                     <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
                                     <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
                                 </View>
-                                {isSelected && <CircleCheck width={22} height={22} color="#007AFF" />}
+                                {isSelected && <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#007AFF" />}
                             </TouchableOpacity>
                         );
                     })}

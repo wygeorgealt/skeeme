@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, Animated, StyleSheet, Modal, Platform } from 'react-native';
-import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
+
 import { useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -21,21 +21,24 @@ import { MCQCard } from '@/components/quiz/MCQCard';
 import { TheoryCard } from '@/components/quiz/TheoryCard';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { DocumentCodeIcon, Upload01Icon, CheckmarkCircle01Icon, Cancel01Icon, IdeaIcon, Timer01Icon, Tick01Icon, ArrowRight01Icon, Share01Icon, Leaf01Icon, FireIcon, ListViewIcon, UserGroupIcon, Medal01Icon, InformationCircleIcon, Alert01Icon } from '@hugeicons/core-free-icons';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & OPTIONS
 // ══════════════════════════════════════════════════════════════════════════════
 const DIFFICULTY_OPTIONS = [
-    { key: 'easy', label: 'Easy', icon: 'leaf.fill' as IconSymbolName, desc: 'Focus on fundamentals' },
-    { key: 'medium', label: 'Medium', icon: 'lightbulb.fill' as IconSymbolName, desc: 'Comprehensive coverage' },
-    { key: 'hard', label: 'Hard', icon: 'flame.fill' as IconSymbolName, desc: 'Deep analytical questions' },
+    { key: 'easy', label: 'Easy', icon: Leaf01Icon, desc: 'Focus on fundamentals' },
+    { key: 'medium', label: 'Medium', icon: IdeaIcon, desc: 'Comprehensive coverage' },
+    { key: 'hard', label: 'Hard', icon: FireIcon, desc: 'Deep analytical questions' },
 ];
 
 const FORMAT_OPTIONS = [
-    { key: 'mcq', label: 'MCQ', icon: 'list.bullet' as IconSymbolName, desc: 'Multiple choice questions' },
-    { key: 'theory', label: 'Theory', icon: 'doc.text.fill' as IconSymbolName, desc: 'Essay & analysis' },
-    { key: 'both', label: 'Mixed', icon: 'person.2.fill' as IconSymbolName, desc: 'Combination of both' },
+    { key: 'mcq', label: 'MCQ', icon: ListViewIcon, desc: 'Multiple choice questions' },
+    { key: 'theory', label: 'Theory', icon: DocumentCodeIcon, desc: 'Essay & analysis' },
+    { key: 'both', label: 'Mixed', icon: UserGroupIcon, desc: 'Combination of both' },
 ];
 
 const LOADING_STAGES_FILE = ['Analyzing Document...', 'Extracting Context...', 'Generating Questions...', 'Finalizing Quiz...', 'Almost Ready...'];
@@ -427,13 +430,13 @@ export default function GenerateQuizScreen() {
                                 </View>
                             ) : selectedFile ? (
                                 <>
-                                    <IconSymbol name="doc.text.fill" size={32} color="#007AFF" style={{ marginBottom: 12 }} />
+                                    <HugeiconsIcon icon={DocumentCodeIcon} size={32} color="#007AFF" style={{ marginBottom: 12 }} />
                                     <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
                                     <Text style={[s.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
                                 </>
                             ) : (
                                 <>
-                                    <IconSymbol name="square.and.arrow.up.on.square.fill" size={32} color="#8E8E93" style={{ marginBottom: 12 }} />
+                                    <HugeiconsIcon icon={Upload01Icon} size={32} color="#8E8E93" style={{ marginBottom: 12 }} />
                                     <Text style={[s.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
                                     <Text style={[s.uploadSub, { color: '#8E8E93' }]}>Maximum 5MB</Text>
                                 </>
@@ -475,13 +478,13 @@ export default function GenerateQuizScreen() {
                                     style={[s.card, s.optionCard, { backgroundColor: C.card, borderColor: isSelected ? '#007AFF' : 'transparent', borderWidth: 2 }]}
                                 >
                                     <View style={[s.iconBoxRow, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
-                                        <IconSymbol name={opt.icon} size={18} color="#007AFF" />
+                                        <HugeiconsIcon icon={opt.icon} size={18} color="#007AFF" />
                                     </View>
                                     <View style={{ flex: 1, marginLeft: 16 }}>
                                         <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
                                         <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
                                     </View>
-                                    {isSelected && <IconSymbol name="checkmark.circle.fill" size={22} color="#007AFF" />}
+                                    {isSelected && <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#007AFF" />}
                                 </TouchableOpacity>
                             );
                         })}
@@ -500,13 +503,13 @@ export default function GenerateQuizScreen() {
                                     style={[s.card, s.optionCard, { backgroundColor: C.card, borderColor: isSelected ? '#007AFF' : 'transparent', borderWidth: 2 }]}
                                 >
                                     <View style={[s.iconBoxRow, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
-                                        <IconSymbol name={opt.icon} size={18} color="#007AFF" />
+                                        <HugeiconsIcon icon={opt.icon} size={18} color="#007AFF" />
                                     </View>
                                     <View style={{ flex: 1, marginLeft: 16 }}>
                                         <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
                                         <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
                                     </View>
-                                    {isSelected && <IconSymbol name="checkmark.circle.fill" size={22} color="#007AFF" />}
+                                    {isSelected && <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#007AFF" />}
                                 </TouchableOpacity>
                             );
                         })}
@@ -618,13 +621,13 @@ export default function GenerateQuizScreen() {
                                         textColor = '#34C759';
                                         letterBg = 'rgba(52,199,89,0.1)';
                                         letterColor = '#34C759';
-                                        icon = <IconSymbol name="checkmark.circle.fill" size={20} color="#34C759" />;
+                                        icon = <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} color="#34C759" />;
                                     } else if (isSelected && !isCorrectOpt) {
                                         borderColor = '#FF3B30';
                                         textColor = '#FF3B30';
                                         letterBg = 'rgba(255,59,48,0.1)';
                                         letterColor = '#FF3B30';
-                                        icon = <IconSymbol name="xmark" size={20} color="#FF3B30" />;
+                                        icon = <HugeiconsIcon icon={Cancel01Icon} size={20} color="#FF3B30" />;
                                     }
                                 } else if (isSelected) {
                                     borderColor = '#007AFF';
@@ -676,7 +679,7 @@ export default function GenerateQuizScreen() {
                                 return (
                                     <View style={{ marginTop: 16, marginBottom: 24, padding: 16, backgroundColor: isDark ? 'rgba(0,122,255,0.1)' : '#F0F8FF', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,122,255,0.3)' }}>
                                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                                            <IconSymbol name="lightbulb.fill" size={20} color="#007AFF" />
+                                            <HugeiconsIcon icon={IdeaIcon} size={20} color="#007AFF" />
                                             <Text style={{ marginLeft: 8, fontSize: 16, fontWeight: '700', color: '#007AFF' }}>
                                                 {isCorrect ? 'Spot on! 🎉' : 'Nice try, but not quite! 🤔'}
                                             </Text>
@@ -736,10 +739,10 @@ export default function GenerateQuizScreen() {
     // ── RESULTS VIEW ────────────────────────────────────────────────────────────
     const percentage = Math.round((correctCount / questions.length) * 100);
     const getRemark = (pct: number) => {
-        if (pct >= 90) return { title: "GENIUS!", subtitle: "You've completely mastered this topic!", icon: 'trophy.fill' as IconSymbolName };
-        if (pct >= 75) return { title: "WELL DONE!", subtitle: "Excellent performance, keep it up!", icon: 'checkmark.circle.fill' as IconSymbolName };
-        if (pct >= 50) return { title: "SOLID EFFORT!", subtitle: "Good job, but there's room to grow.", icon: 'info.circle.fill' as IconSymbolName };
-        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: 'exclamationmark.triangle.fill' as IconSymbolName };
+        if (pct >= 90) return { title: "GENIUS!", subtitle: "You've completely mastered this topic!", icon: Medal01Icon };
+        if (pct >= 75) return { title: "WELL DONE!", subtitle: "Excellent performance, keep it up!", icon: CheckmarkCircle01Icon };
+        if (pct >= 50) return { title: "SOLID EFFORT!", subtitle: "Good job, but there's room to grow.", icon: InformationCircleIcon };
+        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: Alert01Icon };
     };
     const remark = getRemark(percentage);
 
@@ -749,7 +752,7 @@ export default function GenerateQuizScreen() {
                 {/* Score Header Glass Card */}
                 <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.resultsHeader}>
                     <View style={s.resultsIconBox}>
-                        <IconSymbol name={remark.icon} size={36} color={C.primary} />
+                        <HugeiconsIcon icon={remark.icon} size={36} color={C.primary} />
                     </View>
                     <Text style={[s.resultsTitle, { color: C.primary }]}>{remark.title}</Text>
                     <Text style={[s.scoreValue, { color: C.text }]}>{percentage}%</Text>
@@ -758,11 +761,11 @@ export default function GenerateQuizScreen() {
                     {/* Meta Info */}
                     <View style={s.resultsMeta}>
                         <View style={s.metaCard}>
-                            <IconSymbol name="checkmark.circle.fill" size={16} color="#4ADE80" />
+                            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color="#4ADE80" />
                             <Text style={[s.metaText, { color: C.textSecondary }]}>{correctCount} OK</Text>
                         </View>
                         <View style={s.metaCard}>
-                            <IconSymbol name="timer" size={16} color={C.primary} />
+                            <HugeiconsIcon icon={Timer01Icon} size={16} color={C.primary} />
                             <Text style={[s.metaText, { color: C.textSecondary }]}>
                                 {timerEnabled ? formatTime(((parseInt(timerMinutes) || 10) * 60) - timeLeft) : 'No Timer'}
                             </Text>
@@ -789,9 +792,9 @@ export default function GenerateQuizScreen() {
                             >
                                 <View style={[s.reviewStatusBox, { backgroundColor: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }]}>
                                     {isCorrect ? (
-                                        <IconSymbol name="checkmark" size={18} color="#10b981" />
+                                        <HugeiconsIcon icon={Tick01Icon} size={18} color="#10b981" />
                                     ) : (
-                                        <IconSymbol name="xmark" size={18} color="#ef4444" />
+                                        <HugeiconsIcon icon={Cancel01Icon} size={18} color="#ef4444" />
                                     )}
                                 </View>
                                 <View style={{ flex: 1 }}>
@@ -801,7 +804,7 @@ export default function GenerateQuizScreen() {
                                     </Text>
                                 </View>
                                 {canExplain && (
-                                    <IconSymbol name="chevron.right" size={16} color={C.textTertiary} />
+                                    <HugeiconsIcon icon={ArrowRight01Icon} size={16} color={C.textTertiary} />
                                 )}
                             </BlurView>
                         </TouchableOpacity>
@@ -843,7 +846,7 @@ export default function GenerateQuizScreen() {
                             <ActivityIndicator size="small" color={C.primary} />
                         ) : (
                             <>
-                                <IconSymbol name="square.and.arrow.up" size={18} color={C.text} />
+                                <HugeiconsIcon icon={Share01Icon} size={18} color={C.text} />
                                 <Text style={[s.actionBtnText, { color: C.text }]}>Share</Text>
                             </>
                         )}
@@ -860,7 +863,7 @@ export default function GenerateQuizScreen() {
                                 <ActivityIndicator size="small" color="white" />
                             ) : (
                                 <>
-                                    <IconSymbol name="doc.text.fill" size={18} color="white" />
+                                    <HugeiconsIcon icon={DocumentCodeIcon} size={18} color="white" />
                                     <Text style={s.exportBtnText}>Export</Text>
                                 </>
                             )}
@@ -902,9 +905,9 @@ export default function GenerateQuizScreen() {
                                 { backgroundColor: explanationQ?.isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', marginRight: 0 }
                             ]}>
                                 {explanationQ?.isCorrect ? (
-                                    <IconSymbol name="checkmark" size={18} color="#10b981" />
+                                    <HugeiconsIcon icon={Tick01Icon} size={18} color="#10b981" />
                                 ) : (
-                                    <IconSymbol name="xmark" size={18} color="#ef4444" />
+                                    <HugeiconsIcon icon={Cancel01Icon} size={18} color="#ef4444" />
                                 )}
                             </View>
                             <Text style={[s.sheetTitle, { color: C.text }]} numberOfLines={2}>

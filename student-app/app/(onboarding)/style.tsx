@@ -4,7 +4,9 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { CheckmarkCircle01Icon, Sun01Icon, CompassIcon } from '@hugeicons/core-free-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STYLES = [
@@ -12,13 +14,13 @@ const STYLES = [
         key: 'simple',
         label: 'Simple & Clear',
         desc: "Break it down like I'm new to this topic.",
-        icon: 'sun.max.fill',
+        icon: Sun01Icon,
     },
     {
         key: 'detailed',
         label: 'Detailed & Academic',
         desc: 'Give me the full exam-level answer.',
-        icon: 'compass.drawing',
+        icon: CompassIcon,
     },
 ];
 
@@ -85,14 +87,14 @@ export default function StyleScreen() {
                                         ]}
                                     >
                                         <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                                            <IconSymbol name={iconName as any} size={24} color={iconColor} />
+                                            <HugeiconsIcon icon={style.icon} size={24} color={iconColor} />
                                         </View>
                                         <View style={s.textStack}>
                                             <Text style={[s.optionLabel, { color: textColor }]}>{style.label}</Text>
                                             <Text style={[s.optionDesc, { color: subtextColor }]}>{style.desc}</Text>
                                         </View>
                                         {isSelected && (
-                                            <IconSymbol name="checkmark.circle.fill" size={26} color="#007AFF" />
+                                            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={26} color="#007AFF" />
                                         )}
                                     </TouchableOpacity>
                                 </Animated.View>

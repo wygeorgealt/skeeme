@@ -1,10 +1,13 @@
 import { Text } from '@/components/ui/Text';
 import React from 'react';
 import { View, TouchableOpacity, useColorScheme, Share, Platform } from 'react-native';
-import { Flame, Share2 } from 'lucide-react-native';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { CircleArrowUp02Icon, Share01Icon } from '@hugeicons/core-free-icons';
+
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import RevenueCatUI from 'react-native-purchases-ui';
+import { useAuthStore } from '@/store/authStore';
 
 interface OutOfCreditsModalProps {
     visible: boolean;
@@ -32,14 +35,13 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
     if (!visible) return null;
 
     const handleUpgrade = async () => {
-        onDismiss();
         try {
             await RevenueCatUI.presentPaywall();
-        } catch (e) {
-            // Fallback if the RC Paywall UI fails to load
-            router.push('/upgrade');
-        }
+            // Refresh user status after paywall dismisses
+            await useAuthStore.getState().checkAuth();
+        } catch (e) {}
     };
+
 
     const handleShare = async () => {
         try {
@@ -90,7 +92,8 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
                 {/* Icon */}
                 <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF620', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
-                    <Flame width={28} height={28} color="#8B5CF6" />
+                    <HugeiconsIcon icon={CircleArrowUp02Icon} size={28} color="#8B5CF6" />
+
                 </View>
 
                 {/* Copy */}
@@ -152,19 +155,16 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                             gap: 6,
                         }}
                     >
-                        <Share2 width={16} height={16} color={isDark ? '#CBD5E1' : '#475569'} />
+                        <HugeiconsIcon icon={Share01Icon} size={16} color={isDark ? '#CBD5E1' : '#475569'} />
                         <Text style={{ color: isDark ? '#CBD5E1' : '#475569', fontSize: 13, fontWeight: '700' }}>
                             Refer a friend
                         </Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* Dismiss */}
-                <TouchableOpacity onPress={onDismiss} style={{ marginTop: 16, alignSelf: 'center', paddingVertical: 8 }}>
-                    <Text style={{ color: isDark ? '#64748B' : '#94A3B8', fontSize: 14, fontWeight: '600' }}>
-                        I'll study later
-                    </Text>
-                </TouchableOpacity>
+                {/* No 'I'll study later' — user must upgrade to continue */}
+                <View style={{ height: 24 }} />
+
             </View>
         </View>
     );

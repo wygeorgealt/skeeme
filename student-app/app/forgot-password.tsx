@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, useColorScheme, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { IosPillButton } from '@/components/ui/IosPillButton';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ForgotPasswordScreen() {
@@ -55,7 +57,7 @@ export default function ForgotPasswordScreen() {
                         style={[s.backBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     >
-                        <IconSymbol name="chevron.left" size={24} color={C.text} />
+                        <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={C.text} />
                     </TouchableOpacity>
                 </View>
 

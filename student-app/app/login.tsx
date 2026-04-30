@@ -6,9 +6,11 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { StatusBar } from 'expo-status-bar';
 
 export default function LoginScreen() {
@@ -74,7 +76,7 @@ export default function LoginScreen() {
                         style={[s.closeBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
                     >
-                        <IconSymbol name="xmark" size={20} color={C.text} />
+                        <HugeiconsIcon icon={Cancel01Icon} size={20} color={C.text} />
                     </TouchableOpacity>
                 </View>
 

@@ -5,11 +5,14 @@ import { useAuthStore } from '@/store/authStore';
 import { useEffect, useState } from 'react';
 import { signInWithGoogle } from '@/lib/socialAuth';
 import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withDelay, withSpring } from 'react-native-reanimated';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SystemUI from 'expo-system-ui';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AppleIcon } from '@hugeicons/core-free-icons';
+
 
 const HERO_VIDEO = require('../../assets/videos/hero_scan.mp4');
 
@@ -48,7 +51,7 @@ export default function AuthSelectScreen() {
         };
     }, []);
 
-    const player = useVideoPlayer(HERO_VIDEO, (player) => {
+    const player = useVideoPlayer(HERO_VIDEO, (player: any) => {
         player.loop = true;
         player.muted = true;
         player.play();
@@ -139,7 +142,7 @@ export default function AuthSelectScreen() {
                             style={[s.authBtn, s.appleBtn]}
                         >
                             <View style={s.authBtnIcon}>
-                                <IconSymbol name="apple.logo" size={20} color="#FFFFFF" />
+                                <HugeiconsIcon icon={AppleIcon} size={20} color="#FFFFFF" />
                             </View>
                             <Text style={[s.authBtnText, { color: '#FFFFFF' }]}>Continue with Apple</Text>
                         </TouchableOpacity>
@@ -194,7 +197,11 @@ const s = StyleSheet.create({
         overflow: 'hidden',
     },
     videoOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
     },
     videoFade: {
         position: 'absolute',

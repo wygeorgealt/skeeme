@@ -4,11 +4,13 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { Calendar01Icon, UserIcon } from '@hugeicons/core-free-icons';
 import { calculateAge, formatDateDisplay } from '@/utils/dateUtils';
 
 export default function BirthdayScreen() {
@@ -88,7 +90,7 @@ export default function BirthdayScreen() {
                             activeOpacity={0.7}
                             style={[s.inputContainer, { backgroundColor: C.card, borderColor: C.separator, marginBottom: 12 }]}
                         >
-                            <IconSymbol name="calendar" size={20} color={C.primary} style={s.icon} />
+                            <HugeiconsIcon icon={Calendar01Icon} size={20} color={C.primary} style={s.icon} />
                             <Text style={[s.inputText, { color: C.text }]}>
                                 {formatDateDisplay(date)}
                             </Text>
@@ -109,7 +111,7 @@ export default function BirthdayScreen() {
 
                         <View style={s.ageHighlight}>
                             <View style={[s.ageBadge, { backgroundColor: C.primary + '20' }]}>
-                                <IconSymbol name="person.fill" size={16} color={C.primary} style={{ marginRight: 6 }} />
+                                <HugeiconsIcon icon={UserIcon} size={16} color={C.primary} style={{ marginRight: 6 }} />
                                 <Text style={[s.ageText, { color: C.primary }]}>
                                     Detected Age: {age} years old
                                 </Text>

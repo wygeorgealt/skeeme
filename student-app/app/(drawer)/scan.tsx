@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Dimensions, Platform } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { haptics } from '@/lib/haptics';
@@ -31,6 +30,9 @@ import * as Print from 'expo-print';
 import { generateScanHTML } from '@/lib/pdfGenerator';
 import { scannerService, ScanResult } from '@/lib/scanner';
 import { posthog } from '@/lib/posthog';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { ScanIcon, ArrowLeft01Icon, EnergyIcon, Image01Icon, CreditCardIcon, Shield01Icon, ListViewIcon, CheckmarkCircle01Icon, ThumbsUpIcon, ThumbsDownIcon, ArrowRight01Icon, Share01Icon, Camera01Icon } from '@hugeicons/core-free-icons';
 
 const BASE_SCAN_COST = 50;
 const COST_PER_SOLUTION = 0;
@@ -246,7 +248,7 @@ export default function ScanScreen() {
                     <View style={{ flex: 1 }} />
                 ) : !permission.granted ? (
                     <View style={s.permissionContainer}>
-                        <IconSymbol name="viewfinder" size={64} color={C.primary} style={{ marginBottom: 24 }} />
+                        <HugeiconsIcon icon={ScanIcon} size={64} color={C.primary} style={{ marginBottom: 24 }} />
                         <Text style={[s.heroTitle, { color: C.text }]}>Camera Access Needed</Text>
                         <Text style={[s.heroDesc, { paddingHorizontal: 40 }]}>
                             Skeeme needs your camera to scan equations and past questions instantly.
@@ -265,13 +267,13 @@ export default function ScanScreen() {
                             {/* Top Semi-transparent Overlay */}
                             <View style={[s.topChrome, { paddingTop: Math.max(insets.top, 16) }]}>
                                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={s.overlayTopBtn}>
-                                    <IconSymbol name="chevron.left" size={28} color="white" />
+                                    <HugeiconsIcon icon={ArrowLeft01Icon} size={28} color="white" />
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => setEnableTorch(!enableTorch)} activeOpacity={0.7} style={s.overlayTopBtn}>
                                     {enableTorch ? (
-                                        <IconSymbol name="bolt.fill" size={24} color="white" />
+                                        <HugeiconsIcon icon={EnergyIcon} size={24} color="white" />
                                     ) : (
-                                        <IconSymbol name="bolt.slash.fill" size={24} color="white" />
+                                        <HugeiconsIcon icon={EnergyIcon} size={24} color="white" />
                                     )}
                                 </TouchableOpacity>
                             </View>
@@ -284,7 +286,7 @@ export default function ScanScreen() {
                             {/* Bottom Semi-transparent Overlay */}
                             <View style={[s.bottomChrome, { paddingBottom: Math.max(insets.bottom, 32) + 90 }]}>
                                 <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={s.galleryBtn}>
-                                    <IconSymbol name="photo.on.rectangle" size={28} color="white" />
+                                    <HugeiconsIcon icon={Image01Icon} size={28} color="white" />
                                 </TouchableOpacity>
 
                                 <TouchableOpacity onPress={handleCapture} activeOpacity={0.8} style={s.shutterOuter}>
@@ -307,7 +309,7 @@ export default function ScanScreen() {
 
             <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
-                    <IconSymbol name="chevron.left" size={20} color={C.text} />
+                    <HugeiconsIcon icon={ArrowLeft01Icon} size={20} color={C.text} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Results</Text>
                 <View style={{ width: 44 }} />
@@ -367,13 +369,13 @@ export default function ScanScreen() {
                         {/* Metadata Bar (Credits Used + Accuracy) */}
                         <View style={[s.metaBar, isDark ? s.cardDark : s.cardLight]}>
                             <View style={s.metaItem}>
-                                <IconSymbol name="creditcard.fill" size={14} color={C.primary} />
+                                <HugeiconsIcon icon={CreditCardIcon} size={14} color={C.primary} />
                                 <Text style={[s.metaLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Credits</Text>
                                 <Text style={[s.metaValue, isDark ? s.textWhite : s.textSlate900]}>{lastScanCost ?? '—'}</Text>
                             </View>
                             <View style={s.metaDivider} />
                             <View style={s.metaItem}>
-                                <IconSymbol name="checkmark.shield.fill" size={14} color="#10b981" />
+                                <HugeiconsIcon icon={Shield01Icon} size={14} color="#10b981" />
                                 <Text style={[s.metaLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Accuracy</Text>
                                 <Text style={[s.metaValue, isDark ? s.textWhite : s.textSlate900]}>High</Text>
                             </View>
@@ -404,7 +406,7 @@ export default function ScanScreen() {
                                 <View style={[s.sectionDivider, isDark ? s.dividerDark : s.dividerLight]} />
                                 <View style={s.sectionHeaderRow}>
                                     <View style={s.answerIconRow}>
-                                        <IconSymbol name="list.bullet.indent" size={18} color={C.primary} />
+                                        <HugeiconsIcon icon={ListViewIcon} size={18} color={C.primary} />
                                         <Text style={[s.sectionTitle, isDark ? s.textWhite : s.textSlate900]}>Answer</Text>
                                     </View>
                                 </View>
@@ -438,7 +440,7 @@ export default function ScanScreen() {
                                 <View style={s.feedbackRow}>
                                     {feedback[index] ? (
                                         <Animated.View entering={FadeIn.duration(300)} style={s.feedbackDone}>
-                                            <IconSymbol name="checkmark.circle.fill" size={16} color="#10b981" />
+                                            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color="#10b981" />
                                             <Text style={[s.feedbackDoneText, { color: '#10b981' }]}>
                                                 Thanks for the feedback!
                                             </Text>
@@ -455,7 +457,7 @@ export default function ScanScreen() {
                                                     activeOpacity={0.7}
                                                     style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
                                                 >
-                                                    <IconSymbol name="hand.thumbsup" size={14} color={isDark ? 'white' : '#0f172a'} />
+                                                    <HugeiconsIcon icon={ThumbsUpIcon} size={14} color={isDark ? 'white' : '#0f172a'} />
                                                     <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Helpful</Text>
                                                 </TouchableOpacity>
                                                 <TouchableOpacity
@@ -466,7 +468,7 @@ export default function ScanScreen() {
                                                     activeOpacity={0.7}
                                                     style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
                                                 >
-                                                    <IconSymbol name="hand.thumbsdown" size={14} color={isDark ? 'white' : '#0f172a'} />
+                                                    <HugeiconsIcon icon={ThumbsDownIcon} size={14} color={isDark ? 'white' : '#0f172a'} />
                                                     <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Unhelpful</Text>
                                                 </TouchableOpacity>
                                             </View>
@@ -489,7 +491,7 @@ export default function ScanScreen() {
                         >
                             <View style={s.followUpInner}>
                                 <Text style={[s.followUpText, isDark ? s.textSlate400d : s.textSlate500l]}>Practice similar questions...</Text>
-                                <IconSymbol name="arrow.right" size={16} color={C.textTertiary} />
+                                <HugeiconsIcon icon={ArrowRight01Icon} size={16} color={C.textTertiary} />
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -518,14 +520,14 @@ export default function ScanScreen() {
                             <ActivityIndicator size="small" color={C.primary} />
                         ) : (
                             <>
-                                <IconSymbol name="square.and.arrow.up" size={18} color={isDark ? '#cbd5e1' : '#64748b'} />
+                                <HugeiconsIcon icon={Share01Icon} size={18} color={isDark ? '#cbd5e1' : '#64748b'} />
                                 <Text style={[s.slimFooterBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>Share PDF</Text>
                             </>
                         )}
                     </TouchableOpacity>
                     <View style={[s.slimFooterDivider, isDark ? s.dividerDark : s.dividerLight]} />
                     <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={s.slimFooterBtn}>
-                        <IconSymbol name="camera" size={18} color={isDark ? '#cbd5e1' : '#64748b'} />
+                        <HugeiconsIcon icon={Camera01Icon} size={18} color={isDark ? '#cbd5e1' : '#64748b'} />
                         <Text style={[s.slimFooterBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>Scan New</Text>
                     </TouchableOpacity>
                 </BlurView>

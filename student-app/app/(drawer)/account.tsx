@@ -5,9 +5,16 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
+
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { ArrowRight01Icon, PencilEdit01Icon, ReceiptDollarIcon, AccountSetting02Icon, CircleArrowUp02Icon, Notification01Icon, HelpCircleIcon, CheckmarkCircle01Icon, DocumentCodeIcon, Logout01Icon, Delete01Icon } from '@hugeicons/core-free-icons';
+import RevenueCatUI from 'react-native-purchases-ui';
+
+
+
 import { Modal } from 'react-native';
 
 const PREDEFINED_AVATARS = [
@@ -56,7 +63,7 @@ function SettingsRow({
     icon, iconBg, label, value, onPress, isLast = false, isDark, destructive = false,
     hasSwitch = false, switchValue = false, onSwitch = () => {}
 }: {
-    icon?: IconSymbolName; iconBg?: string; label: string; value?: string;
+    icon?: any; iconBg?: string; label: string; value?: string;
     onPress?: () => void; isLast?: boolean; isDark: boolean; destructive?: boolean;
     hasSwitch?: boolean; switchValue?: boolean; onSwitch?: (val: boolean) => void;
 }) {
@@ -69,7 +76,7 @@ function SettingsRow({
         >
             {icon && iconBg && (
                 <View style={[s.rowIcon, { backgroundColor: iconBg }]}>
-                    <IconSymbol name={icon} size={18} color="#fff" />
+                    <HugeiconsIcon icon={icon} size={18} color="#fff" />
                 </View>
             )}
             <Text style={[s.rowLabel, { color: destructive ? C.destructive : C.text, marginLeft: icon ? 0 : 16, textAlign: destructive ? 'center' : 'left' }]} numberOfLines={1}>
@@ -84,7 +91,7 @@ function SettingsRow({
                     thumbColor={Platform.OS === 'ios' ? undefined : '#f4f3f4'}
                 />
             ) : (
-                !!onPress && !destructive && <IconSymbol name="chevron.right" size={18} color={C.textTertiary} />
+                !!onPress && !destructive && <HugeiconsIcon icon={ArrowRight01Icon} size={18} color={C.textTertiary} />
             )}
         </TouchableOpacity>
     );
@@ -190,7 +197,7 @@ export default function AccountScreen() {
                             )}
                         </View>
                         <View style={[s.editBadge, { borderColor: C.background }]}>
-                            <IconSymbol name="pencil" size={14} color="#FFF" />
+                            <HugeiconsIcon icon={PencilEdit01Icon} size={14} color="#FFF" />
                         </View>
                     </TouchableOpacity>
                     <Text style={[s.profileName, { color: C.text }]}>{user.name}</Text>
@@ -201,15 +208,24 @@ export default function AccountScreen() {
                 <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Account</Text>
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon="sparkles" iconBg="#007AFF"
+                        icon={ReceiptDollarIcon} iconBg="#007AFF"
                         label="Subscription"
-                        value={user.plan_name === 'elite' || user.is_unlimited ? 'Skeeme Elite' : (user.plan_name === 'standard' ? 'Skeeme Standard' : 'Skeeme Free')}
+
+                        value={user.plan_name === 'elite' || user.is_unlimited ? 'Skeeme Max' : (user.plan_name === 'standard' ? 'Skeeme Pro' : 'Skeeme Free')}
+
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="arrow.up.circle.fill" iconBg="#FF9500"
+                        icon={CircleArrowUp02Icon} iconBg="#FF9500"
                         label="Upgrade"
-                        onPress={() => router.push('/upgrade')}
+
+                        onPress={async () => {
+                            try {
+                                await RevenueCatUI.presentPaywall();
+                                await useAuthStore.getState().checkAuth();
+                            } catch (e) {}
+                        }}
+
                         isLast={true}
                         isDark={isDark}
                     />
@@ -219,13 +235,14 @@ export default function AccountScreen() {
                 <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Preferences</Text>
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon="wand.and.stars" iconBg="#5E5CE6"
+                        icon={AccountSetting02Icon} iconBg="#5E5CE6"
                         label="Personalization"
+
                         onPress={() => router.push('/preferences')}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="bell.fill" iconBg="#FF2D55"
+                        icon={Notification01Icon} iconBg="#FF2D55"
                         label="Notifications"
                         hasSwitch={true}
                         switchValue={notificationsEnabled}
@@ -233,8 +250,9 @@ export default function AccountScreen() {
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="sparkles" iconBg="#FF9500"
+                        icon={AccountSetting02Icon} iconBg="#FF9500"
                         label="Haptic Feedback"
+
                         hasSwitch={true}
                         switchValue={hapticsEnabled}
                         onSwitch={(val) => useAuthStore.getState().setHapticsEnabled(val)}
@@ -262,19 +280,19 @@ export default function AccountScreen() {
                 <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Support</Text>
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon="questionmark.circle" iconBg="#8E8E93"
+                        icon={HelpCircleIcon} iconBg="#8E8E93"
                         label="Report Issue"
                         onPress={() => router.push('/support')}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="checkmark.circle.fill" iconBg="#8E8E93"
+                        icon={CheckmarkCircle01Icon} iconBg="#8E8E93"
                         label="Privacy Policy"
                         onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/privacy')}
                         isDark={isDark}
                     />
                     <SettingsRow
-                        icon="doc.text.fill" iconBg="#8E8E93"
+                        icon={DocumentCodeIcon} iconBg="#8E8E93"
                         label="Terms of Service"
                         onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/terms')}
                         isLast={true}
@@ -285,7 +303,7 @@ export default function AccountScreen() {
                 {/* ── Section 4: Log Out ── */}
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon="arrow.right.to.line" iconBg="#8E8E93"
+                        icon={Logout01Icon} iconBg="#8E8E93"
                         label="Log Out"
                         onPress={handleSignOut}
                         isLast={true}
@@ -297,7 +315,7 @@ export default function AccountScreen() {
                 <Text style={[s.sectionLabel, { color: C.destructive }]}>Danger Zone</Text>
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon="trash.fill" iconBg="#FF3B30"
+                        icon={Delete01Icon} iconBg="#FF3B30"
                         label="Delete Account"
                         onPress={() => {
                             Alert.alert("Permanent Action", "Are you sure you want to permanently delete your account?", [

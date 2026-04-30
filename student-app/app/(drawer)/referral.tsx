@@ -2,10 +2,12 @@ import { Text } from '@/components/ui/Text';
 import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, useColorScheme, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { router } from 'expo-router';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useState, useEffect } from 'react';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { ArrowLeft01Icon, GiftIcon } from '@hugeicons/core-free-icons';
 import { Colors } from '@/constants/theme';
 
 export default function ReferralScreen() {
@@ -55,7 +57,7 @@ export default function ReferralScreen() {
             {/* Header */}
             <View style={s.header}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
-                    <IconSymbol name="chevron.left" size={24} color={isDark ? 'white' : '#1e293b'} />
+                    <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <View style={s.headerTextContainer}>
                     <Text style={[s.headerTitle, { color: C.text }]}>Rewards</Text>
@@ -69,7 +71,7 @@ export default function ReferralScreen() {
                 {/* Redeem Section */}
                 <View style={[s.sectionCard, isDark ? s.sectionCardDark : s.sectionCardLight]}>
                     <View style={s.iconBox}>
-                        <IconSymbol name="gift.fill" size={18} color={C.primary} />
+                        <HugeiconsIcon icon={GiftIcon} size={18} color={C.primary} />
                     </View>
                     <Text style={[s.sectionTitle, { color: C.text }]}>Redeem an Invitation</Text>
                     <Text style={s.sectionDesc}>

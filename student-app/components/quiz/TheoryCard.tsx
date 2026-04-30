@@ -1,7 +1,8 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, useColorScheme } from 'react-native';
-import { Star, TriangleAlert, Sparkles } from 'lucide-react-native';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { StarIcon, Alert01Icon, SparklesIcon } from '@hugeicons/core-free-icons';
 import { api } from '@/lib/api';
 import { Question, TheoryResult } from './QuizTypes';
 import { MathText } from '../ui/MathText';
@@ -69,15 +70,14 @@ export function TheoryCard({
                             
                             let label = isVeryCorrect ? 'Correct' : isPartiallyCorrect ? 'Almost there' : "You didn't get it";
                             let color = isVeryCorrect ? '#34C759' : isPartiallyCorrect ? '#FF9500' : '#FF3B30';
-                            let iconColor = isVeryCorrect ? '#34C759' : isPartiallyCorrect ? '#FF9500' : '#FF3B30';
 
                             return (
                                 <View style={[s.scoreBox, { borderColor: color, backgroundColor: color + '10' }]}>
                                     <View style={[s.scoreIconCircle, { backgroundColor: color }]}>
                                         {isVeryCorrect ? (
-                                            <Star width={18} height={18} color="#fff" />
+                                            <HugeiconsIcon icon={StarIcon} size={18} color="#fff" />
                                         ) : (
-                                            <TriangleAlert width={18} height={18} color="#fff" />
+                                            <HugeiconsIcon icon={Alert01Icon} size={18} color="#fff" />
                                         )}
                                     </View>
                                     <View>
@@ -122,7 +122,7 @@ export function TheoryCard({
                                 <ActivityIndicator color={C.textTertiary} size="small" />
                             ) : (
                                 <>
-                                    <Sparkles width={18} height={18} color="#fff" />
+                                    <HugeiconsIcon icon={SparklesIcon} size={18} color="#fff" />
                                     <Text style={s.submitBtnText}>Mark Answer</Text>
                                 </>
                             )}
@@ -157,4 +157,3 @@ const s = StyleSheet.create({
     submitBtn: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10 },
     submitBtnText: { color: 'white', fontWeight: '700', fontSize: 16 },
 });
-

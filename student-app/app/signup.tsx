@@ -6,9 +6,11 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { StatusBar } from 'expo-status-bar';
 
 export default function SignupScreen() {
@@ -89,7 +91,7 @@ export default function SignupScreen() {
                         style={[s.backBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     >
-                        <IconSymbol name="chevron.left" size={24} color={C.text} />
+                        <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={C.text} />
                     </TouchableOpacity>
                 </View>
 

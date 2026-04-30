@@ -4,11 +4,15 @@ import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Acti
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { ArrowLeft01Icon, Mail01Icon } from '@hugeicons/core-free-icons';
+import RevenueCatUI from 'react-native-purchases-ui';
 import { IosPillButton } from '@/components/ui/IosPillButton';
+
 
 export default function OtpScreen() {
     const scheme = useColorScheme();
@@ -97,9 +101,8 @@ export default function OtpScreen() {
                 const { user: authedUser, token: authToken } = verifyRes.data;
                 const { login } = useAuthStore.getState();
                 await login(authedUser, authToken);
+                router.replace('/(drawer)'); 
 
-                // Show Paywall/Upgrade screen immediately after account creation
-                router.replace('/upgrade');
             } else {
                 router.replace(`/new-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`);
             }
@@ -149,10 +152,11 @@ export default function OtpScreen() {
                 <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity onPress={() => router.back()}>
                         <View style={[s.backBtn, { backgroundColor: C.card }]}>
-                            <IconSymbol name="chevron.left" size={24} color={C.text} />
+                            <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={C.text} />
                         </View>
                     </TouchableOpacity>
                 </View>
+
 
                 <ScrollView 
                     contentContainerStyle={s.scrollContent}
@@ -160,7 +164,7 @@ export default function OtpScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={[s.iconCircle, { backgroundColor: C.primaryLight }]}>
-                        <IconSymbol name="envelope.fill" size={32} color={C.primary} />
+                        <HugeiconsIcon icon={Mail01Icon} size={32} color={C.primary} />
                     </View>
 
                     <Text style={[s.title, { color: C.text }]}>Check your email</Text>

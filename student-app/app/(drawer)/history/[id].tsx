@@ -4,7 +4,6 @@ import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useState, useRef, useEffect } from 'react';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -15,6 +14,9 @@ import * as Print from 'expo-print';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
 import { MathText } from '@/components/ui/MathText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { Tick01Icon, Cancel01Icon, MagicWand01Icon, CheckmarkCircle01Icon, CancelCircleIcon, IdeaIcon, ArrowLeft01Icon, DocumentCodeIcon, Share01Icon } from '@hugeicons/core-free-icons';
 import { BlurView } from 'expo-blur';
 
 // Storage helpers
@@ -75,9 +77,9 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
             <View style={s.qHeader}>
                 <View style={[s.qIcon, q.is_correct ? s.bgEmerald10 : s.bgRed10]}>
                     {q.is_correct ? (
-                        <IconSymbol name="checkmark" size={18} color="#10b981" />
+                        <HugeiconsIcon icon={Tick01Icon} size={18} color="#10b981" />
                     ) : (
-                        <IconSymbol name="xmark" size={18} color="#ef4444" />
+                        <HugeiconsIcon icon={Cancel01Icon} size={18} color="#ef4444" />
                     )}
                 </View>
                 <View style={s.flex1}>
@@ -108,7 +110,7 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                         {q.explanation && (
                             <View style={[s.feedbackBox, isDark ? s.bgEmeraldDark : s.bgEmeraldLight, { marginTop: 24 }]}>
                                 <View style={s.feedbackHeader}>
-                                    <IconSymbol name="wand.and.stars" size={14} color="#10b981" />
+                                    <HugeiconsIcon icon={MagicWand01Icon} size={14} color="#10b981" />
                                     <Text style={s.feedbackTitle}>AI Feedback</Text>
                                 </View>
                                 <MathText
@@ -143,8 +145,8 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                             return (
                                 <View key={i} style={[s.optionRow, bg, borderColor]}>
                                     <Text style={[s.optionText, text]}>{opt}</Text>
-                                    {icon === 'checkmark-circle' && <IconSymbol name="checkmark.circle.fill" size={18} color="#10b981" />}
-                                    {icon === 'close-circle' && <IconSymbol name="xmark.circle.fill" size={18} color="#ef4444" />}
+                                    {icon === 'checkmark-circle' && <HugeiconsIcon icon={CheckmarkCircle01Icon} size={18} color="#10b981" />}
+                                    {icon === 'close-circle' && <HugeiconsIcon icon={CancelCircleIcon} size={18} color="#ef4444" />}
                                 </View>
                             );
                         })}
@@ -152,7 +154,7 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                         {q.explanation && (
                             <View style={[s.feedbackBox, isDark ? s.bgEmeraldDark : s.bgEmeraldLight]}>
                                 <View style={s.feedbackHeader}>
-                                    <IconSymbol name="lightbulb.fill" size={14} color="#10b981" />
+                                    <HugeiconsIcon icon={IdeaIcon} size={14} color="#10b981" />
                                     <Text style={s.feedbackTitle}>Explanation</Text>
                                 </View>
                                 <MathText
@@ -226,7 +228,7 @@ export default function QuizHistoryDetailScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <View style={[s.topControls, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity onPress={() => router.back()} style={s.backBtnSkeleton}>
-                    <IconSymbol name="chevron.left" size={24} color="white" />
+                    <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color="white" />
                 </TouchableOpacity>
             </View>
             <View style={s.loadingHeader}>
@@ -282,7 +284,7 @@ export default function QuizHistoryDetailScreen() {
                         activeOpacity={0.7}
                         style={[s.menuBtn, isDark ? s.bgWhite10 : s.bgSlate100]}
                     >
-                        <IconSymbol name="chevron.left" size={24} color={isDark ? 'white' : 'black'} />
+                        <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={isDark ? 'white' : 'black'} />
                     </TouchableOpacity>
                     <Text style={[s.headerText, isDark ? s.textWhite : s.textSlate900]}>Quiz Results</Text>
                     <View style={s.size12} />
@@ -291,7 +293,7 @@ export default function QuizHistoryDetailScreen() {
                 {/* Top Score Area */}
                 <View style={s.scoreArea}>
                     <View style={[s.scoreIconBox, isDark ? s.bgWhite10 : s.bgSlate100]}>
-                        <IconSymbol name="wand.and.stars" size={36} color="#8B5CF6" />
+                        <HugeiconsIcon icon={MagicWand01Icon} size={36} color="#8B5CF6" />
                     </View>
                     <Text style={s.scoreTag}>{remark.title}</Text>
                     <Text style={[s.scoreText, isDark ? s.textWhite : s.textSlate900]}>
@@ -358,7 +360,7 @@ export default function QuizHistoryDetailScreen() {
                 >
                     {isExporting ? <ActivityIndicator size="small" color={isDark ? 'black' : 'white'} /> : (
                         <View style={s.exportBtnContent}>
-                            <IconSymbol name="doc.text.fill" size={20} color={isDark ? 'black' : 'white'} />
+                            <HugeiconsIcon icon={DocumentCodeIcon} size={20} color={isDark ? 'black' : 'white'} />
                             <Text style={[s.exportBtnText, isDark ? s.textBlack : s.textWhite]}>Save Report</Text>
                         </View>
                     )}
@@ -381,7 +383,7 @@ export default function QuizHistoryDetailScreen() {
                     style={s.shareBtn}
                 >
                     {isSharing ? <ActivityIndicator size="small" color="white" /> : (
-                        <IconSymbol name="square.and.arrow.up" size={20} color="white" />
+                        <HugeiconsIcon icon={Share01Icon} size={20} color="white" />
                     )}
                 </TouchableOpacity>
             </BlurView>
