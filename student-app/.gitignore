@@ -44,3 +44,5 @@ app-example
 /android
 
 .env.local
+.env
+create_tester.php

@@ -30,6 +30,8 @@ export async function signInWithGoogle(): Promise<{
     token: string;
     isNewUser: boolean;
 } | null> {
+    await initGoogleSignIn();
+
     if (!GoogleSignin) {
         Alert.alert(
             'Native Module Missing',
@@ -39,7 +41,6 @@ export async function signInWithGoogle(): Promise<{
     }
 
     try {
-        await initGoogleSignIn();
         await GoogleSignin.hasPlayServices();
         const response = await GoogleSignin.signIn();
 
