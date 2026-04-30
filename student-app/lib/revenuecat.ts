@@ -3,7 +3,7 @@ import Purchases, { LOG_LEVEL, PurchasesEntitlementInfo } from 'react-native-pur
 
 const API_KEYS = {
   apple: 'goog_api_key_placeholder', // Replace with your actual Apple key
-  google: 'test_bXKLJRirXqytjUfJQzLWWHDvfg', // From your screenshot
+  google: 'goog_ZUwiPwLYzGscZwqYfxzfsVxSEor', 
 };
 
 /**
@@ -33,26 +33,24 @@ export const identifyUser = async (userId: string) => {
 };
 
 /**
- * Check if user has active "Skeeme_Pro" or "Skeeme_Max" entitlement
+ * Check if user has active "pro" entitlement (covers both Pro and Max plans)
  */
 export const isUnlimitedMember = async (): Promise<boolean> => {
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    return typeof customerInfo.entitlements.active['Skeeme_Pro'] !== 'undefined' || 
-           typeof customerInfo.entitlements.active['Skeeme_Max'] !== 'undefined';
+    return typeof customerInfo.entitlements.active['pro'] !== 'undefined';
   } catch (e) {
     return false;
   }
 };
 
 /**
- * Restore previously purchased items (Mandatory for App Store)
+ * Restore previously purchased items
  */
 export const restorePurchases = async (): Promise<boolean> => {
   try {
     const customerInfo = await Purchases.restorePurchases();
-    return typeof customerInfo.entitlements.active['Skeeme_Pro'] !== 'undefined' || 
-           typeof customerInfo.entitlements.active['Skeeme_Max'] !== 'undefined';
+    return typeof customerInfo.entitlements.active['pro'] !== 'undefined';
   } catch (e) {
     return false;
   }

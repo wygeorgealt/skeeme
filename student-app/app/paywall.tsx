@@ -42,14 +42,14 @@ export default function PaywallScreen() {
         <View style={[s.container, { backgroundColor: '#000', paddingTop: insets.top }]}>
             <View style={s.content}>
                 <View style={s.iconBox}>
-                    <HugeiconsIcon icon={CircleArrowUp02Icon} size={48} color="#8B5CF6" />
+                    <HugeiconsIcon icon={CircleArrowUp02Icon} size={48} color={C.primary} />
                 </View>
                 <Text style={s.title}>Subscription Required</Text>
                 <Text style={s.subtitle}>
                     Choose a plan to unlock all of Skeeme's AI study tools and keep your momentum going.
                 </Text>
 
-                <TouchableOpacity onPress={handleUpgrade} style={s.mainBtn}>
+                <TouchableOpacity onPress={handleUpgrade} style={[s.mainBtn, { backgroundColor: C.primary }]}>
                     <Text style={s.mainBtnText}>View Plans</Text>
                 </TouchableOpacity>
 
@@ -65,10 +65,10 @@ export default function PaywallScreen() {
 const s = StyleSheet.create({
     container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     content: { padding: 32, alignItems: 'center', width: '100%' },
-    iconBox: { width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(139, 92, 246, 0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
+    iconBox: { width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(0, 122, 255, 0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
     title: { fontSize: 28, fontWeight: '900', color: '#fff', textAlign: 'center', marginBottom: 16 },
     subtitle: { fontSize: 16, color: '#94a3b8', textAlign: 'center', lineHeight: 24, marginBottom: 48 },
-    mainBtn: { backgroundColor: '#8B5CF6', height: 60, borderRadius: 30, width: '100%', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+    mainBtn: { height: 60, borderRadius: 30, width: '100%', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
     mainBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' },
     logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
     logoutText: { color: '#94a3b8', fontSize: 15, fontWeight: '600' },

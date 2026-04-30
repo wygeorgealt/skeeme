@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">= 5.9.1",
-    "appVersionSource": "remote"
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -17,14 +17,14 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://skeeme.com/api/v1/student/",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "677120499703-77ktccne1953v7uci57q5qcl7lls27b9.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "677120499703-k3d0tankblmt5bod7ug70c2te4n0e06a.apps.googleusercontent.com"
       }
     },
     "production": {
       "channel": "production",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://skeeme.com/api/v1/student/",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "677120499703-77ktccne1953v7uci57q5qcl7lls27b9.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "677120499703-k3d0tankblmt5bod7ug70c2te4n0e06a.apps.googleusercontent.com"
       }
     }
   },

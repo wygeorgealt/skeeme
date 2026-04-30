@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.skeeme.app",
-      "versionCode": 1,
+      "versionCode": 4,
       "permissions": [
         "INTERNET",
         "CAMERA",
@@ -61,7 +61,18 @@
           "backgroundColor": "#100921"
         }
       ],
-      "expo-font"
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "blockedPermissions": [
+              "android.permission.ACTIVITY_RECOGNITION"
+            ]
+          }
+        }
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

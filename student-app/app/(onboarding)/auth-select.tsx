@@ -4,30 +4,50 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect, useState } from 'react';
 import { signInWithGoogle } from '@/lib/socialAuth';
-import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withDelay, withSpring } from 'react-native-reanimated';
-import { Colors } from '@/constants/theme';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
+import { Colors, Spacing, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SystemUI from 'expo-system-ui';
+import { StatusBar } from 'expo-status-bar';
 
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { AppleIcon } from '@hugeicons/core-free-icons';
 
-
-const HERO_VIDEO = require('../../assets/videos/hero_scan.mp4');
+const MASCOT_IMAGE = require('../../assets/images/splash-icon.png');
 
 export default function AuthSelectScreen() {
     const router = useRouter();
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
     const { setOnboardingStep, login } = useAuthStore();
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
+    // Pulse animation for the glow
+    const glowScale = useSharedValue(1);
+    const glowOpacity = useSharedValue(0.2);
+
     useEffect(() => {
         setOnboardingStep(1);
+        
+        // Start the pulsing glow animation
+        glowScale.value = withRepeat(
+            withTiming(1.2, { duration: 2000 }),
+            -1,
+            true
+        );
+        glowOpacity.value = withRepeat(
+            withTiming(0.4, { duration: 2000 }),
+            -1,
+            true
+        );
     }, []);
+
+    const animatedGlowStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: glowScale.value }],
+        opacity: glowOpacity.value,
+    }));
 
     const handleGoogleSignIn = async () => {
         setIsGoogleLoading(true);
@@ -42,80 +62,54 @@ export default function AuthSelectScreen() {
         }
     };
 
-    // Make the native status bar area match the video's dark tone
+    // Match status bar and system UI
     useEffect(() => {
-        SystemUI.setBackgroundColorAsync('#2C1810');
-        return () => {
-            // Revert to theme color when leaving this screen
-            SystemUI.setBackgroundColorAsync(isDark ? '#000000' : '#F2F2F7');
-        };
-    }, []);
-
-    const player = useVideoPlayer(HERO_VIDEO, (player: any) => {
-        player.loop = true;
-        player.muted = true;
-        player.play();
-    });
-
-    const SCREEN_H = Dimensions.get('screen').height;
-    const videoHeight = useSharedValue(SCREEN_H);
-
-    useEffect(() => {
-        videoHeight.value = withDelay(2000, withSpring(SCREEN_H * 0.55, { damping: 15, stiffness: 100 }));
-    }, []);
-
-    const animatedVideoStyle = useAnimatedStyle(() => {
-        return {
-            height: videoHeight.value,
-        };
-    });
+        SystemUI.setBackgroundColorAsync(C.background);
+    }, [C.background]);
 
     const openLink = (url: string) => Linking.openURL(url);
 
     return (
         <View style={[s.container, { backgroundColor: C.background }]}>
+            <StatusBar style={isDark ? "light" : "dark"} />
 
-            {/* Hero Video Area */}
-            <Animated.View style={[s.videoContainer, animatedVideoStyle]}>
-                <VideoView
-                    player={player}
-                    style={StyleSheet.absoluteFill}
-                    nativeControls={false}
-                    contentFit="cover"
-                />
-                {/* Gradient overlay at the bottom of the video */}
-                <View style={[s.videoOverlay, { 
-                    backgroundColor: isDark 
-                        ? 'rgba(0,0,0,0.4)' 
-                        : 'rgba(255,255,255,0.3)' 
-                }]} />
-                {/* Bottom fade into background */}
-                <View style={[s.videoFade, { 
-                    backgroundColor: C.background 
-                }]} />
-            </Animated.View>
+            {/* Mascot Area with Glow */}
+            <View style={s.mascotContainer}>
+                <View style={s.mascotWrapper}>
+                    {/* Animated Glow Layer */}
+                    <Animated.View style={[s.glowCircle, { backgroundColor: C.primary }, animatedGlowStyle]} />
+                    
+                    <Animated.View entering={FadeIn.duration(1000)} style={s.mascotBox}>
+                        <Image 
+                            source={MASCOT_IMAGE} 
+                            style={[s.mascotImage, { tintColor: C.primary }]}
+                            resizeMode="contain"
+                        />
+                    </Animated.View>
+                </View>
+            </View>
 
             {/* Content Section */}
             <View style={[s.contentArea, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-                <View style={s.spacer} />
-
-                <Animated.View entering={FadeInDown.duration(600).delay(2200)} style={s.textSection}>
+                
+                <Animated.View entering={FadeInDown.duration(800).delay(300)} style={s.textSection}>
+                    <Text style={[s.greeting, { color: C.primary }]}>Hi!</Text>
                     <Text style={[s.title, { color: C.text }]}>
-                        Study smarter,{'\n'}not harder
+                        I'm Skeeme,
                     </Text>
                     <Text style={[s.subtitle, { color: C.textSecondary }]}>
-                        Snap photos, get instant solutions, and ace your exams with AI-powered study tools.
+                        Your study friend for success. Let's ace those exams together!
                     </Text>
                 </Animated.View>
 
                 {/* Auth Buttons */}
-                <Animated.View entering={FadeInDown.duration(600).delay(2400)} style={s.buttonsSection}>
+                <Animated.View entering={FadeInDown.duration(600).delay(600)} style={s.buttonsSection}>
 
                     {/* Continue with Google */}
                     <TouchableOpacity
                         onPress={handleGoogleSignIn}
                         activeOpacity={0.8}
-                        style={[s.authBtn, s.googleBtn, { opacity: isGoogleLoading ? 0.7 : 1 }]}
+                        style={[s.authBtn, s.googleBtn, { borderColor: C.separatorOpaque }]}
                         disabled={isGoogleLoading}
                     >
                         <View style={s.authBtnIcon}>
@@ -134,17 +128,15 @@ export default function AuthSelectScreen() {
                     {Platform.OS === 'ios' && (
                         <TouchableOpacity
                             onPress={() => {
-                                // TODO: Wire up expo-apple-authentication
-                                // For now, route to email sign up
                                 router.push('/signup');
                             }}
                             activeOpacity={0.8}
-                            style={[s.authBtn, s.appleBtn]}
+                            style={[s.authBtn, s.appleBtn, { backgroundColor: isDark ? '#FFFFFF' : '#000000' }]}
                         >
                             <View style={s.authBtnIcon}>
-                                <HugeiconsIcon icon={AppleIcon} size={20} color="#FFFFFF" />
+                                <HugeiconsIcon icon={AppleIcon} size={20} color={isDark ? '#000000' : '#FFFFFF'} />
                             </View>
-                            <Text style={[s.authBtnText, { color: '#FFFFFF' }]}>Continue with Apple</Text>
+                            <Text style={[s.authBtnText, { color: isDark ? '#000000' : '#FFFFFF' }]}>Continue with Apple</Text>
                         </TouchableOpacity>
                     )}
 
@@ -159,7 +151,7 @@ export default function AuthSelectScreen() {
                     <TouchableOpacity
                         onPress={() => router.push('/signup')}
                         activeOpacity={0.8}
-                        style={s.emailBtn}
+                        style={[s.emailBtn, { backgroundColor: C.primary }]}
                     >
                         <Text style={s.emailBtnText}>Continue with Email</Text>
                     </TouchableOpacity>
@@ -168,11 +160,11 @@ export default function AuthSelectScreen() {
                     <View style={s.termsContainer}>
                         <Text style={[s.termsText, { color: C.textTertiary }]}>
                             By continuing, you agree to our{' '}
-                            <Text style={[s.linkText, { color: '#007AFF' }]} onPress={() => openLink('https://skeeme.com/terms')}>
+                            <Text style={[s.linkText, { color: C.primary }]} onPress={() => openLink('https://skeeme.com/terms')}>
                                 Terms of Service
                             </Text>
                             , and confirm you have read our{' '}
-                            <Text style={[s.linkText, { color: '#007AFF' }]} onPress={() => openLink('https://skeeme.com/privacy')}>
+                            <Text style={[s.linkText, { color: C.primary }]} onPress={() => openLink('https://skeeme.com/privacy')}>
                                 Privacy Policy
                             </Text>
                             .
@@ -188,47 +180,56 @@ export default function AuthSelectScreen() {
 const s = StyleSheet.create({
     container: { flex: 1 },
 
-    // Video
-    videoContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        overflow: 'hidden',
+    // Mascot
+    mascotContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 60,
     },
-    videoOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+    mascotWrapper: {
+        width: 200,
+        height: 200,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    videoFade: {
+    glowCircle: {
         position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 120,
+        width: 160,
+        height: 160,
+        borderRadius: 80,
+        filter: Platform.OS === 'web' ? 'blur(40px)' : undefined, // Native blur is tricky, we use opacity + scale
+    },
+    mascotBox: {
+        width: 200,
+        height: 200,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    mascotImage: {
+        width: '100%',
+        height: '100%',
     },
 
     // Content
     contentArea: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        paddingHorizontal: 24,
+        paddingHorizontal: Spacing.xl,
         paddingBottom: 16,
     },
-    spacer: { flex: 1 },
 
     textSection: {
-        marginBottom: 32,
+        marginBottom: 40,
+    },
+    greeting: {
+        fontSize: 48,
+        fontWeight: '900',
+        marginBottom: -5,
     },
     title: {
         fontSize: 34,
         fontWeight: '800',
         letterSpacing: -0.5,
-        lineHeight: 41,
-        marginBottom: 12,
+        marginBottom: 8,
     },
     subtitle: {
         fontSize: 17,
@@ -244,7 +245,7 @@ const s = StyleSheet.create({
     authBtn: {
         width: '100%',
         height: 56,
-        borderRadius: 16,
+        borderRadius: Radius.xl,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -253,10 +254,9 @@ const s = StyleSheet.create({
     googleBtn: {
         backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#E5E5EA',
     },
     appleBtn: {
-        backgroundColor: '#000000',
+        // Dynamic based on theme
     },
     authBtnIcon: {
         width: 24,
@@ -275,7 +275,7 @@ const s = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 16,
-        marginVertical: 4,
+        marginVertical: 8,
     },
     dividerLine: {
         flex: 1,
@@ -286,12 +286,11 @@ const s = StyleSheet.create({
         fontWeight: '500',
     },
 
-    // Email button (styled like Agree & Continue)
+    // Email button
     emailBtn: {
         width: '100%',
         height: 56,
-        backgroundColor: '#007AFF',
-        borderRadius: 16,
+        borderRadius: Radius.xl,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -304,7 +303,7 @@ const s = StyleSheet.create({
     
     // Terms
     termsContainer: {
-        marginTop: 16,
+        marginTop: 20,
         alignItems: 'center',
         paddingHorizontal: 8,
     },
