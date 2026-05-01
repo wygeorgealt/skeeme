@@ -44,17 +44,18 @@ export async function signInWithGoogle(): Promise<{
         await GoogleSignin.hasPlayServices();
         const response = await GoogleSignin.signIn();
 
-        // The idToken is what we send to our Laravel backend for verification
-        const idToken = response.data?.idToken;
+        // Laravel Socialite userFromToken() requires an Access Token, not an ID Token.
+        const tokens = await GoogleSignin.getTokens();
+        const accessToken = tokens.accessToken;
 
-        if (!idToken) {
-            Alert.alert('Error', 'Could not retrieve authentication token from Google.');
+        if (!accessToken) {
+            Alert.alert('Error', 'Could not retrieve access token from Google.');
             return null;
         }
 
-        // Exchange the Google id_token with our Laravel API for a Sanctum token
-        const apiResponse = await api.post('/student/oauth/google', {
-            token: idToken,
+        // Exchange the Google access token with our Laravel API for a Sanctum token
+        const apiResponse = await api.post('oauth/google', {
+            token: accessToken,
             device_name: `${Platform.OS}_app`,
         });
 
@@ -85,7 +86,7 @@ export async function signInWithGoogle(): Promise<{
 // ─── APPLE SIGN IN (Placeholder) ───────────────────────────────────────────
 // Apple Sign-In requires `expo-apple-authentication` which is iOS-only.
 // Implementation will follow the same pattern: get the identity token from
-// Apple's native SDK, then POST it to /student/oauth/apple.
+// Apple's native SDK, then POST it to oauth/apple.
 
 export async function signInWithApple(): Promise<{
     user: any;
