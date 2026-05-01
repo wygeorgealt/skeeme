@@ -93,16 +93,14 @@ class ScanController extends Controller
             }
 
             $useDeepseek = ($activeProvider === 'deepseek');
-            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-sonnet-4-5';
+            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-haiku-4-5-20251001';
 
-            // Dynamic Timeout based on Network Quality Header
-            $networkType = $request->header('X-Network-Type');
-            $networkGen = $request->header('X-Network-Generation');
-            // Give Vision a bit more time because images are large
-            $timeout = ($networkType === 'cellular' && in_array($networkGen, ['2g', '3g', 'edge'])) ? 30 : 60;
+            // Complex images (like medical scripts) take Claude a long time to parse.
+            // Give the AI 3 full minutes (180s) to generate the response before timing out.
+            $timeout = 180; 
 
             $this->aiService->setTimeout($timeout);
-            $this->deepseek->setTimeout($timeout + 60);
+            $this->deepseek->setTimeout($timeout);
 
             try {
                 if ($useDeepseek) {
@@ -150,7 +148,7 @@ class ScanController extends Controller
                             'action_type' => 'scan_solve',
                             'amount' => -$deduction,
                             'description' => $isFreeDailyScan ? "Free Daily Scan: " . $solutionsCount . " questions" : "Scan & Solve: " . $solutionsCount . " questions processed",
-                            'model_used' => $modelUsed ?? 'claude-sonnet-4-5',
+                            'model_used' => $modelUsed ?? 'claude-haiku-4-5-20251001',
                             'request_id' => $requestId,
                         ]);
                     } catch (\Exception $e) {

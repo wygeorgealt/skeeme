@@ -13,7 +13,7 @@ class AnthropicAIService
     protected $apiKey;
     protected $version = '2023-06-01';
     protected $baseUrl = 'https://api.anthropic.com/v1/messages';
-    protected $model = 'claude-sonnet-4-5';
+    protected $model = 'claude-haiku-4-5-20251001';
     protected $timeout = 60; // Default 60s for backend generation
 
     public function __construct()

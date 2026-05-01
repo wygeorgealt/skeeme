@@ -154,7 +154,7 @@ class PracticeQuizController extends Controller
             }
 
             $useDeepseek = ($activeProvider === 'deepseek');
-            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-sonnet-4-5';
+            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-haiku-4-5-20251001';
 
             // Dynamic Timeout based on Network Quality Header
             $networkType = $request->header('X-Network-Type');
@@ -238,7 +238,7 @@ class PracticeQuizController extends Controller
                             'action_type' => 'quiz_generation',
                             'amount' => -$totalCost,
                             'description' => "Practice Quiz: " . ($validated['question_count'] ?? 10) . " questions on " . ($validated['topic'] ?? 'File'),
-                            'model_used' => $modelUsed ?? 'claude-sonnet-4-5',
+                            'model_used' => $modelUsed ?? 'claude-haiku-4-5-20251001',
                             'request_id' => $requestId,
                         ]);
                     } catch (\Exception $e) {
