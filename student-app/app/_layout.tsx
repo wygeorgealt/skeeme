@@ -87,15 +87,10 @@ export default function RootLayout() {
           router.replace('/(onboarding)/education');
         }
       } else {
-        // Hard Paywall Enforcement: If onboarding is complete but user is still on 'free' plan
-        if (user.plan_name === 'free') {
-          if (currentSegment !== 'paywall') {
-            router.replace('/paywall');
-          }
-        } else {
-          if (isPublicRoute || !currentSegment || currentSegment === 'paywall') {
-            router.replace('/(drawer)');
-          }
+        // Allow all users (free or premium) to access the app after onboarding
+        // If they run out of credits, the OutOfCreditsModal will block their actions but they can still view their history
+        if (isPublicRoute || !currentSegment) {
+          router.replace('/(drawer)');
         }
       }
     } else {
