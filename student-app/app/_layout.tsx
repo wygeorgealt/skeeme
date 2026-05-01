@@ -12,7 +12,6 @@ import AnimatedSplash from '@/components/AnimatedSplash';
 import Animated, { FadeOut } from 'react-native-reanimated';
 import { NetworkStatus } from '@/components/NetworkStatus';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { ShakeReporter } from '@/components/ShakeReporter';
 import { useFonts } from 'expo-font';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '@/lib/posthog';
@@ -176,7 +175,6 @@ export default function RootLayout() {
               {/* Global Modals */}
               <OutOfCreditsModalWrapper />
               <GlobalErrorModalWrapper />
-              <ShakeReporter />
 
               <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
             </ThemeProvider>
