@@ -41,18 +41,18 @@ class RefillStudentCredits extends Command
             $desc = '';
 
             if ($plan === 'free') {
-                // Free tier gets 150 credits every 30 days. Don't refill if they just signed up (they get 500 bonus)
+                // Free tier gets 100 credits every 30 days. Don't refill if they just signed up (they get 100 bonus)
                 $lastRefill = $user->last_credit_refill_at;
                 if (!$lastRefill) {
                     if ($user->created_at > now()->subDays(30)) {
-                        continue; // Still within their first 30 days of the free 500
+                        continue; // Still within their first 30 days of the free 100
                     }
                 } else {
                     if (\Carbon\Carbon::parse($lastRefill) > now()->subDays(30)) {
                         continue;
                     }
                 }
-                $refillAmount = 150;
+                $refillAmount = 100;
                 $desc = "Monthly Free plan credit refill";
             } else {
                 // Subscribed gets weekly 1500/5000 refills

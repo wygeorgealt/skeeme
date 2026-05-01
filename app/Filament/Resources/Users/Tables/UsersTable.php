@@ -86,9 +86,9 @@ class UsersTable
                     ->color('warning')
                     ->requiresConfirmation()
                     ->action(function (User $record) {
-                        $record->update(['credits' => 500]);
+                        $record->update(['credits' => 100]);
                         Notification::make()
-                            ->title('Credits reset to 500')
+                            ->title('Credits reset to 100')
                             ->success()
                             ->send();
                     }),

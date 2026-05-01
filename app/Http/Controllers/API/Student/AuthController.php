@@ -130,7 +130,7 @@ class AuthController extends Controller
                 'role' => 'student',
                 'status' => 'active',
                 'approved_at' => now(),
-                'credits' => 500,
+                'credits' => 100,
                 'provider' => $provider,
                 'provider_id' => $socialUser->getId(),
                 'avatar' => $socialUser->getAvatar(),
@@ -140,7 +140,7 @@ class AuthController extends Controller
             // Log initial credits
             $user->transactions()->create([
                 'type' => 'reward',
-                'amount' => 500,
+                'amount' => 100,
                 'description' => 'Welcome bonus: Free tier signup credits',
                 'metadata' => json_encode(['source' => 'signup']),
             ]);
@@ -219,7 +219,7 @@ class AuthController extends Controller
             'role' => 'student',
             'status' => 'pending', // Verification required
             'approved_at' => null,   // Will be set on verification
-            'credits' => 500, // Initial credits for Free tier
+            'credits' => 100, // Initial credits for Free tier
             'referral_code' => strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8)),
             'ai_preferences' => [
                 'education_level' => $validated['education_level'] ?? null,
@@ -233,7 +233,7 @@ class AuthController extends Controller
         // Log initial credits
         $user->transactions()->create([
             'type' => 'reward',
-            'amount' => 500,
+            'amount' => 100,
             'description' => 'Welcome bonus: Free tier signup credits',
             'metadata' => json_encode(['source' => 'signup']),
         ]);

@@ -6,7 +6,7 @@ import { Colors } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
 import RevenueCatUI from 'react-native-purchases-ui';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { CircleArrowUp02Icon, Logout01Icon } from '@hugeicons/core-free-icons';
+import { CircleArrowUp02Icon, Logout01Icon, Cancel01Icon } from '@hugeicons/core-free-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function PaywallScreen() {
@@ -40,6 +40,14 @@ export default function PaywallScreen() {
 
     return (
         <View style={[s.container, { backgroundColor: '#000', paddingTop: insets.top }]}>
+            <TouchableOpacity 
+                style={s.closeBtn} 
+                onPress={() => router.replace('/(drawer)')}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
+                <HugeiconsIcon icon={Cancel01Icon} size={24} color="#FFF" />
+            </TouchableOpacity>
+            
             <View style={s.content}>
                 <View style={s.iconBox}>
                     <HugeiconsIcon icon={CircleArrowUp02Icon} size={48} color={C.primary} />
@@ -72,4 +80,5 @@ const s = StyleSheet.create({
     mainBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' },
     logoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
     logoutText: { color: '#94a3b8', fontSize: 15, fontWeight: '600' },
+    closeBtn: { position: 'absolute', top: 20, right: 20, zIndex: 10, padding: 8 },
 });

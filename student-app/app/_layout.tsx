@@ -89,13 +89,13 @@ export default function RootLayout() {
       } else {
         // Hard Paywall Enforcement: If onboarding is complete but user is still on 'free' plan
         if (user.plan_name === 'free') {
-           if (currentSegment !== 'paywall') {
-              router.replace('/paywall');
-           }
+          if (currentSegment !== 'paywall') {
+            router.replace('/paywall');
+          }
         } else {
-           if (isPublicRoute || !currentSegment || currentSegment === 'paywall') {
-             router.replace('/(drawer)');
-           }
+          if (isPublicRoute || !currentSegment || currentSegment === 'paywall') {
+            router.replace('/(drawer)');
+          }
         }
       }
     } else {
@@ -145,48 +145,48 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: rootBg }}>
       <View style={{ flex: 1, backgroundColor: rootBg }}>
-      <PostHogProvider client={posthog}>
-      <QueryProvider>
-        <ThemeProvider value={{
-          ...(tailwindScheme === 'dark' ? DarkTheme : DefaultTheme),
-          colors: {
-            ...(tailwindScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
-            background: 'transparent',
-            card: 'transparent',
-          }
-        }}>
+        <PostHogProvider client={posthog}>
+          <QueryProvider>
+            <ThemeProvider value={{
+              ...(tailwindScheme === 'dark' ? DarkTheme : DefaultTheme),
+              colors: {
+                ...(tailwindScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+                background: 'transparent',
+                card: 'transparent',
+              }
+            }}>
 
-          {/* High-Fidelity Animated Splash Overlay */}
-          {!isAnimationFinished && (
-            <Animated.View exiting={FadeOut.duration(500)} style={{ position: 'absolute', zIndex: 99999, width: '100%', height: '100%' }}>
-              <AnimatedSplash onFinish={() => setIsAnimationFinished(true)} />
-            </Animated.View>
-          )}
+              {/* High-Fidelity Animated Splash Overlay */}
+              {!isAnimationFinished && (
+                <Animated.View exiting={FadeOut.duration(500)} style={{ position: 'absolute', zIndex: 99999, width: '100%', height: '100%' }}>
+                  <AnimatedSplash onFinish={() => setIsAnimationFinished(true)} />
+                </Animated.View>
+              )}
 
-          <NetworkStatus />
+              <NetworkStatus />
 
-          <Stack screenOptions={{ headerShown: false, headerTransparent: true, contentStyle: { backgroundColor: 'transparent' } }}>
-            <Stack.Screen name="(onboarding)" options={{ headerShown: false, animation: 'fade' }} />
-            <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
-            <Stack.Screen name="signup" options={{ headerShown: false, animation: 'fade' }} />
-            <Stack.Screen name="forgot-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
-            <Stack.Screen name="otp" options={{ headerShown: false, animation: 'slide_from_right' }} />
-            <Stack.Screen name="new-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
-            <Stack.Screen name="(drawer)" options={{ headerShown: false, animation: 'fade', headerTransparent: true }} />
-            <Stack.Screen name="paywall" options={{ headerShown: false, animation: 'fade' }} />
+              <Stack screenOptions={{ headerShown: false, headerTransparent: true, contentStyle: { backgroundColor: 'transparent' } }}>
+                <Stack.Screen name="(onboarding)" options={{ headerShown: false, animation: 'fade' }} />
+                <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
+                <Stack.Screen name="signup" options={{ headerShown: false, animation: 'fade' }} />
+                <Stack.Screen name="forgot-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                <Stack.Screen name="otp" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                <Stack.Screen name="new-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
+                <Stack.Screen name="(drawer)" options={{ headerShown: false, animation: 'fade', headerTransparent: true }} />
+                <Stack.Screen name="paywall" options={{ headerShown: false, animation: 'fade' }} />
 
-            <Stack.Screen name="+not-found" />
-          </Stack>
+                <Stack.Screen name="+not-found" />
+              </Stack>
 
-          {/* Global Modals */}
-          <OutOfCreditsModalWrapper />
-          <GlobalErrorModalWrapper />
-          <ShakeReporter />
+              {/* Global Modals */}
+              <OutOfCreditsModalWrapper />
+              <GlobalErrorModalWrapper />
+              <ShakeReporter />
 
-          <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
-        </ThemeProvider>
-      </QueryProvider>
-      </PostHogProvider>
+              <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
+            </ThemeProvider>
+          </QueryProvider>
+        </PostHogProvider>
       </View>
     </GestureHandlerRootView>
   );
@@ -197,8 +197,8 @@ function OutOfCreditsModalWrapper() {
   const OutOfCreditsModal = require('@/components/OutOfCreditsModal').default;
 
   return (
-    <OutOfCreditsModal 
-      visible={showCreditsModal} 
+    <OutOfCreditsModal
+      visible={showCreditsModal}
       onDismiss={() => toggleCreditsModal(false)}
       featureAttempted={creditsModalFeature || 'scan'}
     />
@@ -210,8 +210,8 @@ function GlobalErrorModalWrapper() {
   const GlobalErrorModal = require('@/components/GlobalErrorModal').default;
 
   return (
-    <GlobalErrorModal 
-      visible={globalError !== null} 
+    <GlobalErrorModal
+      visible={globalError !== null}
       error={globalError}
       onDismiss={() => setGlobalError(null)}
     />
@@ -241,19 +241,19 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
       <TouchableOpacity
         onPress={() => {
-            // Use a hard link or router push to get them to help
-            try {
-                // If the error is deep, we might need a reset or specific path
-                router.replace('/(drawer)/support');
-            } catch (e) {
-                // Fallback for extreme cases
-                retry();
-            }
+          // Use a hard link or router push to get them to help
+          try {
+            // If the error is deep, we might need a reset or specific path
+            router.replace('/(drawer)/support');
+          } catch (e) {
+            // Fallback for extreme cases
+            retry();
+          }
         }}
         style={{ marginTop: 16, paddingVertical: 12 }}
       >
         <Text style={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: '600', fontSize: 15 }}>
-            Need help? <Text style={{ color: '#007AFF' }}>Contact Support</Text>
+          Need help? <Text style={{ color: '#007AFF' }}>Contact Support</Text>
         </Text>
       </TouchableOpacity>
     </View>

@@ -39,7 +39,7 @@ export default function NotificationScreen() {
             if (__DEV__) console.warn('Failed to submit onboarding data', e);
         }
         await completeOnboarding();
-        router.replace('/(drawer)');
+        router.replace('/paywall');
     };
 
     const handleEnableNotifications = async () => {
@@ -49,7 +49,11 @@ export default function NotificationScreen() {
         } catch (e) {
             if (__DEV__) console.warn('Notification permission failed', e);
         }
-        await submitOnboarding();
+        
+        // Wait a moment so the user sees any interaction or the modal before navigating away
+        setTimeout(() => {
+            submitOnboarding();
+        }, 500);
     };
 
     const handleSkip = async () => {
@@ -63,7 +67,7 @@ export default function NotificationScreen() {
                 {/* Visual Illustration */}
                 <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.illustrationSection}>
                     {/* Decorative Background Glow */}
-                    <View style={[s.glow, { backgroundColor: '#8B5CF6' }]} />
+                    <View style={[s.glow, { backgroundColor: '#007AFF' }]} />
                     
                     {/* Mock Notification 1 */}
                     <Animated.View 
@@ -71,14 +75,12 @@ export default function NotificationScreen() {
                         style={[s.mockNotification, { 
                             backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
                             borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                            top: -30, 
-                            left: -20, 
-                            transform: [{ rotate: '-4deg' }] 
+                            transform: [{ rotate: '-2deg' }, { translateY: -20 }] 
                         }]}
                     >
                         <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
                         <View style={s.mockHeader}>
-                            <View style={[s.mockIconBadge, { backgroundColor: '#8B5CF6' }]}>
+                            <View style={[s.mockIconBadge, { backgroundColor: '#007AFF' }]}>
                                 <HugeiconsIcon icon={Notification01Icon} size={14} color="#FFF" />
                             </View>
                             <Text style={[s.mockAppName, { color: C.textSecondary }]}>Skeeme</Text>
@@ -94,9 +96,7 @@ export default function NotificationScreen() {
                         style={[s.mockNotification, { 
                             backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
                             borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                            top: 50, 
-                            right: -20, 
-                            transform: [{ rotate: '3deg' }] 
+                            transform: [{ rotate: '2deg' }, { translateY: 10 }] 
                         }]}
                     >
                         <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
@@ -168,8 +168,8 @@ const s = StyleSheet.create({
         transform: [{ scale: 1.5 }],
     },
     mockNotification: {
-        position: 'absolute',
-        width: 280,
+        width: '100%',
+        maxWidth: 320,
         padding: 16,
         borderRadius: 24,
         borderWidth: 1,
@@ -179,6 +179,7 @@ const s = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 24,
         elevation: 8,
+        marginVertical: -10,
     },
     mockHeader: {
         flexDirection: 'row',
