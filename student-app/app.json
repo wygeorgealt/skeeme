@@ -13,7 +13,7 @@
       "bundleIdentifier": "com.skeeme.app",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "Skeeme uses the camera to scan math questions or flashcard source material for AI solving.",
+        "NSCameraUsageDescription": "Skeeme uses the camera to scan questions or flashcard source material for AI solving.",
         "NSPhotoLibraryUsageDescription": "Skeeme accesses your photos to select existing question images for scanning.",
         "NSPhotoLibraryAddUsageDescription": "Skeeme needs permission to save generated PDFs and exported flashcards to your library.",
         "NSUserTrackingUsageDescription": "Skeeme uses this to provide personalized educational content and diagnostic crash reporting."
@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.skeeme.app",
-      "versionCode": 8,
+      "versionCode": 9,
       "permissions": [
         "INTERNET",
         "CAMERA",

@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform, Dimensions, Linking, Image } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform, Dimensions, Linking, Image, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect, useState } from 'react';
@@ -109,19 +109,32 @@ export default function AuthSelectScreen() {
                     <TouchableOpacity
                         onPress={handleGoogleSignIn}
                         activeOpacity={0.8}
-                        style={[s.authBtn, s.googleBtn, { borderColor: C.separatorOpaque }]}
+                        style={[
+                            s.authBtn, 
+                            { 
+                                borderWidth: 1, 
+                                borderColor: C.separatorOpaque,
+                                backgroundColor: isDark ? '#1E293B' : '#FFFFFF'
+                            }
+                        ]}
                         disabled={isGoogleLoading}
                     >
-                        <View style={s.authBtnIcon}>
-                            <Image 
-                                source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }} 
-                                style={{ width: 24, height: 24 }} 
-                                resizeMode="contain"
-                            />
-                        </View>
-                        <Text style={[s.authBtnText, { color: '#000000' }]}>
-                            {isGoogleLoading ? 'Connecting...' : 'Continue with Google'}
-                        </Text>
+                        {isGoogleLoading ? (
+                            <ActivityIndicator color={isDark ? '#FFFFFF' : '#000000'} />
+                        ) : (
+                            <>
+                                <View style={s.authBtnIcon}>
+                                    <Image 
+                                        source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }} 
+                                        style={{ width: 24, height: 24 }} 
+                                        resizeMode="contain"
+                                    />
+                                </View>
+                                <Text style={[s.authBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                                    Continue with Google
+                                </Text>
+                            </>
+                        )}
                     </TouchableOpacity>
 
                     {/* Continue with Apple (iOS only) */}

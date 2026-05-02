@@ -60,13 +60,13 @@ class ScanController extends Controller
 
         Log::info('Scan & Solve: Credit Check Passed', ['user_id' => $user->id]);
 
-        $isFreeDailyScan = $request->attributes->get('is_free_daily_scan', false);
+
 
         // 3. Preliminary Check & Lock Credits (Atomic)
-        $canProceed = DB::transaction(function () use ($user, $scanCost, $isFreeDailyScan) {
+        $canProceed = DB::transaction(function () use ($user, $scanCost) {
             $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
 
-            if (!$lockedUser->is_unlimited && !$isFreeDailyScan && $lockedUser->credits < $scanCost) {
+            if (!$lockedUser->is_unlimited && $lockedUser->credits < $scanCost) {
                 return false;
             }
             return true;
@@ -134,20 +134,16 @@ class ScanController extends Controller
 
             // 6. Deduct Usage (Atomic)
             if (!$user->is_unlimited) {
-                DB::transaction(function () use ($user, $finalCost, $solutionsCount, $modelUsed, $requestId, $isFreeDailyScan) {
-                    $deduction = $isFreeDailyScan ? 0 : $finalCost;
+                DB::transaction(function () use ($user, $finalCost, $solutionsCount, $modelUsed, $requestId) {
                     $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
-                    
-                    if (!$isFreeDailyScan) {
-                        $lockedUser->decrement('credits', $deduction);
-                    }
+                    $lockedUser->decrement('credits', $finalCost);
 
                     try {
                         $lockedUser->transactions()->create([
                             'type' => 'usage',
                             'action_type' => 'scan_solve',
-                            'amount' => -$deduction,
-                            'description' => $isFreeDailyScan ? "Free Daily Scan: " . $solutionsCount . " questions" : "Scan & Solve: " . $solutionsCount . " questions processed",
+                            'amount' => -$finalCost,
+                            'description' => "Scan & Solve: " . $solutionsCount . " questions processed",
                             'model_used' => $modelUsed ?? 'claude-haiku-4-5-20251001',
                             'request_id' => $requestId,
                         ]);
@@ -166,8 +162,8 @@ class ScanController extends Controller
             $responseData = [
                 'message' => 'Image processed successfully.',
                 'results' => $solutions,
-                'cost' => $isFreeDailyScan ? 0 : $finalCost,
-                'credits_deducted' => ($user->is_unlimited || $isFreeDailyScan) ? 0 : $finalCost,
+                'cost' => $finalCost,
+                'credits_deducted' => $user->is_unlimited ? 0 : $finalCost,
                 'remaining_credits' => $user->fresh()->credits
             ];
 

@@ -118,7 +118,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                     }}
                 >
                     <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900' }}>
-                        Top up and keep going →
+                        Upgrade to keep going →
                     </Text>
                 </TouchableOpacity>
 

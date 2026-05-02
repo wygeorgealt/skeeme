@@ -179,7 +179,7 @@ export default function BillingHistoryScreen() {
                             </View>
                             <Text style={[s.emptyTitle, isDark ? s.textWhite : s.textSlate900]}>No Invoices</Text>
                             <Text style={s.emptySubtitle}>
-                                Once you start a subscription or buy credits, your receipts will appear here.
+                                Once you start a subscription, your receipts will appear here.
                             </Text>
                         </View>
                     ) : (
