@@ -65,6 +65,15 @@ class User extends Authenticatable implements FilamentUser
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'next_free_refill_at',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -91,6 +100,42 @@ class User extends Authenticatable implements FilamentUser
         return Attribute::make(
             get: fn () => $this->is_unlimited_student,
         );
+    }
+
+    /**
+     * Get the exact time the next free credit refill will occur.
+     */
+    protected function nextFreeRefillAt(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if ($this->role !== 'student' || $this->getStudentPlan() !== 'free') {
+                    return null;
+                }
+                $lastRefill = $this->last_credit_refill_at ?? $this->created_at ?? now();
+                return \Carbon\Carbon::parse($lastRefill)->addHours(5)->ceilMinute(10)->toIso8601String();
+            },
+        );
+    }
+
+    /**
+     * Check if the rounded 5 hours have passed since the last refill for a free user, and refill if so.
+     */
+    public function checkAndRefillFreeCredits(): void
+    {
+        if ($this->role !== 'student' || $this->getStudentPlan() !== 'free') {
+            return;
+        }
+
+        $lastRefill = $this->last_credit_refill_at ?? $this->created_at ?? now();
+        $promisedRefillTime = \Carbon\Carbon::parse($lastRefill)->addHours(5)->ceilMinute(10);
+        
+        if (now()->greaterThanOrEqualTo($promisedRefillTime)) {
+            $this->update([
+                'credits' => max(100, $this->credits), // Top up back to 100
+                'last_credit_refill_at' => now(),
+            ]);
+        }
     }
 
     /**

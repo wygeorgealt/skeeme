@@ -265,6 +265,7 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
+        $user->checkAndRefillFreeCredits();
 
         // Ensure user has a streak record initialized
         $streak = StudyStreak::firstOrCreate(

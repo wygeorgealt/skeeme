@@ -10,6 +10,7 @@ export interface User {
     is_unlimited: boolean;
     is_unlimited_student?: boolean;
     plan_name?: string; // 'free', 'standard', 'elite', etc.
+    next_free_refill_at?: string | null;
     streak?: {
         current_streak: number;
         longest_streak: number;

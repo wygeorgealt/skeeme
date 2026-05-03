@@ -57,6 +57,23 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
         }
     };
 
+    const user = useAuthStore((s) => s.user);
+
+    let titleText = "You've been working hard.";
+    let descText = "You've used all your credits for now — that means you've been studying seriously. Keep the momentum going.";
+
+    if (user?.next_free_refill_at) {
+        titleText = "Out of credits.";
+        try {
+            const date = new Date(user.next_free_refill_at);
+            const timeString = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            descText = `You're out of free credits for now. They will renew by ${timeString}. Upgrade to Pro to keep going immediately!`;
+        } catch (e) {
+            // fallback if date parsing fails
+            descText = "You're out of free credits for now. They will renew soon. Upgrade to Pro to keep going immediately!";
+        }
+    }
+
     return (
         <View
             style={{
@@ -98,10 +115,10 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
                 {/* Copy */}
                 <Text style={{ color: isDark ? '#F1F5F9' : '#0F172A', fontSize: 22, fontWeight: '900', textAlign: 'center', marginBottom: 8 }}>
-                    You've been working hard.
+                    {titleText}
                 </Text>
                 <Text style={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: 15, fontWeight: '500', textAlign: 'center', lineHeight: 22, marginBottom: 28, paddingHorizontal: 8 }}>
-                    You've used all your credits for now — that means you've been studying seriously. Keep the momentum going.
+                    {descText}
                 </Text>
 
                 {/* Primary CTA */}
