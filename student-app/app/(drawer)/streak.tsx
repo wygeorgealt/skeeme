@@ -153,8 +153,7 @@ export default function StreakScreen() {
                         <TouchableOpacity 
                             onPress={async () => {
                                 try {
-                                    await RevenueCatUI.presentPaywall({ displayCloseButton: true });
-                                    await useAuthStore.getState().checkAuth();
+                                    router.push('/paywall');
                                 } catch (e) {}
                             }} 
                             style={[s.upgradeBtn, { backgroundColor: C.primary }]} 

@@ -1,50 +1,85 @@
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
-import { router } from 'expo-router';
-import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import { router, useLocalSearchParams } from 'expo-router';
+import RevenueCatUI from 'react-native-purchases-ui';
 import { posthog } from '@/lib/posthog';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { Cancel01Icon } from '@hugeicons/core-free-icons';
 
 export default function PaywallScreen() {
     const { user, checkAuth } = useAuthStore();
+    const insets = useSafeAreaInsets();
+    const params = useLocalSearchParams();
+    const fromOnboarding = params.fromOnboarding === 'true';
 
     useEffect(() => {
-        // If already subscribed, go straight to the app
-        if (user && user.plan_name !== 'free') {
+        // If already subscribed and coming from onboarding, skip paywall
+        if (fromOnboarding && user && user.plan_name !== 'free') {
             router.replace('/(drawer)');
-            return;
         }
-        showPaywall();
-    }, []);
+    }, [user, fromOnboarding]);
 
-    const showPaywall = async () => {
-        try {
-            const result = await RevenueCatUI.presentPaywall({ displayCloseButton: true });
-
-            if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
-                if (result === PAYWALL_RESULT.PURCHASED) {
-                    posthog.capture('subscription_purchased');
-                }
-                // They subscribed — refresh auth to get updated plan
-                await checkAuth();
-            }
-        } catch (e) {
-            // Ignore errors silently
+    const handleClose = () => {
+        if (fromOnboarding) {
+            router.replace('/(drawer)');
+        } else if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/(drawer)');
         }
-
-        // Whether they subscribed, dismissed, or errored — always go to the app.
-        // Free users get 100 credits and full access to the free tier.
-        router.replace('/(drawer)');
     };
 
-    // Show a simple loading spinner while the RevenueCat paywall is presenting
+    const handlePurchaseCompleted = async () => {
+        posthog.capture('subscription_purchased');
+        await checkAuth();
+        handleClose();
+    };
+
+    const handleRestoreCompleted = async () => {
+        await checkAuth();
+        handleClose();
+    };
+
     return (
         <View style={s.container}>
-            <ActivityIndicator size="large" color="#7C3AED" />
+            <RevenueCatUI.Paywall 
+                style={s.paywall}
+                onPurchaseCompleted={handlePurchaseCompleted}
+                onRestoreCompleted={handleRestoreCompleted}
+                onDismiss={handleClose}
+            />
+            
+            {/* Custom Close Button overlaid on top to guarantee visibility */}
+            <TouchableOpacity 
+                style={[s.closeBtn, { top: Math.max(insets.top, 20) + 10 }]}
+                onPress={handleClose}
+                hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+            >
+                <HugeiconsIcon icon={Cancel01Icon} size={24} color="#000000" />
+            </TouchableOpacity>
         </View>
     );
 }
 
 const s = StyleSheet.create({
-    container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
+    container: { flex: 1, backgroundColor: '#ffffff' },
+    paywall: { flex: 1 },
+    closeBtn: {
+        position: 'absolute',
+        right: 20,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 9999,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+        elevation: 4,
+    }
 });

@@ -43,7 +43,7 @@ export default function NotificationScreen() {
             if (__DEV__) console.warn('Failed to submit onboarding data', e);
         }
         await completeOnboarding();
-        router.replace('/paywall');
+        router.replace('/paywall?fromOnboarding=true');
     };
 
     const handleEnableNotifications = async () => {

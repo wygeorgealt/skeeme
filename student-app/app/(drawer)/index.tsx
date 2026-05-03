@@ -143,8 +143,7 @@ export default function DashboardScreen() {
                                 <TouchableOpacity 
                                     onPress={async () => {
                                         try {
-                                            await RevenueCatUI.presentPaywall({ displayCloseButton: true });
-                                            await useAuthStore.getState().checkAuth();
+                                            router.push('/paywall');
                                         } catch (e) {}
                                     }}
                                     style={[s.upgradePill, { backgroundColor: C.primary }]}

@@ -34,12 +34,9 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
     if (!visible) return null;
 
-    const handleUpgrade = async () => {
-        try {
-            await RevenueCatUI.presentPaywall({ displayCloseButton: true });
-            // Refresh user status after paywall dismisses
-            await useAuthStore.getState().checkAuth();
-        } catch (e) {}
+    const handleUpgrade = () => {
+        onDismiss();
+        router.push('/paywall');
     };
 
 

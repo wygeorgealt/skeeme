@@ -219,10 +219,9 @@ export default function AccountScreen() {
                         icon={CircleArrowUp02Icon} iconBg="#FF9500"
                         label="Upgrade"
 
-                        onPress={async () => {
+                        onPress={() => {
                             try {
-                                await RevenueCatUI.presentPaywall({ displayCloseButton: true });
-                                await useAuthStore.getState().checkAuth();
+                                router.push('/paywall');
                             } catch (e) {}
                         }}
 
