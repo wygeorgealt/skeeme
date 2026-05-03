@@ -2,7 +2,7 @@
   "expo": {
     "name": "Skeeme",
     "slug": "skeeme",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "skeeme",
@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.skeeme.app",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "NSCameraUsageDescription": "Skeeme uses the camera to scan questions or flashcard source material for AI solving.",
         "NSPhotoLibraryUsageDescription": "Skeeme accesses your photos to select existing question images for scanning.",
@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.skeeme.app",
-      "versionCode": 10,
+      "versionCode": 11,
       "permissions": [
         "INTERNET",
         "CAMERA",
