@@ -92,7 +92,16 @@ class AnthropicAIService
                     'max_tokens' => $calculatedMaxTokens,
                     'system' => 'You are a quiz generator. Return ONLY raw JSON matching the requested schema. No conversational text.',
                     'messages' => [
-                        ['role' => 'user', 'content' => $optimizedPrompt]
+                        [
+                            'role' => 'user', 
+                            'content' => [
+                                [
+                                    'type' => 'text',
+                                    'text' => $optimizedPrompt,
+                                    'cache_control' => ['type' => 'ephemeral']
+                                ]
+                            ]
+                        ]
                     ],
                     'temperature' => 0.5,
                 ],
@@ -144,7 +153,18 @@ class AnthropicAIService
                     'model' => $this->model,
                     'max_tokens' => $calculatedMaxTokens,
                     'system' => 'You are an expert tutor creating highly effective flashcards. Return only JSON.',
-                    'messages' => [['role' => 'user', 'content' => $optimizedPrompt]],
+                    'messages' => [
+                        [
+                            'role' => 'user', 
+                            'content' => [
+                                [
+                                    'type' => 'text',
+                                    'text' => $optimizedPrompt,
+                                    'cache_control' => ['type' => 'ephemeral']
+                                ]
+                            ]
+                        ]
+                    ],
                     'temperature' => 0.5,
                 ],
                 'timeout' => $this->timeout,
@@ -338,6 +358,7 @@ PROMPT;
                                         'media_type' => $this->detectImageType($base64Image),
                                         'data' => $this->cleanBase64($base64Image),
                                     ],
+                                    'cache_control' => ['type' => 'ephemeral']
                                 ],
                                 [
                                     'type' => 'text',
@@ -353,8 +374,18 @@ PROMPT;
 
             $data = json_decode($response->getBody()->getContents(), true);
             $content = $data['content'][0]['text'] ?? '{}';
+            
+            // Robust JSON extraction to ignore conversational text
             $content = preg_replace('/```(?:json)?|```/', '', $content);
             $decoded = json_decode(trim($content), true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                // Fallback: extract JSON object via regex
+                preg_match('/\{[\s\S]*\}/', $content, $matches);
+                if (!empty($matches[0])) {
+                    $decoded = json_decode($matches[0], true);
+                }
+            }
 
             if (!is_array($decoded) || !isset($decoded['results'])) {
                 // Fallback: try to extract results array
@@ -380,6 +411,7 @@ PROMPT;
         return [
             'x-api-key' => $this->apiKey,
             'anthropic-version' => $this->version,
+            'anthropic-beta' => 'prompt-caching-2024-07-31',
             'content-type' => 'application/json',
         ];
     }
