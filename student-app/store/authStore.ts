@@ -183,8 +183,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     login: async (user, token) => {
-        set({ user, token });
+        set({ user, token, onboardingComplete: true });
         try {
+            await standardStorage.setItem('onboarding_complete', 'true');
             await secureStorage.setItem('auth_token', token);
             await standardStorage.setItem('auth_user', JSON.stringify(user));
             try {

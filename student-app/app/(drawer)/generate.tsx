@@ -14,6 +14,7 @@ import { generateQuizHTML } from '@/lib/pdfGenerator';
 import { generateUUID } from '@/lib/utils';
 import CreditStatusBar from '@/components/CreditStatusBar';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
+import { posthog } from '@/lib/posthog';
 
 import { haptics } from '@/lib/haptics';
 import { QuizMode, Difficulty, FormatType, Question } from '@/components/quiz/QuizTypes';
@@ -262,6 +263,12 @@ export default function GenerateQuizScreen() {
                 response = await api.post('quizzes/generate', { topic, question_count: parseInt(questionCount), question_types: questionTypes, difficulty }, { headers: { 'Idempotency-Key': idempotencyKey } });
             }
             setQuestions(response.data.questions);
+            posthog.capture('quiz_generated', {
+                mode,
+                difficulty,
+                format,
+                question_count: parseInt(questionCount) || 10
+            });
             if (response.data.remaining_credits !== undefined) {
                 updateUser({ credits: response.data.remaining_credits });
                 setCreditRefreshKey(k => k + 1);

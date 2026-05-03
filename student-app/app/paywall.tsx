@@ -3,6 +3,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import { posthog } from '@/lib/posthog';
 
 export default function PaywallScreen() {
     const { user, checkAuth } = useAuthStore();
@@ -18,9 +19,12 @@ export default function PaywallScreen() {
 
     const showPaywall = async () => {
         try {
-            const result = await RevenueCatUI.presentPaywall();
+            const result = await RevenueCatUI.presentPaywall({ displayCloseButton: true });
 
             if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+                if (result === PAYWALL_RESULT.PURCHASED) {
+                    posthog.capture('subscription_purchased');
+                }
                 // They subscribed — refresh auth to get updated plan
                 await checkAuth();
             }

@@ -12,6 +12,7 @@ import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { StatusBar } from 'expo-status-bar';
+import { posthog } from '@/lib/posthog';
 
 export default function SignupScreen() {
     const scheme = useColorScheme();
@@ -63,6 +64,7 @@ export default function SignupScreen() {
                 ...(onboardingData?.dob_year && { dob_year: onboardingData.dob_year }),
                 ...(onboardingData?.age && { age: onboardingData.age }),
             });
+            posthog.capture('account_created');
             router.replace({ pathname: '/otp', params: { email: email.trim().toLowerCase(), type: 'verification' } });
         } catch (error: any) {
             const status = error.response?.status;

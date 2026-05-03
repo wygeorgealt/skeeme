@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/Text';
 import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,7 +25,11 @@ export default function NotificationScreen() {
         setOnboardingStep(6);
     }, []);
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const submitOnboarding = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
         // Send personalization data to the backend
         try {
             await api.post('me/onboarding', {
@@ -43,6 +47,7 @@ export default function NotificationScreen() {
     };
 
     const handleEnableNotifications = async () => {
+        if (isSubmitting) return;
         try {
             const { status } = await Notifications.requestPermissionsAsync();
             if (__DEV__) console.log('Notification permission:', status);
@@ -57,6 +62,7 @@ export default function NotificationScreen() {
     };
 
     const handleSkip = async () => {
+        if (isSubmitting) return;
         await submitOnboarding();
     };
 

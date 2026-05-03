@@ -221,7 +221,7 @@ export default function AccountScreen() {
 
                         onPress={async () => {
                             try {
-                                await RevenueCatUI.presentPaywall();
+                                await RevenueCatUI.presentPaywall({ displayCloseButton: true });
                                 await useAuthStore.getState().checkAuth();
                             } catch (e) {}
                         }}
