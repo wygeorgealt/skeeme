@@ -315,7 +315,7 @@ export default function ScanScreen() {
                 <View style={{ width: 44 }} />
             </View>
 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 220 }} showsVerticalScrollIndicator={false}>
                 {!!imageUri && results.length === 0 && (
                     <View style={s.previewContainer}>
                         <BlurView 
