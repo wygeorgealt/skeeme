@@ -343,7 +343,7 @@ PROMPT;
             $response = $this->client->post($this->baseUrl, [
                 'headers' => $this->buildHeaders(),
                 'json' => [
-                    'model' => 'claude-sonnet-4-5-20251001', // Use Sonnet for Vision — Haiku is too weak for complex math JSON
+                    'model' => 'claude-sonnet-4-6',
                     'max_tokens' => 8192,
                     'system' => 'You are a world-class academic tutor. You MUST return ONLY valid JSON. NEVER include conversational text, internal thoughts, or "let me recalculate" notes. Output the raw JSON and nothing else.',
                     'messages' => [
