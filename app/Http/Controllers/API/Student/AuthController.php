@@ -70,6 +70,7 @@ class AuthController extends Controller
                 'credits' => $user->credits,
                 'is_unlimited' => (bool) $user->is_unlimited_student,
                 'ai_preferences' => $user->ai_preferences,
+                'nearest_exam' => $user->nearest_exam,
             ],
             'token' => $token,
             'pricing' => $pricing,
@@ -164,6 +165,7 @@ class AuthController extends Controller
                 'credits' => $user->credits,
                 'is_unlimited' => (bool) $user->is_unlimited_student,
                 'ai_preferences' => $user->ai_preferences,
+                'nearest_exam' => $user->nearest_exam,
             ],
             'token' => $token,
             'pricing' => $pricing,
@@ -313,6 +315,7 @@ class AuthController extends Controller
             'streak' => $streak,
             'pricing' => $pricing,
             'ai_preferences' => $user->ai_preferences,
+            'nearest_exam' => $user->nearest_exam,
         ]);
     }
 
@@ -448,6 +451,7 @@ class AuthController extends Controller
                     'credits' => $user->credits,
                     'is_unlimited' => (bool) $user->is_unlimited_student,
                     'ai_preferences' => $user->ai_preferences,
+                    'nearest_exam' => $user->nearest_exam,
                 ],
                 'token' => $authToken,
                 'pricing' => $pricing,
