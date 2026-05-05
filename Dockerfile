@@ -17,6 +17,19 @@ RUN apt-get update && \
     apt-get install nodejs -y && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Increase Nginx and PHP limits for high-res image scans
+RUN echo "client_max_body_size 20M; client_body_buffer_size 10M;" > /etc/nginx/conf.d/tuning.conf
+ENV PHP_POST_MAX_SIZE=20M
+ENV PHP_UPLOAD_MAX_FILESIZE=20M
+ENV NGINX_MAX_BODY_SIZE=20M
+
+# PHP-FPM Performance Tuning
+ENV FPM_PM_MAX_CHILDREN=20
+ENV FPM_PM_START_SERVERS=5
+ENV FPM_PM_MIN_SPARE_SERVERS=5
+ENV FPM_PM_MAX_SPARE_SERVERS=10
+ENV FPM_PM_MAX_REQUESTS=1000
+
 # Set working directory
 WORKDIR /var/www/html
 

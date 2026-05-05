@@ -376,23 +376,34 @@ PROMPT;
             $content = $data['content'][0]['text'] ?? '{}';
             
             // Robust JSON extraction to ignore conversational text
-            $content = preg_replace('/```(?:json)?|```/', '', $content);
-            $decoded = json_decode(trim($content), true);
+            $cleanContent = preg_replace('/```(?:json)?|```/', '', $content);
+            $decoded = json_decode(trim($cleanContent), true);
             
             if (json_last_error() !== JSON_ERROR_NONE) {
-                // Fallback: extract JSON object via regex
-                preg_match('/\{[\s\S]*\}/', $content, $matches);
-                if (!empty($matches[0])) {
+                // Fallback 1: Extract anything between the first { and last }
+                if (preg_match('/\{[\s\S]*\}/', $content, $matches)) {
                     $decoded = json_decode($matches[0], true);
                 }
             }
 
-            if (!is_array($decoded) || !isset($decoded['results'])) {
-                // Fallback: try to extract results array
-                if (is_array($decoded) && array_is_list($decoded)) {
-                    return ['results' => $decoded];
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                // Fallback 2: Extract anything between the first [ and last ] (if it returned a list directly)
+                if (preg_match('/\[[\s\S]*\]/', $content, $matches)) {
+                    $list = json_decode($matches[0], true);
+                    if (is_array($list)) {
+                        $decoded = ['results' => $list];
+                    }
                 }
+            }
+            
+            if (!is_array($decoded) || (!isset($decoded['results']) && !isset($decoded[0]))) {
+                Log::error('Claude Vision Parse Failure', ['raw_content' => $content]);
                 throw new \Exception('AI returned invalid JSON structure for scan solve');
+            }
+
+            // Handle root level array
+            if (is_array($decoded) && !isset($decoded['results']) && array_is_list($decoded)) {
+                $decoded = ['results' => $decoded];
             }
 
             return $decoded;
