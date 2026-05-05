@@ -11,7 +11,7 @@ import * as SecureStore from 'expo-secure-store';
 import { IosCard } from '@/components/ui/IosCard';
 
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { FireIcon, CircleArrowUp02Icon, Coins01Icon, TimeQuarter02Icon, Activity01Icon, ArrowRight01Icon, Medal01Icon, BookOpen01Icon, Copy01Icon, Clock01Icon } from '@hugeicons/core-free-icons';
+import { FireIcon, CircleArrowUp02Icon, Coins01Icon, TimeQuarter02Icon, Activity01Icon, ArrowRight01Icon, Medal01Icon, BookOpen01Icon, Copy01Icon, Clock01Icon, Calendar01Icon } from '@hugeicons/core-free-icons';
 import RevenueCatUI from 'react-native-purchases-ui';
 
 
@@ -76,6 +76,8 @@ export default function DashboardScreen() {
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
     const queryClient = useQueryClient();
+
+    const daysUntilExam = user?.nearest_exam ? Math.ceil((new Date(user.nearest_exam.exam_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
 
 
     const { data: heatmapDates = [], isLoading: isLoadingHeatmap } = useQuery({
@@ -181,13 +183,26 @@ export default function DashboardScreen() {
 
                 {/* ── Stats Row ── */}
                 <View style={s.statsRow}>
-                    <IosCard style={{ flex: 1 }} padding="md">
-                        <View style={[s.statIconBox, { backgroundColor: '#FFD60A15' }]}>
-                            <HugeiconsIcon icon={Coins01Icon} size={16} color="#FFD60A" />
-                        </View>
-                        <Text style={[s.statNum, { color: C.text }]}>{user.credits_spent_this_week ?? 0}</Text>
-                        <Text style={[s.statDesc, { color: C.textSecondary }]}>Credits Spent</Text>
-                    </IosCard>
+                    <TouchableOpacity 
+                        style={{ flex: 1 }} 
+                        onPress={() => router.push('/exams' as any)}
+                        activeOpacity={0.7}
+                    >
+                        <IosCard 
+                            style={{ flex: 1 }} 
+                            padding="md"
+                        >
+                            <View style={[s.statIconBox, { backgroundColor: '#5856D615' }]}>
+                                <HugeiconsIcon icon={Calendar01Icon} size={16} color="#5856D6" />
+                            </View>
+                            <Text style={[s.statNum, { color: C.text }]}>
+                                {daysUntilExam !== null ? (daysUntilExam < 0 ? 0 : daysUntilExam) : '—'}
+                            </Text>
+                            <Text style={[s.statDesc, { color: C.textSecondary }]}>
+                                {user.nearest_exam ? 'Days to Exam' : 'Add Exam'}
+                            </Text>
+                        </IosCard>
+                    </TouchableOpacity>
 
                     <IosCard style={{ flex: 1 }} padding="md">
                         <View style={[s.statIconBox, { backgroundColor: '#007AFF15' }]}>

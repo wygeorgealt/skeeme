@@ -33,6 +33,11 @@ export interface User {
     credits_spent_this_week?: number;
     study_sessions_this_week?: number;
     weekly_activity_points?: (number | { value: number })[];
+    nearest_exam?: {
+        id: number;
+        title: string;
+        exam_date: string;
+    } | null;
 }
 
 export interface StreakMilestone {

@@ -161,6 +161,7 @@ Route::group(['prefix' => 'v1'], function () {
             Route::post('logout', [\App\Http\Controllers\API\Student\AuthController::class, 'logout']);
             Route::get('me', [\App\Http\Controllers\API\Student\AuthController::class, 'me']);
             Route::post('me/onboarding', [\App\Http\Controllers\API\Student\ProfileController::class, 'completeOnboarding']);
+            Route::apiResource('user-exams', \App\Http\Controllers\API\Student\UserExamController::class);
             Route::get('sync', [\App\Http\Controllers\API\Student\SyncController::class, 'index']);
             
             // AI-Intensive Routes (Throttled: 5 per minute)

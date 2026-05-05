@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { CheckmarkCircle01Icon, TestTube01Icon, ToolsIcon, BookOpen01Icon, Briefcase01Icon, DocumentCodeIcon, HealthIcon, DashboardSquare01Icon } from '@hugeicons/core-free-icons';
@@ -34,13 +35,14 @@ export default function FieldScreen() {
     }, []);
 
     const handleSelect = (key: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setSelected(key);
         setOnboardingData({ field_of_study: key });
     };
 
     const handleNext = () => {
         if (selected) {
-            router.push('/(onboarding)/birthday');
+            router.push('/(onboarding)/style');
         }
     };
 
@@ -54,6 +56,12 @@ export default function FieldScreen() {
                 
                 <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
                     <Animated.View entering={FadeInDown.duration(600).delay(100)}>
+                        <View style={s.stepRow}>
+                            <Text style={[s.stepText, { color: iconColor }]}>Step 3 of 7</Text>
+                            <View style={s.progressBar}>
+                                <View style={[s.progressFill, { width: '42%', backgroundColor: iconColor }]} />
+                            </View>
+                        </View>
                         <Text style={[s.heroTitle, { color: textColor }]}>
                             Focus Area
                         </Text>
@@ -169,4 +177,9 @@ const s = StyleSheet.create({
     },
     primaryBtnDisabled: { backgroundColor: '#A2C9F4' },
     primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', letterSpacing: -0.41 },
+
+    stepRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+    stepText: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+    progressBar: { flex: 1, height: 4, backgroundColor: 'rgba(0,122,255,0.1)', borderRadius: 2, overflow: 'hidden' },
+    progressFill: { height: '100%', borderRadius: 2 },
 });

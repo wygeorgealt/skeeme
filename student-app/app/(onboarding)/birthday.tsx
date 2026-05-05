@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import * as Haptics from 'expo-haptics';
 
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { Calendar01Icon, UserIcon } from '@hugeicons/core-free-icons';
@@ -32,7 +33,7 @@ export default function BirthdayScreen() {
     const [showPicker, setShowPicker] = useState(Platform.OS === 'ios'); // iOS shows inline/modal by default
 
     useEffect(() => {
-        setOnboardingStep(5);
+        setOnboardingStep(6);
     }, []);
 
     const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -43,14 +44,15 @@ export default function BirthdayScreen() {
         if (selectedDate) {
             setDate(selectedDate);
             setAge(calculateAge(selectedDate));
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
     };
 
     const handleNext = async () => {
-        if (age < 13) {
+        if (age < 3) {
             Alert.alert(
                 'Age Requirement',
-                'You must be at least 13 years old to use Skeeme. Please check your date of birth and try again.',
+                'You must be at least 3 years old to use Skeeme. Please check your date of birth and try again.',
                 [{ text: 'OK', style: 'default' }]
             );
             return;
@@ -63,7 +65,7 @@ export default function BirthdayScreen() {
         router.push('/(onboarding)/notifications');
     };
 
-    const isValid = age >= 13;
+    const isValid = age >= 3;
 
     return (
         <View style={{ flex: 1 }}>
@@ -71,6 +73,12 @@ export default function BirthdayScreen() {
                 
                 <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
                     <Animated.View entering={FadeInDown.duration(600).delay(100)}>
+                        <View style={s.stepRow}>
+                            <Text style={[s.stepText, { color: C.primary }]}>Step 6 of 7</Text>
+                            <View style={s.progressBar}>
+                                <View style={[s.progressFill, { width: '85%', backgroundColor: C.primary }]} />
+                            </View>
+                        </View>
                         <Text style={[s.heroTitle, { color: C.text }]}>
                             A Little About You
                         </Text>
@@ -180,5 +188,10 @@ const s = StyleSheet.create({
     },
     
     footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24 },
+
+    stepRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+    stepText: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+    progressBar: { flex: 1, height: 4, backgroundColor: 'rgba(0,122,255,0.1)', borderRadius: 2, overflow: 'hidden' },
+    progressFill: { height: '100%', borderRadius: 2 },
 });
 

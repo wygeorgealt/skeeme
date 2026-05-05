@@ -71,6 +71,7 @@ class User extends Authenticatable implements FilamentUser
      */
     protected $appends = [
         'next_free_refill_at',
+        'nearest_exam',
     ];
 
     /**
@@ -174,6 +175,24 @@ class User extends Authenticatable implements FilamentUser
     public function quizSessions()
     {
         return $this->hasMany(QuizSession::class);
+    }
+
+    public function userExams()
+    {
+        return $this->hasMany(UserExam::class);
+    }
+
+    /**
+     * Get the nearest upcoming exam
+     */
+    public function nearestExam(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->userExams()
+                ->where('exam_date', '>=', now()->startOfDay())
+                ->orderBy('exam_date', 'asc')
+                ->first(),
+        );
     }
 
     public function streakFreezes()

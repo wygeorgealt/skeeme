@@ -53,6 +53,8 @@ class ProfileController extends Controller
             'dob_month' => 'nullable|integer|between:1,12',
             'dob_year' => 'nullable|integer',
             'age' => 'nullable|integer',
+            'next_exam_date' => 'nullable|date',
+            'next_exam_title' => 'nullable|string|max:100',
         ]);
 
         $user = $request->user();
@@ -76,6 +78,13 @@ class ProfileController extends Controller
         $user->ai_preferences = $aiPreferences;
         $user->save();
 
+        if (isset($validated['next_exam_date'])) {
+            $user->userExams()->create([
+                'title' => $validated['next_exam_title'] ?? 'Next Exam',
+                'exam_date' => $validated['next_exam_date'],
+            ]);
+        }
+
         return response()->json([
             'message' => 'Onboarding completed successfully',
             'user' => [
@@ -83,6 +92,7 @@ class ProfileController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'ai_preferences' => $user->ai_preferences,
+                'nearest_exam' => $user->nearest_exam,
             ]
         ]);
     }

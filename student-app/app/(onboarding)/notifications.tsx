@@ -22,7 +22,7 @@ export default function NotificationScreen() {
     const { setOnboardingStep, completeOnboarding, onboardingData, user } = useAuthStore();
 
     useEffect(() => {
-        setOnboardingStep(6);
+        setOnboardingStep(7);
     }, []);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,6 +38,8 @@ export default function NotificationScreen() {
                 dob_month: onboardingData.dob_month,
                 dob_year: onboardingData.dob_year,
                 age: onboardingData.age,
+                next_exam_date: onboardingData.next_exam_date,
+                next_exam_title: onboardingData.next_exam_title,
             });
         } catch (e) {
             if (__DEV__) console.warn('Failed to submit onboarding data', e);
@@ -69,6 +71,14 @@ export default function NotificationScreen() {
     return (
         <View style={[s.container, { backgroundColor: C.background }]}>
             <SafeAreaView style={s.safeArea}>
+                <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
+                    <View style={s.stepRow}>
+                        <Text style={[s.stepText, { color: '#007AFF' }]}>Step 7 of 7</Text>
+                        <View style={s.progressBar}>
+                            <View style={[s.progressFill, { width: '100%', backgroundColor: '#007AFF' }]} />
+                        </View>
+                    </View>
+                </View>
 
                 {/* Visual Illustration */}
                 <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.illustrationSection}>
@@ -115,6 +125,27 @@ export default function NotificationScreen() {
                         </View>
                         <Text style={[s.mockTitle, { color: C.text }]}>Goal Reached 🎯</Text>
                         <Text style={[s.mockBody, { color: C.textSecondary }]}>Awesome work! You scored 100% on your Physics quiz.</Text>
+                    </Animated.View>
+
+                    {/* Mock Notification 3: Exam Countdown */}
+                    <Animated.View 
+                        entering={FadeInDown.duration(800).delay(800).springify()}
+                        style={[s.mockNotification, { 
+                            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                            transform: [{ rotate: '0deg' }, { translateY: 40 }] 
+                        }]}
+                    >
+                        <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+                        <View style={s.mockHeader}>
+                            <View style={[s.mockIconBadge, { backgroundColor: '#5856D6' }]}>
+                                <HugeiconsIcon icon={Notification01Icon} size={14} color="#FFF" />
+                            </View>
+                            <Text style={[s.mockAppName, { color: C.textSecondary }]}>Skeeme</Text>
+                            <Text style={[s.mockTime, { color: C.textSecondary }]}>just now</Text>
+                        </View>
+                        <Text style={[s.mockTitle, { color: C.text }]}>Exam Nudge 📚</Text>
+                        <Text style={[s.mockBody, { color: C.textSecondary }]}>3 days until your Math Exam! Have you studied today?</Text>
                     </Animated.View>
                 </Animated.View>
 
@@ -273,4 +304,9 @@ const s = StyleSheet.create({
         fontSize: 17,
         fontWeight: '600',
     },
+    headerSection: { paddingHorizontal: 24, paddingBottom: 12 },
+    stepRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+    stepText: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+    progressBar: { flex: 1, height: 4, backgroundColor: 'rgba(0,122,255,0.1)', borderRadius: 2, overflow: 'hidden' },
+    progressFill: { height: '100%', borderRadius: 2 },
 });
