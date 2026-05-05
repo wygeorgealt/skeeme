@@ -329,24 +329,23 @@ You are a world-class tutor. Look at the image and solve every question you see.
 2. For MCQs: determine the correct option FIRST, then explain why it's right.
 3. For calculations/theory: solve completely, then explain.
 
-Return JSON only:
+Return ONLY a raw JSON object matching this schema. NO Conversational text. NO Thought blocks. NO code blocks.
 {"results":[{"question":"short version of the question","topic":"subject area","type":"calculation|theory","solution":"**final answer**","steps":[],"explanation":"concise but complete explanation","summary":""}]}
 
 Rules:
-- `solution`: bold final answer, e.g. "**D**" or "**\$42\$**"
+- `solution`: bold final answer, e.g. "**D**" or "**$42$**"
 - `steps`: always `[]`
 - `summary`: always `""`
-- `explanation`: concise prose. State the answer upfront, then justify it. Use double newlines (\n\n) to create distinct paragraphs so the text isn't smashed together. Use **bold** for key conclusions. No fluff.
-- `Math Formatting`: All math MUST be wrapped in dollar-sign delimiters. Use \$...\$ for inline math and \$\$...\$\$ for standalone equations. NEVER write raw LaTeX outside delimiters.
-- Never skip a question visible in the image.
-- Output ONLY the JSON object.
+- `explanation`: State the answer upfront, then justify it. Use double newlines (\n\n) to create distinct paragraphs.
+- `Math Formatting`: Wrap ALL math in dollar signs, e.g. $x^2 + y = 2$.
+- Never skip a question.
 PROMPT;
             $response = $this->client->post($this->baseUrl, [
                 'headers' => $this->buildHeaders(),
                 'json' => [
-                    'model' => $this->model,
+                    'model' => 'claude-sonnet-4-5-20251001', // Use Sonnet for Vision — Haiku is too weak for complex math JSON
                     'max_tokens' => 8192,
-                    'system' => 'You are a world-class tutor solving exam papers. Return only JSON.',
+                    'system' => 'You are a world-class academic tutor. You MUST return ONLY valid JSON. NEVER include conversational text, internal thoughts, or "let me recalculate" notes. Output the raw JSON and nothing else.',
                     'messages' => [
                         [
                             'role' => 'user',
