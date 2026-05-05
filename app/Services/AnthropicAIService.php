@@ -322,7 +322,7 @@ class AnthropicAIService
 
             Log::info('Claude Vision: Processing image directly (native OCR)...');
 
-            $solvePrompt = <<<PROMPT
+            $solvePrompt = <<<'PROMPT'
 You are a world-class tutor. Look at the image and solve every question you see.
 
 1. Identify ALL questions and sub-parts (1a, 1b, 2, etc.) — each is a separate result item.
