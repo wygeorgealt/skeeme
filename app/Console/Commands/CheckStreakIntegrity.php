@@ -88,9 +88,9 @@ class CheckStreakIntegrity extends Command
                     // Upsell for non-Elite users
                     $push->send(
                         $user->expo_push_token,
-                        "Your {$oldStreak}-day streak just reset 😢",
-                        "Elite subscribers never lose their streak — they get 2 automatic Streak Freezes every month. Upgrade to Elite →",
-                        ['screen' => 'upgrade']
+                        "Your {$oldStreak}-day streak reset 😢",
+                        "You missed a day and your streak has reset to zero. Start a new streak today and keep the momentum going!",
+                        ['screen' => 'streaks']
                     );
                 } else {
                     // Elite but out of freezes
