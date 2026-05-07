@@ -508,7 +508,8 @@ export default function ScanScreen() {
                         s.slimFooter, 
                         isDark ? s.slimFooterDark : s.slimFooterLight,
                         {
-                            bottom: 90,
+                            bottom: 0,
+                            paddingBottom: Math.max(insets.bottom, 16) + 75,
                             backgroundColor: isDark 
                                 ? (Platform.OS === 'android' ? '#000000' : 'rgba(0,0,0,0.8)') 
                                 : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
@@ -641,7 +642,7 @@ const s = StyleSheet.create({
     followUpText: { fontSize: 15, fontWeight: '600' },
 
     // Slim footer
-    slimFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingBottom: 40, borderTopWidth: 1 },
+    slimFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingBottom: 100, borderTopWidth: 1 },
     slimFooterDark: { backgroundColor: 'rgba(0,0,0,0.8)', borderTopColor: 'rgba(255,255,255,0.08)' },
     slimFooterLight: { backgroundColor: 'rgba(255,255,255,0.9)', borderTopColor: 'rgba(60,60,67,0.08)' },
     slimFooterBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 10 },

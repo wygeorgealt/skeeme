@@ -4,7 +4,7 @@ import { View, StyleSheet } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { FireIcon, Trophy01Icon, SparklesIcon } from '@hugeicons/core-free-icons';
+import { FireIcon, Medal01Icon, SparklesIcon } from '@hugeicons/core-free-icons';
 
 const GRADIENTS = [
     ['#FF5F6D', '#FFC371'], // Sweet Morning (Orange/Yellow)
@@ -46,7 +46,7 @@ export const ShareCard = ({ type, data, viewShotRef }: ShareCardProps) => {
                         {type === 'streak' ? (
                             <HugeiconsIcon icon={FireIcon} size={280} color="rgba(255,255,255,0.12)" />
                         ) : (
-                            <HugeiconsIcon icon={Trophy01Icon} size={280} color="rgba(255,255,255,0.12)" />
+                            <HugeiconsIcon icon={Medal01Icon} size={280} color="rgba(255,255,255,0.12)" />
                         )}
                     </View>
 

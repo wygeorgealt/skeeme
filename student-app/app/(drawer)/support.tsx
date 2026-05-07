@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ArrowLeft01Icon, CancelCircleIcon, Image01Icon, MailUpload02Icon } from '@hugeicons/core-free-icons';
+import { ArrowLeft01Icon, Cancel01Icon, Image01Icon, MailUpload02Icon } from '@hugeicons/core-free-icons';
 
 import { Text } from '@/components/ui/Text';
 
@@ -149,7 +149,7 @@ export default function SupportScreen() {
                                 activeOpacity={0.7}
                                 style={s.removeScreenshotBtn}
                             >
-                                <HugeiconsIcon icon={CancelCircleIcon} size={24} color="#ef4444" />
+                                <HugeiconsIcon icon={Cancel01Icon} size={24} color="#ef4444" />
                             </TouchableOpacity>
                         </View>
                     ) : (

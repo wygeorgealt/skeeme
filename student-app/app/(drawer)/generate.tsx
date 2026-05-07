@@ -12,7 +12,6 @@ import { ShareCard } from '@/components/ui/ShareCard';
 import { RewardModal } from '@/components/RewardModal';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
 import { generateUUID } from '@/lib/utils';
-import CreditStatusBar from '@/components/CreditStatusBar';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 import { posthog } from '@/lib/posthog';
 
@@ -528,7 +527,7 @@ export default function GenerateQuizScreen() {
                     intensity={Platform.OS === 'ios' ? 100 : 0} 
                     tint={isDark ? "dark" : "light"} 
                     style={[s.formFooter, { 
-                        paddingBottom: 24, 
+                        paddingBottom: Math.max(insets.bottom, 16) + 75, 
                         borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
                         backgroundColor: isDark 
                             ? (Platform.OS === 'android' ? '#121212' : 'rgba(18,18,18,0.8)') 
@@ -711,12 +710,12 @@ export default function GenerateQuizScreen() {
                     tint={isDark ? 'dark' : 'light'} 
                     style={{ 
                         position: 'absolute', 
-                        bottom: 90, 
+                        bottom: 0, 
                         left: 0, 
                         right: 0, 
                         paddingHorizontal: 24, 
                         paddingTop: 16, 
-                        paddingBottom: 24, 
+                        paddingBottom: Math.max(insets.bottom, 16) + 75, 
                         borderTopWidth: 1, 
                         borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
                         backgroundColor: isDark 
@@ -834,8 +833,13 @@ export default function GenerateQuizScreen() {
                 intensity={Platform.OS === 'ios' ? 100 : 0} 
                 tint={isDark ? "dark" : "light"} 
                 style={[s.footer, { 
-                    paddingBottom: insets.bottom + 85, 
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    paddingBottom: Math.max(insets.bottom, 16) + 75, 
                     paddingHorizontal: 24, 
+                    borderTopWidth: 1,
                     borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
                     backgroundColor: isDark 
                         ? (Platform.OS === 'android' ? '#121212' : 'rgba(18,18,18,0.8)') 
@@ -1024,7 +1028,7 @@ const s = StyleSheet.create({
     optionDesc: { fontSize: 13, fontWeight: '500' },
 
     // Footer actions
-    formFooter: { position: 'absolute', bottom: 90, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
+    formFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
     generatePillButton: { width: '100%', borderRadius: 100, paddingVertical: 18, alignItems: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
     generatePillText: { color: '#FFF', fontSize: 16, fontWeight: '800', letterSpacing: -0.2 },
     loadingContainer: { alignItems: 'center', paddingVertical: 12 },

@@ -283,7 +283,7 @@ export default function GenerateFlashcardScreen() {
                 intensity={Platform.OS === 'ios' ? 100 : 0} 
                 tint={isDark ? "dark" : "light"} 
                 style={[s.formFooter, { 
-                    paddingBottom: 24, 
+                    paddingBottom: Math.max(insets.bottom, 16) + 75, 
                     borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
                     backgroundColor: isDark 
                         ? (Platform.OS === 'android' ? '#121212' : 'rgba(18,18,18,0.8)') 
@@ -363,7 +363,7 @@ const s = StyleSheet.create({
     optionDesc: { fontSize: 13, fontWeight: '500' },
 
     // Footer
-    formFooter: { position: 'absolute', bottom: 90, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
+    formFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
     generatePillButton: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
     generatePillText: { color: 'white', fontWeight: '700', fontSize: 16, letterSpacing: -0.2 },
     

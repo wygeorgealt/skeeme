@@ -43,6 +43,20 @@ app-example
 /ios
 /android
 
-.env.local
-.env
+# sensitive credentials
+*.json
+!app.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!eas.json
+!babel.config.js
+!metro.config.js
+!tailwind.config.js
+!eslint.config.js
+*.jks
+*.pem
+*.p12
+*.key
+.env*
 create_tester.php

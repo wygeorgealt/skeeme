@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, useColorScheme, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, useColorScheme, StyleSheet, Platform } from 'react-native';
 
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -184,7 +184,7 @@ export default function PreferencesScreen() {
             </ScrollView>
 
             {/* Sticky Save Button */}
-            <BlurView intensity={100} tint={isDark ? 'dark' : 'light'} style={s.stickyFooter}>
+            <BlurView intensity={Platform.OS === 'ios' ? 100 : 0} tint={isDark ? "dark" : "light"} style={[s.stickyFooter, { paddingBottom: Math.max(insets.bottom, 16) + 75, backgroundColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)' }]}>
                 <TouchableOpacity
                     onPress={handleSave}
                     disabled={saving}
@@ -225,7 +225,7 @@ const s = StyleSheet.create({
     
     textInput: { height: 50, fontSize: 17, flex: 1 },
 
-    stickyFooter: { position: 'absolute', bottom: 90, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
+    stickyFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)' },
     saveBtnShadow: { width: '100%', height: 56, borderRadius: 100, backgroundColor: '#007AFF', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4, alignItems: 'center', justifyContent: 'center' },
     saveBtnText: { color: 'white', fontWeight: '700', fontSize: 16 },
     

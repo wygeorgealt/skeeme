@@ -16,7 +16,7 @@ import { MathText } from '@/components/ui/MathText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Tick01Icon, Cancel01Icon, MagicWand01Icon, CheckmarkCircle01Icon, CancelCircleIcon, IdeaIcon, ArrowLeft01Icon, DocumentCodeIcon, Share01Icon } from '@hugeicons/core-free-icons';
+import { Tick01Icon, Cancel01Icon, MagicWand01Icon, CheckmarkCircle01Icon, IdeaIcon, ArrowLeft01Icon, DocumentCodeIcon, Share01Icon } from '@hugeicons/core-free-icons';
 import { BlurView } from 'expo-blur';
 
 // Storage helpers
@@ -146,7 +146,7 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                                 <View key={i} style={[s.optionRow, bg, borderColor]}>
                                     <Text style={[s.optionText, text]}>{opt}</Text>
                                     {icon === 'checkmark-circle' && <HugeiconsIcon icon={CheckmarkCircle01Icon} size={18} color="#10b981" />}
-                                    {icon === 'close-circle' && <HugeiconsIcon icon={CancelCircleIcon} size={18} color="#ef4444" />}
+                                    {icon === 'close-circle' && <HugeiconsIcon icon={Cancel01Icon} size={18} color="#ef4444" />}
                                 </View>
                             );
                         })}
@@ -344,12 +344,13 @@ export default function QuizHistoryDetailScreen() {
                 style={[
                     s.footer, 
                     isDark ? s.footerDark : s.footerLight,
-                    {
-                        bottom: 90,
-                        backgroundColor: isDark 
-                            ? (Platform.OS === 'android' ? '#090A0F' : 'rgba(9, 10, 15, 0.8)') 
-                            : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.9)')
-                    }
+                        {
+                            bottom: 0,
+                            paddingBottom: Math.max(insets.bottom, 16) + 75,
+                            backgroundColor: isDark 
+                                ? (Platform.OS === 'android' ? '#000000' : 'rgba(0,0,0,0.8)') 
+                                : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+                        }
                 ]}
             >
                 <TouchableOpacity
