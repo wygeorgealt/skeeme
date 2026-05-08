@@ -7,9 +7,8 @@ import { StatusBar } from 'expo-status-bar';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CloseCircle, Key } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Cancel01Icon, Key01Icon } from '@hugeicons/core-free-icons';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 
 export default function NewPasswordScreen() {
@@ -77,7 +76,7 @@ export default function NewPasswordScreen() {
                 <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity onPress={() => router.replace('/login')}>
                         <View style={[s.backBtn, { backgroundColor: C.card }]}>
-                            <HugeiconsIcon icon={Cancel01Icon} size={24} color={C.text} />
+                            <CloseCircle size={24} color={C.text} />
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -88,7 +87,7 @@ export default function NewPasswordScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={[s.iconCircle, { backgroundColor: C.primaryLight }]}>
-                        <HugeiconsIcon icon={Key01Icon} size={32} color={C.primary} />
+                        <Key size={32} color={C.primary} />
                     </View>
 
                     <Text style={[s.title, { color: C.text }]}>Security</Text>

@@ -23,8 +23,25 @@ import { TheoryCard } from '@/components/quiz/TheoryCard';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { DocumentCodeIcon, Upload01Icon, CheckmarkCircle01Icon, Cancel01Icon, IdeaIcon, Timer01Icon, Tick01Icon, ArrowRight01Icon, Share01Icon, Leaf01Icon, FireIcon, ListViewIcon, UserGroupIcon, Medal01Icon, InformationCircleIcon, Alert01Icon } from '@hugeicons/core-free-icons';
+import {
+    Leaf,
+    LightbulbBolt,
+    Fire,
+    List,
+    DocumentText,
+    UsersGroupRounded,
+    CheckCircle,
+    CloseCircle,
+    Lightbulb,
+    Stopwatch,
+    AltArrowRight,
+    Share,
+    InfoCircle,
+    Danger,
+    CloudUpload,
+    FolderOpen,
+    CupStar,
+} from '@solar-icons/react-native/Bold';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
@@ -32,16 +49,27 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 // CONSTANTS & OPTIONS
 // ══════════════════════════════════════════════════════════════════════════════
 const DIFFICULTY_OPTIONS = [
-    { key: 'easy', label: 'Easy', icon: Leaf01Icon, desc: 'Focus on fundamentals' },
-    { key: 'medium', label: 'Medium', icon: IdeaIcon, desc: 'Comprehensive coverage' },
-    { key: 'hard', label: 'Hard', icon: FireIcon, desc: 'Deep analytical questions' },
+    { key: 'easy',   label: 'Easy',   Icon: Leaf,                  desc: 'Focus on fundamentals'    },
+    { key: 'medium', label: 'Medium', Icon: LightbulbBolt,        desc: 'Comprehensive coverage'   },
+    { key: 'hard',   label: 'Hard',   Icon: Fire,  desc: 'Deep analytical questions' },
 ];
 
 const FORMAT_OPTIONS = [
-    { key: 'mcq', label: 'MCQ', icon: ListViewIcon, desc: 'Multiple choice questions' },
-    { key: 'theory', label: 'Theory', icon: DocumentCodeIcon, desc: 'Essay & analysis' },
-    { key: 'both', label: 'Mixed', icon: UserGroupIcon, desc: 'Combination of both' },
+    { key: 'mcq',    label: 'MCQ',    Icon: List,     desc: 'Multiple choice questions' },
+    { key: 'theory', label: 'Theory', Icon: DocumentText, desc: 'Essay & analysis'           },
+    { key: 'both',   label: 'Mixed',  Icon: UsersGroupRounded,        desc: 'Combination of both'        },
 ];
+
+// Card shadow helper
+const cardShadow = (C: typeof Colors.light) => ({
+    backgroundColor: C.card,
+    borderRadius: 20,
+    shadowColor: C.cardShadowColor,
+    shadowOpacity: C.cardShadowOpacity,
+    shadowRadius: C.cardShadowRadius,
+    shadowOffset: C.cardShadowOffset,
+    elevation: C.cardElevation,
+});
 
 const LOADING_STAGES_FILE = ['Skeeming...', 'Solving...', 'Extracting Context...', 'Generating Questions...', 'Almost Ready...'];
 const LOADING_STAGES_TOPIC = ['Skeeming...', 'Solving...', 'Researching Topic...', 'Generating Questions...', 'Almost Ready...'];
@@ -439,33 +467,31 @@ export default function GenerateQuizScreen() {
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
     if (questions.length === 0) {
         const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
-        const estimatedCost = parseInt(questionCount) || 10;
-        
+        const iconBg = isDark ? 'rgba(0,122,255,0.15)' : '#EBF3FF';
+
         return (
-            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+            <View style={{ flex: 1, backgroundColor: C.background }}>
                 {/* Header */}
-                <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
-                    <Text style={[s.headerTitle, { color: C.text }]}>
-                        Build Quiz
-                    </Text>
+                <View style={[sf.header, { paddingTop: Math.max(insets.top, 20) }]}>
+                    <Text style={[sf.headerTitle, { color: C.text }]}>Build Quiz</Text>
                 </View>
 
-                <ScrollView 
-                    style={{ flex: 1 }} 
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 220, paddingTop: 10 }} 
+                <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 220, paddingTop: 4 }}
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Segmented Control */}
-                    <View style={[s.segmentedControl, isDark ? s.segmentedControlDark : s.segmentedControlLight]}>
+                    <View style={[sf.segCtrl, { backgroundColor: isDark ? '#2C2C2E' : '#E5E7EB' }]}>
                         {(['topic', 'file'] as QuizMode[]).map(m => {
                             const isSelected = mode === m;
                             return (
-                                <TouchableOpacity 
-                                    key={m} 
+                                <TouchableOpacity
+                                    key={m}
                                     onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                    style={[s.segmentBtn, isSelected && (isDark ? s.segmentBtnActiveDark : s.segmentBtnActiveLight)]}
+                                    style={[sf.segBtn, isSelected && [sf.segBtnActive, { backgroundColor: C.card, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 }]]}
                                 >
-                                    <Text style={[s.segmentText, isSelected ? { color: C.text, fontWeight: '700' } : { color: C.textTertiary, fontWeight: '500' }]}>
+                                    <Text style={[sf.segText, { color: isSelected ? C.text : C.textTertiary, fontWeight: isSelected ? '700' : '500' }]}>
                                         {m === 'topic' ? 'By Topic' : 'From File'}
                                     </Text>
                                 </TouchableOpacity>
@@ -473,13 +499,13 @@ export default function GenerateQuizScreen() {
                         })}
                     </View>
 
-                    {/* Input Area */}
+                    {/* Input */}
                     {mode === 'topic' ? (
-                        <View style={[s.card, { backgroundColor: C.card, marginBottom: 24 }]}>
+                        <View style={[cardShadow(C), sf.inputCard]}>
                             <TextInput
-                                style={[s.textInput, { color: C.text }]}
+                                style={[sf.textInput, { color: C.text }]}
                                 placeholder="E.g. Cell Biology, World War II..."
-                                placeholderTextColor="#8E8E93"
+                                placeholderTextColor={C.textTertiary}
                                 value={topic}
                                 onChangeText={setTopic}
                             />
@@ -488,132 +514,137 @@ export default function GenerateQuizScreen() {
                         <TouchableOpacity
                             onPress={handleFileSelect}
                             disabled={isProcessingFile}
-                            activeOpacity={0.7}
-                            style={[s.card, s.uploadBox, { backgroundColor: C.card, marginBottom: 24 }]}
+                            activeOpacity={0.75}
+                            style={[cardShadow(C), sf.uploadBox]}
                         >
                             {isProcessingFile ? (
-                                <View style={s.centered}>
+                                <View style={sf.centered}>
                                     <LoadingSpinner size={32} />
-                                    <Text style={[s.processingText, { color: '#007AFF' }]}>Analyzing document...</Text>
+                                    <Text style={[sf.uploadSub, { color: C.primary, marginTop: 10 }]}>Analyzing document...</Text>
                                 </View>
                             ) : selectedFile ? (
                                 <>
-                                    <HugeiconsIcon icon={DocumentCodeIcon} size={32} color="#007AFF" style={{ marginBottom: 12 }} />
-                                    <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
-                                    <Text style={[s.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
+                                    <FolderOpen size={32} color={C.primary} />
+                                    <Text style={[sf.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
+                                    <Text style={[sf.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
                                 </>
                             ) : (
                                 <>
-                                    <HugeiconsIcon icon={Upload01Icon} size={32} color="#8E8E93" style={{ marginBottom: 12 }} />
-                                    <Text style={[s.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
-                                    <Text style={[s.uploadSub, { color: '#8E8E93' }]}>Maximum 5MB</Text>
+                                    <CloudUpload size={32} color={C.textTertiary} />
+                                    <Text style={[sf.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
+                                    <Text style={[sf.uploadSub, { color: C.textTertiary }]}>Maximum 5MB</Text>
                                 </>
                             )}
                         </TouchableOpacity>
                     )}
 
-                    {/* Number of Questions (Stepper) */}
-                    <Text style={s.sectionTitle}>NUMBER OF QUESTIONS</Text>
-                    <View style={[s.card, s.stepperCard, { backgroundColor: C.card }]}>
-                        <Text style={[s.stepperLabel, { color: C.text }]}>Questions</Text>
-                        <View style={s.stepperControls}>
-                            <TouchableOpacity 
-                                style={[s.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}
+                    {/* Number of Questions */}
+                    <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>NUMBER OF QUESTIONS</Text>
+                    <View style={[cardShadow(C), sf.stepperCard]}>
+                        <Text style={[sf.stepperLabel, { color: C.text }]}>Questions</Text>
+                        <View style={sf.stepperRow}>
+                            <TouchableOpacity
+                                style={[sf.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F0F2F7' }]}
                                 onPress={() => setQuestionCount(prev => String(Math.max(10, parseInt(prev) - 5)))}
                             >
-                                <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>-</Text>
+                                <Text style={[sf.stepperBtnText, { color: C.primary }]}>-</Text>
                             </TouchableOpacity>
-                            <Text style={[s.stepperValue, { color: C.text }]}>{questionCount}</Text>
-                            <TouchableOpacity 
-                                style={[s.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}
+                            <Text style={[sf.stepperValue, { color: C.text }]}>{questionCount}</Text>
+                            <TouchableOpacity
+                                style={[sf.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F0F2F7' }]}
                                 onPress={() => setQuestionCount(prev => String(Math.min(30, parseInt(prev) + 5)))}
                             >
-                                <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>+</Text>
+                                <Text style={[sf.stepperBtnText, { color: C.primary }]}>+</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
 
                     {/* Difficulty */}
-                    <Text style={s.sectionTitle}>DIFFICULTY</Text>
-                    <View style={{ gap: 12, marginBottom: 24 }}>
-                        {DIFFICULTY_OPTIONS.map(opt => {
+                    <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>DIFFICULTY</Text>
+                    <View style={cardShadow(C)}>
+                        {DIFFICULTY_OPTIONS.map((opt, index) => {
                             const isSelected = difficulty === opt.key;
+                            const isLast = index === DIFFICULTY_OPTIONS.length - 1;
                             return (
                                 <TouchableOpacity
                                     key={opt.key}
                                     onPress={() => setDifficulty(opt.key as Difficulty)}
-                                    activeOpacity={0.8}
-                                    style={[s.card, s.optionCard, { backgroundColor: C.card, borderColor: isSelected ? '#007AFF' : 'transparent', borderWidth: 2 }]}
+                                    activeOpacity={0.75}
+                                    style={[
+                                        sf.optRow,
+                                        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
+                                    ]}
                                 >
-                                    <View style={[s.iconBoxRow, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
-                                        <HugeiconsIcon icon={opt.icon} size={18} color="#007AFF" />
+                                    <View style={[sf.optIcon, { backgroundColor: iconBg }]}>
+                                        <opt.Icon size={20} color="#007AFF" />
                                     </View>
-                                    <View style={{ flex: 1, marginLeft: 16 }}>
-                                        <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
-                                        <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[sf.optLabel, { color: C.text }]}>{opt.label}</Text>
+                                        <Text style={[sf.optDesc, { color: C.textSecondary }]}>{opt.desc}</Text>
                                     </View>
-                                    {isSelected && <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#007AFF" />}
+                                    {isSelected && <CheckCircle size={22} color="#007AFF" />}
                                 </TouchableOpacity>
                             );
                         })}
                     </View>
 
-                    {/* Format */}
-                    <Text style={s.sectionTitle}>QUESTION FORMAT</Text>
-                    <View style={{ gap: 12, marginBottom: 24 }}>
-                        {FORMAT_OPTIONS.map(opt => {
+                    {/* Question Format */}
+                    <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>QUESTION FORMAT</Text>
+                    <View style={cardShadow(C)}>
+                        {FORMAT_OPTIONS.map((opt, index) => {
                             const isSelected = format === opt.key;
+                            const isLast = index === FORMAT_OPTIONS.length - 1;
                             return (
                                 <TouchableOpacity
                                     key={opt.key}
                                     onPress={() => setFormat(opt.key as FormatType)}
-                                    activeOpacity={0.8}
-                                    style={[s.card, s.optionCard, { backgroundColor: C.card, borderColor: isSelected ? '#007AFF' : 'transparent', borderWidth: 2 }]}
+                                    activeOpacity={0.75}
+                                    style={[
+                                        sf.optRow,
+                                        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
+                                    ]}
                                 >
-                                    <View style={[s.iconBoxRow, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
-                                        <HugeiconsIcon icon={opt.icon} size={18} color="#007AFF" />
+                                    <View style={[sf.optIcon, { backgroundColor: iconBg }]}>
+                                        <opt.Icon size={20} color="#007AFF" />
                                     </View>
-                                    <View style={{ flex: 1, marginLeft: 16 }}>
-                                        <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
-                                        <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[sf.optLabel, { color: C.text }]}>{opt.label}</Text>
+                                        <Text style={[sf.optDesc, { color: C.textSecondary }]}>{opt.desc}</Text>
                                     </View>
-                                    {isSelected && <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#007AFF" />}
+                                    {isSelected && <CheckCircle size={22} color="#007AFF" />}
                                 </TouchableOpacity>
                             );
                         })}
                     </View>
                 </ScrollView>
 
-                {/* Glassmorphic Sticky Footer */}
-                <BlurView 
-                    intensity={Platform.OS === 'ios' ? 100 : 0} 
-                    tint={isDark ? "dark" : "light"} 
-                    style={[s.formFooter, { 
-                        paddingBottom: Math.max(insets.bottom, 16) + 75, 
-                        borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                        backgroundColor: isDark 
-                            ? (Platform.OS === 'android' ? '#121212' : 'rgba(18,18,18,0.8)') 
-                            : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+                {/* Sticky Footer */}
+                <BlurView
+                    intensity={Platform.OS === 'ios' ? 100 : 0}
+                    tint={isDark ? 'dark' : 'light'}
+                    style={[sf.footer, {
+                        paddingBottom: Math.max(insets.bottom, 16) + 75,
+                        backgroundColor: isDark
+                            ? (Platform.OS === 'android' ? '#0D0D0D' : 'rgba(13,13,13,0.9)')
+                            : (Platform.OS === 'android' ? '#F0F2F7' : 'rgba(240,242,247,0.9)'),
+                        borderTopColor: C.separator,
                     }]}
                 >
-                    {isLoading ? (
-                        <View style={s.loadingContainer}>
-                            <LoadingSpinner size={32} />
-                            <Text style={[s.loadingText, { color: C.text, marginTop: 12 }]}>{loadingStage}</Text>
-                        </View>
-                    ) : (
-                        <TouchableOpacity
-                            onPress={handleGenerate}
-                            disabled={!canGenerate}
-                            activeOpacity={0.8}
-                            style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : '#A2C9F4' }]}
-                        >
-                                <Text style={s.generatePillText}>
-                                    Generate Quiz
-                                </Text>
-                        </TouchableOpacity>
-                    )}
+                    <TouchableOpacity
+                        onPress={handleGenerate}
+                        disabled={!canGenerate}
+                        activeOpacity={0.85}
+                        style={[sf.generateBtn, { backgroundColor: canGenerate ? '#007AFF' : (isDark ? '#1E3A5F' : '#A2C9F4') }]}
+                    >
+                        <Text style={sf.generateBtnText}>Generate Quiz</Text>
+                    </TouchableOpacity>
                 </BlurView>
+
+                <OutOfCreditsModal
+                    visible={showOutOfCredits}
+                    onDismiss={() => setShowOutOfCredits(false)}
+                    featureAttempted="quiz"
+                />
             </View>
         );
     }
@@ -703,13 +734,13 @@ export default function GenerateQuizScreen() {
                                         textColor = '#34C759';
                                         letterBg = 'rgba(52,199,89,0.1)';
                                         letterColor = '#34C759';
-                                        icon = <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} color="#34C759" />;
+                                        icon = <CheckCircle size={20} color="#34C759" />;
                                     } else if (isSelected && !isCorrectOpt) {
                                         borderColor = '#FF3B30';
                                         textColor = '#FF3B30';
                                         letterBg = 'rgba(255,59,48,0.1)';
                                         letterColor = '#FF3B30';
-                                        icon = <HugeiconsIcon icon={Cancel01Icon} size={20} color="#FF3B30" />;
+                                        icon = <CloseCircle size={20} color="#FF3B30" />;
                                     }
                                 } else if (isSelected) {
                                     borderColor = '#007AFF';
@@ -761,7 +792,7 @@ export default function GenerateQuizScreen() {
                                 return (
                                     <View style={{ marginTop: 16, marginBottom: 24, padding: 16, backgroundColor: isDark ? 'rgba(0,122,255,0.1)' : '#F0F8FF', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,122,255,0.3)' }}>
                                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                                            <HugeiconsIcon icon={IdeaIcon} size={20} color="#007AFF" />
+                                            <LightbulbBolt size={20} color="#007AFF" />
                                             <Text style={{ marginLeft: 8, fontSize: 16, fontWeight: '700', color: '#007AFF' }}>
                                                 {isCorrect ? 'Spot on! 🎉' : 'Nice try, but not quite! 🤔'}
                                             </Text>
@@ -821,10 +852,10 @@ export default function GenerateQuizScreen() {
     // ── RESULTS VIEW ────────────────────────────────────────────────────────────
     const percentage = Math.round((correctCount / questions.length) * 100);
     const getRemark = (pct: number) => {
-        if (pct >= 90) return { title: "GENIUS!", subtitle: "You've completely mastered this topic!", icon: Medal01Icon };
-        if (pct >= 75) return { title: "WELL DONE!", subtitle: "Excellent performance, keep it up!", icon: CheckmarkCircle01Icon };
-        if (pct >= 50) return { title: "SOLID EFFORT!", subtitle: "Good job, but there's room to grow.", icon: InformationCircleIcon };
-        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: Alert01Icon };
+        if (pct >= 90) return { title: "GENIUS!", subtitle: "You've completely mastered this topic!", icon: CupStar };
+        if (pct >= 75) return { title: "WELL DONE!", subtitle: "Excellent performance, keep it up!", icon: CheckCircle };
+        if (pct >= 50) return { title: "SOLID EFFORT!", subtitle: "Good job, but there's room to grow.", icon: InfoCircle };
+        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: Danger };
     };
     const remark = getRemark(percentage);
 
@@ -834,7 +865,7 @@ export default function GenerateQuizScreen() {
                 {/* Score Header Glass Card */}
                 <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.resultsHeader}>
                     <View style={s.resultsIconBox}>
-                        <HugeiconsIcon icon={remark.icon} size={36} color={C.primary} />
+                        <remark.icon size={36} color={C.primary} />
                     </View>
                     <Text style={[s.resultsTitle, { color: C.primary }]}>{remark.title}</Text>
                     <Text style={[s.scoreValue, { color: C.text }]}>{percentage}%</Text>
@@ -843,11 +874,11 @@ export default function GenerateQuizScreen() {
                     {/* Meta Info */}
                     <View style={s.resultsMeta}>
                         <View style={s.metaCard}>
-                            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} color="#4ADE80" />
+                            <CheckCircle size={16} color="#4ADE80" />
                             <Text style={[s.metaText, { color: C.textSecondary }]}>{correctCount} OK</Text>
                         </View>
                         <View style={s.metaCard}>
-                            <HugeiconsIcon icon={Timer01Icon} size={16} color={C.primary} />
+                            <Stopwatch size={16} color={C.primary} />
                             <Text style={[s.metaText, { color: C.textSecondary }]}>
                                 {timerEnabled ? formatTime(((parseInt(timerMinutes) || 10) * 60) - timeLeft) : 'No Timer'}
                             </Text>
@@ -874,9 +905,9 @@ export default function GenerateQuizScreen() {
                             >
                                 <View style={[s.reviewStatusBox, { backgroundColor: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }]}>
                                     {isCorrect ? (
-                                        <HugeiconsIcon icon={Tick01Icon} size={18} color="#10b981" />
+                                        <CheckCircle size={18} color="#10b981" />
                                     ) : (
-                                        <HugeiconsIcon icon={Cancel01Icon} size={18} color="#ef4444" />
+                                        <CloseCircle size={18} color="#ef4444" />
                                     )}
                                 </View>
                                 <View style={{ flex: 1 }}>
@@ -886,7 +917,7 @@ export default function GenerateQuizScreen() {
                                     </Text>
                                 </View>
                                 {canExplain && (
-                                    <HugeiconsIcon icon={ArrowRight01Icon} size={16} color={C.textTertiary} />
+                                    <AltArrowRight size={16} color={C.textTertiary} />
                                 )}
                             </BlurView>
                         </TouchableOpacity>
@@ -933,7 +964,7 @@ export default function GenerateQuizScreen() {
                             <LoadingSpinner size={24} color={C.primary} strokeWidth={3} />
                         ) : (
                             <>
-                                <HugeiconsIcon icon={Share01Icon} size={18} color={C.text} />
+                                <Share size={18} color={C.text} />
                                 <Text style={[s.actionBtnText, { color: C.text }]}>Share</Text>
                             </>
                         )}
@@ -950,7 +981,7 @@ export default function GenerateQuizScreen() {
                                 <LoadingSpinner size={24} color="white" strokeWidth={3} />
                             ) : (
                                 <>
-                                    <HugeiconsIcon icon={DocumentCodeIcon} size={18} color="white" />
+                                    <DocumentText size={18} color="white" />
                                     <Text style={s.exportBtnText}>Export</Text>
                                 </>
                             )}
@@ -992,9 +1023,9 @@ export default function GenerateQuizScreen() {
                                 { backgroundColor: explanationQ?.isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', marginRight: 0 }
                             ]}>
                                 {explanationQ?.isCorrect ? (
-                                    <HugeiconsIcon icon={Tick01Icon} size={18} color="#10b981" />
+                                    <CheckCircle size={18} color="#10b981" />
                                 ) : (
-                                    <HugeiconsIcon icon={Cancel01Icon} size={18} color="#ef4444" />
+                                    <CloseCircle size={18} color="#ef4444" />
                                 )}
                             </View>
                             <Text style={[s.sheetTitle, { color: C.text }]} numberOfLines={2}>
@@ -1172,3 +1203,39 @@ const s = StyleSheet.create({
     sheetCloseBtnText: { fontWeight: '700', fontSize: 16 },
 });
 
+// ── Setup Form StyleSheet (sf) ───────────────────────────────────────────────
+const sf = StyleSheet.create({
+    header: { paddingHorizontal: 20, paddingBottom: 16 },
+    headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1 },
+
+    segCtrl: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: 20 },
+    segBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
+    segBtnActive: { borderRadius: 10 },
+    segText: { fontSize: 15 },
+
+    inputCard: { paddingHorizontal: 16, paddingVertical: 4, marginBottom: 24 },
+    textInput: { height: 52, fontSize: 16, fontWeight: '500' },
+
+    uploadBox: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 24, gap: 10, marginBottom: 24 },
+    uploadTitle: { fontSize: 16, fontWeight: '600', textAlign: 'center' },
+    uploadSub: { fontSize: 13, textAlign: 'center' },
+    centered: { alignItems: 'center' },
+
+    sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, marginLeft: 4 },
+
+    stepperCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16, marginBottom: 28 },
+    stepperLabel: { fontSize: 16, fontWeight: '600' },
+    stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+    stepperBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+    stepperBtnText: { fontSize: 22, fontWeight: '700', lineHeight: 26 },
+    stepperValue: { fontSize: 22, fontWeight: '800', minWidth: 32, textAlign: 'center' },
+
+    optRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14, minHeight: 64 },
+    optIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    optLabel: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
+    optDesc: { fontSize: 13 },
+
+    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth },
+    generateBtn: { width: '100%', height: 56, borderRadius: 100, alignItems: 'center', justifyContent: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
+    generateBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
+});

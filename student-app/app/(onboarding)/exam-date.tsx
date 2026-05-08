@@ -7,9 +7,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
+import { Calendar, Checklist } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Calendar01Icon, Task01Icon } from '@hugeicons/core-free-icons';
 import { Colors } from '@/constants/theme';
 
 export default function ExamDateScreen() {
@@ -77,7 +76,7 @@ export default function ExamDateScreen() {
                         style={[s.pickerCard, isDark ? s.cardDark : s.cardLight]}
                     >
                         <View style={s.iconHeader}>
-                            <HugeiconsIcon icon={Calendar01Icon} size={32} color={iconColor} />
+                            <Calendar size={32} color={iconColor} />
                         </View>
                         
                         <Text style={[s.dateLabel, { color: textColor }]}>
@@ -112,7 +111,7 @@ export default function ExamDateScreen() {
                         entering={FadeInDown.duration(600).delay(500)}
                         style={s.infoRow}
                     >
-                        <HugeiconsIcon icon={Task01Icon} size={20} color={subtextColor} />
+                        <Checklist size={20} color={subtextColor} />
                         <Text style={[s.infoText, { color: subtextColor }]}>
                             We'll send gentle reminders to keep your streak alive as the date approaches.
                         </Text>

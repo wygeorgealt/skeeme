@@ -5,13 +5,13 @@ import { Platform } from 'react-native';
 export const Colors = {
   light: {
     // Backgrounds
-    background: '#F2F2F7',
+    background: '#F0F2F7',
     secondaryBackground: '#FFFFFF',
     card: '#FFFFFF',
     elevated: '#E5E5EA',
     
     // Text
-    text: '#000000',
+    text: '#0A0F1E',
     textSecondary: '#6D6D72',
     textTertiary: '#8E8E93',
     
@@ -26,14 +26,22 @@ export const Colors = {
     warning: '#FF9500',
     
     // Separators
-    separator: 'rgba(60, 60, 67, 0.29)',
+    separator: 'rgba(60, 60, 67, 0.12)',
     separatorOpaque: '#E5E5EA',
     
     // Icons
     icon: '#6D6D72',
     iconActive: '#007AFF',
-    tabIconDefault: '#6D6D72',
+    tabIconDefault: '#9CA3AF',
     tabIconSelected: '#007AFF',
+
+    // Card elevation (flat card system)
+    cardShadowColor: '#000000',
+    cardShadowOpacity: 0.06,
+    cardShadowRadius: 12,
+    cardShadowOffset: { width: 0, height: 2 },
+    cardElevation: 3,
+
     // Backwards-compatible aliases
     cardSecondary: '#F2F2F7',
     glassBorder: 'rgba(0,0,0,0.04)',
@@ -41,19 +49,19 @@ export const Colors = {
   },
   dark: {
     // Backgrounds
-    background: '#000000',
-    secondaryBackground: '#121212',
+    background: '#0D0D0D',
+    secondaryBackground: '#1A1A1A',
     card: '#1C1C1E',
     elevated: '#2C2C2E',
     
     // Text
     text: '#FFFFFF',
     textSecondary: '#A1A1A6',
-    textTertiary: '#8E8E93',
+    textTertiary: '#6B6B70',
     
     // Brand / Primary Action
     primary: '#007AFF',
-    primaryLight: 'rgba(0, 122, 255, 0.2)',
+    primaryLight: 'rgba(0, 122, 255, 0.18)',
     
     // Semantic
     destructive: '#FF453A',
@@ -62,18 +70,26 @@ export const Colors = {
     warning: '#FFD60A',
     
     // Separators
-    separator: 'rgba(84, 84, 88, 0.65)',
+    separator: 'rgba(84, 84, 88, 0.4)',
     separatorOpaque: '#38383A',
     
     // Icons
     icon: '#A1A1A6',
     iconActive: '#007AFF',
-    tabIconDefault: '#A1A1A6',
+    tabIconDefault: '#6B7280',
     tabIconSelected: '#007AFF',
+
+    // Card elevation (flat card system)
+    cardShadowColor: '#000000',
+    cardShadowOpacity: 0.3,
+    cardShadowRadius: 16,
+    cardShadowOffset: { width: 0, height: 4 },
+    cardElevation: 6,
+
     // Backwards-compatible aliases
     cardSecondary: '#2C2C2E',
-    glassBorder: 'rgba(255,255,255,0.08)',
-    glassBackground: 'rgba(28, 28, 30, 0.65)',
+    glassBorder: 'rgba(255,255,255,0.06)',
+    glassBackground: 'rgba(28, 28, 30, 0.75)',
   },
 };
 

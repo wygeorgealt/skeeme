@@ -1,8 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import React from 'react';
 import { View, TouchableOpacity, useColorScheme, Share, Platform } from 'react-native';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { CircleArrowUp02Icon, Share01Icon } from '@hugeicons/core-free-icons';
+import { RoundArrowUp, Forward } from '@solar-icons/react-native/Bold';
 
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
@@ -106,7 +105,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
                 {/* Icon */}
                 <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF620', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
-                    <HugeiconsIcon icon={CircleArrowUp02Icon} size={28} color="#8B5CF6" />
+                    <RoundArrowUp size={28} color="#8B5CF6" />
 
                 </View>
 
@@ -169,7 +168,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                             gap: 6,
                         }}
                     >
-                        <HugeiconsIcon icon={Share01Icon} size={16} color={isDark ? '#CBD5E1' : '#475569'} />
+                        <Forward size={16} color={isDark ? '#CBD5E1' : '#475569'} />
                         <Text style={{ color: isDark ? '#CBD5E1' : '#475569', fontSize: 13, fontWeight: '700' }}>
                             Refer a friend
                         </Text>

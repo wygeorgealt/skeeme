@@ -6,9 +6,8 @@ import { api } from '@/lib/api';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { IosPillButton } from '@/components/ui/IosPillButton';
+import { AltArrowLeft } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ForgotPasswordScreen() {
@@ -57,7 +56,7 @@ export default function ForgotPasswordScreen() {
                         style={[s.backBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     >
-                        <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={C.text} />
+                        <AltArrowLeft size={24} color={C.text} />
                     </TouchableOpacity>
                 </View>
 

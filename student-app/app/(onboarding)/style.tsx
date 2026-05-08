@@ -5,9 +5,8 @@ import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { CheckCircle, Sun, Compass } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { CheckmarkCircle01Icon, Sun01Icon, CompassIcon } from '@hugeicons/core-free-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STYLES = [
@@ -15,13 +14,13 @@ const STYLES = [
         key: 'simple',
         label: 'Simple & Clear',
         desc: "Break it down like I'm new to this topic.",
-        icon: Sun01Icon,
+        icon: Sun,
     },
     {
         key: 'detailed',
         label: 'Detailed & Academic',
         desc: 'Give me the full exam-level answer.',
-        icon: CompassIcon,
+        icon: Compass,
     },
 ];
 
@@ -95,14 +94,14 @@ export default function StyleScreen() {
                                         ]}
                                     >
                                         <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                                            <HugeiconsIcon icon={style.icon} size={24} color={iconColor} />
+                                            <style.icon size={24} color={iconColor} />
                                         </View>
                                         <View style={s.textStack}>
                                             <Text style={[s.optionLabel, { color: textColor }]}>{style.label}</Text>
                                             <Text style={[s.optionDesc, { color: subtextColor }]}>{style.desc}</Text>
                                         </View>
                                         {isSelected && (
-                                            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={26} color="#007AFF" />
+                                            <CheckCircle size={26} color="#007AFF" />
                                         )}
                                     </TouchableOpacity>
                                 </Animated.View>

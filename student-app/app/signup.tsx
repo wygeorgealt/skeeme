@@ -8,9 +8,8 @@ import { PasswordField } from '@/components/ui/PasswordField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
+import { AltArrowLeft } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ArrowLeft01Icon } from '@hugeicons/core-free-icons';
 import { StatusBar } from 'expo-status-bar';
 import { posthog } from '@/lib/posthog';
 
@@ -93,7 +92,7 @@ export default function SignupScreen() {
                         style={[s.backBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     >
-                        <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={C.text} />
+                        <AltArrowLeft size={24} color={C.text} />
                     </TouchableOpacity>
                 </View>
 

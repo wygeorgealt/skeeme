@@ -1,8 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import React from 'react';
 import { View, TouchableOpacity, useColorScheme, Platform } from 'react-native';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { AlertCircleIcon } from '@hugeicons/core-free-icons';
+import { DangerTriangle } from '@solar-icons/react-native/Bold';
 
 interface GlobalErrorModalProps {
     visible: boolean;
@@ -51,7 +50,7 @@ export default function GlobalErrorModal({ visible, error, onDismiss }: GlobalEr
 
                 {/* Icon */}
                 <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: isDark ? 'rgba(255, 59, 48, 0.2)' : 'rgba(255, 59, 48, 0.1)', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
-                    <HugeiconsIcon icon={AlertCircleIcon} size={28} color="#FF3B30" />
+                    <DangerTriangle size={28} color="#FF3B30" />
                 </View>
 
                 {/* Copy */}

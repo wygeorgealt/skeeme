@@ -7,9 +7,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { IosCard } from '@/components/ui/IosCard';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Calendar01Icon, PlusSignIcon, Delete02Icon, CalendarCheckIn01Icon } from '@hugeicons/core-free-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { AddCircle, Calendar, TrashBinTrash } from '@solar-icons/react-native/Bold';
 
 export default function ExamsScreen() {
     const { user, updateUser } = useAuthStore();
@@ -92,13 +91,13 @@ export default function ExamsScreen() {
                         onPress={() => setIsModalOpen(true)}
                         style={[s.addBtn, { backgroundColor: C.primary }]}
                     >
-                        <HugeiconsIcon icon={PlusSignIcon} size={20} color="#FFF" />
+                        <AddCircle size={20} color="#FFF" />
                     </TouchableOpacity>
                 </View>
 
                 {exams.length === 0 ? (
                     <View style={s.emptyState}>
-                        <HugeiconsIcon icon={Calendar01Icon} size={64} color={C.textTertiary} />
+                        <Calendar size={64} color={C.textTertiary} />
                         <Text style={[s.emptyText, { color: C.textSecondary }]}>No upcoming exams set.</Text>
                     </View>
                 ) : (
@@ -108,7 +107,7 @@ export default function ExamsScreen() {
                             <IosCard key={exam.id} style={s.examCard} padding="md">
                                 <View style={s.examRow}>
                                     <View style={[s.examIcon, { backgroundColor: C.primary + '15' }]}>
-                                        <HugeiconsIcon icon={CalendarCheckIn01Icon} size={20} color={C.primary} />
+                                        <Calendar size={20} color={C.primary} />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={[s.examTitle, { color: textColor }]}>{exam.title}</Text>
@@ -121,7 +120,7 @@ export default function ExamsScreen() {
                                         <Text style={[s.daysLabel, { color: C.textSecondary }]}>days left</Text>
                                     </View>
                                     <TouchableOpacity onPress={() => handleDelete(exam.id)} style={s.deleteBtn}>
-                                        <HugeiconsIcon icon={Delete02Icon} size={20} color="#FF3B30" />
+                                        <TrashBinTrash size={20} color="#FF3B30" />
                                     </TouchableOpacity>
                                 </View>
                             </IosCard>

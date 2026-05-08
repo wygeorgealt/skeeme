@@ -8,9 +8,8 @@ import { Colors } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import * as Notifications from 'expo-notifications';
+import { CheckCircle, Bell } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Notification01Icon, Tick01Icon } from '@hugeicons/core-free-icons';
 import { api } from '@/lib/api';
 
 export default function NotificationScreen() {
@@ -97,7 +96,7 @@ export default function NotificationScreen() {
                         <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
                         <View style={s.mockHeader}>
                             <View style={[s.mockIconBadge, { backgroundColor: '#007AFF' }]}>
-                                <HugeiconsIcon icon={Notification01Icon} size={14} color="#FFF" />
+                                <Bell size={14} color="#FFF" />
                             </View>
                             <Text style={[s.mockAppName, { color: C.textSecondary }]}>Skeeme</Text>
                             <Text style={[s.mockTime, { color: C.textSecondary }]}>now</Text>
@@ -118,7 +117,7 @@ export default function NotificationScreen() {
                         <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
                         <View style={s.mockHeader}>
                             <View style={[s.mockIconBadge, { backgroundColor: '#10B981' }]}>
-                                <HugeiconsIcon icon={Tick01Icon} size={14} color="#FFF" />
+                                <CheckCircle size={14} color="#FFF" />
                             </View>
                             <Text style={[s.mockAppName, { color: C.textSecondary }]}>Skeeme</Text>
                             <Text style={[s.mockTime, { color: C.textSecondary }]}>1h ago</Text>
@@ -139,7 +138,7 @@ export default function NotificationScreen() {
                         <BlurView intensity={isDark ? 40 : 80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
                         <View style={s.mockHeader}>
                             <View style={[s.mockIconBadge, { backgroundColor: '#5856D6' }]}>
-                                <HugeiconsIcon icon={Notification01Icon} size={14} color="#FFF" />
+                                <Bell size={14} color="#FFF" />
                             </View>
                             <Text style={[s.mockAppName, { color: C.textSecondary }]}>Skeeme</Text>
                             <Text style={[s.mockTime, { color: C.textSecondary }]}>just now</Text>
@@ -166,7 +165,7 @@ export default function NotificationScreen() {
                         activeOpacity={0.8}
                         style={s.primaryBtn}
                     >
-                        <HugeiconsIcon icon={Notification01Icon} size={18} color="#FFFFFF" />
+                        <Bell size={18} color="#FFFFFF" />
                         <Text style={s.primaryBtnText}>Enable Notifications</Text>
                     </TouchableOpacity>
 

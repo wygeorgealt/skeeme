@@ -1,9 +1,8 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, useColorScheme, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ViewIcon, ViewOffIcon } from '@hugeicons/core-free-icons';
 import { Colors } from '@/constants/theme';
+import { Eye, EyeClosed } from '@solar-icons/react-native/Bold';
 
 interface PasswordFieldProps {
     value: string;
@@ -41,9 +40,9 @@ export function PasswordField({
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 {showPassword ? (
-                    <HugeiconsIcon icon={ViewOffIcon} size={18} color={placeholderColor} />
+                    <EyeClosed size={18} color={placeholderColor} />
                 ) : (
-                    <HugeiconsIcon icon={ViewIcon} size={18} color={placeholderColor} />
+                    <Eye size={18} color={placeholderColor} />
                 )}
             </TouchableOpacity>
         </View>

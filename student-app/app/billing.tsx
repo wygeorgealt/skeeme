@@ -7,9 +7,8 @@ import { useCallback, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useAuthStore } from '@/store/authStore';
 import * as FileSystem from 'expo-file-system/legacy';
+import { DangerTriangle, DocumentText, Download, Refresh, RoundArrowUp } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Alert01Icon, RefreshIcon, CircleArrowUp02Icon, DocumentCodeIcon, Download01Icon } from '@hugeicons/core-free-icons';
 import RevenueCatUI from 'react-native-purchases-ui';
 import * as Sharing from 'expo-sharing';
 
@@ -111,7 +110,7 @@ export default function BillingHistoryScreen() {
             ) : error ? (
                 <View style={s.errorContainer}>
                     <View style={[s.errorIconBox, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
-                        <HugeiconsIcon icon={Alert01Icon} size={40} color="#ef4444" />
+                        <DangerTriangle size={40} color="#ef4444" />
                     </View>
                     <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Unable to load</Text>
                     <Text style={s.errorSubtitle}>
@@ -121,7 +120,7 @@ export default function BillingHistoryScreen() {
                         onPress={() => refetch()}
                         style={s.retryBtn}
                     >
-                        <HugeiconsIcon icon={RefreshIcon} size={18} color="white" />
+                        <Refresh size={18} color="white" />
                         <Text style={s.retryBtnText}>Try Again</Text>
                     </TouchableOpacity>
                 </View>
@@ -145,7 +144,7 @@ export default function BillingHistoryScreen() {
                     <View style={[s.planCard, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
                         <View style={s.planHeaderRow}>
                             <View style={[s.planIconBox, user?.is_unlimited ? s.bgBrandSoft : (isDark ? s.bgSlate800 : s.bgSlate100)]}>
-                                <HugeiconsIcon icon={CircleArrowUp02Icon} size={18} color={user?.plan_name !== 'free' ? "#8B5CF6" : "#94a3b8"} />
+                                <RoundArrowUp size={18} color={user?.plan_name !== 'free' ? "#8B5CF6" : "#94a3b8"} />
 
                             </View>
                             <TouchableOpacity
@@ -174,7 +173,7 @@ export default function BillingHistoryScreen() {
                     {data?.data?.length === 0 ? (
                         <View style={[s.emptyContainer, isDark ? s.bgDarkCardSoft : s.bgWhite, !isDark && s.borderSlate100]}>
                             <View style={[s.emptyIconBox, isDark ? s.bgSlate800 : s.bgSlate50]}>
-                                <HugeiconsIcon icon={DocumentCodeIcon} size={32} color={isDark ? '#cbd5e1' : '#64748b'} />
+                                <DocumentText size={32} color={isDark ? '#cbd5e1' : '#64748b'} />
                             </View>
                             <Text style={[s.emptyTitle, isDark ? s.textWhite : s.textSlate900]}>No Invoices</Text>
                             <Text style={s.emptySubtitle}>
@@ -206,7 +205,7 @@ export default function BillingHistoryScreen() {
                                     activeOpacity={0.7}
                                     style={[s.downloadBtn, isDark ? s.bgDarkCardSoft : s.bgSlate50, !isDark && s.borderSlate200]}
                                 >
-                                    <HugeiconsIcon icon={Download01Icon} size={18} color={isDark ? 'white' : '#121212'} />
+                                    <Download size={18} color={isDark ? 'white' : '#121212'} />
                                 </TouchableOpacity>
                             </View>
                         ))

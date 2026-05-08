@@ -1,12 +1,11 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { CheckmarkCircle01Icon, CancelCircleIcon, Tick01Icon, Cancel01Icon, ArrowLeft01Icon, ArrowReloadHorizontalIcon } from '@hugeicons/core-free-icons';
 import { QuizFlipCard } from './QuizFlipCard';
 import { Question } from './QuizTypes';
 import { MathText } from '../ui/MathText';
 import { Colors, Spacing, Radius } from '@/constants/theme';
+import { AltArrowLeft, CheckCircle, CloseCircle, Refresh } from '@solar-icons/react-native/Bold';
 
 export function MCQCard({
     q, qi, onAnswer, selectedAnswer, quizFinished,
@@ -95,8 +94,8 @@ export function MCQCard({
                             style={[s.optionBtn, styles.container]}
                         >
                             <Text style={[s.optionText, styles.text]}>{opt}</Text>
-                            {styles.icon === 'checkmark-circle' && <HugeiconsIcon icon={CheckmarkCircle01Icon} size={18} color={styles.iconColor} />}
-                            {styles.icon === 'close-circle' && <HugeiconsIcon icon={CancelCircleIcon} size={18} color={styles.iconColor} />}
+                            {styles.icon === 'checkmark-circle' && <CheckCircle size={18} color={styles.iconColor} />}
+                            {styles.icon === 'close-circle' && <CloseCircle size={18} color={styles.iconColor} />}
                         </TouchableOpacity>
                     );
                 })}
@@ -107,9 +106,9 @@ export function MCQCard({
                 <View style={[s.footer, { borderTopColor: C.separator }]}>
                     <View style={[s.statusBadge, { borderColor: isCorrect ? C.success : C.destructive, backgroundColor: isCorrect ? (isDark ? 'rgba(48,209,88,0.1)' : 'rgba(52,199,89,0.1)') : (isDark ? 'rgba(255,69,58,0.1)' : 'rgba(255,59,48,0.1)') }]}>
                         {isCorrect ? (
-                            <HugeiconsIcon icon={Tick01Icon} size={14} color={C.success} />
+                            <CheckCircle size={14} color={C.success} />
                         ) : (
-                            <HugeiconsIcon icon={Cancel01Icon} size={14} color={C.destructive} />
+                            <CloseCircle size={14} color={C.destructive} />
                         )}
                         <Text style={[s.statusText, { color: isCorrect ? C.success : C.destructive }]}>
                             {isCorrect ? 'Correct' : 'Incorrect'}
@@ -121,7 +120,7 @@ export function MCQCard({
                         activeOpacity={0.8}
                         style={[s.explainBtn, { backgroundColor: isDark ? '#FFF' : '#000' }]}
                     >
-                        <HugeiconsIcon icon={ArrowReloadHorizontalIcon} size={16} color={isDark ? '#000' : '#FFF'} style={{ marginRight: 8 }} />
+                        <Refresh size={16} color={isDark ? '#000' : '#FFF'} style={{ marginRight: 8 }} />
                         <Text style={[s.explainBtnText, { color: isDark ? '#000' : '#FFF' }]}>Flip for Explanation</Text>
                     </TouchableOpacity>
                 </View>
@@ -132,7 +131,7 @@ export function MCQCard({
     const back = (
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
             <TouchableOpacity onPress={() => setFlipped(false)} style={s.backBtn}>
-                <HugeiconsIcon icon={ArrowLeft01Icon} size={18} color={C.text} />
+                <AltArrowLeft size={18} color={C.text} />
                 <Text style={[s.backText, { color: C.text }]}>Back</Text>
             </TouchableOpacity>
             

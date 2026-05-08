@@ -3,61 +3,62 @@ import { View, ScrollView, RefreshControl, useColorScheme, StyleSheet, Touchable
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as SecureStore from 'expo-secure-store';
 
-import { IosCard } from '@/components/ui/IosCard';
-
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { FireIcon, CircleArrowUp02Icon, Coins01Icon, TimeQuarter02Icon, Activity01Icon, ArrowRight01Icon, Medal01Icon, BookOpen01Icon, Copy01Icon, Clock01Icon, Calendar01Icon } from '@hugeicons/core-free-icons';
-import RevenueCatUI from 'react-native-purchases-ui';
-
-
+import { Fire, RoundArrowUp, Calendar, ClockCircle, Notebook, History, MedalRibbonsStar, AltArrowRight, Chart2, Layers } from '@solar-icons/react-native/Bold';
 
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 
+// ─── Card shadow helper ───────────────────────────────────────────────────────
+const cardStyle = (C: typeof Colors.light) => ({
+    backgroundColor: C.card,
+    borderRadius: 20,
+    shadowColor: C.cardShadowColor,
+    shadowOpacity: C.cardShadowOpacity,
+    shadowRadius: C.cardShadowRadius,
+    shadowOffset: C.cardShadowOffset,
+    elevation: C.cardElevation,
+});
+
+// ─── Quick Action config ──────────────────────────────────────────────────────
 const QUICK_ACTIONS = [
-    { label: 'Quiz', icon: BookOpen01Icon, route: '/generate', color: '#007AFF' },
-    { label: 'Flashcards', icon: Copy01Icon, route: '/flashcards', color: '#34C759' },
-    { label: 'History', icon: Clock01Icon, route: '/history', color: '#FF9500' },
-    { label: 'Streak', icon: FireIcon, route: '/streak', color: '#FF3B30' },
+    { label: 'Quiz',       Icon: Notebook, route: '/generate',   bg: '#EBF3FF', color: '#007AFF' },
+    { label: 'Flashcards', Icon: Layers,    route: '/flashcards', bg: '#E6F9EE', color: '#34C759' },
+    { label: 'History',    Icon: History,  route: '/history',    bg: '#FFF4E6', color: '#FF9500' },
+    { label: 'Streak',     Icon: Fire,     route: '/streak',     bg: '#FFEBEA', color: '#FF3B30' },
 ] as const;
 
-// ─── 7-Day Streak Calendar ───────────────────────────────────────────────────
-function StreakCalendar({ data, isDark }: { data: any[]; isDark: boolean }) {
-    const C = Colors[isDark ? 'dark' : 'light'];
+// ─── 7-Day Streak Calendar ────────────────────────────────────────────────────
+function StreakCalendar({ data, isDark, C }: { data: any[]; isDark: boolean; C: typeof Colors.light }) {
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    const todayIndex = (new Date().getDay() + 6) % 7; // Mon is 0
-    
-    // Check for activity — if value > 0 then day is active
+    const todayIndex = (new Date().getDay() + 6) % 7;
+
     const isActive = (idx: number) => {
         const val = data?.[idx];
         return typeof val === 'number' ? val > 0 : typeof val === 'object' ? (val?.value ?? 0) > 0 : false;
     };
 
     return (
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
             {days.map((day, i) => {
                 const active = isActive(i);
                 const isToday = i === todayIndex;
-                
                 return (
-                    <View key={i} style={{ alignItems: 'center', gap: 10 }}>
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: isToday ? C.primary : C.textSecondary }}>{day}</Text>
+                    <View key={i} style={{ alignItems: 'center', gap: 8 }}>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: isToday ? C.primary : C.textTertiary }}>{day}</Text>
                         <View style={{
-                            width: 32, height: 32, borderRadius: 16,
+                            width: 34, height: 34, borderRadius: 17,
                             alignItems: 'center', justifyContent: 'center',
-                            backgroundColor: active ? C.primary : (isDark ? 'rgba(148,163,184,0.1)' : 'rgba(148,163,184,0.05)'),
+                            backgroundColor: active ? C.primary : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
                             borderWidth: !active && isToday ? 2 : 0,
-                            borderColor: !active && isToday ? C.primary : 'transparent'
+                            borderColor: C.primary,
                         }}>
-                            {active ? (
-                                <HugeiconsIcon icon={FireIcon} size={16} color="#FFF" />
-                            ) : (
-                                <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: C.textTertiary }} />
-                            )}
+                            {active
+                                ? <Fire size={16} color="#FFF" />
+                                : <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.textTertiary }} />
+                            }
                         </View>
                     </View>
                 );
@@ -77,10 +78,11 @@ export default function DashboardScreen() {
     const insets = useSafeAreaInsets();
     const queryClient = useQueryClient();
 
-    const daysUntilExam = user?.nearest_exam ? Math.ceil((new Date(user.nearest_exam.exam_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
+    const daysUntilExam = user?.nearest_exam
+        ? Math.ceil((new Date(user.nearest_exam.exam_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+        : null;
 
-
-    const { data: heatmapDates = [], isLoading: isLoadingHeatmap } = useQuery({
+    const { data: heatmapDates = [] } = useQuery({
         queryKey: ['streak-heatmap'],
         queryFn: async () => {
             const res = await api.get('streaks/heatmap');
@@ -117,83 +119,64 @@ export default function DashboardScreen() {
 
     if (!user) return null;
 
+    const weeklyCalendarData = Array.from({ length: 7 }).map((_, i) => {
+        const today = new Date();
+        const currentDay = (today.getDay() + 6) % 7;
+        const d = new Date(today);
+        d.setDate(today.getDate() - currentDay + i);
+        const tzoffset = d.getTimezoneOffset() * 60000;
+        const localISO = (new Date(d.getTime() - tzoffset)).toISOString().slice(0, 10);
+        return heatmapDates.includes(localISO) ? 1 : 0;
+    });
+
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
             <ScrollView
-                contentContainerStyle={[s.scroll, { paddingTop: insets.top + Spacing.sm, paddingBottom: 120 }]}
+                contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: 130, paddingHorizontal: 16, gap: 14 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        tintColor={C.primary}
-                        colors={[C.primary]}
-                    />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} colors={[C.primary]} />
                 }
             >
-                {/* ── Hero Card: Balance & Quick Actions ── */}
-                <IosCard style={s.heroCard} padding="lg">
-                    <View style={s.heroTop}>
-                        <View>
-                            <Text style={[s.heroLabel, { color: C.textSecondary }]}>Available Balance</Text>
-                            <Text style={[s.heroValue, { color: C.text }]}>
-                                {user.is_unlimited ? '∞' : user.credits?.toLocaleString() ?? '0'}
-                            </Text>
-                        </View>
-                        <View style={s.heroActions}>
-                            {user.plan_name?.toLowerCase() !== 'elite' && (
-                                <TouchableOpacity 
-                                    onPress={async () => {
-                                        try {
-                                            router.push('/paywall');
-                                        } catch (e) {}
-                                    }}
-                                    style={[s.upgradePill, { backgroundColor: C.primary }]}
-
-                                >
-                                    <HugeiconsIcon icon={CircleArrowUp02Icon} size={14} color="#FFF" />
-
-                                    <Text style={s.upgradeText}>Upgrade</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
+                {/* ── Hero: Balance + Upgrade (no card) ── */}
+                <View style={s.heroSection}>
+                    <View>
+                        <Text style={[s.heroLabel, { color: C.textSecondary }]}>AVAILABLE BALANCE</Text>
+                        <Text style={[s.heroValue, { color: C.text }]}>
+                            {user.is_unlimited ? '∞' : user.credits?.toLocaleString() ?? '0'}
+                        </Text>
                     </View>
+                    {user.plan_name?.toLowerCase() !== 'elite' && (
+                        <TouchableOpacity onPress={() => router.push('/paywall')} style={[s.upgradePill, { backgroundColor: C.primary }]}>
+                            <RoundArrowUp size={14} color="#FFF" />
+                            <Text style={s.upgradeText}>Upgrade</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
 
-                    <View style={s.quickRow}>
-                        {QUICK_ACTIONS.map((action) => {
-                            const IconComp = action.icon;
-                            return (
-                                <TouchableOpacity
-                                    key={action.route}
-                                    onPress={() => router.push(action.route)}
-                                    activeOpacity={0.7}
-                                    style={s.quickItem}
-                                >
-                                    <View style={[s.quickIcon, { backgroundColor: action.color + '12' }]}>
-                                        <View style={[styles.innerCircle, { backgroundColor: action.color + '10' }]}>
-                                            <HugeiconsIcon icon={action.icon} size={24} color={action.color} />
-                                        </View>
-                                    </View>
-                                    <Text style={[s.quickLabel, { color: C.textSecondary }]}>{action.label}</Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                </IosCard>
+                {/* ── Quick Actions Grid ── */}
+                <View style={s.quickRow}>
+                    {QUICK_ACTIONS.map((action) => (
+                        <TouchableOpacity
+                            key={action.route}
+                            onPress={() => router.push(action.route)}
+                            activeOpacity={0.75}
+                            style={s.quickItem}
+                        >
+                            <View style={[s.quickIconBox, { backgroundColor: isDark ? action.color + '22' : action.bg }]}>
+                                <action.Icon size={26} color={action.color} />
+                            </View>
+                            <Text style={[s.quickLabel, { color: C.textSecondary }]}>{action.label}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
 
                 {/* ── Stats Row ── */}
-                <View style={s.statsRow}>
-                    <TouchableOpacity 
-                        style={{ flex: 1 }} 
-                        onPress={() => router.push('/exams' as any)}
-                        activeOpacity={0.7}
-                    >
-                        <IosCard 
-                            style={{ flex: 1 }} 
-                            padding="md"
-                        >
-                            <View style={[s.statIconBox, { backgroundColor: '#5856D615' }]}>
-                                <HugeiconsIcon icon={Calendar01Icon} size={16} color="#5856D6" />
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/exams' as any)} activeOpacity={0.75}>
+                        <View style={[s.statCard, cardStyle(C)]}>
+                            <View style={[s.statIconBox, { backgroundColor: isDark ? '#5856D622' : '#EEF0FF' }]}>
+                                <Calendar size={18} color="#5856D6" />
                             </View>
                             <Text style={[s.statNum, { color: C.text }]}>
                                 {daysUntilExam !== null ? (daysUntilExam < 0 ? 0 : daysUntilExam) : '—'}
@@ -201,118 +184,94 @@ export default function DashboardScreen() {
                             <Text style={[s.statDesc, { color: C.textSecondary }]}>
                                 {user.nearest_exam ? 'Days to Exam' : 'Add Exam'}
                             </Text>
-                        </IosCard>
+                        </View>
                     </TouchableOpacity>
 
-                    <IosCard style={{ flex: 1 }} padding="md">
-                        <View style={[s.statIconBox, { backgroundColor: '#007AFF15' }]}>
-                            <HugeiconsIcon icon={TimeQuarter02Icon} size={16} color="#007AFF" />
+                    <View style={[{ flex: 1 }, s.statCard, cardStyle(C)]}>
+                        <View style={[s.statIconBox, { backgroundColor: isDark ? '#007AFF22' : '#EBF3FF' }]}>
+                            <ClockCircle size={18} color="#007AFF" />
                         </View>
-
                         <Text style={[s.statNum, { color: C.text }]}>{user.study_sessions_this_week ?? 0}</Text>
                         <Text style={[s.statDesc, { color: C.textSecondary }]}>Study Sessions</Text>
-                    </IosCard>
+                    </View>
                 </View>
 
-                {/* ── Weekly Activity (Streak Calendar) ── */}
-                <IosCard padding="lg" style={{ marginBottom: Spacing.lg }}>
+                {/* ── Weekly Activity ── */}
+                <View style={[s.activityCard, cardStyle(C)]}>
                     <View style={s.activityHeader}>
                         <View>
                             <Text style={[s.activityTitle, { color: C.text }]}>Weekly Activity</Text>
                             <Text style={[s.activitySub, { color: C.textSecondary }]}>Your study momentum</Text>
                         </View>
-                        <HugeiconsIcon icon={Activity01Icon} color={C.primary} size={20} />
+                        <Chart2 size={20} color={C.primary} />
                     </View>
-                    <View style={{ height: 10 }} />
-                    <StreakCalendar data={
-                        Array.from({ length: 7 }).map((_, i) => {
-                            const today = new Date();
-                            const currentDay = (today.getDay() + 6) % 7; // Monday = 0
-                            const startOfWeek = new Date(today);
-                            startOfWeek.setDate(today.getDate() - currentDay + i);
-                            
-                            // Format to YYYY-MM-DD local time
-                            const tzoffset = startOfWeek.getTimezoneOffset() * 60000;
-                            const localISOTime = (new Date(startOfWeek.getTime() - tzoffset)).toISOString().slice(0, 10);
-                            
-                            return heatmapDates.includes(localISOTime) ? 1 : 0;
-                        })
-                    } isDark={isDark} />
-                    <View style={{ height: 10 }} />
-                </IosCard>
-
-                {/* ── Streaks Header ── */}
-                <View style={{ paddingHorizontal: 4, marginBottom: Spacing.sm }}>
-                    <Text style={[s.sectionTitle, { color: C.text }]}>Streaks</Text>
+                    <StreakCalendar data={weeklyCalendarData} isDark={isDark} C={C} />
                 </View>
 
-                <IosCard padding="none" style={{ marginBottom: Spacing.lg }}>
-                    <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.7}>
-                        <View style={[s.streakIcon, { backgroundColor: '#FF3B3015' }]}>
-                            <HugeiconsIcon icon={FireIcon} size={18} color="#FF3B30" />
+                {/* ── Streaks Header ── */}
+                <Text style={[s.sectionTitle, { color: C.text }]}>Streaks</Text>
+
+                {/* ── Streaks Card ── */}
+                <View style={[cardStyle(C), { overflow: 'hidden', borderRadius: 20 }]}>
+                    <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.75}>
+                        <View style={[s.streakIcon, { backgroundColor: isDark ? '#FF3B3022' : '#FFEBEA' }]}>
+                            <Fire size={18} color="#FF3B30" />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={[s.streakTitle, { color: C.text }]}>Current Streak</Text>
                             <Text style={[s.streakSub, { color: C.textSecondary }]}>Keep the fire alive</Text>
                         </View>
                         <Text style={[s.streakCount, { color: C.text }]}>{user.streak?.current_streak ?? 0}</Text>
-                        <HugeiconsIcon icon={ArrowRight01Icon} size={18} color={C.textTertiary} style={{ marginLeft: 4 }} />
+                        <AltArrowRight size={18} color={C.textTertiary} />
                     </TouchableOpacity>
+
                     <View style={[s.divider, { backgroundColor: C.separator }]} />
-                    <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.7}>
-                        <View style={[s.streakIcon, { backgroundColor: '#FF950015' }]}>
-                            <HugeiconsIcon icon={Medal01Icon} size={18} color="#FF9500" />
+
+                    <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.75}>
+                        <View style={[s.streakIcon, { backgroundColor: isDark ? '#FF950022' : '#FFF4E6' }]}>
+                            <MedalRibbonsStar size={18} color="#FF9500" />
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={[s.streakTitle, { color: C.text }]}>Longest Streak</Text>
                             <Text style={[s.streakSub, { color: C.textSecondary }]}>Your personal best</Text>
                         </View>
                         <Text style={[s.streakCount, { color: C.text }]}>{user.streak?.longest_streak ?? 0}</Text>
-                        <HugeiconsIcon icon={ArrowRight01Icon} size={18} color={C.textTertiary} style={{ marginLeft: 4 }} />
+                        <AltArrowRight size={18} color={C.textTertiary} />
                     </TouchableOpacity>
-                </IosCard>
+                </View>
             </ScrollView>
-
         </View>
     );
 }
 
 const s = StyleSheet.create({
-    scroll: { paddingHorizontal: Spacing.md, gap: 0 },
-    
-    heroCard: { marginBottom: Spacing.md, marginTop: Spacing.sm },
-    heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 },
-    heroLabel: { fontSize: 13, fontWeight: '500', marginBottom: 4 },
-    heroValue: { fontSize: 44, fontWeight: '700', letterSpacing: -1 },
-    heroActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-    upgradePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, gap: 6 },
-    upgradeText: { color: '#FFF', fontSize: 13, fontWeight: '700' },
-    menuCircle: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+    heroSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 16, paddingVertical: 12 },
+    heroLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginBottom: 6, textTransform: 'uppercase' },
+    heroValue: { fontSize: 48, fontWeight: '800', letterSpacing: -2, lineHeight: 54 },
+    upgradePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 100, gap: 6 },
+    upgradeText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
 
-    quickRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 },
-    quickItem: { alignItems: 'center', gap: 8 },
-    quickIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-    quickLabel: { fontSize: 11, fontWeight: '600' },
+    quickRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4, marginBottom: 4 },
+    quickItem: { alignItems: 'center', gap: 8, flex: 1 },
+    quickIconBox: { width: 70, height: 70, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    quickLabel: { fontSize: 13, fontWeight: '600' },
 
-    statsRow: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.md },
-    statIconBox: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-    statNum: { fontSize: 28, fontWeight: '700', marginBottom: 2 },
+    statCard: { padding: 18 },
+    statIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+    statNum: { fontSize: 30, fontWeight: '800', marginBottom: 2, letterSpacing: -0.5 },
     statDesc: { fontSize: 13, fontWeight: '500' },
 
-    activityHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+    activityCard: { padding: 20 },
+    activityHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 },
     activityTitle: { fontSize: 17, fontWeight: '700', marginBottom: 2 },
     activitySub: { fontSize: 13, fontWeight: '500' },
 
-    sectionTitle: { fontSize: 20, fontWeight: '700', marginTop: 8 },
+    sectionTitle: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5, marginTop: 4, marginBottom: -2 },
 
-    streakRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, gap: Spacing.sm },
-    streakIcon: { width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
-    streakTitle: { fontSize: FontSize.subhead, fontWeight: '600' },
-    streakSub: { fontSize: FontSize.caption1, marginTop: 2 },
-    streakCount: { fontSize: FontSize.title3, fontWeight: '700' },
-    divider: { height: StyleSheet.hairlineWidth, marginHorizontal: Spacing.md },
-});
-
-const styles = StyleSheet.create({
-    innerCircle: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+    streakRow: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
+    streakIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    streakTitle: { fontSize: 15, fontWeight: '600' },
+    streakSub: { fontSize: 12, marginTop: 2 },
+    streakCount: { fontSize: 20, fontWeight: '800', marginRight: 4 },
+    divider: { height: StyleSheet.hairlineWidth, marginHorizontal: 16 },
 });

@@ -8,9 +8,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sharing from 'expo-sharing';
 import { ShareCard } from '@/components/ui/ShareCard';
+import { AltArrowLeft, Snowflake, Stars } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ArrowLeft01Icon, SparklesIcon, SnowIcon } from '@hugeicons/core-free-icons';
 import RevenueCatUI from 'react-native-purchases-ui';
 
 import { Colors } from '@/constants/theme';
@@ -83,7 +82,7 @@ export default function StreakScreen() {
 
             <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
-                    <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={isDark ? 'white' : '#1e293b'} />
+                    <AltArrowLeft size={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Streak</Text>
                 <View style={{ width: 44 }} />
@@ -115,7 +114,7 @@ export default function StreakScreen() {
                         activeOpacity={0.8}
                         style={[s.shareBtn, isDark ? s.bgWhite10 : s.bgWhite]}
                     >
-                        <HugeiconsIcon icon={SparklesIcon} size={18} color={C.primary} style={{ marginRight: 8 }} />
+                        <Stars size={18} color={C.primary} style={{ marginRight: 8 }} />
                         <Text style={[s.shareBtnText, { color: C.primary }]}>Share Milestone</Text>
                     </TouchableOpacity>
                 )}
@@ -129,7 +128,7 @@ export default function StreakScreen() {
                     ]}>
                         <View style={s.protectionHeader}>
                             <View style={[s.protectionIconBox, isDark ? s.protectionIconBoxDark : s.protectionIconBoxLight]}>
-                                <HugeiconsIcon icon={SnowIcon} size={18} color={C.primary} />
+                                <Snowflake size={18} color={C.primary} />
                             </View>
                             {!hasProtection ? (
                                 <View style={[s.badge, isDark ? s.badgeDark : s.badgeLight]}>

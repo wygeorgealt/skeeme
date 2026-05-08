@@ -1,12 +1,11 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, useColorScheme } from 'react-native';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { StarIcon, Alert01Icon, SparklesIcon } from '@hugeicons/core-free-icons';
 import { api } from '@/lib/api';
 import { Question, TheoryResult } from './QuizTypes';
 import { MathText } from '../ui/MathText';
 import { Colors, Spacing, Radius } from '@/constants/theme';
+import { DangerTriangle, Star, Stars } from '@solar-icons/react-native/Bold';
 
 export function TheoryCard({
     q, qi, onGraded,
@@ -75,9 +74,9 @@ export function TheoryCard({
                                 <View style={[s.scoreBox, { borderColor: color, backgroundColor: color + '10' }]}>
                                     <View style={[s.scoreIconCircle, { backgroundColor: color }]}>
                                         {isVeryCorrect ? (
-                                            <HugeiconsIcon icon={StarIcon} size={18} color="#fff" />
+                                            <Star size={18} color="#fff" />
                                         ) : (
-                                            <HugeiconsIcon icon={Alert01Icon} size={18} color="#fff" />
+                                            <DangerTriangle size={18} color="#fff" />
                                         )}
                                     </View>
                                     <View>
@@ -122,7 +121,7 @@ export function TheoryCard({
                                 <ActivityIndicator color={C.textTertiary} size="small" />
                             ) : (
                                 <>
-                                    <HugeiconsIcon icon={SparklesIcon} size={18} color="#fff" />
+                                    <Stars size={18} color="#fff" />
                                     <Text style={s.submitBtnText}>Mark Answer</Text>
                                 </>
                             )}

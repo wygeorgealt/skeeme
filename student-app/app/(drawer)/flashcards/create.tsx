@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Platform } from 'react-native';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { DocumentCodeIcon, Upload01Icon, SparklesIcon, ArrowLeft01Icon, Leaf01Icon, IdeaIcon, Rocket01Icon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
 import EventSource from 'react-native-sse';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +12,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useQueryClient } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { posthog } from '@/lib/posthog';
+import { CheckCircle, DocumentText, CloudUpload, Leaf, LightbulbBolt, Rocket, FolderOpen } from '@solar-icons/react-native/Bold';
 
 import { RewardModal } from '@/components/RewardModal';
 
@@ -183,12 +182,10 @@ export default function GenerateFlashcardScreen() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             {/* Header */}
-            <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
-                <Text style={[s.headerTitle, { color: C.text }]}>
-                    Create Deck
-                </Text>
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 20) }]}>
+                <Text style={[s.headerTitle, { color: C.text }]}>Create Deck</Text>
             </View>
 
             <ScrollView 
@@ -239,13 +236,13 @@ export default function GenerateFlashcardScreen() {
                             </View>
                         ) : selectedFile ? (
                             <>
-                                <HugeiconsIcon icon={DocumentCodeIcon} size={32} color="#007AFF" style={{ marginBottom: 12 }} />
+                                <DocumentText size={32} color="#007AFF" style={{ marginBottom: 12 }} />
                                 <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
                                 <Text style={[s.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
                             </>
                         ) : (
                             <>
-                                <HugeiconsIcon icon={Upload01Icon} size={32} color="#8E8E93" style={{ marginBottom: 12 }} />
+                                <CloudUpload size={32} color="#8E8E93" style={{ marginBottom: 12 }} />
                                 <Text style={[s.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
                                 <Text style={[s.uploadSub, { color: '#8E8E93' }]}>Maximum 5MB</Text>
                             </>
@@ -275,46 +272,49 @@ export default function GenerateFlashcardScreen() {
                 </View>
 
                 {/* Difficulty */}
-                <Text style={s.sectionTitle}>DIFFICULTY</Text>
-                <View style={{ gap: 12, marginBottom: 24 }}>
+                <Text style={[s.sectionTitle, { color: C.textTertiary }]}>DIFFICULTY</Text>
+                <View style={[s.card, { backgroundColor: C.card }]}>
                     {[
-                        { key: 'easy', label: 'Easy', icon: Leaf01Icon, desc: 'Focus on fundamentals' },
-                        { key: 'medium', label: 'Medium', icon: IdeaIcon, desc: 'Comprehensive coverage' },
-                        { key: 'hard', label: 'Hard', icon: Rocket01Icon, desc: 'Deep analytical questions' },
-                    ].map(opt => {
+                        { key: 'easy',   label: 'Easy',   Icon: Leaf,               desc: 'Focus on fundamentals'    },
+                        { key: 'medium', label: 'Medium', Icon: LightbulbBolt,     desc: 'Comprehensive coverage'   },
+                        { key: 'hard',   label: 'Hard',   Icon: Rocket,      desc: 'Deep analytical questions' },
+                    ].map((opt, index, arr) => {
                         const isSelected = difficulty === opt.key;
-                        const Icon = opt.icon;
+                        const isLast = index === arr.length - 1;
+                        const iconBg = isDark ? 'rgba(0,122,255,0.15)' : '#EBF3FF';
                         return (
                             <TouchableOpacity
                                 key={opt.key}
                                 onPress={() => setDifficulty(opt.key as Difficulty)}
-                                activeOpacity={0.8}
-                                style={[s.card, s.optionCard, { backgroundColor: C.card, borderColor: isSelected ? '#007AFF' : 'transparent', borderWidth: 2 }]}
+                                activeOpacity={0.75}
+                                style={[
+                                    s.optRow,
+                                    !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
+                                ]}
                             >
-                                <View style={[s.iconBoxRow, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
-                                    <HugeiconsIcon icon={Icon} size={18} color="#007AFF" />
+                                <View style={[s.optIcon, { backgroundColor: iconBg }]}>
+                                    <opt.Icon size={20} color="#007AFF" />
                                 </View>
-                                <View style={{ flex: 1, marginLeft: 16 }}>
-                                    <Text style={[s.optionTitle, { color: C.text }]}>{opt.label}</Text>
-                                    <Text style={[s.optionDesc, { color: '#8E8E93' }]}>{opt.desc}</Text>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[s.optLabel, { color: C.text }]}>{opt.label}</Text>
+                                    <Text style={[s.optDesc, { color: C.textSecondary }]}>{opt.desc}</Text>
                                 </View>
-                                {isSelected && <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} color="#007AFF" />}
+                                {isSelected && <CheckCircle size={22} color="#007AFF" />}
                             </TouchableOpacity>
                         );
                     })}
                 </View>
             </ScrollView>
 
-            {/* Glassmorphic Sticky Footer */}
-            <BlurView 
-                intensity={Platform.OS === 'ios' ? 100 : 0} 
-                tint={isDark ? "dark" : "light"} 
-                style={[s.formFooter, { 
-                    paddingBottom: Math.max(insets.bottom, 16) + 75, 
-                    borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                    backgroundColor: isDark 
-                        ? (Platform.OS === 'android' ? '#121212' : 'rgba(18,18,18,0.8)') 
-                        : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+            <BlurView
+                intensity={Platform.OS === 'ios' ? 100 : 0}
+                tint={isDark ? 'dark' : 'light'}
+                style={[s.formFooter, {
+                    paddingBottom: Math.max(insets.bottom, 16) + 75,
+                    borderTopColor: C.separator,
+                    backgroundColor: isDark
+                        ? (Platform.OS === 'android' ? '#0D0D0D' : 'rgba(13,13,13,0.9)')
+                        : (Platform.OS === 'android' ? '#F0F2F7' : 'rgba(240,242,247,0.9)'),
                 }]}
             >
                 <TouchableOpacity
@@ -346,51 +346,56 @@ export default function GenerateFlashcardScreen() {
 }
 
 const s = StyleSheet.create({
-    header: { paddingHorizontal: 24, paddingBottom: 24 },
+    header: { paddingHorizontal: 20, paddingBottom: 16 },
     headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1 },
 
-    // Segmented Pill Control
-    segmentedControl: { flexDirection: 'row', borderRadius: 999, padding: 4, marginBottom: 24 },
-    segmentedControlLight: { backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: '#FFFFFF' },
-    segmentedControlDark: { backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-    segmentBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 999 },
-    segmentBtnActiveLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
-    segmentBtnActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
-    segmentText: { fontSize: 14, letterSpacing: -0.2 },
+    // Segmented Control
+    segmentedControl: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: 20 },
+    segmentedControlLight: { backgroundColor: '#E5E7EB' },
+    segmentedControlDark: { backgroundColor: '#2C2C2E' },
+    segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
+    segmentBtnActiveLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 2 },
+    segmentBtnActiveDark: { backgroundColor: '#3A3A3C', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 2 },
+    segmentText: { fontSize: 15 },
 
-    sectionTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginTop: 12, marginBottom: 12, paddingLeft: 4, color: '#8E8E93' },
+    sectionTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginTop: 12, marginBottom: 10, paddingLeft: 4, textTransform: 'uppercase' },
 
-    // Input Cards
-    card: { borderRadius: 24, padding: 16 },
-    textInput: { height: 28, fontSize: 17, fontWeight: '500' },
-    
-    uploadBox: { borderStyle: 'dashed', borderWidth: 2, borderColor: '#C7C7CC', alignItems: 'center', justifyContent: 'center', paddingVertical: 32 },
-    uploadTitle: { fontSize: 17, fontWeight: '700', marginBottom: 4 },
-    uploadSub: { fontSize: 13, fontWeight: '500' },
+    // Cards
+    card: { borderRadius: 20, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 2 }, elevation: 3, marginBottom: 28 },
+    textInput: { height: 52, fontSize: 16, fontWeight: '500', paddingHorizontal: 16 },
+
+    uploadBox: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 24, gap: 10 },
+    uploadTitle: { fontSize: 16, fontWeight: '600', textAlign: 'center' },
+    uploadSub: { fontSize: 13, textAlign: 'center' },
 
     // Stepper
-    stepperCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
-    stepperLabel: { fontSize: 17, fontWeight: '600' },
-    stepperControls: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-    stepperBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-    stepperBtnText: { fontSize: 24, fontWeight: '400', lineHeight: 28 },
-    stepperValue: { fontSize: 17, fontWeight: '700', minWidth: 24, textAlign: 'center' },
+    stepperCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 },
+    stepperLabel: { fontSize: 16, fontWeight: '600' },
+    stepperControls: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+    stepperBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+    stepperBtnText: { fontSize: 22, fontWeight: '700', lineHeight: 26 },
+    stepperValue: { fontSize: 22, fontWeight: '800', minWidth: 32, textAlign: 'center' },
 
-    // Difficulty Options
+    // Difficulty Options (grouped card rows)
+    optRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14, minHeight: 64 },
+    optIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    optLabel: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
+    optDesc: { fontSize: 13 },
+
+    // Legacy (kept for compatibility)
     optionCard: { flexDirection: 'row', alignItems: 'center', padding: 12 },
     iconBoxRow: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    optionTitle: { fontSize: 17, fontWeight: '700', marginBottom: 2 },
-    optionDesc: { fontSize: 13, fontWeight: '500' },
+    optionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
+    optionDesc: { fontSize: 13 },
 
     // Footer
-    formFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
-    generatePillButton: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
-    generatePillText: { color: 'white', fontWeight: '700', fontSize: 16, letterSpacing: -0.2 },
-    
+    formFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth },
+    generatePillButton: { height: 56, borderRadius: 100, alignItems: 'center', justifyContent: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
+    generatePillText: { color: 'white', fontWeight: '700', fontSize: 16 },
+
     loadingContainer: { alignItems: 'center', justifyContent: 'center' },
     loadingText: { fontSize: 14, fontWeight: '600' },
-
-    // Helpers
     centered: { alignItems: 'center', justifyContent: 'center' },
     processingText: { fontSize: 13, fontWeight: '600', marginTop: 12 },
 });
+

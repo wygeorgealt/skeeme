@@ -10,9 +10,8 @@ import { Colors, Spacing, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'expo-status-bar';
+import { IPhone } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { AppleIcon } from '@hugeicons/core-free-icons';
 
 const MASCOT_IMAGE = require('../../assets/images/splash-icon.png');
 
@@ -148,7 +147,7 @@ export default function AuthSelectScreen() {
                             style={[s.authBtn, s.appleBtn, { backgroundColor: isDark ? '#FFFFFF' : '#000000' }]}
                         >
                             <View style={s.authBtnIcon}>
-                                <HugeiconsIcon icon={AppleIcon} size={20} color={isDark ? '#000000' : '#FFFFFF'} />
+                                <IPhone size={20} color={isDark ? '#000000' : '#FFFFFF'} />
                             </View>
                             <Text style={[s.authBtnText, { color: isDark ? '#000000' : '#FFFFFF' }]}>Continue with Apple</Text>
                         </TouchableOpacity>

@@ -2,8 +2,6 @@ import { Text } from '@/components/ui/Text';
 import { View, TouchableOpacity, SectionList, RefreshControl, useColorScheme, Platform, StyleSheet, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Delete01Icon, DocumentCodeIcon, BookOpen01Icon, ArrowRight01Icon, Copy01Icon } from '@hugeicons/core-free-icons';
 import { router } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -11,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 import { Swipeable } from 'react-native-gesture-handler';
+import { AltArrowRight, Book, Copy, DocumentText, Notebook, TrashBinTrash } from '@solar-icons/react-native/Bold';
 
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -196,7 +195,7 @@ export default function StudyHistoryDashboard() {
                 <View style={[s.segmentContainer, isDark ? s.segmentContainerDark : s.segmentContainerLight]}>
                     {(['quizzes', 'flashcards'] as const).map(tab => {
                         const isActive = activeTab === tab;
-                        const icon = tab === 'quizzes' ? BookOpen01Icon : Copy01Icon;
+                        const Icon = tab === 'quizzes' ? Book : Copy;
                         return (
                             <TouchableOpacity
                                 key={tab}
@@ -211,7 +210,7 @@ export default function StudyHistoryDashboard() {
                                 ]}
                             >
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                    <HugeiconsIcon icon={icon} size={14} color={isActive ? (isDark ? '#FFF' : '#000') : C.textTertiary} />
+                                    <Icon size={14} color={isActive ? (isDark ? '#FFF' : '#000') : C.textTertiary} />
                                     <Text style={[
                                         s.segmentText,
                                         isActive ? { color: C.text, fontWeight: '700' } : { color: C.textTertiary, fontWeight: '500' }
@@ -258,7 +257,7 @@ export default function StudyHistoryDashboard() {
                                     onPress={() => handleDelete(id, title, isQuiz ? 'quiz' : 'flashcard')}
                                 >
                                     <View style={{ width: 90, height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                                        <HugeiconsIcon icon={Delete01Icon} size={22} color="white" />
+                                        <TrashBinTrash size={22} color="white" />
                                     </View>
                                 </TouchableOpacity>
                             </View>
@@ -299,7 +298,7 @@ export default function StudyHistoryDashboard() {
                         return (
                             <View style={s.emptyContainer}>
                                 <View style={[s.emptyIconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
-                                    <HugeiconsIcon icon={DocumentCodeIcon} size={32} color={C.textTertiary} />
+                                    <DocumentText size={32} color={C.textTertiary} />
                                 </View>
                                 <Text style={[s.emptyTitle, { color: C.text }]}>No history yet</Text>
                                 <Text style={[s.emptySub, { color: C.textSecondary }]}>
@@ -335,7 +334,7 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
         >
             <View style={s.cardBody}>
                 <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight]}>
-                    <HugeiconsIcon icon={BookOpen01Icon} size={20} color={C.primary} />
+                    <Notebook size={20} color={C.primary} />
                 </View>
                 <View style={s.cardContent}>
                     <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{session.topic}</Text>
@@ -357,7 +356,7 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                     <TouchableOpacity onPress={() => router.push(`/(drawer)/history/${session.id}` as any)} activeOpacity={0.8} style={s.actionPill}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                              <Text style={s.actionPillText}>View Details</Text>
-                             <HugeiconsIcon icon={ArrowRight01Icon} size={14} color="#FFFFFF" />
+                             <AltArrowRight size={14} color="#FFFFFF" />
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -375,7 +374,7 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
         >
             <View style={s.cardBody}>
                 <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight]}>
-                    <HugeiconsIcon icon={DocumentCodeIcon} size={20} color={C.primary} />
+                    <DocumentText size={20} color={C.primary} />
                 </View>
                 <View style={s.cardContent}>
                     <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{deck.title}</Text>

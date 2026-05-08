@@ -8,8 +8,7 @@ import { api } from '@/lib/api';
 import { useEffect } from 'react';
 import { registerForPushNotificationsAsync } from '@/lib/notifications';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Home01Icon, UserIcon, Camera01Icon } from '@hugeicons/core-free-icons';
+import { Home, User, CameraAdd } from '@solar-icons/react-native/Bold';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, SharedValue } from 'react-native-reanimated';
 
 // ─── Icons logic moved to TabBar / TabLayout with direct HugeiconsIcon imports ───
@@ -104,7 +103,7 @@ function TabBar({ state, descriptors, navigation }: any) {
                             accessibilityLabel={String(label)}
                             accessibilityState={isFocused ? { selected: true } : {}}
                         >
-                            <HugeiconsIcon icon={Home01Icon} color={iconColor} size={24} />
+                            <Home color={iconColor} size={24} />
                             <Text style={[bar.tabLabel, { color: iconColor }]}>{label}</Text>
                         </TouchableOpacity>
                     );
@@ -133,7 +132,7 @@ function TabBar({ state, descriptors, navigation }: any) {
                             accessibilityLabel={String(label)}
                             accessibilityState={isFocused ? { selected: true } : {}}
                         >
-                            <HugeiconsIcon icon={UserIcon} color={iconColor} size={24} />
+                            <User color={iconColor} size={24} />
                             <Text style={[bar.tabLabel, { color: iconColor }]}>{label}</Text>
                         </TouchableOpacity>
                     );
@@ -150,7 +149,7 @@ function TabBar({ state, descriptors, navigation }: any) {
                         accessibilityLabel="Scan"
                     >
                         <View style={[bar.fabCircle, { backgroundColor: C.primary }]}>
-                            <HugeiconsIcon icon={Camera01Icon} color="#FFFFFF" size={28} />
+                            <CameraAdd color="#FFFFFF" size={28} />
                         </View>
                     </TouchableOpacity>
                 </Animated.View>
@@ -251,8 +250,8 @@ export default function TabLayout() {
                 name="index"
                 options={{
                     title: 'Home',
-                    tabBarIcon: ({ color, size }) =>
-                        <HugeiconsIcon icon={Home01Icon} color={color} size={size} />,
+                        tabBarIcon: ({ color, size }) =>
+                        <Home color={color} size={size} />,
                 }}
             />
             <Tabs.Screen
@@ -260,7 +259,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Scan',
                     // Icon handled by ScanTabButton inside TabBar
-                    tabBarIcon: ({ color, size }) => <HugeiconsIcon icon={Camera01Icon} color={color} size={size} />,
+                    tabBarIcon: ({ color, size }) => <CameraAdd color={color} size={size} />,
                 }}
             />
             <Tabs.Screen
@@ -268,7 +267,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Me',
                     tabBarIcon: ({ color, size }) =>
-                        <HugeiconsIcon icon={UserIcon} color={color} size={size} />,
+                        <User color={color} size={size} />,
                 }}
             />
 

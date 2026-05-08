@@ -9,8 +9,7 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { CloudOffIcon, CloudIcon } from '@hugeicons/core-free-icons';
+import { Cloud, CloudCross } from '@solar-icons/react-native/Bold';
 
 
 export function NetworkStatus() {
@@ -62,9 +61,9 @@ export function NetworkStatus() {
         <Animated.View style={[styles.container, animatedStyle, { paddingHorizontal: 16 }]}>
             <View style={styles.content}>
                 {isConnected ? (
-                    <HugeiconsIcon icon={CloudIcon} size={18} color="white" />
+                    <Cloud size={18} color="white" />
                 ) : (
-                    <HugeiconsIcon icon={CloudOffIcon} size={18} color="white" />
+                    <CloudCross size={18} color="white" />
                 )}
 
                 <Text style={styles.text}>

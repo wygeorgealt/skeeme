@@ -5,8 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import RevenueCatUI from 'react-native-purchases-ui';
 import { posthog } from '@/lib/posthog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Cancel01Icon } from '@hugeicons/core-free-icons';
+import { CloseCircle } from '@solar-icons/react-native/Bold';
 
 export default function PaywallScreen() {
     const { user, checkAuth } = useAuthStore();
@@ -57,7 +56,7 @@ export default function PaywallScreen() {
                 onPress={handleClose}
                 hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
             >
-                <HugeiconsIcon icon={Cancel01Icon} size={24} color="#000000" />
+                <CloseCircle size={24} color="#000000" />
             </TouchableOpacity>
         </View>
     );

@@ -6,19 +6,18 @@ import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { CheckCircle, TestTube, Settings, Book, Case, DocumentText, Heart, Widget } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { CheckmarkCircle01Icon, TestTube01Icon, ToolsIcon, BookOpen01Icon, Briefcase01Icon, DocumentCodeIcon, HealthIcon, DashboardSquare01Icon } from '@hugeicons/core-free-icons';
 import { Colors } from '@/constants/theme';
 
 const FIELDS = [
-    { key: 'sciences', label: 'Sciences', icon: TestTube01Icon },
-    { key: 'engineering', label: 'Engineering', icon: ToolsIcon },
-    { key: 'humanities', label: 'Humanities', icon: BookOpen01Icon },
-    { key: 'business', label: 'Business', icon: Briefcase01Icon },
-    { key: 'law', label: 'Law', icon: DocumentCodeIcon },
-    { key: 'medicine', label: 'Medicine', icon: HealthIcon },
-    { key: 'other', label: 'Other', icon: DashboardSquare01Icon },
+    { key: 'sciences', label: 'Sciences', icon: TestTube },
+    { key: 'engineering', label: 'Engineering', icon: Settings },
+    { key: 'humanities', label: 'Humanities', icon: Book },
+    { key: 'business', label: 'Business', icon: Case },
+    { key: 'law', label: 'Law', icon: DocumentText },
+    { key: 'medicine', label: 'Medicine', icon: Heart },
+    { key: 'other', label: 'Other', icon: Widget },
 ];
 
 export default function FieldScreen() {
@@ -92,11 +91,11 @@ export default function FieldScreen() {
                                         ]}
                                     >
                                         <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                                            <HugeiconsIcon icon={field.icon} size={20} color={iconColor} />
+                                            <field.icon size={20} color={iconColor} />
                                         </View>
                                         <Text style={[s.optionLabel, { color: textColor }]}>{field.label}</Text>
                                         {isSelected && (
-                                            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={24} color="#007AFF" />
+                                            <CheckCircle size={24} color="#007AFF" />
                                         )}
                                     </TouchableOpacity>
                                 </Animated.View>

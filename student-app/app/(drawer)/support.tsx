@@ -8,9 +8,8 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius } from '@/constants/theme';
+import { AltArrowLeft, CloseCircle, Gallery, Letter } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ArrowLeft01Icon, Cancel01Icon, Image01Icon, MailUpload02Icon } from '@hugeicons/core-free-icons';
 
 import { Text } from '@/components/ui/Text';
 
@@ -99,7 +98,7 @@ export default function SupportScreen() {
                     activeOpacity={0.7}
                     style={[s.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}
                 >
-                    <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={C.text} />
+                    <AltArrowLeft size={24} color={C.text} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Support</Text>
                 <View style={{ width: 44 }} />
@@ -150,7 +149,7 @@ export default function SupportScreen() {
                                 activeOpacity={0.7}
                                 style={s.removeScreenshotBtn}
                             >
-                                <HugeiconsIcon icon={Cancel01Icon} size={24} color="#ef4444" />
+                                <CloseCircle size={24} color="#ef4444" />
                             </TouchableOpacity>
                         </View>
                     ) : (
@@ -162,7 +161,7 @@ export default function SupportScreen() {
                                 { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', borderColor: C.separator }
                             ]}
                         >
-                            <HugeiconsIcon icon={Image01Icon} size={22} color={isDark ? '#6b7280' : '#94a3b8'} />
+                            <Gallery size={22} color={isDark ? '#6b7280' : '#94a3b8'} />
                             <Text style={[s.attachBtnText, { color: isDark ? '#9ca3af' : '#64748b' }]}>
                                 Add a screenshot
                             </Text>
@@ -179,7 +178,7 @@ export default function SupportScreen() {
                             <LoadingSpinner size={24} color="white" strokeWidth={3} />
                         ) : (
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <HugeiconsIcon icon={MailUpload02Icon} size={18} color="white" />
+                                <Letter size={18} color="white" />
 
                                 <View style={{ width: 10 }} />
                                 <Text style={s.submitBtnText}>Send Message</Text>

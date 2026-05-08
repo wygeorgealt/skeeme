@@ -3,8 +3,6 @@ import { View, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, us
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { SparklesIcon, Delete01Icon, ArrowRight01Icon, DocumentCodeIcon } from '@hugeicons/core-free-icons';
 import { Colors } from '@/constants/theme';
 import { router, useNavigation } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
@@ -15,6 +13,7 @@ import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
 import { FlashcardDeck } from '@/types';
 import { Swipeable } from 'react-native-gesture-handler';
+import { AltArrowRight, DocumentText, TrashBinTrash } from '@solar-icons/react-native/Bold';
 
 // Storage helpers
 const storage = {
@@ -216,7 +215,7 @@ export default function FlashcardsDashboard() {
                                 onPress={() => handleDelete(deck.id, deck.title)}
                             >
                                 <View style={{ width: 90, height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                                    <HugeiconsIcon icon={Delete01Icon} size={22} color="white" />
+                                    <TrashBinTrash size={22} color="white" />
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -237,7 +236,7 @@ export default function FlashcardsDashboard() {
                                         <Text style={{ fontSize: 13, fontWeight: '500', color: '#8E8E93' }}>{new Date(deck.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
                                     </View>
                                 </View>
-                                <HugeiconsIcon icon={ArrowRight01Icon} size={20} color="#C7C7CC" strokeWidth={3} />
+                                <AltArrowRight size={20} color="#C7C7CC" strokeWidth={3} />
                             </TouchableOpacity>
                         </Swipeable>
                     );
@@ -252,7 +251,7 @@ export default function FlashcardsDashboard() {
                     ) : (
                         <BlurView intensity={isDark ? 20 : 40} tint={isDark ? 'dark' : 'light'} style={[s.emptyState, isDark ? s.glassBorderDark : s.glassBorderLight]}>
                             <View style={[s.emptyIconBox, isDark ? s.bgWhite5 : s.bgIndigo50]}>
-                                <HugeiconsIcon icon={DocumentCodeIcon} size={40} color="#8B5CF6" />
+                                <DocumentText size={40} color="#8B5CF6" />
                             </View>
                             <Text style={[s.emptyTitle, isDark ? s.textWhite : s.textSlate900]}>No Decks Yet</Text>
                             <Text style={[s.emptySubtitle, isDark ? s.textSlate500 : s.textSlate400]}>

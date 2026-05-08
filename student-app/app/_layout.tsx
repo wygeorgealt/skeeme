@@ -16,9 +16,7 @@ import { useFonts } from 'expo-font';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '@/lib/posthog';
 import * as SystemUI from 'expo-system-ui';
-
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Alert01Icon, RefreshIcon } from '@hugeicons/core-free-icons';
+import { DangerTriangle, Refresh } from '@solar-icons/react-native/Bold';
 import { initializeRevenueCat } from '@/lib/revenuecat';
 import RevenueCatUI from 'react-native-purchases-ui';
 
@@ -217,7 +215,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: isDark ? '#0f0f11' : '#fafafa' }}>
-      <HugeiconsIcon icon={Alert01Icon} size={48} color="#ef4444" />
+      <DangerTriangle size={48} color="#ef4444" />
       <Text style={{ fontSize: 20, fontWeight: '900', color: isDark ? 'white' : '#0f172a', marginTop: 20, marginBottom: 8, textAlign: 'center' }}>
         Something went wrong.
       </Text>
@@ -228,7 +226,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         onPress={retry}
         style={{ backgroundColor: isDark ? 'white' : '#0f172a', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', width: '100%', justifyContent: 'center' }}
       >
-        <HugeiconsIcon icon={RefreshIcon} size={18} color={isDark ? '#0f172a' : 'white'} />
+        <Refresh size={18} color={isDark ? '#0f172a' : 'white'} />
         <Text style={{ color: isDark ? '#0f172a' : 'white', fontWeight: 'bold', marginLeft: 8 }}>Try Again</Text>
       </TouchableOpacity>
 

@@ -7,9 +7,8 @@ import { useAuthStore } from '@/store/authStore';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AltArrowLeft, Letter } from '@solar-icons/react-native/Bold';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ArrowLeft01Icon, Mail01Icon } from '@hugeicons/core-free-icons';
 import RevenueCatUI from 'react-native-purchases-ui';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 
@@ -152,7 +151,7 @@ export default function OtpScreen() {
                 <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity onPress={() => router.back()}>
                         <View style={[s.backBtn, { backgroundColor: C.card }]}>
-                            <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={C.text} />
+                            <AltArrowLeft size={24} color={C.text} />
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -164,7 +163,7 @@ export default function OtpScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={[s.iconCircle, { backgroundColor: C.primaryLight }]}>
-                        <HugeiconsIcon icon={Mail01Icon} size={32} color={C.primary} />
+                        <Letter size={32} color={C.primary} />
                     </View>
 
                     <Text style={[s.title, { color: C.text }]}>Check your email</Text>
