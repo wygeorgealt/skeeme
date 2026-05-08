@@ -273,4 +273,91 @@ class ScanController extends Controller
             return response()->json(['message' => $message], 500);
         }
     }
+
+    /**
+     * Stream solve a question from a scanned image (SSE)
+     */
+    public function streamSolve(Request $request)
+    {
+        $idempotencyKey = $request->header('Idempotency-Key') ?? $request->input('idempotency_key');
+        $requestId = $idempotencyKey ?? (string) Str::uuid();
+
+        set_time_limit(240); // 4 minutes
+
+        Log::info('Scan & Solve Stream Request Received', [
+            'user_id' => $request->user()?->id,
+            'image_size' => strlen($request->input('image', '')),
+        ]);
+        $request->validate([
+            'image' => 'required|string', // base64-encoded image
+        ]);
+
+        if (strlen($request->input('image')) > 5 * 1024 * 1024) {
+            return response()->json(['message' => 'Image payload too large. Please use a smaller photo.'], 422);
+        }
+
+        $user = $request->user();
+
+        $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
+        $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
+        $scanRates = $pricingConfig['rates']['scan_solve'] ?? ['free' => 50, 'paid' => 25];
+        $scanCost = is_array($scanRates) ? ($scanRates[$planTier] ?? 25) : $scanRates;
+
+        $canProceed = DB::transaction(function () use ($user, $scanCost) {
+            $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
+            if (!$lockedUser->is_unlimited && $lockedUser->credits < $scanCost) {
+                return false;
+            }
+            return true;
+        });
+
+        if (!$canProceed) {
+            return response()->json(['message' => "Insufficient credits."], 403);
+        }
+
+        return response()->stream(function () use ($request, $user, $scanCost, $requestId) {
+            $fullContent = '';
+            $modelUsed = 'claude-sonnet-4-6';
+
+            try {
+                $timeout = 180;
+                $this->aiService->setTimeout($timeout);
+                
+                $this->aiService->streamSolveFromImage($request->input('image'), function ($chunk) use (&$fullContent) {
+                    if ($chunk['type'] === 'content_block_delta') {
+                        $text = $chunk['delta']['text'] ?? '';
+                        $fullContent .= $text;
+                        echo "data: " . json_encode(['text' => $text]) . "\n\n";
+                        if (ob_get_level() > 0) ob_flush();
+                        flush();
+                    }
+                });
+
+                // Credit Deduction
+                if (!$user->is_unlimited) {
+                    $user->decrement('credits', $scanCost);
+                    $user->transactions()->create([
+                        'type' => 'usage',
+                        'action_type' => 'scan_solve',
+                        'amount' => -$scanCost,
+                        'description' => "Scan & Solve (Streaming)",
+                        'model_used' => $modelUsed,
+                        'request_id' => $requestId,
+                    ]);
+                    Cache::forget("user_credits_{$user->id}");
+                    \App\Jobs\CheckLowCredits::dispatch($user->id);
+                }
+
+                echo "data: [DONE]\n\n";
+            } catch (\Exception $e) {
+                Log::error("Streaming Scan Error: " . $e->getMessage());
+                echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+            'Connection' => 'keep-alive',
+        ]);
+    }
 }

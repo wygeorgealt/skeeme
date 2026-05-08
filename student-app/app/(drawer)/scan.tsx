@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Dimensions, Platform } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { BlurView } from 'expo-blur';
@@ -63,6 +63,24 @@ export default function ScanScreen() {
 
     const [progressPercent, setProgressPercent] = useState(0);
 
+    const pulseAnim = useSharedValue(0.4);
+
+    useEffect(() => {
+        if (loading) {
+            pulseAnim.value = withRepeat(
+                withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+                -1,
+                true
+            );
+        } else {
+            pulseAnim.value = 1;
+        }
+    }, [loading]);
+
+    const pulseStyle = useAnimatedStyle(() => ({
+        opacity: pulseAnim.value,
+    }));
+
     const pickImage = async (useCamera: boolean) => {
         setResults([]);
 
@@ -93,7 +111,6 @@ export default function ScanScreen() {
             setImageBase64(base64Data);
 
             if (base64Data) {
-                // Yield to allow the UI to transition to the preview screen before heavy processing
                 setTimeout(() => {
                     handleSolve(base64Data);
                 }, 50);
@@ -109,10 +126,9 @@ export default function ScanScreen() {
 
             if (photo) {
                 setLoading(true);
-                setLoadingStage('Preparing image...');
+                setLoadingStage('Analyzing image...');
                 setProgressPercent(0);
 
-                // Resize and compress, do not crop (avoids aspect ratio mismatch bugs)
                 const manipulated = await manipulateAsync(
                     photo.uri,
                     [{ resize: { width: 1080 } }],
@@ -122,7 +138,6 @@ export default function ScanScreen() {
                 setImageUri(manipulated.uri);
                 setImageBase64(manipulated.base64 || null);
 
-                // Immediately start solving instead of waiting for a button click
                 if (manipulated.base64) {
                     await handleSolve(manipulated.base64);
                 } else {
@@ -142,7 +157,7 @@ export default function ScanScreen() {
 
         let currentCredits = user?.credits ?? 0;
         let isUnlimited = user?.is_unlimited ?? false;
-        
+
         const minCost = BASE_SCAN_COST + COST_PER_SOLUTION;
         if (!isUnlimited && currentCredits < minCost) {
             try {
@@ -152,7 +167,7 @@ export default function ScanScreen() {
                     currentCredits = userRes.data.credits ?? 0;
                     isUnlimited = userRes.data.is_unlimited ?? false;
                 }
-            } catch (e) {}
+            } catch (e) { }
 
             if (!isUnlimited && currentCredits < minCost) {
                 setShowOutOfCredits(true);
@@ -161,37 +176,20 @@ export default function ScanScreen() {
         }
 
         setLoading(true);
-        setLoadingStage('Scan image...');
+        setLoadingStage('Analyzing image...');
         setProgressPercent(10);
-
-        const thinkingPhrases = [
-            'Thinking...',
-            'Analyzing questions...',
-            'Solving equations...',
-            'Formulating answers...',
-            'Almost there...',
-            'Checking correctness...',
-            'Thinking deeper...',
-            'Applying logic...',
-            'Gathering info...',
-        ];
-
-        let stageIdx = 0;
-        const stageInterval = setInterval(() => {
-            const nextPhrase = thinkingPhrases[Math.floor(Math.random() * thinkingPhrases.length)];
-            setLoadingStage(nextPhrase);
-            setProgressPercent(prev => Math.min(prev + (Math.random() * 5 + 2), 95));
-        }, 2000);
 
         try {
             const token = useAuthStore.getState().token;
             const idempotencyKey = Math.random().toString(36).substring(7);
             const url = `${process.env.EXPO_PUBLIC_API_URL}scan/solve/stream`;
-            
+
             const es = new EventSource(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Idempotency-Key': idempotencyKey,
+                    'Content-Type': 'application/json',
+                    'Accept': 'text/event-stream, application/json',
                 },
                 method: 'POST',
                 body: JSON.stringify({ image: targetBase64 }),
@@ -202,7 +200,6 @@ export default function ScanScreen() {
             es.addEventListener('message', (event) => {
                 if (event.data === '[DONE]') {
                     es.close();
-                    clearInterval(stageInterval);
                     finishSolve(accumulatedJson);
                     return;
                 }
@@ -211,13 +208,12 @@ export default function ScanScreen() {
                     const chunk = JSON.parse(event.data || '{}');
                     if (chunk.text) {
                         accumulatedJson += chunk.text;
-                        // Periodic attempt to parse partial results to show progress
                         try {
                             const partial = parsePartialJson(accumulatedJson);
                             if (partial && partial.results) {
                                 setResults(partial.results);
                             }
-                        } catch (e) {}
+                        } catch (e) { }
                     }
                     if (chunk.error) {
                         throw new Error(chunk.error);
@@ -231,24 +227,20 @@ export default function ScanScreen() {
                 if (__DEV__) console.error('SSE Error', event);
                 es.close();
                 setLoading(false);
-                clearInterval(stageInterval);
                 Alert.alert('Error', 'Streaming interrupted. Please try again.');
             });
 
         } catch (err: any) {
             setLoading(false);
-            clearInterval(stageInterval);
             Alert.alert('Error', 'Connection failed. Please try again.');
         }
     };
 
     const parsePartialJson = (json: string) => {
         try {
-            // Try to close the JSON structure manually to see if it parses
             let testJson = json.trim();
             if (!testJson.endsWith(']}')) {
                 if (testJson.includes('"results":[')) {
-                    // Try to find the last complete object in the array
                     const lastObjEnd = testJson.lastIndexOf('}');
                     if (lastObjEnd !== -1) {
                         testJson = testJson.substring(0, lastObjEnd + 1) + ']}';
@@ -272,11 +264,10 @@ export default function ScanScreen() {
             const cleanJson = fullJson.replace(/```(?:json)?|```/g, '').trim();
             const data = JSON.parse(cleanJson);
             setResults(data.results || []);
-            
-            // Refresh credits
+
             const userRes = await api.get('me');
             if (userRes.data) updateUser(userRes.data);
-            
+
             posthog.capture('scan_solved_stream', { questions_found: data.results?.length || 0 });
         } catch (e) {
             Alert.alert('Error', 'Failed to parse AI response.');
@@ -340,7 +331,6 @@ export default function ScanScreen() {
                         <CameraView style={StyleSheet.absoluteFill} facing="back" ref={cameraRef} enableTorch={enableTorch} />
 
                         <View style={[StyleSheet.absoluteFill, { justifyContent: 'space-between' }]}>
-                            {/* Top Semi-transparent Overlay */}
                             <View style={[s.topChrome, { paddingTop: Math.max(insets.top, 16) }]}>
                                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={s.overlayTopBtn}>
                                     <HugeiconsIcon icon={ArrowLeft01Icon} size={28} color="white" />
@@ -354,12 +344,10 @@ export default function ScanScreen() {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Center Viewfinder */}
                             <View style={s.centerViewfinder}>
                                 <Text style={s.instructionText}>Take a clear photo of your questions</Text>
                             </View>
 
-                            {/* Bottom Semi-transparent Overlay */}
                             <View style={[s.bottomChrome, { paddingBottom: Math.max(insets.bottom, 32) + 90 }]}>
                                 <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={s.galleryBtn}>
                                     <HugeiconsIcon icon={Image01Icon} size={28} color="white" />
@@ -369,7 +357,6 @@ export default function ScanScreen() {
                                     <View style={s.shutterInner} />
                                 </TouchableOpacity>
 
-                                {/* Empty view to balance the gallery button for centered flex layout */}
                                 <View style={{ width: 44, height: 44 }} />
                             </View>
                         </View>
@@ -392,61 +379,44 @@ export default function ScanScreen() {
             </View>
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 220 }} showsVerticalScrollIndicator={false}>
-                {!!imageUri && results.length === 0 && (
+                {!!imageUri && !loading && results.length === 0 && (
                     <View style={s.previewContainer}>
-                        <BlurView 
-                            intensity={Platform.OS === 'ios' ? (isDark ? 30 : 60) : 0} 
-                            tint={isDark ? 'dark' : 'light'} 
+                        <BlurView
+                            intensity={Platform.OS === 'ios' ? (isDark ? 30 : 60) : 0}
+                            tint={isDark ? 'dark' : 'light'}
                             style={[s.previewCard, {
-                                backgroundColor: isDark 
-                                    ? (Platform.OS === 'android' ? '#1C1C1E' : 'rgba(28,28,30,0.4)') 
+                                backgroundColor: isDark
+                                    ? (Platform.OS === 'android' ? '#1C1C1E' : 'rgba(28,28,30,0.4)')
                                     : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.6)')
                             }]}
                         >
                             <View style={{ width: '100%', height: 350, overflow: 'hidden' }}>
                                 <ExpoImage source={{ uri: imageUri }} style={s.previewImage} contentFit="cover" />
-                                {loading && (
-                                    <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)' }]} />
-                                )}
                             </View>
                         </BlurView>
-
-                        {loading && (
-                            <BlurView 
-                                intensity={Platform.OS === 'ios' ? (isDark ? 40 : 80) : 0} 
-                                tint={isDark ? 'dark' : 'light'} 
-                                style={[s.loadingCard, {
-                                    backgroundColor: isDark 
-                                        ? (Platform.OS === 'android' ? '#121212' : 'rgba(18,18,18,0.7)') 
-                                        : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
-                                }]}
-                            >
-                                <Text style={[s.loadingStage, isDark ? s.textWhite : s.textSlate900, { marginBottom: 16 }]}>{loadingStage || 'Processing...'}</Text>
-                                
-                                <View style={s.progressBarContainer}>
-                                    <View style={[s.progressBarFill, { width: `${progressPercent}%` }]} />
-                                </View>
-
-                                <Text style={s.loadingSub}>Skeeme AI is working hard</Text>
-                            </BlurView>
-                        )}
                     </View>
                 )}
 
-                {!!(results.length > 0) && (
+                {!!(results.length > 0 || loading) && (
                     <View>
-                        {/* Captured Image Thumbnail */}
                         {!!imageUri && (
-                            <View style={[s.capturedImageBar, isDark ? s.cardDark : s.cardLight]}>
-                                <ExpoImage source={{ uri: imageUri }} style={s.capturedThumb} contentFit="contain" />
+                            <View style={s.userPromptRow}>
+                                <View style={[s.userPromptBubble, isDark ? s.userBubbleDark : s.userBubbleLight]}>
+                                    <ExpoImage source={{ uri: imageUri }} style={s.userPromptImage} contentFit="cover" />
+                                </View>
                             </View>
                         )}
 
+                        {loading && results.length === 0 && (
+                            <View style={s.aiResponseRow}>
+                                <Animated.Text style={[s.aiAnalyzingText, isDark ? s.textWhite : s.textSlate900, pulseStyle]}>
+                                    {loadingStage}
+                                </Animated.Text>
+                            </View>
+                        )}
 
-                        {/* Solutions */}
                         {results.map((item, index) => (
                             <View key={index} style={[s.answerCard, isDark ? s.cardDark : s.cardLight]}>
-                                {/* Question Section */}
                                 <View style={s.sectionHeaderRow}>
                                     <View style={s.sectionTitleContainer}>
                                         <Text style={[s.sectionTitle, isDark ? s.textWhite : s.textSlate900]}>Question</Text>
@@ -464,7 +434,6 @@ export default function ScanScreen() {
                                     containerStyle={{ marginBottom: 24 }}
                                 />
 
-                                {/* Answer Section */}
                                 <View style={[s.sectionDivider, isDark ? s.dividerDark : s.dividerLight]} />
                                 <View style={s.sectionHeaderRow}>
                                     <View style={s.answerIconRow}>
@@ -484,7 +453,6 @@ export default function ScanScreen() {
                                     </View>
                                 )}
 
-                                {/* Explanation Section — Gauth-style flowing document */}
                                 <View style={[s.sectionDivider, isDark ? s.dividerDark : s.dividerLight]} />
 
                                 <MathText
@@ -498,7 +466,6 @@ export default function ScanScreen() {
                                     containerStyle={{ marginBottom: 20 }}
                                 />
 
-                                {/* Feedback Row */}
                                 <View style={s.feedbackRow}>
                                     {feedback[index] ? (
                                         <Animated.View entering={FadeIn.duration(300)} style={s.feedbackDone}>
@@ -540,7 +507,6 @@ export default function ScanScreen() {
                             </View>
                         ))}
 
-                        {/* Follow-up Bar */}
                         <TouchableOpacity
                             onPress={() => {
                                 const topics = results.map(r => r.topic).filter(Boolean);
@@ -561,19 +527,18 @@ export default function ScanScreen() {
                 <View style={{ height: 24 }} />
             </ScrollView>
 
-            {/* Slim Bottom Actions */}
             {!!(results.length > 0) && (
-                <BlurView 
-                    intensity={Platform.OS === 'ios' ? (isDark ? 80 : 100) : 0} 
-                    tint={isDark ? "dark" : "light"} 
+                <BlurView
+                    intensity={Platform.OS === 'ios' ? (isDark ? 80 : 100) : 0}
+                    tint={isDark ? "dark" : "light"}
                     style={[
-                        s.slimFooter, 
+                        s.slimFooter,
                         isDark ? s.slimFooterDark : s.slimFooterLight,
                         {
                             bottom: 0,
                             paddingBottom: Math.max(insets.bottom, 16) + 75,
-                            backgroundColor: isDark 
-                                ? (Platform.OS === 'android' ? '#000000' : 'rgba(0,0,0,0.8)') 
+                            backgroundColor: isDark
+                                ? (Platform.OS === 'android' ? '#000000' : 'rgba(0,0,0,0.8)')
                                 : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
                         }
                     ]}
@@ -603,8 +568,6 @@ const s = StyleSheet.create({
     permissionContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 16 },
     headerBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-    headerBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
-    headerBtnLight: { backgroundColor: 'rgba(255,255,255,0.6)' },
     headerTitle: { fontSize: 17, fontWeight: '800', letterSpacing: -0.5 },
 
     heroTitle: { fontSize: 24, fontWeight: '900', marginBottom: 12, textAlign: 'center', letterSpacing: -1 },
@@ -614,16 +577,10 @@ const s = StyleSheet.create({
     primaryBtnGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
     primaryBtnText: { color: 'white', fontWeight: '800', fontSize: 16, letterSpacing: -0.3 },
 
-    // Live Camera Overlays
     topChrome: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16, backgroundColor: 'rgba(0,0,0,0.45)' },
     overlayTopBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
     centerViewfinder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    viewfinderBox: { width: CROP_BOX_WIDTH, height: CROP_BOX_HEIGHT, backgroundColor: 'transparent', marginBottom: 24 },
-    cropCornerTL: { position: 'absolute', top: -2, left: -2, width: 32, height: 32, borderTopWidth: 4, borderLeftWidth: 4, borderColor: 'white' },
-    cropCornerTR: { position: 'absolute', top: -2, right: -2, width: 32, height: 32, borderTopWidth: 4, borderRightWidth: 4, borderColor: 'white' },
-    cropCornerBL: { position: 'absolute', bottom: -2, left: -2, width: 32, height: 32, borderBottomWidth: 4, borderLeftWidth: 4, borderColor: 'white' },
-    cropCornerBR: { position: 'absolute', bottom: -2, right: -2, width: 32, height: 32, borderBottomWidth: 4, borderRightWidth: 4, borderColor: 'white' },
     instructionText: { color: 'white', fontSize: 13, fontWeight: '600', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
 
     bottomChrome: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 32, paddingTop: 24, backgroundColor: 'rgba(0,0,0,0.45)' },
@@ -631,63 +588,28 @@ const s = StyleSheet.create({
     shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: '#007AFF' },
     galleryBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
-    // Preview (before solve)
     previewContainer: { alignItems: 'center' },
     previewCard: { width: '100%', borderRadius: 24, overflow: 'hidden', borderBottomWidth: 3, borderBottomColor: 'rgba(139, 92, 246, 0.3)' },
     previewImage: { width: '100%', height: '100%' },
-    scanLineContainer: { position: 'absolute', top: 0, left: 0, right: 0, height: 60, opacity: 0.8 },
-    loadingCard: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24, width: '100%', borderRadius: 24, marginTop: 24 },
-    spinnerBox: { marginBottom: 20 },
-    loadingStage: { fontWeight: '800', fontSize: 17, letterSpacing: -0.5 },
-    loadingSub: { color: '#64748b', fontWeight: '600', fontSize: 13, marginTop: 12 },
-    
-    progressBarContainer: { width: '100%', height: 6, backgroundColor: 'rgba(0,122,255,0.15)', borderRadius: 3, overflow: 'hidden' },
-    progressBarFill: { height: '100%', backgroundColor: '#007AFF', borderRadius: 3 },
-    fullBtnGroup: { width: '100%', gap: 12, marginTop: 24 },
-    fullBtnText: { color: '#fff', fontWeight: '800', fontSize: 16, marginLeft: 10 },
-    fullSecondaryBtnGlass: { height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    retakeText: { fontWeight: '800', fontSize: 15 },
 
-    // === Minimalistic Results (Gauth-inspired) ===
-
-    // Card containers
     cardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
     cardLight: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: 'rgba(60,60,67,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
 
-    // Captured image bar
-    capturedImageBar: { borderRadius: 20, overflow: 'hidden', marginBottom: 16 },
-    capturedThumb: { width: '100%', height: 180 },
-
-    // Metadata bar (Credits Used + Accuracy)
-    metaBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 16, padding: 16, marginBottom: 16 },
-    metaItem: { flex: 1, alignItems: 'center', gap: 4 },
-    metaLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', opacity: 0.6 },
-    metaValue: { fontSize: 16, fontWeight: '800' },
-    metaDivider: { width: 1, height: 24, backgroundColor: 'rgba(148,163,184,0.2)' },
-
-    // Answer cards — Gauth-inspired clean document layout
     answerCard: { borderRadius: 24, padding: 24, marginBottom: 16 },
 
-    // Section layout
     sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
     sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.4 },
     answerIconRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
 
-    copyBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(148,163,184,0.08)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
-    copyBtnText: { fontSize: 12, fontWeight: '700', color: '#64748b' },
-
     topicPill: { backgroundColor: 'rgba(0,122,255,0.08)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
     topicPillText: { color: '#007AFF', fontWeight: '700', fontSize: 11, letterSpacing: 0.3 },
 
-    // Section divider (thin, spacious)
     sectionDivider: { height: 1.5, marginTop: 4, marginBottom: 20, opacity: 0.1 },
 
-    // Answer highlight box
     answerHighlight: { borderRadius: 16, borderLeftWidth: 4, borderLeftColor: '#10b981', marginBottom: 20, padding: 25 },
     answerHighlightLight: { backgroundColor: 'rgba(16,185,129,0.03)' },
     answerHighlightDark: { backgroundColor: 'rgba(16,185,129,0.06)' },
 
-    // Feedback
     feedbackRow: { alignItems: 'center', paddingTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(148,163,184,0.08)' },
     feedbackBtns: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     feedbackPrompt: { fontSize: 13, fontWeight: '600', marginBottom: 16 },
@@ -698,12 +620,10 @@ const s = StyleSheet.create({
     feedbackDone: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: 'rgba(16,185,129,0.08)', borderRadius: 14 },
     feedbackDoneText: { fontSize: 13, fontWeight: '700' },
 
-    // Follow-up bar
     followUpBar: { borderRadius: 20, padding: 20, marginTop: 4 },
     followUpInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     followUpText: { fontSize: 15, fontWeight: '600' },
 
-    // Slim footer
     slimFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingBottom: 100, borderTopWidth: 1 },
     slimFooterDark: { backgroundColor: 'rgba(0,0,0,0.8)', borderTopColor: 'rgba(255,255,255,0.08)' },
     slimFooterLight: { backgroundColor: 'rgba(255,255,255,0.9)', borderTopColor: 'rgba(60,60,67,0.08)' },
@@ -711,15 +631,22 @@ const s = StyleSheet.create({
     slimFooterBtnText: { fontSize: 15, fontWeight: '700' },
     slimFooterDivider: { width: 1, height: 24 },
 
-    // Text utilities
     textSlate400d: { color: '#94a3b8' },
     textSlate500l: { color: '#64748b' },
-    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
-    bgWhite60: { backgroundColor: 'rgba(255,255,255,0.6)' },
     textWhite: { color: 'white' },
     textSlate900: { color: '#0f172a' },
-    textSlate600: { color: '#475569' },
     dividerDark: { backgroundColor: 'rgba(255,255,255,0.06)' },
     dividerLight: { backgroundColor: '#f1f5f9' },
     sectionTitleContainer: { flex: 1 },
+
+    userPromptRow: { width: '100%', alignItems: 'flex-end', marginBottom: 24, paddingHorizontal: 10 },
+    userPromptBubble: { borderRadius: 16, overflow: 'hidden', padding: 4, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+    userBubbleDark: { backgroundColor: '#27272a' },
+    userBubbleLight: { backgroundColor: '#f1f5f9' },
+    userPromptImage: { width: 140, height: 140, borderRadius: 12 },
+    aiResponseRow: { width: '100%', alignItems: 'flex-start', marginBottom: 24, paddingHorizontal: 10 },
+    aiAnalyzingText: { fontSize: 16, fontWeight: '600' },
+
+    thinkingContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
+    thinkingText: { fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
 });

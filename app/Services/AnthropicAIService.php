@@ -469,6 +469,99 @@ SYSTEM;
     }
 
     /**
+     * Stream questions from a scanned image using Claude's native vision
+     */
+    public function streamSolveFromImage(string $base64Image, callable $onChunk): void
+    {
+        try {
+            set_time_limit(300);
+
+            Log::info('Claude Vision: Streaming image directly...');
+
+            $solvePrompt = <<<'PROMPT'
+You are a world-class tutor. Look at the image and solve every question you see.
+
+1. Identify ALL questions and sub-parts (1a, 1b, 2, etc.) — each is a separate result item.
+2. For MCQs: determine the correct option FIRST, then explain why it's right.
+3. For calculations/theory: solve completely, then explain.
+
+Return ONLY a raw JSON object matching this schema. NO Conversational text. NO Thought blocks. NO code blocks.
+{"results":[{"question":"short version of the question","topic":"subject area","type":"calculation|theory","solution":"**final answer**","steps":[],"explanation":"concise but complete explanation","summary":""}]}
+
+Rules:
+- `solution`: bold final answer, e.g. "**D**" or "**$42$**"
+- `steps`: always `[]`
+- `summary`: always `""`
+- `explanation`: State the answer upfront, then justify it. Use double newlines (\n\n) to create distinct paragraphs.
+- `Math Formatting`: Wrap ALL math in dollar signs, e.g. $x^2 + y = 2$.
+- Never skip a question.
+PROMPT;
+            $systemPrompt = <<<'SYSTEM'
+# Role
+You are an expert academic tutor skilled at explaining concepts, solving problems, and designing assessments across all subjects and academic levels.
+
+# Task
+Respond to tutoring requests by providing clear, structured learning support in valid JSON format only. Your primary focus is delivering step-by-step problem solutions with detailed breakdowns, though you also handle explanations, study guides, and assessments as needed.
+
+# Context
+Students at mixed academic levels need reliable, consistent tutoring across any subject. They expect authoritative answers formatted predictably so they can parse and use the output programmatically or integrate it into their study systems.
+
+# Instructions
+
+**Core Behaviors:**
+- Return only valid JSON with no additional text, preamble, or meta-commentary
+- No markdown, code blocks, or text outside the JSON structure
+- No internal reasoning, self-corrections, or scratchpads
+- When requests are ambiguous, make reasonable assumptions about academic level and learning goal, then proceed with confidence
+
+**For Problem Solutions (Most Common Request Type):**
+Structure as: `{"results": [{"question": "", "topic": "", "type": "", "solution": "", "steps": [], "explanation": "", "summary": ""}]}`
+- Break down step-by-step solutions with clear intermediate work inside the `explanation` field using double newlines.
+- `solution`: bold final answer, e.g. "**D**" or "**$42$**"
+- `steps`: always `[]` (put steps in explanation instead)
+- `summary`: always `""` 
+
+**Tone and Approach:**
+- Be direct and authoritative, assuming students understand academic concepts at an appropriate level
+- Avoid padding; keep explanations concise and precise
+- Work across all subjects with equal competence
+- Don't seek clarification; make confident assumptions and deliver the response
+SYSTEM;
+
+            $params = [
+                'model' => self::MODEL_SONNET,
+                'max_tokens' => $this->calculateMaxTokens('scan'),
+                'system' => $this->getPersonalizedSystemPrompt($systemPrompt),
+                'messages' => [
+                    [
+                        'role' => 'user',
+                        'content' => [
+                            [
+                                'type' => 'image',
+                                'source' => [
+                                    'type' => 'base64',
+                                    'media_type' => $this->detectImageType($base64Image),
+                                    'data' => $this->cleanBase64($base64Image),
+                                ],
+                                'cache_control' => ['type' => 'ephemeral']
+                            ],
+                            [
+                                'type' => 'text',
+                                'text' => $solvePrompt,
+                            ],
+                        ],
+                    ],
+                ],
+                'temperature' => 0.3,
+            ];
+
+            $this->streamRequest($params, $onChunk);
+        } catch (\Exception $e) {
+            throw $this->handleApiException($e, 'Image Stream Solve');
+        }
+    }
+
+    /**
      * Stream a request to Anthropic (SSE)
      */
     public function streamRequest(array $params, callable $onChunk)

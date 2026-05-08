@@ -84,8 +84,8 @@ export default function GenerateFlashcardScreen() {
         setLoadingStage(mode === 'file' ? 'Analyzing Document...' : 'Analyzing Topic...');
 
         const stages = mode === 'file'
-            ? ['Reading material...', 'Identifying key concepts...', 'Creating cards...', 'Reviewing content...', 'Almost ready...']
-            : ['Analyzing Topic...', 'Researching Context...', 'Drafting cards...', 'Finalizing deck...', 'Almost ready...'];
+            ? ['Skeeming...', 'Solving...', 'Identifying key concepts...', 'Creating cards...', 'Almost ready...']
+            : ['Skeeming...', 'Solving...', 'Researching Topic...', 'Drafting cards...', 'Almost ready...'];
 
         let stageIdx = 0;
         const stageInterval = setInterval(() => {
@@ -167,6 +167,20 @@ export default function GenerateFlashcardScreen() {
 
     const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
     const estimatedCost = parseInt(cardCount) || 10;
+
+    if (isLoading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' }}>
+                <LoadingSpinner size={60} color={C.primary} />
+                <Text style={{ fontFamily: 'Outfit-Bold', fontSize: 24, marginTop: 24, color: isDark ? '#fff' : '#000' }}>
+                    {loadingStage || 'Skeeming...'}
+                </Text>
+                <Text style={{ fontFamily: 'Outfit-Regular', fontSize: 16, marginTop: 8, color: '#8E8E93' }}>
+                    Generating your flashcard deck...
+                </Text>
+            </View>
+        );
+    }
 
     return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
@@ -303,23 +317,16 @@ export default function GenerateFlashcardScreen() {
                         : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
                 }]}
             >
-                {isLoading ? (
-                    <View style={s.loadingContainer}>
-                        <LoadingSpinner size={32} />
-                        <Text style={[s.loadingText, { color: C.text, marginTop: 12 }]}>{loadingStage}</Text>
-                    </View>
-                ) : (
-                    <TouchableOpacity
-                        onPress={handleGenerate}
-                        disabled={!canGenerate}
-                        activeOpacity={0.8}
-                        style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : '#A2C9F4' }]}
-                    >
-                            <Text style={s.generatePillText}>
-                                Generate Set
-                            </Text>
-                    </TouchableOpacity>
-                )}
+                <TouchableOpacity
+                    onPress={handleGenerate}
+                    disabled={!canGenerate}
+                    activeOpacity={0.8}
+                    style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : '#A2C9F4' }]}
+                >
+                        <Text style={s.generatePillText}>
+                            Generate Set
+                        </Text>
+                </TouchableOpacity>
             </BlurView>
 
             <RewardModal

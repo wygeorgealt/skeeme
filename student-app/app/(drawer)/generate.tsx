@@ -43,9 +43,9 @@ const FORMAT_OPTIONS = [
     { key: 'both', label: 'Mixed', icon: UserGroupIcon, desc: 'Combination of both' },
 ];
 
-const LOADING_STAGES_FILE = ['Analyzing Document...', 'Extracting Context...', 'Generating Questions...', 'Finalizing Quiz...', 'Almost Ready...'];
-const LOADING_STAGES_TOPIC = ['Analyzing Topic...', 'Researching Context...', 'Generating Questions...', 'Finalizing Quiz...', 'Almost Ready...'];
-const PROGRESS_STAGES = ['Analyzing', 'Extracting', 'Generating', 'Finalizing'];
+const LOADING_STAGES_FILE = ['Skeeming...', 'Solving...', 'Extracting Context...', 'Generating Questions...', 'Almost Ready...'];
+const LOADING_STAGES_TOPIC = ['Skeeming...', 'Solving...', 'Researching Topic...', 'Generating Questions...', 'Almost Ready...'];
+const PROGRESS_STAGES = ['Skeeming', 'Extracting', 'Generating', 'Finalizing'];
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN SCREEN
@@ -619,7 +619,21 @@ export default function GenerateQuizScreen() {
     }
 
     // ── QUIZ VIEW ───────────────────────────────────────────────────────────────
-    if (questions.length > 0 && currentQIndex < questions.length) {
+    if (isLoading || (questions.length > 0 && currentQIndex < questions.length)) {
+        if (questions.length === 0) {
+            return (
+                <View style={{ flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' }}>
+                    <LoadingSpinner size={60} color={C.primary} />
+                    <Text style={{ fontFamily: 'Outfit-Bold', fontSize: 24, marginTop: 24, color: isDark ? '#fff' : '#000' }}>
+                        {loadingStage || 'Skeeming...'}
+                    </Text>
+                    <Text style={{ fontFamily: 'Outfit-Regular', fontSize: 16, marginTop: 8, color: '#8E8E93' }}>
+                        Generating your quiz questions...
+                    </Text>
+                </View>
+            );
+        }
+
         const q = questions[currentQIndex];
         const isTheory = q.question_type === 'essay';
         const rawProgressPct = (currentQIndex / questions.length) * 100;
