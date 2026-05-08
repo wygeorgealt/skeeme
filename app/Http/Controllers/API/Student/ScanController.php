@@ -24,6 +24,95 @@ class ScanController extends Controller
     }
 
     /**
+     * Solve a question from a scanned image (Streaming SSE).
+     */
+    public function streamSolve(Request $request)
+    {
+        $request->validate(['image' => 'required|string']);
+        $user = $request->user();
+
+        // 1. Credit Check (Same as sync solve)
+        $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
+        $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
+        $scanRates = $pricingConfig['rates']['scan_solve'] ?? ['free' => 50, 'paid' => 25];
+        $scanCost = is_array($scanRates) ? ($scanRates[$planTier] ?? 25) : $scanRates;
+
+        if (!$user->is_unlimited && $user->credits < $scanCost) {
+            return response()->json(['message' => "Insufficient credits."], 403);
+        }
+
+        $requestId = (string) Str::uuid();
+
+        return response()->stream(function () use ($request, $user, $scanCost, $requestId) {
+            $fullContent = '';
+            $modelUsed = AIService::MODEL_SONNET;
+
+            // Prepare headers for SSE
+            echo "HTTP/1.1 200 OK\n";
+            echo "Content-Type: text/event-stream\n";
+            echo "Cache-Control: no-cache\n";
+            echo "Connection: keep-alive\n";
+            echo "X-Accel-Buffering: no\n\n";
+
+            try {
+                $params = [
+                    'model' => $modelUsed,
+                    'max_tokens' => 2048,
+                    'system' => "You are a world-class tutor. Look at the image and solve every question you see. Return ONLY a raw JSON object matching this schema: {\"results\":[{\"question\":\"\",\"topic\":\"\",\"type\":\"\",\"solution\":\"\",\"steps\":[],\"explanation\":\"\",\"summary\":\"\"}]}",
+                    'messages' => [
+                        [
+                            'role' => 'user',
+                            'content' => [
+                                [
+                                    'type' => 'image',
+                                    'source' => [
+                                        'type' => 'base64',
+                                        'media_type' => 'image/jpeg',
+                                        'data' => preg_replace('/^data:image\/(png|jpeg|jpg|gif|webp);base64,/', '', $request->input('image')),
+                                    ]
+                                ],
+                                [
+                                    'type' => 'text',
+                                    'text' => "Solve this now."
+                                ]
+                            ]
+                        ]
+                    ],
+                    'temperature' => 0.3,
+                ];
+
+                $this->aiService->streamRequest($params, function ($chunk) use (&$fullContent) {
+                    if ($chunk['type'] === 'content_block_delta') {
+                        $text = $chunk['delta']['text'] ?? '';
+                        $fullContent .= $text;
+                        echo "data: " . json_encode(['text' => $text]) . "\n\n";
+                        if (ob_get_level() > 0) ob_flush();
+                        flush();
+                    }
+                });
+
+                // Finalize Credit Deduction
+                if (!$user->is_unlimited) {
+                    $user->decrement('credits', $scanCost);
+                    $user->transactions()->create([
+                        'type' => 'usage',
+                        'action_type' => 'scan_solve',
+                        'amount' => -$scanCost,
+                        'description' => "Scan & Solve (Streaming)",
+                        'model_used' => $modelUsed,
+                        'request_id' => $requestId,
+                    ]);
+                }
+
+                echo "data: [DONE]\n\n";
+            } catch (\Exception $e) {
+                Log::error("Streaming Scan Error: " . $e->getMessage());
+                echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
+            }
+        });
+    }
+
+    /**
      * Solve a question from a scanned image.
      */
     public function solve(Request $request)

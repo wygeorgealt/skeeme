@@ -167,8 +167,11 @@ Route::group(['prefix' => 'v1'], function () {
             // AI-Intensive Routes (Throttled: 5 per minute)
             Route::group(['middleware' => ['throttle:5,1', 'sufficient.credits']], function () {
                 Route::post('quizzes/generate', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'generate']);
+                Route::post('quizzes/generate/stream', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'streamGenerate']);
                 Route::post('flashcards/generate', [\App\Http\Controllers\API\Student\FlashcardController::class, 'generate']);
+                Route::post('flashcards/generate/stream', [\App\Http\Controllers\API\Student\FlashcardController::class, 'streamGenerate']);
                 Route::post('scan/solve', [\App\Http\Controllers\API\Student\ScanController::class, 'solve']);
+                Route::post('scan/solve/stream', [\App\Http\Controllers\API\Student\ScanController::class, 'streamSolve']);
             });
 
             Route::get('ai-jobs/status/{job_id}', [\App\Http\Controllers\API\Student\AIJobStatusController::class, 'show']);

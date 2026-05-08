@@ -32,7 +32,8 @@ import { scannerService, ScanResult } from '@/lib/scanner';
 import { posthog } from '@/lib/posthog';
 
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ScanIcon, ArrowLeft01Icon, EnergyIcon, Image01Icon, CreditCardIcon, Shield01Icon, ListViewIcon, CheckmarkCircle01Icon, ThumbsUpIcon, ThumbsDownIcon, ArrowRight01Icon, Share01Icon, Camera01Icon } from '@hugeicons/core-free-icons';
+import { ScanIcon, ArrowLeft01Icon, EnergyIcon, Image01Icon, ListViewIcon, CheckmarkCircle01Icon, ThumbsUpIcon, ThumbsDownIcon, ArrowRight01Icon, Share01Icon, Camera01Icon } from '@hugeicons/core-free-icons';
+import EventSource from 'react-native-sse';
 
 const BASE_SCAN_COST = 50;
 const COST_PER_SOLUTION = 0;
@@ -56,7 +57,6 @@ export default function ScanScreen() {
     const [loading, setLoading] = useState(false);
     const [loadingStage, setLoadingStage] = useState('');
     const [results, setResults] = useState<ScanResult[]>([]);
-    const [lastScanCost, setLastScanCost] = useState<number | null>(null);
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
     const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'unhelpful'>>({});
 
@@ -64,7 +64,6 @@ export default function ScanScreen() {
 
     const pickImage = async (useCamera: boolean) => {
         setResults([]);
-        setLastScanCost(null);
 
         const permissionMethod = useCamera
             ? ImagePicker.requestCameraPermissionsAsync
@@ -145,7 +144,6 @@ export default function ScanScreen() {
         
         const minCost = BASE_SCAN_COST + COST_PER_SOLUTION;
         if (!isUnlimited && currentCredits < minCost) {
-            // Force refresh user from API before failing, in case they just topped up
             try {
                 const userRes = await api.get('me');
                 if (userRes.data) {
@@ -165,44 +163,106 @@ export default function ScanScreen() {
         setLoadingStage('Scan image...');
         setProgressPercent(10);
 
-        const stages = ['Scan image...', 'Reading handwriting...', 'Detecting questions...', 'AI Solving...', 'Double checking...', 'Finalizing results...'];
+        const stages = ['Scan image...', 'AI Solving...', 'Finalizing results...'];
         let stageIdx = 0;
         const stageInterval = setInterval(() => {
             stageIdx = Math.min(stageIdx + 1, stages.length - 1);
             setLoadingStage(stages[stageIdx]);
-            setProgressPercent(prev => Math.min(prev + 15, 90));
-        }, 2500);
+            setProgressPercent(prev => Math.min(prev + 10, 90));
+        }, 3000);
 
         try {
-            const data = await scannerService.solve(targetBase64, 'base64');
-            setProgressPercent(100);
-            
-            setImageBase64(null);
-            setResults(data.results || []);
-            setLastScanCost(data.cost);
+            const token = useAuthStore.getState().token;
+            const es = new EventSource(`${process.env.EXPO_PUBLIC_API_URL}student/scan/solve/stream`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                method: 'POST',
+                body: JSON.stringify({ image: targetBase64 }),
+            });
 
-            try {
-                posthog.capture('scan_solved', {
-                    questions_found: data.results?.length || 0,
-                    cost: data.cost
-                });
-            } catch (e) { /* ignore */ }
+            let accumulatedJson = '';
 
-            const userRes = await api.get('me');
-            if (userRes.data) {
-                updateUser(userRes.data);
-            }
+            es.addEventListener('message', (event) => {
+                if (event.data === '[DONE]') {
+                    es.close();
+                    finishSolve(accumulatedJson);
+                    return;
+                }
+
+                try {
+                    const chunk = JSON.parse(event.data || '{}');
+                    if (chunk.text) {
+                        accumulatedJson += chunk.text;
+                        // Periodic attempt to parse partial results to show progress
+                        try {
+                            const partial = parsePartialJson(accumulatedJson);
+                            if (partial && partial.results) {
+                                setResults(partial.results);
+                            }
+                        } catch (e) {}
+                    }
+                    if (chunk.error) {
+                        throw new Error(chunk.error);
+                    }
+                } catch (e) {
+                    if (__DEV__) console.error('Stream parse error', e);
+                }
+            });
+
+            es.addEventListener('error', (event) => {
+                if (__DEV__) console.error('SSE Error', event);
+                es.close();
+                setLoading(false);
+                clearInterval(stageInterval);
+            });
+
         } catch (err: any) {
-            if (err?.response?.status !== 402 && err?.response?.status !== 403) {
-                let msg = 'Failed to solve. Try a clearer photo.';
-                if (err?.response?.data?.message) msg = err.response.data.message;
-                else if (err?.message) msg = err.message;
-                Alert.alert('Error', msg);
-            }
-        } finally {
-            clearInterval(stageInterval);
             setLoading(false);
-            setLoadingStage('');
+            clearInterval(stageInterval);
+            Alert.alert('Error', 'Connection failed. Please try again.');
+        }
+    };
+
+    const parsePartialJson = (json: string) => {
+        try {
+            // Try to close the JSON structure manually to see if it parses
+            let testJson = json.trim();
+            if (!testJson.endsWith(']}')) {
+                if (testJson.includes('"results":[')) {
+                    // Try to find the last complete object in the array
+                    const lastObjEnd = testJson.lastIndexOf('}');
+                    if (lastObjEnd !== -1) {
+                        testJson = testJson.substring(0, lastObjEnd + 1) + ']}';
+                    } else {
+                        testJson += ']}';
+                    }
+                } else {
+                    testJson += '"}';
+                }
+            }
+            return JSON.parse(testJson);
+        } catch (e) {
+            return null;
+        }
+    };
+
+    const finishSolve = async (fullJson: string) => {
+        setLoading(false);
+        setProgressPercent(100);
+        try {
+            const cleanJson = fullJson.replace(/```(?:json)?|```/g, '').trim();
+            const data = JSON.parse(cleanJson);
+            setResults(data.results || []);
+            
+            // Refresh credits
+            const userRes = await api.get('me');
+            if (userRes.data) updateUser(userRes.data);
+            
+            posthog.capture('scan_solved_stream', { questions_found: data.results?.length || 0 });
+        } catch (e) {
+            Alert.alert('Error', 'Failed to parse AI response.');
         }
     };
 
@@ -234,7 +294,6 @@ export default function ScanScreen() {
         setImageUri(null);
         setImageBase64(null);
         setResults([]);
-        setLastScanCost(null);
     };
 
     const [enableTorch, setEnableTorch] = useState(false);
@@ -366,20 +425,6 @@ export default function ScanScreen() {
                             </View>
                         )}
 
-                        {/* Metadata Bar (Credits Used + Accuracy) */}
-                        <View style={[s.metaBar, isDark ? s.cardDark : s.cardLight]}>
-                            <View style={s.metaItem}>
-                                <HugeiconsIcon icon={CreditCardIcon} size={14} color={C.primary} />
-                                <Text style={[s.metaLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Credits</Text>
-                                <Text style={[s.metaValue, isDark ? s.textWhite : s.textSlate900]}>{lastScanCost ?? '—'}</Text>
-                            </View>
-                            <View style={s.metaDivider} />
-                            <View style={s.metaItem}>
-                                <HugeiconsIcon icon={Shield01Icon} size={14} color="#10b981" />
-                                <Text style={[s.metaLabel, isDark ? s.textSlate400d : s.textSlate500l]}>Accuracy</Text>
-                                <Text style={[s.metaValue, isDark ? s.textWhite : s.textSlate900]}>High</Text>
-                            </View>
-                        </View>
 
                         {/* Solutions */}
                         {results.map((item, index) => (

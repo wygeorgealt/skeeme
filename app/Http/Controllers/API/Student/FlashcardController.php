@@ -29,6 +29,127 @@ class FlashcardController extends Controller
     }
 
     /**
+     * Generate a new flashcard deck using AI (Streaming SSE)
+     */
+    public function streamGenerate(Request $request)
+    {
+        $validated = $request->validate([
+            'topic'          => 'nullable|string|max:255',
+            'file'           => 'nullable|file|mimes:pdf,doc,docx,txt,md|max:5120',
+            'card_count'     => 'required|integer|min:5|max:50',
+            'difficulty'     => 'nullable|string|in:easy,medium,hard,mixed',
+        ]);
+
+        $user = $request->user();
+        $sourceContent = '';
+
+        if ($request->hasFile('file')) {
+            $sourceContent = $this->extractionService->extractText($request->file('file')->getPathname(), $request->file('file')->getClientOriginalExtension());
+        } else {
+            $sourceContent = $validated['topic'];
+        }
+
+        $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
+        $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
+        $flashcardRates = $pricingConfig['rates']['flashcard_flat'] ?? ['free' => 30, 'paid' => 25];
+        $totalCost = is_array($flashcardRates) ? ($flashcardRates[$planTier] ?? 25) : $flashcardRates;
+
+        if (!$user->is_unlimited && $user->credits < $totalCost) {
+            return response()->json(['message' => "Insufficient credits."], 403);
+        }
+
+        $requestId = (string) Str::uuid();
+
+        return response()->stream(function () use ($request, $user, $sourceContent, $validated, $totalCost, $requestId) {
+            $fullContent = '';
+            $modelUsed = AIService::MODEL_HAIKU;
+
+            echo "HTTP/1.1 200 OK\n";
+            echo "Content-Type: text/event-stream\n";
+            echo "Cache-Control: no-cache\n";
+            echo "Connection: keep-alive\n";
+            echo "X-Accel-Buffering: no\n\n";
+
+            try {
+                $params = [
+                    'model' => $modelUsed,
+                    'max_tokens' => $this->aiService->calculateMaxTokens('flashcard', $validated['card_count']),
+                    'system' => "You are an expert tutor creating highly effective flashcards. Return only JSON. Schema: [{\"front\":\"\",\"back\":\"\"}]",
+                    'messages' => [
+                        ['role' => 'user', 'content' => "Generate " . ($validated['card_count'] ?? 10) . " flashcards on: " . $sourceContent]
+                    ],
+                    'temperature' => 0.7,
+                ];
+
+                $this->aiService->streamRequest($params, function ($chunk) use (&$fullContent) {
+                    if ($chunk['type'] === 'content_block_delta') {
+                        $text = $chunk['delta']['text'] ?? '';
+                        $fullContent .= $text;
+                        echo "data: " . json_encode(['text' => $text]) . "\n\n";
+                        if (ob_get_level() > 0) ob_flush();
+                        flush();
+                    }
+                });
+
+                // Credit Deduction
+                if (!$user->is_unlimited) {
+                    $user->decrement('credits', $totalCost);
+                    $user->transactions()->create([
+                        'type' => 'usage',
+                        'action_type' => 'flashcard_generation',
+                        'amount' => -$totalCost,
+                        'description' => "Flashcard Generation (Streaming)",
+                        'model_used' => $modelUsed,
+                        'request_id' => $requestId,
+                    ]);
+                }
+
+                // Persistence logic
+                try {
+                    $cleanJson = preg_replace('/```(?:json)?|```/s', '', $fullContent);
+                    $cardsData = json_decode(trim($cleanJson), true);
+                    
+                    if (is_array($cardsData)) {
+                        $title = $validated['topic'] ?? 'New Flashcard Deck';
+                        $deck = DB::transaction(function () use ($cardsData, $user, $title) {
+                            $deck = \App\Models\FlashcardDeck::create([
+                                'user_id' => $user->id,
+                                'title' => $title,
+                                'source_type' => 'ai_stream',
+                            ]);
+                            
+                            $toInsert = [];
+                            foreach ($cardsData as $idx => $c) {
+                                if (empty($c['front']) || empty($c['back'])) continue;
+                                $toInsert[] = [
+                                    'flashcard_deck_id' => $deck->id,
+                                    'front' => $c['front'],
+                                    'back' => $c['back'],
+                                    'order_column' => $idx,
+                                    'created_at' => now(),
+                                    'updated_at' => now()
+                                ];
+                            }
+                            if (!empty($toInsert)) {
+                                \App\Models\Flashcard::insert($toInsert);
+                            }
+                            return $deck;
+                        });
+                        echo "data: " . json_encode(['db_id' => $deck->id]) . "\n\n";
+                    }
+                } catch (\Exception $saveEx) {
+                    Log::error("Failed to save streamed flashcards: " . $saveEx->getMessage());
+                }
+
+                echo "data: [DONE]\n\n";
+            } catch (\Exception $e) {
+                Log::error("Streaming Flashcards Error: " . $e->getMessage());
+                echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
+            }
+        });
+    }
+
+    /**
      * List all flashcard decks for the user
      */
     public function index(Request $request)

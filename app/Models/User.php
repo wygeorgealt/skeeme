@@ -205,6 +205,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Referral::class, 'referrer_user_id');
     }
 
+    public function aiProfile()
+    {
+        return $this->hasOne(UserAiProfile::class);
+    }
+
     /**
      * Get the student's current plan name (Free, Standard, Elite).
      */

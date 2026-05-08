@@ -28,6 +28,98 @@ class PracticeQuizController extends Controller
     }
 
     /**
+     * Generate a practice quiz from topic or file (Streaming SSE)
+     */
+    public function streamGenerate(Request $request)
+    {
+        $validated = $request->validate([
+            'topic' => 'required_without:file|nullable|string|max:255',
+            'file' => 'required_without:topic|nullable|file|mimes:pdf,docx,txt,md|max:10240',
+            'question_count' => 'required|integer|min:10|max:30',
+            'question_types' => 'required|array|min:1',
+            'question_types.*' => 'in:mcq,theory',
+            'difficulty' => 'nullable|in:easy,medium,hard',
+        ]);
+
+        $user = $request->user();
+        $sourceContent = '';
+
+        if ($request->hasFile('file')) {
+            $sourceContent = $this->extractionService->extractText($request->file('file')->getRealPath(), $request->file('file')->getClientOriginalExtension());
+        } else {
+            $sourceContent = $validated['topic'];
+        }
+
+        $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
+        $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
+        $quizRates = $pricingConfig['rates']['quiz_flat'] ?? ['free' => 30, 'paid' => 30];
+        $totalCost = is_array($quizRates) ? ($quizRates[$planTier] ?? 30) : $quizRates;
+
+        if (!$user->is_unlimited_student && $user->credits < $totalCost) {
+            return response()->json(['message' => "Insufficient credits."], 403);
+        }
+
+        $requestId = (string) Str::uuid();
+
+        return response()->stream(function () use ($request, $user, $sourceContent, $validated, $totalCost, $requestId) {
+            $fullContent = '';
+            $modelUsed = AIService::MODEL_HAIKU;
+
+            echo "HTTP/1.1 200 OK\n";
+            echo "Content-Type: text/event-stream\n";
+            echo "Cache-Control: no-cache\n";
+            echo "Connection: keep-alive\n";
+            echo "X-Accel-Buffering: no\n\n";
+
+            try {
+                $types = [];
+                foreach ($validated['question_types'] as $type) {
+                    if ($type === 'mcq') $types[] = 'multiple_choice';
+                    if ($type === 'theory') $types[] = 'essay';
+                }
+
+                $params = [
+                    'model' => $modelUsed,
+                    'max_tokens' => $this->aiService->calculateMaxTokens("mcq_" . ($validated['difficulty'] ?? 'medium'), $validated['question_count']),
+                    'system' => "You are a quiz generator. Return ONLY raw JSON matching the requested schema. No conversational text.",
+                    'messages' => [
+                        ['role' => 'user', 'content' => "Generate a " . ($validated['difficulty'] ?? 'medium') . " quiz with " . ($validated['question_count'] ?? 10) . " questions on the following topic/material: " . $sourceContent]
+                    ],
+                    'temperature' => 0.7,
+                ];
+
+                $this->aiService->streamRequest($params, function ($chunk) use (&$fullContent) {
+                    if ($chunk['type'] === 'content_block_delta') {
+                        $text = $chunk['delta']['text'] ?? '';
+                        $fullContent .= $text;
+                        echo "data: " . json_encode(['text' => $text]) . "\n\n";
+                        if (ob_get_level() > 0) ob_flush();
+                        flush();
+                    }
+                });
+
+                // Credit Deduction
+                if (!$user->is_unlimited_student) {
+                    $user->decrement('credits', $totalCost);
+                    $user->transactions()->create([
+                        'type' => 'usage',
+                        'action_type' => 'quiz_generation',
+                        'amount' => -$totalCost,
+                        'description' => "Practice Quiz (Streaming)",
+                        'model_used' => $modelUsed,
+                        'request_id' => $requestId,
+                    ]);
+                }
+
+                echo "data: [DONE]\n\n";
+            } catch (\Exception $e) {
+                Log::error("Streaming Quiz Error: " . $e->getMessage());
+                echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
+            }
+        });
+    }
+
+    /**
      * Generate a practice quiz from topic or file
      */
     public function generate(Request $request)

@@ -225,7 +225,7 @@ export default function GenerateQuizScreen() {
         if (mode === 'file' && !selectedFile) return Alert.alert('Required', 'Please select a document.');
         
         // Pre-flight check
-        const estimatedCost = parseInt(questionCount) || 10;
+        const estimatedCost = 30; // Flat rate
         if (!user?.is_unlimited && (user?.credits ?? 0) < estimatedCost) {
             setShowOutOfCredits(true);
             return;
@@ -239,59 +239,120 @@ export default function GenerateQuizScreen() {
 
         // Stage cycling logic
         const stages = mode === 'file' ? LOADING_STAGES_FILE : LOADING_STAGES_TOPIC;
-
         let stageIdx = 0;
         const stageInterval = setInterval(() => {
             stageIdx = Math.min(stageIdx + 1, stages.length - 1);
             setLoadingStage(stages[stageIdx]);
-        }, 2500);
+        }, 4000);
 
         try {
+            const token = useAuthStore.getState().token;
             const questionTypes = format === 'both' ? ['mcq', 'theory'] : [format === 'theory' ? 'theory' : 'mcq'];
-            let response;
-            if (mode === 'file' && selectedFile) {
-                const fd = new FormData();
-                fd.append('file', { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.mimeType || 'application/octet-stream' } as any);
-                fd.append('question_count', questionCount);
-                fd.append('difficulty', difficulty);
-                questionTypes.forEach((t, i) => fd.append(`question_types[${i}]`, t));
-                const idempotencyKey = generateUUID();
-                response = await api.post('quizzes/generate', fd, { headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': idempotencyKey } });
-            } else {
-                const idempotencyKey = generateUUID();
-                response = await api.post('quizzes/generate', { topic, question_count: parseInt(questionCount), question_types: questionTypes, difficulty }, { headers: { 'Idempotency-Key': idempotencyKey } });
-            }
-            setQuestions(response.data.questions);
-            posthog.capture('quiz_generated', {
-                mode,
-                difficulty,
-                format,
-                question_count: parseInt(questionCount) || 10
+            const idempotencyKey = generateUUID();
+            
+            const url = `${process.env.EXPO_PUBLIC_API_URL}student/quizzes/generate/stream`;
+            
+            let accumulatedJson = '';
+            
+            // Using EventSource for streaming
+            const es = new EventSource(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Idempotency-Key': idempotencyKey,
+                },
+                method: 'POST',
+                body: mode === 'file' && selectedFile 
+                    ? (() => {
+                        const fd = new FormData();
+                        fd.append('file', { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.mimeType || 'application/octet-stream' } as any);
+                        fd.append('question_count', questionCount);
+                        fd.append('difficulty', difficulty);
+                        questionTypes.forEach((t, i) => fd.append(`question_types[${i}]`, t));
+                        return fd;
+                      })()
+                    : JSON.stringify({ 
+                        topic, 
+                        question_count: parseInt(questionCount), 
+                        question_types: questionTypes, 
+                        difficulty 
+                      }),
             });
-            if (response.data.remaining_credits !== undefined) {
-                updateUser({ credits: response.data.remaining_credits });
-                setCreditRefreshKey(k => k + 1);
-            }
-            if (timerEnabled) startTimer(parseInt(timerMinutes) || 10);
+
+            es.addEventListener('message', (event) => {
+                if (event.data === '[DONE]') {
+                    es.close();
+                    finishGeneration(accumulatedJson);
+                    clearInterval(stageInterval);
+                    return;
+                }
+
+                try {
+                    const chunk = JSON.parse(event.data || '{}');
+                    if (chunk.text) {
+                        accumulatedJson += chunk.text;
+                        // Partial parse to show questions early
+                        try {
+                            const partial = parsePartialJson(accumulatedJson);
+                            if (partial && partial.questions) {
+                                setQuestions(partial.questions);
+                            }
+                        } catch (e) {}
+                    }
+                    if (chunk.error) throw new Error(chunk.error);
+                } catch (e) {}
+            });
+
+            es.addEventListener('error', (event) => {
+                es.close();
+                setIsLoading(false);
+                clearInterval(stageInterval);
+                Alert.alert('Error', 'Streaming interrupted.');
+            });
+
         } catch (e: any) {
-            if (__DEV__) console.error('[Quiz Generation] Error:', e);
-            let msg = 'Something went wrong. Please try again.';
-            const data = e.response?.data;
-
-            if (data?.errors) {
-                const firstKey = Object.keys(data.errors)[0];
-                msg = data.errors[firstKey][0];
-            } else if (data?.message) {
-                msg = data.message;
-            }
-
-            if (e.response?.status !== 402 && e.response?.status !== 403) {
-                Alert.alert('Failed', msg);
-            }
-        } finally {
             clearInterval(stageInterval);
             setIsLoading(false);
-            setLoadingStage('');
+            Alert.alert('Error', 'Failed to start generation.');
+        }
+    };
+
+    const parsePartialJson = (json: string) => {
+        try {
+            let testJson = json.trim();
+            if (!testJson.endsWith(']}')) {
+                if (testJson.includes('"questions":[')) {
+                    const lastObjEnd = testJson.lastIndexOf('}');
+                    if (lastObjEnd !== -1) {
+                        testJson = testJson.substring(0, lastObjEnd + 1) + ']}';
+                    } else {
+                        testJson += ']}';
+                    }
+                } else {
+                    testJson += '"}';
+                }
+            }
+            return JSON.parse(testJson);
+        } catch (e) {
+            return null;
+        }
+    };
+
+    const finishGeneration = async (fullJson: string) => {
+        setIsLoading(false);
+        try {
+            const cleanJson = fullJson.replace(/```(?:json)?|```/g, '').trim();
+            const data = JSON.parse(cleanJson);
+            setQuestions(data.questions || []);
+            
+            posthog.capture('quiz_generated_stream', { mode, difficulty, format });
+            
+            // Refresh user credits
+            const userRes = await api.get('me');
+            if (userRes.data) updateUser(userRes.data);
+            
+            if (timerEnabled) startTimer(parseInt(timerMinutes) || 10);
+        } catch (e) {
+            Alert.alert('Error', 'Failed to finalize quiz results.');
         }
     };
 

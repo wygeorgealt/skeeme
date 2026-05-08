@@ -13,17 +13,45 @@ class AnthropicAIService
     protected $apiKey;
     protected $version = '2023-06-01';
     protected $baseUrl = 'https://api.anthropic.com/v1/messages';
-    protected $model = 'claude-haiku-4-5-20251001';
     protected $timeout = 60; // Default 60s for backend generation
+
+    // Model constants
+    const MODEL_SONNET = 'claude-sonnet-4-6';
+    const MODEL_HAIKU = 'claude-haiku-4-5-20251001';
+
+    protected $personalizationService;
 
     public function __construct()
     {
         $this->apiKey = config('services.anthropic.api_key');
-        // We use a high default in client, but can override per-request
         $this->client = new Client([
             'timeout' => 120,
             'connect_timeout' => 10,
         ]);
+        $this->personalizationService = app(UserPersonalizationService::class);
+    }
+
+    /**
+     * Calculate max tokens based on task type and count
+     */
+    protected function calculateMaxTokens(string $type, int $count = 0, string $difficulty = 'medium'): int
+    {
+        return match(true) {
+            $type === 'scan'                          => 2048,
+            $type === 'flashcard' && $count <= 5      => 400,
+            $type === 'flashcard' && $count <= 15     => 900,
+            $type === 'flashcard'                     => 1600,
+            $type === 'mcq_easy'   && $count <= 5     => 500,
+            $type === 'mcq_easy'   && $count <= 15    => 1000,
+            $type === 'mcq_easy'                      => 1800,
+            $type === 'mcq_medium' && $count <= 5     => 700,
+            $type === 'mcq_medium' && $count <= 15    => 1400,
+            $type === 'mcq_medium'                    => 2200,
+            $type === 'mcq_hard'   && $count <= 5     => 900,
+            $type === 'mcq_hard'   && $count <= 15    => 1800,
+            $type === 'mcq_hard'                      => 2800,
+            default                                   => 1024,
+        };
     }
 
     public function setTimeout(int $seconds): self
@@ -82,15 +110,14 @@ class AnthropicAIService
 
             if ($progressCallback) $progressCallback(50);
 
-            // Dynamic max_tokens based on count (~350 tokens per question to prevent truncation)
-            $calculatedMaxTokens = min(10000, max(1500, $numberOfQuestions * 350));
+            $maxTokens = $this->calculateMaxTokens("mcq_{$difficulty}", $numberOfQuestions);
 
             $response = $this->client->post($this->baseUrl, [
                 'headers' => $this->buildHeaders(),
                 'json' => [
-                    'model' => $this->model,
-                    'max_tokens' => $calculatedMaxTokens,
-                    'system' => 'You are a quiz generator. Return ONLY raw JSON matching the requested schema. No conversational text.',
+                    'model' => self::MODEL_HAIKU,
+                    'max_tokens' => $maxTokens,
+                    'system' => $this->getPersonalizedSystemPrompt('You are a quiz generator. Return ONLY raw JSON matching the requested schema. No conversational text.'),
                     'messages' => [
                         [
                             'role' => 'user', 
@@ -142,17 +169,16 @@ class AnthropicAIService
             $sanitizedNotes = array_map([$this, 'sanitizeUtf8'], $notes);
             $optimizedPrompt = $this->buildFlashcardPrompt($sanitizedNotes, $numberOfCards, $difficulty, $prompt);
 
-            // Dynamic max_tokens (~200 tokens per card)
-            $calculatedMaxTokens = min(10000, max(1000, $numberOfCards * 200));
+            $maxTokens = $this->calculateMaxTokens('flashcard', $numberOfCards);
 
             if ($progressCallback) $progressCallback(30);
 
             $response = $this->client->post($this->baseUrl, [
                 'headers' => $this->buildHeaders(),
                 'json' => [
-                    'model' => $this->model,
-                    'max_tokens' => $calculatedMaxTokens,
-                    'system' => 'You are an expert tutor creating highly effective flashcards. Return only JSON.',
+                    'model' => self::MODEL_HAIKU,
+                    'max_tokens' => $maxTokens,
+                    'system' => $this->getPersonalizedSystemPrompt('You are an expert tutor creating highly effective flashcards. Return only JSON.'),
                     'messages' => [
                         [
                             'role' => 'user', 
@@ -207,8 +233,8 @@ class AnthropicAIService
             $response = $this->client->post($this->baseUrl, [
                 'headers' => $this->buildHeaders(),
                 'json' => [
-                    'model' => $this->model,
-                    'max_tokens' => 4096,
+                    'model' => self::MODEL_HAIKU,
+                    'max_tokens' => 1024,
                     'system' => $systemPrompt,
                     'messages' => [['role' => 'user', 'content' => $prompt]],
                     'temperature' => 0.7,
@@ -234,8 +260,8 @@ class AnthropicAIService
             $response = $this->client->post($this->baseUrl, [
                 'headers' => $this->buildHeaders(),
                 'json' => [
-                    'model' => $this->model,
-                    'max_tokens' => 4096,
+                    'model' => self::MODEL_HAIKU,
+                    'max_tokens' => 1024,
                     'system' => $systemPrompt,
                     'messages' => [['role' => 'user', 'content' => $text]],
                     'temperature' => 0.3,
@@ -287,7 +313,7 @@ class AnthropicAIService
             $response = $this->client->post($this->baseUrl, [
                 'headers' => $this->buildHeaders(),
                 'json' => [
-                    'model' => $this->model,
+                    'model' => self::MODEL_SONNET,
                     'max_tokens' => 1024,
                     'system' => $systemPrompt,
                     'messages' => [['role' => 'user', 'content' => $prompt]],
@@ -340,12 +366,7 @@ Rules:
 - `Math Formatting`: Wrap ALL math in dollar signs, e.g. $x^2 + y = 2$.
 - Never skip a question.
 PROMPT;
-            $response = $this->client->post($this->baseUrl, [
-                'headers' => $this->buildHeaders(),
-                'json' => [
-                    'model' => 'claude-sonnet-4-6',
-                    'max_tokens' => 10000,
-                    'system' => <<<'SYSTEM'
+            $systemPrompt = <<<'SYSTEM'
 # Role
 You are an expert academic tutor skilled at explaining concepts, solving problems, and designing assessments across all subjects and academic levels.
 
@@ -375,8 +396,13 @@ Structure as: `{"results": [{"question": "", "topic": "", "type": "", "solution"
 - Avoid padding; keep explanations concise and precise
 - Work across all subjects with equal competence
 - Don't seek clarification; make confident assumptions and deliver the response
-SYSTEM
-,
+SYSTEM;
+            $response = $this->client->post($this->baseUrl, [
+                'headers' => $this->buildHeaders(),
+                'json' => [
+                    'model' => self::MODEL_SONNET,
+                    'max_tokens' => $this->calculateMaxTokens('scan'),
+                    'system' => $this->getPersonalizedSystemPrompt($systemPrompt),
                     'messages' => [
                         [
                             'role' => 'user',
@@ -440,6 +466,59 @@ SYSTEM
         } catch (\Exception $e) {
             throw $this->handleApiException($e, 'Image Solve');
         }
+    }
+
+    /**
+     * Stream a request to Anthropic (SSE)
+     */
+    public function streamRequest(array $params, callable $onChunk)
+    {
+        if (isset($params['system'])) {
+            $params['system'] = $this->getPersonalizedSystemPrompt($params['system']);
+        }
+        $params['stream'] = true;
+
+        $response = $this->client->post($this->baseUrl, [
+            'headers' => $this->buildHeaders(),
+            'json' => $params,
+            'stream' => true,
+        ]);
+
+        $body = $response->getBody();
+        $buffer = '';
+
+        while (!$body->eof()) {
+            $chunk = $body->read(1024);
+            $buffer .= $chunk;
+
+            while (($pos = strpos($buffer, "\n\n")) !== false) {
+                $event = substr($buffer, 0, $pos);
+                $buffer = substr($buffer, $pos + 2);
+
+                if (str_starts_with($event, 'data: ')) {
+                    $data = substr($event, 6);
+                    if ($data === '[DONE]') break;
+
+                    $decoded = json_decode($data, true);
+                    if ($decoded && isset($decoded['type'])) {
+                        $onChunk($decoded);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Get a personalized system prompt by appending student context.
+     */
+    protected function getPersonalizedSystemPrompt(string $basePrompt): string
+    {
+        $user = auth()->user();
+        if (!$user) return $basePrompt;
+
+        $context = $this->personalizationService->getSystemContext($user);
+        
+        return $basePrompt . "\n\n" . $context;
     }
 
     // ─── SHARED HELPERS ─────────────────────────────────────────────────

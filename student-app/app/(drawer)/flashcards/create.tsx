@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Platform } from 'react-native';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { DocumentCodeIcon, Upload01Icon, SparklesIcon, ArrowLeft01Icon, Leaf01Icon, IdeaIcon, Rocket01Icon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
+import EventSource from 'react-native-sse';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
@@ -92,64 +93,75 @@ export default function GenerateFlashcardScreen() {
         }, 2500);
 
         try {
-            let response;
-            if (mode === 'file' && selectedFile) {
-                const fd = new FormData();
-                fd.append('file', {
-                    uri: selectedFile.uri,
-                    name: selectedFile.name,
-                    type: selectedFile.mimeType || 'application/octet-stream'
-                } as any);
-                fd.append('card_count', cardCount);
-                fd.append('difficulty', difficulty);
-                const idempotencyKey = generateUUID();
-                response = await api.post('flashcards/generate', fd, { headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': idempotencyKey } });
-            } else {
-                const idempotencyKey = generateUUID();
-                response = await api.post('flashcards/generate', {
-                    topic,
-                    card_count: count,
-                    difficulty
-                }, { headers: { 'Idempotency-Key': idempotencyKey } });
-            }
+            const token = useAuthStore.getState().token;
+            const idempotencyKey = generateUUID();
+            const url = `${process.env.EXPO_PUBLIC_API_URL}student/flashcards/generate/stream`;
 
-            if (response.data.remaining_credits !== undefined) {
-                updateUser({ credits: response.data.remaining_credits });
-            }
+            const es = new EventSource(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Idempotency-Key': idempotencyKey,
+                },
+                method: 'POST',
+                body: mode === 'file' && selectedFile 
+                    ? (() => {
+                        const fd = new FormData();
+                        fd.append('file', { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.mimeType || 'application/octet-stream' } as any);
+                        fd.append('card_count', cardCount);
+                        fd.append('difficulty', difficulty);
+                        return fd;
+                      })()
+                    : JSON.stringify({ topic, card_count: count, difficulty }),
+            });
 
-            queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
+            let accumulatedJson = '';
 
-            const deckId = response.data.data?.id;
+            es.addEventListener('message', (event) => {
+                if (event.data === '[DONE]') {
+                    es.close();
+                    clearInterval(stageInterval);
+                    // Final check - results are saved on backend
+                    return;
+                }
 
-            try {
-                posthog.capture('flashcards_generated', {
-                    difficulty,
-                    card_count: count,
-                    mode,
-                    cost: estimatedCost
-                });
-            } catch(e) { /* ignore tracking errs */ }
+                try {
+                    const chunk = JSON.parse(event.data || '{}');
+                    if (chunk.text) {
+                        accumulatedJson += chunk.text;
+                    }
+                    if (chunk.db_id) {
+                        finishFlashcardGen(chunk.db_id);
+                    }
+                    if (chunk.error) throw new Error(chunk.error);
+                } catch (e) {}
+            });
 
-            if (response.data.reward?.earned) {
-                setRewardData(response.data.reward);
-                setPendingDeckId(deckId);
-                setIsRewardModalVisible(true);
-            } else {
-                router.replace(`/(drawer)/flashcards/${deckId}`);
-            }
+            es.addEventListener('error', (event) => {
+                es.close();
+                setIsLoading(false);
+                clearInterval(stageInterval);
+                Alert.alert('Error', 'Streaming failed.');
+            });
 
         } catch (e: any) {
-            if (__DEV__) console.error('[Flashcard Creation] Error:', e);
-            let msg = 'Failed to generate flashcards. Please try again.';
-            const data = e.response?.data;
-            if (data?.message) msg = data.message;
-            if (e.response?.status === 403) Alert.alert('Insufficient Credits', msg);
-            else Alert.alert('Failed', msg);
-        } finally {
             clearInterval(stageInterval);
             setIsLoading(false);
-            setLoadingStage('');
+            Alert.alert('Error', 'Failed to start generation.');
         }
+    };
+
+    const finishFlashcardGen = async (deckId: number) => {
+        setIsLoading(false);
+        queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
+        
+        try {
+            posthog.capture('flashcards_generated_stream', { difficulty, card_count: parseInt(cardCount) });
+        } catch(e) {}
+
+        const userRes = await api.get('me');
+        if (userRes.data) updateUser(userRes.data);
+
+        router.replace(`/(drawer)/flashcards/${deckId}`);
     };
 
     const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
