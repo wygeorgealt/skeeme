@@ -34,23 +34,50 @@ class AnthropicAIService
     /**
      * Calculate max tokens based on task type and count
      */
-    protected function calculateMaxTokens(string $type, int $count = 0, string $difficulty = 'medium'): int
+    public function calculateMaxTokens(string $type, int $count = 0, string $difficulty = 'medium'): int
     {
         return match(true) {
-            $type === 'scan'                          => 9000,
-            $type === 'flashcard' && $count <= 5      => 400,
-            $type === 'flashcard' && $count <= 15     => 900,
-            $type === 'flashcard'                     => 1600,
-            $type === 'mcq_easy'   && $count <= 5     => 500,
-            $type === 'mcq_easy'   && $count <= 15    => 1000,
-            $type === 'mcq_easy'                      => 1800,
-            $type === 'mcq_medium' && $count <= 5     => 700,
-            $type === 'mcq_medium' && $count <= 15    => 1400,
-            $type === 'mcq_medium'                    => 2200,
-            $type === 'mcq_hard'   && $count <= 5     => 900,
-            $type === 'mcq_hard'   && $count <= 15    => 1800,
-            $type === 'mcq_hard'                      => 2800,
-            default                                   => 1024,
+            // ── SCAN ─────────────────────────────────────────────────────────
+            $type === 'scan'                           => 9000,
+
+            // ── FLASHCARDS (min:5, max:50, step:5) ───────────────────────────
+            // ~80 tokens per card, with generous headroom
+            $type === 'flashcard' && $count <= 5       =>  500,
+            $type === 'flashcard' && $count <= 10      =>  900,
+            $type === 'flashcard' && $count <= 15      => 1300,
+            $type === 'flashcard' && $count <= 20      => 1700,
+            $type === 'flashcard' && $count <= 25      => 2200,
+            $type === 'flashcard' && $count <= 30      => 2700,
+            $type === 'flashcard' && $count <= 35      => 3200,
+            $type === 'flashcard' && $count <= 40      => 3700,
+            $type === 'flashcard' && $count <= 45      => 4200,
+            $type === 'flashcard'                      => 4800,  // 50
+
+            // ── MCQ EASY (min:10, max:30, step:5) ────────────────────────────
+            // ~100 tokens per question
+            $type === 'mcq_easy' && $count <= 10       => 1100,
+            $type === 'mcq_easy' && $count <= 15       => 1600,
+            $type === 'mcq_easy' && $count <= 20       => 2100,
+            $type === 'mcq_easy' && $count <= 25       => 2600,
+            $type === 'mcq_easy'                       => 3200,  // 30
+
+            // ── MCQ MEDIUM (min:10, max:30, step:5) ──────────────────────────
+            // ~150 tokens per question
+            $type === 'mcq_medium' && $count <= 10     => 1600,
+            $type === 'mcq_medium' && $count <= 15     => 2400,
+            $type === 'mcq_medium' && $count <= 20     => 3200,
+            $type === 'mcq_medium' && $count <= 25     => 4000,
+            $type === 'mcq_medium'                     => 4800,  // 30
+
+            // ── MCQ HARD (min:10, max:30, step:5) ────────────────────────────
+            // ~200 tokens per question
+            $type === 'mcq_hard' && $count <= 10       => 2200,
+            $type === 'mcq_hard' && $count <= 15       => 3300,
+            $type === 'mcq_hard' && $count <= 20       => 4400,
+            $type === 'mcq_hard' && $count <= 25       => 5500,
+            $type === 'mcq_hard'                       => 6600,  // 30
+
+            default                                    => 1024,
         };
     }
 
