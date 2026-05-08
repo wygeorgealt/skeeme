@@ -83,7 +83,7 @@ class AnthropicAIService
             if ($progressCallback) $progressCallback(50);
 
             // Dynamic max_tokens based on count (~350 tokens per question to prevent truncation)
-            $calculatedMaxTokens = min(8192, max(1500, $numberOfQuestions * 350));
+            $calculatedMaxTokens = min(10000, max(1500, $numberOfQuestions * 350));
 
             $response = $this->client->post($this->baseUrl, [
                 'headers' => $this->buildHeaders(),
@@ -143,7 +143,7 @@ class AnthropicAIService
             $optimizedPrompt = $this->buildFlashcardPrompt($sanitizedNotes, $numberOfCards, $difficulty, $prompt);
 
             // Dynamic max_tokens (~200 tokens per card)
-            $calculatedMaxTokens = min(8192, max(1000, $numberOfCards * 200));
+            $calculatedMaxTokens = min(10000, max(1000, $numberOfCards * 200));
 
             if ($progressCallback) $progressCallback(30);
 
@@ -344,7 +344,7 @@ PROMPT;
                 'headers' => $this->buildHeaders(),
                 'json' => [
                     'model' => 'claude-sonnet-4-6',
-                    'max_tokens' => 8192,
+                    'max_tokens' => 10000,
                     'system' => <<<'SYSTEM'
 # Role
 You are an expert academic tutor skilled at explaining concepts, solving problems, and designing assessments across all subjects and academic levels.
