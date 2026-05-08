@@ -47,13 +47,6 @@ class ScanController extends Controller
             $fullContent = '';
             $modelUsed = AIService::MODEL_SONNET;
 
-            // Prepare headers for SSE
-            echo "HTTP/1.1 200 OK\n";
-            echo "Content-Type: text/event-stream\n";
-            echo "Cache-Control: no-cache\n";
-            echo "Connection: keep-alive\n";
-            echo "X-Accel-Buffering: no\n\n";
-
             try {
                 $params = [
                     'model' => $modelUsed,
@@ -109,7 +102,12 @@ class ScanController extends Controller
                 Log::error("Streaming Scan Error: " . $e->getMessage());
                 echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
             }
-        });
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+            'Connection' => 'keep-alive',
+        ]);
     }
 
     /**

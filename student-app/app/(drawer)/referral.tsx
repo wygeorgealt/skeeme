@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, useColorScheme, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, TextInput, Alert, useColorScheme, StyleSheet } from 'react-native';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Stack } from 'expo-router';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
@@ -93,7 +94,7 @@ export default function ReferralScreen() {
                             activeOpacity={0.8}
                             style={[s.claimBtn, code.trim() && !loading ? s.claimBtnActive : (isDark ? s.claimBtnDark : s.claimBtnLight)]}
                         >
-                            {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.claimBtnText}>Claim</Text>}
+                            {loading ? <LoadingSpinner size={20} color="#fff" /> : <Text style={s.claimBtnText}>Claim</Text>}
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -105,7 +106,7 @@ export default function ReferralScreen() {
                         <View style={s.codeHeader}>
                             <Text style={s.codeLabel}>Referral Code</Text>
                             {loadingStats ? (
-                                <ActivityIndicator color="rgba(255,255,255,0.7)" />
+                                <LoadingSpinner size={20} color="rgba(255,255,255,0.7)" />
                             ) : (
                                 <Text style={s.codeValue}>{stats.code || '...'}</Text>
                             )}
@@ -115,7 +116,7 @@ export default function ReferralScreen() {
                             <View style={s.statBox}>
                                 <Text style={s.statLabel}>Friends Joined</Text>
                                 {loadingStats ? (
-                                    <ActivityIndicator size="small" color="rgba(255,255,255,0.7)" />
+                                    <LoadingSpinner size={20} color="rgba(255,255,255,0.7)" />
                                 ) : (
                                     <Text style={s.statValue}>{stats.total_referred}</Text>
                                 )}
@@ -123,7 +124,7 @@ export default function ReferralScreen() {
                             <View style={s.statBox}>
                                 <Text style={s.statLabel}>Rewards Earned</Text>
                                 {loadingStats ? (
-                                    <ActivityIndicator size="small" color="rgba(255,255,255,0.7)" />
+                                    <LoadingSpinner size={20} color="rgba(255,255,255,0.7)" />
                                 ) : (
                                     <Text style={s.statValue}>{stats.credits_earned}</Text>
                                 )}

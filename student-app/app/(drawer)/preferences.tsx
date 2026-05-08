@@ -1,6 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, useColorScheme, StyleSheet, Platform } from 'react-native';
+import { View, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Platform } from 'react-native';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -192,7 +193,7 @@ export default function PreferencesScreen() {
                     style={s.saveBtnShadow}
                 >
                     {saving ? (
-                        <ActivityIndicator color="white" size="small" />
+                        <LoadingSpinner size={24} color="white" strokeWidth={3} />
                     ) : (
                         <Text style={s.saveBtnText}>Save Preferences</Text>
                     )}

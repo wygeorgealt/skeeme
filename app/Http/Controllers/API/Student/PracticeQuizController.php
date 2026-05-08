@@ -55,7 +55,7 @@ class PracticeQuizController extends Controller
         $quizRates = $pricingConfig['rates']['quiz_flat'] ?? ['free' => 30, 'paid' => 30];
         $totalCost = is_array($quizRates) ? ($quizRates[$planTier] ?? 30) : $quizRates;
 
-        if (!$user->is_unlimited_student && $user->credits < $totalCost) {
+        if (!$user->is_unlimited && $user->credits < $totalCost) {
             return response()->json(['message' => "Insufficient credits."], 403);
         }
 
@@ -64,12 +64,6 @@ class PracticeQuizController extends Controller
         return response()->stream(function () use ($request, $user, $sourceContent, $validated, $totalCost, $requestId) {
             $fullContent = '';
             $modelUsed = AIService::MODEL_HAIKU;
-
-            echo "HTTP/1.1 200 OK\n";
-            echo "Content-Type: text/event-stream\n";
-            echo "Cache-Control: no-cache\n";
-            echo "Connection: keep-alive\n";
-            echo "X-Accel-Buffering: no\n\n";
 
             try {
                 $types = [];
@@ -99,7 +93,7 @@ class PracticeQuizController extends Controller
                 });
 
                 // Credit Deduction
-                if (!$user->is_unlimited_student) {
+                if (!$user->is_unlimited) {
                     $user->decrement('credits', $totalCost);
                     $user->transactions()->create([
                         'type' => 'usage',
@@ -116,7 +110,12 @@ class PracticeQuizController extends Controller
                 Log::error("Streaming Quiz Error: " . $e->getMessage());
                 echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
             }
-        });
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+            'Connection' => 'keep-alive',
+        ]);
     }
 
     /**
@@ -213,7 +212,7 @@ class PracticeQuizController extends Controller
             $canProceed = DB::transaction(function () use ($user, $totalCost) {
                 $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
 
-                if (!$lockedUser->is_unlimited_student && $lockedUser->credits < $totalCost) {
+                if (!$lockedUser->is_unlimited && $lockedUser->credits < $totalCost) {
                     return false;
                 }
                 return true;
@@ -319,7 +318,7 @@ class PracticeQuizController extends Controller
             Log::info("[AI Quiz] Success! Questions generated.", ['count' => count($questions)]);
 
             // 6. Deduct Usage (Atomic) - Only AFTER successful generation
-            if (!$user->is_unlimited_student) {
+            if (!$user->is_unlimited) {
                 DB::transaction(function () use ($user, $totalCost, $validated, $modelUsed, $requestId) {
                     $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
                     $lockedUser->decrement('credits', $totalCost);

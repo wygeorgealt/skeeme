@@ -24,7 +24,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
-import { ActivityIndicator } from 'react-native';
 import { Flashcard as Card, FlashcardDeck } from '@/types';
 
 // Storage helpers

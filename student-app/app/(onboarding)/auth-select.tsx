@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform, Dimensions, Linking, Image, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform, Dimensions, Linking, Image } from 'react-native';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect, useState } from 'react';
@@ -120,7 +121,7 @@ export default function AuthSelectScreen() {
                         disabled={isGoogleLoading}
                     >
                         {isGoogleLoading ? (
-                            <ActivityIndicator color={isDark ? '#FFFFFF' : '#000000'} />
+                            <LoadingSpinner size={24} color={isDark ? '#FFFFFF' : '#000000'} />
                         ) : (
                             <>
                                 <View style={s.authBtnIcon}>

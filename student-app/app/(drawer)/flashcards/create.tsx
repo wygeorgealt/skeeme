@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Platform } from 'react-native';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { DocumentCodeIcon, Upload01Icon, SparklesIcon, ArrowLeft01Icon, Leaf01Icon, IdeaIcon, Rocket01Icon, CheckmarkCircle01Icon } from '@hugeicons/core-free-icons';
 import EventSource from 'react-native-sse';
@@ -12,6 +12,7 @@ import { generateUUID } from '@/lib/utils';
 import { Colors } from '@/constants/theme';
 import * as DocumentPicker from 'expo-document-picker';
 import { useQueryClient } from '@tanstack/react-query';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { posthog } from '@/lib/posthog';
 
 import { RewardModal } from '@/components/RewardModal';
@@ -95,7 +96,7 @@ export default function GenerateFlashcardScreen() {
         try {
             const token = useAuthStore.getState().token;
             const idempotencyKey = generateUUID();
-            const url = `${process.env.EXPO_PUBLIC_API_URL}student/flashcards/generate/stream`;
+            const url = `${process.env.EXPO_PUBLIC_API_URL}flashcards/generate/stream`;
 
             const es = new EventSource(url, {
                 headers: {
@@ -112,7 +113,7 @@ export default function GenerateFlashcardScreen() {
                         return fd;
                       })()
                     : JSON.stringify({ topic, card_count: count, difficulty }),
-            });
+            } as any);
 
             let accumulatedJson = '';
 
@@ -219,7 +220,7 @@ export default function GenerateFlashcardScreen() {
                     >
                         {isProcessingFile ? (
                             <View style={s.centered}>
-                                <ActivityIndicator size="small" color="#007AFF" />
+                                <LoadingSpinner size={32} />
                                 <Text style={[s.processingText, { color: '#007AFF' }]}>Analyzing document...</Text>
                             </View>
                         ) : selectedFile ? (
@@ -304,8 +305,8 @@ export default function GenerateFlashcardScreen() {
             >
                 {isLoading ? (
                     <View style={s.loadingContainer}>
-                        <ActivityIndicator size="small" color="#007AFF" style={{ marginBottom: 12 }} />
-                        <Text style={[s.loadingText, { color: C.text }]}>{loadingStage}</Text>
+                        <LoadingSpinner size={32} />
+                        <Text style={[s.loadingText, { color: C.text, marginTop: 12 }]}>{loadingStage}</Text>
                     </View>
                 ) : (
                     <TouchableOpacity

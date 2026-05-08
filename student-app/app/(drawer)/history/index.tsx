@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, SectionList, RefreshControl, useColorScheme, Platform, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, SectionList, RefreshControl, useColorScheme, Platform, StyleSheet, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { HugeiconsIcon } from '@hugeicons/react-native';

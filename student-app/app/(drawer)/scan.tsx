@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, StyleSheet, Dimensions, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Dimensions, Platform } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -32,7 +32,8 @@ import { scannerService, ScanResult } from '@/lib/scanner';
 import { posthog } from '@/lib/posthog';
 
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { ScanIcon, ArrowLeft01Icon, EnergyIcon, Image01Icon, ListViewIcon, CheckmarkCircle01Icon, ThumbsUpIcon, ThumbsDownIcon, ArrowRight01Icon, Share01Icon, Camera01Icon } from '@hugeicons/core-free-icons';
+import { Camera01Icon, Home01Icon, UserIcon, ArrowLeft01Icon, Image01Icon, SparklesIcon, CheckmarkCircle01Icon, Cancel01Icon, ScanIcon, EnergyIcon, ListViewIcon, ThumbsUpIcon, ThumbsDownIcon, ArrowRight01Icon, Share01Icon } from '@hugeicons/core-free-icons';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import EventSource from 'react-native-sse';
 
 const BASE_SCAN_COST = 50;
@@ -163,30 +164,45 @@ export default function ScanScreen() {
         setLoadingStage('Scan image...');
         setProgressPercent(10);
 
-        const stages = ['Scan image...', 'AI Solving...', 'Finalizing results...'];
+        const thinkingPhrases = [
+            'Thinking...',
+            'Analyzing questions...',
+            'Solving equations...',
+            'Formulating answers...',
+            'Almost there...',
+            'Checking correctness...',
+            'Thinking deeper...',
+            'Applying logic...',
+            'Gathering info...',
+        ];
+
         let stageIdx = 0;
         const stageInterval = setInterval(() => {
-            stageIdx = Math.min(stageIdx + 1, stages.length - 1);
-            setLoadingStage(stages[stageIdx]);
-            setProgressPercent(prev => Math.min(prev + 10, 90));
-        }, 3000);
+            const nextPhrase = thinkingPhrases[Math.floor(Math.random() * thinkingPhrases.length)];
+            setLoadingStage(nextPhrase);
+            setProgressPercent(prev => Math.min(prev + (Math.random() * 5 + 2), 95));
+        }, 2000);
 
         try {
             const token = useAuthStore.getState().token;
-            const es = new EventSource(`${process.env.EXPO_PUBLIC_API_URL}student/scan/solve/stream`, {
+            const idempotencyKey = Math.random().toString(36).substring(7);
+            const url = `${process.env.EXPO_PUBLIC_API_URL}scan/solve/stream`;
+            
+            const es = new EventSource(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
+                    'Idempotency-Key': idempotencyKey,
                 },
                 method: 'POST',
                 body: JSON.stringify({ image: targetBase64 }),
-            });
+            } as any);
 
             let accumulatedJson = '';
 
             es.addEventListener('message', (event) => {
                 if (event.data === '[DONE]') {
                     es.close();
+                    clearInterval(stageInterval);
                     finishSolve(accumulatedJson);
                     return;
                 }
@@ -216,6 +232,7 @@ export default function ScanScreen() {
                 es.close();
                 setLoading(false);
                 clearInterval(stageInterval);
+                Alert.alert('Error', 'Streaming interrupted. Please try again.');
             });
 
         } catch (err: any) {
@@ -563,7 +580,7 @@ export default function ScanScreen() {
                 >
                     <TouchableOpacity onPress={handleExport} disabled={loading} activeOpacity={0.7} style={s.slimFooterBtn}>
                         {loading ? (
-                            <ActivityIndicator size="small" color={C.primary} />
+                            <LoadingSpinner size={24} />
                         ) : (
                             <>
                                 <HugeiconsIcon icon={Share01Icon} size={18} color={isDark ? '#cbd5e1' : '#64748b'} />

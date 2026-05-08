@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { View, ScrollView, ActivityIndicator, TouchableOpacity, useColorScheme, Platform, Alert, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, useColorScheme, Platform, Alert, StyleSheet } from 'react-native';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -359,7 +360,7 @@ export default function QuizHistoryDetailScreen() {
                     activeOpacity={0.7}
                     style={[s.exportBtn, isDark ? s.bgWhite : s.bgSlate900]}
                 >
-                    {isExporting ? <ActivityIndicator size="small" color={isDark ? 'black' : 'white'} /> : (
+                    {isExporting ? <LoadingSpinner size={24} color={isDark ? 'black' : 'white'} /> : (
                         <View style={s.exportBtnContent}>
                             <HugeiconsIcon icon={DocumentCodeIcon} size={20} color={isDark ? 'black' : 'white'} />
                             <Text style={[s.exportBtnText, isDark ? s.textBlack : s.textWhite]}>Save Report</Text>
@@ -383,7 +384,7 @@ export default function QuizHistoryDetailScreen() {
                     disabled={isSharing}
                     style={s.shareBtn}
                 >
-                    {isSharing ? <ActivityIndicator size="small" color="white" /> : (
+                    {isSharing ? <LoadingSpinner size={24} color="white" /> : (
                         <HugeiconsIcon icon={Share01Icon} size={20} color="white" />
                     )}
                 </TouchableOpacity>

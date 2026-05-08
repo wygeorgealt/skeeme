@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { useState } from 'react';
-import { View, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, useColorScheme, StyleSheet, TextInput } from 'react-native';
+import { View, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useColorScheme, StyleSheet, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { api } from '@/lib/api';
 import { StatusBar } from 'expo-status-bar';

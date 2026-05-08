@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, useColorScheme, Animated, StyleSheet, Modal, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, Animated, StyleSheet, Modal, Platform } from 'react-native';
+import EventSource from 'react-native-sse';
 
 import { useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { api } from '@/lib/api';
@@ -25,6 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { DocumentCodeIcon, Upload01Icon, CheckmarkCircle01Icon, Cancel01Icon, IdeaIcon, Timer01Icon, Tick01Icon, ArrowRight01Icon, Share01Icon, Leaf01Icon, FireIcon, ListViewIcon, UserGroupIcon, Medal01Icon, InformationCircleIcon, Alert01Icon } from '@hugeicons/core-free-icons';
 import { Colors, Spacing, Radius } from '@/constants/theme';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & OPTIONS
@@ -250,11 +252,10 @@ export default function GenerateQuizScreen() {
             const questionTypes = format === 'both' ? ['mcq', 'theory'] : [format === 'theory' ? 'theory' : 'mcq'];
             const idempotencyKey = generateUUID();
             
-            const url = `${process.env.EXPO_PUBLIC_API_URL}student/quizzes/generate/stream`;
+            const url = `${process.env.EXPO_PUBLIC_API_URL}quizzes/generate/stream`;
             
             let accumulatedJson = '';
             
-            // Using EventSource for streaming
             const es = new EventSource(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -276,7 +277,7 @@ export default function GenerateQuizScreen() {
                         question_types: questionTypes, 
                         difficulty 
                       }),
-            });
+            } as any);
 
             es.addEventListener('message', (event) => {
                 if (event.data === '[DONE]') {
@@ -492,7 +493,7 @@ export default function GenerateQuizScreen() {
                         >
                             {isProcessingFile ? (
                                 <View style={s.centered}>
-                                    <ActivityIndicator size="small" color="#007AFF" />
+                                    <LoadingSpinner size={32} />
                                     <Text style={[s.processingText, { color: '#007AFF' }]}>Analyzing document...</Text>
                                 </View>
                             ) : selectedFile ? (
@@ -597,8 +598,8 @@ export default function GenerateQuizScreen() {
                 >
                     {isLoading ? (
                         <View style={s.loadingContainer}>
-                            <ActivityIndicator size="small" color="#007AFF" style={{ marginBottom: 12 }} />
-                            <Text style={[s.loadingText, { color: C.text }]}>{loadingStage}</Text>
+                            <LoadingSpinner size={32} />
+                            <Text style={[s.loadingText, { color: C.text, marginTop: 12 }]}>{loadingStage}</Text>
                         </View>
                     ) : (
                         <TouchableOpacity
@@ -915,7 +916,7 @@ export default function GenerateQuizScreen() {
                         style={[s.shareBtn, isDark ? s.shareBtnDark : s.shareBtnLight]}
                     >
                         {isSharing ? (
-                            <ActivityIndicator size="small" color={C.primary} />
+                            <LoadingSpinner size={24} color={C.primary} strokeWidth={3} />
                         ) : (
                             <>
                                 <HugeiconsIcon icon={Share01Icon} size={18} color={C.text} />
@@ -932,7 +933,7 @@ export default function GenerateQuizScreen() {
                     >
                         <View style={s.exportBtnContent}>
                             {isExporting ? (
-                                <ActivityIndicator size="small" color="white" />
+                                <LoadingSpinner size={24} color="white" strokeWidth={3} />
                             ) : (
                                 <>
                                     <HugeiconsIcon icon={DocumentCodeIcon} size={18} color="white" />

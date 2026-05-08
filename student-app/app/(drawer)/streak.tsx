@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { View, ScrollView, TouchableOpacity, useColorScheme, ActivityIndicator, Platform, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, useColorScheme, Platform, StyleSheet } from 'react-native';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Stack, router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -136,7 +137,7 @@ export default function StreakScreen() {
 
                                 </View>
                             ) : loadingFreezes ? (
-                                <ActivityIndicator size="small" color={C.primary} />
+                                <LoadingSpinner size={20} />
                             ) : (
                                 <View style={s.freezeAvailableBadge}>
                                     <Text style={s.freezeAvailableText}>{freezesLeft} Available</Text>

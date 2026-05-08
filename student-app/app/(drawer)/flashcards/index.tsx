@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, useColorScheme, Platform, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, useColorScheme, Platform, StyleSheet, StatusBar } from 'react-native';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { HugeiconsIcon } from '@hugeicons/react-native';
@@ -267,7 +268,7 @@ export default function FlashcardsDashboard() {
                             style={[s.loadMoreBtn, isDark ? s.bgWhite10 : s.bgWhite60]}
                         >
                             {isLoading ? (
-                                <ActivityIndicator size="small" color={C.primary} />
+                                <LoadingSpinner size={24} />
                             ) : (
                                 <Text style={[s.loadMoreText, isDark ? s.textWhite : s.textSlate900]}>Load More</Text>
                             )}

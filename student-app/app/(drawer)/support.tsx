@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, useColorScheme, StyleSheet, ScrollView, Alert, Image } from 'react-native';
+import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, useColorScheme, StyleSheet, ScrollView, Alert, Image } from 'react-native';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
@@ -175,7 +176,7 @@ export default function SupportScreen() {
                         style={[s.submitBtn, { backgroundColor: C.primary }, isSubmitting && { opacity: 0.7 }]}
                     >
                         {isSubmitting ? (
-                            <ActivityIndicator color="white" />
+                            <LoadingSpinner size={24} color="white" strokeWidth={3} />
                         ) : (
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <HugeiconsIcon icon={MailUpload02Icon} size={18} color="white" />

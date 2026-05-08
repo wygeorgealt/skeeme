@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, useColorScheme, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, useColorScheme, ViewStyle, TextStyle } from 'react-native';
 import { Colors, FontSize, Spacing, Radius } from '@/constants/theme';
+import { LoadingSpinner } from '../LoadingSpinner';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 type Size = 'sm' | 'md' | 'lg';
@@ -78,7 +79,7 @@ export function IosPillButton({
             ]}
         >
             {loading ? (
-                <ActivityIndicator color={textColorByVariant[variant]} />
+                <LoadingSpinner size={20} color={textColorByVariant[variant]} strokeWidth={3} />
             ) : (
                 <>
                     {icon}
