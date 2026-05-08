@@ -37,7 +37,7 @@ class AnthropicAIService
     protected function calculateMaxTokens(string $type, int $count = 0, string $difficulty = 'medium'): int
     {
         return match(true) {
-            $type === 'scan'                          => 2048,
+            $type === 'scan'                          => 9000,
             $type === 'flashcard' && $count <= 5      => 400,
             $type === 'flashcard' && $count <= 15     => 900,
             $type === 'flashcard'                     => 1600,

@@ -28,86 +28,183 @@ class ScanController extends Controller
      */
     public function streamSolve(Request $request)
     {
+        set_time_limit(240);
+
+        $idempotencyKey = $request->header('Idempotency-Key') ?? $request->input('idempotency_key');
+        $requestId = $idempotencyKey ?? (string) Str::uuid();
+
+        $sseHeaders = [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+            'Connection' => 'keep-alive',
+        ];
+
+        // Idempotency replay: re-emit cached result as a single full_result event
+        if ($idempotencyKey && Cache::has("scan_idem_{$idempotencyKey}")) {
+            $cached = Cache::get("scan_idem_{$idempotencyKey}");
+            return response()->stream(function () use ($cached) {
+                echo "data: " . json_encode(['type' => 'full_result', 'data' => $cached['data']]) . "\n\n";
+                echo "data: " . json_encode(['type' => 'complete', 'credits_remaining' => $cached['credits_remaining']]) . "\n\n";
+                echo "data: [DONE]\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+            }, 200, $sseHeaders);
+        }
+
         $request->validate(['image' => 'required|string']);
+
+        if (strlen($request->input('image')) > 5 * 1024 * 1024) {
+            return response()->json(['message' => 'Image payload too large. Please use a smaller photo.'], 422);
+        }
+
         $user = $request->user();
 
-        // 1. Credit Check (Same as sync solve)
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
         $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
         $scanRates = $pricingConfig['rates']['scan_solve'] ?? ['free' => 50, 'paid' => 25];
         $scanCost = is_array($scanRates) ? ($scanRates[$planTier] ?? 25) : $scanRates;
 
-        if (!$user->is_unlimited && $user->credits < $scanCost) {
-            return response()->json(['message' => "Insufficient credits."], 403);
+        $canProceed = DB::transaction(function () use ($user, $scanCost) {
+            $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
+            if (!$lockedUser->is_unlimited && $lockedUser->credits < $scanCost) {
+                return false;
+            }
+            return true;
+        });
+
+        if (!$canProceed) {
+            return response()->json([
+                'message' => "Insufficient credits. You need at least {$scanCost} credits for a scan.",
+                'required' => $scanCost,
+                'available' => $user->credits,
+            ], 403);
         }
 
-        $requestId = (string) Str::uuid();
+        return response()->stream(function () use ($request, $user, $scanCost, $requestId, $idempotencyKey) {
+            $emit = function (array $payload) {
+                echo "data: " . json_encode($payload) . "\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+            };
 
-        return response()->stream(function () use ($request, $user, $scanCost, $requestId) {
+            $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
+            $activeProvider = $aiConfig['provider'];
+            $isManualOverride = $aiConfig['is_manual'] ?? false;
+
+            if ($activeProvider === 'none') {
+                $emit(['type' => 'error', 'message' => 'Skeeme AI is currently undergoing scheduled maintenance. Please try again later.']);
+                echo "data: [DONE]\n\n";
+                return;
+            }
+
+            $useDeepseek = ($activeProvider === 'deepseek');
+            $modelUsed = $useDeepseek ? 'deepseek-chat' : AIService::MODEL_SONNET;
             $fullContent = '';
-            $modelUsed = AIService::MODEL_SONNET;
+            $deepseekResult = null;
+
+            $this->aiService->setTimeout(180);
+            $this->deepseek->setTimeout(180);
 
             try {
-                $params = [
-                    'model' => $modelUsed,
-                    'max_tokens' => 2048,
-                    'system' => "You are a world-class tutor. Look at the image and solve every question you see. Return ONLY a raw JSON object matching this schema: {\"results\":[{\"question\":\"\",\"topic\":\"\",\"type\":\"\",\"solution\":\"\",\"steps\":[],\"explanation\":\"\",\"summary\":\"\"}]}",
-                    'messages' => [
-                        [
-                            'role' => 'user',
-                            'content' => [
-                                [
-                                    'type' => 'image',
-                                    'source' => [
-                                        'type' => 'base64',
-                                        'media_type' => 'image/jpeg',
-                                        'data' => preg_replace('/^data:image\/(png|jpeg|jpg|gif|webp);base64,/', '', $request->input('image')),
-                                    ]
-                                ],
-                                [
-                                    'type' => 'text',
-                                    'text' => "Solve this now."
-                                ]
-                            ]
-                        ]
-                    ],
-                    'temperature' => 0.3,
-                ];
+                if ($useDeepseek) {
+                    Log::info("Streaming Scan: Circuit Breaker active, using Deepseek (non-streaming).");
+                    $deepseekResult = $this->deepseek->solveFromImage($request->input('image'));
+                    $emit(['type' => 'full_result', 'data' => $deepseekResult]);
+                } else {
+                    $this->aiService->streamSolveFromImage($request->input('image'), function ($chunk) use (&$fullContent, $emit) {
+                        if ($chunk['type'] === 'content_block_delta') {
+                            $text = $chunk['delta']['text'] ?? '';
+                            if ($text === '') return;
+                            $fullContent .= $text;
+                            $emit(['type' => 'text_delta', 'text' => $text]);
+                        }
+                    });
+                }
+            } catch (\Exception $e) {
+                if (!$useDeepseek && !$isManualOverride) {
+                    Log::warning("Claude stream failed, falling back to Deepseek: " . $e->getMessage());
+                    Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
+                    try {
+                        $deepseekResult = $this->deepseek->solveFromImage($request->input('image'));
+                        $modelUsed = 'deepseek-chat';
+                        $emit(['type' => 'full_result', 'data' => $deepseekResult]);
+                    } catch (\Exception $e2) {
+                        Log::error("Deepseek fallback also failed: " . $e2->getMessage());
+                        $emit(['type' => 'error', 'message' => 'Skeeme is down, Please try again later.']);
+                        echo "data: [DONE]\n\n";
+                        return;
+                    }
+                } else {
+                    if ($isManualOverride) {
+                        \App\Models\SystemSetting::triggerManualFailureAlert($activeProvider, 'Scan & Solve Streaming', $e->getMessage());
+                    }
+                    Log::error("Streaming Scan Error: " . $e->getMessage());
+                    $emit(['type' => 'error', 'message' => 'Skeeme is down, Please try again later.']);
+                    echo "data: [DONE]\n\n";
+                    return;
+                }
+            }
 
-                $this->aiService->streamRequest($params, function ($chunk) use (&$fullContent) {
-                    if ($chunk['type'] === 'content_block_delta') {
-                        $text = $chunk['delta']['text'] ?? '';
-                        $fullContent .= $text;
-                        echo "data: " . json_encode(['text' => $text]) . "\n\n";
-                        if (ob_get_level() > 0) ob_flush();
-                        flush();
+            // Atomic credit deduction
+            if (!$user->is_unlimited) {
+                DB::transaction(function () use ($user, $scanCost, $modelUsed, $requestId) {
+                    $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
+                    $lockedUser->decrement('credits', $scanCost);
+                    try {
+                        $lockedUser->transactions()->create([
+                            'type' => 'usage',
+                            'action_type' => 'scan_solve',
+                            'amount' => -$scanCost,
+                            'description' => "Scan & Solve (Streaming)",
+                            'model_used' => $modelUsed,
+                            'request_id' => $requestId,
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error("Failed to log scan transaction: " . $e->getMessage());
                     }
                 });
-
-                // Finalize Credit Deduction
-                if (!$user->is_unlimited) {
-                    $user->decrement('credits', $scanCost);
-                    $user->transactions()->create([
-                        'type' => 'usage',
-                        'action_type' => 'scan_solve',
-                        'amount' => -$scanCost,
-                        'description' => "Scan & Solve (Streaming)",
-                        'model_used' => $modelUsed,
-                        'request_id' => $requestId,
-                    ]);
-                }
-
-                echo "data: [DONE]\n\n";
-            } catch (\Exception $e) {
-                Log::error("Streaming Scan Error: " . $e->getMessage());
-                echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
+                Cache::forget("user_credits_{$user->id}");
+                \App\Jobs\CheckLowCredits::dispatch($user->id);
             }
-        }, 200, [
-            'Content-Type' => 'text/event-stream',
-            'Cache-Control' => 'no-cache',
-            'X-Accel-Buffering' => 'no',
-            'Connection' => 'keep-alive',
-        ]);
+
+            $remaining = $user->fresh()->credits;
+            $emit(['type' => 'complete', 'credits_remaining' => $remaining]);
+
+            // Idempotency cache (store final shape so replays look the same as live)
+            if ($idempotencyKey) {
+                $cachePayload = [
+                    'credits_remaining' => $remaining,
+                    'data' => $deepseekResult ?? $this->parseStreamedJson($fullContent),
+                ];
+                if ($cachePayload['data']) {
+                    Cache::put("scan_idem_{$idempotencyKey}", $cachePayload, now()->addHours(24));
+                }
+            }
+
+            echo "data: [DONE]\n\n";
+            if (ob_get_level() > 0) ob_flush();
+            flush();
+        }, 200, $sseHeaders);
+    }
+
+    /**
+     * Best-effort parse of streamed JSON content for idempotency caching.
+     */
+    protected function parseStreamedJson(string $content): ?array
+    {
+        $clean = trim(preg_replace('/```(?:json)?|```/', '', $content));
+        $decoded = json_decode($clean, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return $decoded;
+        }
+        if (preg_match('/\{[\s\S]*\}/', $content, $matches)) {
+            $decoded = json_decode($matches[0], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        return null;
     }
 
     /**
@@ -272,92 +369,5 @@ class ScanController extends Controller
             }
             return response()->json(['message' => $message], 500);
         }
-    }
-
-    /**
-     * Stream solve a question from a scanned image (SSE)
-     */
-    public function streamSolve(Request $request)
-    {
-        $idempotencyKey = $request->header('Idempotency-Key') ?? $request->input('idempotency_key');
-        $requestId = $idempotencyKey ?? (string) Str::uuid();
-
-        set_time_limit(240); // 4 minutes
-
-        Log::info('Scan & Solve Stream Request Received', [
-            'user_id' => $request->user()?->id,
-            'image_size' => strlen($request->input('image', '')),
-        ]);
-        $request->validate([
-            'image' => 'required|string', // base64-encoded image
-        ]);
-
-        if (strlen($request->input('image')) > 5 * 1024 * 1024) {
-            return response()->json(['message' => 'Image payload too large. Please use a smaller photo.'], 422);
-        }
-
-        $user = $request->user();
-
-        $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
-        $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
-        $scanRates = $pricingConfig['rates']['scan_solve'] ?? ['free' => 50, 'paid' => 25];
-        $scanCost = is_array($scanRates) ? ($scanRates[$planTier] ?? 25) : $scanRates;
-
-        $canProceed = DB::transaction(function () use ($user, $scanCost) {
-            $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
-            if (!$lockedUser->is_unlimited && $lockedUser->credits < $scanCost) {
-                return false;
-            }
-            return true;
-        });
-
-        if (!$canProceed) {
-            return response()->json(['message' => "Insufficient credits."], 403);
-        }
-
-        return response()->stream(function () use ($request, $user, $scanCost, $requestId) {
-            $fullContent = '';
-            $modelUsed = 'claude-sonnet-4-6';
-
-            try {
-                $timeout = 180;
-                $this->aiService->setTimeout($timeout);
-                
-                $this->aiService->streamSolveFromImage($request->input('image'), function ($chunk) use (&$fullContent) {
-                    if ($chunk['type'] === 'content_block_delta') {
-                        $text = $chunk['delta']['text'] ?? '';
-                        $fullContent .= $text;
-                        echo "data: " . json_encode(['text' => $text]) . "\n\n";
-                        if (ob_get_level() > 0) ob_flush();
-                        flush();
-                    }
-                });
-
-                // Credit Deduction
-                if (!$user->is_unlimited) {
-                    $user->decrement('credits', $scanCost);
-                    $user->transactions()->create([
-                        'type' => 'usage',
-                        'action_type' => 'scan_solve',
-                        'amount' => -$scanCost,
-                        'description' => "Scan & Solve (Streaming)",
-                        'model_used' => $modelUsed,
-                        'request_id' => $requestId,
-                    ]);
-                    Cache::forget("user_credits_{$user->id}");
-                    \App\Jobs\CheckLowCredits::dispatch($user->id);
-                }
-
-                echo "data: [DONE]\n\n";
-            } catch (\Exception $e) {
-                Log::error("Streaming Scan Error: " . $e->getMessage());
-                echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
-            }
-        }, 200, [
-            'Content-Type' => 'text/event-stream',
-            'Cache-Control' => 'no-cache',
-            'X-Accel-Buffering' => 'no',
-            'Connection' => 'keep-alive',
-        ]);
     }
 }
