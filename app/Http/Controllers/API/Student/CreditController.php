@@ -32,11 +32,19 @@ class CreditController extends Controller
             }
         }
 
+        $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
+        $planTier = $plan === 'free' ? 'free' : 'paid';
+        $rates = $pricingConfig['rates'] ?? [];
+
+        $scanRate = is_array($rates['scan_solve'] ?? 25) ? ($rates['scan_solve'][$planTier] ?? 25) : ($rates['scan_solve'] ?? 25);
+        $quizRate = is_array($rates['quiz_flat'] ?? 30) ? ($rates['quiz_flat'][$planTier] ?? 30) : ($rates['quiz_flat'] ?? 30);
+        $flashcardRate = is_array($rates['flashcard_flat'] ?? 25) ? ($rates['flashcard_flat'][$planTier] ?? 25) : ($rates['flashcard_flat'] ?? 25);
+
         // Estimate remaining actions based on average credit costs
         $estimatedActions = [
-            'scans' => (int) floor($credits / 10),          // base 2 + avg 2 solutions * 4
-            'quizzes_10q' => (int) floor($credits / 15),     // 10 questions + ~500 words
-            'flashcard_decks_20c' => (int) floor($credits / 35), // 20 cards + ~500 words
+            'scans' => $scanRate > 0 ? (int) floor($credits / $scanRate) : 0,
+            'quizzes_10q' => $quizRate > 0 ? (int) floor($credits / $quizRate) : 0,
+            'flashcard_decks_20c' => $flashcardRate > 0 ? (int) floor($credits / $flashcardRate) : 0,
         ];
 
         // Credit thresholds for color coding

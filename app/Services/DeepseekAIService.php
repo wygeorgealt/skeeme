@@ -336,6 +336,107 @@ PROMPT;
     }
 
     /**
+     * Stream solve for a scanned image.
+     *
+     * Matches Anthropic streaming approach (SSE), but uses DeepSeek stream over /chat/completions.
+     *
+     * Expects the caller to pass a callback that receives decoded JSON chunk payloads.
+     */
+    public function streamSolveFromImage(string $base64Image, callable $onChunk): void
+    {
+        try {
+            set_time_limit(300);
+
+            Log::info('Deepseek Vision: Streaming image via OCR + SSE...');
+
+            // Step 1: OCR
+            $extractedText = $this->ocrFromBase64($base64Image);
+            if (empty(trim($extractedText))) {
+                throw new \Exception('Could not read any text from the image. Please try a clearer photo.');
+            }
+
+            $prompt = <<<PROMPT
+You are a world-class tutor. The text below was extracted via OCR from a student's exam photo. Fix any OCR errors (e.g. "dy dx" -> "dy/dx").
+
+"{$extractedText}"
+
+Return ONLY a raw JSON object matching this schema. NO Conversational text. NO Thought blocks. NO code blocks.
+{"results":[{"question":"short version of the question","topic":"subject area","type":"calculation|theory","solution":"**final answer**","steps":[],"explanation":"concise but complete explanation","summary":""}]}
+
+Rules:
+- `solution`: bold final answer, e.g. "**D**" or "**$\\42$**"
+- `steps`: always `[]` (put steps in explanation instead)
+- `summary`: always ""
+- `explanation`: State the answer upfront, then justify it.
+- `Math Formatting`: Wrap ALL math in dollar signs.
+PROMPT;
+
+            $params = [
+                'model' => 'deepseek-v4-pro',
+                'stream' => true,
+                'temperature' => 0.3,
+                'max_tokens' => 8192,
+                'response_format' => ['type' => 'json_object'],
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => "You are an expert academic tutor. Return ONLY valid JSON as instructed.",
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $prompt,
+                    ],
+                ],
+            ];
+
+            $response = $this->client->post(
+                $this->baseUrl . '/chat/completions',
+                [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $this->apiKey,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'timeout' => $this->timeout,
+                    'json' => $params,
+                    'stream' => true,
+                ]
+            );
+
+            $body = $response->getBody();
+            $buffer = '';
+
+            while (!$body->eof()) {
+                $chunk = $body->read(1024);
+                $buffer .= $chunk;
+
+                while (($pos = strpos($buffer, "\n\n")) !== false) {
+                    $event = substr($buffer, 0, $pos);
+                    $buffer = substr($buffer, $pos + 2);
+
+                    foreach (preg_split('/\r?\n/', $event) as $line) {
+                        $line = trim($line);
+                        if ($line === '' || !str_starts_with($line, 'data: ')) continue;
+
+                        $data = substr($line, 6);
+                        if ($data === '[DONE]') {
+                            return;
+                        }
+
+                        $decoded = json_decode($data, true);
+                        if (!is_array($decoded)) continue;
+
+                        // DeepSeek typically sends deltas under choices[0].delta.content
+                        // We forward chunk to caller; caller can concatenate.
+                        $onChunk($decoded);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            throw $this->handleApiException($e, 'Image Stream Solve');
+        }
+    }
+
+    /**
      * Generate Flashcards from notes or a topic
      */
     public function generateFlashcards(

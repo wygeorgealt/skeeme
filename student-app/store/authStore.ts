@@ -36,6 +36,9 @@ interface AuthState {
     // Global Error
     globalError: string | null;
     setGlobalError: (error: string | null) => void;
+    // Account Modal
+    accountModalOpen: boolean;
+    toggleAccountModal: (show: boolean) => void;
 }
 
 // Secure storage for sensitive data (tokens)
@@ -114,8 +117,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     creditsModalFeature: null,
     hapticsEnabled: true,
     globalError: null,
+    accountModalOpen: false,
 
     setGlobalError: (error) => set({ globalError: error }),
+
+    toggleAccountModal: (show) => set({ accountModalOpen: show }),
 
     fetchPricingConfig: async () => {
         try {

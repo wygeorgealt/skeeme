@@ -60,14 +60,17 @@ class ScanController extends Controller
 
         $user = $request->user();
 
-        $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
-        $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
-        $scanRates = $pricingConfig['rates']['scan_solve'] ?? ['free' => 50, 'paid' => 25];
-        $scanCost = is_array($scanRates) ? ($scanRates[$planTier] ?? 25) : $scanRates;
+        $scanCost = (int) $request->attributes->get('calculated_credit_cost', 0);
+        if ($scanCost <= 0) {
+            $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
+            $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
+            $scanRates = $pricingConfig['rates']['scan_solve'] ?? ['free' => 50, 'paid' => 25];
+            $scanCost = is_array($scanRates) ? ($scanRates[$planTier] ?? 25) : $scanRates;
+        }
 
         $canProceed = DB::transaction(function () use ($user, $scanCost) {
             $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
-            if (!$lockedUser->is_unlimited && $lockedUser->credits < $scanCost) {
+            if (!$lockedUser->is_unlimited_student && $lockedUser->credits < $scanCost) {
                 return false;
             }
             return true;
@@ -108,9 +111,28 @@ class ScanController extends Controller
 
             try {
                 if ($useDeepseek) {
-                    Log::info("Streaming Scan: Circuit Breaker active, using Deepseek (non-streaming).");
-                    $deepseekResult = $this->deepseek->solveFromImage($request->input('image'));
-                    $emit(['type' => 'full_result', 'data' => $deepseekResult]);
+                    Log::info("Streaming Scan: Circuit Breaker active, using Deepseek (streaming OCR + SSE).");
+                    $this->deepseek->streamSolveFromImage($request->input('image'), function ($chunk) use (&$fullContent, $emit, &$deepseekResult) {
+                        // DeepSeek streaming payloads vary by provider version.
+                        // We forward any text delta we can find.
+                        $delta = $chunk['choices'][0]['delta']['content']
+                            ?? $chunk['choices'][0]['delta']['text']
+                            ?? null;
+
+                        if (!is_string($delta) || $delta === '') {
+                            return;
+                        }
+
+                        $fullContent .= $delta;
+                        $emit(['type' => 'text_delta', 'text' => $delta]);
+
+                        return;
+                    });
+
+                    // DeepSeek stream will end without us reconstructing the final JSON reliably here.
+                    // For now, attempt best-effort parse from streamed content.
+                    $deepseekResult = $this->parseStreamedJson($fullContent);
+                    $emit(['type' => 'full_result', 'data' => $deepseekResult ?? []]);
                 } else {
                     $this->aiService->streamSolveFromImage($request->input('image'), function ($chunk) use (&$fullContent, $emit) {
                         if ($chunk['type'] === 'content_block_delta') {
@@ -120,6 +142,11 @@ class ScanController extends Controller
                             $emit(['type' => 'text_delta', 'text' => $text]);
                         }
                     });
+
+                    $parsedResult = $this->parseStreamedJson($fullContent);
+                    if ($parsedResult) {
+                        $emit(['type' => 'full_result', 'data' => $parsedResult]);
+                    }
                 }
             } catch (\Exception $e) {
                 if (!$useDeepseek && !$isManualOverride) {
@@ -147,7 +174,7 @@ class ScanController extends Controller
             }
 
             // Atomic credit deduction
-            if (!$user->is_unlimited) {
+            if (!$user->is_unlimited_student) {
                 DB::transaction(function () use ($user, $scanCost, $modelUsed, $requestId) {
                     $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
                     $lockedUser->decrement('credits', $scanCost);
@@ -237,10 +264,13 @@ class ScanController extends Controller
         $user = $request->user();
 
         // Use the Flat Rate "Buffer Average" strategy (Option A)
-        $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
-        $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
-        $scanRates = $pricingConfig['rates']['scan_solve'] ?? ['free' => 50, 'paid' => 25];
-        $scanCost = is_array($scanRates) ? ($scanRates[$planTier] ?? 25) : $scanRates;
+        $scanCost = (int) $request->attributes->get('calculated_credit_cost', 0);
+        if ($scanCost <= 0) {
+            $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
+            $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
+            $scanRates = $pricingConfig['rates']['scan_solve'] ?? ['free' => 50, 'paid' => 25];
+            $scanCost = is_array($scanRates) ? ($scanRates[$planTier] ?? 25) : $scanRates;
+        }
 
         Log::info('Scan & Solve: Credit Check Passed', ['user_id' => $user->id]);
 
@@ -250,7 +280,7 @@ class ScanController extends Controller
         $canProceed = DB::transaction(function () use ($user, $scanCost) {
             $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
 
-            if (!$lockedUser->is_unlimited && $lockedUser->credits < $scanCost) {
+            if (!$lockedUser->is_unlimited_student && $lockedUser->credits < $scanCost) {
                 return false;
             }
             return true;
@@ -317,7 +347,7 @@ class ScanController extends Controller
             $finalCost = $scanCost;
 
             // 6. Deduct Usage (Atomic)
-            if (!$user->is_unlimited) {
+            if (!$user->is_unlimited_student) {
                 DB::transaction(function () use ($user, $finalCost, $solutionsCount, $modelUsed, $requestId) {
                     $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
                     $lockedUser->decrement('credits', $finalCost);
@@ -347,7 +377,7 @@ class ScanController extends Controller
                 'message' => 'Image processed successfully.',
                 'results' => $solutions,
                 'cost' => $finalCost,
-                'credits_deducted' => $user->is_unlimited ? 0 : $finalCost,
+                'credits_deducted' => $user->is_unlimited_student ? 0 : $finalCost,
                 'remaining_credits' => $user->fresh()->credits
             ];
 

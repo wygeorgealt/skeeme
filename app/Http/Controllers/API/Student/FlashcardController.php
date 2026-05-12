@@ -54,7 +54,7 @@ class FlashcardController extends Controller
         $flashcardRates = $pricingConfig['rates']['flashcard_flat'] ?? ['free' => 30, 'paid' => 25];
         $totalCost = is_array($flashcardRates) ? ($flashcardRates[$planTier] ?? 25) : $flashcardRates;
 
-        if (!$user->is_unlimited && $user->credits < $totalCost) {
+        if (!$user->is_unlimited_student && $user->credits < $totalCost) {
             return response()->json(['message' => "Insufficient credits."], 403);
         }
 
@@ -86,7 +86,7 @@ class FlashcardController extends Controller
                 });
 
                 // Credit Deduction
-                if (!$user->is_unlimited) {
+                if (!$user->is_unlimited_student) {
                     $user->decrement('credits', $totalCost);
                     $user->transactions()->create([
                         'type' => 'usage',
@@ -286,7 +286,7 @@ class FlashcardController extends Controller
         $canProceed = DB::transaction(function () use ($user, $totalCost) {
             $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
 
-            if (!$lockedUser->is_unlimited && $lockedUser->credits < $totalCost) {
+            if (!$lockedUser->is_unlimited_student && $lockedUser->credits < $totalCost) {
                 return false;
             }
             return true;
@@ -388,7 +388,7 @@ class FlashcardController extends Controller
                 Flashcard::insert($cardsToInsert);
 
                 // Deduct Usage immediately (Atomic)
-                if (!$user->is_unlimited) {
+                if (!$user->is_unlimited_student) {
                     $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
                     $lockedUser->decrement('credits', $totalCost);
 
@@ -415,7 +415,7 @@ class FlashcardController extends Controller
             $responseData = [
                 'message' => 'AI flashcard generation success.',
                 'data' => $deck->load('flashcards')->toArray(),
-                'credits_deducted' => $user->is_unlimited ? 0 : $totalCost,
+                'credits_deducted' => $user->is_unlimited_student ? 0 : $totalCost,
                 'remaining_credits' => $user->fresh()->credits
             ];
 

@@ -62,7 +62,7 @@ export default function ScanScreen() {
 
     const [progressPercent, setProgressPercent] = useState(0);
 
-    const esRef = useRef<EventSource | null>(null);
+    const esRef = useRef<(() => void) | null>(null);
 
     const pulseAnim = useSharedValue(0.4);
 
@@ -80,7 +80,7 @@ export default function ScanScreen() {
 
     useEffect(() => () => {
         if (esRef.current) {
-            esRef.current.close();
+            esRef.current();
             esRef.current = null;
         }
     }, []);
@@ -188,35 +188,36 @@ export default function ScanScreen() {
         setProgressPercent(10);
 
         if (esRef.current) {
-            esRef.current.close();
+            esRef.current();
             esRef.current = null;
         }
 
         try {
-            const token = useAuthStore.getState().token;
-            const idempotencyKey = makeIdempotencyKey();
-            const url = `${process.env.EXPO_PUBLIC_API_URL}scan/solve/stream`;
-
-            const es = new EventSource(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Idempotency-Key': idempotencyKey,
-                    'Content-Type': 'application/json',
-                    'Accept': 'text/event-stream, application/json',
-                },
-                method: 'POST',
-                body: JSON.stringify({ image: targetBase64 }),
-            } as any);
-            esRef.current = es;
-
-            let accumulatedJson = '';
             let streamErrored = false;
             let finalResults: ScanResult[] = [];
 
-            es.addEventListener('message', (event: any) => {
-                if (event.data === '[DONE]') {
-                    es.close();
-                    if (esRef.current === es) esRef.current = null;
+            const cleanup = scannerService.streamSolve(targetBase64, {
+                onDelta: (partialResults) => {
+                    finalResults = partialResults;
+                    setResults(partialResults);
+                },
+                onFullResult: (fullResults) => {
+                    finalResults = fullResults;
+                    setResults(fullResults);
+                },
+                onComplete: (creditsRemaining) => {
+                    if (user) {
+                        updateUser({ ...user, credits: creditsRemaining } as any);
+                    }
+                },
+                onError: (message) => {
+                    streamErrored = true;
+                    esRef.current = null;
+                    setLoading(false);
+                    Alert.alert('Error', message);
+                },
+                onDone: () => {
+                    esRef.current = null;
                     setLoading(false);
                     setProgressPercent(100);
                     if (!streamErrored) {
@@ -224,116 +225,15 @@ export default function ScanScreen() {
                             posthog.capture('scan_solved_stream', { questions_found: finalResults.length });
                         } catch (e) { }
                     }
-                    return;
-                }
-
-                try {
-                    const chunk = JSON.parse(event.data || '{}');
-                    switch (chunk.type) {
-                        case 'text_delta': {
-                            if (chunk.text) {
-                                accumulatedJson += chunk.text;
-                                const partial = repairPartialJson(accumulatedJson);
-                                if (partial?.results?.length) {
-                                    finalResults = partial.results;
-                                    setResults(partial.results);
-                                }
-                            }
-                            break;
-                        }
-                        case 'full_result': {
-                            if (chunk.data?.results) {
-                                finalResults = chunk.data.results;
-                                setResults(chunk.data.results);
-                            }
-                            break;
-                        }
-                        case 'complete': {
-                            if (typeof chunk.credits_remaining === 'number' && user) {
-                                updateUser({ ...user, credits: chunk.credits_remaining } as any);
-                            }
-                            break;
-                        }
-                        case 'error': {
-                            streamErrored = true;
-                            es.close();
-                            if (esRef.current === es) esRef.current = null;
-                            setLoading(false);
-                            Alert.alert('Error', chunk.message || 'Failed to solve. Please try again.');
-                            break;
-                        }
-                    }
-                } catch (e) {
-                    if (__DEV__) console.error('Stream parse error', e);
                 }
             });
 
-            es.addEventListener('error', (event: any) => {
-                if (__DEV__) console.error('SSE Error', event);
-                es.close();
-                if (esRef.current === es) esRef.current = null;
-                if (!streamErrored) {
-                    streamErrored = true;
-                    setLoading(false);
-                    Alert.alert('Error', 'Streaming interrupted. Please try again.');
-                }
-            });
+            esRef.current = cleanup;
 
         } catch (err: any) {
             setLoading(false);
             Alert.alert('Error', 'Connection failed. Please try again.');
         }
-    };
-
-    const makeIdempotencyKey = () =>
-        'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-            const r = (Math.random() * 16) | 0;
-            const v = c === 'x' ? r : (r & 0x3) | 0x8;
-            return v.toString(16);
-        });
-
-    // Depth-aware JSON repair: tracks string/escape state and bracket depth,
-    // strips dangling tokens, then closes open structures so partial streams
-    // can be parsed mid-flight without the closing-bracket hacks.
-    const repairPartialJson = (input: string): any | null => {
-        if (!input) return null;
-        let s = input.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '');
-
-        try { return JSON.parse(s); } catch { }
-
-        const stack: string[] = [];
-        let inString = false;
-        let escape = false;
-
-        for (let i = 0; i < s.length; i++) {
-            const c = s[i];
-            if (escape) { escape = false; continue; }
-            if (inString) {
-                if (c === '\\') escape = true;
-                else if (c === '"') inString = false;
-                continue;
-            }
-            if (c === '"') inString = true;
-            else if (c === '{') stack.push('}');
-            else if (c === '[') stack.push(']');
-            else if (c === '}' || c === ']') stack.pop();
-        }
-
-        let result = s;
-        if (inString) result += '"';
-
-        let prev = '';
-        while (prev !== result) {
-            prev = result;
-            result = result.replace(/,\s*$/, '');
-            result = result.replace(/"[^"]*"\s*:\s*$/, '');
-            result = result.replace(/,\s*"[^"]*"\s*$/, '');
-            result = result.trim();
-        }
-
-        while (stack.length > 0) result += stack.pop();
-
-        try { return JSON.parse(result); } catch { return null; }
     };
 
     const handleCopy = async (text: string) => {
@@ -362,7 +262,7 @@ export default function ScanScreen() {
 
     const resetScan = () => {
         if (esRef.current) {
-            esRef.current.close();
+            esRef.current();
             esRef.current = null;
         }
         setLoading(false);

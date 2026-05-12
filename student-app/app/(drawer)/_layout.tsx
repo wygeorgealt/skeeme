@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useEffect } from 'react';
 import { registerForPushNotificationsAsync } from '@/lib/notifications';
+import AccountModal from '@/components/AccountModal';
 
 import { Home, User, CameraAdd } from '@solar-icons/react-native/Bold';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, SharedValue } from 'react-native-reanimated';
@@ -19,6 +20,7 @@ function TabBar({ state, descriptors, navigation }: any) {
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
+    const { toggleAccountModal } = useAuthStore();
 
     // Find scan route to get its onPress
     const scanRouteIndex = state.routes.findIndex((r: any) => r.name === 'scan');
@@ -123,8 +125,7 @@ function TabBar({ state, descriptors, navigation }: any) {
                         <TouchableOpacity
                             key={route.key}
                             onPress={() => {
-                                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-                                if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
+                                toggleAccountModal(true);
                             }}
                             activeOpacity={0.7}
                             style={bar.sideTab}
@@ -217,7 +218,7 @@ export default function TabLayout() {
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
-    const { user, token } = useAuthStore();
+    const { user, token, accountModalOpen, toggleAccountModal } = useAuthStore();
     const pathname = usePathname();
 
     useEffect(() => {
@@ -238,45 +239,50 @@ export default function TabLayout() {
     }, [token, user, pathname]);
 
     return (
-        <Tabs
-            tabBar={(props) => <TabBar {...props} />}
-            screenOptions={{
-                headerShown: false,
-                // Background under the tab bar should be solid to avoid bleed-through
-                sceneStyle: { backgroundColor: C.background },
-            }}
-        >
-            <Tabs.Screen
-                name="index"
-                options={{
-                    title: 'Home',
+        <>
+            <Tabs
+                tabBar={(props) => <TabBar {...props} />}
+                screenOptions={{
+                    headerShown: false,
+                    // Background under the tab bar should be solid to avoid bleed-through
+                    sceneStyle: { backgroundColor: C.background },
+                }}
+            >
+                <Tabs.Screen
+                    name="index"
+                    options={{
+                        title: 'Home',
+                            tabBarIcon: ({ color, size }) =>
+                            <Home color={color} size={size} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="scan"
+                    options={{
+                        title: 'Scan',
+                        // Icon handled by ScanTabButton inside TabBar
+                        tabBarIcon: ({ color, size }) => <CameraAdd color={color} size={size} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="account"
+                    options={{
+                        title: 'Me',
                         tabBarIcon: ({ color, size }) =>
-                        <Home color={color} size={size} />,
-                }}
-            />
-            <Tabs.Screen
-                name="scan"
-                options={{
-                    title: 'Scan',
-                    // Icon handled by ScanTabButton inside TabBar
-                    tabBarIcon: ({ color, size }) => <CameraAdd color={color} size={size} />,
-                }}
-            />
-            <Tabs.Screen
-                name="account"
-                options={{
-                    title: 'Me',
-                    tabBarIcon: ({ color, size }) =>
-                        <User color={color} size={size} />,
-                }}
-            />
+                            <User color={color} size={size} />,
+                    }}
+                />
 
-            {/* Hidden screens — accessible via router.push() */}
-            <Tabs.Screen name="flashcards" options={{ href: null }} />
-            <Tabs.Screen name="history" options={{ href: null }} />
-            <Tabs.Screen name="preferences" options={{ href: null }} />
-            <Tabs.Screen name="streak" options={{ href: null }} />
-            <Tabs.Screen name="support" options={{ href: null }} />
-        </Tabs>
+                {/* Hidden screens — accessible via router.push() */}
+                <Tabs.Screen name="flashcards" options={{ href: null }} />
+                <Tabs.Screen name="history" options={{ href: null }} />
+                <Tabs.Screen name="preferences" options={{ href: null }} />
+                <Tabs.Screen name="streak" options={{ href: null }} />
+                <Tabs.Screen name="support" options={{ href: null }} />
+            </Tabs>
+
+            {/* Account Modal */}
+            <AccountModal visible={accountModalOpen} onDismiss={() => toggleAccountModal(false)} />
+        </>
     );
 }

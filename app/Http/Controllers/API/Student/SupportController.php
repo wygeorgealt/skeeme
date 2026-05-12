@@ -33,7 +33,7 @@ class SupportController extends Controller
             $content = "Name: {$user->name}\n";
             $content .= "Email: {$user->email}\n";
             $content .= "User ID: {$user->id}\n";
-            $content .= "Plan: " . ($user->is_unlimited ? 'Unlimited Pro' : 'Free') . "\n";
+            $content .= "Plan: " . ($user->is_unlimited_student ? 'Unlimited Pro' : 'Free') . "\n";
             if ($screenshotPath) {
                 $content .= "Screenshot: " . url('storage/' . $screenshotPath) . "\n";
             }

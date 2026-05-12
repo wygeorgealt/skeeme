@@ -55,7 +55,7 @@ class PracticeQuizController extends Controller
         $quizRates = $pricingConfig['rates']['quiz_flat'] ?? ['free' => 30, 'paid' => 30];
         $totalCost = is_array($quizRates) ? ($quizRates[$planTier] ?? 30) : $quizRates;
 
-        if (!$user->is_unlimited && $user->credits < $totalCost) {
+        if (!$user->is_unlimited_student && $user->credits < $totalCost) {
             return response()->json(['message' => "Insufficient credits."], 403);
         }
 
@@ -93,7 +93,7 @@ class PracticeQuizController extends Controller
                 });
 
                 // Credit Deduction
-                if (!$user->is_unlimited) {
+                if (!$user->is_unlimited_student) {
                     $user->decrement('credits', $totalCost);
                     $user->transactions()->create([
                         'type' => 'usage',
@@ -212,7 +212,7 @@ class PracticeQuizController extends Controller
             $canProceed = DB::transaction(function () use ($user, $totalCost) {
                 $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
 
-                if (!$lockedUser->is_unlimited && $lockedUser->credits < $totalCost) {
+                if (!$lockedUser->is_unlimited_student && $lockedUser->credits < $totalCost) {
                     return false;
                 }
                 return true;
@@ -318,7 +318,7 @@ class PracticeQuizController extends Controller
             Log::info("[AI Quiz] Success! Questions generated.", ['count' => count($questions)]);
 
             // 6. Deduct Usage (Atomic) - Only AFTER successful generation
-            if (!$user->is_unlimited) {
+            if (!$user->is_unlimited_student) {
                 DB::transaction(function () use ($user, $totalCost, $validated, $modelUsed, $requestId) {
                     $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
                     $lockedUser->decrement('credits', $totalCost);

@@ -51,22 +51,22 @@ class CreditCostCalculator
         $planTier = $this->getPlanTier($request);
 
         // Scan & Solve
-        if (Str::contains($path, 'scan/solve')) {
+        if (Str::endsWith($path, 'scan/solve') || Str::endsWith($path, 'scan/solve/stream')) {
             return $this->tieredRate($rates['scan_solve'] ?? null, $planTier, 25);
         }
 
         // Quiz Builder
-        if (Str::contains($path, 'quizzes/generate')) {
+        if (Str::endsWith($path, 'quizzes/generate') || Str::endsWith($path, 'quizzes/generate/stream')) {
             return $this->tieredRate($rates['quiz_flat'] ?? null, $planTier, 30);
         }
 
         // Flashcards
-        if (Str::contains($path, 'flashcards/generate')) {
+        if (Str::endsWith($path, 'flashcards/generate') || Str::endsWith($path, 'flashcards/generate/stream')) {
             return $this->tieredRate($rates['flashcard_flat'] ?? null, $planTier, 25);
         }
 
         // Theory Grading
-        if (Str::contains($path, 'quizzes/grade-theory')) {
+        if (Str::endsWith($path, 'quizzes/grade-theory')) {
             return $rates['theory_grading'] ?? 2;
         }
 
