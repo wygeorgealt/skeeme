@@ -302,3 +302,19 @@ Did you mean one of these?
 #19 C:/Users/kritex/Herd/skeeme/artisan(16): Illuminate/Foundation/Application->handleCommand(Object(Symfony/Component/Console/Input/ArgvInput))
 #20 {main}
 "} 
+[2026-05-13 11:57:04] production.ERROR: GoogleDocumentAIService Error: {
+    "message": "Request contains an invalid argument.",
+    "code": 3,
+    "status": "INVALID_ARGUMENT",
+    "details": [
+        {
+            "@type": "type.googleapis.com\/google.rpc.BadRequest",
+            "fieldViolations": [
+                {
+                    "field": "raw_document.mime_type",
+                    "description": "Unsupported mime type."
+                }
+            ]
+        }
+    ]
+}  

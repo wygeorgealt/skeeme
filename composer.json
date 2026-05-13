@@ -12,6 +12,7 @@
         "php": "^8.2",
         "caresome/filament-auth-designer": "^2.0",
         "filament/filament": "^4.6",
+        "google/cloud-document-ai": "^2.7",
         "laravel/fortify": "2.x-dev",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.2",

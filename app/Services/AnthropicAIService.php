@@ -144,7 +144,7 @@ class AnthropicAIService
                 'json' => [
                     'model' => self::MODEL_HAIKU,
                     'max_tokens' => $maxTokens,
-                    'system' => $this->getPersonalizedSystemPrompt('You are a quiz generator. Return ONLY raw JSON matching the requested schema. No conversational text.'),
+                    'system' => $this->getPersonalizedSystemPrompt('You are a quiz generator. Return ONLY raw JSON matching the requested schema. Wrap all math/formulas in dollar signs. No conversational text.'),
                     'messages' => [
                         [
                             'role' => 'user', 
@@ -205,7 +205,7 @@ class AnthropicAIService
                 'json' => [
                     'model' => self::MODEL_HAIKU,
                     'max_tokens' => $maxTokens,
-                    'system' => $this->getPersonalizedSystemPrompt('You are an expert tutor creating highly effective flashcards. Return only JSON.'),
+                    'system' => $this->getPersonalizedSystemPrompt('You are an expert tutor creating highly effective flashcards. Return only JSON. Wrap all math/formulas in dollar signs.'),
                     'messages' => [
                         [
                             'role' => 'user', 

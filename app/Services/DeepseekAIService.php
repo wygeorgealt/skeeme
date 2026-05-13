@@ -13,13 +13,15 @@ class DeepseekAIService
     protected $apiKey;
     protected $baseUrl = 'https://api.deepseek.com/v1';
     protected $visionService;
+    protected $docAiService;
     protected $personalizationService;
     protected $timeout = 60; // Default 60s
 
-    public function __construct(GoogleVisionService $visionService)
+    public function __construct(GoogleVisionService $visionService, GoogleDocumentAIService $docAiService)
     {
         $this->apiKey = config('services.deepseek.api_key');
         $this->visionService = $visionService;
+        $this->docAiService = $docAiService;
         $this->client = new Client([
             'timeout' => 120, // High default, overridden per request
             'connect_timeout' => 10,
@@ -180,7 +182,7 @@ PROMPT;
                         'messages' => [
                             [
                                 'role' => 'system',
-                                'content' => 'You are a quiz generator. Return only JSON.',
+                                'content' => $this->getPersonalizedSystemPrompt('You are a quiz generator. Return only JSON. Wrap all math/formulas in dollar signs, e.g. $x^2$.'),
                             ],
                             [
                                 'role' => 'user',
@@ -352,8 +354,13 @@ PROMPT;
             if ($onStatus) $onStatus('Reading text from image...');
             Log::info('Deepseek Vision: Streaming image via OCR + SSE...');
 
-            // Step 1: OCR
-            $extractedText = $this->ocrFromBase64($base64Image);
+            // Step 1: High-Fidelity OCR
+            $tempFile = tempnam(sys_get_temp_dir(), 'skeeme_ocr');
+            file_put_contents($tempFile, base64_decode($base64Image));
+            
+            $extractedText = $this->docAiService->processDocument($tempFile) ?? $this->ocrFromBase64($base64Image);
+            @unlink($tempFile);
+
             if (empty(trim($extractedText))) {
                 throw new \Exception('Could not read any text from the image. Please try a clearer photo.');
             }
@@ -410,7 +417,7 @@ Structure as: `{"results": [{"question": "", "topic": "", "type": "", "solution"
 SYSTEM;
 
             $params = [
-                'model' => 'deepseek-chat',
+                'model' => 'deepseek-v4-pro',
                 'stream' => true,
                 'temperature' => 0.3,
                 'max_tokens' => 8192,
@@ -468,10 +475,66 @@ SYSTEM;
                         // We forward chunk to caller; caller can concatenate.
                         $onChunk($decoded);
                     }
-                }
             }
         } catch (\Exception $e) {
             throw $this->handleApiException($e, 'Image Stream Solve');
+        }
+    }
+
+    /**
+     * Stream a generic request to DeepSeek (SSE)
+     */
+    public function streamRequest(array $params, callable $onChunk)
+    {
+        if (isset($params['system'])) {
+            $params['system'] = $this->getPersonalizedSystemPrompt($params['system']);
+        }
+        
+        // DeepSeek/OpenAI format expects 'messages' with system/user roles
+        if (!isset($params['messages'])) {
+            $params['messages'] = [];
+            if (isset($params['system'])) {
+                $params['messages'][] = ['role' => 'system', 'content' => $params['system']];
+                unset($params['system']);
+            }
+        }
+        
+        $params['stream'] = true;
+
+        $response = $this->client->post($this->baseUrl . '/chat/completions', [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+            ],
+            'json' => $params,
+            'stream' => true,
+        ]);
+
+        $body = $response->getBody();
+        $buffer = '';
+
+        while (!$body->eof()) {
+            $chunk = $body->read(1024);
+            if ($chunk === '') continue;
+            $buffer .= $chunk;
+
+            while (($pos = strpos($buffer, "\n\n")) !== false) {
+                $event = substr($buffer, 0, $pos);
+                $buffer = substr($buffer, $pos + 2);
+
+                foreach (explode("\n", str_replace("\r", "", $event)) as $line) {
+                    $line = trim($line);
+                    if ($line === '' || !str_starts_with($line, 'data: ')) continue;
+
+                    $data = substr($line, 6);
+                    if ($data === '[DONE]') break;
+
+                    $decoded = json_decode($data, true);
+                    if ($decoded) {
+                        $onChunk($decoded);
+                    }
+                }
+            }
         }
     }
 
@@ -508,7 +571,7 @@ SYSTEM;
                         'messages' => [
                             [
                                 'role' => 'system',
-                                'content' => 'You are an expert tutor creating highly effective flashcards. Return only JSON.',
+                                'content' => $this->getPersonalizedSystemPrompt('You are an expert tutor creating highly effective flashcards. Return only JSON. Wrap all math/formulas in dollar signs, e.g. $x^2$.'),
                             ],
                             [
                                 'role' => 'user',

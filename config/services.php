@@ -79,6 +79,14 @@ return [
         'api_key' => env('GOOGLE_CLOUD_VISION_API_KEY'),
     ],
 
+    'google_document_ai' => [
+        'project_id' => env('GOOGLE_CLOUD_PROJECT_ID'),
+        'location' => env('GOOGLE_CLOUD_LOCATION', 'us'),
+        'processor_id' => env('GOOGLE_DOCUMENT_AI_PROCESSOR_ID'),
+        'credentials_json' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+        'credentials_raw' => env('GOOGLE_CLOUD_KEY_JSON'),
+    ],
+
     'anthropic' => [
         'api_key' => env('ANTHROPIC_API_KEY'),
         'version' => '2023-06-01',

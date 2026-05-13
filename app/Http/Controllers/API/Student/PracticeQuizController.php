@@ -32,6 +32,8 @@ class PracticeQuizController extends Controller
      */
     public function streamGenerate(Request $request)
     {
+        set_time_limit(600);
+
         $validated = $request->validate([
             'topic' => 'required_without:file|nullable|string|max:255',
             'file' => 'required_without:topic|nullable|file|mimes:pdf,docx,txt,md|max:10240',
@@ -45,9 +47,18 @@ class PracticeQuizController extends Controller
         $sourceContent = '';
 
         if ($request->hasFile('file')) {
-            $sourceContent = $this->extractionService->extractText($request->file('file')->getRealPath(), $request->file('file')->getClientOriginalExtension());
+            $sourceContent = $this->extractionService->extractText($request->file('file')->getPathname(), $request->file('file')->getClientOriginalExtension());
         } else {
             $sourceContent = $validated['topic'];
+        }
+
+        if (empty(trim($sourceContent))) {
+            return response()->json(['message' => 'No content found to generate quiz from.'], 422);
+        }
+
+        // Pre-summarize long documents
+        if (str_word_count($sourceContent) >= 3000) {
+            $sourceContent = $this->deepseek->condenseMaterial($sourceContent, (int) $validated['question_count'], 'quiz');
         }
 
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
@@ -63,34 +74,55 @@ class PracticeQuizController extends Controller
 
         return response()->stream(function () use ($request, $user, $sourceContent, $validated, $totalCost, $requestId) {
             $fullContent = '';
-            $modelUsed = AIService::MODEL_HAIKU;
-
+            
             try {
-                $types = [];
-                foreach ($validated['question_types'] as $type) {
-                    if ($type === 'mcq') $types[] = 'multiple_choice';
-                    if ($type === 'theory') $types[] = 'essay';
-                }
+                $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
+                $activeProvider = $aiConfig['provider'];
+                $useDeepseek = ($activeProvider === 'deepseek');
+                
+                $modelUsed = $useDeepseek ? 'deepseek-chat' : AIService::MODEL_HAIKU;
+                $service = $useDeepseek ? $this->deepseek : $this->aiService;
 
                 $params = [
                     'model' => $modelUsed,
                     'max_tokens' => $this->aiService->calculateMaxTokens("mcq_" . ($validated['difficulty'] ?? 'medium'), $validated['question_count']),
-                    'system' => "You are a quiz generator. Return ONLY raw JSON matching the requested schema. No conversational text.",
+                    'system' => "You are a quiz generator. Return ONLY raw JSON array matching the requested schema. No conversational text, no markdown. Schema: [{\"question_text\":\"\",\"options\":[\"\",\"\",\"\",\"\"],\"correct_answer\":\"\",\"explanation\":\"\",\"question_type\":\"multiple_choice|essay\"}]",
                     'messages' => [
                         ['role' => 'user', 'content' => "Generate a " . ($validated['difficulty'] ?? 'medium') . " quiz with " . ($validated['question_count'] ?? 10) . " questions on the following topic/material: " . $sourceContent]
                     ],
                     'temperature' => 0.7,
                 ];
 
-                $this->aiService->streamRequest($params, function ($chunk) use (&$fullContent) {
-                    if ($chunk['type'] === 'content_block_delta') {
-                        $text = $chunk['delta']['text'] ?? '';
+                $onChunk = function ($chunk) use (&$fullContent, $useDeepseek) {
+                    $text = '';
+                    if ($useDeepseek) {
+                        $text = $chunk['choices'][0]['delta']['content'] ?? '';
+                    } else {
+                        if ($chunk['type'] === 'content_block_delta') {
+                            $text = $chunk['delta']['text'] ?? '';
+                        }
+                    }
+
+                    if ($text !== '') {
                         $fullContent .= $text;
                         echo "data: " . json_encode(['text' => $text]) . "\n\n";
                         if (ob_get_level() > 0) ob_flush();
                         flush();
                     }
-                });
+                };
+
+                try {
+                    $service->streamRequest($params, $onChunk);
+                } catch (\Exception $e) {
+                    if (!$useDeepseek) {
+                        Log::warning("Quiz Stream: Claude failed, falling back to DeepSeek. Error: " . $e->getMessage());
+                        $modelUsed = 'deepseek-chat';
+                        $params['model'] = $modelUsed;
+                        $this->deepseek->streamRequest($params, $onChunk);
+                    } else {
+                        throw $e;
+                    }
+                }
 
                 // Credit Deduction
                 if (!$user->is_unlimited_student) {
@@ -99,7 +131,7 @@ class PracticeQuizController extends Controller
                         'type' => 'usage',
                         'action_type' => 'quiz_generation',
                         'amount' => -$totalCost,
-                        'description' => "Practice Quiz (Streaming)",
+                        'description' => "Practice Quiz (Streaming): " . ($validated['topic'] ?? 'File Content'),
                         'model_used' => $modelUsed,
                         'request_id' => $requestId,
                     ]);

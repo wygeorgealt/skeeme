@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect, memo, useMemo, useCallback } from 'react';
-import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, StatusBar } from 'react-native';
+import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, StatusBar, LayoutAnimation } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -19,12 +19,14 @@ import Animated, {
     withSpring, 
     withTiming, 
     Easing,
-    LayoutAnimation,
-    withRepeat
+    withRepeat,
+    FadeIn,
+    ZoomIn
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
 import { Flashcard as Card, FlashcardDeck } from '@/types';
+import { StreakAnimation } from '@/components/StreakAnimation';
 
 // Storage helpers
 const storage = {
@@ -148,9 +150,10 @@ export default function StudyDeckScreen() {
     const isDark = colorScheme === 'dark';
     const progressAnim = useSharedValue(0);
     const syncAnim = useSharedValue(0);
-    const { updateUser } = useAuthStore();
+    const { user, updateUser } = useAuthStore();
     const [isSavingSession, setIsSavingSession] = useState(false);
     const [rewardMessage, setRewardMessage] = useState('');
+    const [showMilestone, setShowMilestone] = useState(false);
 
     const { data: remoteDeck, isLoading, error } = useQuery({
         queryKey: ['deck', id],
@@ -217,8 +220,22 @@ export default function StudyDeckScreen() {
             scrollRef.current?.scrollTo({ x: nextIndex * SCREEN_WIDTH, animated: true });
             // The scroll listener will update the index to ensure smooth transition
         } else {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             haptics.notificationAsync('success' as any);
             setRewardMessage(REWARD_MESSAGES[Math.floor(Math.random() * REWARD_MESSAGES.length)]);
+            
+            // Determine if we should show the big celebration
+            const streak = typeof user?.streak === 'number' ? user.streak : (user?.streak?.current_streak || 0);
+            const lastDate = typeof user?.streak === 'object' ? user.streak?.last_study_date : null;
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Show milestone if they haven't studied today yet AND it's a milestone count
+            // (Note: streak will increment after saving, so we check current+1)
+            const nextStreak = streak + 1;
+            const isFirstStudyToday = lastDate !== today;
+            const isMilestoneCount = nextStreak === 1 || nextStreak % 7 === 0;
+            
+            setShowMilestone(isFirstStudyToday && isMilestoneCount);
             setIsComplete(true);
         }
     };
@@ -229,6 +246,7 @@ export default function StudyDeckScreen() {
             haptics.impactAsync();
             const prevIndex = currentIndex - 1;
             scrollRef.current?.scrollTo({ x: prevIndex * SCREEN_WIDTH, animated: true });
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             // The scroll listener will update the index
         }
     };
@@ -275,6 +293,7 @@ export default function StudyDeckScreen() {
         const x = event.nativeEvent.contentOffset.x;
         const index = Math.round(x / SCREEN_WIDTH);
         if (index !== currentIndex && index >= 0 && index < deck.flashcards.length) {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setCurrentIndex(index);
         }
     };
@@ -320,34 +339,71 @@ export default function StudyDeckScreen() {
         </View>
     );
 
-    if (isComplete) return (
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <View style={s.successCenter}>
-                <View style={s.successIconBox}>
-                    <View style={[s.successIconGradient, { backgroundColor: '#007AFF' }]}>
-                        <HugeiconsIcon icon={Tick01Icon} size={48} color="white" strokeWidth={3} />
+    if (isComplete) {
+        const streak = typeof user?.streak === 'number' ? user.streak : (user?.streak?.current_streak || 1);
+
+        if (showMilestone) {
+            return (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? '#000' : '#FFF', zIndex: 9999 }]}>
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+                        <StreakAnimation 
+                            streakCount={streak} 
+                            isDark={isDark} 
+                            size={SCREEN_WIDTH * 0.7}
+                        />
+                        <Animated.View entering={FadeIn.delay(2000).duration(800)} style={{ alignItems: 'center' }}>
+                            <Text style={[s.successTitle, isDark ? s.textWhite : s.textSlate900, { fontSize: 32 }]}>
+                                {streak} Day Streak!
+                            </Text>
+                            <Text style={[s.successSubtitle, { marginBottom: 40 }]}>
+                                You're on fire! Keep up the amazing work.
+                            </Text>
+                            
+                            <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={{ width: '100%' }}>
+                                <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF', width: 240, borderRadius: 32 }]}>
+                                    <Text style={s.btnTextLarge}>Awesome!</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </Animated.View>
                     </View>
                 </View>
-                <Text style={[s.successTitle, isDark ? s.textWhite : s.textSlate900]}>Session Complete!</Text>
-                <Text style={s.successSubtitle}>{rewardMessage || "You've mastered all " + deck.flashcards.length + " cards in this set. Great job!"}</Text>
-                
-                <View style={s.successActions}>
-                    <TouchableOpacity onPress={restartSession} activeOpacity={0.8} style={s.flex1}>
-                        <View style={[s.outlineBtn, isDark ? s.outlineBtnDark : s.outlineBtnLight]}>
-                            <HugeiconsIcon icon={ReloadIcon} size={20} color={isDark ? 'white' : '#0f172a'} />
-                            <Text style={[s.outlineBtnText, isDark ? s.textWhite : s.textSlate900]}>Retake</Text>
+            );
+        }
+
+        return (
+            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+                <View style={s.successCenter}>
+                    <Animated.View entering={ZoomIn.duration(800)}>
+                        <View style={s.successIconBox}>
+                            <View style={[s.successIconGradient, { backgroundColor: '#34C759' }]}>
+                                <HugeiconsIcon icon={Tick01Icon} size={48} color="white" strokeWidth={3} />
+                            </View>
                         </View>
-                    </TouchableOpacity>
+                    </Animated.View>
+
+                    <Animated.View entering={FadeIn.delay(300).duration(600)}>
+                        <Text style={[s.successTitle, isDark ? s.textWhite : s.textSlate900]}>Good Job! 👍</Text>
+                        <Text style={s.successSubtitle}>{rewardMessage || "You've mastered all " + deck.flashcards.length + " cards in this set. Great job!"}</Text>
+                    </Animated.View>
                     
-                    <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={s.flex1}>
-                        <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF' }]}>
-                            <Text style={s.btnTextLarge}>Finish</Text>
-                        </View>
-                    </TouchableOpacity>
+                    <Animated.View entering={FadeIn.delay(600).duration(600)} style={s.successActions}>
+                        <TouchableOpacity onPress={restartSession} activeOpacity={0.8} style={s.flex1}>
+                            <View style={[s.outlineBtn, isDark ? s.outlineBtnDark : s.outlineBtnLight]}>
+                                <HugeiconsIcon icon={ReloadIcon} size={20} color={isDark ? 'white' : '#0f172a'} />
+                                <Text style={[s.outlineBtnText, isDark ? s.textWhite : s.textSlate900]}>Retake</Text>
+                            </View>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={s.flex1}>
+                            <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF' }]}>
+                                <Text style={s.btnTextLarge}>Finish</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </Animated.View>
                 </View>
             </View>
-        </View>
-    );
+        );
+    }
 
     const progressWidth = cards.length > 0 ? `${((currentIndex + 1) / cards.length) * 100}%` : '0%';
 
@@ -410,33 +466,37 @@ export default function StudyDeckScreen() {
 
             {/* Navigation Footer */}
             <View style={s.footer}>
-                <View style={s.controlsRow}>
-                    <TouchableOpacity 
-                        onPress={prevCard} 
-                        disabled={currentIndex === 0}
-                        activeOpacity={0.7} 
-                        style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite60, currentIndex === 0 && { opacity: 0.3 }]}
-                    >
-                        <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={isDark ? 'white' : '#1e293b'} />
-                    </TouchableOpacity>
-
+                {currentIndex === cards.length - 1 ? (
                     <TouchableOpacity 
                         onPress={nextCard} 
                         activeOpacity={0.8} 
-                        style={s.mainActionBtn}
+                        style={s.finishBtn}
                     >
                         <View style={[s.mainActionGradient, { backgroundColor: '#007AFF' }]}>
-                            <Text style={s.mainActionLabel}>
-                                {currentIndex === cards.length - 1 ? 'Finish Deck' : 'Next Card'}
-                            </Text>
-                            <HugeiconsIcon 
-                                icon={currentIndex === cards.length - 1 ? CheckmarkCircle01Icon : ArrowRight01Icon} 
-                                size={20} 
-                                color="white" 
-                            />
+                            <Text style={s.mainActionLabel}>Finish Deck</Text>
+                            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} color="white" />
                         </View>
                     </TouchableOpacity>
-                </View>
+                ) : (
+                    <View style={[s.controlsRow, { justifyContent: 'center', gap: 24 }]}>
+                        <TouchableOpacity 
+                            onPress={prevCard} 
+                            disabled={currentIndex === 0}
+                            activeOpacity={0.7} 
+                            style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite, currentIndex === 0 && { opacity: 0.3 }]}
+                        >
+                            <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={isDark ? 'white' : '#1e293b'} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            onPress={nextCard} 
+                            activeOpacity={0.8} 
+                            style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite]}
+                        >
+                            <HugeiconsIcon icon={ArrowRight01Icon} size={24} color={isDark ? 'white' : '#1e293b'} />
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
         </View>
     );
@@ -483,7 +543,8 @@ const s = StyleSheet.create({
 
     footer: { paddingHorizontal: 16, paddingBottom: 120, paddingTop: 20 },
     controlsRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-    navIconBtn: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+    navIconBtn: { height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
+    finishBtn: { width: '100%', height: 64, borderRadius: 32, overflow: 'hidden' },
     mainActionBtn: { flex: 1, height: 64, borderRadius: 32, overflow: 'hidden' },
     mainActionBlur: { flex: 1 },
     mainActionGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
@@ -513,7 +574,7 @@ const s = StyleSheet.create({
     loadingWrapper: { flex: 1, paddingHorizontal: 16, paddingTop: 100 },
     loadingPlaceholder: { width: '100%', aspectRatio: 3/4, borderRadius: 16, padding: 32, justifyContent: 'center' },
     bgGrayDark: { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
-    bgWhite: { backgroundColor: 'rgba(255, 255, 255, 0.4)' },
+    bgWhite: { backgroundColor: '#FFFFFF' },
     flexRowGap2: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     
     textWhite: { color: 'white' },

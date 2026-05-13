@@ -10,11 +10,14 @@ use Illuminate\Support\Facades\Storage;
 class FileExtractionService
 {
     protected $visionService;
+    protected $docAiService;
 
-    public function __construct(GoogleVisionService $visionService)
+    public function __construct(GoogleVisionService $visionService, GoogleDocumentAIService $docAiService)
     {
         $this->visionService = $visionService;
+        $this->docAiService = $docAiService;
     }
+
     /**
      * Extract text from a file based on its extension.
      *
@@ -38,14 +41,14 @@ class FileExtractionService
 
         try {
             $text = match ($extension) {
-                'pdf' => $this->extractFromPdf($filePath),
-                'docx' => $this->extractFromDocx($filePath),
-                'doc' => $this->extractFromDocx($filePath), 
+                'pdf' => $this->docAiService->processDocument($filePath) ?? $this->extractFromPdf($filePath),
+                'docx', 'doc' => $this->extractFromDocx($filePath),
                 'txt', 'md' => file_get_contents($filePath),
+                'png', 'jpg', 'jpeg' => $this->docAiService->processDocument($filePath) ?? $this->visionService->ocr(base64_encode(file_get_contents($filePath)))['text'],
                 default => null,
             };
 
-            // OCR Fallback: If text is extremely short (scanned PDF or diagram-heavy medicine notes)
+            // OCR Fallback: If text is extremely short or Document AI failed
             if ($extension === 'pdf' && (empty($text) || strlen(trim($text)) < 150)) {
                 Log::info("Sparse text detected in PDF ({$extension}), attempting Google Vision OCR fallback...");
                 $ocrResult = $this->visionService->ocrPdf($filePath);

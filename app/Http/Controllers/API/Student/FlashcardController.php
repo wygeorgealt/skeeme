@@ -33,20 +33,34 @@ class FlashcardController extends Controller
      */
     public function streamGenerate(Request $request)
     {
+        set_time_limit(300);
+
         $validated = $request->validate([
             'topic'          => 'nullable|string|max:255',
-            'file'           => 'nullable|file|mimes:pdf,doc,docx,txt,md|max:5120',
+            'file'           => 'nullable|file|mimes:pdf,doc,docx,txt,md|max:10240',
             'card_count'     => 'required|integer|min:5|max:50',
             'difficulty'     => 'nullable|string|in:easy,medium,hard,mixed',
         ]);
 
         $user = $request->user();
         $sourceContent = '';
+        $title = $validated['topic'] ?? 'Flashcards from File';
 
         if ($request->hasFile('file')) {
-            $sourceContent = $this->extractionService->extractText($request->file('file')->getPathname(), $request->file('file')->getClientOriginalExtension());
+            $file = $request->file('file');
+            $title = urldecode(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+            $sourceContent = $this->extractionService->extractText($file->getPathname(), $file->getClientOriginalExtension());
         } else {
             $sourceContent = $validated['topic'];
+        }
+
+        if (empty(trim($sourceContent))) {
+            return response()->json(['message' => 'No content found to generate flashcards from.'], 422);
+        }
+
+        // Pre-summarize long documents
+        if (str_word_count($sourceContent) >= 3000) {
+            $sourceContent = $this->deepseek->condenseMaterial($sourceContent, (int) $validated['card_count'], 'flashcards');
         }
 
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
@@ -60,30 +74,57 @@ class FlashcardController extends Controller
 
         $requestId = (string) Str::uuid();
 
-        return response()->stream(function () use ($request, $user, $sourceContent, $validated, $totalCost, $requestId) {
+        return response()->stream(function () use ($request, $user, $sourceContent, $validated, $totalCost, $requestId, $title) {
             $fullContent = '';
-            $modelUsed = AIService::MODEL_HAIKU;
-
+            
             try {
+                $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
+                $activeProvider = $aiConfig['provider'];
+                $useDeepseek = ($activeProvider === 'deepseek');
+                
+                $modelUsed = $useDeepseek ? 'deepseek-chat' : AIService::MODEL_HAIKU;
+                $service = $useDeepseek ? $this->deepseek : $this->aiService;
+
                 $params = [
                     'model' => $modelUsed,
                     'max_tokens' => $this->aiService->calculateMaxTokens('flashcard', $validated['card_count']),
-                    'system' => "You are an expert tutor creating highly effective flashcards. Return only JSON. Schema: [{\"front\":\"\",\"back\":\"\"}]",
+                    'system' => "You are an expert tutor creating highly effective flashcards. Return ONLY valid JSON in a flat array: [{\"front\":\"\",\"back\":\"\"}]. No markdown, no preambles.",
                     'messages' => [
-                        ['role' => 'user', 'content' => "Generate " . ($validated['card_count'] ?? 10) . " flashcards on: " . $sourceContent]
+                        ['role' => 'user', 'content' => "Generate " . ($validated['card_count'] ?? 10) . " " . ($validated['difficulty'] ?? 'medium') . " difficulty flashcards on: " . $sourceContent]
                     ],
                     'temperature' => 0.7,
                 ];
 
-                $this->aiService->streamRequest($params, function ($chunk) use (&$fullContent) {
-                    if ($chunk['type'] === 'content_block_delta') {
-                        $text = $chunk['delta']['text'] ?? '';
+                $onChunk = function ($chunk) use (&$fullContent, $useDeepseek) {
+                    $text = '';
+                    if ($useDeepseek) {
+                        $text = $chunk['choices'][0]['delta']['content'] ?? '';
+                    } else {
+                        if ($chunk['type'] === 'content_block_delta') {
+                            $text = $chunk['delta']['text'] ?? '';
+                        }
+                    }
+
+                    if ($text !== '') {
                         $fullContent .= $text;
                         echo "data: " . json_encode(['text' => $text]) . "\n\n";
                         if (ob_get_level() > 0) ob_flush();
                         flush();
                     }
-                });
+                };
+
+                try {
+                    $service->streamRequest($params, $onChunk);
+                } catch (\Exception $e) {
+                    if (!$useDeepseek) {
+                        Log::warning("Flashcard Stream: Claude failed, falling back to DeepSeek. Error: " . $e->getMessage());
+                        $modelUsed = 'deepseek-chat';
+                        $params['model'] = $modelUsed;
+                        $this->deepseek->streamRequest($params, $onChunk);
+                    } else {
+                        throw $e;
+                    }
+                }
 
                 // Credit Deduction
                 if (!$user->is_unlimited_student) {
@@ -92,7 +133,7 @@ class FlashcardController extends Controller
                         'type' => 'usage',
                         'action_type' => 'flashcard_generation',
                         'amount' => -$totalCost,
-                        'description' => "Flashcard Generation (Streaming)",
+                        'description' => "Flashcard Generation (Streaming): " . $title,
                         'model_used' => $modelUsed,
                         'request_id' => $requestId,
                     ]);
@@ -104,7 +145,6 @@ class FlashcardController extends Controller
                     $cardsData = json_decode(trim($cleanJson), true);
                     
                     if (is_array($cardsData)) {
-                        $title = $validated['topic'] ?? 'New Flashcard Deck';
                         $deck = DB::transaction(function () use ($cardsData, $user, $title) {
                             $deck = \App\Models\FlashcardDeck::create([
                                 'user_id' => $user->id,
