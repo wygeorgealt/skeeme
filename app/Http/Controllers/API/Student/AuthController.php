@@ -136,7 +136,7 @@ class AuthController extends Controller
                 'provider' => $provider,
                 'provider_id' => $socialUser->getId(),
                 'avatar' => $socialUser->getAvatar(),
-                'referral_code' => strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8)),
+                'referral_code' => strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 6)),
             ]);
 
             // Log initial credits
@@ -233,7 +233,7 @@ class AuthController extends Controller
             'status' => 'pending', // Verification required
             'approved_at' => null,   // Will be set on verification
             'credits' => 100, // Initial credits for Free tier
-            'referral_code' => strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8)),
+            'referral_code' => strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 6)),
             'ai_preferences' => [
                 'education_level' => $validated['education_level'] ?? null,
                 'field_of_study' => $validated['field_of_study'] ?? null,

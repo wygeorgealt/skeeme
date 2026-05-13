@@ -205,12 +205,12 @@ class ReferralController extends Controller
     }
 
     /**
-     * Generate a unique 8-character alphanumeric referral code.
+     * Generate a unique 6-character alphanumeric referral code.
      */
     private function generateUniqueCode(): string
     {
         do {
-            $code = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8));
+            $code = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 6));
         } while (User::where('referral_code', $code)->exists());
 
         return $code;

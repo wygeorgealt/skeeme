@@ -41,6 +41,10 @@ import {
     MedalRibbonsStar,
     Case,
     LightbulbBolt,
+    Copy,
+    Forward,
+    UsersGroupTwoRounded,
+    WalletMoney,
 } from '@solar-icons/react-native/Bold';
 import { Colors, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
@@ -49,8 +53,8 @@ import { Modal as ReanimatedModal } from 'react-native-reanimated-modal';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import PreferencesModal from './PreferencesModal';
 import SupportModal from './SupportModal';
-import ReferralModal from './ReferralModal';
 import { CupStar } from '@solar-icons/react-native/Bold';
+import { Share, Clipboard } from 'react-native';
 
 
 
@@ -451,6 +455,131 @@ function SupportView({ onBack }: { onBack: () => void }) {
     );
 }
 
+function ReferralView({ onBack }: { onBack: () => void }) {
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
+    const insets = useSafeAreaInsets();
+    
+    const [referralData, setReferralData] = useState<{ referral_code: string; share_text: string } | null>(null);
+    const [stats, setStats] = useState<{ total_referrals: number; credits_earned: number } | null>(null);
+    const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const [codeRes, statsRes] = await Promise.all([
+                api.get('referral/my-code'),
+                api.get('referral/stats')
+            ]);
+            setReferralData(codeRes.data);
+            setStats(statsRes.data);
+        } catch (e) {
+            console.error('Failed to fetch referral data', e);
+        }
+    };
+
+    const handleCopy = () => {
+        if (referralData?.referral_code) {
+            Clipboard.setString(referralData.referral_code);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    const handleShare = async () => {
+        if (referralData?.share_text) {
+            try {
+                await Share.share({ message: referralData.share_text });
+            } catch (e) {}
+        }
+    };
+
+    return (
+        <View style={{ flex: 1 }}>
+            <ScrollView 
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 140 }} 
+                showsVerticalScrollIndicator={false}
+            >
+                <Animated.View entering={FadeInDown.duration(300)}>
+                    <Text style={{ fontSize: 24, fontWeight: '800', color: C.text, marginBottom: 8, letterSpacing: -0.5 }}>Earn More Credits</Text>
+                    <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 24 }}>Invite friends to Skeeme and get rewarded when they start studying.</Text>
+
+                    <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
+                        {[
+                            { val: '200', label: 'Direct Refer' },
+                            { val: '50', label: 'Friend of Friend' },
+                            { val: '100', label: "Friend's Bonus" }
+                        ].map((tier, i) => (
+                            <View key={i} style={{ flex: 1, padding: 12, borderRadius: 16, backgroundColor: C.card, alignItems: 'center', borderWidth: 1, borderColor: isDark ? C.glassBorder : 'transparent' }}>
+                                <Text style={{ fontSize: 18, fontWeight: '900', color: '#007AFF', marginBottom: 2 }}>{tier.val}</Text>
+                                <Text style={{ fontSize: 10, fontWeight: '700', color: C.textTertiary, textAlign: 'center' }}>{tier.label}</Text>
+                            </View>
+                        ))}
+                    </View>
+
+                    <GroupedCard isDark={isDark}>
+                        <View style={{ padding: 20 }}>
+                            <Text style={{ fontSize: 11, fontWeight: '800', color: C.textTertiary, letterSpacing: 1, marginBottom: 8 }}>YOUR UNIQUE CODE</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Text style={{ fontSize: 28, fontWeight: '900', color: C.text, letterSpacing: 2 }}>
+                                    {referralData?.referral_code || '------'}
+                                </Text>
+                                <TouchableOpacity 
+                                    onPress={handleCopy} 
+                                    style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(0,122,255,0.1)', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    {copied ? <CheckCircle size={20} color="#34C759" /> : <Copy size={20} color="#007AFF" />}
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </GroupedCard>
+
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24, marginBottom: 32 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <UsersGroupTwoRounded size={18} color={C.textSecondary} />
+                            <Text style={{ fontSize: 14, fontWeight: '700', color: C.textSecondary }}>{stats?.total_referrals || 0} Joins</Text>
+                        </View>
+                        <View style={{ width: 1, height: 16, backgroundColor: C.separator }} />
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <WalletMoney size={18} color={C.textSecondary} />
+                            <Text style={{ fontSize: 14, fontWeight: '700', color: C.textSecondary }}>{stats?.credits_earned || 0} Earned</Text>
+                        </View>
+                    </View>
+                </Animated.View>
+            </ScrollView>
+
+            <BlurView
+                intensity={50}
+                tint={isDark ? 'dark' : 'light'}
+                style={{
+                    position: 'absolute',
+                    bottom: 0, left: 0, right: 0,
+                    paddingHorizontal: 20,
+                    paddingTop: 16,
+                    paddingBottom: Math.max(insets.bottom, 16) + 16,
+                }}
+            >
+                <TouchableOpacity
+                    onPress={handleShare}
+                    activeOpacity={0.8}
+                    style={{ 
+                        height: 56, backgroundColor: '#007AFF', borderRadius: 28, 
+                        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+                        shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6
+                    }}
+                >
+                    <Forward size={20} color="#FFF" />
+                    <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '800' }}>Share Invite Link</Text>
+                </TouchableOpacity>
+            </BlurView>
+        </View>
+    );
+}
+
 interface AccountModalProps {
     visible: boolean;
     onDismiss: () => void;
@@ -470,8 +599,7 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
     const [isDeleting, setIsDeleting] = useState(false);
     
     // Internal Navigation View
-    const [activeView, setActiveView] = useState<'main' | 'preferences' | 'support'>('main');
-    const [showReferral, setShowReferral] = useState(false);
+    const [activeView, setActiveView] = useState<'main' | 'preferences' | 'support' | 'referral'>('main');
 
     const bottomInset = insets.bottom ?? 0;
 
@@ -716,7 +844,7 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                                     icon={CupStar}
                                     iconBg="#34C759"
                                     label="Refer a Friend"
-                                    onPress={() => setShowReferral(true)}
+                                    onPress={() => setActiveView('referral')}
                                     isLast
                                     isDark={isDark}
                                 />
@@ -843,12 +971,8 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
 
                 {activeView === 'preferences' && <PreferencesView onBack={() => setActiveView('main')} />}
                 {activeView === 'support' && <SupportView onBack={() => setActiveView('main')} />}
+                {activeView === 'referral' && <ReferralView onBack={() => setActiveView('main')} />}
             </ReanimatedModal>
-
-            <ReferralModal 
-                visible={showReferral} 
-                onDismiss={() => setShowReferral(false)} 
-            />
         </>
     );
 }
