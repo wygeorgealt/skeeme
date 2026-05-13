@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     View,
     ScrollView,
@@ -32,6 +32,9 @@ import {
 import { Colors, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
 import { Modal } from 'react-native';
+import { Modal as ReanimatedModal } from 'react-native-reanimated-modal';
+
+
 
 const s = StyleSheet.create({
     scroll: { paddingHorizontal: 16 },
@@ -130,7 +133,7 @@ function SettingsRow({
                     thumbColor={Platform.OS === 'ios' ? undefined : '#f4f3f4'}
                 />
             ) : (
-                !!onPress && !destructive && <AltArrowRight size={18} color={C.textTertiary} />
+                !!onPress && !destructive && Icon && <AltArrowRight size={18} color={C.textTertiary} />
             )}
         </TouchableOpacity>
     );
@@ -222,14 +225,19 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
 
     return (
         <>
-            <Modal visible={deleteModalVisible} transparent animationType="fade" onRequestClose={() => setDeleteModalVisible(false)}>
+            <ReanimatedModal
+                visible={deleteModalVisible}
+                onHide={() => setDeleteModalVisible(false)}
+                animation="fade"
+                backdrop={{ opacity: 0.5 }}
+            >
                 <View
                     style={{
-                        flex: 1,
-                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        backgroundColor: 'transparent',
                         justifyContent: 'center',
                         alignItems: 'center',
                         paddingHorizontal: 24,
+                        flex: 1,
                     }}
                 >
                     <View style={{ backgroundColor: C.card, borderRadius: 20, padding: 24, width: '100%' }}>
@@ -282,43 +290,37 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                         </View>
                     </View>
                 </View>
-            </Modal>
+            </ReanimatedModal>
 
-            {visible && (
+            <ReanimatedModal
+                visible={visible}
+                onHide={onDismiss}
+                animation="slide"
+                swipe={{
+                    enabled: true,
+                    directions: ['down'],
+                }}
+                contentContainerStyle={{
+                    backgroundColor: C.background,
+                    borderTopLeftRadius: 40,
+                    borderTopRightRadius: 40,
+                    paddingHorizontal: 0,
+                    paddingTop: 16,
+                    paddingBottom: Math.max(bottomInset, 16),
+                    // Ensure the modal takes up appropriate space
+                    minHeight: '50%',
+                }}
+            >
                 <View
                     style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        justifyContent: 'flex-end',
-                        zIndex: 999,
+                        width: 40,
+                        height: 4,
+                        backgroundColor: isDark ? '#475569' : '#CBD5E1',
+                        borderRadius: 2,
+                        alignSelf: 'center',
+                        marginBottom: 16,
                     }}
-                >
-                    <TouchableOpacity activeOpacity={1} onPress={onDismiss} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }} />
-
-                    <View
-                        style={{
-                            backgroundColor: C.background,
-                            borderTopLeftRadius: 28,
-                            borderTopRightRadius: 28,
-                            paddingHorizontal: 0,
-                            paddingTop: 16,
-                            paddingBottom: Math.max(bottomInset, 16),
-                            maxHeight: '85%',
-                        }}
-                    >
-                        <View
-                            style={{
-                                width: 40,
-                                height: 4,
-                                backgroundColor: isDark ? '#475569' : '#CBD5E1',
-                                borderRadius: 2,
-                                alignSelf: 'center',
-                                marginBottom: 16,
-                            }}
-                        />
+                />
 
                         <ScrollView contentContainerStyle={[s.scroll, { paddingTop: 8, paddingBottom: 24 }]} showsVerticalScrollIndicator={false}>
                             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingRight: 16, marginBottom: 16 }}>
@@ -485,9 +487,7 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                                 />
                             </GroupedCard>
                         </ScrollView>
-                    </View>
-                </View>
-            )}
+            </ReanimatedModal>
         </>
     );
 }

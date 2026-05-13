@@ -950,11 +950,10 @@ SYSTEM
 
     /**
      * OCR: Extract text from a base64-encoded image.
-     * Tries Google Cloud Vision first, then OCR.space (Fallback).
+     * Uses Google Cloud Vision (Managed, high-accuracy).
      */
     protected function ocrFromBase64(string $base64Image): string
     {
-        // 1. Try Google Cloud Vision (Managed, high-accuracy)
         try {
             Log::info('Attempting OCR with Google Cloud Vision...');
             $visionResult = $this->visionService->ocr($base64Image);
@@ -963,50 +962,14 @@ SYSTEM
                 Log::info('Google Cloud Vision Success.');
                 return $visionResult['text'];
             }
-            Log::warning('Google Vision returned empty results, falling back to OCR.space');
-        } catch (\Exception $e) {
-            Log::error('Google Vision failed: ' . $e->getMessage() . '. Falling back.');
-        }
-
-        // 2. Fallback to OCR.space Engine 2
-        try {
-            Log::info('Attempting OCR with OCR.space (Fallback)...');
-            $fallbackClient = new Client(['timeout' => 15]);
-            $response = $fallbackClient->post('https://api.ocr.space/parse/image', [
-                'headers' => [
-                    'apikey' => 'helloworld',
-                ],
-                'multipart' => [
-                    [
-                        'name' => 'base64Image',
-                        'contents' => 'data:image/jpeg;base64,' . $base64Image,
-                    ],
-                    [
-                        'name' => 'language',
-                        'contents' => 'eng',
-                    ],
-                    [
-                        'name' => 'isOverlayRequired',
-                        'contents' => 'false',
-                    ],
-                    [
-                        'name' => 'OCREngine',
-                        'contents' => '1', // Engine 1 is faster but slightly less accurate for math
-                    ],
-                ],
-            ]);
-
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            if (isset($data['ParsedResults'][0]['ParsedText'])) {
-                return trim($data['ParsedResults'][0]['ParsedText']);
-            }
-
-            if (isset($data['ErrorMessage'])) {
-                Log::error('OCR.space Error (Engine 1 Fallback): ' . implode(', ', (array) $data['ErrorMessage']));
+            
+            if (!$visionResult['success']) {
+                Log::error('Google Vision Error: ' . ($visionResult['error'] ?? 'Unknown error'));
+            } else {
+                Log::warning('Google Vision returned empty results.');
             }
         } catch (\Exception $e) {
-            Log::error('OCR.space Engine 1 Fallback Exception: ' . $e->getMessage());
+            Log::error('Google Vision Exception: ' . $e->getMessage());
         }
 
         return '';

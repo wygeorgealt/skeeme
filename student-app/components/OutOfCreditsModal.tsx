@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, TouchableOpacity, useColorScheme, Share, Platform } from 'react-native';
 import { RoundArrowUp, Forward } from '@solar-icons/react-native/Bold';
 
@@ -7,6 +7,9 @@ import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import RevenueCatUI from 'react-native-purchases-ui';
 import { useAuthStore } from '@/store/authStore';
+import { Modal as ReanimatedModal } from 'react-native-reanimated-modal';
+
+
 
 interface OutOfCreditsModalProps {
     visible: boolean;
@@ -71,37 +74,25 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
     }
 
     return (
-        <View
-            style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                top: 0,
-                justifyContent: 'flex-end',
-                zIndex: 999,
+        <ReanimatedModal
+            visible={visible}
+            onHide={onDismiss}
+            animation="slide"
+            swipe={{
+                enabled: true,
+                directions: ['down'],
+            }}
+            contentContainerStyle={{
+                backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                borderTopLeftRadius: 40,
+                borderTopRightRadius: 40,
+                paddingHorizontal: 24,
+                paddingTop: 28,
+                paddingBottom: Platform.OS === 'ios' ? 44 : 28,
             }}
         >
-            {/* Backdrop */}
-            <TouchableOpacity
-                activeOpacity={1}
-                onPress={onDismiss}
-                style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
-            />
-
-            {/* Bottom Sheet */}
-            <View
-                style={{
-                    backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
-                    borderTopLeftRadius: 28,
-                    borderTopRightRadius: 28,
-                    paddingHorizontal: 24,
-                    paddingTop: 28,
-                    paddingBottom: Platform.OS === 'ios' ? 44 : 28,
-                }}
-            >
-                {/* Handle */}
-                <View style={{ width: 40, height: 4, backgroundColor: isDark ? '#475569' : '#CBD5E1', borderRadius: 2, alignSelf: 'center', marginBottom: 24 }} />
+            {/* Handle */}
+            <View style={{ width: 40, height: 4, backgroundColor: isDark ? '#475569' : '#CBD5E1', borderRadius: 2, alignSelf: 'center', marginBottom: 24 }} />
 
                 {/* Icon */}
                 <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF620', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
@@ -177,8 +168,6 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
                 {/* No 'I'll study later' — user must upgrade to continue */}
                 <View style={{ height: 24 }} />
-
-            </View>
-        </View>
+        </ReanimatedModal>
     );
 }

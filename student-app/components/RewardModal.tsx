@@ -1,6 +1,8 @@
 import { Text } from '@/components/ui/Text';
 import React from 'react';
-import { Modal, View, TouchableOpacity, StyleSheet, Dimensions, useColorScheme } from 'react-native';
+import { Modal as ReanimatedModal } from 'react-native-reanimated-modal';
+import { View, TouchableOpacity, StyleSheet, Dimensions, useColorScheme } from 'react-native';
+
 import { BlurView } from 'expo-blur';
 import { CupStar } from '@solar-icons/react-native/Bold';
 
@@ -25,15 +27,13 @@ export const RewardModal: React.FC<RewardModalProps> = ({ isVisible, onClose, re
     if (!reward) return null;
 
     return (
-        <Modal
-            transparent
+        <ReanimatedModal
             visible={isVisible}
-            animationType="fade"
-            onRequestClose={onClose}
+            onHide={onClose}
+            animation="fade"
+            backdrop={<BlurView intensity={20} style={StyleSheet.absoluteFill} tint={isDark ? 'dark' : 'light'} />}
         >
             <View style={styles.overlay}>
-                <BlurView intensity={20} style={StyleSheet.absoluteFill} tint={isDark ? 'dark' : 'light'} />
-
                 <Animated.View
                     entering={FadeInUp.springify()}
                     exiting={FadeOutDown}
@@ -45,7 +45,6 @@ export const RewardModal: React.FC<RewardModalProps> = ({ isVisible, onClose, re
                     <Animated.View entering={ZoomIn.delay(300).springify()} style={styles.iconContainer}>
                         <View style={styles.iconCircle}>
                             <CupStar size={50} color="#FFD700" />
-
                         </View>
                     </Animated.View>
 
@@ -70,7 +69,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({ isVisible, onClose, re
                     </TouchableOpacity>
                 </Animated.View>
             </View>
-        </Modal>
+        </ReanimatedModal>
     );
 };
 
