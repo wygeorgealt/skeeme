@@ -139,14 +139,20 @@ class ScanController extends Controller
                         $emit(['type' => 'full_result', 'data' => $deepseekResult]);
                     }
                 } else {
-                    $this->aiService->streamSolveFromImage($request->input('image'), function ($chunk) use (&$fullContent, $emit) {
-                        if ($chunk['type'] === 'content_block_delta') {
-                            $text = $chunk['delta']['text'] ?? '';
-                            if ($text === '') return;
-                            $fullContent .= $text;
-                            $emit(['type' => 'text_delta', 'text' => $text]);
+                    $this->aiService->streamSolveFromImage(
+                        $request->input('image'), 
+                        function ($chunk) use (&$fullContent, $emit) {
+                            if ($chunk['type'] === 'content_block_delta') {
+                                $text = $chunk['delta']['text'] ?? '';
+                                if ($text === '') return;
+                                $fullContent .= $text;
+                                $emit(['type' => 'text_delta', 'text' => $text]);
+                            }
+                        },
+                        function ($status) use ($emit) {
+                            $emit(['type' => 'status', 'message' => $status]);
                         }
-                    });
+                    );
 
                     $parsedResult = $this->parseStreamedJson($fullContent);
                     if ($parsedResult && isset($parsedResult['results'])) {

@@ -367,12 +367,45 @@ Return ONLY a raw JSON object matching this schema. NO Conversational text. NO T
 {"results":[{"question":"short version of the question","topic":"subject area","type":"calculation|theory","solution":"**final answer**","steps":[],"explanation":"concise but complete explanation","summary":""}]}
 
 Rules:
-- `solution`: bold final answer, e.g. "**D**" or "**$\\42$**"
+- `solution`: bold final answer, e.g. "**D**" or "**\$42\$**"
 - `steps`: always `[]` (put steps in explanation instead)
 - `summary`: always ""
 - `explanation`: State the answer upfront, then justify it.
 - `Math Formatting`: Wrap ALL math in dollar signs.
 PROMPT;
+
+
+            $systemPrompt = <<<'SYSTEM'
+# Role
+You are an expert academic tutor skilled at explaining concepts, solving problems, and designing assessments across all subjects and academic levels.
+
+# Task
+Respond to tutoring requests by providing clear, structured learning support in valid JSON format only. Your primary focus is delivering step-by-step problem solutions with detailed breakdowns, though you also handle explanations, study guides, and assessments as needed.
+
+# Context
+Students at mixed academic levels need reliable, consistent tutoring across any subject. They expect authoritative answers formatted predictably so they can parse and use the output programmatically or integrate it into their study systems.
+
+# Instructions
+
+**Core Behaviors:**
+- Return only valid JSON with no additional text, preamble, or meta-commentary
+- No markdown, code blocks, or text outside the JSON structure
+- No internal reasoning, self-corrections, or scratchpads
+- When requests are ambiguous, make reasonable assumptions about academic level and learning goal, then proceed with confidence
+
+**For Problem Solutions (Most Common Request Type):**
+Structure as: `{"results": [{"question": "", "topic": "", "type": "", "solution": "", "steps": [], "explanation": "", "summary": ""}]}`
+- Break down step-by-step solutions with clear intermediate work inside the `explanation` field using double newlines.
+- `solution`: bold final answer, e.g. "**D**" or "**$42$**"
+- `steps`: always `[]` (put steps in explanation instead)
+- `summary`: always `""` 
+
+**Tone and Approach:**
+- Be direct and authoritative, assuming students understand academic concepts at an appropriate level
+- Avoid padding; keep explanations concise and precise
+- Work across all subjects with equal competence
+- Don't seek clarification; make confident assumptions and deliver the response
+SYSTEM;
 
             $params = [
                 'model' => 'deepseek-chat',
@@ -383,7 +416,7 @@ PROMPT;
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => "You are a world-class academic tutor. Extract questions from OCR text and provide step-by-step solutions. Always return a JSON object with a 'results' array containing 'question', 'topic', 'type', 'solution', and 'explanation' fields.",
+                        'content' => $this->getPersonalizedSystemPrompt($systemPrompt),
                     ],
                     [
                         'role' => 'user',

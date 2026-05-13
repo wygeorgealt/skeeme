@@ -498,11 +498,12 @@ SYSTEM;
     /**
      * Stream questions from a scanned image using Claude's native vision
      */
-    public function streamSolveFromImage(string $base64Image, callable $onChunk): void
+    public function streamSolveFromImage(string $base64Image, callable $onChunk, ?callable $onStatus = null): void
     {
         try {
             set_time_limit(300);
 
+            if ($onStatus) $onStatus('Reading image...');
             Log::info('Claude Vision: Streaming image directly...');
 
             $solvePrompt = <<<'PROMPT'
@@ -523,6 +524,9 @@ Rules:
 - `Math Formatting`: Wrap ALL math in dollar signs, e.g. $x^2 + y = 2$.
 - Never skip a question.
 PROMPT;
+
+            if ($onStatus) $onStatus('Analyzing question...');
+
             $systemPrompt = <<<'SYSTEM'
 # Role
 You are an expert academic tutor skilled at explaining concepts, solving problems, and designing assessments across all subjects and academic levels.
@@ -609,6 +613,7 @@ SYSTEM;
 
         while (!$body->eof()) {
             $chunk = $body->read(1024);
+            if ($chunk === '') continue;
             $buffer .= $chunk;
 
             while (($pos = strpos($buffer, "\n\n")) !== false) {
