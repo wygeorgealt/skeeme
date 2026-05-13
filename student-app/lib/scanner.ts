@@ -127,11 +127,26 @@ export const scannerService = {
         });
 
         es.addEventListener('error', (event: any) => {
-            if (__DEV__) console.error('SSE Error', event);
+            if (__DEV__) console.error('SSE Error Detail:', event);
             es.close();
+            
             if (!streamErrored) {
                 streamErrored = true;
-                callbacks.onError?.('Streaming interrupted. Please try again.');
+                
+                // Differentiate between intentional server errors and network/client errors
+                let errorMessage = 'Connection interrupted. Please check your internet and try again.';
+                
+                if (event?.message) {
+                    if (event.message.includes('network connection was lost') || 
+                        event.message.includes('Network Error') || 
+                        event.xhrStatus === 0) {
+                        errorMessage = 'Network connection lost. Please try again.';
+                    } else {
+                        errorMessage = event.message;
+                    }
+                }
+                
+                callbacks.onError?.(errorMessage);
             }
         });
 

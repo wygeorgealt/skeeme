@@ -13,6 +13,7 @@ class DeepseekAIService
     protected $apiKey;
     protected $baseUrl = 'https://api.deepseek.com/v1';
     protected $visionService;
+    protected $personalizationService;
     protected $timeout = 60; // Default 60s
 
     public function __construct(GoogleVisionService $visionService)
@@ -23,6 +24,7 @@ class DeepseekAIService
             'timeout' => 120, // High default, overridden per request
             'connect_timeout' => 10,
         ]);
+        $this->personalizationService = app(UserPersonalizationService::class);
     }
 
     public function setTimeout(int $seconds): self
@@ -1126,5 +1128,18 @@ SYSTEM
         $text = preg_replace('/[^\x20-\x7E\t\n\r\x{00A0}-\x{FFFF}]/u', '', $text);
         
         return $text;
+    }
+
+    /**
+     * Get a personalized system prompt by appending student context.
+     */
+    protected function getPersonalizedSystemPrompt(string $basePrompt): string
+    {
+        $user = auth()->user();
+        if (!$user) return $basePrompt;
+
+        $context = $this->personalizationService->getSystemContext($user);
+        
+        return $basePrompt . "\n\n" . $context;
     }
 }

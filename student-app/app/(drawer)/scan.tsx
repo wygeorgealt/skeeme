@@ -13,7 +13,7 @@ import Animated, {
     interpolate,
     useAnimatedStyle
 } from 'react-native-reanimated';
-import { AltArrowLeft, AltArrowRight, Bolt, CameraAdd, CheckCircle, Dislike, Gallery, Like, Scanner, Share, List } from '@solar-icons/react-native/Bold';
+import { QuestionCircle, AltArrowLeft, AltArrowRight, Bolt, CameraAdd, CheckCircle, Dislike, Gallery, Like, Refresh, Scanner, Share, List } from '@solar-icons/react-native/Bold';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -58,6 +58,8 @@ export default function ScanScreen() {
     const [loadingStage, setLoadingStage] = useState('');
     const [results, setResults] = useState<ScanResult[]>([]);
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
+    const [scanError, setScanError] = useState<string | null>(null);
+    const [isNetworkError, setIsNetworkError] = useState(false);
     const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'unhelpful'>>({});
 
     const [progressPercent, setProgressPercent] = useState(0);
@@ -184,6 +186,8 @@ export default function ScanScreen() {
         }
 
         setLoading(true);
+        setScanError(null);
+        setIsNetworkError(false);
         setLoadingStage('Analyzing image...');
         setProgressPercent(10);
         hapticFiredRef.current = false;
@@ -223,7 +227,12 @@ export default function ScanScreen() {
                     streamErrored = true;
                     esRef.current = null;
                     setLoading(false);
-                    Alert.alert('Error', message);
+                    setScanError(message);
+                    
+                    // Detect if it was a network error for the UI
+                    if (message.toLowerCase().includes('network') || message.toLowerCase().includes('connection')) {
+                        setIsNetworkError(true);
+                    }
                 },
                 onDone: () => {
                     esRef.current = null;
@@ -241,7 +250,8 @@ export default function ScanScreen() {
 
         } catch (err: any) {
             setLoading(false);
-            Alert.alert('Error', 'Connection failed. Please try again.');
+            setScanError('Connection failed. Please try again.');
+            setIsNetworkError(true);
         }
     };
 
@@ -279,6 +289,8 @@ export default function ScanScreen() {
         setImageUri(null);
         setImageBase64(null);
         setResults([]);
+        setScanError(null);
+        setIsNetworkError(false);
         hapticFiredRef.current = false;
     };
 
@@ -385,15 +397,46 @@ export default function ScanScreen() {
                             </View>
                         )}
 
-                        {loading && results.length === 0 && (
-                            <View style={s.aiResponseRow}>
-                                <Animated.Text style={[s.aiAnalyzingText, isDark ? s.textWhite : s.textSlate900, pulseStyle]}>
-                                    {loadingStage}
-                                </Animated.Text>
+                        {scanError ? (
+                            <View style={[s.errorContainer, isDark ? s.cardDark : s.cardLight]}>
+                                <View style={s.errorIconCircle}>
+                                    <QuestionCircle size={32} color={isNetworkError ? '#f59e0b' : '#ef4444'} />
+                                </View>
+                                <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>
+                                    {isNetworkError ? 'Connection Issue' : 'Analysis Failed'}
+                                </Text>
+                                <Text style={[s.errorDesc, isDark ? s.textSlate400d : s.textSlate500l]}>
+                                    {scanError}
+                                </Text>
+                                
+                                <TouchableOpacity 
+                                    onPress={() => handleSolve()} 
+                                    activeOpacity={0.8}
+                                    style={s.retryBtn}
+                                >
+                                    <Refresh size={18} color="white" />
+                                    <Text style={s.retryBtnText}>Try Again</Text>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity 
+                                    onPress={resetScan} 
+                                    activeOpacity={0.7}
+                                    style={s.cancelBtn}
+                                >
+                                    <Text style={[s.cancelBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>Cancel</Text>
+                                </TouchableOpacity>
                             </View>
-                        )}
+                        ) : (
+                            <>
+                                {loading && results.length === 0 && (
+                                    <View style={s.aiResponseRow}>
+                                        <Animated.Text style={[s.aiAnalyzingText, isDark ? s.textWhite : s.textSlate900, pulseStyle]}>
+                                            {loadingStage}
+                                        </Animated.Text>
+                                    </View>
+                                )}
 
-                        {results.map((item, index) => (
+                                {results.map((item, index) => (
                             <View key={index} style={[s.answerCard, isDark ? s.cardDark : s.cardLight]}>
                                 <View style={s.sectionHeaderRow}>
                                     <View style={s.sectionTitleContainer}>
@@ -500,6 +543,8 @@ export default function ScanScreen() {
                                 </View>
                             </TouchableOpacity>
                         )}
+                            </>
+                        )}
                     </View>
                 )}
                 <View style={{ height: 24 }} />
@@ -597,6 +642,15 @@ const s = StyleSheet.create({
     feedbackBtnText: { fontSize: 13, fontWeight: '700' },
     feedbackDone: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: 'rgba(16,185,129,0.08)', borderRadius: 14 },
     feedbackDoneText: { fontSize: 13, fontWeight: '700' },
+
+    errorContainer: { margin: 20, padding: 32, borderRadius: 32, alignItems: 'center' },
+    errorIconCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(239,68,68,0.08)', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    errorTitle: { fontSize: 20, fontWeight: '900', marginBottom: 12, letterSpacing: -0.5 },
+    errorDesc: { fontSize: 15, fontWeight: '600', textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+    retryBtn: { backgroundColor: '#007AFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 32, paddingVertical: 16, borderRadius: 16, width: '100%', marginBottom: 12 },
+    retryBtnText: { color: 'white', fontWeight: '800', fontSize: 16 },
+    cancelBtn: { paddingVertical: 12, width: '100%', alignItems: 'center' },
+    cancelBtnText: { fontSize: 15, fontWeight: '700' },
 
     followUpBar: { borderRadius: 20, padding: 20, marginTop: 4 },
     followUpInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
