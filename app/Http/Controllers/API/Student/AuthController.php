@@ -87,6 +87,7 @@ class AuthController extends Controller
         $request->validate([
             'token' => 'required|string',
             'device_name' => 'nullable|string',
+            'referral_code' => 'nullable|string|exists:users,referral_code',
         ]);
 
         $allowedProviders = ['google', 'apple'];
@@ -147,6 +148,16 @@ class AuthController extends Controller
             ]);
 
             $isNewUser = true;
+
+            // Process Referral if provided
+            if ($request->filled('referral_code')) {
+                try {
+                    Auth::login($user); // Temporary login to use ReferralController
+                    app(\App\Http\Controllers\API\Student\ReferralController::class)->redeem($request);
+                } catch (\Exception $e) {
+                    Log::error("Referral redemption failed during OAuth signup", ['error' => $e->getMessage()]);
+                }
+            }
         }
 
         $deviceName = $request->input('device_name', 'mobile_app');
@@ -188,10 +199,10 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'device_name' => 'nullable|string',
-            // Onboarding AI Preferences
             'education_level' => 'nullable|string|in:high_school,undergraduate,masters,professional',
             'field_of_study' => 'nullable|string|max:100',
             'learning_style' => 'nullable|string|in:simple,detailed,analogies',
+            'referral_code' => 'nullable|string|exists:users,referral_code',
         ]);
 
         // Logic to extract first/last name from fullName if not provided explicitly
@@ -239,6 +250,16 @@ class AuthController extends Controller
             'description' => 'Welcome bonus: Free tier signup credits',
             'metadata' => json_encode(['source' => 'signup']),
         ]);
+
+        // Process Referral if provided (Note: User is pending, but we credit them now as requested)
+        if ($request->filled('referral_code')) {
+            try {
+                Auth::login($user); 
+                app(\App\Http\Controllers\API\Student\ReferralController::class)->redeem($request);
+            } catch (\Exception $e) {
+                Log::error("Referral redemption failed during registration", ['error' => $e->getMessage()]);
+            }
+        }
 
         $deviceName = $request->input('device_name', 'mobile_app');
         Log::info('New student registered (Pending Verification)', ['user_id' => $user->id, 'device' => $deviceName]);

@@ -235,6 +235,8 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('referral/my-code', [\App\Http\Controllers\API\Student\ReferralController::class, 'myCode']);
             Route::get('referral/stats', [\App\Http\Controllers\API\Student\ReferralController::class, 'stats']);
             Route::post('referral/redeem', [\App\Http\Controllers\API\Student\ReferralController::class, 'redeem']);
+            Route::get('referral/pending-rewards', [\App\Http\Controllers\API\Student\ReferralController::class, 'pendingRewards']);
+            Route::post('referral/claim-rewards', [\App\Http\Controllers\API\Student\ReferralController::class, 'claimRewards']);
         });
     });
 
