@@ -135,7 +135,9 @@ class ScanController extends Controller
                     );
 
                     $deepseekResult = $this->parseStreamedJson($fullContent);
-                    $emit(['type' => 'full_result', 'data' => $deepseekResult ?? []]);
+                    if ($deepseekResult && isset($deepseekResult['results'])) {
+                        $emit(['type' => 'full_result', 'data' => $deepseekResult]);
+                    }
                 } else {
                     $this->aiService->streamSolveFromImage($request->input('image'), function ($chunk) use (&$fullContent, $emit) {
                         if ($chunk['type'] === 'content_block_delta') {
@@ -147,7 +149,7 @@ class ScanController extends Controller
                     });
 
                     $parsedResult = $this->parseStreamedJson($fullContent);
-                    if ($parsedResult) {
+                    if ($parsedResult && isset($parsedResult['results'])) {
                         $emit(['type' => 'full_result', 'data' => $parsedResult]);
                     }
                 }
@@ -223,17 +225,28 @@ class ScanController extends Controller
      */
     protected function parseStreamedJson(string $content): ?array
     {
-        $clean = trim(preg_replace('/```(?:json)?|```/', '', $content));
+        // 1. Try direct decode
+        $decoded = json_decode(trim($content), true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return $decoded;
+        }
+
+        // 2. Remove markdown code blocks
+        $clean = preg_replace('/```(?:json)?([\s\S]*?)```/i', '$1', $content);
+        $clean = trim($clean);
         $decoded = json_decode($clean, true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
             return $decoded;
         }
+
+        // 3. Extract anything between the first { and last }
         if (preg_match('/\{[\s\S]*\}/', $content, $matches)) {
             $decoded = json_decode($matches[0], true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                 return $decoded;
             }
         }
+
         return null;
     }
 

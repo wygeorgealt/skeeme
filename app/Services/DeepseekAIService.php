@@ -375,7 +375,7 @@ Rules:
 PROMPT;
 
             $params = [
-                'model' => 'deepseek-v4-flash',
+                'model' => 'deepseek-chat',
                 'stream' => true,
                 'temperature' => 0.3,
                 'max_tokens' => 8192,
@@ -383,7 +383,7 @@ PROMPT;
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => "You are an expert academic tutor. Return ONLY valid JSON as instructed.",
+                        'content' => "You are a world-class academic tutor. Extract questions from OCR text and provide step-by-step solutions. Always return a JSON object with a 'results' array containing 'question', 'topic', 'type', 'solution', and 'explanation' fields.",
                     ],
                     [
                         'role' => 'user',

@@ -483,21 +483,23 @@ export default function ScanScreen() {
                             </View>
                         ))}
 
-                        <TouchableOpacity
-                            onPress={() => {
-                                const topics = results.map(r => r.topic).filter(Boolean);
-                                const uniqueTopics = [...new Set(topics)];
-                                const combinedTopic = uniqueTopics.join(', ') || 'General';
-                                router.push({ pathname: '/generate', params: { topic: combinedTopic } });
-                            }}
-                            activeOpacity={0.8}
-                            style={[s.followUpBar, isDark ? s.cardDark : s.cardLight]}
-                        >
-                            <View style={s.followUpInner}>
-                                <Text style={[s.followUpText, isDark ? s.textSlate400d : s.textSlate500l]}>Practice similar questions...</Text>
-                                <AltArrowRight size={16} color={C.textTertiary} />
-                            </View>
-                        </TouchableOpacity>
+                        {!loading && results.length > 0 && (
+                            <TouchableOpacity
+                                onPress={() => {
+                                    const topics = results.map(r => r.topic).filter(Boolean);
+                                    const uniqueTopics = [...new Set(topics)];
+                                    const combinedTopic = uniqueTopics.join(', ') || 'General';
+                                    router.push({ pathname: '/generate', params: { topic: combinedTopic } });
+                                }}
+                                activeOpacity={0.8}
+                                style={[s.followUpBar, isDark ? s.cardDark : s.cardLight]}
+                            >
+                                <View style={s.followUpInner}>
+                                    <Text style={[s.followUpText, isDark ? s.textSlate400d : s.textSlate500l]}>Practice similar questions...</Text>
+                                    <AltArrowRight size={16} color={C.textTertiary} />
+                                </View>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
                 <View style={{ height: 24 }} />
