@@ -331,7 +331,7 @@ class AuthController extends Controller
             'credits_spent_this_week' => abs($creditsSpent),
             'study_sessions_this_week' => $quizSessionsCount + $flashcardSessionsCount + $scanHistoryCount,
             'is_unlimited' => $user->is_unlimited_student,
-            'plan_name' => $user->activeSubscription?->plan_name ?? 'free',
+            'plan_name' => $user->getStudentPlan(),
             'role' => $user->role,
             'streak' => $streak,
             'pricing' => $pricing,

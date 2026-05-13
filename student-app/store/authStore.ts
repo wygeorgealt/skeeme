@@ -37,7 +37,8 @@ interface AuthState {
     globalError: string | null;
     setGlobalError: (error: string | null) => void;
     accountModalOpen: boolean;
-    toggleAccountModal: (show: boolean) => void;
+    accountModalView: 'main' | 'preferences' | 'support' | 'referral';
+    toggleAccountModal: (show: boolean, view?: 'main' | 'preferences' | 'support' | 'referral') => void;
     notificationsEnabled: boolean;
     setNotificationsEnabled: (enabled: boolean) => Promise<void>;
 }
@@ -119,11 +120,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     hapticsEnabled: true,
     globalError: null,
     accountModalOpen: false,
+    accountModalView: 'main',
     notificationsEnabled: true,
 
     setGlobalError: (error) => set({ globalError: error }),
 
-    toggleAccountModal: (show) => set({ accountModalOpen: show }),
+    toggleAccountModal: (show, view = 'main') => set({ accountModalOpen: show, accountModalView: view }),
 
     fetchPricingConfig: async () => {
         try {

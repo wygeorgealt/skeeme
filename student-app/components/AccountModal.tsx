@@ -599,7 +599,14 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
     const [isDeleting, setIsDeleting] = useState(false);
     
     // Internal Navigation View
+    const { accountModalView, toggleAccountModal } = useAuthStore();
     const [activeView, setActiveView] = useState<'main' | 'preferences' | 'support' | 'referral'>('main');
+
+    useEffect(() => {
+        if (visible) {
+            setActiveView(accountModalView);
+        }
+    }, [visible, accountModalView]);
 
     const bottomInset = insets.bottom ?? 0;
 
@@ -822,11 +829,11 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                                     icon={Bill}
                                     iconBg="#007AFF"
                                     label="Subscription"
-                                    value={user.plan_name === 'elite' || user.is_unlimited ? 'Skeeme Max' : user.plan_name === 'standard' ? 'Skeeme Pro' : 'Skeeme Free'}
-                                    isLast={user.plan_name === 'elite' || user.is_unlimited}
+                                    value={user.plan_name === 'max' || user.is_unlimited ? 'Skeeme Max' : user.plan_name === 'pro' ? 'Skeeme Pro' : 'Skeeme Free'}
+                                    isLast={user.plan_name === 'max' || user.is_unlimited}
                                     isDark={isDark}
                                 />
-                                {!(user.plan_name === 'elite' || user.is_unlimited) && (
+                                {user.plan_name === 'free' && (
                                     <SettingsRow
                                         icon={RoundArrowUp}
                                         iconBg="#FF9500"

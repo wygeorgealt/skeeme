@@ -146,7 +146,7 @@ export default function DashboardScreen() {
                             {user.is_unlimited ? '∞' : user.credits?.toLocaleString() ?? '0'}
                         </Text>
                     </View>
-                    {user.plan_name?.toLowerCase() !== 'elite' && (
+                    {user.plan_name === 'free' && (
                         <TouchableOpacity onPress={() => router.push('/paywall')} style={[s.upgradePill, { backgroundColor: C.primary }]}>
                             <RoundArrowUp size={14} color="#FFF" />
                             <Text style={s.upgradeText}>Upgrade</Text>

@@ -110,11 +110,16 @@ class User extends Authenticatable implements FilamentUser
     {
         return Attribute::make(
             get: function () {
-                if ($this->role !== 'student' || $this->getStudentPlan() !== 'free') {
-                    return null;
-                }
+                $plan = $this->getStudentPlan();
                 $lastRefill = $this->last_credit_refill_at ?? $this->created_at ?? now();
-                return \Carbon\Carbon::parse($lastRefill)->addHours(5)->ceilMinute(10)->toIso8601String();
+                
+                if ($plan === 'free') {
+                    return \Carbon\Carbon::parse($lastRefill)->addHours(5)->ceilMinute(10)->toIso8601String();
+                } elseif ($plan === 'pro' || $plan === 'max') {
+                    // Refills daily if empty
+                    return \Carbon\Carbon::parse($lastRefill)->addDay()->startOfDay()->toIso8601String();
+                }
+                return null;
             },
         );
     }
@@ -124,18 +129,30 @@ class User extends Authenticatable implements FilamentUser
      */
     public function checkAndRefillFreeCredits(): void
     {
-        if ($this->role !== 'student' || $this->getStudentPlan() !== 'free') {
+        if ($this->role !== 'student') {
             return;
         }
 
+        $plan = $this->getStudentPlan();
         $lastRefill = $this->last_credit_refill_at ?? $this->created_at ?? now();
-        $promisedRefillTime = \Carbon\Carbon::parse($lastRefill)->addHours(5)->ceilMinute(10);
-        
-        if (now()->greaterThanOrEqualTo($promisedRefillTime)) {
-            $this->update([
-                'credits' => max(100, $this->credits), // Top up back to 100
-                'last_credit_refill_at' => now(),
-            ]);
+
+        if ($plan === 'free') {
+            $promisedRefillTime = \Carbon\Carbon::parse($lastRefill)->addHours(5)->ceilMinute(10);
+            if (now()->greaterThanOrEqualTo($promisedRefillTime)) {
+                $this->update([
+                    'credits' => max(100, $this->credits), 
+                    'last_credit_refill_at' => now(),
+                ]);
+            }
+        } elseif (($plan === 'pro' || $plan === 'max') && $this->credits <= 0) {
+            // Pro/Max users get 1000 credits refill everyday if they run out
+            $nextAllowedRefill = \Carbon\Carbon::parse($lastRefill)->addDay()->startOfDay();
+            if (now()->greaterThanOrEqualTo($nextAllowedRefill)) {
+                $this->update([
+                    'credits' => 1000,
+                    'last_credit_refill_at' => now(),
+                ]);
+            }
         }
     }
 
@@ -216,7 +233,7 @@ class User extends Authenticatable implements FilamentUser
     public function getStudentPlan(): string
     {
         if ($this->is_unlimited_student) {
-            return 'elite';
+            return 'max';
         }
 
         $sub = \App\Models\IndividualSubscription::where('user_id', $this->id)
@@ -227,7 +244,9 @@ class User extends Authenticatable implements FilamentUser
 
         if (!$sub) return 'free';
 
-        return strtolower($sub->plan_name) === 'elite' ? 'elite' : 'standard';
+        $name = strtolower($sub->plan_name);
+        if ($name === 'elite' || $name === 'max') return 'max';
+        return 'pro';
     }
 
     /**

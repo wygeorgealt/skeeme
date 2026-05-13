@@ -6,7 +6,6 @@ import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { BlurView } from 'expo-blur';
-import ReferralModal from './ReferralModal';
 import Animated, { 
     FadeIn, 
     FadeOut, 
@@ -26,7 +25,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const user = useAuthStore((s) => s.user);
-    const [showReferral, setShowReferral] = React.useState(false);
+    const toggleAccountModal = useAuthStore((s) => s.toggleAccountModal);
     const [timeLeft, setTimeLeft] = React.useState('');
 
     // Log the event to backend
@@ -41,29 +40,6 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
     useEffect(() => {
         if (visible) logEvent();
     }, [visible]);
-
-    if (!visible) return null;
-
-    const handleUpgrade = () => {
-        onDismiss();
-        router.push('/paywall');
-    };
-
-    const handleShare = async () => {
-        try {
-            const res = await api.get('referral/my-code');
-            await Share.share({
-                message: res.data.share_text,
-            });
-        } catch {
-            await Share.share({
-                message: "I've been using Skeeme to study smarter — it builds quizzes and flashcards from my notes using AI. Download: https://skeeme.com/students",
-            });
-        }
-    };
-
-    let titleText = "You've been working hard.";
-    let descText = "You've used all your credits for now — that means you've been studying seriously. Keep the momentum going.";
 
     useEffect(() => {
         if (!user?.next_free_refill_at) return;
@@ -88,6 +64,32 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
     }, [user?.next_free_refill_at]);
 
     if (!visible) return null;
+
+    const handleUpgrade = () => {
+        onDismiss();
+        router.push('/paywall');
+    };
+
+    const handleShare = async () => {
+        try {
+            const res = await api.get('referral/my-code');
+            await Share.share({
+                message: res.data.share_text,
+            });
+        } catch {
+            await Share.share({
+                message: "I've been using Skeeme to study smarter — it builds quizzes and flashcards from my notes using AI. Download: https://skeeme.com/students",
+            });
+        }
+    };
+
+    let titleText = "You've been working hard.";
+    let descText = "You've used all your credits for now — that means you've been studying seriously. Keep the momentum going.";
+
+    if (user?.plan_name === 'pro' || user?.plan_name === 'max') {
+        titleText = "Credits Exhausted";
+        descText = "You've used your daily credits. Don't worry, your premium status gives you a 1,000 credit refill every day.";
+    }
 
     return (
         <Modal
@@ -151,28 +153,35 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
                         {/* Actions */}
                         <View style={styles.actions}>
-                            <TouchableOpacity
-                                onPress={handleUpgrade}
-                                activeOpacity={0.8}
-                                style={styles.primaryBtn}
-                            >
-                                <RoundArrowUp size={20} color="#FFFFFF" />
-                                <Text style={styles.primaryBtnText}>Upgrade to Pro</Text>
-                            </TouchableOpacity>
+                            {user?.plan_name !== 'max' && (
+                                <TouchableOpacity
+                                    onPress={handleUpgrade}
+                                    activeOpacity={0.8}
+                                    style={styles.primaryBtn}
+                                >
+                                    <RoundArrowUp size={20} color="#FFFFFF" />
+                                    <Text style={styles.primaryBtnText}>
+                                        {user?.plan_name === 'pro' ? 'Upgrade to Max' : 'Upgrade to Pro'}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
 
                             <TouchableOpacity
-                                onPress={() => setShowReferral(true)}
-                                activeOpacity={0.7}
-                                style={[styles.secondaryBtn, { borderColor: isDark ? '#3A3A3C' : '#E5E5EA' }]}
+                                onPress={() => {
+                                    onDismiss();
+                                    toggleAccountModal(true, 'referral');
+                                }}
+                                activeOpacity={0.8}
+                                style={user?.plan_name === 'max' ? styles.primaryBtn : [styles.secondaryBtn, { borderColor: isDark ? '#3A3A3C' : '#E5E5EA' }]}
                             >
-                                <Forward size={20} color={isDark ? '#FFFFFF' : '#000000'} />
-                                <Text style={[styles.secondaryBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>Earn more credits</Text>
+                                <Forward size={20} color={user?.plan_name === 'max' ? '#FFFFFF' : (isDark ? '#FFFFFF' : '#000000')} />
+                                <Text style={user?.plan_name === 'max' ? styles.primaryBtnText : [styles.secondaryBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                                    Earn more credits
+                                </Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </Animated.View>
-
-                <ReferralModal visible={showReferral} onDismiss={() => setShowReferral(false)} />
             </View>
         </Modal>
     );
