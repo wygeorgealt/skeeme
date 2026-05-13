@@ -8,6 +8,8 @@ import { api } from '@/lib/api';
 import { useEffect } from 'react';
 import { registerForPushNotificationsAsync } from '@/lib/notifications';
 import AccountModal from '@/components/AccountModal';
+import ClaimRewardModal from '@/components/ClaimRewardModal';
+import { useState } from 'react';
 
 import { Home, User, CameraAdd } from '@solar-icons/react-native/Bold';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, SharedValue } from 'react-native-reanimated';
@@ -220,6 +222,7 @@ export default function TabLayout() {
     const C = Colors[isDark ? 'dark' : 'light'];
     const { user, token, accountModalOpen, toggleAccountModal } = useAuthStore();
     const pathname = usePathname();
+    const [pendingReward, setPendingReward] = useState<{ total: number } | null>(null);
 
     useEffect(() => {
         // AI Personalization Guard — if logged in but no education level, force preferences
@@ -233,6 +236,13 @@ export default function TabLayout() {
         const timer = setTimeout(() => {
             if (token) {
                 registerForPushNotificationsAsync(token).catch(() => { });
+                
+                // Check for pending referral rewards
+                api.get('referral/pending-rewards').then(res => {
+                    if (res.data.total > 0) {
+                        setPendingReward({ total: res.data.total });
+                    }
+                }).catch(() => {});
             }
         }, 500);
         return () => clearTimeout(timer);
@@ -283,6 +293,13 @@ export default function TabLayout() {
 
             {/* Account Modal */}
             <AccountModal visible={accountModalOpen} onDismiss={() => toggleAccountModal(false)} />
+
+            {/* Claim Reward Modal */}
+            <ClaimRewardModal 
+                visible={pendingReward !== null} 
+                total={pendingReward?.total || 0}
+                onClaim={() => setPendingReward(null)}
+            />
         </>
     );
 }

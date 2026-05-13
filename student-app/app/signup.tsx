@@ -28,6 +28,7 @@ export default function SignupScreen() {
     const [nameError, setNameError] = useState('');
     const [emailError, setEmailError] = useState('');
     const [passwordError, setPasswordError] = useState('');
+    const [referralCode, setReferralCode] = useState('');
 
     const getPasswordStrength = () => {
         if (!password) return { label: '', color: 'transparent', pct: 0 };
@@ -62,6 +63,7 @@ export default function SignupScreen() {
                 ...(onboardingData?.dob_month && { dob_month: onboardingData.dob_month }),
                 ...(onboardingData?.dob_year && { dob_year: onboardingData.dob_year }),
                 ...(onboardingData?.age && { age: onboardingData.age }),
+                ...(referralCode.trim() && { referral_code: referralCode.trim() }),
             });
             posthog.capture('account_created');
             router.replace({ pathname: '/otp', params: { email: email.trim().toLowerCase(), type: 'verification' } });
@@ -140,6 +142,18 @@ export default function SignupScreen() {
                                 style={{ flex: 1 }}
                                 inputStyle={[s.groupedInput, { color: C.text }]}
                                 placeholder="Required"
+                            />
+                        </View>
+                        <View style={[s.separator, { backgroundColor: C.separator }]} />
+                        <View style={s.groupedRow}>
+                            <Text style={[s.groupedLabel, { color: C.text }]}>Promo</Text>
+                            <TextInput
+                                style={[s.groupedInput, { color: C.text }]}
+                                placeholder="Referral code (optional)"
+                                placeholderTextColor={C.textTertiary}
+                                autoCapitalize="characters"
+                                value={referralCode}
+                                onChangeText={setReferralCode}
                             />
                         </View>
                     </View>

@@ -41,71 +41,38 @@ export function TheoryCard({
     };
 
     return (
-        <View style={s.cardOuter}>
-            <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
-                {/* Header */}
-                <View style={[s.cardHeader, { borderBottomColor: C.separator }]}>
-                    <Text style={[s.qNum, { color: C.textTertiary }]}>Question {qi + 1}</Text>
-                    <View style={[s.diffBadge, { borderColor: C.separator }]}>
-                        <Text style={[s.diffText, { color: C.textSecondary }]}>
-                            {q.difficulty_level}
-                        </Text>
-                    </View>
-                </View>
-
-                <MathText
-                    content={q.question_text}
-                    color={C.text}
-                    fontSize={17}
-                    containerStyle={{ minHeight: 50, marginBottom: 8 }}
-                />
+        <View style={{ marginBottom: 20 }}>
+            {/* Header matches active quiz header logic if needed, but here we focus on content */}
+            <View style={{ marginBottom: 32, marginTop: 10 }}>
+                <Text style={{ fontSize: 28, fontWeight: '800', color: C.text, lineHeight: 38, letterSpacing: -0.5 }}>
+                    {q.question_text}
+                </Text>
+            </View>
 
                 {result ? (
-                    <View style={s.resultSection}>
-                        {(() => {
-                            const isVeryCorrect = result.score === result.max;
-                            const isPartiallyCorrect = result.score > 0 && result.score < result.max;
-                            const isWrong = result.score === 0;
-                            
-                            let label = isVeryCorrect ? 'Correct' : isPartiallyCorrect ? 'Almost there' : "You didn't get it";
-                            let color = isVeryCorrect ? '#34C759' : isPartiallyCorrect ? '#FF9500' : '#FF3B30';
-
-                            return (
-                                <View style={[s.scoreBox, { borderColor: color, backgroundColor: color + '10' }]}>
-                                    <View style={[s.scoreIconCircle, { backgroundColor: color }]}>
-                                        {isVeryCorrect ? (
-                                            <Star size={18} color="#fff" />
-                                        ) : (
-                                            <DangerTriangle size={18} color="#fff" />
-                                        )}
-                                    </View>
-                                    <View>
-                                        <Text style={[s.scoreText, { color: color }]}>{label}</Text>
-                                    </View>
-                                </View>
-                            );
-                        })()}
-
-                        <Text style={[s.sectionTitle, { color: C.textTertiary }]}>AI Feedback</Text>
-                        <View style={[s.feedbackBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC', borderColor: C.separator }]}>
+                    <View style={{ marginTop: 20 }}>
+                         {/* Results are now handled by the parent's bottom card for consistency in generate.tsx, 
+                             but we show a small status indicator here if needed or just the feedback */}
+                        <View style={[s.feedbackBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC', borderColor: C.separator, borderRadius: 24, padding: 20 }]}>
+                            <Text style={{ fontSize: 13, fontWeight: '800', color: C.textTertiary, textTransform: 'uppercase', marginBottom: 12 }}>Your Answer Assessment</Text>
                             <MathText
                                 content={result.feedback}
                                 color={C.textSecondary}
-                                fontSize={15}
+                                fontSize={16}
                             />
                         </View>
                     </View>
                 ) : (
-                    <View style={s.inputSection}>
+                    <View style={{ marginTop: 10 }}>
                         <TextInput
                             multiline
-                            placeholder="Write your answer..."
+                            placeholder="Type your detailed answer here..."
                             placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
                             value={answer}
                             onChangeText={setAnswer}
                             style={[
                                 s.textArea,
-                                { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC', borderColor: C.separator, color: C.text }
+                                { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC', borderColor: C.separator, color: C.text, borderRadius: 24 }
                             ]}
                             textAlignVertical="top"
                             editable={!grading}
@@ -115,21 +82,20 @@ export function TheoryCard({
                             onPress={handleSubmit}
                             disabled={grading || answer.trim().length === 0}
                             activeOpacity={0.8}
-                            style={[s.submitBtn, { backgroundColor: grading ? (isDark ? '#2C2C2E' : '#E5E5EA') : C.primary }]}
+                            style={[s.submitBtn, { backgroundColor: grading ? (isDark ? '#2C2C2E' : '#E5E5EA') : '#007AFF', borderRadius: 100, height: 64 }]}
                         >
                             {grading ? (
                                 <ActivityIndicator color={C.textTertiary} size="small" />
                             ) : (
                                 <>
-                                    <Stars size={18} color="#fff" />
-                                    <Text style={s.submitBtnText}>Mark Answer</Text>
+                                    <Stars size={20} color="#fff" />
+                                    <Text style={[s.submitBtnText, { fontSize: 18, fontWeight: '800' }]}>Grade Answer</Text>
                                 </>
                             )}
                         </TouchableOpacity>
                     </View>
                 )}
             </View>
-        </View>
     );
 }
 

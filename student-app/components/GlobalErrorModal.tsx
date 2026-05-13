@@ -1,7 +1,20 @@
 import { Text } from '@/components/ui/Text';
-import React from 'react';
-import { View, TouchableOpacity, useColorScheme, Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, TouchableOpacity, useColorScheme, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
 import { DangerTriangle } from '@solar-icons/react-native/Bold';
+import { BlurView } from 'expo-blur';
+import Animated, { 
+    useSharedValue, 
+    useAnimatedStyle, 
+    withSpring, 
+    withTiming,
+    FadeIn,
+    FadeOut,
+    SlideInDown,
+    SlideOutDown
+} from 'react-native-reanimated';
+
+const { width, height } = Dimensions.get('window');
 
 interface GlobalErrorModalProps {
     visible: boolean;
@@ -16,68 +29,129 @@ export default function GlobalErrorModal({ visible, error, onDismiss }: GlobalEr
     if (!visible) return null;
 
     return (
-        <View
-            style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                top: 0,
-                justifyContent: 'flex-end',
-                zIndex: 1000,
-            }}
+        <Modal
+            transparent
+            visible={visible}
+            animationType="none"
+            onRequestClose={onDismiss}
         >
-            {/* Backdrop */}
-            <TouchableOpacity
-                activeOpacity={1}
-                onPress={onDismiss}
-                style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
-            />
-
-            {/* Bottom Sheet */}
-            <View
-                style={{
-                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                    borderTopLeftRadius: 28,
-                    borderTopRightRadius: 28,
-                    paddingHorizontal: 24,
-                    paddingTop: 28,
-                    paddingBottom: Platform.OS === 'ios' ? 44 : 28,
-                }}
-            >
-                {/* Handle */}
-                <View style={{ width: 40, height: 4, backgroundColor: isDark ? '#3A3A3C' : '#E5E5EA', borderRadius: 2, alignSelf: 'center', marginBottom: 24 }} />
-
-                {/* Icon */}
-                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: isDark ? 'rgba(255, 59, 48, 0.2)' : 'rgba(255, 59, 48, 0.1)', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
-                    <DangerTriangle size={28} color="#FF3B30" />
-                </View>
-
-                {/* Copy */}
-                <Text style={{ color: isDark ? '#FFFFFF' : '#000000', fontSize: 22, fontWeight: '900', textAlign: 'center', marginBottom: 8 }}>
-                    Something went wrong
-                </Text>
-                <Text style={{ color: isDark ? '#8E8E93' : '#8E8E93', fontSize: 15, fontWeight: '500', textAlign: 'center', lineHeight: 22, marginBottom: 28, paddingHorizontal: 8 }}>
-                    {error || 'Skeeme is currently down. Please try again later.'}
-                </Text>
-
-                {/* Primary CTA */}
-                <TouchableOpacity
-                    onPress={onDismiss}
-                    activeOpacity={0.9}
-                    style={{
-                        backgroundColor: '#007AFF',
-                        height: 56,
-                        borderRadius: 20,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}
+            <View style={styles.container}>
+                {/* Backdrop with Blur */}
+                <Animated.View 
+                    entering={FadeIn} 
+                    exiting={FadeOut} 
+                    style={StyleSheet.absoluteFill}
                 >
-                    <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900' }}>
-                        Okay
-                    </Text>
-                </TouchableOpacity>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss}>
+                        <BlurView 
+                            intensity={25} 
+                            style={StyleSheet.absoluteFill} 
+                            tint={isDark ? 'dark' : 'light'} 
+                        />
+                        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)' }]} />
+                    </Pressable>
+                </Animated.View>
+
+                {/* The Actual Bottom Sheet */}
+                <Animated.View
+                    entering={SlideInDown.springify().damping(20).stiffness(150)}
+                    exiting={SlideOutDown}
+                    style={[
+                        styles.sheet,
+                        { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }
+                    ]}
+                >
+                    <View style={[styles.handle, { backgroundColor: isDark ? '#3A3A3C' : '#E5E5EA' }]} />
+
+                    <View style={styles.content}>
+                        <View style={[
+                            styles.iconBox, 
+                            { backgroundColor: isDark ? 'rgba(255, 59, 48, 0.15)' : 'rgba(255, 59, 48, 0.08)' }
+                        ]}>
+                            <DangerTriangle size={32} color="#FF3B30" />
+                        </View>
+
+                        <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                            Connection Error
+                        </Text>
+                        
+                        <Text style={styles.message}>
+                            {error || 'Skeeme is having trouble connecting to the servers. Please try again.'}
+                        </Text>
+
+                        <TouchableOpacity
+                            onPress={onDismiss}
+                            activeOpacity={0.8}
+                            style={styles.btn}
+                        >
+                            <Text style={styles.btnText}>Got it</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
             </View>
-        </View>
+        </Modal>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    sheet: {
+        width: width,
+        borderTopLeftRadius: 36,
+        borderTopRightRadius: 36,
+        paddingTop: 14,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 30,
+        // No shadows or extra borders to prevent "ghost cards"
+    },
+    handle: {
+        width: 40,
+        height: 5,
+        borderRadius: 2.5,
+        alignSelf: 'center',
+        marginBottom: 24,
+    },
+    content: {
+        paddingHorizontal: 24,
+        alignItems: 'center',
+    },
+    iconBox: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: '900',
+        textAlign: 'center',
+        marginBottom: 10,
+        letterSpacing: -0.5,
+    },
+    message: {
+        color: '#8E8E93',
+        fontSize: 16,
+        fontWeight: '500',
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 32,
+        paddingHorizontal: 10,
+    },
+    btn: {
+        backgroundColor: '#007AFF',
+        width: '100%',
+        height: 62,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    btnText: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: '800',
+    },
+});

@@ -1,15 +1,20 @@
 import { Text } from '@/components/ui/Text';
-import React, { useRef, useEffect } from 'react';
-import { View, TouchableOpacity, useColorScheme, Share, Platform } from 'react-native';
-import { RoundArrowUp, Forward } from '@solar-icons/react-native/Bold';
-
+import React, { useEffect } from 'react';
+import { View, TouchableOpacity, useColorScheme, Share, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
+import { RoundArrowUp, Forward, WalletMoney, Alarm } from '@solar-icons/react-native/Bold';
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
-import RevenueCatUI from 'react-native-purchases-ui';
 import { useAuthStore } from '@/store/authStore';
-import { Modal as ReanimatedModal } from 'react-native-reanimated-modal';
+import { BlurView } from 'expo-blur';
+import ReferralModal from './ReferralModal';
+import Animated, { 
+    FadeIn, 
+    FadeOut, 
+    SlideInDown, 
+    SlideOutDown 
+} from 'react-native-reanimated';
 
-
+const { width } = Dimensions.get('window');
 
 interface OutOfCreditsModalProps {
     visible: boolean;
@@ -20,6 +25,9 @@ interface OutOfCreditsModalProps {
 export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted }: OutOfCreditsModalProps) {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const user = useAuthStore((s) => s.user);
+    const [showReferral, setShowReferral] = React.useState(false);
+    const [timeLeft, setTimeLeft] = React.useState('');
 
     // Log the event to backend
     const logEvent = async () => {
@@ -30,7 +38,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
         }
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (visible) logEvent();
     }, [visible]);
 
@@ -41,7 +49,6 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
         router.push('/paywall');
     };
 
-
     const handleShare = async () => {
         try {
             const res = await api.get('referral/my-code');
@@ -49,129 +56,225 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                 message: res.data.share_text,
             });
         } catch {
-            // Fallback share without code
             await Share.share({
                 message: "I've been using Skeeme to study smarter — it builds quizzes and flashcards from my notes using AI. Download: https://skeeme.com/students",
             });
         }
     };
 
-    const user = useAuthStore((s) => s.user);
-
     let titleText = "You've been working hard.";
     let descText = "You've used all your credits for now — that means you've been studying seriously. Keep the momentum going.";
 
-    if (user?.next_free_refill_at) {
-        titleText = "Out of credits.";
-        try {
-            const date = new Date(user.next_free_refill_at);
-            const timeString = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-            descText = `You're out of free credits for now. They will renew by ${timeString}. Upgrade to Pro to keep going immediately!`;
-        } catch (e) {
-            // fallback if date parsing fails
-            descText = "You're out of free credits for now. They will renew soon. Upgrade to Pro to keep going immediately!";
-        }
-    }
+    useEffect(() => {
+        if (!user?.next_free_refill_at) return;
+
+        const timer = setInterval(() => {
+            const now = new Date().getTime();
+            const refillTime = user.next_free_refill_at ? new Date(user.next_free_refill_at).getTime() : 0;
+            const diff = refillTime - now;
+
+            if (diff <= 0) {
+                setTimeLeft('Now!');
+                clearInterval(timer);
+            } else {
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const secs = Math.floor((diff % (1000 * 60)) / 1000);
+                setTimeLeft(`${hours}h ${mins}m ${secs}s`);
+            }
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [user?.next_free_refill_at]);
+
+    if (!visible) return null;
 
     return (
-        <ReanimatedModal
+        <Modal
+            transparent
             visible={visible}
-            onHide={onDismiss}
-            animation={{
-                type: 'slide',
-                duration: 300,
-            }}
-            swipe={{
-                enabled: true,
-                directions: ['down'],
-                threshold: 80,
-            }}
-            contentContainerStyle={{
-                backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
-                borderTopLeftRadius: 40,
-                borderTopRightRadius: 40,
-                paddingHorizontal: 24,
-                paddingTop: 28,
-                paddingBottom: Platform.OS === 'ios' ? 44 : 28,
-            }}
+            animationType="none"
+            onRequestClose={onDismiss}
         >
-            {/* Handle */}
-            <View style={{ width: 40, height: 4, backgroundColor: isDark ? '#475569' : '#CBD5E1', borderRadius: 2, alignSelf: 'center', marginBottom: 24 }} />
-
-                {/* Icon */}
-                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF620', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 }}>
-                    <RoundArrowUp size={28} color="#8B5CF6" />
-
-                </View>
-
-                {/* Copy */}
-                <Text style={{ color: isDark ? '#F1F5F9' : '#0F172A', fontSize: 22, fontWeight: '900', textAlign: 'center', marginBottom: 8 }}>
-                    {titleText}
-                </Text>
-                <Text style={{ color: isDark ? '#94A3B8' : '#64748B', fontSize: 15, fontWeight: '500', textAlign: 'center', lineHeight: 22, marginBottom: 28, paddingHorizontal: 8 }}>
-                    {descText}
-                </Text>
-
-                {/* Primary CTA */}
-                <TouchableOpacity
-                    onPress={handleUpgrade}
-                    activeOpacity={0.9}
-                    style={{
-                        backgroundColor: '#8B5CF6',
-                        height: 56,
-                        borderRadius: 20,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: 12,
-                    }}
+            <View style={styles.container}>
+                {/* Backdrop */}
+                <Animated.View 
+                    entering={FadeIn} 
+                    exiting={FadeOut} 
+                    style={StyleSheet.absoluteFill}
                 >
-                    <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900' }}>
-                        Upgrade to keep going →
-                    </Text>
-                </TouchableOpacity>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss}>
+                        <BlurView 
+                            intensity={25} 
+                            style={StyleSheet.absoluteFill} 
+                            tint={isDark ? 'dark' : 'light'} 
+                        />
+                        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)' }]} />
+                    </Pressable>
+                </Animated.View>
 
-                {/* Secondary CTAs */}
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                    <TouchableOpacity
-                        onPress={handleUpgrade}
-                        activeOpacity={0.8}
-                        style={{
-                            flex: 1,
-                            height: 48,
-                            borderRadius: 16,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: isDark ? '#334155' : '#F1F5F9',
-                        }}
-                    >
-                        <Text style={{ color: isDark ? '#CBD5E1' : '#475569', fontSize: 13, fontWeight: '700' }}>
-                            View plans
+                {/* Bottom Sheet */}
+                <Animated.View
+                    entering={SlideInDown.springify().damping(20).stiffness(150)}
+                    exiting={SlideOutDown}
+                    style={[
+                        styles.sheet,
+                        { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }
+                    ]}
+                >
+                    <View style={[styles.handle, { backgroundColor: isDark ? '#3A3A3C' : '#E5E5EA' }]} />
+
+                    <View style={styles.content}>
+                        <View style={[
+                            styles.iconWrapper, 
+                            { backgroundColor: isDark ? 'rgba(0, 122, 255, 0.15)' : 'rgba(0, 122, 255, 0.08)' }
+                        ]}>
+                            <WalletMoney size={32} color="#007AFF" />
+                        </View>
+
+                        <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                            {titleText}
                         </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={handleShare}
-                        activeOpacity={0.8}
-                        style={{
-                            flex: 1,
-                            height: 48,
-                            borderRadius: 16,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: isDark ? '#334155' : '#F1F5F9',
-                            flexDirection: 'row',
-                            gap: 6,
-                        }}
-                    >
-                        <Forward size={16} color={isDark ? '#CBD5E1' : '#475569'} />
-                        <Text style={{ color: isDark ? '#CBD5E1' : '#475569', fontSize: 13, fontWeight: '700' }}>
-                            Refer a friend
+                        
+                        <Text style={styles.message}>
+                            {descText}
                         </Text>
-                    </TouchableOpacity>
-                </View>
 
-                {/* No 'I'll study later' — user must upgrade to continue */}
-                <View style={{ height: 24 }} />
-        </ReanimatedModal>
+                        {/* Refill Timer UI */}
+                        {user?.next_free_refill_at && (
+                            <View style={[styles.timerBox, { backgroundColor: isDark ? 'rgba(52, 199, 89, 0.1)' : 'rgba(52, 199, 89, 0.05)' }]}>
+                                <Alarm size={18} color="#34C759" />
+                                <Text style={styles.timerLabel}>REFILL IN: </Text>
+                                <Text style={styles.timerValue}>{timeLeft || '--:--:--'}</Text>
+                            </View>
+                        )}
+
+                        {/* Actions */}
+                        <View style={styles.actions}>
+                            <TouchableOpacity
+                                onPress={handleUpgrade}
+                                activeOpacity={0.8}
+                                style={styles.primaryBtn}
+                            >
+                                <RoundArrowUp size={20} color="#FFFFFF" />
+                                <Text style={styles.primaryBtnText}>Upgrade to Pro</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => setShowReferral(true)}
+                                activeOpacity={0.7}
+                                style={[styles.secondaryBtn, { borderColor: isDark ? '#3A3A3C' : '#E5E5EA' }]}
+                            >
+                                <Forward size={20} color={isDark ? '#FFFFFF' : '#000000'} />
+                                <Text style={[styles.secondaryBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>Earn more credits</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Animated.View>
+
+                <ReferralModal visible={showReferral} onDismiss={() => setShowReferral(false)} />
+            </View>
+        </Modal>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    sheet: {
+        width: width,
+        borderTopLeftRadius: 36,
+        borderTopRightRadius: 36,
+        paddingTop: 14,
+        paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+    },
+    handle: {
+        width: 40,
+        height: 5,
+        borderRadius: 2.5,
+        alignSelf: 'center',
+        marginBottom: 24,
+    },
+    content: {
+        paddingHorizontal: 24,
+        alignItems: 'center',
+    },
+    iconWrapper: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: '900',
+        textAlign: 'center',
+        marginBottom: 10,
+        letterSpacing: -0.5,
+    },
+    message: {
+        color: '#8E8E93',
+        fontSize: 16,
+        fontWeight: '500',
+        textAlign: 'center',
+        lineHeight: 24,
+        marginBottom: 32,
+        paddingHorizontal: 8,
+    },
+    actions: {
+        width: '100%',
+        gap: 12,
+    },
+    primaryBtn: {
+        backgroundColor: '#007AFF',
+        width: '100%',
+        height: 64,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+    },
+    primaryBtnText: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: '800',
+    },
+    secondaryBtn: {
+        width: '100%',
+        height: 64,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        borderWidth: 1,
+    },
+    secondaryBtnText: {
+        fontSize: 17,
+        fontWeight: '700',
+    },
+    timerBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        marginBottom: 32,
+    },
+    timerLabel: {
+        fontSize: 12,
+        fontWeight: '800',
+        color: '#34C759',
+        marginLeft: 8,
+    },
+    timerValue: {
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#34C759',
+    },
+});

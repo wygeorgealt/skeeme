@@ -22,6 +22,7 @@ import { MCQCard } from '@/components/quiz/MCQCard';
 import { TheoryCard } from '@/components/quiz/TheoryCard';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { QuizCelebration } from '@/components/quiz/QuizCelebration';
 
 import {
     Leaf,
@@ -107,6 +108,7 @@ export default function GenerateQuizScreen() {
     const [theoryResults, setTheoryResults] = useState<Record<number, boolean>>({});
     const [currentQIndex, setCurrentQIndex] = useState(0);
     const [isRevealed, setIsRevealed] = useState(false);
+    const [isCelebration, setIsCelebration] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const viewShotRef = useRef<View>(null);
 
@@ -123,6 +125,11 @@ export default function GenerateQuizScreen() {
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
     const [creditRefreshKey, setCreditRefreshKey] = useState(0);
     const [explanationQ, setExplanationQ] = useState<{ q: Question; qi: number; isCorrect: boolean } | null>(null);
+
+    // Score calculations
+    const correctCount = Object.entries(selectedAnswers).filter(([qi, ans]) => questions[+qi]?.correct_answer === ans).length
+        + Object.values(theoryResults).filter(Boolean).length;
+    const percentage = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
 
     // Read topic from scan route param
     const params = useLocalSearchParams<{ topic?: string }>();
@@ -396,8 +403,6 @@ export default function GenerateQuizScreen() {
     const mcqAnswered = Object.keys(selectedAnswers).length;
     const theoryAnswered = Object.keys(theoryResults).length;
     const totalAnswered = mcqAnswered + theoryAnswered;
-    const correctCount = Object.entries(selectedAnswers).filter(([qi, ans]) => questions[+qi]?.correct_answer === ans).length
-        + Object.values(theoryResults).filter(Boolean).length;
 
     const saveHistory = useCallback(async () => {
         if (questions.length === 0 || totalAnswered !== questions.length || isSaved || isSavingHistory) return;
@@ -616,6 +621,14 @@ export default function GenerateQuizScreen() {
                             );
                         })}
                     </View>
+
+                    {/* Debug Tool */}
+                    <TouchableOpacity
+                        onPress={() => setShowOutOfCredits(true)}
+                        style={{ marginTop: 20, marginBottom: 40, height: 50, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
+                    >
+                        <Text style={{ color: C.textSecondary, fontWeight: '700', fontSize: 13 }}>Debug: Test Credits Modal</Text>
+                    </TouchableOpacity>
                 </ScrollView>
 
                 {/* Sticky Footer */}
@@ -674,11 +687,39 @@ export default function GenerateQuizScreen() {
                 // Reveal the answer logic for MCQ
                 setIsRevealed(true);
             } else {
-                // Move to next question
-                setIsRevealed(false);
-                setCurrentQIndex(p => p + 1);
+                // Move to next question or finish
+                if (currentQIndex === questions.length - 1) {
+                    setIsCelebration(true);
+                } else {
+                    setIsRevealed(false);
+                    setCurrentQIndex(p => p + 1);
+                }
             }
         };
+
+        const handleRetake = () => {
+            haptics.impactAsync();
+            setSelectedAnswers({});
+            setTheoryResults({});
+            setCurrentQIndex(0);
+            setIsRevealed(false);
+            setIsCelebration(false);
+            if (timerEnabled) startTimer(parseInt(timerMinutes));
+        };
+
+        if (isCelebration) {
+            return (
+                <QuizCelebration 
+                    score={percentage}
+                    isDark={isDark}
+                    onShowResults={() => {
+                        setIsCelebration(false);
+                        setCurrentQIndex(questions.length); // Trigger results view
+                    }}
+                    onRetake={handleRetake}
+                />
+            );
+        }
 
         return (
             <View style={{ flex: 1, backgroundColor: 'transparent' }}>
@@ -690,22 +731,25 @@ export default function GenerateQuizScreen() {
                 </View>
 
                 {/* Progress Text overlay */}
-                <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        Question {currentQIndex + 1} of {questions.length}
+                <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#8E8E93', letterSpacing: -0.2 }}>
+                        Q {currentQIndex + 1}/{questions.length}
                     </Text>
                     
                     {timerEnabled && timeLeft > 0 && (
-                        <Text style={[{ fontSize: 13, fontWeight: '700' }, timeLeft < 60 ? { color: '#FF3B30' } : { color: '#8E8E93' }]}>
-                            {formatTime(timeLeft)}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? 'rgba(255,59,48,0.1)' : '#FFF5F5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 }}>
+                            <Stopwatch size={14} color={timeLeft < 60 ? '#FF3B30' : '#8E8E93'} />
+                            <Text style={[{ fontSize: 13, fontWeight: '700', marginLeft: 4 }, timeLeft < 60 ? { color: '#FF3B30' } : { color: '#8E8E93' }]}>
+                                {formatTime(timeLeft)}
+                            </Text>
+                        </View>
                     )}
                 </View>
 
-                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 180 }} showsVerticalScrollIndicator={false}>
-                    {/* Centered Large Question Card */}
-                    <View style={{ backgroundColor: C.card, borderRadius: 16, padding: 24, marginBottom: 32, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 16, elevation: 4 }}>
-                        <Text style={{ fontSize: 22, fontWeight: '700', color: C.text, lineHeight: 32, textAlign: 'center' }}>
+                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 220 }} showsVerticalScrollIndicator={false}>
+                    {/* Large Question Typography */}
+                    <View style={{ marginBottom: 40, marginTop: 10 }}>
+                        <Text style={{ fontSize: 32, fontWeight: '800', color: C.text, lineHeight: 42, letterSpacing: -0.5 }}>
                             {q.question_text}
                         </Text>
                     </View>
@@ -758,16 +802,16 @@ export default function GenerateQuizScreen() {
                                             }
                                         }}
                                         style={{
-                                            flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 20,
+                                            flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 100,
                                             backgroundColor: bgColor, borderWidth: 1, borderColor: borderColor,
-                                            shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2
+                                            minHeight: 64, marginBottom: 4
                                         }}
                                     >
-                                        <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: letterBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                                            <Text style={{ fontSize: 13, fontWeight: '800', color: letterColor }}>{letter}</Text>
+                                        <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: letterBg, alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                            <Text style={{ fontSize: 15, fontWeight: '800', color: letterColor }}>{letter}</Text>
                                         </View>
-                                        <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: textColor }}>{opt}</Text>
-                                        {icon}
+                                        <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: textColor }}>{opt}</Text>
+                                        <View style={{ marginRight: 8 }}>{icon}</View>
                                     </TouchableOpacity>
                                 );
                             })}
@@ -809,33 +853,70 @@ export default function GenerateQuizScreen() {
                     )}
                 </ScrollView>
 
-                {/* Sticky Active Quiz Next Button */}
+                {/* Redesigned Feedback Card & Next Button */}
                 <BlurView 
-                    intensity={50} 
+                    intensity={80} 
                     tint={isDark ? 'dark' : 'light'} 
                     style={{ 
                         position: 'absolute', 
                         bottom: 0, 
                         left: 0, 
                         right: 0, 
-                        paddingHorizontal: 24, 
-                        paddingTop: 16, 
-                        paddingBottom: Math.max(insets.bottom, 16) + 75, 
-                        borderTopWidth: 0, 
-                        backgroundColor: 'transparent'
+                        paddingHorizontal: 20, 
+                        paddingTop: 20, 
+                        paddingBottom: Math.max(insets.bottom, 20),
+                        borderTopLeftRadius: 32,
+                        borderTopRightRadius: 32,
+                        backgroundColor: isDark ? 'rgba(30,30,30,0.8)' : 'rgba(255,255,255,0.9)',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: -10 },
+                        shadowOpacity: 0.05,
+                        shadowRadius: 20,
+                        elevation: 20
                     }}
                 >
+                    {isRevealed && (() => {
+                        const isCorrect = selectedAnswers[currentQIndex] === q.correct_answer;
+                        let rawExpl = isCorrect ? (q.explanation_right || q.explanation) : (q.explanation_wrong || q.explanation);
+                        let cleanExpl = rawExpl || `The correct answer is: ${q.correct_answer}.`;
+                        
+                        if (!q.explanation_right && !q.explanation_wrong) {
+                            cleanExpl = cleanExpl.replace(/^(correct|perfect|yes|exactly|that is correct|right|spot on|exactly right|that's right|that's correct|you're right|exactly correct|spot on|correct answer|the correct answer is)[,!\.]?\s*/i, '');
+                            cleanExpl = cleanExpl.charAt(0).toUpperCase() + cleanExpl.slice(1);
+                        }
+
+                        return (
+                            <View style={{ marginBottom: 20 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                                    <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: isCorrect ? 'rgba(52,199,89,0.1)' : 'rgba(255,59,48,0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Lightbulb size={18} color={isCorrect ? '#34C759' : '#FF3B30'} />
+                                    </View>
+                                    <Text style={{ marginLeft: 10, fontSize: 18, fontWeight: '800', color: C.text }}>
+                                        {isCorrect ? 'Spot on! 🎉' : 'Keep going! 🚀'}
+                                    </Text>
+                                </View>
+                                <Text style={{ fontSize: 15, color: C.textSecondary, lineHeight: 22, fontWeight: '500' }}>
+                                    {cleanExpl}
+                                </Text>
+                            </View>
+                        );
+                    })()}
+
                     <TouchableOpacity
                         disabled={!hasSelectedAction}
                         onPress={handleNextPress}
                         activeOpacity={0.8}
                         style={{
-                            width: '100%', height: 56, borderRadius: 100, 
+                            width: '100%', height: 64, borderRadius: 100, 
                             backgroundColor: hasSelectedAction ? '#007AFF' : (isDark ? '#2C2C2E' : '#E5E5EA'),
-                            alignItems: 'center', justifyContent: 'center'
+                            alignItems: 'center', justifyContent: 'center',
+                            shadowColor: '#007AFF',
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: hasSelectedAction ? 0.3 : 0,
+                            shadowRadius: 12,
                         }}
                     >
-                        <Text style={{ color: hasSelectedAction ? 'white' : '#8E8E93', fontWeight: '700', fontSize: 16, letterSpacing: -0.2 }}>
+                        <Text style={{ color: hasSelectedAction ? 'white' : '#8E8E93', fontWeight: '800', fontSize: 18, letterSpacing: -0.2 }}>
                             {isTheory ? (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question') : (!isRevealed ? 'Check Answer' : (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question'))}
                         </Text>
                     </TouchableOpacity>
@@ -845,7 +926,6 @@ export default function GenerateQuizScreen() {
     }
 
     // ── RESULTS VIEW ────────────────────────────────────────────────────────────
-    const percentage = Math.round((correctCount / questions.length) * 100);
     const getRemark = (pct: number) => {
         if (pct >= 90) return { title: "GENIUS!", subtitle: "You've completely mastered this topic!", icon: CupStar };
         if (pct >= 75) return { title: "WELL DONE!", subtitle: "Excellent performance, keep it up!", icon: CheckCircle };

@@ -49,6 +49,8 @@ import { Modal as ReanimatedModal } from 'react-native-reanimated-modal';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import PreferencesModal from './PreferencesModal';
 import SupportModal from './SupportModal';
+import ReferralModal from './ReferralModal';
+import { CupStar } from '@solar-icons/react-native/Bold';
 
 
 
@@ -469,6 +471,7 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
     
     // Internal Navigation View
     const [activeView, setActiveView] = useState<'main' | 'preferences' | 'support'>('main');
+    const [showReferral, setShowReferral] = useState(false);
 
     const bottomInset = insets.bottom ?? 0;
 
@@ -692,18 +695,28 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                                     iconBg="#007AFF"
                                     label="Subscription"
                                     value={user.plan_name === 'elite' || user.is_unlimited ? 'Skeeme Max' : user.plan_name === 'standard' ? 'Skeeme Pro' : 'Skeeme Free'}
+                                    isLast={user.plan_name === 'elite' || user.is_unlimited}
                                     isDark={isDark}
                                 />
+                                {!(user.plan_name === 'elite' || user.is_unlimited) && (
+                                    <SettingsRow
+                                        icon={RoundArrowUp}
+                                        iconBg="#FF9500"
+                                        label="Upgrade"
+                                        onPress={() => {
+                                            try {
+                                                onDismiss();
+                                                router.push('/paywall');
+                                            } catch {}
+                                        }}
+                                        isDark={isDark}
+                                    />
+                                )}
                                 <SettingsRow
-                                    icon={RoundArrowUp}
-                                    iconBg="#FF9500"
-                                    label="Upgrade"
-                                    onPress={() => {
-                                        try {
-                                            onDismiss();
-                                            router.push('/paywall');
-                                        } catch {}
-                                    }}
+                                    icon={CupStar}
+                                    iconBg="#34C759"
+                                    label="Refer a Friend"
+                                    onPress={() => setShowReferral(true)}
                                     isLast
                                     isDark={isDark}
                                 />
@@ -831,6 +844,11 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                 {activeView === 'preferences' && <PreferencesView onBack={() => setActiveView('main')} />}
                 {activeView === 'support' && <SupportView onBack={() => setActiveView('main')} />}
             </ReanimatedModal>
+
+            <ReferralModal 
+                visible={showReferral} 
+                onDismiss={() => setShowReferral(false)} 
+            />
         </>
     );
 }

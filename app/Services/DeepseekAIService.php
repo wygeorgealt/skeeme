@@ -475,6 +475,7 @@ SYSTEM;
                         // We forward chunk to caller; caller can concatenate.
                         $onChunk($decoded);
                     }
+                }
             }
         } catch (\Exception $e) {
             throw $this->handleApiException($e, 'Image Stream Solve');
