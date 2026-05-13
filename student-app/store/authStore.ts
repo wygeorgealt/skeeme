@@ -36,9 +36,10 @@ interface AuthState {
     // Global Error
     globalError: string | null;
     setGlobalError: (error: string | null) => void;
-    // Account Modal
     accountModalOpen: boolean;
     toggleAccountModal: (show: boolean) => void;
+    notificationsEnabled: boolean;
+    setNotificationsEnabled: (enabled: boolean) => Promise<void>;
 }
 
 // Secure storage for sensitive data (tokens)
@@ -118,6 +119,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     hapticsEnabled: true,
     globalError: null,
     accountModalOpen: false,
+    notificationsEnabled: true,
 
     setGlobalError: (error) => set({ globalError: error }),
 
@@ -166,6 +168,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ hapticsEnabled: enabled });
         try {
             await standardStorage.setItem('haptics_enabled', String(enabled));
+        } catch (e) {}
+    },
+
+    setNotificationsEnabled: async (enabled: boolean) => {
+        set({ notificationsEnabled: enabled });
+        try {
+            await standardStorage.setItem('notifications_enabled', String(enabled));
         } catch (e) {}
     },
 
@@ -261,6 +270,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     user, 
                     theme: themeStr || 'system', 
                     hapticsEnabled: haptics === null ? true : haptics === 'true',
+                    notificationsEnabled: (await standardStorage.getItem('notifications_enabled')) !== 'false',
                     onboardingComplete: true, 
                     isLoading: false 
                 });
@@ -309,6 +319,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 set({
                     theme: themeStr || 'system',
                     hapticsEnabled: haptics === null ? true : haptics === 'true',
+                    notificationsEnabled: (await standardStorage.getItem('notifications_enabled')) !== 'false',
                     onboardingComplete: obComplete === 'true',
                     onboardingStep: obStep ? parseInt(obStep, 10) : 0,
                     onboardingData: obData ? JSON.parse(obData) : {},

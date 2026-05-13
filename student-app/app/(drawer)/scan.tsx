@@ -63,6 +63,7 @@ export default function ScanScreen() {
     const [progressPercent, setProgressPercent] = useState(0);
 
     const esRef = useRef<(() => void) | null>(null);
+    const hapticFiredRef = useRef(false);
 
     const pulseAnim = useSharedValue(0.4);
 
@@ -129,7 +130,6 @@ export default function ScanScreen() {
     const handleCapture = async () => {
         if (!cameraRef.current) return;
         try {
-            haptics.impactAsync();
             const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
 
             if (photo) {
@@ -186,6 +186,7 @@ export default function ScanScreen() {
         setLoading(true);
         setLoadingStage('Analyzing image...');
         setProgressPercent(10);
+        hapticFiredRef.current = false;
 
         if (esRef.current) {
             esRef.current();
@@ -197,9 +198,17 @@ export default function ScanScreen() {
             let finalResults: ScanResult[] = [];
 
             const cleanup = scannerService.streamSolve(targetBase64, {
+                onStatus: (message) => {
+                    setLoadingStage(message);
+                },
                 onDelta: (partialResults) => {
+                    if (!hapticFiredRef.current && partialResults.length > 0) {
+                        hapticFiredRef.current = true;
+                        haptics.impactAsync('medium' as any, true);
+                    }
                     finalResults = partialResults;
                     setResults(partialResults);
+                    setLoadingStage('Generating answer...');
                 },
                 onFullResult: (fullResults) => {
                     finalResults = fullResults;
@@ -238,7 +247,6 @@ export default function ScanScreen() {
 
     const handleCopy = async (text: string) => {
         await Clipboard.setStringAsync(text);
-        haptics.notificationAsync('success' as any);
     };
 
     const handleExport = async () => {
@@ -271,6 +279,7 @@ export default function ScanScreen() {
         setImageUri(null);
         setImageBase64(null);
         setResults([]);
+        hapticFiredRef.current = false;
     };
 
     const [enableTorch, setEnableTorch] = useState(false);
@@ -449,7 +458,6 @@ export default function ScanScreen() {
                                             <View style={s.feedbackBtns}>
                                                 <TouchableOpacity
                                                     onPress={() => {
-                                                        haptics.notificationAsync('success' as any);
                                                         setFeedback(prev => ({ ...prev, [index]: 'helpful' }));
                                                     }}
                                                     activeOpacity={0.7}
@@ -460,7 +468,6 @@ export default function ScanScreen() {
                                                 </TouchableOpacity>
                                                 <TouchableOpacity
                                                     onPress={() => {
-                                                        haptics.notificationAsync('warning' as any);
                                                         setFeedback(prev => ({ ...prev, [index]: 'unhelpful' }));
                                                     }}
                                                     activeOpacity={0.7}

@@ -10,8 +10,13 @@ import {
     Image,
     StyleSheet,
     Switch,
+    KeyboardAvoidingView,
+    Dimensions,
 } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
 import * as WebBrowser from 'expo-web-browser';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
@@ -28,11 +33,22 @@ import {
     DocumentText,
     Logout,
     TrashBinTrash,
+    CloseCircle,
+    Gallery,
+    Letter,
+    Diploma,
+    Notebook,
+    MedalRibbonsStar,
+    Case,
+    LightbulbBolt,
 } from '@solar-icons/react-native/Bold';
 import { Colors, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
 import { Modal } from 'react-native';
 import { Modal as ReanimatedModal } from 'react-native-reanimated-modal';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import PreferencesModal from './PreferencesModal';
+import SupportModal from './SupportModal';
 
 
 
@@ -50,19 +66,6 @@ const s = StyleSheet.create({
     },
     avatarImg: { width: '100%', height: '100%' },
     avatarInitial: { fontSize: 36, fontWeight: '700' },
-    editBadge: {
-        position: 'absolute',
-        bottom: -4,
-        right: -4,
-        backgroundColor: '#007AFF',
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: '#FFF',
-    },
     profileName: { fontSize: 24, fontWeight: '700', marginBottom: 4, letterSpacing: -0.5 },
     profileEmail: { fontSize: 15 },
     row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingRight: 16 },
@@ -158,6 +161,294 @@ function GroupedCard({ children, isDark }: { children: React.ReactNode; isDark: 
     );
 }
 
+const LEVELS = [
+    { key: 'high_school',   label: 'High School',      Icon: Diploma },
+    { key: 'undergraduate', label: 'Undergraduate',     Icon: Notebook },
+    { key: 'masters',       label: 'Masters / Graduate', Icon: MedalRibbonsStar },
+    { key: 'professional',  label: 'Professional',       Icon: Case },
+];
+
+const STYLES = [
+    { key: 'simple',   label: 'Simple & Easy', desc: 'Everyday language, no jargon',    Icon: LightbulbBolt },
+    { key: 'detailed', label: 'Detailed',       desc: 'In-depth academic breakdowns',    Icon: DocumentText },
+] as const;
+
+function PreferencesView({ onBack }: { onBack: () => void }) {
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
+    const { user, updateUser } = useAuthStore();
+    const prefs = user?.ai_preferences;
+
+    const [level, setLevel] = useState<string>(prefs?.education_level || '');
+    const [field, setField] = useState<string>(prefs?.field_of_study || '');
+    const [style, setStyle] = useState<string>(prefs?.learning_style || '');
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        if (prefs) {
+            setLevel(prefs.education_level || '');
+            setField(prefs.field_of_study || '');
+            setStyle(prefs.learning_style || '');
+        }
+    }, [prefs]);
+
+    const insets = useSafeAreaInsets();
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const res = await api.post('preferences', {
+                education_level: level || null,
+                field_of_study: field.trim() || null,
+                learning_style: style || null,
+            });
+            updateUser({ ai_preferences: res.data.ai_preferences });
+            Alert.alert('Success', 'Preferences updated successfully.');
+            onBack();
+        } catch (error: any) {
+            const msg = error.response?.data?.message || 'Failed to update preferences.';
+            Alert.alert('Error', msg);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const iconBg = isDark ? 'rgba(0,122,255,0.15)' : '#EBF3FF';
+
+    return (
+        <View style={{ flex: 1 }}>
+            <ScrollView 
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 140 }} 
+                showsVerticalScrollIndicator={false}
+            >
+                <Animated.View entering={FadeInDown.duration(300)}>
+                    <Text style={{ fontSize: 24, fontWeight: '800', color: C.text, marginBottom: 8, letterSpacing: -0.5 }}>Personalization</Text>
+                    <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 24 }}>Tailor your AI experience to match your academic level and learning preferences.</Text>
+
+                    <Text style={{ fontSize: 11, fontWeight: '700', textTransform: 'uppercase', color: C.textTertiary, letterSpacing: 1.2, marginBottom: 10, marginLeft: 4 }}>ACADEMIC LEVEL</Text>
+                    <GroupedCard isDark={isDark}>
+                        {LEVELS.map((item, index) => {
+                            const isSelected = level === item.key;
+                            const isLast = index === LEVELS.length - 1;
+                            return (
+                                <TouchableOpacity
+                                    key={item.key}
+                                    onPress={() => setLevel(isSelected ? '' : item.key)}
+                                    activeOpacity={0.7}
+                                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingRight: 16, borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth, borderBottomColor: C.separator }}
+                                >
+                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                        <item.Icon size={20} color="#007AFF" />
+                                    </View>
+                                    <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: C.text }}>{item.label}</Text>
+                                    {isSelected && <CheckCircle size={22} color="#007AFF" />}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </GroupedCard>
+
+                    <Text style={{ fontSize: 11, fontWeight: '700', textTransform: 'uppercase', color: C.textTertiary, letterSpacing: 1.2, marginBottom: 10, marginLeft: 4 }}>FIELD OF STUDY</Text>
+                    <GroupedCard isDark={isDark}>
+                        <View style={{ paddingVertical: 8, paddingRight: 16 }}>
+                            <TextInput
+                                value={field}
+                                onChangeText={setField}
+                                placeholder="E.g. Computer Science, Medicine..."
+                                placeholderTextColor={C.textTertiary}
+                                style={{ height: 48, color: C.text, fontSize: 16, fontWeight: '500' }}
+                            />
+                        </View>
+                    </GroupedCard>
+
+                    <Text style={{ fontSize: 11, fontWeight: '700', textTransform: 'uppercase', color: C.textTertiary, letterSpacing: 1.2, marginBottom: 10, marginLeft: 4 }}>LEARNING STYLE</Text>
+                    <GroupedCard isDark={isDark}>
+                        {STYLES.map((item, index) => {
+                            const isSelected = style === item.key;
+                            const isLast = index === STYLES.length - 1;
+                            return (
+                                <TouchableOpacity
+                                    key={item.key}
+                                    onPress={() => setStyle(isSelected ? '' : item.key)}
+                                    activeOpacity={0.7}
+                                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingRight: 16, borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth, borderBottomColor: C.separator }}
+                                >
+                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                        <item.Icon size={20} color="#007AFF" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 16, fontWeight: '600', color: C.text }}>{item.label}</Text>
+                                        <Text style={{ fontSize: 13, color: C.textSecondary, marginTop: 2 }}>{item.desc}</Text>
+                                    </View>
+                                    {isSelected && <CheckCircle size={22} color="#007AFF" />}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </GroupedCard>
+                </Animated.View>
+            </ScrollView>
+
+            <BlurView
+                intensity={50}
+                tint={isDark ? 'dark' : 'light'}
+                style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    paddingHorizontal: 20,
+                    paddingTop: 16,
+                    paddingBottom: Math.max(insets.bottom, 16) + 16,
+                    backgroundColor: 'transparent',
+                }}
+            >
+                <TouchableOpacity
+                    onPress={handleSave}
+                    disabled={isSaving}
+                    activeOpacity={0.8}
+                    style={{ 
+                        height: 56, 
+                        backgroundColor: C.primary, 
+                        borderRadius: 28, 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        shadowColor: C.primary,
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 12,
+                        elevation: 6
+                    }}
+                >
+                    {isSaving ? <LoadingSpinner size={24} color="#FFF" /> : <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '700' }}>Save Preferences</Text>}
+                </TouchableOpacity>
+            </BlurView>
+        </View>
+    );
+}
+
+function SupportView({ onBack }: { onBack: () => void }) {
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
+    const { user } = useAuthStore();
+    const [message, setMessage] = useState('');
+    const [screenshot, setScreenshot] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const insets = useSafeAreaInsets();
+
+    const pickImage = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.7,
+        });
+        if (!result.canceled && result.assets[0]) {
+            setScreenshot(result.assets[0].uri);
+        }
+    };
+
+    const handleSubmit = async () => {
+        if (!message.trim()) return Alert.alert('Required', 'Please describe the issue.');
+        setIsSubmitting(true);
+        try {
+            const formData = new FormData();
+            formData.append('message', message.trim());
+            if (screenshot) {
+                const filename = screenshot.split('/').pop() || 'screenshot.jpg';
+                const match = /\.(\w+)$/.exec(filename);
+                const type = match ? `image/${match[1]}` : 'image/jpeg';
+                formData.append('screenshot', { uri: screenshot, name: filename, type } as any);
+            }
+            await api.post('support/contact', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            Alert.alert('Sent', 'We received your report. Thank you!', [{ text: 'Okay', onPress: onBack }]);
+        } catch (error: any) {
+            Alert.alert('Error', 'Failed to send report.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <View style={{ flex: 1 }}>
+            <ScrollView 
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 140 }} 
+                showsVerticalScrollIndicator={false}
+            >
+                <Animated.View entering={FadeInDown.duration(300)}>
+                    <Text style={{ fontSize: 24, fontWeight: '800', color: C.text, marginBottom: 8, letterSpacing: -0.5 }}>Report Issue</Text>
+                    <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 24 }}>Let us know if something isn't working right.</Text>
+
+                    <GroupedCard isDark={isDark}>
+                        <View style={{ paddingVertical: 16, paddingRight: 16 }}>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecondary, marginBottom: 12, marginLeft: 4 }}>DESCRIPTION</Text>
+                            <TextInput
+                                style={{ height: 160, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', borderRadius: 16, padding: 16, color: C.text, fontSize: 16, fontWeight: '500', textAlignVertical: 'top' }}
+                                placeholder="What's going on?"
+                                placeholderTextColor={C.textTertiary}
+                                multiline
+                                value={message}
+                                onChangeText={setMessage}
+                            />
+                        </View>
+
+                        <View style={{ paddingVertical: 16, paddingRight: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.separator }}>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecondary, marginBottom: 12, marginLeft: 4 }}>SCREENSHOT (OPTIONAL)</Text>
+                            {screenshot ? (
+                                <View style={{ position: 'relative' }}>
+                                    <Image source={{ uri: screenshot }} style={{ width: '100%', height: 200, borderRadius: 16 }} resizeMode="cover" />
+                                    <TouchableOpacity onPress={() => setScreenshot(null)} style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, padding: 4 }}>
+                                        <CloseCircle size={20} color="#FFF" />
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                <TouchableOpacity onPress={pickImage} style={{ height: 120, borderStyle: 'dashed', borderWidth: 2, borderColor: C.separator, borderRadius: 16, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                    <Gallery size={24} color={C.textTertiary} />
+                                    <Text style={{ color: C.textTertiary, fontSize: 14, fontWeight: '600' }}>Add a screenshot</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </GroupedCard>
+                </Animated.View>
+            </ScrollView>
+
+            <BlurView
+                intensity={50}
+                tint={isDark ? 'dark' : 'light'}
+                style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    paddingHorizontal: 20,
+                    paddingTop: 16,
+                    paddingBottom: Math.max(insets.bottom, 16) + 16,
+                    backgroundColor: 'transparent',
+                }}
+            >
+                <TouchableOpacity
+                    onPress={handleSubmit}
+                    disabled={isSubmitting}
+                    activeOpacity={0.8}
+                    style={{ 
+                        height: 56, 
+                        backgroundColor: C.primary, 
+                        borderRadius: 28, 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        shadowColor: C.primary,
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 12,
+                        elevation: 6
+                    }}
+                >
+                    {isSubmitting ? <LoadingSpinner size={24} color="#FFF" /> : <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '700' }}>Send Report</Text>}
+                </TouchableOpacity>
+            </BlurView>
+        </View>
+    );
+}
+
 interface AccountModalProps {
     visible: boolean;
     onDismiss: () => void;
@@ -169,13 +460,15 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
 
-    const { user, logout, theme, setTheme, hapticsEnabled, setHapticsEnabled } = useAuthStore();
+    const { user, logout, theme, setTheme, hapticsEnabled, setHapticsEnabled, notificationsEnabled, setNotificationsEnabled } = useAuthStore();
 
-    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [deleteConfirmationCode, setDeleteConfirmationCode] = useState('');
     const [deleteInput, setDeleteInput] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
+    
+    // Internal Navigation View
+    const [activeView, setActiveView] = useState<'main' | 'preferences' | 'support'>('main');
 
     const bottomInset = insets.bottom ?? 0;
 
@@ -225,69 +518,94 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
 
     return (
         <>
+            {/* Delete Confirmation Input Modal */}
             <ReanimatedModal
                 visible={deleteModalVisible}
                 onHide={() => setDeleteModalVisible(false)}
-                animation="fade"
-                backdrop={{ opacity: 0.5 }}
+                animation={{ type: 'fade', duration: 300 }}
+                backdrop={{ color: 'black', opacity: 0.5 }}
+                contentContainerStyle={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    paddingHorizontal: 24,
+                }}
             >
-                <View
-                    style={{
-                        backgroundColor: 'transparent',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        paddingHorizontal: 24,
-                        flex: 1,
-                    }}
-                >
-                    <View style={{ backgroundColor: C.card, borderRadius: 20, padding: 24, width: '100%' }}>
-                        <Text style={{ fontSize: 20, fontWeight: '700', color: C.text, marginBottom: 12 }}>Delete Account</Text>
-                        <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 20, lineHeight: 22 }}>
-                            This action cannot be undone. To confirm, type{' '}
-                            <Text style={{ fontWeight: '700' }}>{deleteConfirmationCode}</Text> below.
-                        </Text>
-                        <TextInput
-                            placeholder={deleteConfirmationCode}
-                            placeholderTextColor={C.textTertiary}
-                            value={deleteInput}
-                            onChangeText={setDeleteInput}
+                <View style={{ 
+                    backgroundColor: C.card, 
+                    borderRadius: 24, 
+                    padding: 24, 
+                    width: '100%',
+                    borderWidth: 1,
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 10 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 20,
+                    elevation: 10,
+                }}>
+                    <Text style={{ fontSize: 22, fontWeight: '800', color: '#EF4444', marginBottom: 12, letterSpacing: -0.5 }}>Delete Account</Text>
+                    <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 24, lineHeight: 22 }}>
+                        This is a permanent action. To confirm, please type the following code exactly:
+                        {"\n\n"}
+                        <Text style={{ fontWeight: '800', color: C.text, fontSize: 18, letterSpacing: 1 }}>{deleteConfirmationCode}</Text>
+                    </Text>
+                    
+                    <TextInput
+                        placeholder="Type the code here..."
+                        placeholderTextColor={C.textTertiary}
+                        value={deleteInput}
+                        onChangeText={setDeleteInput}
+                        autoCapitalize="characters"
+                        style={{
+                            height: 56,
+                            borderWidth: 2,
+                            borderColor: deleteInput === deleteConfirmationCode ? '#34C759' : C.separator,
+                            borderRadius: 16,
+                            paddingHorizontal: 16,
+                            fontSize: 16,
+                            fontWeight: '600',
+                            color: C.text,
+                            marginBottom: 24,
+                            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                        }}
+                    />
+
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <TouchableOpacity
+                            onPress={() => setDeleteModalVisible(false)}
+                            activeOpacity={0.7}
                             style={{
-                                borderWidth: 1,
-                                borderColor: C.separator,
-                                borderRadius: 12,
-                                padding: 12,
-                                color: C.text,
-                                marginBottom: 20,
-                                fontFamily: 'Outfit-Regular',
+                                flex: 1,
+                                height: 52,
+                                borderRadius: 14,
+                                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                             }}
-                        />
-                        <View style={{ flexDirection: 'row', gap: 12 }}>
-                            <TouchableOpacity
-                                onPress={() => setDeleteModalVisible(false)}
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: 12,
-                                    borderRadius: 12,
-                                    backgroundColor: isDark ? '#334155' : '#F1F5F9',
-                                    alignItems: 'center',
-                                }}
-                            >
-                                <Text style={{ color: C.text, fontSize: 16, fontWeight: '700' }}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={handleDeleteAccount}
-                                disabled={deleteInput !== deleteConfirmationCode || isDeleting}
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: 12,
-                                    borderRadius: 12,
-                                    backgroundColor: '#EF4444',
-                                    alignItems: 'center',
-                                }}
-                            >
-                                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>{isDeleting ? 'Deleting...' : 'Delete'}</Text>
-                            </TouchableOpacity>
-                        </View>
+                        >
+                            <Text style={{ color: C.text, fontSize: 15, fontWeight: '700' }}>Keep Account</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={handleDeleteAccount}
+                            disabled={deleteInput !== deleteConfirmationCode || isDeleting}
+                            activeOpacity={0.8}
+                            style={{
+                                flex: 1,
+                                height: 52,
+                                borderRadius: 14,
+                                backgroundColor: deleteInput === deleteConfirmationCode ? '#EF4444' : (isDark ? '#471a1a' : '#fee2e2'),
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                opacity: deleteInput === deleteConfirmationCode ? 1 : 0.6,
+                            }}
+                        >
+                            {isDeleting ? (
+                                <LoadingSpinner size={20} color="#fff" />
+                            ) : (
+                                <Text style={{ color: deleteInput === deleteConfirmationCode ? '#fff' : '#ef4444', fontSize: 15, fontWeight: '800' }}>Confirm Delete</Text>
+                            )}
+                        </TouchableOpacity>
                     </View>
                 </View>
             </ReanimatedModal>
@@ -295,20 +613,24 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
             <ReanimatedModal
                 visible={visible}
                 onHide={onDismiss}
-                animation="slide"
-                swipe={{
-                    enabled: true,
-                    directions: ['down'],
+                animation={{
+                    type: 'slide',
+                    duration: 300,
                 }}
+                swipe={{
+                    enabled: activeView === 'main',
+                    directions: ['down'],
+                    threshold: 80,
+                }}
+                backdrop={false}
                 contentContainerStyle={{
+                    flex: 1,
                     backgroundColor: C.background,
                     borderTopLeftRadius: 40,
                     borderTopRightRadius: 40,
                     paddingHorizontal: 0,
                     paddingTop: 16,
-                    paddingBottom: Math.max(bottomInset, 16),
-                    // Ensure the modal takes up appropriate space
-                    minHeight: '50%',
+                    paddingBottom: 0,
                 }}
             >
                 <View
@@ -322,13 +644,34 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                     }}
                 />
 
-                        <ScrollView contentContainerStyle={[s.scroll, { paddingTop: 8, paddingBottom: 24 }]} showsVerticalScrollIndicator={false}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingRight: 16, marginBottom: 16 }}>
-                                <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                                    <Text style={{ fontSize: 28, fontWeight: '600', color: C.text }}>×</Text>
-                                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 }}>
+                    {activeView !== 'main' ? (
+                        <TouchableOpacity 
+                            onPress={() => setActiveView('main')} 
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                        >
+                            <View style={{ 
+                                width: 32, 
+                                height: 32, 
+                                borderRadius: 16, 
+                                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
+                                alignItems: 'center', 
+                                justifyContent: 'center' 
+                            }}>
+                                <AltArrowRight size={18} color={C.text} style={{ transform: [{ rotate: '180deg' }] }} />
                             </View>
+                            <Text style={{ fontSize: 16, fontWeight: '600', color: C.text }}>Back</Text>
+                        </TouchableOpacity>
+                    ) : <View />}
 
+                    <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Text style={{ fontSize: 28, fontWeight: '600', color: C.text }}>×</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {activeView === 'main' && (
+                    <ScrollView contentContainerStyle={[s.scroll, { paddingTop: 8, paddingBottom: 40 }]} showsVerticalScrollIndicator={false}>
+                        <Animated.View entering={FadeIn.duration(200)}>
                             <View style={s.profileSection}>
                                 <View style={[s.avatarCircle, { backgroundColor: C.primaryLight ?? '#F3E8FF' }]}>
                                     {user.avatar || user.avatar_url ? (
@@ -336,9 +679,6 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                                     ) : (
                                         <Text style={[s.avatarInitial, { color: C.primary }]}>{firstChar || ' '}</Text>
                                     )}
-                                </View>
-                                <View style={[s.editBadge, { borderColor: C.background }]}>
-                                    <Pen size={14} color="#FFF" />
                                 </View>
 
                                 <Text style={[s.profileName, { color: C.text }]}>{user.name}</Text>
@@ -376,8 +716,7 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                                     iconBg="#5E5CE6"
                                     label="Personalization"
                                     onPress={() => {
-                                        onDismiss();
-                                        router.push('/preferences');
+                                        setActiveView('preferences');
                                     }}
                                     isDark={isDark}
                                 />
@@ -387,7 +726,9 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                                     label="Notifications"
                                     hasSwitch
                                     switchValue={notificationsEnabled}
-                                    onSwitch={setNotificationsEnabled}
+                                    onSwitch={(v) => {
+                                        void setNotificationsEnabled(v);
+                                    }}
                                     isDark={isDark}
                                 />
                                 <SettingsRow
@@ -397,11 +738,9 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                                     hasSwitch
                                     switchValue={hapticsEnabled}
                                     onSwitch={(v) => {
-                                        // keep zustand async setter, but ignore returned promise
                                         void setHapticsEnabled(v);
                                     }}
                                     isDark={isDark}
-
                                 />
 
                                 <View style={{ paddingVertical: 12, paddingRight: 16 }}>
@@ -446,8 +785,7 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                                     iconBg="#8E8E93"
                                     label="Report Issue"
                                     onPress={() => {
-                                        onDismiss();
-                                        router.push('/support');
+                                        setActiveView('support');
                                     }}
                                     isDark={isDark}
                                 />
@@ -486,9 +824,13 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                                     isDark={isDark}
                                 />
                             </GroupedCard>
-                        </ScrollView>
+                        </Animated.View>
+                    </ScrollView>
+                )}
+
+                {activeView === 'preferences' && <PreferencesView onBack={() => setActiveView('main')} />}
+                {activeView === 'support' && <SupportView onBack={() => setActiveView('main')} />}
             </ReanimatedModal>
         </>
     );
 }
-

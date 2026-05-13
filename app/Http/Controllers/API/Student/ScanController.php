@@ -91,6 +91,9 @@ class ScanController extends Controller
                 flush();
             };
 
+            // 1. Immediate Heartbeat/Status to avoid 504
+            $emit(['type' => 'status', 'message' => 'Connected to Skeeme AI...']);
+
             $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
             $activeProvider = $aiConfig['provider'];
             $isManualOverride = $aiConfig['is_manual'] ?? false;
@@ -112,25 +115,25 @@ class ScanController extends Controller
             try {
                 if ($useDeepseek) {
                     Log::info("Streaming Scan: Circuit Breaker active, using Deepseek (streaming OCR + SSE).");
-                    $this->deepseek->streamSolveFromImage($request->input('image'), function ($chunk) use (&$fullContent, $emit, &$deepseekResult) {
-                        // DeepSeek streaming payloads vary by provider version.
-                        // We forward any text delta we can find.
-                        $delta = $chunk['choices'][0]['delta']['content']
-                            ?? $chunk['choices'][0]['delta']['text']
-                            ?? null;
+                    $this->deepseek->streamSolveFromImage(
+                        $request->input('image'), 
+                        function ($chunk) use (&$fullContent, $emit, &$deepseekResult) {
+                            $delta = $chunk['choices'][0]['delta']['content']
+                                ?? $chunk['choices'][0]['delta']['text']
+                                ?? null;
 
-                        if (!is_string($delta) || $delta === '') {
-                            return;
+                            if (!is_string($delta) || $delta === '') {
+                                return;
+                            }
+
+                            $fullContent .= $delta;
+                            $emit(['type' => 'text_delta', 'text' => $delta]);
+                        },
+                        function ($status) use ($emit) {
+                            $emit(['type' => 'status', 'message' => $status]);
                         }
+                    );
 
-                        $fullContent .= $delta;
-                        $emit(['type' => 'text_delta', 'text' => $delta]);
-
-                        return;
-                    });
-
-                    // DeepSeek stream will end without us reconstructing the final JSON reliably here.
-                    // For now, attempt best-effort parse from streamed content.
                     $deepseekResult = $this->parseStreamedJson($fullContent);
                     $emit(['type' => 'full_result', 'data' => $deepseekResult ?? []]);
                 } else {

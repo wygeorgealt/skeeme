@@ -561,7 +561,7 @@ export default function GenerateQuizScreen() {
 
                     {/* Difficulty */}
                     <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>DIFFICULTY</Text>
-                    <View style={cardShadow(C)}>
+                    <View style={[cardShadow(C), { marginBottom: 20 }]}>
                         {DIFFICULTY_OPTIONS.map((opt, index) => {
                             const isSelected = difficulty === opt.key;
                             const isLast = index === DIFFICULTY_OPTIONS.length - 1;
@@ -590,7 +590,7 @@ export default function GenerateQuizScreen() {
 
                     {/* Question Format */}
                     <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>QUESTION FORMAT</Text>
-                    <View style={cardShadow(C)}>
+                    <View style={[cardShadow(C), { marginBottom: 20}]}>
                         {FORMAT_OPTIONS.map((opt, index) => {
                             const isSelected = format === opt.key;
                             const isLast = index === FORMAT_OPTIONS.length - 1;
@@ -620,14 +620,12 @@ export default function GenerateQuizScreen() {
 
                 {/* Sticky Footer */}
                 <BlurView
-                    intensity={Platform.OS === 'ios' ? 100 : 0}
+                    intensity={50}
                     tint={isDark ? 'dark' : 'light'}
                     style={[sf.footer, {
                         paddingBottom: Math.max(insets.bottom, 16) + 75,
-                        backgroundColor: isDark
-                            ? (Platform.OS === 'android' ? '#0D0D0D' : 'rgba(13,13,13,0.9)')
-                            : (Platform.OS === 'android' ? '#F0F2F7' : 'rgba(240,242,247,0.9)'),
-                        borderTopColor: C.separator,
+                        backgroundColor: 'transparent',
+                        borderTopWidth: 0,
                     }]}
                 >
                     <TouchableOpacity
@@ -813,7 +811,7 @@ export default function GenerateQuizScreen() {
 
                 {/* Sticky Active Quiz Next Button */}
                 <BlurView 
-                    intensity={Platform.OS === 'ios' ? 100 : 0} 
+                    intensity={50} 
                     tint={isDark ? 'dark' : 'light'} 
                     style={{ 
                         position: 'absolute', 
@@ -823,11 +821,8 @@ export default function GenerateQuizScreen() {
                         paddingHorizontal: 24, 
                         paddingTop: 16, 
                         paddingBottom: Math.max(insets.bottom, 16) + 75, 
-                        borderTopWidth: 1, 
-                        borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                        backgroundColor: isDark 
-                            ? (Platform.OS === 'android' ? '#1C1C1E' : 'rgba(28,28,30,0.8)') 
-                            : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+                        borderTopWidth: 0, 
+                        backgroundColor: 'transparent'
                     }}
                 >
                     <TouchableOpacity
@@ -937,7 +932,7 @@ export default function GenerateQuizScreen() {
 
             {/* Actions Footer */}
             <BlurView 
-                intensity={Platform.OS === 'ios' ? 100 : 0} 
+                intensity={50} 
                 tint={isDark ? "dark" : "light"} 
                 style={[s.footer, { 
                     position: 'absolute',
@@ -946,11 +941,8 @@ export default function GenerateQuizScreen() {
                     right: 0,
                     paddingBottom: Math.max(insets.bottom, 16) + 75, 
                     paddingHorizontal: 24, 
-                    borderTopWidth: 1,
-                    borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                    backgroundColor: isDark 
-                        ? (Platform.OS === 'android' ? '#121212' : 'rgba(18,18,18,0.8)') 
-                        : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+                    borderTopWidth: 0,
+                    backgroundColor: 'transparent'
                 }]}
             >
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
@@ -1135,7 +1127,7 @@ const s = StyleSheet.create({
     optionDesc: { fontSize: 13, fontWeight: '500' },
 
     // Footer actions
-    formFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16, borderTopWidth: 1 },
+    formFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16 },
     generatePillButton: { width: '100%', borderRadius: 100, paddingVertical: 18, alignItems: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
     generatePillText: { color: '#FFF', fontSize: 16, fontWeight: '800', letterSpacing: -0.2 },
     loadingContainer: { alignItems: 'center', paddingVertical: 12 },
@@ -1221,7 +1213,7 @@ const sf = StyleSheet.create({
     uploadSub: { fontSize: 13, textAlign: 'center' },
     centered: { alignItems: 'center' },
 
-    sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, marginLeft: 4 },
+    sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginTop: 5, marginBottom: 10, marginLeft: 4 },
 
     stepperCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16, marginBottom: 28 },
     stepperLabel: { fontSize: 16, fontWeight: '600' },
@@ -1235,7 +1227,7 @@ const sf = StyleSheet.create({
     optLabel: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
     optDesc: { fontSize: 13 },
 
-    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth },
+    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16 },
     generateBtn: { width: '100%', height: 56, borderRadius: 100, alignItems: 'center', justifyContent: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
     generateBtnText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 });

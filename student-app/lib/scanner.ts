@@ -50,6 +50,7 @@ export const scannerService = {
     streamSolve: (
         base64: string,
         callbacks: {
+            onStatus?: (message: string) => void;
             onDelta?: (partialResults: ScanResult[]) => void;
             onFullResult?: (results: ScanResult[]) => void;
             onComplete?: (creditsRemaining: number) => void;
@@ -75,7 +76,7 @@ export const scannerService = {
         let accumulatedJson = '';
         let streamErrored = false;
 
-        es.addEventListener('message', (event: any) => {
+         es.addEventListener('message', (event: any) => {
             if (event.data === '[DONE]') {
                 es.close();
                 callbacks.onDone?.();
@@ -85,6 +86,12 @@ export const scannerService = {
             try {
                 const chunk = JSON.parse(event.data || '{}');
                 switch (chunk.type) {
+                    case 'status': {
+                        if (chunk.message) {
+                            callbacks.onStatus?.(chunk.message);
+                        }
+                        break;
+                    }
                     case 'text_delta': {
                         if (chunk.text) {
                             accumulatedJson += chunk.text;

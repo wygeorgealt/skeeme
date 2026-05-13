@@ -77,10 +77,14 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
         <ReanimatedModal
             visible={visible}
             onHide={onDismiss}
-            animation="slide"
+            animation={{
+                type: 'slide',
+                duration: 300,
+            }}
             swipe={{
                 enabled: true,
                 directions: ['down'],
+                threshold: 80,
             }}
             contentContainerStyle={{
                 backgroundColor: isDark ? '#1E293B' : '#FFFFFF',

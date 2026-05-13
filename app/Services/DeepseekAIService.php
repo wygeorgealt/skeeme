@@ -342,11 +342,12 @@ PROMPT;
      *
      * Expects the caller to pass a callback that receives decoded JSON chunk payloads.
      */
-    public function streamSolveFromImage(string $base64Image, callable $onChunk): void
+    public function streamSolveFromImage(string $base64Image, callable $onChunk, ?callable $onStatus = null): void
     {
         try {
             set_time_limit(300);
 
+            if ($onStatus) $onStatus('Reading text from image...');
             Log::info('Deepseek Vision: Streaming image via OCR + SSE...');
 
             // Step 1: OCR
@@ -354,6 +355,8 @@ PROMPT;
             if (empty(trim($extractedText))) {
                 throw new \Exception('Could not read any text from the image. Please try a clearer photo.');
             }
+
+            if ($onStatus) $onStatus('Analyzing question...');
 
             $prompt = <<<PROMPT
 You are a world-class tutor. The text below was extracted via OCR from a student's exam photo. Fix any OCR errors (e.g. "dy dx" -> "dy/dx").
@@ -372,7 +375,7 @@ Rules:
 PROMPT;
 
             $params = [
-                'model' => 'deepseek-v4-pro',
+                'model' => 'deepseek-v4-flash',
                 'stream' => true,
                 'temperature' => 0.3,
                 'max_tokens' => 8192,
@@ -407,13 +410,14 @@ PROMPT;
 
             while (!$body->eof()) {
                 $chunk = $body->read(1024);
+                if ($chunk === '') continue;
                 $buffer .= $chunk;
 
                 while (($pos = strpos($buffer, "\n\n")) !== false) {
                     $event = substr($buffer, 0, $pos);
                     $buffer = substr($buffer, $pos + 2);
 
-                    foreach (preg_split('/\r?\n/', $event) as $line) {
+                    foreach (explode("\n", str_replace("\r", "", $event)) as $line) {
                         $line = trim($line);
                         if ($line === '' || !str_starts_with($line, 'data: ')) continue;
 

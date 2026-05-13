@@ -340,7 +340,7 @@ export default function QuizHistoryDetailScreen() {
 
             {/* Floating Action Buttons */}
             <BlurView 
-                intensity={Platform.OS === 'ios' ? 80 : 0} 
+                intensity={50} 
                 tint={isDark ? "dark" : "light"} 
                 style={[
                     s.footer, 
@@ -348,9 +348,8 @@ export default function QuizHistoryDetailScreen() {
                         {
                             bottom: 0,
                             paddingBottom: Math.max(insets.bottom, 16) + 75,
-                            backgroundColor: isDark 
-                                ? (Platform.OS === 'android' ? '#000000' : 'rgba(0,0,0,0.8)') 
-                                : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
+                            backgroundColor: 'transparent',
+                            borderTopWidth: 0,
                         }
                 ]}
             >
@@ -460,9 +459,9 @@ const s = StyleSheet.create({
     dividerLine: { width: 4, height: 16, backgroundColor: '#8B5CF6', borderRadius: 2, marginRight: 12 },
     reviewTitle: { fontSize: 15, fontWeight: '700' },
 
-    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, flexDirection: 'row', gap: 16, borderTopWidth: 1 },
-    footerDark: { backgroundColor: 'rgba(9, 10, 15, 0.9)', borderTopColor: 'rgba(255,255,255,0.05)' },
-    footerLight: { backgroundColor: 'rgba(255, 255, 255, 0.9)', borderTopColor: '#F1F5F9' },
+    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, flexDirection: 'row', gap: 16 },
+    footerDark: {},
+    footerLight: {},
     exportBtn: { flex: 1, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center' },
     exportBtnContent: { flexDirection: 'row', alignItems: 'center' },
     exportBtnText: { fontWeight: '700', fontSize: 16, marginLeft: 12 },
