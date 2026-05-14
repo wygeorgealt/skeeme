@@ -13,6 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { posthog } from '@/lib/posthog';
 import { CheckCircle, DocumentText, CloudUpload, Leaf, LightbulbBolt, Rocket, FolderOpen } from '@solar-icons/react-native/Bold';
+import GlobalErrorModal from '@/components/GlobalErrorModal';
 
 import { RewardModal } from '@/components/RewardModal';
 
@@ -35,6 +36,8 @@ export default function GenerateFlashcardScreen() {
     const [cardCount, setCardCount] = useState('10');
     const [difficulty, setDifficulty] = useState<Difficulty>('medium');
     const [isLoading, setIsLoading] = useState(false);
+    const [globalError, setGlobalError] = useState<string | null>(null);
+    const [showErrorModal, setShowErrorModal] = useState(false);
 
     // Reward Modal State
     const [rewardData, setRewardData] = useState<any>(null);
@@ -143,13 +146,15 @@ export default function GenerateFlashcardScreen() {
                 es.close();
                 setIsLoading(false);
                 clearInterval(stageInterval);
-                Alert.alert('Error', 'Streaming failed.');
+                setGlobalError('Skeeme is down, Please try again later.');
+                setShowErrorModal(true);
             });
 
         } catch (e: any) {
             clearInterval(stageInterval);
             setIsLoading(false);
-            Alert.alert('Error', 'Failed to start generation.');
+            setGlobalError('Failed to start generation. Please check your connection.');
+            setShowErrorModal(true);
         }
     };
 
@@ -343,6 +348,12 @@ export default function GenerateFlashcardScreen() {
                     }
                 }}
                 reward={rewardData}
+            />
+
+            <GlobalErrorModal 
+                visible={showErrorModal}
+                error={globalError}
+                onDismiss={() => setShowErrorModal(false)}
             />
         </View>
     );

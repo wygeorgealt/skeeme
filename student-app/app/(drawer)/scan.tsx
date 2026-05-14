@@ -34,6 +34,7 @@ import { posthog } from '@/lib/posthog';
 
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import EventSource from 'react-native-sse';
+import GlobalErrorModal from '@/components/GlobalErrorModal';
 
 const BASE_SCAN_COST = 50;
 const COST_PER_SOLUTION = 0;
@@ -61,6 +62,8 @@ export default function ScanScreen() {
     const [scanError, setScanError] = useState<string | null>(null);
     const [isNetworkError, setIsNetworkError] = useState(false);
     const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'unhelpful'>>({});
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [globalErrorMessage, setGlobalErrorMessage] = useState('');
 
     const [progressPercent, setProgressPercent] = useState(0);
 
@@ -228,6 +231,8 @@ export default function ScanScreen() {
                     esRef.current = null;
                     setLoading(false);
                     setScanError(message);
+                    setGlobalErrorMessage('Skeeme is down, Please try again later.');
+                    setShowErrorModal(true);
                     
                     // Detect if it was a network error for the UI
                     if (message.toLowerCase().includes('network') || message.toLowerCase().includes('connection')) {
@@ -252,6 +257,8 @@ export default function ScanScreen() {
             setLoading(false);
             setScanError('Connection failed. Please try again.');
             setIsNetworkError(true);
+            setGlobalErrorMessage('Skeeme is down, Please try again later.');
+            setShowErrorModal(true);
         }
     };
 
@@ -557,6 +564,11 @@ export default function ScanScreen() {
                 <View style={{ height: 24 }} />
             </ScrollView>
 
+            <GlobalErrorModal 
+                visible={showErrorModal}
+                error={globalErrorMessage}
+                onDismiss={() => setShowErrorModal(false)}
+            />
         </View>
     );
 }

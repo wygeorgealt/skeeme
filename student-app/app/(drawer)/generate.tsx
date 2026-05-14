@@ -14,6 +14,7 @@ import { generateQuizHTML } from '@/lib/pdfGenerator';
 import { generateUUID } from '@/lib/utils';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 import { posthog } from '@/lib/posthog';
+import GlobalErrorModal from '@/components/GlobalErrorModal';
 
 import { haptics } from '@/lib/haptics';
 import { QuizMode, Difficulty, FormatType, Question } from '@/components/quiz/QuizTypes';
@@ -122,6 +123,8 @@ export default function GenerateQuizScreen() {
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
     const [creditRefreshKey, setCreditRefreshKey] = useState(0);
     const [explanationQ, setExplanationQ] = useState<{ q: Question; qi: number; isCorrect: boolean } | null>(null);
+    const [globalError, setGlobalError] = useState<string | null>(null);
+    const [showErrorModal, setShowErrorModal] = useState(false);
 
     // Score calculations
     const correctCount = Object.entries(selectedAnswers).filter(([qi, ans]) => questions[+qi]?.correct_answer === ans).length
@@ -342,13 +345,15 @@ export default function GenerateQuizScreen() {
                 es.close();
                 setIsLoading(false);
                 clearInterval(stageInterval);
-                Alert.alert('Error', 'Streaming interrupted.');
+                setGlobalError('Skeeme is down, Please try again later.');
+                setShowErrorModal(true);
             });
 
         } catch (e: any) {
             clearInterval(stageInterval);
             setIsLoading(false);
-            Alert.alert('Error', 'Failed to start generation.');
+            setGlobalError('Failed to start generation. Please check your connection.');
+            setShowErrorModal(true);
         }
     };
 
@@ -643,6 +648,12 @@ export default function GenerateQuizScreen() {
                     visible={showOutOfCredits}
                     onDismiss={() => setShowOutOfCredits(false)}
                     featureAttempted="quiz"
+                />
+
+                <GlobalErrorModal 
+                    visible={showErrorModal}
+                    error={globalError}
+                    onDismiss={() => setShowErrorModal(false)}
                 />
             </View>
         );

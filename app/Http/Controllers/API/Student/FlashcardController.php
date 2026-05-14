@@ -34,6 +34,7 @@ class FlashcardController extends Controller
     public function streamGenerate(Request $request)
     {
         set_time_limit(300);
+        error_log("[DEBUG] Flashcard streamGenerate hit by User: " . (Auth::id() ?? 'Guest'));
 
         try {
             $validated = $request->validate([
@@ -43,6 +44,12 @@ class FlashcardController extends Controller
                 'difficulty'     => 'nullable|string|in:easy,medium,hard,mixed',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            error_log("[DEBUG] Flashcard Validation FAILED: " . json_encode($e->errors()));
+            Log::warning("[AI Flashcard Validation Failed]", [
+                'user_id' => $user->id,
+                'errors' => $e->errors(),
+                'input' => $request->all()
+            ]);
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
         }
 

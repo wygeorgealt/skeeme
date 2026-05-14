@@ -33,17 +33,26 @@ class PracticeQuizController extends Controller
     public function streamGenerate(Request $request)
     {
         set_time_limit(600);
+        error_log("[DEBUG] Quiz streamGenerate hit by User: " . (Auth::id() ?? 'Guest'));
+
+        Log::info("[AI Quiz] streamGenerate attempt", ['input' => $request->all()]);
 
         try {
             $validated = $request->validate([
                 'topic' => 'required_without:file|nullable|string|max:255',
                 'file' => 'required_without:topic|nullable|file|mimes:pdf,docx,txt,md|max:10240',
-                'question_count' => 'required|integer|min:10|max:30',
+                'question_count' => 'required|integer|min:5|max:50',
                 'question_types' => 'required|array|min:1',
                 'question_types.*' => 'in:mcq,theory',
                 'difficulty' => 'nullable|in:easy,medium,hard',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            error_log("[DEBUG] Quiz Validation FAILED: " . json_encode($e->errors()));
+            Log::warning("[AI Quiz Validation Failed]", [
+                'user_id' => Auth::id(),
+                'errors' => $e->errors(),
+                'input' => $request->all()
+            ]);
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
         }
 
