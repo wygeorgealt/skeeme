@@ -37,12 +37,15 @@ class FlashcardController extends Controller
         set_time_limit(300);
         error_log("[DEBUG] Flashcard streamGenerate hit by User: " . (Auth::id() ?? 'Guest'));
 
+        $user = $request->user();
+
         try {
             $validated = $request->validate([
                 'topic'          => 'nullable|string|max:255',
                 'file'           => 'nullable|file|mimes:pdf,doc,docx,txt,md|max:10240',
                 'card_count'     => 'required|integer|min:5|max:50',
                 'difficulty'     => 'nullable|string|in:easy,medium,hard,mixed',
+                'deck_id'        => 'nullable|integer|exists:flashcard_decks,id',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             error_log("[DEBUG] Flashcard Validation FAILED: " . json_encode($e->errors()));
@@ -54,8 +57,27 @@ class FlashcardController extends Controller
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
         }
 
-        $user = $request->user();
-        $title = $validated['topic'] ?? 'Flashcards from File';
+        $title = $validated['topic'] ?? ($request->hasFile('file') ? $request->file('file')->getClientOriginalName() : 'New Flashcard Set');
+
+        // 2. Pre-create or find the deck
+        $deck = null;
+        if (!empty($validated['deck_id'])) {
+            $deck = FlashcardDeck::where('user_id', $user->id)->find($validated['deck_id']);
+            
+            // If we have a deck but no topic/file in request, try to recover from deck
+            if ($deck && empty($validated['topic']) && !$request->hasFile('file')) {
+                $validated['topic'] = $deck->title; // fallback
+                // If it was a file, we'd need the file content, but for now we'll assume topic-based or already extracted
+            }
+        }
+
+        if (!$deck) {
+            $deck = FlashcardDeck::create([
+                'user_id' => $user->id,
+                'title' => $title,
+                'source_type' => $request->hasFile('file') ? 'file' : 'topic',
+            ]);
+        }
 
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
         $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
@@ -76,6 +98,7 @@ class FlashcardController extends Controller
             };
 
             $fullContent = '';
+            $emit(['db_id' => $deck->id]);
             
             try {
                 // 1. Initial Status
@@ -112,15 +135,6 @@ class FlashcardController extends Controller
                 $modelUsed = $useDeepseek ? 'deepseek-chat' : AIService::MODEL_HAIKU;
                 $service = $useDeepseek ? $this->deepseek : $this->aiService;
 
-                // Create Deck immediately to get a DB ID
-                $deck = \App\Models\FlashcardDeck::create([
-                    'user_id' => $user->id,
-                    'title' => $title,
-                    'source_type' => 'ai_stream',
-                    'status' => 'generating'
-                ]);
-                $emit(['db_id' => $deck->id]);
-
                 $params = [
                     'model' => $modelUsed,
                     'max_tokens' => $this->aiService->calculateMaxTokens('flashcard', $validated['card_count']),
@@ -131,9 +145,7 @@ class FlashcardController extends Controller
                     'temperature' => 0.7,
                 ];
 
-                $cardsParsed = 0;
-
-                $onChunk = function ($chunk) use (&$fullContent, $useDeepseek, $emit, $deck, &$cardsParsed) {
+                $onChunk = function ($chunk) use (&$fullContent, $useDeepseek, $emit) {
                     $text = '';
                     if ($useDeepseek) {
                         $text = $chunk['choices'][0]['delta']['content'] ?? '';
@@ -145,32 +157,7 @@ class FlashcardController extends Controller
 
                     if ($text !== '') {
                         $fullContent .= $text;
-                        $emit(['type' => 'text_delta', 'text' => $text]);
-
-                        try {
-                            $cleanJson = preg_replace('/^.*?\[/s', '[', $fullContent);
-                            if (!str_ends_with(trim($cleanJson), ']')) {
-                                $lastObjEnd = strrpos($cleanJson, '}');
-                                if ($lastObjEnd !== false) {
-                                    $partialJson = substr($cleanJson, 0, $lastObjEnd + 1) . ']';
-                                    $data = json_decode($partialJson, true);
-                                    if (is_array($data) && count($data) > $cardsParsed) {
-                                        for ($i = $cardsParsed; $i < count($data); $i++) {
-                                            $c = $data[$i];
-                                            if (!empty($c['front']) && !empty($c['back'])) {
-                                                $deck->flashcards()->create([
-                                                    'front' => $c['front'],
-                                                    'back' => $c['back'],
-                                                    'order_column' => $i
-                                                ]);
-                                                $cardsParsed++;
-                                            }
-                                        }
-                                        $emit(['cards' => $data]);
-                                    }
-                                }
-                            }
-                        } catch (\Exception $e) {}
+                        $emit(['text' => $text]);
                     }
                 };
 
@@ -196,25 +183,39 @@ class FlashcardController extends Controller
                     $modelUsed
                 );
 
-                // One final emit and persistence check
-                $cleanJson = preg_replace('/^.*?\[/s', '[', $fullContent);
-                $finalData = json_decode(trim($cleanJson), true);
-                if (is_array($finalData) && count($finalData) > $cardsParsed) {
-                    for ($i = $cardsParsed; $i < count($finalData); $i++) {
-                        $c = $finalData[$i];
-                        if (!empty($c['front']) && !empty($c['back'])) {
-                            $deck->flashcards()->create([
-                                'front' => $c['front'],
-                                'back' => $c['back'],
-                                'order_column' => $i
-                            ]);
-                            $cardsParsed++;
-                        }
+                // Final Persistence logic (Ensure all are saved)
+                try {
+                    $cleanJson = preg_replace('/```(?:json)?|```/s', '', $fullContent);
+                    $cardsData = json_decode(trim($cleanJson), true);
+                    
+                    if (is_array($cardsData)) {
+                        DB::transaction(function () use ($cardsData, $deck) {
+                            $existingCount = $deck->flashcards()->count();
+                            
+                            $toInsert = [];
+                            foreach ($cardsData as $idx => $c) {
+                                if (empty($c['front']) || empty($c['back'])) continue;
+                                
+                                // Avoid duplicates if possible (simple check by index or content)
+                                if ($idx < $existingCount) continue;
+
+                                $toInsert[] = [
+                                    'flashcard_deck_id' => $deck->id,
+                                    'front' => $c['front'],
+                                    'back' => $c['back'],
+                                    'order_column' => $idx,
+                                    'created_at' => now(),
+                                    'updated_at' => now()
+                                ];
+                            }
+                            if (!empty($toInsert)) {
+                                \App\Models\Flashcard::insert($toInsert);
+                            }
+                        });
                     }
-                    $emit(['cards' => $finalData]);
+                } catch (\Exception $saveEx) {
+                    Log::error("Failed to final save streamed flashcards: " . $saveEx->getMessage());
                 }
-                
-                $deck->update(['status' => 'completed']);
 
                 echo "data: [DONE]\n\n";
             } catch (\Exception $e) {
@@ -267,6 +268,25 @@ class FlashcardController extends Controller
         }
 
         return response()->json(['data' => $decks, 'next_cursor' => $nextCursor]);
+    }
+
+    /**
+     * Create an empty deck
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'source_type' => 'nullable|string',
+        ]);
+
+        $deck = FlashcardDeck::create([
+            'user_id' => $request->user()->id,
+            'title' => $validated['title'],
+            'source_type' => $validated['source_type'] ?? 'topic',
+        ]);
+
+        return response()->json(['data' => $deck]);
     }
 
     /**

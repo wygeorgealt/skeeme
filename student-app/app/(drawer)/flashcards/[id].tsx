@@ -4,7 +4,6 @@ import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, N
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Colors } from '@/constants/theme';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { SparklesIcon, CheckmarkCircle01Icon, Alert01Icon, ArrowLeft01Icon, ArrowRight01Icon, Tick01Icon, ReloadIcon } from '@hugeicons/core-free-icons';
@@ -28,8 +27,6 @@ import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
 import { Flashcard as Card, FlashcardDeck } from '@/types';
 import { StreakAnimation } from '@/components/StreakAnimation';
-import EventSource from 'react-native-sse';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Storage helpers
 const storage = {
@@ -144,11 +141,14 @@ const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: 
 });
 
 export default function StudyDeckScreen() {
-    const { id } = useLocalSearchParams();
+    const { id, autoStart, topic, card_count, difficulty, mode, idempotency } = useLocalSearchParams();
     const scrollRef = useRef<ScrollView>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [cachedDeck, setCachedDeck] = useState<any>(null);
     const [isComplete, setIsComplete] = useState(false);
+    const [streamingCards, setStreamingCards] = useState<any[]>([]);
+    const [isGenerating, setIsGenerating] = useState(autoStart === 'true');
+    const [genStage, setGenStage] = useState('Researching...');
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const progressAnim = useSharedValue(0);
@@ -157,33 +157,26 @@ export default function StudyDeckScreen() {
     const [isSavingSession, setIsSavingSession] = useState(false);
     const [rewardMessage, setRewardMessage] = useState('');
     const [showMilestone, setShowMilestone] = useState(false);
-    const insets = useSafeAreaInsets();
 
-    // Streaming state
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [accumulatedCards, setAccumulatedCards] = useState<any[]>([]);
-    const [loadingStage, setLoadingStage] = useState('Skeeming...');
-    const [persistedId, setPersistedId] = useState<string | null>(null);
-    const params = useLocalSearchParams();
-
-    const { data: remoteDeck, isLoading, error } = useQuery({
-        queryKey: ['deck', persistedId || id],
+    const { data: remoteDeck, isLoading, error, refetch } = useQuery({
+        queryKey: ['deck', id],
         queryFn: async () => {
-            if (id === 'new' && !persistedId) return null;
-            const res = await api.get(`/flashcards/decks/${persistedId || id}`);
+            const res = await api.get(`/flashcards/decks/${id}`);
             const data = res.data.data;
-            await storage.setItem(`cache_deck_detail_${persistedId || id}`, JSON.stringify(data));
+            await storage.setItem(`cache_deck_detail_${id}`, JSON.stringify(data));
             return data;
         },
-        enabled: id !== 'new' || !!persistedId,
         staleTime: 5000,
     });
 
     const deck = useMemo(() => remoteDeck || cachedDeck, [remoteDeck, cachedDeck]);
+    
+    // Merge remote cards and streaming cards
     const cards = useMemo(() => {
-        if (isGenerating) return accumulatedCards;
-        return deck?.flashcards || [];
-    }, [deck?.flashcards, accumulatedCards, isGenerating]);
+        const base = deck?.flashcards || [];
+        const streaming = streamingCards.filter((sc: any) => !base.some((bc: any) => bc.front === sc.front));
+        return [...base, ...streaming];
+    }, [deck?.flashcards, streamingCards]);
 
     // Sync animation for loading state
     useEffect(() => {
@@ -213,76 +206,79 @@ export default function StudyDeckScreen() {
         progressAnim.value = 0;
     }, [id]);
 
+    // Handle auto-start generation
+    useEffect(() => {
+        if (autoStart === 'true' && id) {
+            startLiveGeneration();
+        }
+    }, [id, autoStart]);
+
+    const startLiveGeneration = async () => {
+        setIsGenerating(true);
+        const token = useAuthStore.getState().token;
+        const url = `${process.env.EXPO_PUBLIC_API_URL}flashcards/generate/stream`;
+        
+        let accumulatedJson = '';
+        
+        const es = new EventSource(url, {
+            headers: { 'Authorization': `Bearer ${token}`, 'Idempotency-Key': (idempotency as string) || '' },
+            method: 'POST',
+            body: JSON.stringify({ 
+                deck_id: id,
+                topic: topic,
+                card_count: card_count,
+                difficulty: difficulty
+            })
+        } as any);
+
+        es.addEventListener('message', (event) => {
+            if (event.data === '[DONE]') {
+                es.close();
+                setIsGenerating(false);
+                refetch(); // Final sync with DB
+                return;
+            }
+
+            try {
+                const chunk = JSON.parse(event.data || '{}');
+                if (chunk.type === 'status') setGenStage(chunk.message);
+                if (chunk.text) {
+                    accumulatedJson += chunk.text;
+                    const partial = parsePartialJson(accumulatedJson);
+                    if (partial && Array.isArray(partial)) {
+                        setStreamingCards(partial);
+                    }
+                }
+            } catch (e) {}
+        });
+
+        es.addEventListener('error', () => {
+            es.close();
+            setIsGenerating(false);
+        });
+    };
+
+    const parsePartialJson = (json: string) => {
+        try {
+            let testJson = json.trim();
+            testJson = testJson.replace(/```(?:json)?|```/g, '').trim();
+            if (!testJson.endsWith(']')) {
+                const lastObjEnd = testJson.lastIndexOf('}');
+                if (lastObjEnd !== -1) testJson = testJson.substring(0, lastObjEnd + 1) + ']';
+                else testJson += ']';
+            }
+            return JSON.parse(testJson);
+        } catch (e) { return null; }
+    };
+
     useEffect(() => {
         const hydrate = async () => {
-            if (id === 'new') return;
             const cacheKey = `cache_deck_detail_${id}`;
             const cached = await storage.getItem(cacheKey);
             if (cached) setCachedDeck(JSON.parse(cached));
         };
         hydrate();
     }, [id]);
-
-    // Handle initial generation if redirected with params
-    useEffect(() => {
-        if (id === 'new' && params.topic && !isGenerating && accumulatedCards.length === 0) {
-            startStreaming();
-        }
-    }, [id, params]);
-
-    const startStreaming = async () => {
-        setIsGenerating(true);
-        setAccumulatedCards([]);
-        setLoadingStage('Analyzing topic...');
-
-        try {
-            const formData = new FormData();
-            if (params.topic) formData.append('topic', params.topic as string);
-            formData.append('card_count', (params.card_count || '10') as string);
-            formData.append('difficulty', (params.difficulty || 'medium') as string);
-            
-            // Note: File handling would be complex here, so we assume topic for now
-            // In a real app, we'd handle file uploads differently.
-
-            const es = new EventSource(`${api.defaults.baseURL}/flashcards/generate/stream`, {
-                headers: { 'Authorization': `Bearer ${useAuthStore.getState().token}` },
-                method: 'POST',
-                body: formData,
-            } as any);
-
-            es.addEventListener('message', (event) => {
-                if (!event.data) return;
-                if (event.data === '[DONE]') {
-                    es.close();
-                    setIsGenerating(false);
-                    return;
-                }
-
-                try {
-                    const chunk = JSON.parse(event.data);
-                    if (chunk.type === 'status') {
-                        setLoadingStage(chunk.message);
-                    }
-                    if (chunk.cards) {
-                        setAccumulatedCards(chunk.cards);
-                    }
-                    if (chunk.db_id) {
-                        setPersistedId(chunk.db_id.toString());
-                        // Update URL without refreshing if possible, or just let it stay as 'new'
-                        router.setParams({ id: chunk.db_id.toString() });
-                    }
-                } catch (e) {}
-            });
-
-            es.addEventListener('error', () => {
-                es.close();
-                setIsGenerating(false);
-            });
-
-        } catch (e) {
-            setIsGenerating(false);
-        }
-    };
 
     useEffect(() => {
         if (deck?.flashcards) {
@@ -496,22 +492,20 @@ export default function StudyDeckScreen() {
                 </TouchableOpacity>
                 <View style={s.headerTextContainer}>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        {currentIndex + 1} of {cards.length}
+                        {currentIndex + 1} of {Math.max(cards.length, parseInt(card_count as string) || 0)}
                     </Text>
                     <View style={s.flexRowGap2}>
                         <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900, { maxWidth: SCREEN_WIDTH * 0.5, marginTop: 4 }]} numberOfLines={1}>
-                            {isGenerating ? 'Building Deck...' : (deck?.title || 'Study Deck')}
+                            {deck?.title || 'Study Deck'}
                         </Text>
-                        {(isLoading || isGenerating) && (
+                        {isGenerating && (
                              <Animated.View style={syncAnimatedStyle}>
                                 <HugeiconsIcon icon={SparklesIcon} size={14} color="#007AFF" />
                             </Animated.View>
                         )}
                     </View>
                     {isGenerating && (
-                        <Text style={{ fontSize: 11, color: '#007AFF', fontWeight: '700', marginTop: 4 }}>
-                            {loadingStage}
-                        </Text>
+                        <Text style={{ fontSize: 10, color: '#007AFF', fontWeight: '700', marginTop: 2 }}>{genStage}</Text>
                     )}
                 </View>
                 <View style={s.size10} />
@@ -528,19 +522,16 @@ export default function StudyDeckScreen() {
                 contentContainerStyle={s.pagerContent}
                 scrollEventThrottle={16}
             >
-                {cards.map((card: Card, index: number) => (
-                    <View key={card.id?.toString() || `new-${index}`} style={{ width: SCREEN_WIDTH, height: '100%', paddingHorizontal: 24 }}>
+                  {cards.map((card: any, index: number) => (
+                    <View key={card.id?.toString() || `stream-${index}`} style={{ width: SCREEN_WIDTH, height: '100%', paddingHorizontal: 24 }}>
                         <FlashcardItem card={card} isActive={currentIndex === index} isDark={isDark} />
                     </View>
                 ))}
-
-                {isGenerating && (
+                {isGenerating && cards.length < (parseInt(card_count as string) || 0) && (
                     <View style={{ width: SCREEN_WIDTH, height: '100%', paddingHorizontal: 24 }}>
-                        <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#F8FAFC', borderRadius: 24, padding: 32, justifyContent: 'center', alignItems: 'center', borderStyle: 'dashed', borderWidth: 2, borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }}>
-                            <LoadingSpinner size={32} color="#007AFF" />
-                            <Text style={{ marginTop: 20, color: '#8E8E93', fontWeight: '600', textAlign: 'center' }}>
-                                Skeeming card {cards.length + 1}...
-                            </Text>
+                        <View style={[s.loadingPlaceholder, isDark ? s.bgGrayDark : s.bgWhite, { marginTop: 20 }]}>
+                            <SkeletonLoader width="60%" height={24} style={{ marginBottom: 16 }} />
+                            <SkeletonLoader width="80%" height={16} />
                         </View>
                     </View>
                 )}
@@ -548,7 +539,7 @@ export default function StudyDeckScreen() {
 
             {/* Bottom Progress Dots */}
             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginVertical: 4 }}>
-                {Array.from({ length: cards.length + (isGenerating ? 1 : 0) }).map((_, idx: number) => (
+                {cards.map((_: any, idx: number) => (
                     <View key={idx} style={{ 
                         width: currentIndex === idx ? 8 : 6, 
                         height: currentIndex === idx ? 8 : 6, 
