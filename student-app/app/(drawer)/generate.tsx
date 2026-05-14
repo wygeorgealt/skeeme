@@ -291,11 +291,17 @@ export default function GenerateQuizScreen() {
             
             let accumulatedJson = '';
             
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${token}`,
+                'Idempotency-Key': idempotencyKey,
+            };
+
+            if (mode !== 'file') {
+                headers['Content-Type'] = 'application/json';
+            }
+
             const es = new EventSource(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Idempotency-Key': idempotencyKey,
-                },
+                headers,
                 method: 'POST',
                 body: mode === 'file' && selectedFile 
                     ? (() => {

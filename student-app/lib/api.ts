@@ -91,7 +91,15 @@ api.interceptors.response.use(
 
         if (__DEV__) {
             const errorMsg = response?.data?.message || error.message;
-            console.error(`[API] ❌ ${errorMsg} on ${url}`);
+            const errorCode = error.code;
+            console.error(`[API] ❌ ${errorMsg} (Code: ${errorCode}) on ${url}`, {
+                status: response?.status,
+                headers: response?.headers,
+                config: {
+                    method: config?.method,
+                    headers: config?.headers,
+                }
+            });
         }
 
         // Global fallback for 500 errors to ensure "Skeeme is down" is always shown

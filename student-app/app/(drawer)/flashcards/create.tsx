@@ -100,11 +100,17 @@ export default function GenerateFlashcardScreen() {
             const idempotencyKey = generateUUID();
             const url = `${process.env.EXPO_PUBLIC_API_URL}flashcards/generate/stream`;
 
+            const headers: Record<string, string> = {
+                'Authorization': `Bearer ${token}`,
+                'Idempotency-Key': idempotencyKey,
+            };
+
+            if (mode !== 'file') {
+                headers['Content-Type'] = 'application/json';
+            }
+
             const es = new EventSource(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Idempotency-Key': idempotencyKey,
-                },
+                headers,
                 method: 'POST',
                 body: mode === 'file' && selectedFile 
                     ? (() => {
