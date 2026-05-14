@@ -90,7 +90,7 @@ class FlashcardController extends Controller
 
         $requestId = (string) Str::uuid();
 
-        return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId, $title) {
+        return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId, $title, $deck) {
             $emit = function (array $payload) {
                 echo "data: " . json_encode($payload) . "\n\n";
                 if (ob_get_level() > 0) ob_flush();

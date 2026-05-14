@@ -248,75 +248,6 @@ export default function GenerateFlashcardScreen() {
     const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
     const estimatedCost = parseInt(cardCount) || 10;
 
-    if (isLoading || accumulatedCards.length > 0) {
-        return (
-            <View style={{ flex: 1, backgroundColor: C.background }}>
-                <Stack.Screen options={{ 
-                    headerShown: false,
-                    tabBarStyle: { display: 'none' } 
-                } as any} />
-                
-                <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
-                    <TouchableOpacity 
-                        onPress={() => router.back()} 
-                        activeOpacity={0.7} 
-                        style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
-                    >
-                        <AltArrowLeft size={24} color={isDark ? 'white' : '#0f172a'} />
-                    </TouchableOpacity>
-                    <Text style={[s.headerTitle, { color: C.text }]}>{isComplete ? 'Deck Ready!' : 'Building Set...'}</Text>
-                    <View style={{ width: 44 }} />
-                </View>
-
-                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
-                    {!isComplete && (
-                        <View style={{ alignItems: 'center', marginBottom: 32 }}>
-                            <LoadingSpinner size={40} color={C.primary} />
-                            <Text style={{ fontSize: 20, fontWeight: '800', marginTop: 16, color: C.text, textAlign: 'center' }}>
-                                {loadingStage || 'Skeeming...'}
-                            </Text>
-                        </View>
-                    )}
-
-                    {accumulatedCards.map((card, idx) => (
-                        <View key={idx} style={[s.card, { backgroundColor: C.card, padding: 20, marginBottom: 16, borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
-                            <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 12 }}>{card.front}</Text>
-                            <View style={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', marginBottom: 12 }} />
-                            <Text style={{ fontSize: 14, color: C.textSecondary, lineHeight: 20 }}>{card.back}</Text>
-                        </View>
-                    ))}
-
-                    {!isComplete && [1, 2].map(i => (
-                        <View key={'skel-'+i} style={[s.card, { backgroundColor: C.card, padding: 30, opacity: 0.5 - (i * 0.2), marginBottom: 16 }]}>
-                            <SkeletonLoader width="60%" height={20} style={{ marginBottom: 16 }} />
-                            <View style={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', marginBottom: 16 }} />
-                            <SkeletonLoader width="85%" height={14} style={{ marginBottom: 8 }} />
-                            <SkeletonLoader width="40%" height={14} />
-                        </View>
-                    ))}
-                </ScrollView>
-
-                {isComplete && (
-                    <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={s.formFooter}>
-                        <TouchableOpacity
-                            onPress={() => router.replace(`/flashcards/${pendingDeckId}`)}
-                            activeOpacity={0.8}
-                            style={[s.generatePillButton, { backgroundColor: '#007AFF' }]}
-                        >
-                            <Text style={[s.generatePillText, { color: '#FFF' }]}>Open Deck</Text>
-                        </TouchableOpacity>
-                    </BlurView>
-                )}
-
-                <OutOfCreditsModal 
-                    visible={showOutOfCredits} 
-                    onDismiss={() => setShowOutOfCredits(false)} 
-                    featureAttempted="flashcard" 
-                />
-            </View>
-        );
-    }
-
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
             {/* Header */}
@@ -468,14 +399,23 @@ export default function GenerateFlashcardScreen() {
             >
                 <TouchableOpacity
                     onPress={handleGenerate}
-                    disabled={!canGenerate}
+                    disabled={!canGenerate || isLoading}
                     activeOpacity={0.8}
                     style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : isDark ? '#1C1C1E' : '#E2E8F0' }]}
                 >
-                    <Text style={[s.generatePillText, { color: canGenerate ? '#FFF' : '#94a3b8' }]}>
-                        Generate Set
-                    </Text>
+                    {isLoading ? (
+                        <LoadingSpinner size={24} color="white" strokeWidth={3} />
+                    ) : (
+                        <Text style={[s.generatePillText, { color: canGenerate ? '#FFF' : '#94a3b8' }]}>
+                            Generate Set
+                        </Text>
+                    )}
                 </TouchableOpacity>
+                <OutOfCreditsModal 
+                    visible={showOutOfCredits} 
+                    onDismiss={() => setShowOutOfCredits(false)} 
+                    featureAttempted="flashcard" 
+                />
             </BlurView>
 
             <RewardModal
