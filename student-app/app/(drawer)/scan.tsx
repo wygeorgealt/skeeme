@@ -428,11 +428,14 @@ export default function ScanScreen() {
                             </View>
                         ) : (
                             <>
-                                {loading && results.length === 0 && (
+                                {loading && (
                                     <View style={s.aiResponseRow}>
-                                        <Animated.Text style={[s.aiAnalyzingText, isDark ? s.textWhite : s.textSlate900, pulseStyle]}>
-                                            {loadingStage}
-                                        </Animated.Text>
+                                        <View style={[s.thinkingBubble, isDark ? s.thinkingBubbleDark : s.thinkingBubbleLight]}>
+                                            <LoadingSpinner size={16} color={C.primary} />
+                                            <Animated.Text style={[s.aiAnalyzingText, { color: C.text }, pulseStyle]}>
+                                                {loadingStage}
+                                            </Animated.Text>
+                                        </View>
                                     </View>
                                 )}
 
@@ -677,8 +680,17 @@ const s = StyleSheet.create({
     userBubbleLight: { backgroundColor: '#f1f5f9' },
     userPromptImage: { width: 140, height: 140, borderRadius: 12 },
     aiResponseRow: { width: '100%', alignItems: 'flex-start', marginBottom: 24, paddingHorizontal: 10 },
-    aiAnalyzingText: { fontSize: 16, fontWeight: '600' },
+    aiAnalyzingText: { fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
+    thinkingBubble: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: 12, 
+        paddingHorizontal: 16, 
+        paddingVertical: 10, 
+        borderRadius: 20,
+        marginBottom: 8
+    },
+    thinkingBubbleLight: { backgroundColor: '#f1f5f9' },
+    thinkingBubbleDark: { backgroundColor: '#1C1C1E' },
 
-    thinkingContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
-    thinkingText: { fontSize: 16, fontWeight: '600', letterSpacing: -0.3 },
 });

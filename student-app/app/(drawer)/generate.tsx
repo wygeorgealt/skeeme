@@ -10,7 +10,6 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { ShareCard } from '@/components/ui/ShareCard';
-import { RewardModal } from '@/components/RewardModal';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
 import { generateUUID } from '@/lib/utils';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
@@ -119,8 +118,6 @@ export default function GenerateQuizScreen() {
     const [isSavingHistory, setIsSavingHistory] = useState(false);
     const [saveError, setSaveError] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
-    const [rewardData, setRewardData] = useState<any>(null);
-    const [isRewardModalVisible, setIsRewardModalVisible] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
     const [creditRefreshKey, setCreditRefreshKey] = useState(0);
@@ -442,11 +439,6 @@ export default function GenerateQuizScreen() {
             if (userRes.data) {
                 updateUser(userRes.data);
             }
-
-            if (res.data.reward?.earned) {
-                setRewardData(res.data.reward);
-                setIsRewardModalVisible(true);
-            }
         } catch (err) {
             if (__DEV__) console.warn('Failed to save quiz history', err);
             setSaveError(true);
@@ -622,13 +614,6 @@ export default function GenerateQuizScreen() {
                         })}
                     </View>
 
-                    {/* Debug Tool */}
-                    <TouchableOpacity
-                        onPress={() => setShowOutOfCredits(true)}
-                        style={{ marginTop: 20, marginBottom: 40, height: 50, borderRadius: 16, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
-                    >
-                        <Text style={{ color: C.textSecondary, fontWeight: '700', fontSize: 13 }}>Debug: Test Credits Modal</Text>
-                    </TouchableOpacity>
                 </ScrollView>
 
                 {/* Sticky Footer */}
@@ -641,35 +626,6 @@ export default function GenerateQuizScreen() {
                         borderTopWidth: 0,
                     }]}
                 >
-                    {__DEV__ && (
-                        <TouchableOpacity
-                            onPress={() => {
-                                setRewardData({
-                                    earned: true,
-                                    amount: 100,
-                                    message: 'Referral Success!',
-                                    type: 'referral'
-                                });
-                                setIsRewardModalVisible(true);
-                            }}
-                            style={{ 
-                                position: 'absolute', 
-                                top: -45, 
-                                right: 20, 
-                                backgroundColor: '#34C759', 
-                                paddingHorizontal: 12, 
-                                paddingVertical: 6, 
-                                borderRadius: 12,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.1,
-                                shadowRadius: 4,
-                                elevation: 3
-                            }}
-                        >
-                            <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800' }}>Test Reward</Text>
-                        </TouchableOpacity>
-                    )}
                     <TouchableOpacity
                         onPress={handleGenerate}
                         disabled={!canGenerate}
@@ -1099,7 +1055,6 @@ export default function GenerateQuizScreen() {
                 </TouchableOpacity>
             </BlurView>
 
-            <RewardModal isVisible={isRewardModalVisible} onClose={() => setIsRewardModalVisible(false)} reward={rewardData} />
             <OutOfCreditsModal visible={showOutOfCredits} onDismiss={() => setShowOutOfCredits(false)} featureAttempted="quiz" />
 
             {/* Explanation Modal */}
