@@ -209,7 +209,14 @@ class ScanController extends Controller
             $remaining = $user->fresh()->credits;
             $emit(['type' => 'complete', 'credits_remaining' => $remaining]);
 
-            // Idempotency cache (store final shape so replays look the same as live)
+            // Log Study Activity for Streak
+            try {
+                app(\App\Services\StreakService::class)->logActivity($user->id);
+            } catch (\Exception $e) {
+                Log::error("Streak update failed during scan: " . $e->getMessage());
+            }
+
+            // Idempotency cache
             if ($idempotencyKey) {
                 $cachePayload = [
                     'credits_remaining' => $remaining,
@@ -402,6 +409,13 @@ class ScanController extends Controller
                 'credits_deducted' => $user->is_unlimited_student ? 0 : $finalCost,
                 'remaining_credits' => $user->fresh()->credits
             ];
+
+            // Log Study Activity for Streak
+            try {
+                app(\App\Services\StreakService::class)->logActivity($user->id);
+            } catch (\Exception $e) {
+                Log::error("Streak update failed during scan solve: " . $e->getMessage());
+            }
 
             if ($idempotencyKey) {
                 Cache::put("idempotency_{$idempotencyKey}", $responseData, now()->addHours(24));

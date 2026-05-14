@@ -36,8 +36,18 @@ class StreakController extends Controller
             ->pluck('date')
             ->toArray();
 
+        // Get distinct dates from Scan & Solve (Transactions)
+        $scanDates = DB::table('transactions')
+            ->where('user_id', $userId)
+            ->where('action_type', 'scan_solve')
+            ->where('created_at', '>=', $thirtyDaysAgo)
+            ->select(DB::raw('DATE(created_at) as date'))
+            ->distinct()
+            ->pluck('date')
+            ->toArray();
+
         // Merge, unique, and sort
-        $activeDates = array_unique(array_merge($quizDates, $flashcardDates));
+        $activeDates = array_unique(array_merge($quizDates, $flashcardDates, $scanDates));
         sort($activeDates);
 
         return response()->json(['data' => $activeDates]);
