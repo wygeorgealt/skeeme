@@ -17,7 +17,7 @@ import GlobalErrorModal from '@/components/GlobalErrorModal';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback } from 'react';
-
+import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 import { RewardModal } from '@/components/RewardModal';
 
 type QuizMode = 'topic' | 'file';
@@ -46,6 +46,9 @@ export default function GenerateFlashcardScreen() {
     const [rewardData, setRewardData] = useState<any>(null);
     const [isRewardModalVisible, setIsRewardModalVisible] = useState(false);
     const [pendingDeckId, setPendingDeckId] = useState<number | null>(null);
+    const [accumulatedCards, setAccumulatedCards] = useState<any[]>([]);
+    const [isComplete, setIsComplete] = useState(false);
+    const [showOutOfCredits, setShowOutOfCredits] = useState(false);
     const navigation = useNavigation();
     useFocusEffect(
         useCallback(() => {
@@ -109,6 +112,8 @@ export default function GenerateFlashcardScreen() {
         }
 
         setIsLoading(true);
+        setAccumulatedCards([]);
+        setIsComplete(false);
         setLoadingStage(mode === 'file' ? 'Analyzing Document...' : 'Analyzing Topic...');
 
         const stages = mode === 'file'
@@ -166,8 +171,15 @@ export default function GenerateFlashcardScreen() {
                     }
                     if (chunk.text) {
                         accumulatedJson += chunk.text;
+                        try {
+                            const partial = parsePartialJson(accumulatedJson);
+                            if (partial && Array.isArray(partial)) {
+                                setAccumulatedCards(partial);
+                            }
+                        } catch (e) {}
                     }
                     if (chunk.db_id) {
+                        setPendingDeckId(chunk.db_id);
                         finishFlashcardGen(chunk.db_id);
                     }
                     if (chunk.error) throw new Error(chunk.error);
@@ -190,24 +202,49 @@ export default function GenerateFlashcardScreen() {
         }
     };
 
+    const parsePartialJson = (json: string) => {
+        try {
+            let testJson = json.trim();
+            testJson = testJson.replace(/```(?:json)?|```/g, '').trim();
+            if (!testJson.endsWith(']')) {
+                const lastObjEnd = testJson.lastIndexOf('}');
+                if (lastObjEnd !== -1) {
+                    testJson = testJson.substring(0, lastObjEnd + 1) + ']';
+                } else {
+                    testJson += ']';
+                }
+            }
+            return JSON.parse(testJson);
+        } catch (e) {
+            return null;
+        }
+    };
+
     const finishFlashcardGen = async (deckId: number) => {
         setIsLoading(false);
+        setIsComplete(true);
         queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
         
+        // Refresh user credits to see if we used the safety net
+        try {
+            const userRes = await api.get('me');
+            if (userRes.data) {
+                updateUser(userRes.data);
+                if (userRes.data.credits === 0 && !userRes.data.is_unlimited_student) {
+                    setShowOutOfCredits(true);
+                }
+            }
+        } catch (e) {}
+
         try {
             posthog.capture('flashcards_generated_stream', { difficulty, card_count: parseInt(cardCount) });
         } catch(e) {}
-
-        const userRes = await api.get('me');
-        if (userRes.data) updateUser(userRes.data);
-
-        router.replace(`/(drawer)/flashcards/${deckId}`);
     };
 
     const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
     const estimatedCost = parseInt(cardCount) || 10;
 
-    if (isLoading) {
+    if (isLoading || accumulatedCards.length > 0) {
         return (
             <View style={{ flex: 1, backgroundColor: C.background }}>
                 <Stack.Screen options={{ 
@@ -215,30 +252,63 @@ export default function GenerateFlashcardScreen() {
                     tabBarStyle: { display: 'none' } 
                 } as any} />
                 
-                <View style={[s.header, { paddingTop: Math.max(insets.top, 20) }]}>
-                    <Text style={[s.headerTitle, { color: C.text }]}>Building Set...</Text>
+                <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
+                    <TouchableOpacity 
+                        onPress={() => router.back()} 
+                        activeOpacity={0.7} 
+                        style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
+                    >
+                        <AltArrowLeft size={24} color={isDark ? 'white' : '#0f172a'} />
+                    </TouchableOpacity>
+                    <Text style={[s.headerTitle, { color: C.text }]}>{isComplete ? 'Deck Ready!' : 'Building Set...'}</Text>
+                    <View style={{ width: 44 }} />
                 </View>
 
-                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24 }}>
-                    <View style={{ alignItems: 'center', marginBottom: 40, marginTop: 20 }}>
-                        <LoadingSpinner size={50} color={C.primary} />
-                        <Text style={{ fontSize: 24, fontWeight: '800', marginTop: 24, color: C.text, textAlign: 'center' }}>
-                            {loadingStage || 'Skeeming...'}
-                        </Text>
-                        <Text style={{ fontSize: 16, color: C.textTertiary, marginTop: 8, textAlign: 'center' }}>
-                            Our AI is crafting your study materials
-                        </Text>
-                    </View>
+                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
+                    {!isComplete && (
+                        <View style={{ alignItems: 'center', marginBottom: 32 }}>
+                            <LoadingSpinner size={40} color={C.primary} />
+                            <Text style={{ fontSize: 20, fontWeight: '800', marginTop: 16, color: C.text, textAlign: 'center' }}>
+                                {loadingStage || 'Skeeming...'}
+                            </Text>
+                        </View>
+                    )}
 
-                    {[1, 2, 3].map(i => (
-                        <View key={i} style={[s.card, { backgroundColor: C.card, padding: 30, opacity: 1 - (i * 0.2) }]}>
-                            <SkeletonLoader width="60%" height={24} style={{ marginBottom: 16 }} />
-                            <View style={{ height: 2, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', marginVertical: 16 }} />
-                            <SkeletonLoader width="85%" height={16} style={{ marginBottom: 8 }} />
-                            <SkeletonLoader width="40%" height={16} />
+                    {accumulatedCards.map((card, idx) => (
+                        <View key={idx} style={[s.card, { backgroundColor: C.card, padding: 20, marginBottom: 16, borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 12 }}>{card.front}</Text>
+                            <View style={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', marginBottom: 12 }} />
+                            <Text style={{ fontSize: 14, color: C.textSecondary, lineHeight: 20 }}>{card.back}</Text>
+                        </View>
+                    ))}
+
+                    {!isComplete && [1, 2].map(i => (
+                        <View key={'skel-'+i} style={[s.card, { backgroundColor: C.card, padding: 30, opacity: 0.5 - (i * 0.2), marginBottom: 16 }]}>
+                            <SkeletonLoader width="60%" height={20} style={{ marginBottom: 16 }} />
+                            <View style={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', marginBottom: 16 }} />
+                            <SkeletonLoader width="85%" height={14} style={{ marginBottom: 8 }} />
+                            <SkeletonLoader width="40%" height={14} />
                         </View>
                     ))}
                 </ScrollView>
+
+                {isComplete && (
+                    <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={s.formFooter}>
+                        <TouchableOpacity
+                            onPress={() => router.replace(`/flashcards/${pendingDeckId}`)}
+                            activeOpacity={0.8}
+                            style={[s.generatePillButton, { backgroundColor: '#007AFF' }]}
+                        >
+                            <Text style={[s.generatePillText, { color: '#FFF' }]}>Open Deck</Text>
+                        </TouchableOpacity>
+                    </BlurView>
+                )}
+
+                <OutOfCreditsModal 
+                    visible={showOutOfCredits} 
+                    onDismiss={() => setShowOutOfCredits(false)} 
+                    featureAttempted="flashcard" 
+                />
             </View>
         );
     }

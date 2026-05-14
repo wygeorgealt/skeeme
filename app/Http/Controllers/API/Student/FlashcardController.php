@@ -152,20 +152,13 @@ class FlashcardController extends Controller
                 }
 
                 // 4. Credit Deduction (Atomic)
-                if (!$user->is_unlimited_student) {
-                    DB::transaction(function () use ($user, $totalCost, $modelUsed, $requestId, $title) {
-                        $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
-                        $lockedUser->decrement('credits', $totalCost);
-                        $lockedUser->transactions()->create([
-                            'type' => 'usage',
-                            'action_type' => 'flashcard_generation',
-                            'amount' => -$totalCost,
-                            'description' => "Flashcard Generation (Streaming): " . $title,
-                            'model_used' => $modelUsed,
-                            'request_id' => $requestId,
-                        ]);
-                    });
-                }
+                $user->deductCredits(
+                    $totalCost,
+                    'flashcard_generation',
+                    "Flashcard Generation (Streaming): " . $title,
+                    $requestId,
+                    $modelUsed
+                );
 
                 // Persistence logic
                 try {

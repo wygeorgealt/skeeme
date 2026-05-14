@@ -70,9 +70,11 @@ class ScanController extends Controller
 
         $canProceed = DB::transaction(function () use ($user, $scanCost) {
             $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
-            if (!$lockedUser->is_unlimited_student && $lockedUser->credits < $scanCost) {
-                return false;
-            }
+            if ($lockedUser->is_unlimited_student) return true;
+            
+            // Safety Net: Allow if user has any credits left (one last ride)
+            if ($lockedUser->credits <= 0) return false;
+
             return true;
         });
 
@@ -190,26 +192,9 @@ class ScanController extends Controller
             }
 
             // Atomic credit deduction
-            if (!$user->is_unlimited_student) {
-                DB::transaction(function () use ($user, $scanCost, $modelUsed, $requestId) {
-                    $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
-                    $lockedUser->decrement('credits', $scanCost);
-                    try {
-                        $lockedUser->transactions()->create([
-                            'type' => 'usage',
-                            'action_type' => 'scan_solve',
-                            'amount' => -$scanCost,
-                            'description' => "Scan & Solve (Streaming)",
-                            'model_used' => $modelUsed,
-                            'request_id' => $requestId,
-                        ]);
-                    } catch (\Exception $e) {
-                        Log::error("Failed to log scan transaction: " . $e->getMessage());
-                    }
-                });
-                Cache::forget("user_credits_{$user->id}");
-                \App\Jobs\CheckLowCredits::dispatch($user->id);
-            }
+            $user->deductCredits($scanCost, 'scan_solve', "Scan & Solve (Streaming)", $requestId, $modelUsed);
+            Cache::forget("user_credits_{$user->id}");
+            \App\Jobs\CheckLowCredits::dispatch($user->id);
 
             $remaining = $user->fresh()->credits;
             $emit(['type' => 'complete', 'credits_remaining' => $remaining]);

@@ -172,7 +172,7 @@ export default function ScanScreen() {
         let isUnlimited = user?.is_unlimited ?? false;
 
         const minCost = BASE_SCAN_COST + COST_PER_SOLUTION;
-        if (!isUnlimited && currentCredits < minCost) {
+        if (!isUnlimited && currentCredits <= 0) {
             try {
                 const userRes = await api.get('me');
                 if (userRes.data) {
@@ -182,7 +182,7 @@ export default function ScanScreen() {
                 }
             } catch (e) { }
 
-            if (!isUnlimited && currentCredits < minCost) {
+            if (!isUnlimited && currentCredits <= 0) {
                 setShowOutOfCredits(true);
                 return;
             }
@@ -224,6 +224,9 @@ export default function ScanScreen() {
                 onComplete: (creditsRemaining) => {
                     if (user) {
                         updateUser({ ...user, credits: creditsRemaining } as any);
+                        if (creditsRemaining === 0 && !isUnlimited) {
+                            setShowOutOfCredits(true);
+                        }
                     }
                 },
                 onError: (message) => {

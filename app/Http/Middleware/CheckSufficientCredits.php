@@ -58,8 +58,14 @@ class CheckSufficientCredits
 
 
 
-        // 4. Validate
+        // 4. Validate (Safety Net Logic)
         if ($available < $cost) {
+            // Safety Net: If free user has at least 1 credit, let them do one last "heavy" action
+            if ($user->getStudentPlan() === 'free' && $available > 0) {
+                $request->attributes->set('calculated_credit_cost', $cost);
+                return $next($request);
+            }
+
             Log::warning("Insufficient credits intercepted by middleware", [
                 'user_id' => $user->id,
                 'available' => $available,

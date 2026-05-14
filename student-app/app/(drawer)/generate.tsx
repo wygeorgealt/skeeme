@@ -287,9 +287,8 @@ export default function GenerateQuizScreen() {
         if (mode === 'topic' && !topic.trim()) return Alert.alert('Required', 'Please enter a topic.');
         if (mode === 'file' && !selectedFile) return Alert.alert('Required', 'Please select a document.');
         
-        // Pre-flight check
-        const estimatedCost = 30; // Flat rate
-        if (!user?.is_unlimited && (user?.credits ?? 0) < estimatedCost) {
+        // Pre-flight check (Safety Net: allow if > 0)
+        if (!user?.is_unlimited && (user?.credits ?? 0) <= 0) {
             setShowOutOfCredits(true);
             return;
         }
@@ -434,7 +433,12 @@ export default function GenerateQuizScreen() {
             
             // Refresh user credits
             const userRes = await api.get('me');
-            if (userRes.data) updateUser(userRes.data);
+            if (userRes.data) {
+                updateUser(userRes.data);
+                if (userRes.data.credits === 0 && !userRes.data.is_unlimited_student) {
+                    setShowOutOfCredits(true);
+                }
+            }
             
             if (timerEnabled) startTimer(parseInt(timerMinutes) || 10);
             

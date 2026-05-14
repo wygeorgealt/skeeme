@@ -154,20 +154,13 @@ class PracticeQuizController extends Controller
                 }
 
                 // 4. Credit Deduction (Atomic)
-                if (!$user->is_unlimited_student) {
-                    DB::transaction(function () use ($user, $totalCost, $modelUsed, $requestId, $validated) {
-                        $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
-                        $lockedUser->decrement('credits', $totalCost);
-                        $lockedUser->transactions()->create([
-                            'type' => 'usage',
-                            'action_type' => 'quiz_generation',
-                            'amount' => -$totalCost,
-                            'description' => "Practice Quiz (Streaming): " . ($validated['topic'] ?? 'File Content'),
-                            'model_used' => $modelUsed,
-                            'request_id' => $requestId,
-                        ]);
-                    });
-                }
+                $user->deductCredits(
+                    $totalCost, 
+                    'quiz_generation', 
+                    "Practice Quiz (Streaming): " . ($validated['topic'] ?? 'File Content'),
+                    $requestId,
+                    $modelUsed
+                );
 
                 echo "data: [DONE]\n\n";
             } catch (\Exception $e) {

@@ -157,6 +157,32 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Deduct credits safely, capping at 0 (Safety Net Logic).
+     */
+    public function deductCredits(int $amount, string $actionType, string $description, string $requestId, ?string $modelUsed = null): void
+    {
+        if ($this->is_unlimited_student) return;
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($amount, $actionType, $description, $requestId, $modelUsed) {
+            $user = self::where('id', $this->id)->lockForUpdate()->first();
+            
+            // Safety net: amount to deduct is limited by current balance if it's a "one last ride" scenario
+            $actualDeduction = min($user->credits, $amount);
+            
+            $user->decrement('credits', $actualDeduction);
+            
+            $user->transactions()->create([
+                'type' => 'usage',
+                'action_type' => $actionType,
+                'amount' => -$actualDeduction,
+                'description' => $description,
+                'model_used' => $modelUsed,
+                'request_id' => $requestId,
+            ]);
+        });
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string
