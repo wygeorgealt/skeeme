@@ -364,8 +364,9 @@ export default function GenerateQuizScreen() {
                         // Partial parse to show questions early
                         try {
                             const partial = parsePartialJson(accumulatedJson);
-                            if (partial && partial.questions) {
-                                setQuestions(partial.questions);
+                            if (partial) {
+                                const qs = Array.isArray(partial) ? partial : (partial.questions || []);
+                                if (qs.length > 0) setQuestions(qs);
                             }
                         } catch (e) {}
                     }
@@ -392,16 +393,27 @@ export default function GenerateQuizScreen() {
     const parsePartialJson = (json: string) => {
         try {
             let testJson = json.trim();
-            if (!testJson.endsWith(']}')) {
-                if (testJson.includes('"questions":[')) {
+            // Remove markdown code blocks if present
+            testJson = testJson.replace(/```(?:json)?|```/g, '').trim();
+            
+            if (!testJson.endsWith(']') && !testJson.endsWith('}')) {
+                // Try to close an array
+                if (testJson.startsWith('[')) {
+                    const lastObjEnd = testJson.lastIndexOf('}');
+                    if (lastObjEnd !== -1) {
+                        testJson = testJson.substring(0, lastObjEnd + 1) + ']';
+                    } else {
+                        testJson += ']';
+                    }
+                } 
+                // Try to close a "questions": [] object
+                else if (testJson.includes('"questions":[')) {
                     const lastObjEnd = testJson.lastIndexOf('}');
                     if (lastObjEnd !== -1) {
                         testJson = testJson.substring(0, lastObjEnd + 1) + ']}';
                     } else {
                         testJson += ']}';
                     }
-                } else {
-                    testJson += '"}';
                 }
             }
             return JSON.parse(testJson);
@@ -415,7 +427,8 @@ export default function GenerateQuizScreen() {
         try {
             const cleanJson = fullJson.replace(/```(?:json)?|```/g, '').trim();
             const data = JSON.parse(cleanJson);
-            setQuestions(data.questions || []);
+            const questionsArr = Array.isArray(data) ? data : (data.questions || []);
+            setQuestions(questionsArr);
             
             posthog.capture('quiz_generated_stream', { mode, difficulty, format });
             

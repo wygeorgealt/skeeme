@@ -70,7 +70,9 @@ class PracticeQuizController extends Controller
 
         return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId) {
             $emit = function (array $payload) use ($requestId) {
-                error_log("[DEBUG] [$requestId] Emitting: " . ($payload['type'] ?? (isset($payload['error']) ? 'ERROR' : 'text chunk')));
+                if (isset($payload['type']) && $payload['type'] === 'status') {
+                    error_log("[DEBUG] [$requestId] Emitting status: " . $payload['message']);
+                }
                 echo "data: " . json_encode($payload) . "\n\n";
                 if (ob_get_level() > 0) ob_flush();
                 flush();
