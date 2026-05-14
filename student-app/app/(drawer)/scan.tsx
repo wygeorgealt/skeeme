@@ -365,10 +365,16 @@ export default function ScanScreen() {
                     <AltArrowLeft size={20} color={C.text} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Results</Text>
-                <View style={{ width: 44 }} />
+                {results.length > 0 ? (
+                    <TouchableOpacity onPress={handleExport} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
+                        <Share size={20} color={C.text} />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 44 }} />
+                )}
             </View>
 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 220 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
                 {!!imageUri && !loading && results.length === 0 && (
                     <View style={s.previewContainer}>
                         <BlurView
@@ -441,20 +447,18 @@ export default function ScanScreen() {
 
                                 {results.map((item, index) => (
                             <View key={index} style={[s.answerCard, isDark ? s.cardDark : s.cardLight]}>
-                                <View style={s.sectionHeaderRow}>
-                                    <View style={s.sectionTitleContainer}>
-                                        <Text style={[s.sectionTitle, isDark ? s.textWhite : s.textSlate900]}>Question</Text>
-                                    </View>
-                                    {!!item.topic && (
+                                {!!item.topic && (
+                                    <View style={s.sectionHeaderRow}>
+                                        <View style={s.sectionTitleContainer} />
                                         <View style={s.topicPill}>
                                             <Text style={s.topicPillText}>{item.topic}</Text>
                                         </View>
-                                    )}
-                                </View>
+                                    </View>
+                                )}
                                 <MathText
                                     content={item.question || 'No question text found.'}
                                     color={isDark ? '#FFFFFF' : '#1e293b'}
-                                    fontSize={16}
+                                    fontSize={15}
                                     containerStyle={{ marginBottom: 24 }}
                                 />
 
@@ -471,7 +475,7 @@ export default function ScanScreen() {
                                         <MathText
                                             content={item.solution || item.summary || ''}
                                             color={isDark ? '#FFFFFF' : '#0f172a'}
-                                            fontSize={17}
+                                            fontSize={16}
                                             containerStyle={{ paddingVertical: 8 }}
                                         />
                                     </View>
@@ -486,7 +490,7 @@ export default function ScanScreen() {
                                             : (item.steps && item.steps.length > 0 ? item.steps.join('\n\n') : 'No detailed explanation available.')
                                     }
                                     color={isDark ? '#cbd5e1' : '#334155'}
-                                    fontSize={16}
+                                    fontSize={15}
                                     containerStyle={{ marginBottom: 20 }}
                                 />
 
@@ -553,39 +557,6 @@ export default function ScanScreen() {
                 <View style={{ height: 24 }} />
             </ScrollView>
 
-            {!!(results.length > 0) && (
-                <BlurView
-                    intensity={Platform.OS === 'ios' ? (isDark ? 80 : 100) : 0}
-                    tint={isDark ? "dark" : "light"}
-                    style={[
-                        s.slimFooter,
-                        isDark ? s.slimFooterDark : s.slimFooterLight,
-                        {
-                            bottom: 0,
-                            paddingBottom: Math.max(insets.bottom, 16) + 75,
-                            backgroundColor: isDark
-                                ? (Platform.OS === 'android' ? '#000000' : 'rgba(0,0,0,0.8)')
-                                : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.9)')
-                        }
-                    ]}
-                >
-                    <TouchableOpacity onPress={handleExport} disabled={loading} activeOpacity={0.7} style={s.slimFooterBtn}>
-                        {loading ? (
-                            <LoadingSpinner size={24} />
-                        ) : (
-                            <>
-                                <Share size={18} color={isDark ? '#cbd5e1' : '#64748b'} />
-                                <Text style={[s.slimFooterBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>Share PDF</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                    <View style={[s.slimFooterDivider, isDark ? s.dividerDark : s.dividerLight]} />
-                    <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={s.slimFooterBtn}>
-                        <CameraAdd size={18} color={isDark ? '#cbd5e1' : '#64748b'} />
-                        <Text style={[s.slimFooterBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>Scan New</Text>
-                    </TouchableOpacity>
-                </BlurView>
-            )}
         </View>
     );
 }

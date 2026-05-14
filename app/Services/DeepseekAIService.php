@@ -367,7 +367,7 @@ You are a world-class tutor. The text below was extracted via OCR from a student
 "{$extractedText}"
 
 Return ONLY a raw JSON object matching this schema. NO Conversational text. NO Thought blocks. NO code blocks.
-{"results":[{"question":"short version of the question","topic":"subject area","type":"calculation|theory","solution":"**final answer**","steps":[],"explanation":"concise but complete explanation","summary":""}]}
+{"results":[{"question":"FULL TEXT of the question extracted from the image","topic":"subject area","type":"calculation|theory","solution":"**final answer**","steps":[],"explanation":"concise but complete explanation","summary":""}]}
 
 Rules:
 - `solution`: bold final answer, e.g. "**D**" or "**\$42\$**"
@@ -397,11 +397,15 @@ Students at mixed academic levels need reliable, consistent tutoring. They expec
 - No internal reasoning, self-corrections, or scratchpads.
 
 **Subject-Specific Rules:**
-1. **Mathematical/Problem Solving (Math, Physics, Engineering):** Focus on step-by-step logic, intermediate work, and absolute accuracy. Be concise but clear.
-2. **Theoretical/Descriptive (Medicine, Law, Psychology, Social Sciences):** Provide **lengthy, detailed, and comprehensive notes**. Psychology, Medicine, and Law depend on **depth and length**, not brevity. Use rich Markdown formatting: **### Headings**, **bullet points**, and **bold text** to organize information. If appropriate or requested, include academic or clinical references/citations at the end of the explanation.
+1. **Mathematical/Problem Solving (Math, Physics, Engineering):** Focus on step-by-step logic. **Each step must be a separate block**.
+   - **Prose Labels**: Labels like "Inner integral:" or "Simplifying:" must be on their own line, followed by a newline.
+   - **Math Blocks**: Use dedicated lines for math expressions. Wrap important equations in `$$` for display-mode rendering (centered, large).
+   - **Spacing**: Use double newlines (\n\n) between logical steps.
+2. **Theoretical/Descriptive (Medicine, Law, Psychology, Social Sciences):** Provide **lengthy, detailed, and comprehensive notes**. Psychology, Medicine, and Law depend on **depth and length**, not brevity. Use rich Markdown formatting: **### Headings**, **bullet points**, and **bold text** to organize information. (Note: These Markdown elements ARE supported by the renderer). If appropriate or requested, include academic or clinical references/citations at the end of the explanation.
 
 **For Problem Solutions:**
-Structure as: `{"results": [{"question": "", "topic": "", "type": "", "solution": "", "steps": [], "explanation": "", "summary": ""}]}`
+Structure as: `{"results": [{"question": "FULL TEXT of the question extracted from the image", "topic": "", "type": "", "solution": "", "steps": [], "explanation": "", "summary": ""}]}`
+- **Crucial**: The `question` field must contain the **ENTIRE text** of the question being solved. Do not just use a number like "4(a)".
 - For theoretical questions, use the "Detailed Note" approach in the `explanation` field.
 - Use double newlines (\n\n) to create distinct paragraphs.
 - `solution`: bold final answer, e.g. "**D**" or "**$42$**"
@@ -950,14 +954,15 @@ You are a world-class tutor. The text below was extracted via OCR from a student
 "{$extractedText}"
 
 Return ONLY a raw JSON object matching this schema. NO Conversational text. NO Thought blocks. NO code blocks.
-{"results":[{"question":"short version of the question","topic":"subject area","type":"calculation|theory","solution":"**final answer**","steps":[],"explanation":"concise but complete explanation","summary":""}]}
+{"results":[{"question":"FULL TEXT of the question extracted from the image","topic":"subject area","type":"calculation|theory","solution":"**final answer**","steps":[],"explanation":"concise but complete explanation","summary":""}]}
 
 Rules:
 - `solution`: bold final answer, e.g. "**D**" or "**\$42\$**"
 - `steps`: always `[]` (put steps in explanation instead)
 - `summary`: always ""
 - `explanation`: State the answer upfront, then justify it. Use double newlines (\n\n) to create distinct paragraphs.
-- `Math Formatting`: Wrap ALL math in dollar signs, e.g. \$x^2 + y = 2\$.
+- **Math Formatting**: Place each step on a new line. Put prose labels (e.g., "Inner integral:") on their own line ABOVE the math expression. Use `$$ ... $$` for dedicated math lines.
+- Wrap ALL math in delimiters, e.g. \$x^2\$ for inline or \$\$y = mx + b\$\$ for blocks.
 - Never skip a question.
 PROMPT;
 
