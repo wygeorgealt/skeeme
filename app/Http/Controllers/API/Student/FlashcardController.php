@@ -112,6 +112,15 @@ class FlashcardController extends Controller
                 $modelUsed = $useDeepseek ? 'deepseek-chat' : AIService::MODEL_HAIKU;
                 $service = $useDeepseek ? $this->deepseek : $this->aiService;
 
+                // Create Deck immediately to get a DB ID
+                $deck = \App\Models\FlashcardDeck::create([
+                    'user_id' => $user->id,
+                    'title' => $title,
+                    'source_type' => 'ai_stream',
+                    'status' => 'generating'
+                ]);
+                $emit(['db_id' => $deck->id]);
+
                 $params = [
                     'model' => $modelUsed,
                     'max_tokens' => $this->aiService->calculateMaxTokens('flashcard', $validated['card_count']),
@@ -122,7 +131,9 @@ class FlashcardController extends Controller
                     'temperature' => 0.7,
                 ];
 
-                $onChunk = function ($chunk) use (&$fullContent, $useDeepseek, $emit) {
+                $cardsParsed = 0;
+
+                $onChunk = function ($chunk) use (&$fullContent, $useDeepseek, $emit, $deck, &$cardsParsed) {
                     $text = '';
                     if ($useDeepseek) {
                         $text = $chunk['choices'][0]['delta']['content'] ?? '';
@@ -134,7 +145,32 @@ class FlashcardController extends Controller
 
                     if ($text !== '') {
                         $fullContent .= $text;
-                        $emit(['text' => $text]);
+                        $emit(['type' => 'text_delta', 'text' => $text]);
+
+                        try {
+                            $cleanJson = preg_replace('/^.*?\[/s', '[', $fullContent);
+                            if (!str_ends_with(trim($cleanJson), ']')) {
+                                $lastObjEnd = strrpos($cleanJson, '}');
+                                if ($lastObjEnd !== false) {
+                                    $partialJson = substr($cleanJson, 0, $lastObjEnd + 1) . ']';
+                                    $data = json_decode($partialJson, true);
+                                    if (is_array($data) && count($data) > $cardsParsed) {
+                                        for ($i = $cardsParsed; $i < count($data); $i++) {
+                                            $c = $data[$i];
+                                            if (!empty($c['front']) && !empty($c['back'])) {
+                                                $deck->flashcards()->create([
+                                                    'front' => $c['front'],
+                                                    'back' => $c['back'],
+                                                    'order_column' => $i
+                                                ]);
+                                                $cardsParsed++;
+                                            }
+                                        }
+                                        $emit(['cards' => $data]);
+                                    }
+                                }
+                            }
+                        } catch (\Exception $e) {}
                     }
                 };
 
@@ -160,41 +196,25 @@ class FlashcardController extends Controller
                     $modelUsed
                 );
 
-                // Persistence logic
-                try {
-                    $cleanJson = preg_replace('/```(?:json)?|```/s', '', $fullContent);
-                    $cardsData = json_decode(trim($cleanJson), true);
-                    
-                    if (is_array($cardsData)) {
-                        $deck = DB::transaction(function () use ($cardsData, $user, $title) {
-                            $deck = \App\Models\FlashcardDeck::create([
-                                'user_id' => $user->id,
-                                'title' => $title,
-                                'source_type' => 'ai_stream',
+                // One final emit and persistence check
+                $cleanJson = preg_replace('/^.*?\[/s', '[', $fullContent);
+                $finalData = json_decode(trim($cleanJson), true);
+                if (is_array($finalData) && count($finalData) > $cardsParsed) {
+                    for ($i = $cardsParsed; $i < count($finalData); $i++) {
+                        $c = $finalData[$i];
+                        if (!empty($c['front']) && !empty($c['back'])) {
+                            $deck->flashcards()->create([
+                                'front' => $c['front'],
+                                'back' => $c['back'],
+                                'order_column' => $i
                             ]);
-                            
-                            $toInsert = [];
-                            foreach ($cardsData as $idx => $c) {
-                                if (empty($c['front']) || empty($c['back'])) continue;
-                                $toInsert[] = [
-                                    'flashcard_deck_id' => $deck->id,
-                                    'front' => $c['front'],
-                                    'back' => $c['back'],
-                                    'order_column' => $idx,
-                                    'created_at' => now(),
-                                    'updated_at' => now()
-                                ];
-                            }
-                            if (!empty($toInsert)) {
-                                \App\Models\Flashcard::insert($toInsert);
-                            }
-                            return $deck;
-                        });
-                        $emit(['db_id' => $deck->id]);
+                            $cardsParsed++;
+                        }
                     }
-                } catch (\Exception $saveEx) {
-                    Log::error("Failed to save streamed flashcards: " . $saveEx->getMessage());
+                    $emit(['cards' => $finalData]);
                 }
+                
+                $deck->update(['status' => 'completed']);
 
                 echo "data: [DONE]\n\n";
             } catch (\Exception $e) {

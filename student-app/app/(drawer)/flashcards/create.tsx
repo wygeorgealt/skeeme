@@ -1,31 +1,21 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Platform } from 'react-native';
-import EventSource from 'react-native-sse';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { router, Stack, useFocusEffect } from 'expo-router';
-import { generateUUID } from '@/lib/utils';
+import { router, Stack } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import * as DocumentPicker from 'expo-document-picker';
-import { useQueryClient } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { posthog } from '@/lib/posthog';
 import { CheckCircle, DocumentText, CloudUpload, Leaf, LightbulbBolt, Rocket, FolderOpen, AltArrowLeft } from '@solar-icons/react-native/Bold';
-import GlobalErrorModal from '@/components/GlobalErrorModal';
-import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
-import { useNavigation } from '@react-navigation/native';
-import React, { useCallback } from 'react';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
-import { RewardModal } from '@/components/RewardModal';
+import React from 'react';
 
 type QuizMode = 'topic' | 'file';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
 export default function GenerateFlashcardScreen() {
-    const { user, updateUser } = useAuthStore();
-    const queryClient = useQueryClient();
+    const { user } = useAuthStore();
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -35,43 +25,9 @@ export default function GenerateFlashcardScreen() {
     const [topic, setTopic] = useState('');
     const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
     const [isProcessingFile, setIsProcessingFile] = useState(false);
-    const [loadingStage, setLoadingStage] = useState('');
     const [cardCount, setCardCount] = useState('10');
     const [difficulty, setDifficulty] = useState<Difficulty>('medium');
-    const [isLoading, setIsLoading] = useState(false);
-    const [globalError, setGlobalError] = useState<string | null>(null);
-    const [showErrorModal, setShowErrorModal] = useState(false);
-
-    // Reward Modal State
-    const [rewardData, setRewardData] = useState<any>(null);
-    const [isRewardModalVisible, setIsRewardModalVisible] = useState(false);
-    const [pendingDeckId, setPendingDeckId] = useState<number | null>(null);
-    const [accumulatedCards, setAccumulatedCards] = useState<any[]>([]);
-    const [isComplete, setIsComplete] = useState(false);
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
-    const navigation = useNavigation();
-    useFocusEffect(
-        useCallback(() => {
-            const onBeforeRemove = (e: any) => {
-                if (!isLoading) return;
-                e.preventDefault();
-                Alert.alert(
-                    'Stop Generation?',
-                    'If you leave now, the flashcard generation will be cancelled. Are you sure?',
-                    [
-                        { text: "No, Stay", style: 'cancel', onPress: () => {} },
-                        {
-                            text: 'Yes, Stop',
-                            style: 'destructive',
-                            onPress: () => navigation.dispatch(e.data.action),
-                        },
-                    ]
-                );
-            };
-            navigation.addListener('beforeRemove', onBeforeRemove);
-            return () => navigation.removeListener('beforeRemove', onBeforeRemove);
-        }, [navigation, isLoading])
-    );
 
     const handleFileSelect = async () => {
         try {
@@ -83,20 +39,14 @@ export default function GenerateFlashcardScreen() {
             if (!r.canceled && r.assets?.length) {
                 const asset = r.assets[0];
                 if (asset.size && asset.size > 5 * 1024 * 1024) {
-                    Alert.alert('File too large', 'Please upload a file smaller than 5MB. Ensure it contains extractable text.');
+                    Alert.alert('File too large', 'Please upload a file smaller than 5MB.');
                     return;
                 }
-
-                setIsProcessingFile(true);
-                setTimeout(() => {
-                    setSelectedFile(asset);
-                    setMode('file');
-                    setTopic('');
-                    setIsProcessingFile(false);
-                }, 800);
+                setSelectedFile(asset);
+                setMode('file');
+                setTopic('');
             }
         } catch {
-            setIsProcessingFile(false);
             Alert.alert('Error', 'Failed to pick document.');
         }
     };
@@ -105,216 +55,35 @@ export default function GenerateFlashcardScreen() {
         if (mode === 'topic' && !topic.trim()) return Alert.alert('Required', 'Please enter a topic.');
         if (mode === 'file' && !selectedFile) return Alert.alert('Required', 'Please select a document.');
         
-        const count = parseInt(cardCount) || 10;
-        if (!user?.is_unlimited && (user?.credits ?? 0) < count) {
-            Alert.alert('Insufficient Credits', 'You need more credits to generate this deck.');
+        // Safety Net Check
+        if (!user?.is_unlimited && (user?.credits ?? 0) <= 0) {
+            setShowOutOfCredits(true);
             return;
         }
 
-        setIsLoading(true);
-        setAccumulatedCards([]);
-        setIsComplete(false);
-        setLoadingStage(mode === 'file' ? 'Analyzing Document...' : 'Analyzing Topic...');
-
-        const stages = mode === 'file'
-            ? ['Skeeming...', 'Solving...', 'Identifying key concepts...', 'Creating cards...', 'Almost ready...']
-            : ['Skeeming...', 'Solving...', 'Researching Topic...', 'Drafting cards...', 'Almost ready...'];
-
-        let stageIdx = 0;
-        const stageInterval = setInterval(() => {
-            stageIdx = Math.min(stageIdx + 1, stages.length - 1);
-            setLoadingStage(stages[stageIdx]);
-        }, 2500);
-
-        try {
-            const token = useAuthStore.getState().token;
-            const idempotencyKey = generateUUID();
-            const url = `${process.env.EXPO_PUBLIC_API_URL}flashcards/generate/stream`;
-
-            const headers: Record<string, string> = {
-                'Authorization': `Bearer ${token}`,
-                'Idempotency-Key': idempotencyKey,
-            };
-
-            if (mode !== 'file') {
-                headers['Content-Type'] = 'application/json';
-            }
-
-            const es = new EventSource(url, {
-                headers,
-                method: 'POST',
-                body: mode === 'file' && selectedFile 
-                    ? (() => {
-                        const fd = new FormData();
-                        fd.append('file', { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.mimeType || 'application/octet-stream' } as any);
-                        fd.append('card_count', cardCount);
-                        fd.append('difficulty', difficulty);
-                        return fd;
-                      })()
-                    : JSON.stringify({ topic, card_count: count, difficulty }),
-            } as any);
-
-            let accumulatedJson = '';
-
-            es.addEventListener('message', (event) => {
-                if (event.data === '[DONE]') {
-                    es.close();
-                    clearInterval(stageInterval);
-                    // Final check - results are saved on backend
-                    return;
-                }
-
-                try {
-                    const chunk = JSON.parse(event.data || '{}');
-                    if (chunk.type === 'status') {
-                        setLoadingStage(chunk.message);
-                    }
-                    if (chunk.text) {
-                        accumulatedJson += chunk.text;
-                        try {
-                            const partial = parsePartialJson(accumulatedJson);
-                            if (partial && Array.isArray(partial)) {
-                                setAccumulatedCards(partial);
-                            }
-                        } catch (e) {}
-                    }
-                    if (chunk.db_id) {
-                        setPendingDeckId(chunk.db_id);
-                        finishFlashcardGen(chunk.db_id);
-                    }
-                    if (chunk.error) throw new Error(chunk.error);
-                } catch (e) {}
-            });
-
-            es.addEventListener('error', (event) => {
-                es.close();
-                setIsLoading(false);
-                clearInterval(stageInterval);
-                setGlobalError('Skeeme is down, Please try again later.');
-                setShowErrorModal(true);
-            });
-
-        } catch (e: any) {
-            clearInterval(stageInterval);
-            setIsLoading(false);
-            setGlobalError('Failed to start generation. Please check your connection.');
-            setShowErrorModal(true);
+        if (mode === 'file') {
+            Alert.alert('Coming Soon', 'File-based flashcards are being optimized. Please use Topic for now.');
+            return;
         }
-    };
 
-    const parsePartialJson = (json: string) => {
-        try {
-            let testJson = json.trim();
-            testJson = testJson.replace(/```(?:json)?|```/g, '').trim();
-            if (!testJson.endsWith(']')) {
-                const lastObjEnd = testJson.lastIndexOf('}');
-                if (lastObjEnd !== -1) {
-                    testJson = testJson.substring(0, lastObjEnd + 1) + ']';
-                } else {
-                    testJson += ']';
-                }
+        // Redirect to the viewer which will handle the stream
+        router.push({
+            pathname: '/flashcards/[id]',
+            params: {
+                id: 'new',
+                topic: topic,
+                card_count: cardCount,
+                difficulty: difficulty
             }
-            return JSON.parse(testJson);
-        } catch (e) {
-            return null;
-        }
-    };
-
-    const finishFlashcardGen = async (deckId: number) => {
-        setIsLoading(false);
-        setIsComplete(true);
-        queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
-        
-        // Refresh user credits to see if we used the safety net
-        try {
-            const userRes = await api.get('me');
-            if (userRes.data) {
-                updateUser(userRes.data);
-                if (userRes.data.credits === 0 && !userRes.data.is_unlimited_student) {
-                    setShowOutOfCredits(true);
-                }
-            }
-        } catch (e) {}
-
-        try {
-            posthog.capture('flashcards_generated_stream', { difficulty, card_count: parseInt(cardCount) });
-        } catch(e) {}
+        } as any);
     };
 
     const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
-    const estimatedCost = parseInt(cardCount) || 10;
-
-    if (isLoading || accumulatedCards.length > 0) {
-        return (
-            <View style={{ flex: 1, backgroundColor: C.background }}>
-                <Stack.Screen options={{ 
-                    headerShown: false,
-                    tabBarStyle: { display: 'none' } 
-                } as any} />
-                
-                <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
-                    <TouchableOpacity 
-                        onPress={() => router.back()} 
-                        activeOpacity={0.7} 
-                        style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
-                    >
-                        <AltArrowLeft size={24} color={isDark ? 'white' : '#0f172a'} />
-                    </TouchableOpacity>
-                    <Text style={[s.headerTitle, { color: C.text }]}>{isComplete ? 'Deck Ready!' : 'Building Set...'}</Text>
-                    <View style={{ width: 44 }} />
-                </View>
-
-                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: 120 }}>
-                    {!isComplete && (
-                        <View style={{ alignItems: 'center', marginBottom: 32 }}>
-                            <LoadingSpinner size={40} color={C.primary} />
-                            <Text style={{ fontSize: 20, fontWeight: '800', marginTop: 16, color: C.text, textAlign: 'center' }}>
-                                {loadingStage || 'Skeeming...'}
-                            </Text>
-                        </View>
-                    )}
-
-                    {accumulatedCards.map((card, idx) => (
-                        <View key={idx} style={[s.card, { backgroundColor: C.card, padding: 20, marginBottom: 16, borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
-                            <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 12 }}>{card.front}</Text>
-                            <View style={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', marginBottom: 12 }} />
-                            <Text style={{ fontSize: 14, color: C.textSecondary, lineHeight: 20 }}>{card.back}</Text>
-                        </View>
-                    ))}
-
-                    {!isComplete && [1, 2].map(i => (
-                        <View key={'skel-'+i} style={[s.card, { backgroundColor: C.card, padding: 30, opacity: 0.5 - (i * 0.2), marginBottom: 16 }]}>
-                            <SkeletonLoader width="60%" height={20} style={{ marginBottom: 16 }} />
-                            <View style={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', marginBottom: 16 }} />
-                            <SkeletonLoader width="85%" height={14} style={{ marginBottom: 8 }} />
-                            <SkeletonLoader width="40%" height={14} />
-                        </View>
-                    ))}
-                </ScrollView>
-
-                {isComplete && (
-                    <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={s.formFooter}>
-                        <TouchableOpacity
-                            onPress={() => router.replace(`/flashcards/${pendingDeckId}`)}
-                            activeOpacity={0.8}
-                            style={[s.generatePillButton, { backgroundColor: '#007AFF' }]}
-                        >
-                            <Text style={[s.generatePillText, { color: '#FFF' }]}>Open Deck</Text>
-                        </TouchableOpacity>
-                    </BlurView>
-                )}
-
-                <OutOfCreditsModal 
-                    visible={showOutOfCredits} 
-                    onDismiss={() => setShowOutOfCredits(false)} 
-                    featureAttempted="flashcard" 
-                />
-            </View>
-        );
-    }
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
+            <Stack.Screen options={{ title: 'Create Deck', headerShown: false }} />
+            
             {/* Header */}
             <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity 
@@ -328,7 +97,7 @@ export default function GenerateFlashcardScreen() {
                 <View style={{ width: 44 }} />
             </View>
 
-                <ScrollView 
+            <ScrollView 
                 style={{ flex: 1 }} 
                 contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220, paddingTop: 10 }} 
                 showsVerticalScrollIndicator={false}
@@ -341,208 +110,185 @@ export default function GenerateFlashcardScreen() {
                             <TouchableOpacity 
                                 key={m} 
                                 onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                style={[s.segmentBtn, isSelected && (isDark ? s.segmentBtnActiveDark : s.segmentBtnActiveLight)]}
+                                style={[s.segmentedOption, isSelected && s.segmentedOptionActive]}
+                                activeOpacity={0.8}
                             >
-                                <Text style={[s.segmentText, { color: isSelected ? C.text : C.textTertiary, fontWeight: isSelected ? '700' : '500' }]}>
-                                    {m === 'topic' ? 'By Topic' : 'From File'}
+                                <Text style={[s.segmentedText, isSelected ? s.segmentedTextActive : { color: C.textSecondary }]}>
+                                    {m === 'topic' ? 'Topic' : 'Document'}
                                 </Text>
                             </TouchableOpacity>
                         );
                     })}
                 </View>
 
-                {/* Input Area */}
                 {mode === 'topic' ? (
-                    <View style={[s.card, { backgroundColor: C.card, marginBottom: 32 }]}>
+                    <View style={[s.card, { backgroundColor: C.card }]}>
+                        <View style={s.inputHeader}>
+                            <LightbulbBolt size={18} color="#007AFF" />
+                            <Text style={[s.inputLabel, { color: C.text }]}>What should we cover?</Text>
+                        </View>
                         <TextInput
-                            style={[s.textInput, { color: C.text }]}
-                            placeholder="E.g. Cell Biology, World War II..."
-                            placeholderTextColor="#94a3b8"
+                            style={[s.topicInput, { color: C.text, borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}
+                            placeholder="e.g. Photosynthesis, Civil Rights Movement..."
+                            placeholderTextColor={C.textTertiary}
                             value={topic}
                             onChangeText={setTopic}
-                            multiline={false}
+                            multiline
                         />
+                        <View style={s.tipsContainer}>
+                            <CheckCircle size={14} color="#34C759" />
+                            <Text style={s.tipText}>Specific topics give better results</Text>
+                        </View>
                     </View>
                 ) : (
-                    <TouchableOpacity
+                    <TouchableOpacity 
                         onPress={handleFileSelect}
-                        disabled={isProcessingFile}
                         activeOpacity={0.7}
-                        style={[s.card, s.uploadBox, { backgroundColor: C.card, marginBottom: 32 }]}
+                        style={[s.uploadCard, { backgroundColor: C.card, borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]}
                     >
-                        {isProcessingFile ? (
-                            <View style={s.centered}>
-                                <LoadingSpinner size={32} />
-                                <Text style={[s.processingText, { color: '#007AFF' }]}>Analyzing document...</Text>
+                        {selectedFile ? (
+                            <View style={s.fileSelectedContainer}>
+                                <View style={s.fileIconBox}>
+                                    <DocumentText size={32} color="#007AFF" />
+                                </View>
+                                <Text style={[s.fileName, { color: C.text }]} numberOfLines={1}>{selectedFile.name}</Text>
+                                <Text style={s.fileSize}>{(selectedFile.size! / (1024 * 1024)).toFixed(2)} MB</Text>
+                                <TouchableOpacity onPress={() => setSelectedFile(null)} style={s.removeFileBtn}>
+                                    <Text style={{ color: '#ef4444', fontWeight: '700', fontSize: 13 }}>Remove</Text>
+                                </TouchableOpacity>
                             </View>
-                        ) : selectedFile ? (
-                            <>
-                                <View style={s.iconBoxRow}>
-                                    <DocumentText size={24} color="#007AFF" />
-                                </View>
-                                <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
-                                <Text style={[s.uploadSub, { color: '#10b981' }]}>Ready to generate</Text>
-                            </>
                         ) : (
-                            <>
-                                <View style={s.iconBoxRow}>
-                                    <CloudUpload size={24} color="#007AFF" />
+                            <View style={s.uploadPrompt}>
+                                <View style={s.uploadIconBox}>
+                                    {isProcessingFile ? <LoadingSpinner size={24} color="#007AFF" /> : <CloudUpload size={28} color="#007AFF" />}
                                 </View>
-                                <Text style={[s.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
-                                <Text style={[s.uploadSub, { color: '#94a3b8' }]}>Maximum 5MB</Text>
-                            </>
+                                <Text style={[s.uploadTitle, { color: C.text }]}>Upload Study Material</Text>
+                                <Text style={s.uploadSubtitle}>PDF, Word, or Text files (max 10MB)</Text>
+                            </View>
                         )}
                     </TouchableOpacity>
                 )}
 
-                {/* Number of Cards (Stepper) */}
-                <Text style={[s.sectionTitle, { color: '#94a3b8' }]}>NUMBER OF CARDS</Text>
-                <View style={[s.card, s.stepperCard, { backgroundColor: C.card, marginBottom: 32 }]}>
-                    <Text style={[s.stepperLabel, { color: C.text }]}>Cards</Text>
-                    <View style={s.stepperControls}>
-                        <TouchableOpacity 
-                            style={s.stepperBtn}
-                            onPress={() => setCardCount(prev => String(Math.max(5, parseInt(prev) - 5)))}
-                        >
-                            <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>-</Text>
-                        </TouchableOpacity>
-                        <Text style={[s.stepperValue, { color: C.text }]}>{cardCount}</Text>
-                        <TouchableOpacity 
-                            style={s.stepperBtn}
-                            onPress={() => setCardCount(prev => String(Math.min(50, parseInt(prev) + 5)))}
-                        >
-                            <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>+</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* Difficulty */}
-                <Text style={[s.sectionTitle, { color: '#94a3b8' }]}>DIFFICULTY</Text>
-                <View style={[s.card, { backgroundColor: C.card }]}>
-                    {[
-                        { key: 'easy',   label: 'Easy',   Icon: Leaf,               desc: 'Focus on fundamentals'    },
-                        { key: 'medium', label: 'Medium', Icon: LightbulbBolt,     desc: 'Comprehensive coverage'   },
-                        { key: 'hard',   label: 'Hard',   Icon: Rocket,      desc: 'Deep analytical questions' },
-                    ].map((opt, index, arr) => {
-                        const isSelected = difficulty === opt.key;
-                        const isLast = index === arr.length - 1;
-                        const iconBg = isDark ? 'rgba(0,122,255,0.15)' : '#EBF3FF';
-                        return (
-                            <TouchableOpacity
-                                key={opt.key}
-                                onPress={() => setDifficulty(opt.key as Difficulty)}
-                                activeOpacity={0.75}
-                                style={[
-                                    s.optRow,
-                                    !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-                                ]}
+                <View style={s.settingsSection}>
+                    <Text style={[s.sectionTitle, { color: C.textSecondary }]}>DECK SETTINGS</Text>
+                    
+                    {/* Card Count */}
+                    <View style={[s.settingRow, { backgroundColor: C.card }]}>
+                        <View style={s.settingInfo}>
+                            <Rocket size={20} color="#FF9500" />
+                            <Text style={[s.settingLabel, { color: C.text }]}>Cards</Text>
+                        </View>
+                        <View style={s.stepper}>
+                            <TouchableOpacity 
+                                onPress={() => setCardCount(Math.max(5, parseInt(cardCount) - 5).toString())}
+                                style={s.stepBtn}
                             >
-                                <View style={[s.optIcon, { backgroundColor: iconBg }]}>
-                                    <opt.Icon size={20} color="#007AFF" />
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={[s.optLabel, { color: C.text }]}>{opt.label}</Text>
-                                    <Text style={[s.optDesc, { color: C.textSecondary }]}>{opt.desc}</Text>
-                                </View>
-                                {isSelected && <CheckCircle size={22} color="#007AFF" />}
+                                <Text style={s.stepBtnText}>-</Text>
                             </TouchableOpacity>
-                        );
-                    })}
+                            <Text style={[s.stepValue, { color: C.text }]}>{cardCount}</Text>
+                            <TouchableOpacity 
+                                onPress={() => setCardCount(Math.min(50, parseInt(cardCount) + 5).toString())}
+                                style={s.stepBtn}
+                            >
+                                <Text style={s.stepBtnText}>+</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* Difficulty */}
+                    <View style={[s.settingRow, { backgroundColor: C.card, marginTop: 12 }]}>
+                        <View style={s.settingInfo}>
+                            <FolderOpen size={20} color="#5856D6" />
+                            <Text style={[s.settingLabel, { color: C.text }]}>Depth</Text>
+                        </View>
+                        <View style={s.difficultyPills}>
+                            {(['easy', 'medium', 'hard'] as Difficulty[]).map(d => (
+                                <TouchableOpacity 
+                                    key={d}
+                                    onPress={() => setDifficulty(d)}
+                                    style={[s.diffPill, difficulty === d && { backgroundColor: '#007AFF', borderColor: '#007AFF' }]}
+                                >
+                                    <Text style={[s.diffPillText, difficulty === d && { color: '#FFF' }]}>
+                                        {d.charAt(0).toUpperCase() + d.slice(1)}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
                 </View>
             </ScrollView>
 
-            <BlurView
-                intensity={Platform.OS === 'ios' ? 90 : 100}
-                tint={isDark ? 'dark' : 'light'}
-                style={[s.formFooter, {
-                    paddingBottom: Math.max(insets.bottom, 16) + 75,
-                    borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                    backgroundColor: isDark
-                        ? (Platform.OS === 'android' ? 'rgba(13,13,13,0.95)' : 'rgba(13,13,13,0.6)')
-                        : (Platform.OS === 'android' ? 'rgba(248,250,252,0.95)' : 'rgba(248,250,252,0.7)'),
-                }]}
-            >
+            {/* Footer */}
+            <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={s.formFooter}>
+                <View style={s.costInfo}>
+                    <View style={s.costBadge}>
+                        <Text style={s.costText}>Costs {cardCount} credits</Text>
+                    </View>
+                    <Text style={s.balanceText}>Balance: {user?.credits ?? 0}</Text>
+                </View>
                 <TouchableOpacity
                     onPress={handleGenerate}
                     disabled={!canGenerate}
                     activeOpacity={0.8}
-                    style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : isDark ? '#1C1C1E' : '#E2E8F0' }]}
+                    style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : (isDark ? '#2C2C2E' : '#E5E5EA') }]}
                 >
-                    <Text style={[s.generatePillText, { color: canGenerate ? '#FFF' : '#94a3b8' }]}>
-                        Generate Set
+                    <Text style={[s.generatePillText, { color: canGenerate ? '#FFF' : (isDark ? '#48484A' : '#A1A1A1') }]}>
+                        Start Generating
                     </Text>
                 </TouchableOpacity>
             </BlurView>
 
-            <RewardModal
-                isVisible={isRewardModalVisible}
-                onClose={() => {
-                    setIsRewardModalVisible(false);
-                    if (pendingDeckId) {
-                        router.replace(`/(drawer)/flashcards/${pendingDeckId}`);
-                    } else {
-                        router.back();
-                    }
-                }}
-                reward={rewardData}
-            />
-
-            <GlobalErrorModal 
-                visible={showErrorModal}
-                error={globalError}
-                onDismiss={() => setShowErrorModal(false)}
-            />
+            <OutOfCreditsModal visible={showOutOfCredits} onDismiss={() => setShowOutOfCredits(false)} featureAttempted="flashcard" />
         </View>
     );
 }
 
 const s = StyleSheet.create({
-    header: { paddingHorizontal: 24, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 20, zIndex: 10 },
+    headerTitle: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
     menuBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-    menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
-    menuBtnLight: { backgroundColor: '#F8FAFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
-
-    // Segmented Control
-    segmentedControl: { flexDirection: 'row', borderRadius: 999, padding: 4, marginBottom: 24 },
-    segmentedControlLight: { backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: '#FFFFFF' },
-    segmentedControlDark: { backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-    segmentBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
-    segmentBtnActiveLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
-    segmentBtnActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
-    segmentText: { fontSize: 14, letterSpacing: -0.2 },
-
-    sectionTitle: { fontSize: 12, fontWeight: '800', letterSpacing: 1.2, marginTop: 12, marginBottom: 12, marginLeft: 8, textTransform: 'uppercase' },
-
-    // Cards
-    card: { borderRadius: 20, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 16, elevation: 2, borderWidth: 1, borderColor: 'transparent' },
-    textInput: { fontSize: 16, fontWeight: '600', padding: 8 },
-
-    uploadBox: { alignItems: 'center', justifyContent: 'center', paddingVertical: 36, borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(0,122,255,0.3)' },
-    uploadTitle: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
-    uploadSub: { fontSize: 13, fontWeight: '500' },
-
-    // Stepper
-    stepperCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 },
-    stepperLabel: { fontSize: 16, fontWeight: '600' },
-    stepperControls: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-    stepperBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,122,255,0.1)' },
-    stepperBtnText: { fontSize: 24, fontWeight: '400', lineHeight: 28 },
-    stepperValue: { fontSize: 18, fontWeight: '800', minWidth: 24, textAlign: 'center' },
-
-    // Difficulty Options (grouped card rows)
-    optRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14, minHeight: 64 },
-    optIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    optLabel: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
-    optDesc: { fontSize: 13, fontWeight: '500' },
-
-    // Footer
-    formFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16 },
-    generatePillButton: { width: '100%', borderRadius: 100, paddingVertical: 18, alignItems: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
-    generatePillText: { fontSize: 16, fontWeight: '800', letterSpacing: -0.2 },
-
-    iconBoxRow: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,122,255,0.1)', marginBottom: 12 },
-    centered: { alignItems: 'center', justifyContent: 'center' },
-    processingText: { fontSize: 13, fontWeight: '600', marginTop: 12 },
+    menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.08)' },
+    menuBtnLight: { backgroundColor: '#F1F5F9' },
+    segmentedControl: { flexDirection: 'row', padding: 6, borderRadius: 999, marginBottom: 24 },
+    segmentedControlDark: { backgroundColor: 'rgba(255,255,255,0.05)' },
+    segmentedControlLight: { backgroundColor: '#F1F5F9' },
+    segmentedOption: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 999 },
+    segmentedOptionActive: { backgroundColor: '#FFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+    segmentedText: { fontSize: 14, fontWeight: '700' },
+    segmentedTextActive: { color: '#000' },
+    card: { borderRadius: 24, padding: 24, marginBottom: 24 },
+    inputHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+    inputLabel: { fontSize: 16, fontWeight: '700' },
+    topicInput: { height: 120, borderRadius: 16, borderWidth: 1, padding: 16, fontSize: 16, fontWeight: '500', textAlignVertical: 'top' },
+    tipsContainer: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
+    tipText: { fontSize: 12, color: '#8E8E93', fontWeight: '500' },
+    uploadCard: { borderRadius: 24, padding: 32, marginBottom: 24, borderStyle: 'dashed', borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+    uploadPrompt: { alignItems: 'center' },
+    uploadIconBox: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(0,122,255,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    uploadTitle: { fontSize: 17, fontWeight: '800', marginBottom: 6 },
+    uploadSubtitle: { fontSize: 13, color: '#8E8E93', fontWeight: '500' },
+    fileSelectedContainer: { alignItems: 'center', width: '100%' },
+    fileIconBox: { width: 80, height: 80, borderRadius: 24, backgroundColor: 'rgba(0,122,255,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    fileName: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+    fileSize: { fontSize: 13, color: '#8E8E93', marginBottom: 16 },
+    removeFileBtn: { padding: 8 },
+    settingsSection: { gap: 12 },
+    sectionTitle: { fontSize: 12, fontWeight: '800', letterSpacing: 1.5, marginLeft: 4, marginBottom: 4 },
+    settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 18, borderRadius: 20 },
+    settingInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    settingLabel: { fontSize: 16, fontWeight: '700' },
+    stepper: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    stepBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,122,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+    stepBtnText: { fontSize: 20, fontWeight: '700', color: '#007AFF' },
+    stepValue: { fontSize: 17, fontWeight: '800', width: 24, textAlign: 'center' },
+    difficultyPills: { flexDirection: 'row', gap: 8 },
+    diffPill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
+    diffPillText: { fontSize: 13, fontWeight: '700', color: '#8E8E93' },
+    formFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 20, paddingBottom: Platform.OS === 'ios' ? 44 : 32, borderTopLeftRadius: 32, borderTopRightRadius: 32, borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+    costInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+    costBadge: { backgroundColor: 'rgba(52, 199, 89, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99 },
+    costText: { color: '#34C759', fontWeight: '800', fontSize: 12 },
+    balanceText: { fontSize: 12, fontWeight: '700', color: '#8E8E93' },
+    generatePillButton: { height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+    generatePillText: { fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
 });
-
