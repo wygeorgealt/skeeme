@@ -68,7 +68,8 @@ class FlashcardController extends Controller
         $requestId = (string) Str::uuid();
 
         return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId, $title) {
-            $emit = function (array $payload) {
+            $emit = function (array $payload) use ($requestId) {
+                error_log("[DEBUG] [$requestId] Emitting: " . ($payload['type'] ?? (isset($payload['error']) ? 'ERROR' : 'text chunk')));
                 echo "data: " . json_encode($payload) . "\n\n";
                 if (ob_get_level() > 0) ob_flush();
                 flush();
@@ -220,9 +221,10 @@ class FlashcardController extends Controller
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',
-            'Cache-Control' => 'no-cache',
+            'Cache-Control' => 'no-cache, no-transform',
             'X-Accel-Buffering' => 'no',
             'Connection' => 'keep-alive',
+            'Content-Encoding' => 'none',
         ]);
     }
 

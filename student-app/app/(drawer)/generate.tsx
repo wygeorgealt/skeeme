@@ -46,6 +46,32 @@ import {
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
+// ── SKELETON COMPONENTS ──────────────────────────────────────────────────────
+const SkeletonCard = ({ isDark }: { isDark: boolean }) => {
+    const opacity = useRef(new Animated.Value(0.3)).current;
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(opacity, { toValue: 0.7, duration: 800, useNativeDriver: true }),
+                Animated.timing(opacity, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+            ])
+        ).start();
+    }, []);
+
+    const bgColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+    return (
+        <View style={{ flex: 1 }}>
+            <Animated.View style={{ height: 40, width: '90%', backgroundColor: bgColor, borderRadius: 8, marginBottom: 12, opacity }} />
+            <Animated.View style={{ height: 40, width: '70%', backgroundColor: bgColor, borderRadius: 8, marginBottom: 40, opacity }} />
+            
+            {[1, 2, 3, 4].map(i => (
+                <Animated.View key={i} style={{ height: 64, width: '100%', backgroundColor: bgColor, borderRadius: 32, marginBottom: 12, opacity }} />
+            ))}
+        </View>
+    );
+};
+
 // ══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & OPTIONS
 // ══════════════════════════════════════════════════════════════════════════════
@@ -476,7 +502,7 @@ export default function GenerateQuizScreen() {
     }, [questions.length, navigation]);
 
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
-    if (questions.length === 0) {
+    if (questions.length === 0 && !isLoading) {
         const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
         const iconBg = isDark ? 'rgba(0,122,255,0.15)' : '#EBF3FF';
 
@@ -669,14 +695,33 @@ export default function GenerateQuizScreen() {
     if (isLoading || (questions.length > 0 && currentQIndex < questions.length)) {
         if (questions.length === 0) {
             return (
-                <View style={{ flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' }}>
-                    <LoadingSpinner size={60} color={C.primary} />
-                    <Text style={{ fontFamily: 'Outfit-Bold', fontSize: 24, marginTop: 24, color: isDark ? '#fff' : '#000' }}>
-                        {loadingStage || 'Skeeming...'}
-                    </Text>
-                    <Text style={{ fontFamily: 'Outfit-Regular', fontSize: 16, marginTop: 8, color: '#8E8E93' }}>
-                        Generating your quiz questions...
-                    </Text>
+                <View style={{ flex: 1, backgroundColor: C.background }}>
+                    {/* Header with back button to cancel */}
+                    <View style={{ paddingTop: insets.top + 20, paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                        <TouchableOpacity 
+                            onPress={() => { setIsLoading(false); }}
+                            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                            <CloseCircle size={24} color={C.text} />
+                        </TouchableOpacity>
+                        <View style={{ alignItems: 'center' }}>
+                            <Text style={{ fontSize: 14, fontWeight: '800', color: C.primary, textTransform: 'uppercase', letterSpacing: 1 }}>{loadingStage || 'Skeeming...'}</Text>
+                        </View>
+                        <View style={{ width: 40 }} />
+                    </View>
+
+                    <View style={{ flex: 1, paddingHorizontal: 24 }}>
+                        <SkeletonCard isDark={isDark} />
+                    </View>
+
+                    <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingBottom: Math.max(insets.bottom, 20), borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
+                        <View style={{ padding: 16 }}>
+                            <View style={{ height: 56, borderRadius: 16, backgroundColor: isDark ? '#1E1E1E' : '#F2F2F7', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10 }}>
+                                <LoadingSpinner size={20} color={C.textSecondary} />
+                                <Text style={{ fontSize: 16, fontWeight: '700', color: '#8E8E93' }}>Generating Quiz...</Text>
+                            </View>
+                        </View>
+                    </BlurView>
                 </View>
             );
         }
