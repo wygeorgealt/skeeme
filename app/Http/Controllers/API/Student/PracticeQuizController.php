@@ -34,48 +34,67 @@ class PracticeQuizController extends Controller
     {
         set_time_limit(600);
 
-        $validated = $request->validate([
-            'topic' => 'required_without:file|nullable|string|max:255',
-            'file' => 'required_without:topic|nullable|file|mimes:pdf,docx,txt,md|max:10240',
-            'question_count' => 'required|integer|min:10|max:30',
-            'question_types' => 'required|array|min:1',
-            'question_types.*' => 'in:mcq,theory',
-            'difficulty' => 'nullable|in:easy,medium,hard',
-        ]);
+        try {
+            $validated = $request->validate([
+                'topic' => 'required_without:file|nullable|string|max:255',
+                'file' => 'required_without:topic|nullable|file|mimes:pdf,docx,txt,md|max:10240',
+                'question_count' => 'required|integer|min:10|max:30',
+                'question_types' => 'required|array|min:1',
+                'question_types.*' => 'in:mcq,theory',
+                'difficulty' => 'nullable|in:easy,medium,hard',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
+        }
 
         $user = $request->user();
-        $sourceContent = '';
-
-        if ($request->hasFile('file')) {
-            $sourceContent = $this->extractionService->extractText($request->file('file')->getPathname(), $request->file('file')->getClientOriginalExtension());
-        } else {
-            $sourceContent = $validated['topic'];
-        }
-
-        if (empty(trim($sourceContent))) {
-            return response()->json(['message' => 'No content found to generate quiz from.'], 422);
-        }
-
-        // Pre-summarize long documents
-        if (str_word_count($sourceContent) >= 3000) {
-            $sourceContent = $this->deepseek->condenseMaterial($sourceContent, (int) $validated['question_count'], 'quiz');
-        }
-
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
         $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
         $quizRates = $pricingConfig['rates']['quiz_flat'] ?? ['free' => 30, 'paid' => 30];
         $totalCost = is_array($quizRates) ? ($quizRates[$planTier] ?? 30) : $quizRates;
 
         if (!$user->is_unlimited_student && $user->credits < $totalCost) {
-            return response()->json(['message' => "Insufficient credits."], 403);
+            return response()->json(['message' => "Insufficient credits. You need $totalCost credits."], 403);
         }
 
         $requestId = (string) Str::uuid();
 
-        return response()->stream(function () use ($request, $user, $sourceContent, $validated, $totalCost, $requestId) {
+        return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId) {
+            $emit = function (array $payload) {
+                echo "data: " . json_encode($payload) . "\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+            };
+
             $fullContent = '';
             
             try {
+                // 1. Initial Status
+                $emit(['type' => 'status', 'message' => 'Skeeming...']);
+
+                // 2. Resource Extraction (Moved inside stream to avoid 504/Blocking)
+                $sourceContent = '';
+                if ($request->hasFile('file')) {
+                    $emit(['type' => 'status', 'message' => 'Analyzing Document...']);
+                    $sourceContent = $this->extractionService->extractText($request->file('file')->getPathname(), $request->file('file')->getClientOriginalExtension());
+                } else {
+                    $sourceContent = $validated['topic'];
+                }
+
+                if (empty(trim($sourceContent))) {
+                    $emit(['error' => 'No content found to generate quiz from.']);
+                    echo "data: [DONE]\n\n";
+                    return;
+                }
+
+                // 3. Document Condensing (if needed)
+                if (str_word_count($sourceContent) >= 3000) {
+                    $emit(['type' => 'status', 'message' => 'Summarizing material...']);
+                    $sourceContent = $this->deepseek->condenseMaterial($sourceContent, (int) $validated['question_count'], 'quiz');
+                }
+
+                $emit(['type' => 'status', 'message' => 'Generating Questions...']);
+
                 $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
                 $activeProvider = $aiConfig['provider'];
                 $useDeepseek = ($activeProvider === 'deepseek');
@@ -93,7 +112,7 @@ class PracticeQuizController extends Controller
                     'temperature' => 0.7,
                 ];
 
-                $onChunk = function ($chunk) use (&$fullContent, $useDeepseek) {
+                $onChunk = function ($chunk) use (&$fullContent, $useDeepseek, $emit) {
                     $text = '';
                     if ($useDeepseek) {
                         $text = $chunk['choices'][0]['delta']['content'] ?? '';
@@ -105,9 +124,7 @@ class PracticeQuizController extends Controller
 
                     if ($text !== '') {
                         $fullContent .= $text;
-                        echo "data: " . json_encode(['text' => $text]) . "\n\n";
-                        if (ob_get_level() > 0) ob_flush();
-                        flush();
+                        $emit(['text' => $text]);
                     }
                 };
 
@@ -115,7 +132,7 @@ class PracticeQuizController extends Controller
                     $service->streamRequest($params, $onChunk);
                 } catch (\Exception $e) {
                     if (!$useDeepseek) {
-                        Log::warning("Quiz Stream: Claude failed, falling back to DeepSeek. Error: " . $e->getMessage());
+                        Log::warning("Quiz Stream Fallback: Claude failed, using DeepSeek. Error: " . $e->getMessage());
                         $modelUsed = 'deepseek-chat';
                         $params['model'] = $modelUsed;
                         $this->deepseek->streamRequest($params, $onChunk);
@@ -124,23 +141,37 @@ class PracticeQuizController extends Controller
                     }
                 }
 
-                // Credit Deduction
+                // 4. Credit Deduction (Atomic)
                 if (!$user->is_unlimited_student) {
-                    $user->decrement('credits', $totalCost);
-                    $user->transactions()->create([
-                        'type' => 'usage',
-                        'action_type' => 'quiz_generation',
-                        'amount' => -$totalCost,
-                        'description' => "Practice Quiz (Streaming): " . ($validated['topic'] ?? 'File Content'),
-                        'model_used' => $modelUsed,
-                        'request_id' => $requestId,
-                    ]);
+                    DB::transaction(function () use ($user, $totalCost, $modelUsed, $requestId, $validated) {
+                        $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+                        $lockedUser->decrement('credits', $totalCost);
+                        $lockedUser->transactions()->create([
+                            'type' => 'usage',
+                            'action_type' => 'quiz_generation',
+                            'amount' => -$totalCost,
+                            'description' => "Practice Quiz (Streaming): " . ($validated['topic'] ?? 'File Content'),
+                            'model_used' => $modelUsed,
+                            'request_id' => $requestId,
+                        ]);
+                    });
                 }
 
                 echo "data: [DONE]\n\n";
             } catch (\Exception $e) {
-                Log::error("Streaming Quiz Error: " . $e->getMessage());
-                echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
+                Log::error("[Streaming Quiz Error] " . $e->getMessage(), [
+                    'user_id' => $user->id,
+                    'request_id' => $requestId,
+                    'trace' => substr($e->getTraceAsString(), 0, 1000)
+                ]);
+
+                $msg = "Skeeme is down, Please try again later.";
+                if ($e->getCode() === 403 || str_contains($e->getMessage(), 'credits')) {
+                    $msg = $e->getMessage();
+                }
+                
+                echo "data: " . json_encode(['error' => $msg]) . "\n\n";
+                echo "data: [DONE]\n\n";
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',

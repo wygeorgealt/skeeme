@@ -80,8 +80,8 @@ function TabBar({ state, descriptors, navigation }: any) {
                     bar.blurBase,
                     {
                         paddingBottom: Math.max(insets.bottom, 16),
-                        backgroundColor: isDark 
-                            ? (Platform.OS === 'android' ? 'rgba(0,0,0,0.92)' : 'rgba(0,0,0,0.6)') 
+                        backgroundColor: isDark
+                            ? (Platform.OS === 'android' ? 'rgba(0,0,0,0.92)' : 'rgba(0,0,0,0.6)')
                             : (Platform.OS === 'android' ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)'),
                         borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
                     },
@@ -236,13 +236,13 @@ export default function TabLayout() {
         const timer = setTimeout(() => {
             if (token) {
                 registerForPushNotificationsAsync(token).catch(() => { });
-                
+
                 // Check for pending referral rewards
                 api.get('referral/pending-rewards').then(res => {
                     if (res.data.total > 0) {
                         setPendingReward({ total: res.data.total });
                     }
-                }).catch(() => {});
+                }).catch(() => { });
             }
         }, 500);
         return () => clearTimeout(timer);
@@ -262,7 +262,7 @@ export default function TabLayout() {
                     name="index"
                     options={{
                         title: 'Home',
-                            tabBarIcon: ({ color, size }) =>
+                        tabBarIcon: ({ color, size }) =>
                             <Home color={color} size={size} />,
                     }}
                 />
@@ -295,8 +295,8 @@ export default function TabLayout() {
             <AccountModal visible={accountModalOpen} onDismiss={() => toggleAccountModal(false)} />
 
             {/* Claim Reward Modal */}
-            <ClaimRewardModal 
-                visible={pendingReward !== null} 
+            <ClaimRewardModal
+                visible={pendingReward !== null}
                 total={pendingReward?.total || 0}
                 onClaim={() => setPendingReward(null)}
             />

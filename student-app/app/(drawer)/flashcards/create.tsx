@@ -126,6 +126,9 @@ export default function GenerateFlashcardScreen() {
 
                 try {
                     const chunk = JSON.parse(event.data || '{}');
+                    if (chunk.type === 'status') {
+                        setLoadingStage(chunk.message);
+                    }
                     if (chunk.text) {
                         accumulatedJson += chunk.text;
                     }

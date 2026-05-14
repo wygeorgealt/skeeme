@@ -35,33 +35,19 @@ class FlashcardController extends Controller
     {
         set_time_limit(300);
 
-        $validated = $request->validate([
-            'topic'          => 'nullable|string|max:255',
-            'file'           => 'nullable|file|mimes:pdf,doc,docx,txt,md|max:10240',
-            'card_count'     => 'required|integer|min:5|max:50',
-            'difficulty'     => 'nullable|string|in:easy,medium,hard,mixed',
-        ]);
+        try {
+            $validated = $request->validate([
+                'topic'          => 'nullable|string|max:255',
+                'file'           => 'nullable|file|mimes:pdf,doc,docx,txt,md|max:10240',
+                'card_count'     => 'required|integer|min:5|max:50',
+                'difficulty'     => 'nullable|string|in:easy,medium,hard,mixed',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
+        }
 
         $user = $request->user();
-        $sourceContent = '';
         $title = $validated['topic'] ?? 'Flashcards from File';
-
-        if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $title = urldecode(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
-            $sourceContent = $this->extractionService->extractText($file->getPathname(), $file->getClientOriginalExtension());
-        } else {
-            $sourceContent = $validated['topic'];
-        }
-
-        if (empty(trim($sourceContent))) {
-            return response()->json(['message' => 'No content found to generate flashcards from.'], 422);
-        }
-
-        // Pre-summarize long documents
-        if (str_word_count($sourceContent) >= 3000) {
-            $sourceContent = $this->deepseek->condenseMaterial($sourceContent, (int) $validated['card_count'], 'flashcards');
-        }
 
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
         $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
@@ -69,15 +55,48 @@ class FlashcardController extends Controller
         $totalCost = is_array($flashcardRates) ? ($flashcardRates[$planTier] ?? 25) : $flashcardRates;
 
         if (!$user->is_unlimited_student && $user->credits < $totalCost) {
-            return response()->json(['message' => "Insufficient credits."], 403);
+            return response()->json(['message' => "Insufficient credits. You need $totalCost credits."], 403);
         }
 
         $requestId = (string) Str::uuid();
 
-        return response()->stream(function () use ($request, $user, $sourceContent, $validated, $totalCost, $requestId, $title) {
+        return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId, $title) {
+            $emit = function (array $payload) {
+                echo "data: " . json_encode($payload) . "\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+            };
+
             $fullContent = '';
             
             try {
+                // 1. Initial Status
+                $emit(['type' => 'status', 'message' => 'Skeeming...']);
+
+                // 2. Resource Extraction
+                $sourceContent = '';
+                if ($request->hasFile('file')) {
+                    $emit(['type' => 'status', 'message' => 'Reading document...']);
+                    $file = $request->file('file');
+                    $sourceContent = $this->extractionService->extractText($file->getPathname(), $file->getClientOriginalExtension());
+                } else {
+                    $sourceContent = $validated['topic'];
+                }
+
+                if (empty(trim($sourceContent))) {
+                    $emit(['error' => 'No content found to generate flashcards from.']);
+                    echo "data: [DONE]\n\n";
+                    return;
+                }
+
+                // 3. Document Condensing (if needed)
+                if (str_word_count($sourceContent) >= 3000) {
+                    $emit(['type' => 'status', 'message' => 'Analyzing key concepts...']);
+                    $sourceContent = $this->deepseek->condenseMaterial($sourceContent, (int) $validated['card_count'], 'flashcards');
+                }
+
+                $emit(['type' => 'status', 'message' => 'Generating Flashcards...']);
+
                 $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
                 $activeProvider = $aiConfig['provider'];
                 $useDeepseek = ($activeProvider === 'deepseek');
@@ -95,7 +114,7 @@ class FlashcardController extends Controller
                     'temperature' => 0.7,
                 ];
 
-                $onChunk = function ($chunk) use (&$fullContent, $useDeepseek) {
+                $onChunk = function ($chunk) use (&$fullContent, $useDeepseek, $emit) {
                     $text = '';
                     if ($useDeepseek) {
                         $text = $chunk['choices'][0]['delta']['content'] ?? '';
@@ -107,9 +126,7 @@ class FlashcardController extends Controller
 
                     if ($text !== '') {
                         $fullContent .= $text;
-                        echo "data: " . json_encode(['text' => $text]) . "\n\n";
-                        if (ob_get_level() > 0) ob_flush();
-                        flush();
+                        $emit(['text' => $text]);
                     }
                 };
 
@@ -117,7 +134,7 @@ class FlashcardController extends Controller
                     $service->streamRequest($params, $onChunk);
                 } catch (\Exception $e) {
                     if (!$useDeepseek) {
-                        Log::warning("Flashcard Stream: Claude failed, falling back to DeepSeek. Error: " . $e->getMessage());
+                        Log::warning("Flashcard Stream Fallback: Claude failed, using DeepSeek. Error: " . $e->getMessage());
                         $modelUsed = 'deepseek-chat';
                         $params['model'] = $modelUsed;
                         $this->deepseek->streamRequest($params, $onChunk);
@@ -126,17 +143,20 @@ class FlashcardController extends Controller
                     }
                 }
 
-                // Credit Deduction
+                // 4. Credit Deduction (Atomic)
                 if (!$user->is_unlimited_student) {
-                    $user->decrement('credits', $totalCost);
-                    $user->transactions()->create([
-                        'type' => 'usage',
-                        'action_type' => 'flashcard_generation',
-                        'amount' => -$totalCost,
-                        'description' => "Flashcard Generation (Streaming): " . $title,
-                        'model_used' => $modelUsed,
-                        'request_id' => $requestId,
-                    ]);
+                    DB::transaction(function () use ($user, $totalCost, $modelUsed, $requestId, $title) {
+                        $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
+                        $lockedUser->decrement('credits', $totalCost);
+                        $lockedUser->transactions()->create([
+                            'type' => 'usage',
+                            'action_type' => 'flashcard_generation',
+                            'amount' => -$totalCost,
+                            'description' => "Flashcard Generation (Streaming): " . $title,
+                            'model_used' => $modelUsed,
+                            'request_id' => $requestId,
+                        ]);
+                    });
                 }
 
                 // Persistence logic
@@ -169,7 +189,7 @@ class FlashcardController extends Controller
                             }
                             return $deck;
                         });
-                        echo "data: " . json_encode(['db_id' => $deck->id]) . "\n\n";
+                        $emit(['db_id' => $deck->id]);
                     }
                 } catch (\Exception $saveEx) {
                     Log::error("Failed to save streamed flashcards: " . $saveEx->getMessage());
@@ -177,8 +197,19 @@ class FlashcardController extends Controller
 
                 echo "data: [DONE]\n\n";
             } catch (\Exception $e) {
-                Log::error("Streaming Flashcards Error: " . $e->getMessage());
-                echo "data: " . json_encode(['error' => $e->getMessage()]) . "\n\n";
+                Log::error("[Streaming Flashcards Error] " . $e->getMessage(), [
+                    'user_id' => $user->id,
+                    'request_id' => $requestId,
+                    'trace' => substr($e->getTraceAsString(), 0, 1000)
+                ]);
+
+                $msg = "Skeeme is down, Please try again later.";
+                if ($e->getCode() === 403 || str_contains($e->getMessage(), 'credits')) {
+                    $msg = $e->getMessage();
+                }
+                
+                echo "data: " . json_encode(['error' => $msg]) . "\n\n";
+                echo "data: [DONE]\n\n";
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',

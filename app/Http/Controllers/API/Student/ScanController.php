@@ -160,6 +160,12 @@ class ScanController extends Controller
                     }
                 }
             } catch (\Exception $e) {
+                Log::error("[Streaming Scan Error] " . $e->getMessage(), [
+                    'user_id' => $user->id,
+                    'request_id' => $requestId,
+                    'trace' => substr($e->getTraceAsString(), 0, 1000)
+                ]);
+
                 if (!$useDeepseek && !$isManualOverride) {
                     Log::warning("Claude stream failed, falling back to Deepseek: " . $e->getMessage());
                     Cache::put('use_deepseek_fallback', true, now()->addMinutes(30));
@@ -177,7 +183,6 @@ class ScanController extends Controller
                     if ($isManualOverride) {
                         \App\Models\SystemSetting::triggerManualFailureAlert($activeProvider, 'Scan & Solve Streaming', $e->getMessage());
                     }
-                    Log::error("Streaming Scan Error: " . $e->getMessage());
                     $emit(['type' => 'error', 'message' => 'Skeeme is down, Please try again later.']);
                     echo "data: [DONE]\n\n";
                     return;

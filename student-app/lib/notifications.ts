@@ -44,15 +44,15 @@ export async function registerForPushNotificationsAsync(authToken?: string | nul
         try {
             const projectId =
                 Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-            
+
             if (!projectId) {
                 if (__DEV__) console.warn('EAS Project ID not found. Ensure app.json has extra.eas.projectId defined.');
             }
-            
+
             token = (await Notifications.getExpoPushTokenAsync({
                 projectId,
             })).data;
-            
+
             // Sync with backend
             if (token && authToken) {
                 await api.post('device-token', { expo_push_token: token }, {
