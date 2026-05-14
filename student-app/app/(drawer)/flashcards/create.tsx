@@ -12,7 +12,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useQueryClient } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { posthog } from '@/lib/posthog';
-import { CheckCircle, DocumentText, CloudUpload, Leaf, LightbulbBolt, Rocket, FolderOpen } from '@solar-icons/react-native/Bold';
+import { CheckCircle, DocumentText, CloudUpload, Leaf, LightbulbBolt, Rocket, FolderOpen, AltArrowLeft } from '@solar-icons/react-native/Bold';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useNavigation } from '@react-navigation/native';
@@ -246,13 +246,21 @@ export default function GenerateFlashcardScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
             {/* Header */}
-            <View style={[s.header, { paddingTop: Math.max(insets.top, 20) }]}>
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
+                <TouchableOpacity 
+                    onPress={() => router.back()} 
+                    activeOpacity={0.7} 
+                    style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
+                >
+                    <AltArrowLeft size={24} color={isDark ? 'white' : '#0f172a'} />
+                </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Create Deck</Text>
+                <View style={{ width: 44 }} />
             </View>
 
-            <ScrollView 
+                <ScrollView 
                 style={{ flex: 1 }} 
-                contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 220, paddingTop: 10 }} 
+                contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220, paddingTop: 10 }} 
                 showsVerticalScrollIndicator={false}
             >
                 {/* Segmented Control */}
@@ -265,7 +273,7 @@ export default function GenerateFlashcardScreen() {
                                 onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
                                 style={[s.segmentBtn, isSelected && (isDark ? s.segmentBtnActiveDark : s.segmentBtnActiveLight)]}
                             >
-                                <Text style={[s.segmentText, isSelected ? { color: C.text, fontWeight: '700' } : { color: C.textTertiary, fontWeight: '500' }]}>
+                                <Text style={[s.segmentText, { color: isSelected ? C.text : C.textTertiary, fontWeight: isSelected ? '700' : '500' }]}>
                                     {m === 'topic' ? 'By Topic' : 'From File'}
                                 </Text>
                             </TouchableOpacity>
@@ -275,13 +283,14 @@ export default function GenerateFlashcardScreen() {
 
                 {/* Input Area */}
                 {mode === 'topic' ? (
-                    <View style={[s.card, { backgroundColor: C.card, marginBottom: 24 }]}>
+                    <View style={[s.card, { backgroundColor: C.card, marginBottom: 32 }]}>
                         <TextInput
                             style={[s.textInput, { color: C.text }]}
                             placeholder="E.g. Cell Biology, World War II..."
-                            placeholderTextColor="#8E8E93"
+                            placeholderTextColor="#94a3b8"
                             value={topic}
                             onChangeText={setTopic}
+                            multiline={false}
                         />
                     </View>
                 ) : (
@@ -289,7 +298,7 @@ export default function GenerateFlashcardScreen() {
                         onPress={handleFileSelect}
                         disabled={isProcessingFile}
                         activeOpacity={0.7}
-                        style={[s.card, s.uploadBox, { backgroundColor: C.card, marginBottom: 24 }]}
+                        style={[s.card, s.uploadBox, { backgroundColor: C.card, marginBottom: 32 }]}
                     >
                         {isProcessingFile ? (
                             <View style={s.centered}>
@@ -298,34 +307,38 @@ export default function GenerateFlashcardScreen() {
                             </View>
                         ) : selectedFile ? (
                             <>
-                                <DocumentText size={32} color="#007AFF" style={{ marginBottom: 12 }} />
+                                <View style={s.iconBoxRow}>
+                                    <DocumentText size={24} color="#007AFF" />
+                                </View>
                                 <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
-                                <Text style={[s.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
+                                <Text style={[s.uploadSub, { color: '#10b981' }]}>Ready to generate</Text>
                             </>
                         ) : (
                             <>
-                                <CloudUpload size={32} color="#8E8E93" style={{ marginBottom: 12 }} />
+                                <View style={s.iconBoxRow}>
+                                    <CloudUpload size={24} color="#007AFF" />
+                                </View>
                                 <Text style={[s.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
-                                <Text style={[s.uploadSub, { color: '#8E8E93' }]}>Maximum 5MB</Text>
+                                <Text style={[s.uploadSub, { color: '#94a3b8' }]}>Maximum 5MB</Text>
                             </>
                         )}
                     </TouchableOpacity>
                 )}
 
                 {/* Number of Cards (Stepper) */}
-                <Text style={s.sectionTitle}>NUMBER OF CARDS</Text>
-                <View style={[s.card, s.stepperCard, { backgroundColor: C.card }]}>
+                <Text style={[s.sectionTitle, { color: '#94a3b8' }]}>NUMBER OF CARDS</Text>
+                <View style={[s.card, s.stepperCard, { backgroundColor: C.card, marginBottom: 32 }]}>
                     <Text style={[s.stepperLabel, { color: C.text }]}>Cards</Text>
                     <View style={s.stepperControls}>
                         <TouchableOpacity 
-                            style={[s.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}
+                            style={s.stepperBtn}
                             onPress={() => setCardCount(prev => String(Math.max(5, parseInt(prev) - 5)))}
                         >
                             <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>-</Text>
                         </TouchableOpacity>
                         <Text style={[s.stepperValue, { color: C.text }]}>{cardCount}</Text>
                         <TouchableOpacity 
-                            style={[s.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}
+                            style={s.stepperBtn}
                             onPress={() => setCardCount(prev => String(Math.min(50, parseInt(prev) + 5)))}
                         >
                             <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>+</Text>
@@ -334,7 +347,7 @@ export default function GenerateFlashcardScreen() {
                 </View>
 
                 {/* Difficulty */}
-                <Text style={[s.sectionTitle, { color: C.textTertiary }]}>DIFFICULTY</Text>
+                <Text style={[s.sectionTitle, { color: '#94a3b8' }]}>DIFFICULTY</Text>
                 <View style={[s.card, { backgroundColor: C.card }]}>
                     {[
                         { key: 'easy',   label: 'Easy',   Icon: Leaf,               desc: 'Focus on fundamentals'    },
@@ -369,25 +382,25 @@ export default function GenerateFlashcardScreen() {
             </ScrollView>
 
             <BlurView
-                intensity={Platform.OS === 'ios' ? 100 : 0}
+                intensity={Platform.OS === 'ios' ? 90 : 100}
                 tint={isDark ? 'dark' : 'light'}
                 style={[s.formFooter, {
                     paddingBottom: Math.max(insets.bottom, 16) + 75,
-                    borderTopColor: C.separator,
+                    borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
                     backgroundColor: isDark
-                        ? (Platform.OS === 'android' ? '#0D0D0D' : 'rgba(13,13,13,0.9)')
-                        : (Platform.OS === 'android' ? '#F0F2F7' : 'rgba(240,242,247,0.9)'),
+                        ? (Platform.OS === 'android' ? 'rgba(13,13,13,0.95)' : 'rgba(13,13,13,0.6)')
+                        : (Platform.OS === 'android' ? 'rgba(248,250,252,0.95)' : 'rgba(248,250,252,0.7)'),
                 }]}
             >
                 <TouchableOpacity
                     onPress={handleGenerate}
                     disabled={!canGenerate}
                     activeOpacity={0.8}
-                    style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : '#A2C9F4' }]}
+                    style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : isDark ? '#1C1C1E' : '#E2E8F0' }]}
                 >
-                        <Text style={s.generatePillText}>
-                            Generate Set
-                        </Text>
+                    <Text style={[s.generatePillText, { color: canGenerate ? '#FFF' : '#94a3b8' }]}>
+                        Generate Set
+                    </Text>
                 </TouchableOpacity>
             </BlurView>
 
@@ -414,55 +427,51 @@ export default function GenerateFlashcardScreen() {
 }
 
 const s = StyleSheet.create({
-    header: { paddingHorizontal: 20, paddingBottom: 16 },
+    header: { paddingHorizontal: 24, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1 },
+    menuBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+    menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    menuBtnLight: { backgroundColor: '#F8FAFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
 
     // Segmented Control
-    segmentedControl: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: 20 },
-    segmentedControlLight: { backgroundColor: '#E5E7EB' },
-    segmentedControlDark: { backgroundColor: '#2C2C2E' },
-    segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
-    segmentBtnActiveLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 2 },
-    segmentBtnActiveDark: { backgroundColor: '#3A3A3C', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 2 },
-    segmentText: { fontSize: 15 },
+    segmentedControl: { flexDirection: 'row', borderRadius: 999, padding: 4, marginBottom: 24 },
+    segmentedControlLight: { backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: '#FFFFFF' },
+    segmentedControlDark: { backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+    segmentBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
+    segmentBtnActiveLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
+    segmentBtnActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
+    segmentText: { fontSize: 14, letterSpacing: -0.2 },
 
-    sectionTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginTop: 12, marginBottom: 10, paddingLeft: 4, textTransform: 'uppercase' },
+    sectionTitle: { fontSize: 12, fontWeight: '800', letterSpacing: 1.2, marginTop: 12, marginBottom: 12, marginLeft: 8, textTransform: 'uppercase' },
 
     // Cards
-    card: { borderRadius: 20, overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 2 }, elevation: 3, marginBottom: 28 },
-    textInput: { height: 52, fontSize: 16, fontWeight: '500', paddingHorizontal: 16 },
+    card: { borderRadius: 20, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 16, elevation: 2, borderWidth: 1, borderColor: 'transparent' },
+    textInput: { fontSize: 16, fontWeight: '600', padding: 8 },
 
-    uploadBox: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 24, gap: 10 },
-    uploadTitle: { fontSize: 16, fontWeight: '600', textAlign: 'center' },
-    uploadSub: { fontSize: 13, textAlign: 'center' },
+    uploadBox: { alignItems: 'center', justifyContent: 'center', paddingVertical: 36, borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(0,122,255,0.3)' },
+    uploadTitle: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
+    uploadSub: { fontSize: 13, fontWeight: '500' },
 
     // Stepper
     stepperCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 },
     stepperLabel: { fontSize: 16, fontWeight: '600' },
-    stepperControls: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-    stepperBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-    stepperBtnText: { fontSize: 22, fontWeight: '700', lineHeight: 26 },
-    stepperValue: { fontSize: 22, fontWeight: '800', minWidth: 32, textAlign: 'center' },
+    stepperControls: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    stepperBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,122,255,0.1)' },
+    stepperBtnText: { fontSize: 24, fontWeight: '400', lineHeight: 28 },
+    stepperValue: { fontSize: 18, fontWeight: '800', minWidth: 24, textAlign: 'center' },
 
     // Difficulty Options (grouped card rows)
     optRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14, minHeight: 64 },
     optIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     optLabel: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
-    optDesc: { fontSize: 13 },
-
-    // Legacy (kept for compatibility)
-    optionCard: { flexDirection: 'row', alignItems: 'center', padding: 12 },
-    iconBoxRow: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    optionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
-    optionDesc: { fontSize: 13 },
+    optDesc: { fontSize: 13, fontWeight: '500' },
 
     // Footer
-    formFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth },
-    generatePillButton: { height: 56, borderRadius: 100, alignItems: 'center', justifyContent: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
-    generatePillText: { color: 'white', fontWeight: '700', fontSize: 16 },
+    formFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16 },
+    generatePillButton: { width: '100%', borderRadius: 100, paddingVertical: 18, alignItems: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
+    generatePillText: { fontSize: 16, fontWeight: '800', letterSpacing: -0.2 },
 
-    loadingContainer: { alignItems: 'center', justifyContent: 'center' },
-    loadingText: { fontSize: 14, fontWeight: '600' },
+    iconBoxRow: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,122,255,0.1)', marginBottom: 12 },
     centered: { alignItems: 'center', justifyContent: 'center' },
     processingText: { fontSize: 13, fontWeight: '600', marginTop: 12 },
 });

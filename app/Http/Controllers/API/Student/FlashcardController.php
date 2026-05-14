@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use App\Jobs\ProcessAIFlashcards;
+use Illuminate\Support\Facades\Auth;
 
 class FlashcardController extends Controller
 {

@@ -569,14 +569,14 @@ export default function GenerateQuizScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Segmented Control */}
-                    <View style={[sf.segCtrl, { backgroundColor: isDark ? '#2C2C2E' : '#E5E7EB' }]}>
+                    <View style={[sf.segCtrl, isDark ? sf.segCtrlDark : sf.segCtrlLight]}>
                         {(['topic', 'file'] as QuizMode[]).map(m => {
                             const isSelected = mode === m;
                             return (
                                 <TouchableOpacity
                                     key={m}
                                     onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                    style={[sf.segBtn, isSelected && [sf.segBtnActive, { backgroundColor: C.card, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 }]]}
+                                    style={[sf.segBtn, isSelected && (isDark ? sf.segBtnActiveDark : sf.segBtnActiveLight)]}
                                 >
                                     <Text style={[sf.segText, { color: isSelected ? C.text : C.textTertiary, fontWeight: isSelected ? '700' : '500' }]}>
                                         {m === 'topic' ? 'By Topic' : 'From File'}
@@ -1351,9 +1351,12 @@ const sf = StyleSheet.create({
     header: { paddingHorizontal: 20, paddingBottom: 16 },
     headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1 },
 
-    segCtrl: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: 20 },
-    segBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
-    segBtnActive: { borderRadius: 10 },
+    segCtrl: { flexDirection: 'row', borderRadius: 999, padding: 4, marginBottom: 20 },
+    segCtrlLight: { backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: '#FFFFFF' },
+    segCtrlDark: { backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+    segBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
+    segBtnActiveLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
+    segBtnActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
     segText: { fontSize: 15 },
 
     inputCard: { paddingHorizontal: 16, paddingVertical: 4, marginBottom: 24 },
@@ -1369,9 +1372,9 @@ const sf = StyleSheet.create({
     stepperCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16, marginBottom: 28 },
     stepperLabel: { fontSize: 16, fontWeight: '600' },
     stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-    stepperBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-    stepperBtnText: { fontSize: 22, fontWeight: '700', lineHeight: 26 },
-    stepperValue: { fontSize: 22, fontWeight: '800', minWidth: 32, textAlign: 'center' },
+    stepperBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,122,255,0.1)' },
+    stepperBtnText: { fontSize: 24, fontWeight: '400', lineHeight: 28 },
+    stepperValue: { fontSize: 20, fontWeight: '800', minWidth: 32, textAlign: 'center' },
 
     optRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14, minHeight: 64 },
     optIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
