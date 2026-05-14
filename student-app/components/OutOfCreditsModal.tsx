@@ -169,7 +169,11 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                             <TouchableOpacity
                                 onPress={() => {
                                     onDismiss();
-                                    toggleAccountModal(true, 'referral');
+                                    // Small delay to ensure the OutOfCreditsModal is fully dismissed 
+                                    // before opening the AccountModal (prevents UI freeze/conflict)
+                                    setTimeout(() => {
+                                        toggleAccountModal(true, 'referral');
+                                    }, 500);
                                 }}
                                 activeOpacity={0.8}
                                 style={user?.plan_name === 'max' ? styles.primaryBtn : [styles.secondaryBtn, { borderColor: isDark ? '#3A3A3C' : '#E5E5EA' }]}

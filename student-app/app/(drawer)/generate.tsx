@@ -641,6 +641,35 @@ export default function GenerateQuizScreen() {
                         borderTopWidth: 0,
                     }]}
                 >
+                    {__DEV__ && (
+                        <TouchableOpacity
+                            onPress={() => {
+                                setRewardData({
+                                    earned: true,
+                                    amount: 100,
+                                    message: 'Referral Success!',
+                                    type: 'referral'
+                                });
+                                setIsRewardModalVisible(true);
+                            }}
+                            style={{ 
+                                position: 'absolute', 
+                                top: -45, 
+                                right: 20, 
+                                backgroundColor: '#34C759', 
+                                paddingHorizontal: 12, 
+                                paddingVertical: 6, 
+                                borderRadius: 12,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 4,
+                                elevation: 3
+                            }}
+                        >
+                            <Text style={{ color: '#fff', fontSize: 11, fontWeight: '800' }}>Test Reward</Text>
+                        </TouchableOpacity>
+                    )}
                     <TouchableOpacity
                         onPress={handleGenerate}
                         disabled={!canGenerate}

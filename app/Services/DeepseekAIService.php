@@ -13,15 +13,13 @@ class DeepseekAIService
     protected $apiKey;
     protected $baseUrl = 'https://api.deepseek.com/v1';
     protected $visionService;
-    protected $docAiService;
     protected $personalizationService;
     protected $timeout = 60; // Default 60s
 
-    public function __construct(GoogleVisionService $visionService, GoogleDocumentAIService $docAiService)
+    public function __construct(GoogleVisionService $visionService)
     {
         $this->apiKey = config('services.deepseek.api_key');
         $this->visionService = $visionService;
-        $this->docAiService = $docAiService;
         $this->client = new Client([
             'timeout' => 120, // High default, overridden per request
             'connect_timeout' => 10,
@@ -354,12 +352,8 @@ PROMPT;
             if ($onStatus) $onStatus('Reading text from image...');
             Log::info('Deepseek Vision: Streaming image via OCR + SSE...');
 
-            // Step 1: High-Fidelity OCR
-            $tempFile = tempnam(sys_get_temp_dir(), 'skeeme_ocr');
-            file_put_contents($tempFile, base64_decode($base64Image));
-            
-            $extractedText = $this->docAiService->processDocument($tempFile) ?? $this->ocrFromBase64($base64Image);
-            @unlink($tempFile);
+            // Step 1: Cloud-Based OCR (Google Cloud Vision)
+            $extractedText = $this->ocrFromBase64($base64Image);
 
             if (empty(trim($extractedText))) {
                 throw new \Exception('Could not read any text from the image. Please try a clearer photo.');

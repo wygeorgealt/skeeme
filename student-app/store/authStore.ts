@@ -4,6 +4,8 @@ import { Platform } from 'react-native';
 import { User, PricingConfig } from '@/types';
 import { posthog } from '@/lib/posthog';
 
+export type AccountModalView = 'main' | 'preferences' | 'support' | 'referral' | 'delete_account';
+
 interface AuthState {
     user: User | null;
     token: string | null;
@@ -37,8 +39,8 @@ interface AuthState {
     globalError: string | null;
     setGlobalError: (error: string | null) => void;
     accountModalOpen: boolean;
-    accountModalView: 'main' | 'preferences' | 'support' | 'referral';
-    toggleAccountModal: (show: boolean, view?: 'main' | 'preferences' | 'support' | 'referral') => void;
+    accountModalView: AccountModalView;
+    toggleAccountModal: (show: boolean, view?: AccountModalView) => void;
     notificationsEnabled: boolean;
     setNotificationsEnabled: (enabled: boolean) => Promise<void>;
 }

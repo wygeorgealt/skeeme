@@ -17,7 +17,7 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import * as WebBrowser from 'expo-web-browser';
 import * as ImagePicker from 'expo-image-picker';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, AccountModalView } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -593,14 +593,13 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
 
     const { user, logout, theme, setTheme, hapticsEnabled, setHapticsEnabled, notificationsEnabled, setNotificationsEnabled } = useAuthStore();
 
-    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [deleteConfirmationCode, setDeleteConfirmationCode] = useState('');
     const [deleteInput, setDeleteInput] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
     
     // Internal Navigation View
     const { accountModalView, toggleAccountModal } = useAuthStore();
-    const [activeView, setActiveView] = useState<'main' | 'preferences' | 'support' | 'referral'>('main');
+    const [activeView, setActiveView] = useState<AccountModalView>('main');
 
     useEffect(() => {
         if (visible) {
@@ -611,17 +610,16 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
     const bottomInset = insets.bottom ?? 0;
 
     useEffect(() => {
-        if (!deleteModalVisible) return;
+        if (activeView !== 'delete_account') return;
         setDeleteConfirmationCode(`DELETE-${Math.floor(1000 + Math.random() * 9000)}`);
         setDeleteInput('');
-    }, [deleteModalVisible]);
+    }, [activeView]);
 
     const handleDeleteAccount = async () => {
         if (deleteInput !== deleteConfirmationCode) return;
         setIsDeleting(true);
         try {
             await api.delete('profile');
-            setDeleteModalVisible(false);
             Alert.alert('Account Deleted', 'Your account has been deleted permanently.');
             logout();
             router.replace('/login');
@@ -656,98 +654,6 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
 
     return (
         <>
-            {/* Delete Confirmation Input Modal */}
-            <ReanimatedModal
-                visible={deleteModalVisible}
-                onHide={() => setDeleteModalVisible(false)}
-                animation={{ type: 'fade', duration: 300 }}
-                backdrop={{ color: 'black', opacity: 0.5 }}
-                contentContainerStyle={{
-                    flex: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    paddingHorizontal: 24,
-                }}
-            >
-                <View style={{ 
-                    backgroundColor: C.card, 
-                    borderRadius: 24, 
-                    padding: 24, 
-                    width: '100%',
-                    borderWidth: 1,
-                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 10 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 20,
-                    elevation: 10,
-                }}>
-                    <Text style={{ fontSize: 22, fontWeight: '800', color: '#EF4444', marginBottom: 12, letterSpacing: -0.5 }}>Delete Account</Text>
-                    <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 24, lineHeight: 22 }}>
-                        This is a permanent action. To confirm, please type the following code exactly:
-                        {"\n\n"}
-                        <Text style={{ fontWeight: '800', color: C.text, fontSize: 18, letterSpacing: 1 }}>{deleteConfirmationCode}</Text>
-                    </Text>
-                    
-                    <TextInput
-                        placeholder="Type the code here..."
-                        placeholderTextColor={C.textTertiary}
-                        value={deleteInput}
-                        onChangeText={setDeleteInput}
-                        autoCapitalize="characters"
-                        style={{
-                            height: 56,
-                            borderWidth: 2,
-                            borderColor: deleteInput === deleteConfirmationCode ? '#34C759' : C.separator,
-                            borderRadius: 16,
-                            paddingHorizontal: 16,
-                            fontSize: 16,
-                            fontWeight: '600',
-                            color: C.text,
-                            marginBottom: 24,
-                            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                        }}
-                    />
-
-                    <View style={{ flexDirection: 'row', gap: 12 }}>
-                        <TouchableOpacity
-                            onPress={() => setDeleteModalVisible(false)}
-                            activeOpacity={0.7}
-                            style={{
-                                flex: 1,
-                                height: 52,
-                                borderRadius: 14,
-                                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <Text style={{ color: C.text, fontSize: 15, fontWeight: '700' }}>Keep Account</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={handleDeleteAccount}
-                            disabled={deleteInput !== deleteConfirmationCode || isDeleting}
-                            activeOpacity={0.8}
-                            style={{
-                                flex: 1,
-                                height: 52,
-                                borderRadius: 14,
-                                backgroundColor: deleteInput === deleteConfirmationCode ? '#EF4444' : (isDark ? '#471a1a' : '#fee2e2'),
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                opacity: deleteInput === deleteConfirmationCode ? 1 : 0.6,
-                            }}
-                        >
-                            {isDeleting ? (
-                                <LoadingSpinner size={20} color="#fff" />
-                            ) : (
-                                <Text style={{ color: deleteInput === deleteConfirmationCode ? '#fff' : '#ef4444', fontSize: 15, fontWeight: '800' }}>Confirm Delete</Text>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </ReanimatedModal>
-
             <ReanimatedModal
                 visible={visible}
                 onHide={onDismiss}
@@ -966,7 +872,7 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                                     icon={TrashBinTrash}
                                     iconBg="#EF4444"
                                     label="Delete Account"
-                                    onPress={() => setDeleteModalVisible(true)}
+                                    onPress={() => setActiveView('delete_account')}
                                     destructive
                                     isLast
                                     isDark={isDark}
@@ -979,7 +885,89 @@ export default function AccountModal({ visible, onDismiss }: AccountModalProps) 
                 {activeView === 'preferences' && <PreferencesView onBack={() => setActiveView('main')} />}
                 {activeView === 'support' && <SupportView onBack={() => setActiveView('main')} />}
                 {activeView === 'referral' && <ReferralView onBack={() => setActiveView('main')} />}
+                {activeView === 'delete_account' && (
+                    <DeleteAccountView 
+                        onBack={() => setActiveView('main')}
+                        deleteConfirmationCode={deleteConfirmationCode}
+                        deleteInput={deleteInput}
+                        setDeleteInput={setDeleteInput}
+                        isDeleting={isDeleting}
+                        handleDeleteAccount={handleDeleteAccount}
+                        isDark={isDark}
+                        C={C}
+                    />
+                )}
             </ReanimatedModal>
         </>
+    );
+}
+
+function DeleteAccountView({ onBack, deleteConfirmationCode, deleteInput, setDeleteInput, isDeleting, handleDeleteAccount, isDark, C }: any) {
+    return (
+        <Animated.View entering={FadeIn.duration(200)} style={{ flex: 1, paddingHorizontal: 24, paddingTop: 8 }}>
+            <Text style={{ fontSize: 24, fontWeight: '800', color: '#EF4444', marginBottom: 12, letterSpacing: -0.5 }}>Delete Account</Text>
+            <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 24, lineHeight: 22 }}>
+                This is a permanent action. To confirm, please type the following code exactly:
+                {"\n\n"}
+                <Text style={{ fontWeight: '800', color: C.text, fontSize: 18, letterSpacing: 1 }}>{deleteConfirmationCode}</Text>
+            </Text>
+            
+            <TextInput
+                placeholder="Type the code here..."
+                placeholderTextColor={C.textTertiary}
+                value={deleteInput}
+                onChangeText={setDeleteInput}
+                autoCapitalize="characters"
+                style={{
+                    height: 56,
+                    borderWidth: 2,
+                    borderColor: deleteInput === deleteConfirmationCode ? '#34C759' : C.separator,
+                    borderRadius: 16,
+                    paddingHorizontal: 16,
+                    fontSize: 16,
+                    fontWeight: '600',
+                    color: C.text,
+                    marginBottom: 24,
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                }}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                    onPress={onBack}
+                    activeOpacity={0.7}
+                    style={{
+                        flex: 1,
+                        height: 52,
+                        borderRadius: 14,
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <Text style={{ color: C.text, fontSize: 15, fontWeight: '700' }}>Keep Account</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={handleDeleteAccount}
+                    disabled={deleteInput !== deleteConfirmationCode || isDeleting}
+                    activeOpacity={0.8}
+                    style={{
+                        flex: 1,
+                        height: 52,
+                        borderRadius: 14,
+                        backgroundColor: deleteInput === deleteConfirmationCode ? '#EF4444' : (isDark ? '#471a1a' : '#fee2e2'),
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: deleteInput === deleteConfirmationCode ? 1 : 0.6,
+                    }}
+                >
+                    {isDeleting ? (
+                        <LoadingSpinner size={20} color="#fff" />
+                    ) : (
+                        <Text style={{ color: deleteInput === deleteConfirmationCode ? '#fff' : '#ef4444', fontSize: 15, fontWeight: '800' }}>Confirm Delete</Text>
+                    )}
+                </TouchableOpacity>
+            </View>
+        </Animated.View>
     );
 }

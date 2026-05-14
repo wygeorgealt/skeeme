@@ -364,70 +364,12 @@ class AuthController extends Controller
     }
 
     /**
-     * Determine localized pricing based on the user's request IP/headers using live conversion.
+     * Get default pricing info. Actual localized pricing is handled by the mobile stores (Google Play/Apple).
      */
     private function getLocalizedPrice(Request $request)
     {
-        $countryCode = $request->header('CF-IPCountry');
-        $baseUsdPrice = 4;
-
-        // Fallback for local development or non-Cloudflare proxies (like native Ngrok)
-        if (!$countryCode) {
-            $clientIp = $request->header('X-Forwarded-For', $request->ip());
-            $clientIp = trim(explode(',', $clientIp)[0]); // Get the true client IP if there are multiple
-
-            // If it's a public remote IP, look up the client's location
-            if (filter_var($clientIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                $countryCode = Cache::remember("ip_country_{$clientIp}", 60 * 60 * 24, function () use ($clientIp) {
-                    try {
-                        $response = Http::timeout(3)->get("http://ip-api.com/json/{$clientIp}?fields=countryCode");
-                        return $response->successful() ? $response->json('countryCode') : null;
-                    } catch (\Exception $e) {
-                        return null;
-                    }
-                });
-            } else {
-                // If it's a local/private IP (e.g., testing on localhost or local Wi-Fi network), 
-                // look up the machine's public IP location as a fallback for development.
-                $countryCode = Cache::remember('dev_server_country', 60 * 60 * 24, function () {
-                    try {
-                        $response = Http::timeout(3)->get("http://ip-api.com/json/?fields=countryCode");
-                        return $response->successful() ? $response->json('countryCode') : null;
-                    } catch (\Exception $e) {
-                        return null;
-                    }
-                });
-            }
-        }
-
-        if ($countryCode === 'NG') {
-            // Fetch cached rate or look it up (cache for 24 hours)
-            $nairaRate = Cache::remember('usd_to_ngn_rate', 60 * 60 * 24, function () {
-                try {
-                    $response = Http::timeout(3)->get('https://api.exchangerate-api.com/v4/latest/USD');
-                    if ($response->successful()) {
-                        return $response->json('rates.NGN', 1500); // fallback to 1500 if missing
-                    }
-                } catch (\Exception $e) {
-                    Log::error('Currency conversion API failed', ['error' => $e->getMessage()]);
-                }
-                return 1500; // Fallback hardcoded rate in case API goes down
-            });
-
-            // Calculate converted price and round up nicely to nearest 100
-            $rawNairaPrice = $baseUsdPrice * $nairaRate;
-            $prettyNairaPrice = ceil($rawNairaPrice / 100) * 100;
-
-            return [
-                'amount' => number_format($prettyNairaPrice),
-                'currency' => '₦',
-                'period' => '/ month',
-            ];
-        }
-
-        // Default to USD
         return [
-            'amount' => (string) $baseUsdPrice,
+            'amount' => '4.99',
             'currency' => '$',
             'period' => '/ month',
         ];
