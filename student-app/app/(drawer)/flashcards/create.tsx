@@ -5,7 +5,7 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { router } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import { generateUUID } from '@/lib/utils';
 import { Colors } from '@/constants/theme';
 import * as DocumentPicker from 'expo-document-picker';
@@ -14,6 +14,9 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { posthog } from '@/lib/posthog';
 import { CheckCircle, DocumentText, CloudUpload, Leaf, LightbulbBolt, Rocket, FolderOpen } from '@solar-icons/react-native/Bold';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
+import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { useNavigation } from '@react-navigation/native';
+import React, { useCallback } from 'react';
 
 import { RewardModal } from '@/components/RewardModal';
 
@@ -43,6 +46,29 @@ export default function GenerateFlashcardScreen() {
     const [rewardData, setRewardData] = useState<any>(null);
     const [isRewardModalVisible, setIsRewardModalVisible] = useState(false);
     const [pendingDeckId, setPendingDeckId] = useState<number | null>(null);
+    const navigation = useNavigation();
+    useFocusEffect(
+        useCallback(() => {
+            const onBeforeRemove = (e: any) => {
+                if (!isLoading) return;
+                e.preventDefault();
+                Alert.alert(
+                    'Stop Generation?',
+                    'If you leave now, the flashcard generation will be cancelled. Are you sure?',
+                    [
+                        { text: "No, Stay", style: 'cancel', onPress: () => {} },
+                        {
+                            text: 'Yes, Stop',
+                            style: 'destructive',
+                            onPress: () => navigation.dispatch(e.data.action),
+                        },
+                    ]
+                );
+            };
+            navigation.addListener('beforeRemove', onBeforeRemove);
+            return () => navigation.removeListener('beforeRemove', onBeforeRemove);
+        }, [navigation, isLoading])
+    );
 
     const handleFileSelect = async () => {
         try {
@@ -183,14 +209,36 @@ export default function GenerateFlashcardScreen() {
 
     if (isLoading) {
         return (
-            <View style={{ flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' }}>
-                <LoadingSpinner size={60} color={C.primary} />
-                <Text style={{ fontFamily: 'Outfit-Bold', fontSize: 24, marginTop: 24, color: isDark ? '#fff' : '#000' }}>
-                    {loadingStage || 'Skeeming...'}
-                </Text>
-                <Text style={{ fontFamily: 'Outfit-Regular', fontSize: 16, marginTop: 8, color: '#8E8E93' }}>
-                    Generating your flashcard deck...
-                </Text>
+            <View style={{ flex: 1, backgroundColor: C.background }}>
+                <Stack.Screen options={{ 
+                    headerShown: false,
+                    tabBarStyle: { display: 'none' } 
+                } as any} />
+                
+                <View style={[s.header, { paddingTop: Math.max(insets.top, 20) }]}>
+                    <Text style={[s.headerTitle, { color: C.text }]}>Building Set...</Text>
+                </View>
+
+                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24 }}>
+                    <View style={{ alignItems: 'center', marginBottom: 40, marginTop: 20 }}>
+                        <LoadingSpinner size={50} color={C.primary} />
+                        <Text style={{ fontSize: 24, fontWeight: '800', marginTop: 24, color: C.text, textAlign: 'center' }}>
+                            {loadingStage || 'Skeeming...'}
+                        </Text>
+                        <Text style={{ fontSize: 16, color: C.textTertiary, marginTop: 8, textAlign: 'center' }}>
+                            Our AI is crafting your study materials
+                        </Text>
+                    </View>
+
+                    {[1, 2, 3].map(i => (
+                        <View key={i} style={[s.card, { backgroundColor: C.card, padding: 30, opacity: 1 - (i * 0.2) }]}>
+                            <SkeletonLoader width="60%" height={24} style={{ marginBottom: 16 }} />
+                            <View style={{ height: 2, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', marginVertical: 16 }} />
+                            <SkeletonLoader width="85%" height={16} style={{ marginBottom: 8 }} />
+                            <SkeletonLoader width="40%" height={16} />
+                        </View>
+                    ))}
+                </ScrollView>
             </View>
         );
     }

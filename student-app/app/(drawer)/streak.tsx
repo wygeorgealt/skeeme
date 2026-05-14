@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sharing from 'expo-sharing';
 import { ShareCard } from '@/components/ui/ShareCard';
-import { AltArrowLeft, Stars } from '@solar-icons/react-native/Bold';
+import { AltArrowLeft, Stars, Share } from '@solar-icons/react-native/Bold';
 import { StreakAnimation } from '@/components/StreakAnimation';
 import { Colors, Radius } from '@/constants/theme';
 import { Animated as RNAnimated } from 'react-native';
@@ -97,7 +97,7 @@ export default function StreakScreen() {
                             activeOpacity={0.85}
                             style={[s.shareAction, { backgroundColor: C.primary }]}
                         >
-                            <Stars size={18} color="#FFF" />
+                            <Share size={18} color="#FFF" />
                             <Text style={s.shareActionText}>Share</Text>
                         </TouchableOpacity>
                     )}

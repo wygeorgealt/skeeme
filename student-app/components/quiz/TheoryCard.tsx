@@ -43,11 +43,6 @@ export function TheoryCard({
     return (
         <View style={{ marginBottom: 20 }}>
             {/* Header matches active quiz header logic if needed, but here we focus on content */}
-            <View style={{ marginBottom: 32, marginTop: 10 }}>
-                <Text style={{ fontSize: 28, fontWeight: '800', color: C.text, lineHeight: 38, letterSpacing: -0.5 }}>
-                    {q.question_text}
-                </Text>
-            </View>
 
                 {result ? (
                     <View style={{ marginTop: 20 }}>

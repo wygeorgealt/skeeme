@@ -69,6 +69,12 @@ function TabBar({ state, descriptors, navigation }: any) {
             const { options } = descriptors[route.key];
             return options.href !== null && route.name !== 'scan';
         });
+    // Check if any screen has requested to hide the tab bar
+    const focusedRoute = state.routes[state.index];
+    const focusedOptions = descriptors[focusedRoute.key].options;
+    if (focusedOptions.tabBarStyle?.display === 'none') {
+        return null;
+    }
 
     return (
         <View style={bar.outerWrap} pointerEvents="box-none">

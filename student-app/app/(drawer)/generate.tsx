@@ -214,12 +214,12 @@ export default function GenerateQuizScreen() {
             });
             const html = generateQuizHTML(quizTitle, percentage, questionsForExport);
             const { uri } = await Print.printToFileAsync({ html, base64: false });
+            setIsExporting(false);
             await Sharing.shareAsync(uri);
         } catch (e) {
+            setIsExporting(false);
             if (__DEV__) console.error('PDF Export failed', e);
             Alert.alert('Export Failed', 'Could not generate PDF report.');
-        } finally {
-            setIsExporting(false);
         }
     };
 
@@ -437,6 +437,9 @@ export default function GenerateQuizScreen() {
             if (userRes.data) updateUser(userRes.data);
             
             if (timerEnabled) startTimer(parseInt(timerMinutes) || 10);
+            
+            // Reset saved state for new quiz
+            setIsSaved(false);
         } catch (e) {
             Alert.alert('Error', 'Failed to finalize quiz results.');
         }
@@ -500,19 +503,53 @@ export default function GenerateQuizScreen() {
         }
     }, [questions, totalAnswered, isSaved, isSavingHistory, mode, topic, selectedFile, difficulty, correctCount, theoryResults, selectedAnswers, timerEnabled, timerMinutes, timeLeft]);
 
-    // Save quiz history
-    useEffect(() => {
-        if (questions.length > 0 && totalAnswered === questions.length && !isSaved && !isSavingHistory) {
-            saveHistory();
-        }
-    }, [totalAnswered, questions, isSaved, isSavingHistory, saveHistory]);
 
-    // Programmatic header control
+    // Programmatic header and tab bar control
     useEffect(() => {
-        if (questions.length === 0) {
-            navigation.setOptions({ headerShown: false });
+        const isQuizActive = (questions.length > 0 && currentQIndex < questions.length) || isLoading;
+        
+        navigation.setOptions({ 
+            headerShown: false, // Always hide header in this screen as we have custom headers
+            tabBarStyle: isQuizActive ? { display: 'none' } : undefined
+        });
+
+        // If it's a tab navigator, we might need to set it on the parent
+        const parent = navigation.getParent();
+        if (parent) {
+            parent.setOptions({
+                tabBarStyle: isQuizActive ? { display: 'none' } : undefined
+            });
         }
-    }, [questions.length, navigation]);
+    }, [questions.length, currentQIndex, isLoading, navigation]);
+
+    // Prevent accidental exit
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
+            const isQuizActive = (questions.length > 0 && currentQIndex < questions.length) || isLoading;
+            if (!isQuizActive) return;
+
+            e.preventDefault();
+            Alert.alert(
+                'Discard Quiz?',
+                'Leaving now will lose your progress. Are you sure?',
+                [
+                    { text: 'Stay', style: 'cancel' },
+                    { 
+                        text: 'Discard', 
+                        style: 'destructive', 
+                        onPress: () => {
+                            // Reset state and allow navigation
+                            setQuestions([]);
+                            setIsLoading(false);
+                            navigation.dispatch(e.data.action);
+                        } 
+                    }
+                ]
+            );
+        });
+
+        return unsubscribe;
+    }, [navigation, questions.length, currentQIndex, isLoading]);
 
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
     if (questions.length === 0 && !isLoading) {
@@ -744,7 +781,7 @@ export default function GenerateQuizScreen() {
         const rawProgressPct = (currentQIndex / questions.length) * 100;
         const hasSelectedAction = isTheory ? theoryResults[currentQIndex] !== undefined : selectedAnswers[currentQIndex] !== undefined;
 
-        const handleNextPress = () => {
+        const handleNextPress = async () => {
             haptics.impactAsync();
             if (!isRevealed && !isTheory) {
                 // Reveal the answer logic for MCQ
@@ -752,6 +789,10 @@ export default function GenerateQuizScreen() {
             } else {
                 // Move to next question or finish
                 if (currentQIndex === questions.length - 1) {
+                    // Manual submission before celebration
+                    if (!isSaved && !isSavingHistory) {
+                        await saveHistory();
+                    }
                     setIsCelebration(true);
                 } else {
                     setIsRevealed(false);
@@ -879,35 +920,6 @@ export default function GenerateQuizScreen() {
                                 );
                             })}
 
-                            {isRevealed && (() => {
-                                const isCorrect = selectedAnswers[currentQIndex] === q.correct_answer;
-                                // Use targeted explanation if available, otherwise fallback to the unified one
-                                let rawExpl = isCorrect 
-                                    ? (q.explanation_right || q.explanation) 
-                                    : (q.explanation_wrong || q.explanation);
-                                
-                                let cleanExpl = rawExpl || `The correct answer is: ${q.correct_answer}. Keep practicing!`;
-                                
-                                // Strip AI's baked-in affirmative prefixes if it's the old explanation field
-                                if (!q.explanation_right && !q.explanation_wrong) {
-                                    cleanExpl = cleanExpl.replace(/^(correct|perfect|yes|exactly|that is correct|right|spot on|exactly right|that's right|that's correct|you're right|exactly correct|spot on|correct answer|the correct answer is)[,!\.]?\s*/i, '');
-                                    cleanExpl = cleanExpl.charAt(0).toUpperCase() + cleanExpl.slice(1);
-                                }
-
-                                return (
-                                    <View style={{ marginTop: 16, marginBottom: 24, padding: 16, backgroundColor: isDark ? 'rgba(0,122,255,0.1)' : '#F0F8FF', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(0,122,255,0.3)' }}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                                            <LightbulbBolt size={20} color="#007AFF" />
-                                            <Text style={{ marginLeft: 8, fontSize: 16, fontWeight: '700', color: '#007AFF' }}>
-                                                {isCorrect ? 'Spot on! 🎉' : 'Nice try, but not quite! 🤔'}
-                                            </Text>
-                                        </View>
-                                        <Text style={{ fontSize: 15, color: C.text, lineHeight: 22 }}>
-                                            {cleanExpl}
-                                        </Text>
-                                    </View>
-                                );
-                            })()}
                         </View>
                     ) : (
                         <TheoryCard key={currentQIndex} q={q} qi={currentQIndex} onGraded={(qi, correct) => {
@@ -955,7 +967,7 @@ export default function GenerateQuizScreen() {
                                         <Lightbulb size={18} color={isCorrect ? '#34C759' : '#FF3B30'} />
                                     </View>
                                     <Text style={{ marginLeft: 10, fontSize: 18, fontWeight: '800', color: C.text }}>
-                                        {isCorrect ? 'Spot on! 🎉' : 'Keep going! 🚀'}
+                                        {isCorrect ? 'Spot on!' : 'Not quite!'}
                                     </Text>
                                 </View>
                                 <Text style={{ fontSize: 15, color: C.textSecondary, lineHeight: 22, fontWeight: '500' }}>
@@ -979,9 +991,13 @@ export default function GenerateQuizScreen() {
                             shadowRadius: 12,
                         }}
                     >
-                        <Text style={{ color: hasSelectedAction ? 'white' : '#8E8E93', fontWeight: '800', fontSize: 18, letterSpacing: -0.2 }}>
-                            {isTheory ? (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question') : (!isRevealed ? 'Check Answer' : (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question'))}
-                        </Text>
+                        {isSavingHistory ? (
+                            <LoadingSpinner size={24} color="white" />
+                        ) : (
+                            <Text style={{ color: hasSelectedAction ? 'white' : '#8E8E93', fontWeight: '800', fontSize: 18, letterSpacing: -0.2 }}>
+                                {isTheory ? (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question') : (!isRevealed ? 'Check Answer' : (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question'))}
+                            </Text>
+                        )}
                     </TouchableOpacity>
                 </BlurView>
             </View>
@@ -999,7 +1015,7 @@ export default function GenerateQuizScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 160, paddingTop: insets.top + 20 }} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 280, paddingTop: insets.top + 20 }} showsVerticalScrollIndicator={false}>
                 {/* Score Header Glass Card */}
                 <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.resultsHeader}>
                     <View style={s.resultsIconBox}>
@@ -1124,13 +1140,6 @@ export default function GenerateQuizScreen() {
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                    onPress={() => { setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); if (timerRef.current) clearInterval(timerRef.current); }}
-                    activeOpacity={0.8}
-                    style={[s.returnBtn, { backgroundColor: isDark ? C.card : '#F2F2F7' }]}
-                >
-                    <Text style={[s.actionBtnText, { color: C.text }]}>Return Home</Text>
-                </TouchableOpacity>
             </BlurView>
 
             <OutOfCreditsModal visible={showOutOfCredits} onDismiss={() => setShowOutOfCredits(false)} featureAttempted="quiz" />

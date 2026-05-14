@@ -8,29 +8,29 @@ const parseMarkdown = (text: string) => {
     html = html.replace(/^# (.*$)/gim, '<h1 style="font-size: 26px; margin-top: 30px; color: #0f172a; font-weight: 900; letter-spacing: -0.8px;">$1</h1>');
 
     // Rule: Split "Label: $$math$$" into two lines
-    html = html.replace(/^(.+?):\\s*(\\$\\$.+?\\$\\$)/gm, "$1:<br/>$2");
+    html = html.replace(/^(.+?):\s*(\$\$.+?\$\$)/gm, "$1:<br/>$2");
 
     // Block Math ($$ ... $$) -> Wrap in a div with margins
-    html = html.replace(/\\$\\$(.*?)\\$\\$/gs, '<div style="margin: 15px 0; text-align: left;">$$$1$$</div>');
+    html = html.replace(/\$\$(.*?)\$\$/gs, '<div style="margin: 15px 0; text-align: left;">$$$1$$</div>');
 
     // Bold (**text**)
-    html = html.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     
     // Italic (*text*)
-    html = html.replace(/\\*(.*?)\\*/g, '<em>$1</em>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
 
     // Lists (- item)
-    html = html.replace(/^\\- (.*$)/gim, '<div style="margin-left: 10px; margin-bottom: 8px; display: flex;"><span style="margin-right: 10px; color: #3b82f6;">•</span><span>$1</span></div>');
+    html = html.replace(/^- (.*$)/gim, '<div style="margin-left: 10px; margin-bottom: 8px; display: flex;"><span style="margin-right: 10px; color: #3b82f6;">•</span><span>$1</span></div>');
 
     // Numbered Lists (1. item)
-    html = html.replace(/^[0-9]+\\. (.*$)/gim, (match, content) => {
+    html = html.replace(/^[0-9]+\. (.*$)/gim, (match, content) => {
         const num = match.split('.')[0];
         return `<div style="margin-left: 10px; margin-bottom: 8px; display: flex;"><span style="margin-right: 10px; color: #3b82f6; font-weight: bold;">${num}.</span><span>${content}</span></div>`;
     });
 
     // Paragraphs (double newlines)
     html = html.split('\n\n').map(p => {
-        if (p.includes('<h') || p.includes('<div')) return p;
+        if (p.includes('<h') || p.includes('<div') || p.includes('<p')) return p;
         return `<p style="margin-bottom: 12px;">${p.replace(/\n/g, '<br/>')}</p>`;
     }).join('');
 

@@ -16,9 +16,20 @@ import { generateQuizHTML } from '@/lib/pdfGenerator';
 import { MathText } from '@/components/ui/MathText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { Tick01Icon, Cancel01Icon, MagicWand01Icon, CheckmarkCircle01Icon, IdeaIcon, ArrowLeft01Icon, DocumentCodeIcon, Share01Icon } from '@hugeicons/core-free-icons';
+import { 
+    CheckCircle, 
+    CloseCircle, 
+    MagicStick, 
+    Lightbulb, 
+    AltArrowLeft, 
+    DocumentText, 
+    Share,
+    Fire,
+    CupStar,
+    MedalRibbonStar
+} from '@solar-icons/react-native/Bold';
 import { BlurView } from 'expo-blur';
+import Animated, { FadeInDown, FadeInUp, ZoomIn, useSharedValue, useAnimatedStyle, withSpring, withDelay } from 'react-native-reanimated';
 
 // Storage helpers
 const storage = {
@@ -78,9 +89,9 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
             <View style={s.qHeader}>
                 <View style={[s.qIcon, q.is_correct ? s.bgEmerald10 : s.bgRed10]}>
                     {q.is_correct ? (
-                        <HugeiconsIcon icon={Tick01Icon} size={18} color="#10b981" />
+                        <CheckCircle size={18} color="#10b981" />
                     ) : (
-                        <HugeiconsIcon icon={Cancel01Icon} size={18} color="#ef4444" />
+                        <CloseCircle size={18} color="#ef4444" />
                     )}
                 </View>
                 <View style={s.flex1}>
@@ -111,7 +122,7 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                         {q.explanation && (
                             <View style={[s.feedbackBox, isDark ? s.bgEmeraldDark : s.bgEmeraldLight, { marginTop: 24 }]}>
                                 <View style={s.feedbackHeader}>
-                                    <HugeiconsIcon icon={MagicWand01Icon} size={14} color="#10b981" />
+                                    <MagicStick size={14} color="#10b981" />
                                     <Text style={s.feedbackTitle}>AI Feedback</Text>
                                 </View>
                                 <MathText
@@ -146,8 +157,8 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                             return (
                                 <View key={i} style={[s.optionRow, bg, borderColor]}>
                                     <Text style={[s.optionText, text]}>{opt}</Text>
-                                    {icon === 'checkmark-circle' && <HugeiconsIcon icon={CheckmarkCircle01Icon} size={18} color="#10b981" />}
-                                    {icon === 'close-circle' && <HugeiconsIcon icon={Cancel01Icon} size={18} color="#ef4444" />}
+                                    {icon === 'checkmark-circle' && <CheckCircle size={18} color="#10b981" />}
+                                    {icon === 'close-circle' && <CloseCircle size={18} color="#ef4444" />}
                                 </View>
                             );
                         })}
@@ -155,7 +166,7 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                         {q.explanation && (
                             <View style={[s.feedbackBox, isDark ? s.bgEmeraldDark : s.bgEmeraldLight]}>
                                 <View style={s.feedbackHeader}>
-                                    <HugeiconsIcon icon={IdeaIcon} size={14} color="#10b981" />
+                                    <Lightbulb size={14} color="#10b981" />
                                     <Text style={s.feedbackTitle}>Explanation</Text>
                                 </View>
                                 <MathText
@@ -229,7 +240,7 @@ export default function QuizHistoryDetailScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <View style={[s.topControls, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity onPress={() => router.back()} style={s.backBtnSkeleton}>
-                    <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color="white" />
+                    <AltArrowLeft size={24} color="white" />
                 </TouchableOpacity>
             </View>
             <View style={s.loadingHeader}>
@@ -254,10 +265,10 @@ export default function QuizHistoryDetailScreen() {
     if (!session) return null;
 
     const getRemark = (pct: number) => {
-        if (pct >= 90) return { title: "GENIUS!", subtitle: "Incredible work. You've mastered this topic.", icon: "star" };
-        if (pct >= 80) return { title: "GREAT JOB!", subtitle: "Solid understanding. Keep pushing forward!", icon: "trophy" };
-        if (pct >= 60) return { title: "GOOD EFFORT!", subtitle: "You're getting there. A quick review will help.", icon: "school" };
-        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: "trending-up" };
+        if (pct >= 90) return { title: "GENIUS!", subtitle: "Incredible work. You've mastered this topic.", icon: CupStar };
+        if (pct >= 80) return { title: "GREAT JOB!", subtitle: "Solid understanding. Keep pushing forward!", icon: MedalRibbonStar };
+        if (pct >= 60) return { title: "GOOD EFFORT!", subtitle: "You're getting there. A quick review will help.", icon: Lightbulb };
+        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: Fire };
     };
 
     const remark = getRemark(session.score_percentage);
@@ -285,7 +296,7 @@ export default function QuizHistoryDetailScreen() {
                         activeOpacity={0.7}
                         style={[s.menuBtn, isDark ? s.bgWhite10 : s.bgSlate100]}
                     >
-                        <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={isDark ? 'white' : 'black'} />
+                        <AltArrowLeft size={24} color={isDark ? 'white' : 'black'} />
                     </TouchableOpacity>
                     <Text style={[s.headerText, isDark ? s.textWhite : s.textSlate900]}>Quiz Results</Text>
                     <View style={s.size12} />
@@ -293,16 +304,19 @@ export default function QuizHistoryDetailScreen() {
 
                 {/* Top Score Area */}
                 <View style={s.scoreArea}>
-                    <View style={[s.scoreIconBox, isDark ? s.bgWhite10 : s.bgSlate100]}>
-                        <HugeiconsIcon icon={MagicWand01Icon} size={36} color="#8B5CF6" />
-                    </View>
-                    <Text style={s.scoreTag}>{remark.title}</Text>
-                    <Text style={[s.scoreText, isDark ? s.textWhite : s.textSlate900]}>
+                    <Animated.View 
+                        entering={ZoomIn.duration(800).springify()}
+                        style={[s.scoreIconBox, isDark ? s.bgWhite10 : s.bgSlate100]}
+                    >
+                        <remark.icon size={36} color="#007AFF" />
+                    </Animated.View>
+                    <Animated.Text entering={FadeInDown.delay(300)} style={s.scoreTag}>{remark.title}</Animated.Text>
+                    <Animated.Text entering={FadeInDown.delay(500)} style={[s.scoreText, isDark ? s.textWhite : s.textSlate900]}>
                         {Math.round(session.score_percentage)}%
-                    </Text>
-                    <Text style={[s.scoreSubtitle, isDark ? s.textWhite60 : s.textSlate500]}>
+                    </Animated.Text>
+                    <Animated.Text entering={FadeInDown.delay(700)} style={[s.scoreSubtitle, isDark ? s.textWhite60 : s.textSlate500]}>
                         {remark.subtitle}
-                    </Text>
+                    </Animated.Text>
                 </View>
 
                 {/* Bottom Content Container */}
@@ -361,7 +375,7 @@ export default function QuizHistoryDetailScreen() {
                 >
                     {isExporting ? <LoadingSpinner size={24} color={isDark ? 'black' : 'white'} /> : (
                         <View style={s.exportBtnContent}>
-                            <HugeiconsIcon icon={DocumentCodeIcon} size={20} color={isDark ? 'black' : 'white'} />
+                            <DocumentText size={20} color={isDark ? 'black' : 'white'} />
                             <Text style={[s.exportBtnText, isDark ? s.textBlack : s.textWhite]}>Save Report</Text>
                         </View>
                     )}
@@ -384,7 +398,7 @@ export default function QuizHistoryDetailScreen() {
                     style={s.shareBtn}
                 >
                     {isSharing ? <LoadingSpinner size={24} color="white" /> : (
-                        <HugeiconsIcon icon={Share01Icon} size={20} color="white" />
+                        <Share size={20} color="white" />
                     )}
                 </TouchableOpacity>
             </BlurView>
@@ -399,7 +413,7 @@ const s = StyleSheet.create({
     qIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
     bgEmerald10: { backgroundColor: 'rgba(16, 185, 129, 0.1)' },
     bgRed10: { backgroundColor: 'rgba(239, 68, 68, 0.1)' },
-    qLabel: { fontSize: 11, fontWeight: '700', color: '#8B5CF6', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 },
+    qLabel: { fontSize: 11, fontWeight: '700', color: '#007AFF', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 },
     answerPl: { paddingLeft: 56 },
     modelAnswerLabel: { fontSize: 10, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12 },
     feedbackBox: { padding: 20, borderRadius: 24 },
@@ -439,7 +453,7 @@ const s = StyleSheet.create({
 
     scoreArea: { alignItems: 'center', paddingTop: 24, paddingBottom: 48 },
     scoreIconBox: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-    scoreTag: { color: '#8B5CF6', fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
+    scoreTag: { color: '#007AFF', fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
     scoreText: { fontSize: 64, fontWeight: '900', letterSpacing: -2 },
     scoreSubtitle: { fontSize: 15, paddingHorizontal: 24, textAlign: 'center', fontWeight: '500', lineHeight: 22 },
 
@@ -456,7 +470,7 @@ const s = StyleSheet.create({
     statValue: { fontSize: 28, fontWeight: '900' },
 
     reviewDividerRow: { marginBottom: 24, flexDirection: 'row', alignItems: 'center' },
-    dividerLine: { width: 4, height: 16, backgroundColor: '#8B5CF6', borderRadius: 2, marginRight: 12 },
+    dividerLine: { width: 4, height: 16, backgroundColor: '#007AFF', borderRadius: 2, marginRight: 12 },
     reviewTitle: { fontSize: 15, fontWeight: '700' },
 
     footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, flexDirection: 'row', gap: 16 },
@@ -466,7 +480,7 @@ const s = StyleSheet.create({
     exportBtnContent: { flexDirection: 'row', alignItems: 'center' },
     exportBtnText: { fontWeight: '700', fontSize: 16, marginLeft: 12 },
     textBlack: { color: 'black' },
-    shareBtn: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: '#8B5CF6' },
+    shareBtn: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: '#007AFF' },
 
     textWhite: { color: 'white' },
     textSlate900: { color: '#0f172a' },

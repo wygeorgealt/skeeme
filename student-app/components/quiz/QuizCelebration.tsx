@@ -69,8 +69,6 @@ export const QuizCelebration: React.FC<QuizCelebrationProps> = ({ score, onShowR
             </Animated.View>
 
             <Animated.View style={[styles.main, mainStyle]}>
-                {/* Background Glow */}
-                <View style={[styles.glow, { backgroundColor: meta.color + '20' }]} />
 
                 <Svg width={size} height={size}>
                     <Defs>

@@ -68,10 +68,7 @@ class FlashcardController extends Controller
         $requestId = (string) Str::uuid();
 
         return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId, $title) {
-            $emit = function (array $payload) use ($requestId) {
-                if (isset($payload['type']) && $payload['type'] === 'status') {
-                    error_log("[DEBUG] [$requestId] Emitting status: " . $payload['message']);
-                }
+            $emit = function (array $payload) {
                 echo "data: " . json_encode($payload) . "\n\n";
                 if (ob_get_level() > 0) ob_flush();
                 flush();
