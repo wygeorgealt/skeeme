@@ -432,7 +432,7 @@ export default function ScanScreen() {
                                     <View style={s.aiResponseRow}>
                                         <View style={[s.thinkingBubble, isDark ? s.thinkingBubbleDark : s.thinkingBubbleLight]}>
                                             <LoadingSpinner size={16} color={C.primary} />
-                                            <Animated.Text style={[s.aiAnalyzingText, { color: C.text }, pulseStyle]}>
+                                            <Animated.Text style={[s.aiAnalyzingText, { color: isDark ? '#FFFFFF' : '#0A0F1E' }, pulseStyle]}>
                                                 {loadingStage}
                                             </Animated.Text>
                                         </View>
@@ -453,7 +453,7 @@ export default function ScanScreen() {
                                 </View>
                                 <MathText
                                     content={item.question || 'No question text found.'}
-                                    color={isDark ? '#e2e8f0' : '#1e293b'}
+                                    color={isDark ? '#FFFFFF' : '#1e293b'}
                                     fontSize={16}
                                     containerStyle={{ marginBottom: 24 }}
                                 />
@@ -470,7 +470,7 @@ export default function ScanScreen() {
                                     <View style={[s.answerHighlight, isDark ? s.answerHighlightDark : s.answerHighlightLight]}>
                                         <MathText
                                             content={item.solution || item.summary || ''}
-                                            color={isDark ? '#f1f5f9' : '#0f172a'}
+                                            color={isDark ? '#FFFFFF' : '#0f172a'}
                                             fontSize={17}
                                             containerStyle={{ paddingVertical: 8 }}
                                         />
