@@ -198,6 +198,7 @@ Route::group(['prefix' => 'v1'], function () {
             });
 
             Route::group(['prefix' => 'flashcards'], function () {
+                Route::post('decks', [\App\Http\Controllers\API\Student\FlashcardController::class, 'store']);
                 Route::get('decks', [\App\Http\Controllers\API\Student\FlashcardController::class, 'index']);
                 Route::get('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'show']);
                 Route::delete('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'destroy']);
