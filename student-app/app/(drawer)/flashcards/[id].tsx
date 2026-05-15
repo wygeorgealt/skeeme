@@ -1,6 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect, memo, useMemo, useCallback } from 'react';
-import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, StatusBar, LayoutAnimation } from 'react-native';
+import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, LayoutAnimation } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -483,7 +484,7 @@ export default function StudyDeckScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+            <StatusBar style={isDark ? 'light' : 'dark'} />
             
             {/* Header */}
             <View style={[s.headerRow, { paddingBottom: 16 }]}>

@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, useColorScheme, Platform, StyleSheet, StatusBar } from 'react-native';
+import { View, TouchableOpacity, ScrollView, FlatList, RefreshControl, Alert, useColorScheme, Platform, StyleSheet } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -152,7 +153,7 @@ export default function FlashcardsDashboard() {
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+            <StatusBar style={isDark ? 'light' : 'dark'} />
             
             {/* Header */}
             <View style={[s.header, { paddingTop: Math.max(insets.top, 20) }]}>

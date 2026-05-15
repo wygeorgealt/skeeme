@@ -174,7 +174,7 @@ export default function RootLayout() {
               <OutOfCreditsModalWrapper />
               <GlobalErrorModalWrapper />
 
-              <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} backgroundColor="transparent" translucent />
+              <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} />
             </ThemeProvider>
           </QueryProvider>
         </PostHogProvider>

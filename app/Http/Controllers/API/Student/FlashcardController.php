@@ -57,26 +57,17 @@ class FlashcardController extends Controller
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
         }
 
-        $title = $validated['topic'] ?? ($request->hasFile('file') ? $request->file('file')->getClientOriginalName() : 'New Flashcard Set');
-
-        // 2. Pre-create or find the deck
-        $deck = null;
-        if (!empty($validated['deck_id'])) {
-            $deck = FlashcardDeck::where('user_id', $user->id)->find($validated['deck_id']);
-            
-            // If we have a deck but no topic/file in request, try to recover from deck
-            if ($deck && empty($validated['topic']) && !$request->hasFile('file')) {
-                $validated['topic'] = $deck->title; // fallback
-                // If it was a file, we'd need the file content, but for now we'll assume topic-based or already extracted
-            }
+        // 2. Find the pre-created deck
+        $deck = FlashcardDeck::where('user_id', $user->id)->find($validated['deck_id']);
+        if (!$deck) {
+            return response()->json(['message' => 'Deck not found or missing ID'], 404);
         }
 
-        if (!$deck) {
-            $deck = FlashcardDeck::create([
-                'user_id' => $user->id,
-                'title' => $title,
-                'source_type' => $request->hasFile('file') ? 'file' : 'topic',
-            ]);
+        $title = $deck->title;
+        $sourceContent = Cache::get("deck_{$deck->id}_source");
+
+        if (empty(trim((string)$sourceContent))) {
+            return response()->json(['message' => 'No content found for generation. Please recreate the deck.'], 400);
         }
 
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
@@ -90,7 +81,7 @@ class FlashcardController extends Controller
 
         $requestId = (string) Str::uuid();
 
-        return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId, $title, $deck) {
+        return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId, $title, $deck, $sourceContent) {
             $emit = function (array $payload) {
                 echo "data: " . json_encode($payload) . "\n\n";
                 if (ob_get_level() > 0) ob_flush();
@@ -98,27 +89,10 @@ class FlashcardController extends Controller
             };
 
             $fullContent = '';
-            $emit(['db_id' => $deck->id]);
             
             try {
                 // 1. Initial Status
                 $emit(['type' => 'status', 'message' => 'Skeeming...']);
-
-                // 2. Resource Extraction
-                $sourceContent = '';
-                if ($request->hasFile('file')) {
-                    $emit(['type' => 'status', 'message' => 'Reading document...']);
-                    $file = $request->file('file');
-                    $sourceContent = $this->extractionService->extractText($file->getPathname(), $file->getClientOriginalExtension());
-                } else {
-                    $sourceContent = $validated['topic'];
-                }
-
-                if (empty(trim($sourceContent))) {
-                    $emit(['error' => 'No content found to generate flashcards from.']);
-                    echo "data: [DONE]\n\n";
-                    return;
-                }
 
                 // 3. Document Condensing (if needed)
                 if (str_word_count($sourceContent) >= 3000) {
@@ -276,15 +250,29 @@ class FlashcardController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'source_type' => 'nullable|string',
+            'topic' => 'nullable|string|max:255',
+            'file' => 'nullable|file|mimes:pdf,doc,docx,txt,md|max:5120',
         ]);
+
+        $title = $validated['topic'] ?? ($request->hasFile('file') ? $request->file('file')->getClientOriginalName() : 'New Flashcard Set');
 
         $deck = FlashcardDeck::create([
             'user_id' => $request->user()->id,
-            'title' => $validated['title'],
-            'source_type' => $validated['source_type'] ?? 'topic',
+            'title' => $title,
+            'source_type' => $request->hasFile('file') ? 'file' : 'topic',
         ]);
+
+        $sourceContent = '';
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $sourceContent = app(\App\Services\ExtractionService::class)->extractText($file->getPathname(), $file->getClientOriginalExtension());
+        } else {
+            $sourceContent = $validated['topic'] ?? '';
+        }
+
+        if (!empty(trim((string)$sourceContent))) {
+            Cache::put("deck_{$deck->id}_source", $sourceContent, now()->addMinutes(60));
+        }
 
         return response()->json(['data' => $deck]);
     }

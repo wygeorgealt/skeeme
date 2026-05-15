@@ -127,81 +127,41 @@ export default function GenerateFlashcardScreen() {
         }, 2500);
 
         try {
-            const token = useAuthStore.getState().token;
             const idempotencyKey = generateUUID();
-            const url = `${process.env.EXPO_PUBLIC_API_URL}flashcards/generate/stream`;
+            let res;
 
-            const headers: Record<string, string> = {
-                'Authorization': `Bearer ${token}`,
-                'Idempotency-Key': idempotencyKey,
-            };
-
-            if (mode !== 'file') {
-                headers['Content-Type'] = 'application/json';
+            if (mode === 'file' && selectedFile) {
+                const fd = new FormData();
+                fd.append('file', { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.mimeType || 'application/octet-stream' } as any);
+                fd.append('topic', topic); // Send topic as title if needed
+                
+                res = await api.post('flashcards/decks', fd, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+            } else {
+                res = await api.post('flashcards/decks', { topic });
             }
 
-            const es = new EventSource(url, {
-                headers,
-                method: 'POST',
-                body: mode === 'file' && selectedFile 
-                    ? (() => {
-                        const fd = new FormData();
-                        fd.append('file', { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.mimeType || 'application/octet-stream' } as any);
-                        fd.append('card_count', cardCount);
-                        fd.append('difficulty', difficulty);
-                        return fd;
-                      })()
-                    : JSON.stringify({ topic, card_count: count, difficulty }),
-            } as any);
-
-            let accumulatedJson = '';
-
-            es.addEventListener('message', (event) => {
-                if (event.data === '[DONE]') {
-                    es.close();
-                    clearInterval(stageInterval);
-                    // Final check - results are saved on backend
-                    return;
-                }
-
-                try {
-                    const chunk = JSON.parse(event.data || '{}');
-                    if (chunk.db_id) {
-                        es.close();
-                        clearInterval(stageInterval);
-                        
-                        // REDIRECT IMMEDIATELY
-                        const params = new URLSearchParams({
-                            autoStart: 'true',
-                            topic: topic || '',
-                            card_count: cardCount,
-                            difficulty: difficulty,
-                            mode: mode,
-                            idempotency: idempotencyKey || ''
-                        });
-                        
-                        router.replace(`/(drawer)/flashcards/${chunk.db_id}?${params.toString()}`);
-                        return;
-                    }
-                    if (chunk.type === 'status') {
-                        setLoadingStage(chunk.message);
-                    }
-                    if (chunk.error) throw new Error(chunk.error);
-                } catch (e) {}
+            const deckId = res.data.data.id;
+            
+            const params = new URLSearchParams({
+                autoStart: 'true',
+                topic: topic || '',
+                card_count: cardCount,
+                difficulty: difficulty,
+                mode: mode,
+                idempotency: idempotencyKey
             });
-
-            es.addEventListener('error', (event) => {
-                es.close();
-                setIsLoading(false);
-                clearInterval(stageInterval);
-                setGlobalError('Skeeme is down, Please try again later.');
-                setShowErrorModal(true);
-            });
+            
+            clearInterval(stageInterval);
+            setIsLoading(false);
+            
+            router.replace(`/(drawer)/flashcards/${deckId}?${params.toString()}`);
 
         } catch (e: any) {
             clearInterval(stageInterval);
             setIsLoading(false);
-            setGlobalError('Failed to start generation. Please check your connection.');
+            setGlobalError(e.response?.data?.message || 'Failed to start generation. Please check your connection.');
             setShowErrorModal(true);
         }
     };
