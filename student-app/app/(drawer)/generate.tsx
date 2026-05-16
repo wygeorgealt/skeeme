@@ -373,10 +373,16 @@ export default function GenerateQuizScreen() {
                 } catch (e) {}
             });
 
-            es.addEventListener('error', (event) => {
+            es.addEventListener('error', (event: any) => {
                 es.close();
                 setIsLoading(false);
                 clearInterval(stageInterval);
+                
+                if (event?.xhr?.status === 429 || event?.message?.includes('429')) {
+                    useAuthStore.getState().toggleCooldownModal(true);
+                    return;
+                }
+                
                 setGlobalError('Skeeme is down, Please try again later.');
                 setShowErrorModal(true);
             });

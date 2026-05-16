@@ -164,8 +164,8 @@ Route::group(['prefix' => 'v1'], function () {
             Route::apiResource('user-exams', \App\Http\Controllers\API\Student\UserExamController::class);
             Route::get('sync', [\App\Http\Controllers\API\Student\SyncController::class, 'index']);
             
-            // AI-Intensive Routes (Throttled: 5 per minute)
-            Route::group(['middleware' => ['throttle:5,1', 'sufficient.credits']], function () {
+            // AI-Intensive Routes (Throttled based on plan)
+            Route::group(['middleware' => ['throttle:ai-generation', 'sufficient.credits']], function () {
                 Route::post('quizzes/generate', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'generate']);
                 Route::post('quizzes/generate/stream', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'streamGenerate']);
                 Route::post('flashcards/generate', [\App\Http\Controllers\API\Student\FlashcardController::class, 'generate']);
@@ -198,7 +198,7 @@ Route::group(['prefix' => 'v1'], function () {
             });
 
             Route::group(['prefix' => 'flashcards'], function () {
-                Route::post('decks', [\App\Http\Controllers\API\Student\FlashcardController::class, 'store']);
+                Route::post('decks', [\App\Http\Controllers\API\Student\FlashcardController::class, 'store'])->middleware('throttle:ai-generation');
                 Route::get('decks', [\App\Http\Controllers\API\Student\FlashcardController::class, 'index']);
                 Route::get('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'show']);
                 Route::delete('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'destroy']);

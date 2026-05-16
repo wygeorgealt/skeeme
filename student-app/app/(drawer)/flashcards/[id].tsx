@@ -258,9 +258,12 @@ export default function StudyDeckScreen() {
             } catch (e) { }
         });
 
-        es.addEventListener('error', () => {
+        es.addEventListener('error', (event: any) => {
             es.close();
             setIsGenerating(false);
+            if (event?.xhr?.status === 429 || event?.message?.includes('429')) {
+                useAuthStore.getState().toggleCooldownModal(true);
+            }
         });
     };
 

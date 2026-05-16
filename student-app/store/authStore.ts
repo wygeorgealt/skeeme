@@ -32,6 +32,9 @@ interface AuthState {
     showCreditsModal: boolean;
     creditsModalFeature: 'scan' | 'quiz' | 'flashcard' | null;
     toggleCreditsModal: (show: boolean, feature?: 'scan' | 'quiz' | 'flashcard' | null) => void;
+    // Cooldown Modal
+    showCooldownModal: boolean;
+    toggleCooldownModal: (show: boolean) => void;
     // Haptics
     hapticsEnabled: boolean;
     setHapticsEnabled: (enabled: boolean) => Promise<void>;
@@ -119,6 +122,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     onboardingComplete: false,
     showCreditsModal: false,
     creditsModalFeature: null,
+    showCooldownModal: false,
     hapticsEnabled: true,
     globalError: null,
     accountModalOpen: false,
@@ -148,6 +152,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     toggleCreditsModal: (show, feature) => {
         set({ showCreditsModal: show, creditsModalFeature: feature || null });
+    },
+
+    toggleCooldownModal: (show) => {
+        set({ showCooldownModal: show });
     },
 
     setOnboardingData: async (data) => {

@@ -111,6 +111,22 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('otp', function (Request $request) {
             return Limit::perMinutes(5, 5)->by($request->ip());
         });
+
+        RateLimiter::for('ai-generation', function (Request $request) {
+            $user = $request->user();
+            if (!$user) {
+                return Limit::perMinute(5)->by($request->ip());
+            }
+
+            $plan = $user->getStudentPlan();
+            $limit = match ($plan) {
+                'max' => 20,
+                'pro' => 15,
+                default => 5,
+            };
+
+            return Limit::perMinute($limit)->by($user->id);
+        });
     }
 
     /**

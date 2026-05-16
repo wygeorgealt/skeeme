@@ -74,6 +74,14 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        if (error.response?.status === 429) {
+            const aiRoutes = ['generate', 'stream', 'decks', 'solve'];
+            if (aiRoutes.some(r => url?.includes(r))) {
+                useAuthStore.getState().toggleCooldownModal(true);
+            }
+            return Promise.reject(error);
+        }
+
         // 2. Handle Network Retries (Beginner mistake: no retries)
         config.retryCount = config.retryCount || 0;
         

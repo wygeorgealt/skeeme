@@ -172,6 +172,7 @@ export default function RootLayout() {
 
               {/* Global Modals */}
               <OutOfCreditsModalWrapper />
+              <CooldownModalWrapper />
               <GlobalErrorModalWrapper />
 
               <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} />
@@ -192,6 +193,18 @@ function OutOfCreditsModalWrapper() {
       visible={showCreditsModal}
       onDismiss={() => toggleCreditsModal(false)}
       featureAttempted={creditsModalFeature || 'scan'}
+    />
+  );
+}
+
+function CooldownModalWrapper() {
+  const { showCooldownModal, toggleCooldownModal } = useAuthStore();
+  const CooldownModal = require('@/components/CooldownModal').default;
+
+  return (
+    <CooldownModal
+      visible={showCooldownModal}
+      onDismiss={() => toggleCooldownModal(false)}
     />
   );
 }
