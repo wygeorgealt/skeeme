@@ -252,18 +252,31 @@ class FlashcardController extends Controller
         $validated = $request->validate([
             'topic' => 'nullable|string|max:255',
             'file' => 'nullable|file|mimes:pdf,doc,docx,txt,md|max:5120',
+            'extraction_id' => 'nullable|string',
         ]);
 
-        $title = $validated['topic'] ?? ($request->hasFile('file') ? $request->file('file')->getClientOriginalName() : 'New Flashcard Set');
+        $title = $validated['topic'] ?? 'New Flashcard Set';
+        
+        if ($request->has('extraction_id')) {
+            $extractionData = Cache::get("extraction_{$validated['extraction_id']}");
+            if ($extractionData && isset($extractionData['original_name'])) {
+                $title = $extractionData['original_name'];
+            }
+        } elseif ($request->hasFile('file')) {
+            $title = $request->file('file')->getClientOriginalName();
+        }
 
         $deck = FlashcardDeck::create([
             'user_id' => $request->user()->id,
             'title' => $title,
-            'source_type' => $request->hasFile('file') ? 'file' : 'topic',
+            'source_type' => ($request->hasFile('file') || $request->has('extraction_id')) ? 'file' : 'topic',
         ]);
 
         $sourceContent = '';
-        if ($request->hasFile('file')) {
+        if ($request->has('extraction_id')) {
+            $extractionData = Cache::get("extraction_{$validated['extraction_id']}");
+            $sourceContent = $extractionData ? $extractionData['text'] : '';
+        } elseif ($request->hasFile('file')) {
             $file = $request->file('file');
             $sourceContent = $this->extractionService->extractText($file->getPathname(), $file->getClientOriginalExtension());
         } else {

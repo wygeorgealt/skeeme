@@ -164,6 +164,9 @@ Route::group(['prefix' => 'v1'], function () {
             Route::apiResource('user-exams', \App\Http\Controllers\API\Student\UserExamController::class);
             Route::get('sync', [\App\Http\Controllers\API\Student\SyncController::class, 'index']);
             
+            // File Pre-processing
+            Route::post('files/extract', [\App\Http\Controllers\API\Student\FileExtractionController::class, 'extract']);
+
             // AI-Intensive Routes (Throttled based on plan)
             Route::group(['middleware' => ['throttle:ai-generation', 'sufficient.credits']], function () {
                 Route::post('quizzes/generate', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'generate']);

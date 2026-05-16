@@ -151,6 +151,8 @@ export default function GenerateQuizScreen() {
     const [explanationQ, setExplanationQ] = useState<{ q: Question; qi: number; isCorrect: boolean } | null>(null);
     const [globalError, setGlobalError] = useState<string | null>(null);
     const [showErrorModal, setShowErrorModal] = useState(false);
+    const [extractionId, setExtractionId] = useState<string | null>(null);
+    const [isExtracting, setIsExtracting] = useState(false);
 
     // Score calculations
     const correctCount = Object.entries(selectedAnswers).filter(([qi, ans]) => questions[+qi]?.correct_answer === ans).length
@@ -268,16 +270,38 @@ export default function GenerateQuizScreen() {
                 }
 
                 setIsProcessingFile(true);
-                // Simulate quick extraction check/UI feedback
-                setTimeout(() => {
-                    setSelectedFile(asset);
-                    setMode('file');
-                    setTopic('');
-                    setIsProcessingFile(false);
-                }, 800);
+                // Set file instantly so UI updates
+                setSelectedFile(asset);
+                setMode('file');
+                setTopic('');
+                setIsProcessingFile(false);
+                
+                // Start background extraction
+                setIsExtracting(true);
+                try {
+                    const fd = new FormData();
+                    fd.append('file', { uri: asset.uri, name: asset.name, type: asset.mimeType || 'application/octet-stream' } as any);
+                    fd.append('type', 'quiz');
+                    
+                    const res = await api.post('files/extract', fd, {
+                        headers: { 'Content-Type': 'multipart/form-data' },
+                        skipGlobalError: true
+                    } as any);
+                    
+                    if (res.data?.extraction_id) {
+                        setExtractionId(res.data.extraction_id);
+                    }
+                } catch (e: any) {
+                    Alert.alert('Extraction Failed', e.response?.data?.message || 'Could not extract text from document.');
+                    setSelectedFile(null);
+                    setExtractionId(null);
+                } finally {
+                    setIsExtracting(false);
+                }
             }
         } catch {
             setIsProcessingFile(false);
+            setIsExtracting(false);
             Alert.alert('Error', 'Failed to pick document.');
         }
     };
@@ -309,41 +333,63 @@ export default function GenerateQuizScreen() {
 
         try {
             const token = useAuthStore.getState().token;
-            const questionTypes = format === 'both' ? ['mcq', 'theory'] : [format === 'theory' ? 'theory' : 'mcq'];
+            const types = format === 'both' ? ['mcq', 'theory'] : [format === 'theory' ? 'theory' : 'mcq'];
             const idempotencyKey = generateUUID();
-            
             const url = `${process.env.EXPO_PUBLIC_API_URL}quizzes/generate/stream`;
-            
             let accumulatedJson = '';
             
-            const headers: Record<string, string> = {
-                'Authorization': `Bearer ${token}`,
-                'Idempotency-Key': idempotencyKey,
-            };
+            let es: EventSource;
 
-            if (mode !== 'file') {
-                headers['Content-Type'] = 'application/json';
-            }
+            if (mode === 'file' && selectedFile) {
+                if (extractionId) {
+                    es = new EventSource(url, {
+                        headers: { 
+                            'Authorization': `Bearer ${token}`,
+                            'Idempotency-Key': idempotencyKey,
+                            'Content-Type': 'application/json'
+                        },
+                        method: 'POST',
+                        body: JSON.stringify({
+                            topic: topic,
+                            question_count: questionCount,
+                            difficulty: difficulty,
+                            question_types: types,
+                            extraction_id: extractionId
+                        })
+                    } as any);
+                } else {
+                    const fd = new FormData();
+                    fd.append('file', { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.mimeType || 'application/octet-stream' } as any);
+                    fd.append('question_count', questionCount);
+                    fd.append('difficulty', difficulty);
+                    types.forEach((t, i) => fd.append(`question_types[${i}]`, t));
+                    if (topic) fd.append('topic', topic);
 
-            const es = new EventSource(url, {
-                headers,
-                method: 'POST',
-                body: mode === 'file' && selectedFile 
-                    ? (() => {
-                        const fd = new FormData();
-                        fd.append('file', { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.mimeType || 'application/octet-stream' } as any);
-                        fd.append('question_count', questionCount);
-                        fd.append('difficulty', difficulty);
-                        questionTypes.forEach((t, i) => fd.append(`question_types[${i}]`, t));
-                        return fd;
-                      })()
-                    : JSON.stringify({ 
+                    es = new EventSource(url, {
+                        headers: { 
+                            'Authorization': `Bearer ${token}`,
+                            'Idempotency-Key': idempotencyKey
+                        },
+                        method: 'POST',
+                        body: fd
+                    } as any);
+                }
+            } else {
+                es = new EventSource(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Idempotency-Key': idempotencyKey,
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST',
+                    body: JSON.stringify({ 
                         topic, 
                         question_count: parseInt(questionCount), 
-                        question_types: questionTypes, 
+                        question_types: types, 
                         difficulty 
-                      }),
-            } as any);
+                    }),
+                } as any);
+            }
 
             es.addEventListener('message', (event) => {
                 if (event.data === '[DONE]') {
@@ -563,7 +609,7 @@ export default function GenerateQuizScreen() {
 
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
     if (questions.length === 0 && !isLoading) {
-        const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
+        const canGenerate = mode === 'topic' ? topic.trim().length > 0 : (selectedFile !== null && !isExtracting);
         const iconBg = isDark ? 'rgba(0,122,255,0.15)' : '#EBF3FF';
 
         return (
@@ -623,7 +669,14 @@ export default function GenerateQuizScreen() {
                                 <>
                                     <FolderOpen size={32} color={C.primary} />
                                     <Text style={[sf.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
-                                    <Text style={[sf.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
+                                    {isExtracting ? (
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                                            <LoadingSpinner size={14} color={C.primary} />
+                                            <Text style={[sf.uploadSub, { color: C.primary, marginLeft: 6 }]}>Extracting text...</Text>
+                                        </View>
+                                    ) : (
+                                        <Text style={[sf.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
+                                    )}
                                 </>
                             ) : (
                                 <>

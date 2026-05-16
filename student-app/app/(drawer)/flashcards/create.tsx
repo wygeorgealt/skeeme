@@ -39,6 +39,8 @@ export default function GenerateFlashcardScreen() {
     const [globalError, setGlobalError] = useState<string | null>(null);
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
+    const [extractionId, setExtractionId] = useState<string | null>(null);
+    const [isExtracting, setIsExtracting] = useState(false);
     const navigation = useNavigation();
     useFocusEffect(
         useCallback(() => {
@@ -78,15 +80,38 @@ export default function GenerateFlashcardScreen() {
                 }
 
                 setIsProcessingFile(true);
-                setTimeout(() => {
-                    setSelectedFile(asset);
-                    setMode('file');
-                    setTopic('');
-                    setIsProcessingFile(false);
-                }, 800);
+                // Set file instantly so UI updates
+                setSelectedFile(asset);
+                setMode('file');
+                setTopic('');
+                setIsProcessingFile(false);
+                
+                // Start background extraction
+                setIsExtracting(true);
+                try {
+                    const fd = new FormData();
+                    fd.append('file', { uri: asset.uri, name: asset.name, type: asset.mimeType || 'application/octet-stream' } as any);
+                    fd.append('type', 'flashcard');
+                    
+                    const res = await api.post('files/extract', fd, {
+                        headers: { 'Content-Type': 'multipart/form-data' },
+                        skipGlobalError: true
+                    } as any);
+                    
+                    if (res.data?.extraction_id) {
+                        setExtractionId(res.data.extraction_id);
+                    }
+                } catch (e: any) {
+                    Alert.alert('Extraction Failed', e.response?.data?.message || 'Could not extract text from document.');
+                    setSelectedFile(null);
+                    setExtractionId(null);
+                } finally {
+                    setIsExtracting(false);
+                }
             }
         } catch {
             setIsProcessingFile(false);
+            setIsExtracting(false);
             Alert.alert('Error', 'Failed to pick document.');
         }
     };
@@ -122,14 +147,17 @@ export default function GenerateFlashcardScreen() {
             let res;
 
             if (mode === 'file' && selectedFile) {
-                const fd = new FormData();
-                fd.append('file', { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.mimeType || 'application/octet-stream' } as any);
-                fd.append('topic', topic); // Send topic as title if needed
-                
-                res = await api.post('flashcards/decks', fd, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                    skipGlobalError: true
-                } as any);
+                if (extractionId) {
+                    res = await api.post('flashcards/decks', { extraction_id: extractionId }, { skipGlobalError: true } as any);
+                } else {
+                    // Fallback to old method just in case
+                    const fd = new FormData();
+                    fd.append('file', { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.mimeType || 'application/octet-stream' } as any);
+                    res = await api.post('flashcards/decks', fd, {
+                        headers: { 'Content-Type': 'multipart/form-data' },
+                        skipGlobalError: true
+                    } as any);
+                }
             } else {
                 res = await api.post('flashcards/decks', { topic }, { skipGlobalError: true } as any);
             }
@@ -176,7 +204,7 @@ export default function GenerateFlashcardScreen() {
         }
     };
 
-    const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
+    const canGenerate = mode === 'topic' ? topic.trim().length > 0 : (selectedFile !== null && !isExtracting);
     const estimatedCost = parseInt(cardCount) || 10;
 
     return (
@@ -232,7 +260,7 @@ export default function GenerateFlashcardScreen() {
                 ) : (
                     <TouchableOpacity
                         onPress={handleFileSelect}
-                        disabled={isProcessingFile}
+                        disabled={isProcessingFile || isExtracting}
                         activeOpacity={0.7}
                         style={[s.card, s.uploadBox, { backgroundColor: C.card, marginBottom: 32 }]}
                     >
@@ -247,7 +275,14 @@ export default function GenerateFlashcardScreen() {
                                     <DocumentText size={24} color="#007AFF" />
                                 </View>
                                 <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
-                                <Text style={[s.uploadSub, { color: '#10b981' }]}>Ready to generate</Text>
+                                {isExtracting ? (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                                        <LoadingSpinner size={14} color="#007AFF" />
+                                        <Text style={[s.uploadSub, { color: '#007AFF', marginLeft: 6 }]}>Extracting text...</Text>
+                                    </View>
+                                ) : (
+                                    <Text style={[s.uploadSub, { color: '#10b981' }]}>Ready to generate</Text>
+                                )}
                             </>
                         ) : (
                             <>

@@ -39,8 +39,9 @@ class PracticeQuizController extends Controller
 
         try {
             $validated = $request->validate([
-                'topic' => 'required_without:file|nullable|string|max:255',
-                'file' => 'required_without:topic|nullable|file|mimes:pdf,docx,txt,md|max:10240',
+                'topic' => 'required_without_all:file,extraction_id|nullable|string|max:255',
+                'file' => 'required_without_all:topic,extraction_id|nullable|file|mimes:pdf,docx,txt,md|max:10240',
+                'extraction_id' => 'nullable|string',
                 'question_count' => 'required|integer|min:5|max:50',
                 'question_types' => 'required|array|min:1',
                 'question_types.*' => 'in:mcq,theory',
@@ -86,11 +87,17 @@ class PracticeQuizController extends Controller
 
                 // 2. Resource Extraction (Moved inside stream to avoid 504/Blocking)
                 $sourceContent = '';
-                if ($request->hasFile('file')) {
+                if ($request->has('extraction_id')) {
+                    $extractionData = Cache::get("extraction_{$validated['extraction_id']}");
+                    $sourceContent = $extractionData ? $extractionData['text'] : '';
+                    if (empty($sourceContent)) {
+                        $emit(['type' => 'status', 'message' => 'Failed to retrieve pre-extracted text.']);
+                    }
+                } elseif ($request->hasFile('file')) {
                     $emit(['type' => 'status', 'message' => 'Analyzing Document...']);
                     $sourceContent = $this->extractionService->extractText($request->file('file')->getPathname(), $request->file('file')->getClientOriginalExtension());
                 } else {
-                    $sourceContent = $validated['topic'];
+                    $sourceContent = $validated['topic'] ?? '';
                 }
 
                 if (empty(trim($sourceContent))) {
@@ -211,8 +218,9 @@ class PracticeQuizController extends Controller
         try {
             // Log 1: Validation
             $validated = $request->validate([
-                'topic' => 'required_without:file|nullable|string|max:255',
-                'file' => 'required_without:topic|nullable|file|mimes:pdf,docx,txt,md|max:10240',
+                'topic' => 'required_without_all:file,extraction_id|nullable|string|max:255',
+                'file' => 'required_without_all:topic,extraction_id|nullable|file|mimes:pdf,docx,txt,md|max:10240',
+                'extraction_id' => 'nullable|string',
                 'question_count' => 'required|integer|min:10|max:30',
                 'question_types' => 'required|array|min:1',
                 'question_types.*' => 'in:mcq,theory',
@@ -224,7 +232,14 @@ class PracticeQuizController extends Controller
             $sourceContent = '';
 
             // 1. Handle File Upload & Extraction
-            if ($request->hasFile('file')) {
+            if ($request->has('extraction_id')) {
+                Log::info("Processing Cached Extraction");
+                $extractionData = Cache::get("extraction_{$validated['extraction_id']}");
+                $sourceContent = $extractionData ? $extractionData['text'] : '';
+                if (empty($sourceContent)) {
+                    throw new \Exception("Could not retrieve pre-extracted text. Please try uploading the file again.");
+                }
+            } elseif ($request->hasFile('file')) {
                 Log::info("Processing File Upload");
                 $file = $request->file('file');
                 $tempPath = $file->getRealPath();
@@ -243,7 +258,7 @@ class PracticeQuizController extends Controller
                 $r2Path = $file->storeAs('student-uploads/quizzes/' . $user->id, $safeName, config('filesystems.default'));
                 Log::info("R2 Upload Success", ['path' => $r2Path]);
             } else {
-                $sourceContent = $validated['topic'];
+                $sourceContent = $validated['topic'] ?? '';
                 Log::info("Processing Topic", ['topic' => $sourceContent]);
             }
 
