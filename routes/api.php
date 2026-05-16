@@ -168,7 +168,6 @@ Route::group(['prefix' => 'v1'], function () {
             Route::group(['middleware' => ['throttle:ai-generation', 'sufficient.credits']], function () {
                 Route::post('quizzes/generate', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'generate']);
                 Route::post('quizzes/generate/stream', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'streamGenerate']);
-                Route::post('flashcards/generate', [\App\Http\Controllers\API\Student\FlashcardController::class, 'generate']);
                 Route::post('flashcards/generate/stream', [\App\Http\Controllers\API\Student\FlashcardController::class, 'streamGenerate']);
                 Route::post('scan/solve', [\App\Http\Controllers\API\Student\ScanController::class, 'solve']);
                 Route::post('scan/solve/stream', [\App\Http\Controllers\API\Student\ScanController::class, 'streamSolve']);

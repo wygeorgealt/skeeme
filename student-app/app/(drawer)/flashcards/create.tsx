@@ -1,24 +1,21 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Platform } from 'react-native';
-import EventSource from 'react-native-sse';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { router, Stack, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { generateUUID } from '@/lib/utils';
 import { Colors } from '@/constants/theme';
 import * as DocumentPicker from 'expo-document-picker';
 import { useQueryClient } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { posthog } from '@/lib/posthog';
-import { CheckCircle, DocumentText, CloudUpload, Leaf, LightbulbBolt, Rocket, FolderOpen, AltArrowLeft } from '@solar-icons/react-native/Bold';
+import { CheckCircle, DocumentText, CloudUpload, Leaf, LightbulbBolt, Rocket, AltArrowLeft } from '@solar-icons/react-native/Bold';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
-import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback } from 'react';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
-import { RewardModal } from '@/components/RewardModal';
 
 type QuizMode = 'topic' | 'file';
 type Difficulty = 'easy' | 'medium' | 'hard';
@@ -41,13 +38,6 @@ export default function GenerateFlashcardScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [globalError, setGlobalError] = useState<string | null>(null);
     const [showErrorModal, setShowErrorModal] = useState(false);
-
-    // Reward Modal State
-    const [rewardData, setRewardData] = useState<any>(null);
-    const [isRewardModalVisible, setIsRewardModalVisible] = useState(false);
-    const [pendingDeckId, setPendingDeckId] = useState<number | null>(null);
-    const [accumulatedCards, setAccumulatedCards] = useState<any[]>([]);
-    const [isComplete, setIsComplete] = useState(false);
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
     const navigation = useNavigation();
     useFocusEffect(
@@ -105,15 +95,16 @@ export default function GenerateFlashcardScreen() {
         if (mode === 'topic' && !topic.trim()) return Alert.alert('Required', 'Please enter a topic.');
         if (mode === 'file' && !selectedFile) return Alert.alert('Required', 'Please select a document.');
         
-        const count = parseInt(cardCount) || 10;
-        if (!user?.is_unlimited && (user?.credits ?? 0) < count) {
-            Alert.alert('Insufficient Credits', 'You need more credits to generate this deck.');
+        const pricingConfig = useAuthStore.getState().pricingConfig;
+        const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
+        const flatCost = (pricingConfig?.rates?.flashcard_flat as any)?.[planTier] ?? (planTier === 'free' ? 30 : 25);
+        
+        if (!user?.is_unlimited && (user?.credits ?? 0) < flatCost) {
+            Alert.alert('Insufficient Credits', `You need at least ${flatCost} credits to generate this deck.`);
             return;
         }
 
         setIsLoading(true);
-        setAccumulatedCards([]);
-        setIsComplete(false);
         setLoadingStage(mode === 'file' ? 'Analyzing Document...' : 'Analyzing Topic...');
 
         const stages = mode === 'file'
@@ -136,10 +127,11 @@ export default function GenerateFlashcardScreen() {
                 fd.append('topic', topic); // Send topic as title if needed
                 
                 res = await api.post('flashcards/decks', fd, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    skipGlobalError: true
+                } as any);
             } else {
-                res = await api.post('flashcards/decks', { topic });
+                res = await api.post('flashcards/decks', { topic }, { skipGlobalError: true } as any);
             }
 
             const deckId = res.data.data.id;
@@ -182,27 +174,6 @@ export default function GenerateFlashcardScreen() {
         } catch (e) {
             return null;
         }
-    };
-
-    const finishFlashcardGen = async (deckId: number) => {
-        setIsLoading(false);
-        setIsComplete(true);
-        queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
-        
-        // Refresh user credits to see if we used the safety net
-        try {
-            const userRes = await api.get('me');
-            if (userRes.data) {
-                updateUser(userRes.data);
-                if (userRes.data.credits === 0 && !userRes.data.is_unlimited_student) {
-                    setShowOutOfCredits(true);
-                }
-            }
-        } catch (e) {}
-
-        try {
-            posthog.capture('flashcards_generated_stream', { difficulty, card_count: parseInt(cardCount) });
-        } catch(e) {}
     };
 
     const canGenerate = mode === 'topic' ? topic.trim().length > 0 : selectedFile !== null;
@@ -377,19 +348,6 @@ export default function GenerateFlashcardScreen() {
                     featureAttempted="flashcard" 
                 />
             </BlurView>
-
-            <RewardModal
-                isVisible={isRewardModalVisible}
-                onClose={() => {
-                    setIsRewardModalVisible(false);
-                    if (pendingDeckId) {
-                        router.replace(`/(drawer)/flashcards/${pendingDeckId}`);
-                    } else {
-                        router.back();
-                    }
-                }}
-                reward={rewardData}
-            />
 
             <GlobalErrorModal 
                 visible={showErrorModal}

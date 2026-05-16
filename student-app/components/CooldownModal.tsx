@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     primaryBtn: {
-        backgroundColor: '#FF9500',
+        backgroundColor: '#007AFF',
         width: '100%',
         height: 64,
         borderRadius: 20,

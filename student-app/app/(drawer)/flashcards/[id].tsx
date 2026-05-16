@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, memo, useMemo, useCallback } from 'react';
 import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, LayoutAnimation } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Colors } from '@/constants/theme';
 import { HugeiconsIcon } from '@hugeicons/react-native';
@@ -145,6 +145,8 @@ const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: 
 export default function StudyDeckScreen() {
     const { id, autoStart, topic, card_count, difficulty, mode, idempotency } = useLocalSearchParams();
     const scrollRef = useRef<ScrollView>(null);
+    const esRef = useRef<any>(null);
+    const queryClient = useQueryClient();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [cachedDeck, setCachedDeck] = useState<any>(null);
     const [isComplete, setIsComplete] = useState(false);
@@ -208,14 +210,17 @@ export default function StudyDeckScreen() {
         progressAnim.value = 0;
     }, [id]);
 
-    // Handle auto-start generation
+    // Handle auto-start generation — cleanup on unmount to prevent memory leak (C2)
     useEffect(() => {
         if (autoStart === 'true' && id) {
             startLiveGeneration();
         }
+        return () => {
+            esRef.current?.close();
+        };
     }, [id, autoStart]);
 
-    const startLiveGeneration = async () => {
+    const startLiveGeneration = () => {
         setIsGenerating(true);
         const token = useAuthStore.getState().token;
         const url = `${process.env.EXPO_PUBLIC_API_URL}flashcards/generate/stream`;
@@ -237,10 +242,14 @@ export default function StudyDeckScreen() {
             })
         } as any);
 
+        esRef.current = es;
+
         es.addEventListener('message', (event) => {
             if (event.data === '[DONE]') {
                 es.close();
+                esRef.current = null;
                 setIsGenerating(false);
+                queryClient.invalidateQueries({ queryKey: ['deck', id] });
                 refetch(); // Final sync with DB
                 return;
             }
@@ -260,6 +269,7 @@ export default function StudyDeckScreen() {
 
         es.addEventListener('error', (event: any) => {
             es.close();
+            esRef.current = null;
             setIsGenerating(false);
             if (event?.xhr?.status === 429 || event?.message?.includes('429')) {
                 useAuthStore.getState().toggleCooldownModal(true);
@@ -271,12 +281,20 @@ export default function StudyDeckScreen() {
         try {
             let testJson = json.trim();
             testJson = testJson.replace(/```(?:json)?|```/g, '').trim();
-            if (!testJson.endsWith(']')) {
-                const lastObjEnd = testJson.lastIndexOf('}');
-                if (lastObjEnd !== -1) testJson = testJson.substring(0, lastObjEnd + 1) + ']';
-                else testJson += ']';
+            if (!testJson.endsWith(']') && !testJson.endsWith('}')) {
+                if (testJson.startsWith('[')) {
+                    const lastObjEnd = testJson.lastIndexOf('}');
+                    if (lastObjEnd !== -1) testJson = testJson.substring(0, lastObjEnd + 1) + ']';
+                    else testJson += ']';
+                } else if (testJson.includes('"front"')) {
+                    // Wrapped object fallback — extract array if present
+                    const lastObjEnd = testJson.lastIndexOf('}');
+                    if (lastObjEnd !== -1) testJson = testJson.substring(0, lastObjEnd + 1) + ']}';
+                    else testJson += ']}';
+                }
             }
-            return JSON.parse(testJson);
+            const parsed = JSON.parse(testJson);
+            return Array.isArray(parsed) ? parsed : (parsed.cards || parsed.flashcards || null);
         } catch (e) { return null; }
     };
 
@@ -290,19 +308,20 @@ export default function StudyDeckScreen() {
     }, [id]);
 
     useEffect(() => {
-        if (deck?.flashcards) {
-            progressAnim.value = withTiming((currentIndex + 1) / deck.flashcards.length, { duration: 300 });
+        if (cards.length > 0) {
+            progressAnim.value = withTiming((currentIndex + 1) / cards.length, { duration: 300 });
         }
-    }, [currentIndex, deck]);
+    }, [currentIndex, cards]);
 
     const nextCard = () => {
-        if (!deck?.flashcards) return;
-        if (currentIndex < deck.flashcards.length - 1) {
+        if (cards.length === 0) return;
+        if (currentIndex < cards.length - 1) {
             haptics.impactAsync();
             const nextIndex = currentIndex + 1;
             scrollRef.current?.scrollTo({ x: nextIndex * SCREEN_WIDTH, animated: true });
             // The scroll listener will update the index to ensure smooth transition
-        } else {
+        } else if (!isGenerating) {
+            // Only mark complete once streaming has finished
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             haptics.notificationAsync('success' as any);
             setRewardMessage(REWARD_MESSAGES[Math.floor(Math.random() * REWARD_MESSAGES.length)]);
@@ -324,7 +343,7 @@ export default function StudyDeckScreen() {
     };
 
     const prevCard = () => {
-        if (!deck?.flashcards) return;
+        if (cards.length === 0) return;
         if (currentIndex > 0) {
             haptics.impactAsync();
             const prevIndex = currentIndex - 1;
@@ -372,10 +391,10 @@ export default function StudyDeckScreen() {
     };
 
     const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-        if (!deck?.flashcards) return;
+        if (cards.length === 0) return;
         const x = event.nativeEvent.contentOffset.x;
         const index = Math.round(x / SCREEN_WIDTH);
-        if (index !== currentIndex && index >= 0 && index < deck.flashcards.length) {
+        if (index !== currentIndex && index >= 0 && index < cards.length) {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setCurrentIndex(index);
         }

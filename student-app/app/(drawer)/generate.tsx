@@ -441,7 +441,7 @@ export default function GenerateQuizScreen() {
             const userRes = await api.get('me');
             if (userRes.data) {
                 updateUser(userRes.data);
-                if (userRes.data.credits === 0 && !userRes.data.is_unlimited_student) {
+                if (userRes.data.credits === 0 && !userRes.data.is_unlimited) {
                     setShowOutOfCredits(true);
                 }
             }

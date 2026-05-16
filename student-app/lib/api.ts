@@ -75,7 +75,7 @@ api.interceptors.response.use(
         }
 
         if (error.response?.status === 429) {
-            const aiRoutes = ['generate', 'stream', 'decks', 'solve'];
+            const aiRoutes = ['generate', 'stream', 'flashcards/decks', 'solve'];
             if (aiRoutes.some(r => url?.includes(r))) {
                 useAuthStore.getState().toggleCooldownModal(true);
             }
@@ -110,11 +110,33 @@ api.interceptors.response.use(
             });
         }
 
-        // Global fallback for 500 errors to ensure "Skeeme is down" is always shown
-        if (response?.status && response.status >= 500) {
+        // Global fallback for 500 errors to ensure "Skeeme is down" is always shown (using the custom modal)
+        if (response?.status && response.status >= 500 && !(config as any)?.skipGlobalError) {
             useAuthStore.getState().setGlobalError('Skeeme is currently down. Please try again later.');
         } else if (isNetworkError && config.retryCount >= MAX_RETRIES) {
             useAuthStore.getState().setGlobalError('Network connection lost. Please check your internet and try again.');
+        }
+
+        // Sanitize raw errors before they reach local Alert.alert() catches
+        if (error.response) {
+            const status = error.response.status;
+            // Ensure data object exists so we can safely set .message
+            if (!error.response.data || typeof error.response.data !== 'object') {
+                error.response.data = {};
+            }
+            
+            if (status >= 500) {
+                error.response.data.message = 'Skeeme is currently down for maintenance. Please try again later.';
+            } else if (status === 403) {
+                error.response.data.message = 'You do not have permission to perform this action.';
+            } else if (status === 421) {
+                error.response.data.message = 'Service temporarily unavailable. Please try again.';
+            } else if (status === 304) {
+                error.response.data.message = 'No changes were made.';
+            }
+        } else if (isNetworkError) {
+            // Provide a safe fallback for network timeouts so local catches read it cleanly
+            error.response = { data: { message: 'Network connection lost. Please check your internet.' } } as any;
         }
         
         return Promise.reject(error);
