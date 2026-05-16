@@ -11,14 +11,15 @@ import { SparklesIcon, CheckmarkCircle01Icon, Alert01Icon, ArrowLeft01Icon, Arro
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { MathText } from '@/components/ui/MathText';
 import { useAuthStore } from '@/store/authStore';
+import EventSource from 'react-native-sse';
 
 import * as SecureStore from 'expo-secure-store';
-import Animated, { 
-    interpolate, 
-    useAnimatedStyle, 
-    useSharedValue, 
-    withSpring, 
-    withTiming, 
+import Animated, {
+    interpolate,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
     Easing,
     withRepeat,
     FadeIn,
@@ -171,7 +172,7 @@ export default function StudyDeckScreen() {
     });
 
     const deck = useMemo(() => remoteDeck || cachedDeck, [remoteDeck, cachedDeck]);
-    
+
     // Merge remote cards and streaming cards
     const cards = useMemo(() => {
         const base = deck?.flashcards || [];
@@ -218,13 +219,17 @@ export default function StudyDeckScreen() {
         setIsGenerating(true);
         const token = useAuthStore.getState().token;
         const url = `${process.env.EXPO_PUBLIC_API_URL}flashcards/generate/stream`;
-        
+
         let accumulatedJson = '';
-        
+
         const es = new EventSource(url, {
-            headers: { 'Authorization': `Bearer ${token}`, 'Idempotency-Key': (idempotency as string) || '' },
+            headers: { 
+                'Authorization': `Bearer ${token}`, 
+                'Idempotency-Key': (idempotency as string) || '',
+                'Content-Type': 'application/json'
+            },
             method: 'POST',
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 deck_id: id,
                 topic: topic,
                 card_count: card_count,
@@ -250,7 +255,7 @@ export default function StudyDeckScreen() {
                         setStreamingCards(partial);
                     }
                 }
-            } catch (e) {}
+            } catch (e) { }
         });
 
         es.addEventListener('error', () => {
@@ -298,18 +303,18 @@ export default function StudyDeckScreen() {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             haptics.notificationAsync('success' as any);
             setRewardMessage(REWARD_MESSAGES[Math.floor(Math.random() * REWARD_MESSAGES.length)]);
-            
+
             // Determine if we should show the big celebration
             const streak = typeof user?.streak === 'number' ? user.streak : (user?.streak?.current_streak || 0);
             const lastDate = typeof user?.streak === 'object' ? user.streak?.last_study_date : null;
             const today = new Date().toISOString().split('T')[0];
-            
+
             // Show milestone if they haven't studied today yet AND it's a milestone count
             // (Note: streak will increment after saving, so we check current+1)
             const nextStreak = streak + 1;
             const isFirstStudyToday = lastDate !== today;
             const isMilestoneCount = nextStreak === 1 || nextStreak % 7 === 0;
-            
+
             setShowMilestone(isFirstStudyToday && isMilestoneCount);
             setIsComplete(true);
         }
@@ -328,7 +333,7 @@ export default function StudyDeckScreen() {
 
     const saveFlashcardSession = useCallback(async () => {
         if (!deck || isSavingSession) return;
-        
+
         setIsSavingSession(true);
         try {
             // Record the completion in history/sessions
@@ -421,9 +426,9 @@ export default function StudyDeckScreen() {
             return (
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? '#000' : '#FFF', zIndex: 9999 }]}>
                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-                        <StreakAnimation 
-                            streakCount={streak} 
-                            isDark={isDark} 
+                        <StreakAnimation
+                            streakCount={streak}
+                            isDark={isDark}
                             size={SCREEN_WIDTH * 0.7}
                         />
                         <Animated.View entering={FadeIn.delay(2000).duration(800)} style={{ alignItems: 'center' }}>
@@ -433,7 +438,7 @@ export default function StudyDeckScreen() {
                             <Text style={[s.successSubtitle, { marginBottom: 40 }]}>
                                 You're on fire! Keep up the amazing work.
                             </Text>
-                            
+
                             <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={{ width: '100%' }}>
                                 <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF', width: 240, borderRadius: 32 }]}>
                                     <Text style={s.btnTextLarge}>Awesome!</Text>
@@ -460,7 +465,7 @@ export default function StudyDeckScreen() {
                         <Text style={[s.successTitle, isDark ? s.textWhite : s.textSlate900]}>Good Job! 👍</Text>
                         <Text style={s.successSubtitle}>{rewardMessage || "You've mastered all " + deck.flashcards.length + " cards in this set. Great job!"}</Text>
                     </Animated.View>
-                    
+
                     <Animated.View entering={FadeIn.delay(600).duration(600)} style={s.successActions}>
                         <TouchableOpacity onPress={restartSession} activeOpacity={0.8} style={s.flex1}>
                             <View style={[s.outlineBtn, isDark ? s.outlineBtnDark : s.outlineBtnLight]}>
@@ -468,7 +473,7 @@ export default function StudyDeckScreen() {
                                 <Text style={[s.outlineBtnText, isDark ? s.textWhite : s.textSlate900]}>Retake</Text>
                             </View>
                         </TouchableOpacity>
-                        
+
                         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={s.flex1}>
                             <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF' }]}>
                                 <Text style={s.btnTextLarge}>Finish</Text>
@@ -485,7 +490,7 @@ export default function StudyDeckScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
-            
+
             {/* Header */}
             <View style={[s.headerRow, { paddingBottom: 16 }]}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.backBtn, isDark ? s.bgWhite10 : s.bgWhite60]}>
@@ -500,7 +505,7 @@ export default function StudyDeckScreen() {
                             {deck?.title || 'Study Deck'}
                         </Text>
                         {isGenerating && (
-                             <Animated.View style={syncAnimatedStyle}>
+                            <Animated.View style={syncAnimatedStyle}>
                                 <HugeiconsIcon icon={SparklesIcon} size={14} color="#007AFF" />
                             </Animated.View>
                         )}
@@ -523,7 +528,7 @@ export default function StudyDeckScreen() {
                 contentContainerStyle={s.pagerContent}
                 scrollEventThrottle={16}
             >
-                  {cards.map((card: any, index: number) => (
+                {cards.map((card: any, index: number) => (
                     <View key={card.id?.toString() || `stream-${index}`} style={{ width: SCREEN_WIDTH, height: '100%', paddingHorizontal: 24 }}>
                         <FlashcardItem card={card} isActive={currentIndex === index} isDark={isDark} />
                     </View>
@@ -541,11 +546,11 @@ export default function StudyDeckScreen() {
             {/* Bottom Progress Dots */}
             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginVertical: 4 }}>
                 {cards.map((_: any, idx: number) => (
-                    <View key={idx} style={{ 
-                        width: currentIndex === idx ? 8 : 6, 
-                        height: currentIndex === idx ? 8 : 6, 
-                        borderRadius: 4, 
-                        backgroundColor: currentIndex === idx ? '#007AFF' : (isDark ? '#3A3A3C' : '#D1D1D6') 
+                    <View key={idx} style={{
+                        width: currentIndex === idx ? 8 : 6,
+                        height: currentIndex === idx ? 8 : 6,
+                        borderRadius: 4,
+                        backgroundColor: currentIndex === idx ? '#007AFF' : (isDark ? '#3A3A3C' : '#D1D1D6')
                     }} />
                 ))}
             </View>
@@ -553,9 +558,9 @@ export default function StudyDeckScreen() {
             {/* Navigation Footer */}
             <View style={s.footer}>
                 {currentIndex === cards.length - 1 ? (
-                    <TouchableOpacity 
-                        onPress={nextCard} 
-                        activeOpacity={0.8} 
+                    <TouchableOpacity
+                        onPress={nextCard}
+                        activeOpacity={0.8}
                         style={s.finishBtn}
                     >
                         <View style={[s.mainActionGradient, { backgroundColor: '#007AFF' }]}>
@@ -565,18 +570,18 @@ export default function StudyDeckScreen() {
                     </TouchableOpacity>
                 ) : (
                     <View style={[s.controlsRow, { justifyContent: 'center', gap: 24 }]}>
-                        <TouchableOpacity 
-                            onPress={prevCard} 
+                        <TouchableOpacity
+                            onPress={prevCard}
                             disabled={currentIndex === 0}
-                            activeOpacity={0.7} 
+                            activeOpacity={0.7}
                             style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite, currentIndex === 0 && { opacity: 0.3 }]}
                         >
                             <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={isDark ? 'white' : '#1e293b'} />
                         </TouchableOpacity>
 
-                        <TouchableOpacity 
-                            onPress={nextCard} 
-                            activeOpacity={0.8} 
+                        <TouchableOpacity
+                            onPress={nextCard}
+                            activeOpacity={0.8}
                             style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite]}
                         >
                             <HugeiconsIcon icon={ArrowRight01Icon} size={24} color={isDark ? 'white' : '#1e293b'} />
@@ -598,7 +603,7 @@ const s = StyleSheet.create({
     bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
     bgWhite60: { backgroundColor: 'rgba(255,255,255,0.6)' },
     size10: { width: 44 },
-    
+
     progressContainer: { paddingHorizontal: 16, alignItems: 'center', gap: 12 },
     progressBarBg: { height: 6, width: 100, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 3, overflow: 'hidden' },
     bgWhite5: { backgroundColor: 'rgba(255,255,255,0.05)' },
@@ -608,21 +613,21 @@ const s = StyleSheet.create({
 
     pager: { flex: 1 },
     pagerContent: { paddingTop: 20, paddingBottom: 0 },
-    
+
     cardContainer: { height: SCREEN_HEIGHT * 0.48, marginVertical: 0 },
     cardBase: { flex: 1, borderRadius: 16, overflow: 'hidden' },
     glassCard: { flex: 1, borderRadius: 16, padding: 32, justifyContent: 'center', borderBottomWidth: 4 },
     glassBorderDark: { borderColor: 'rgba(255,255,255,0.1)', borderBottomColor: 'rgba(0,122,255,0.3)' },
     glassBorderLight: { borderColor: 'rgba(0,0,0,0.05)', borderBottomColor: 'rgba(0,122,255,0.15)' },
     glassBorderBack: { borderColor: 'rgba(0,122,255,0.2)', borderBottomColor: 'rgba(0,122,255,0.4)' },
-    
+
     cardHeader: { position: 'absolute', top: 32, left: 32, right: 32, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 },
     typeBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: 'rgba(0,122,255,0.1)' },
     typeBadgeText: { fontSize: 10, fontWeight: '900', color: '#007AFF', letterSpacing: 1 },
-    
+
     cardContent: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 40 },
     mathTextContainer: { width: '100%' },
-    
+
     cardFooterTextPos: { position: 'absolute', bottom: 32, left: 0, right: 0, alignItems: 'center', zIndex: 10 },
     cardFooterText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
     cardBackFooterText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
@@ -658,11 +663,11 @@ const s = StyleSheet.create({
     mt4: { marginTop: 16 },
 
     loadingWrapper: { flex: 1, paddingHorizontal: 16, paddingTop: 100 },
-    loadingPlaceholder: { width: '100%', aspectRatio: 3/4, borderRadius: 16, padding: 32, justifyContent: 'center' },
+    loadingPlaceholder: { width: '100%', aspectRatio: 3 / 4, borderRadius: 16, padding: 32, justifyContent: 'center' },
     bgGrayDark: { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
     bgWhite: { backgroundColor: '#FFFFFF' },
     flexRowGap2: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    
+
     textWhite: { color: 'white' },
     textWhite40: { color: 'rgba(255,255,255,0.4)' },
     textSlate900: { color: '#0f172a' },

@@ -23,12 +23,11 @@ ENV PHP_POST_MAX_SIZE=20M
 ENV PHP_UPLOAD_MAX_FILESIZE=20M
 ENV NGINX_MAX_BODY_SIZE=20M
 
-# PHP-FPM Performance Tuning
-ENV FPM_PM_MAX_CHILDREN=20
-ENV FPM_PM_START_SERVERS=5
-ENV FPM_PM_MIN_SPARE_SERVERS=5
-ENV FPM_PM_MAX_SPARE_SERVERS=10
-ENV FPM_PM_MAX_REQUESTS=1000
+# PHP-FPM Performance Tuning (ServerSideUp requires config files for FPM pool settings)
+RUN FPM_POOL_DIR=$(find /etc -type d -name "pool.d" | head -n 1) && \
+    if [ -z "$FPM_POOL_DIR" ]; then FPM_POOL_DIR="/etc/php/8.3/fpm/pool.d"; fi && \
+    mkdir -p "$FPM_POOL_DIR" && \
+    echo "[www]\npm.max_children = 50\npm.start_servers = 10\npm.min_spare_servers = 10\npm.max_spare_servers = 20\npm.max_requests = 1000\n" > "$FPM_POOL_DIR/zzz-tuning.conf"
 
 # Set working directory
 WORKDIR /var/www/html
