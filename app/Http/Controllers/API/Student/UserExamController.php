@@ -11,7 +11,10 @@ class UserExamController extends Controller
 {
     public function index()
     {
-        $exams = Auth::user()->userExams()
+        $user = Auth::user();
+        $user->clearPassedExams();
+
+        $exams = $user->userExams()
             ->orderBy('exam_date', 'asc')
             ->get();
 

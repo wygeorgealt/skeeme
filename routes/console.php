@@ -44,6 +44,11 @@ Schedule::command('send:streak-notifications')
     ->dailyAt('07:00')
     ->description('Sends countdown notifications for upcoming streak milestones');
 
+// Study reminders based on upcoming exam dates
+Schedule::command('app:send-exam-reminders')
+    ->dailyAt('09:00')
+    ->description('Sends study reminders to students based on their upcoming exam dates');
+
 // Purge expired OTPs daily
 Schedule::command('otp:purge')
     ->dailyAt('00:00')

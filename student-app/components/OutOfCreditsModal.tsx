@@ -84,11 +84,12 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
     };
 
     let titleText = "You've been working hard.";
-    let descText = "You've used all your credits for now — that means you've been studying seriously. Keep the momentum going.";
+    let descText = "But you've used all your credits for now. Keep the momentum going.";
 
     if (user?.plan_name === 'pro' || user?.plan_name === 'max') {
         titleText = "Credits Exhausted";
-        descText = "You've used your daily credits. Don't worry, your premium status gives you a 1,000 credit refill every day.";
+        const dailyAmt = user?.plan_name === 'pro' ? '500' : '1,000';
+        descText = `You've used your daily credits. Don't worry, your plan gives you a ${dailyAmt} credit refill every day.`;
     }
 
     return (

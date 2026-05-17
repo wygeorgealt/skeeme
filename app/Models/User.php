@@ -138,6 +138,16 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Clear passed user exams from the database.
+     */
+    public function clearPassedExams(): void
+    {
+        $this->userExams()
+            ->where('exam_date', '<', now()->startOfDay())
+            ->delete();
+    }
+
+    /**
      * Check if the user is eligible for a credit refill and apply it.
      *
      * FREE:     5-hour timer via Redis from depletion point.
@@ -152,6 +162,9 @@ class User extends Authenticatable implements FilamentUser
         if ($this->role !== 'student') {
             return;
         }
+
+        // Clear passed exams first to keep DB/UI synchronized and clean
+        $this->clearPassedExams();
 
         $plan = $this->getStudentPlan();
 
