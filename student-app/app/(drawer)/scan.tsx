@@ -465,33 +465,14 @@ export default function ScanScreen() {
                                         </View>
                                     </View>
                                 )}
-                                <MathText
-                                    content={item.question || 'No question text found.'}
-                                    color={isDark ? '#FFFFFF' : '#1e293b'}
-                                    fontSize={15}
-                                    containerStyle={{ marginBottom: 24 }}
-                                />
-
-                                <View style={[s.sectionDivider, isDark ? s.dividerDark : s.dividerLight]} />
-                                <View style={s.sectionHeaderRow}>
-                                    <View style={s.answerIconRow}>
-                                        <List size={18} color={C.primary} />
-                                        <Text style={[s.sectionTitle, isDark ? s.textWhite : s.textSlate900]}>Answer</Text>
-                                    </View>
-                                </View>
-
                                 {!!(item.solution || item.summary) && (
-                                    <View style={[s.answerHighlight, isDark ? s.answerHighlightDark : s.answerHighlightLight]}>
-                                        <MathText
-                                            content={item.solution || item.summary || ''}
-                                            color={isDark ? '#FFFFFF' : '#0f172a'}
-                                            fontSize={16}
-                                            containerStyle={{ paddingVertical: 8 }}
-                                        />
-                                    </View>
+                                    <MathText
+                                        content={`**${item.solution || item.summary}**`}
+                                        color={isDark ? '#FFFFFF' : '#0f172a'}
+                                        fontSize={17}
+                                        containerStyle={{ marginBottom: 12, marginTop: 8 }}
+                                    />
                                 )}
-
-                                <View style={[s.sectionDivider, isDark ? s.dividerDark : s.dividerLight]} />
 
                                 <MathText
                                     content={
