@@ -34,7 +34,7 @@ class CheckSufficientCredits
         }
 
         // 1b. Refill free users if eligible before proceeding
-        $user->checkAndRefillFreeCredits();
+        $user->checkAndRefillCredits();
 
         // 2. Determine Cost via Calculator (Fail-Closed)
         try {

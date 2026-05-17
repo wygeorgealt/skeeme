@@ -19,10 +19,10 @@ Schedule::command('app:process-subscription-billing')
     ->dailyAt('02:30')
     ->description('Process trial ends and recurring billing for individual student subscriptions');
 
-// Schedule weekly credit refill based on user subscription (checks daily)
+// Monthly credit grant for Pro (20,000) and Max (100,000) subscribers
 Schedule::command('app:refill-student-credits')
     ->dailyAt('01:00')
-    ->description('Checks for students due for their weekly credit refill');
+    ->description('Monthly credit grant for Pro/Max subscribers. Free users excluded (5hr on-demand refill).');
 
 // Schedule cleanup of old student uploads daily at 3 AM
 Schedule::command('app:cleanup-old-uploads')

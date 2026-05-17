@@ -104,32 +104,50 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Get the exact time the next free credit refill will occur.
+     * Get the exact time the next credit refill will occur, for UI countdowns.
+     * Free: 5hrs from depletion (Redis). Pro/Max: next 2:00 AM.
      */
     protected function nextFreeRefillAt(): Attribute
     {
         return Attribute::make(
             get: function () {
                 $plan = $this->getStudentPlan();
-                $lastRefill = $this->last_credit_refill_at ?? $this->created_at ?? now();
-                
+
                 if ($plan === 'free') {
-                    return \Carbon\Carbon::parse($lastRefill)->addHours(5)->ceilMinute(10)->toIso8601String();
-                } elseif ($plan === 'pro' || $plan === 'max') {
-                    // Refills daily if empty
-                    return \Carbon\Carbon::parse($lastRefill)->addDay()->startOfDay()->toIso8601String();
+                    // Only meaningful when credits are empty
+                    if ($this->credits > 0) return null;
+                    $depletedAt = \Illuminate\Support\Facades\Cache::get("credits_emptied_at:{$this->id}");
+                    if (!$depletedAt) return null;
+                    return \Carbon\Carbon::parse($depletedAt)->addHours(5)->ceilMinute(10)->toIso8601String();
                 }
+
+                if ($plan === 'pro' || $plan === 'max') {
+                    // Only meaningful when credits are empty (daily allowance mode)
+                    if ($this->credits > 0) return null;
+                    // Next 2:00 AM server time
+                    $next2am = now()->setTime(2, 0, 0);
+                    if (now()->gte($next2am)) {
+                        $next2am->addDay();
+                    }
+                    return $next2am->toIso8601String();
+                }
+
                 return null;
             },
         );
     }
 
     /**
-     * Check if the rounded 5 hours have passed since credits ran out for a free user, and refill if so.
-     * The timer starts from when credits hit 0 (set in deductCredits), not from the last refill.
-     * Only triggers when credits are fully depleted.
+     * Check if the user is eligible for a credit refill and apply it.
+     *
+     * FREE:     5-hour timer via Redis from depletion point.
+     * PRO:      500 daily allowance (calendar-day reset) when monthly runs out.
+     * MAX:      1,000 daily allowance (calendar-day reset) when monthly runs out.
+     *
+     * The 2 AM nightly cron (app:reset-daily-allowances) handles batch resets.
+     * This on-demand method covers users who open the app between midnight and 2 AM.
      */
-    public function checkAndRefillFreeCredits(): void
+    public function checkAndRefillCredits(): void
     {
         if ($this->role !== 'student') {
             return;
@@ -137,38 +155,47 @@ class User extends Authenticatable implements FilamentUser
 
         $plan = $this->getStudentPlan();
 
+        // ── FREE PLAN ─────────────────────────────────────────────────────────
         if ($plan === 'free') {
-            // Only refill when truly empty
-            if ($this->credits > 0) {
-                return;
-            }
+            if ($this->credits > 0) return; // still has credits, nothing to do
 
-            // Timer starts from when credits hit 0 (last_credit_refill_at is stamped at depletion)
-            $depletedAt = $this->last_credit_refill_at ?? $this->created_at ?? now();
+            $depletedAt = \Illuminate\Support\Facades\Cache::get("credits_emptied_at:{$this->id}");
+            if (!$depletedAt) return; // no depletion stamp, do nothing
+
             $refillTime = \Carbon\Carbon::parse($depletedAt)->addHours(5)->ceilMinute(10);
-
             if (now()->greaterThanOrEqualTo($refillTime)) {
                 $this->update([
-                    'credits' => 100,
+                    'credits'              => 100,
                     'last_credit_refill_at' => now(),
                 ]);
+                \Illuminate\Support\Facades\Cache::forget("credits_emptied_at:{$this->id}");
             }
-        } elseif (($plan === 'pro' || $plan === 'max') && $this->credits <= 0) {
-            // Pro/Max users get 1000 credits refill everyday if they run out
-            $depletedAt = $this->last_credit_refill_at ?? $this->created_at ?? now();
-            $nextAllowedRefill = \Carbon\Carbon::parse($depletedAt)->addDay()->startOfDay();
-            if (now()->greaterThanOrEqualTo($nextAllowedRefill)) {
-                $this->update([
-                    'credits' => 1000,
-                    'last_credit_refill_at' => now(),
-                ]);
+            return;
+        }
+
+        // ── PRO / MAX PLAN ────────────────────────────────────────────────────
+        if (($plan === 'pro' || $plan === 'max') && $this->credits <= 0) {
+            $dailyAmount = $plan === 'pro' ? 500 : 1000;
+            $todayStr    = now()->toDateString(); // YYYY-MM-DD
+
+            $lastAllowanceDate = \Illuminate\Support\Facades\Cache::get("daily_allowance_date:{$this->id}");
+
+            // Calendar-day check: if today != last allowance date, it's a new day
+            if ($lastAllowanceDate !== $todayStr) {
+                $this->update(['credits' => $dailyAmount]); // hard SET, not increment
+                \Illuminate\Support\Facades\Cache::put(
+                    "daily_allowance_date:{$this->id}",
+                    $todayStr,
+                    now()->addDays(2) // TTL safely beyond 1 day
+                );
             }
         }
     }
 
     /**
      * Deduct credits safely, capping at 0 (Safety Net Logic).
-     * When a free user's credits hit 0, stamps last_credit_refill_at to start the 5-hour refill timer.
+     * When a free user's credits hit 0, stamps a Redis key to start the 5-hour refill countdown.
+     * Does NOT touch last_credit_refill_at — that field is reserved for the monthly cron.
      */
     public function deductCredits(int $amount, string $actionType, string $description, string $requestId, ?string $modelUsed = null): void
     {
@@ -177,15 +204,20 @@ class User extends Authenticatable implements FilamentUser
         \Illuminate\Support\Facades\DB::transaction(function () use ($amount, $actionType, $description, $requestId, $modelUsed) {
             $user = self::where('id', $this->id)->lockForUpdate()->first();
             
-            // Safety net: amount to deduct is limited by current balance if it's a "one last ride" scenario
+            // Safety net: amount to deduct is limited by current balance
             $actualDeduction = min($user->credits, $amount);
             
             $user->decrement('credits', $actualDeduction);
 
-            // If this deduction just emptied a free user's credits, start the 5-hour refill clock NOW
+            // If this deduction just emptied a free user's credits, start the 5-hour refill clock
+            // via Redis — keeps last_credit_refill_at clean for the monthly cron's 30-day check
             $freshCredits = $user->fresh()->credits;
             if ($freshCredits <= 0 && $user->getStudentPlan() === 'free') {
-                $user->update(['last_credit_refill_at' => now()]);
+                \Illuminate\Support\Facades\Cache::put(
+                    "credits_emptied_at:{$user->id}",
+                    now()->toIso8601String(),
+                    now()->addHours(6) // 6hr TTL — slightly longer than the 5hr window
+                );
             }
             
             $user->transactions()->create([
