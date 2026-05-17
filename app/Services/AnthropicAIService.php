@@ -41,43 +41,43 @@ class AnthropicAIService
             $type === 'scan'                           => 9000,
 
             // ── FLASHCARDS (min:5, max:50, step:5) ───────────────────────────
-            // ~80 tokens per card, with generous headroom
-            $type === 'flashcard' && $count <= 5       =>  500,
-            $type === 'flashcard' && $count <= 10      =>  900,
-            $type === 'flashcard' && $count <= 15      => 1300,
-            $type === 'flashcard' && $count <= 20      => 1700,
-            $type === 'flashcard' && $count <= 25      => 2200,
-            $type === 'flashcard' && $count <= 30      => 2700,
-            $type === 'flashcard' && $count <= 35      => 3200,
-            $type === 'flashcard' && $count <= 40      => 3700,
-            $type === 'flashcard' && $count <= 45      => 4200,
-            $type === 'flashcard'                      => 4800,  // 50
+            // ~150 tokens per card (including formatting/explanation)
+            $type === 'flashcard' && $count <= 5       => 1000,
+            $type === 'flashcard' && $count <= 10      => 1800,
+            $type === 'flashcard' && $count <= 15      => 2500,
+            $type === 'flashcard' && $count <= 20      => 3200,
+            $type === 'flashcard' && $count <= 25      => 4000,
+            $type === 'flashcard' && $count <= 30      => 4800,
+            $type === 'flashcard' && $count <= 35      => 5500,
+            $type === 'flashcard' && $count <= 40      => 6200,
+            $type === 'flashcard' && $count <= 45      => 7000,
+            $type === 'flashcard'                      => 8000,
 
             // ── MCQ EASY (min:10, max:30, step:5) ────────────────────────────
-            // ~100 tokens per question
-            $type === 'mcq_easy' && $count <= 10       => 1100,
-            $type === 'mcq_easy' && $count <= 15       => 1600,
-            $type === 'mcq_easy' && $count <= 20       => 2100,
-            $type === 'mcq_easy' && $count <= 25       => 2600,
-            $type === 'mcq_easy'                       => 3200,  // 30
+            // ~250 tokens per question
+            $type === 'mcq_easy' && $count <= 10       => 2500,
+            $type === 'mcq_easy' && $count <= 15       => 3800,
+            $type === 'mcq_easy' && $count <= 20       => 5000,
+            $type === 'mcq_easy' && $count <= 25       => 6200,
+            $type === 'mcq_easy'                       => 7500,
 
             // ── MCQ MEDIUM (min:10, max:30, step:5) ──────────────────────────
-            // ~150 tokens per question
-            $type === 'mcq_medium' && $count <= 10     => 1600,
-            $type === 'mcq_medium' && $count <= 15     => 2400,
-            $type === 'mcq_medium' && $count <= 20     => 3200,
-            $type === 'mcq_medium' && $count <= 25     => 4000,
-            $type === 'mcq_medium'                     => 4800,  // 30
+            // ~300 tokens per question
+            $type === 'mcq_medium' && $count <= 10     => 3000,
+            $type === 'mcq_medium' && $count <= 15     => 4500,
+            $type === 'mcq_medium' && $count <= 20     => 6000,
+            $type === 'mcq_medium' && $count <= 25     => 7500,
+            $type === 'mcq_medium'                     => 8192,
 
             // ── MCQ HARD (min:10, max:30, step:5) ────────────────────────────
-            // ~200 tokens per question
-            $type === 'mcq_hard' && $count <= 10       => 2200,
-            $type === 'mcq_hard' && $count <= 15       => 3300,
-            $type === 'mcq_hard' && $count <= 20       => 4400,
-            $type === 'mcq_hard' && $count <= 25       => 5500,
-            $type === 'mcq_hard'                       => 6600,  // 30
+            // ~350 tokens per question
+            $type === 'mcq_hard' && $count <= 10       => 3500,
+            $type === 'mcq_hard' && $count <= 15       => 5000,
+            $type === 'mcq_hard' && $count <= 20       => 6500,
+            $type === 'mcq_hard' && $count <= 25       => 8000,
+            $type === 'mcq_hard'                       => 8192,
 
-            default                                    => 1024,
+            default                                    => 4096,
         };
     }
 
