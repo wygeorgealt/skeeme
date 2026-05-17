@@ -225,6 +225,23 @@ export default function GenerateQuizScreen() {
         }
     };
 
+    const handleResetQuiz = () => {
+        haptics.impactAsync();
+        setQuestions([]);
+        setSelectedAnswers({});
+        setTheoryResults({});
+        setCurrentQIndex(0);
+        setIsRevealed(false);
+        setIsCelebration(false);
+        setTimeLeft(0);
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+        setTopic('');
+        setSelectedFile(null);
+    };
+
     useFocusEffect(
         useCallback(() => {
             const onBeforeRemove = (e: any) => {
@@ -598,7 +615,7 @@ export default function GenerateQuizScreen() {
                             setQuestions([]);
                             setIsLoading(false);
                             navigation.dispatch(e.data.action);
-                        } 
+                        }
                     }
                 ]
             );
@@ -606,6 +623,30 @@ export default function GenerateQuizScreen() {
 
         return unsubscribe;
     }, [navigation, questions.length, currentQIndex, isLoading]);
+
+    // Automatically reset quiz when entering screen if a quiz is fully completed/refocused
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            if (questions.length > 0 && currentQIndex >= questions.length) {
+                // Fully finished/on results screen -> reset to setup form
+                setQuestions([]);
+                setSelectedAnswers({});
+                setTheoryResults({});
+                setCurrentQIndex(0);
+                setIsRevealed(false);
+                setIsCelebration(false);
+                setTimeLeft(0);
+                if (timerRef.current) {
+                    clearInterval(timerRef.current);
+                    timerRef.current = null;
+                }
+                setTopic('');
+                setSelectedFile(null);
+            }
+        });
+
+        return unsubscribe;
+    }, [navigation, questions.length, currentQIndex]);
 
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
     if (questions.length === 0 && !isLoading) {
@@ -1161,7 +1202,7 @@ export default function GenerateQuizScreen() {
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    paddingBottom: Math.max(insets.bottom, 16) + 75, 
+                    paddingBottom: Math.max(insets.bottom, 16) + 115, 
                     paddingHorizontal: 24, 
                     borderTopWidth: 0,
                     backgroundColor: 'transparent'
@@ -1202,6 +1243,22 @@ export default function GenerateQuizScreen() {
                         </View>
                     </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity
+                    onPress={handleResetQuiz}
+                    activeOpacity={0.8}
+                    style={{
+                        width: '100%',
+                        height: 52,
+                        borderRadius: 26,
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginTop: 4,
+                    }}
+                >
+                    <Text style={{ color: C.text, fontWeight: '700', fontSize: 16 }}>Done</Text>
+                </TouchableOpacity>
 
             </BlurView>
 

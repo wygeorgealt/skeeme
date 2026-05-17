@@ -67,7 +67,7 @@ class CreditCostCalculator
 
         // Theory Grading
         if (Str::endsWith($path, 'quizzes/grade-theory')) {
-            return $rates['theory_grading'] ?? 2;
+            return $this->tieredRate($rates['theory_grading'] ?? null, $planTier, 2);
         }
 
         return 0;

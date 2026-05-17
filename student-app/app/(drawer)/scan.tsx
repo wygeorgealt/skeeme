@@ -407,9 +407,7 @@ export default function ScanScreen() {
                     <View>
                         {!!imageUri && (
                             <View style={s.userPromptRow}>
-                                <View style={[s.userPromptBubble, isDark ? s.userBubbleDark : s.userBubbleLight]}>
-                                    <ExpoImage source={{ uri: imageUri }} style={s.userPromptImage} contentFit="cover" />
-                                </View>
+                                <ExpoImage source={{ uri: imageUri }} style={s.userPromptImage} contentFit="contain" />
                             </View>
                         )}
 
@@ -643,11 +641,11 @@ const s = StyleSheet.create({
     dividerLight: { backgroundColor: '#f1f5f9' },
     sectionTitleContainer: { flex: 1 },
 
-    userPromptRow: { width: '100%', alignItems: 'flex-end', marginBottom: 24, paddingHorizontal: 10 },
+    userPromptRow: { width: '100%', alignItems: 'flex-end', marginTop: -18, marginBottom: 24, paddingHorizontal: 10 },
     userPromptBubble: { borderRadius: 16, overflow: 'hidden', padding: 4, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
     userBubbleDark: { backgroundColor: '#27272a' },
     userBubbleLight: { backgroundColor: '#f1f5f9' },
-    userPromptImage: { width: 220, height: 220, borderRadius: 10 },
+    userPromptImage: { width: 190, height: 190, borderRadius: 10 },
     aiResponseRow: { width: '100%', alignItems: 'flex-start', marginBottom: 24, paddingHorizontal: 10 },
     aiAnalyzingText: { fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
     thinkingBubble: {
