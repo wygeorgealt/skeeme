@@ -171,7 +171,10 @@ export default function ScanScreen() {
         let currentCredits = user?.credits ?? 0;
         let isUnlimited = user?.is_unlimited ?? false;
 
-        const minCost = BASE_SCAN_COST + COST_PER_SOLUTION;
+        const pricingConfig = useAuthStore.getState().pricingConfig;
+        const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
+        const scanCost = (pricingConfig?.rates?.scan_solve as any)?.[planTier] ?? (planTier === 'free' ? 50 : 30);
+
         if (!isUnlimited && currentCredits <= 0) {
             try {
                 const userRes = await api.get('me');

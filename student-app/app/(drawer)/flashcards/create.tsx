@@ -124,8 +124,8 @@ export default function GenerateFlashcardScreen() {
         const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
         const flatCost = (pricingConfig?.rates?.flashcard_flat as any)?.[planTier] ?? (planTier === 'free' ? 30 : 25);
         
-        if (!user?.is_unlimited && (user?.credits ?? 0) < flatCost) {
-            Alert.alert('Insufficient Credits', `You need at least ${flatCost} credits to generate this deck.`);
+        if (!user?.is_unlimited && (user?.credits ?? 0) <= 0) {
+            setShowOutOfCredits(true);
             return;
         }
 

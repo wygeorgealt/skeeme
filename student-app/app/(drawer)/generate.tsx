@@ -328,7 +328,11 @@ export default function GenerateQuizScreen() {
         if (mode === 'topic' && !topic.trim()) return Alert.alert('Required', 'Please enter a topic.');
         if (mode === 'file' && !selectedFile) return Alert.alert('Required', 'Please select a document.');
         
-        // Pre-flight check (Safety Net: allow if > 0)
+        const pricingConfig = useAuthStore.getState().pricingConfig;
+        const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
+        const flatCost = (pricingConfig?.rates?.quiz_generation as any)?.[planTier] ?? 30;
+
+        // Pre-flight check
         if (!user?.is_unlimited && (user?.credits ?? 0) <= 0) {
             setShowOutOfCredits(true);
             return;
