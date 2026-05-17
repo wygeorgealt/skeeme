@@ -125,7 +125,9 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Check if the rounded 5 hours have passed since the last refill for a free user, and refill if so.
+     * Check if the rounded 5 hours have passed since credits ran out for a free user, and refill if so.
+     * The timer starts from when credits hit 0 (set in deductCredits), not from the last refill.
+     * Only triggers when credits are fully depleted.
      */
     public function checkAndRefillFreeCredits(): void
     {
@@ -134,19 +136,27 @@ class User extends Authenticatable implements FilamentUser
         }
 
         $plan = $this->getStudentPlan();
-        $lastRefill = $this->last_credit_refill_at ?? $this->created_at ?? now();
 
         if ($plan === 'free') {
-            $promisedRefillTime = \Carbon\Carbon::parse($lastRefill)->addHours(5)->ceilMinute(10);
-            if (now()->greaterThanOrEqualTo($promisedRefillTime)) {
+            // Only refill when truly empty
+            if ($this->credits > 0) {
+                return;
+            }
+
+            // Timer starts from when credits hit 0 (last_credit_refill_at is stamped at depletion)
+            $depletedAt = $this->last_credit_refill_at ?? $this->created_at ?? now();
+            $refillTime = \Carbon\Carbon::parse($depletedAt)->addHours(5)->ceilMinute(10);
+
+            if (now()->greaterThanOrEqualTo($refillTime)) {
                 $this->update([
-                    'credits' => max(100, $this->credits), 
+                    'credits' => 100,
                     'last_credit_refill_at' => now(),
                 ]);
             }
         } elseif (($plan === 'pro' || $plan === 'max') && $this->credits <= 0) {
             // Pro/Max users get 1000 credits refill everyday if they run out
-            $nextAllowedRefill = \Carbon\Carbon::parse($lastRefill)->addDay()->startOfDay();
+            $depletedAt = $this->last_credit_refill_at ?? $this->created_at ?? now();
+            $nextAllowedRefill = \Carbon\Carbon::parse($depletedAt)->addDay()->startOfDay();
             if (now()->greaterThanOrEqualTo($nextAllowedRefill)) {
                 $this->update([
                     'credits' => 1000,
@@ -158,6 +168,7 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * Deduct credits safely, capping at 0 (Safety Net Logic).
+     * When a free user's credits hit 0, stamps last_credit_refill_at to start the 5-hour refill timer.
      */
     public function deductCredits(int $amount, string $actionType, string $description, string $requestId, ?string $modelUsed = null): void
     {
@@ -170,6 +181,12 @@ class User extends Authenticatable implements FilamentUser
             $actualDeduction = min($user->credits, $amount);
             
             $user->decrement('credits', $actualDeduction);
+
+            // If this deduction just emptied a free user's credits, start the 5-hour refill clock NOW
+            $freshCredits = $user->fresh()->credits;
+            if ($freshCredits <= 0 && $user->getStudentPlan() === 'free') {
+                $user->update(['last_credit_refill_at' => now()]);
+            }
             
             $user->transactions()->create([
                 'type' => 'usage',
