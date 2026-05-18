@@ -174,10 +174,23 @@ class User extends Authenticatable implements FilamentUser
 
             $depletedAt = \Illuminate\Support\Facades\Cache::get("credits_emptied_at:{$this->id}");
             if (!$depletedAt) {
-                // Safety fallback: if user is at 0 but has no stamp, stamp it now!
+                // Safety fallback: if user is at 0 but has no stamp, check when they last depleted
+                $lastTx = $this->transactions()->where('type', 'usage')->latest('id')->first();
+                $depletionTime = $lastTx ? \Carbon\Carbon::parse($lastTx->created_at) : $this->updated_at;
+
+                // If they ran out of credits more than 5 hours ago, refill them immediately!
+                if ($depletionTime->copy()->addHours(5)->ceilMinute(10)->isPast()) {
+                    $this->update([
+                        'credits'              => 100,
+                        'last_credit_refill_at' => now(),
+                    ]);
+                    return;
+                }
+
+                // Otherwise, stamp it with the actual depletion time so they don't lose progress
                 \Illuminate\Support\Facades\Cache::put(
                     "credits_emptied_at:{$this->id}",
-                    now()->toIso8601String(),
+                    $depletionTime->toIso8601String(),
                     now()->addDays(30)
                 );
                 return;
