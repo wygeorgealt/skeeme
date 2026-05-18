@@ -16,6 +16,16 @@ interface MathTextProps {
  */
 function wrapBareLaTeX(text: string): string {
   if (!text) return '';
+
+  // Pre-process plain-text exponents (e.g. 2^5 -> $2^5$, x^2 -> $x^2$)
+  let processed = text.replace(/(?<!\$)\b([a-zA-Z0-9]+)\^([a-zA-Z0-9]+)\b(?!\$)/g, '$$$1^$2$$');
+
+  // Pre-process plain-text fractions (e.g. 1/2g -> $\frac{1}{2}g$, 3/4 -> $\frac{3}{4}$)
+  // Restrict to 1-2 digits to avoid matching date formats like 2026/05/18
+  processed = processed.replace(/(?<!\$)\b(\d{1,2})\/(\d{1,2})([a-zA-Z]?)\b(?!\$)/g, '$$\\frac{$1}{$2}$3$$');
+
+  text = processed;
+
   const latexCmds = [
     'frac', 'text', 'sqrt', 'sum', 'prod', 'int', 'lim', 'log', 'ln',
     'sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'times', 'cdot', 'div',
