@@ -89,13 +89,26 @@ export default function CreditStatusBar({ activeAction, onSummaryLoaded, refresh
 
     const color = getColor();
 
-    const rates = pricingConfig?.rates || { scan_solve: 25, quiz_base: 1, flashcard_base: 1 };
+    const rates = pricingConfig?.rates || {};
+    const planTier = summary.plan === 'free' ? 'free' : 'paid';
+    
+    const getRate = (rateKey: string, defaultVal: number): number => {
+        const val = rates[rateKey];
+        if (typeof val === 'object' && val !== null) {
+            return (val as any)[planTier] ?? defaultVal;
+        }
+        return typeof val === 'number' ? val : defaultVal;
+    };
+
+    const scanCost = getRate('scan_solve', 50);
+    const quizCost = getRate('quiz_flat', 30);
+    const flashcardCost = getRate('flashcard_flat', 30);
 
     // Inline action cost estimate
     const actionInfo: Record<string, { cost: string; remaining: number; label: string }> = {
-        scan: { cost: `~${rates.scan_solve}`, remaining: estimated_actions_remaining.scans, label: 'scans' },
-        quiz: { cost: `~${rates.quiz_base}`, remaining: estimated_actions_remaining.quizzes_10q, label: 'quizzes' },
-        flashcard: { cost: `~${rates.flashcard_base}`, remaining: estimated_actions_remaining.flashcard_decks_20c, label: 'decks' },
+        scan: { cost: `~${scanCost}`, remaining: estimated_actions_remaining.scans, label: 'scans' },
+        quiz: { cost: `~${quizCost}`, remaining: estimated_actions_remaining.quizzes_10q, label: 'quizzes' },
+        flashcard: { cost: `~${flashcardCost}`, remaining: estimated_actions_remaining.flashcard_decks_20c, label: 'decks' },
     };
 
     const activeInfo = activeAction ? actionInfo[activeAction] : null;

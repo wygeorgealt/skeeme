@@ -69,6 +69,8 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'credits' => $user->credits,
                 'is_unlimited' => (bool) $user->is_unlimited_student,
+                'plan_name' => $user->getStudentPlan(),
+                'next_free_refill_at' => $user->next_free_refill_at,
                 'ai_preferences' => $user->ai_preferences,
                 'nearest_exam' => $user->nearest_exam,
             ],
@@ -175,6 +177,8 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'credits' => $user->credits,
                 'is_unlimited' => (bool) $user->is_unlimited_student,
+                'plan_name' => $user->getStudentPlan(),
+                'next_free_refill_at' => $user->next_free_refill_at,
                 'ai_preferences' => $user->ai_preferences,
                 'nearest_exam' => $user->nearest_exam,
             ],
@@ -337,6 +341,7 @@ class AuthController extends Controller
             'pricing' => $pricing,
             'ai_preferences' => $user->ai_preferences,
             'nearest_exam' => $user->nearest_exam,
+            'next_free_refill_at' => $user->next_free_refill_at,
         ]);
     }
 
@@ -413,6 +418,8 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'credits' => $user->credits,
                     'is_unlimited' => (bool) $user->is_unlimited_student,
+                    'plan_name' => $user->getStudentPlan(),
+                    'next_free_refill_at' => $user->next_free_refill_at,
                     'ai_preferences' => $user->ai_preferences,
                     'nearest_exam' => $user->nearest_exam,
                 ],

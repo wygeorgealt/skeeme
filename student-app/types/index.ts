@@ -50,8 +50,12 @@ export interface CreditTransaction {
     id: number;
     user_id: number;
     amount: number;
-    type: 'usage' | 'topup' | 'reward' | 'refund' | 'adjustment';
+    type: 'usage' | 'purchase' | 'reward' | 'refund' | 'adjustment';
+    action_type?: 'quiz_generation' | 'flashcard_generation' | 'scan_solve' | 'ai_grading' | 'referral_bonus' | 'signup_bonus';
     description: string;
+    model_used?: string | null;
+    request_id?: string | null;
+    metadata?: Record<string, any> | null;
     created_at: string;
 }
 
@@ -99,13 +103,15 @@ export interface PricingConfig {
         usd: CreditPack[];
     };
     rates: {
-        scan_solve: number;
+        scan_solve: { free: number; paid: number };
+        quiz_flat: { free: number; paid: number };
+        flashcard_flat: { free: number; paid: number };
+        theory_grading: { free: number; paid: number };
         quiz_base: number;
         quiz_weight: number;
         flashcard_base: number;
         flashcard_weight: number;
-        theory_grading: number;
-        [key: string]: number;
+        [key: string]: any;
     };
 }
 

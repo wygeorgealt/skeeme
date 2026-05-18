@@ -27,6 +27,7 @@ class ReferralController extends Controller
         }
 
         return response()->json([
+            'code' => $user->referral_code,
             'referral_code' => $user->referral_code,
             'share_text' => "I've been using Skeeme to study smarter — it builds quizzes and flashcards from my notes using AI. Use my code {$user->referral_code} and get 100 bonus credits free. Download: https://skeeme.com/students",
         ]);

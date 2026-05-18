@@ -38,6 +38,8 @@ class ProfileController extends Controller
                 'phone_number' => $user->phone_number,
                 'credits' => $user->credits,
                 'is_unlimited' => $user->is_unlimited_student,
+                'plan_name' => $user->getStudentPlan(),
+                'next_free_refill_at' => $user->next_free_refill_at,
             ]
         ]);
     }
@@ -91,6 +93,10 @@ class ProfileController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'credits' => $user->credits,
+                'is_unlimited' => $user->is_unlimited_student,
+                'plan_name' => $user->getStudentPlan(),
+                'next_free_refill_at' => $user->next_free_refill_at,
                 'ai_preferences' => $user->ai_preferences,
                 'nearest_exam' => $user->nearest_exam,
             ]
