@@ -173,7 +173,15 @@ class User extends Authenticatable implements FilamentUser
             if ($this->credits > 0) return; // still has credits, nothing to do
 
             $depletedAt = \Illuminate\Support\Facades\Cache::get("credits_emptied_at:{$this->id}");
-            if (!$depletedAt) return; // no depletion stamp, do nothing
+            if (!$depletedAt) {
+                // Safety fallback: if user is at 0 but has no stamp, stamp it now!
+                \Illuminate\Support\Facades\Cache::put(
+                    "credits_emptied_at:{$this->id}",
+                    now()->toIso8601String(),
+                    now()->addDays(30)
+                );
+                return;
+            }
 
             $refillTime = \Carbon\Carbon::parse($depletedAt)->addHours(5)->ceilMinute(10);
             if (now()->greaterThanOrEqualTo($refillTime)) {
@@ -229,7 +237,7 @@ class User extends Authenticatable implements FilamentUser
                 \Illuminate\Support\Facades\Cache::put(
                     "credits_emptied_at:{$user->id}",
                     now()->toIso8601String(),
-                    now()->addHours(6) // 6hr TTL — slightly longer than the 5hr window
+                    now()->addDays(30) // 30-day TTL — keeps the stamp safe so refills are never lost
                 );
             }
             
