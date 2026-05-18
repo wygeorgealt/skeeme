@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect, memo, useMemo, useCallback } from 'react';
-import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, LayoutAnimation } from 'react-native';
+import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, LayoutAnimation, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -256,6 +256,17 @@ export default function StudyDeckScreen() {
 
             try {
                 const chunk = JSON.parse(event.data || '{}');
+                if (chunk.error) {
+                    Alert.alert('Generation Failed', chunk.error);
+                    es.close();
+                    esRef.current = null;
+                    setIsGenerating(false);
+                    if (autoStart === 'true') {
+                        api.delete(`/flashcards/decks/${id}`).catch(() => {});
+                    }
+                    router.back();
+                    return;
+                }
                 if (chunk.type === 'status') setGenStage(chunk.message);
                 if (chunk.text) {
                     accumulatedJson += chunk.text;
@@ -273,6 +284,12 @@ export default function StudyDeckScreen() {
             setIsGenerating(false);
             if (event?.xhr?.status === 429 || event?.message?.includes('429')) {
                 useAuthStore.getState().toggleCooldownModal(true);
+            } else {
+                Alert.alert('Generation Error', 'The study generation server encountered an issue. Please try again.');
+                if (autoStart === 'true') {
+                    api.delete(`/flashcards/decks/${id}`).catch(() => {});
+                }
+                router.back();
             }
         });
     };
@@ -430,7 +447,7 @@ export default function StudyDeckScreen() {
         </View>
     );
 
-    if (!deck || !deck.flashcards) return (
+    if (!deck || !deck.flashcards || (!isGenerating && deck.flashcards.length === 0)) return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.errorCenter}>
                 <Text style={s.noCardsText}>No cards found in this deck.</Text>

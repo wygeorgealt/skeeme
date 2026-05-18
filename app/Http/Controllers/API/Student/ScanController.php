@@ -299,7 +299,7 @@ class ScanController extends Controller
         $canProceed = DB::transaction(function () use ($user, $scanCost) {
             $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
 
-            if (!$lockedUser->is_unlimited_student && $lockedUser->credits < $scanCost) {
+            if (!$lockedUser->is_unlimited_student && $lockedUser->credits <= 0) {
                 return false;
             }
             return true;

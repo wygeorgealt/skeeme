@@ -75,8 +75,8 @@ class FlashcardController extends Controller
         $flashcardRates = $pricingConfig['rates']['flashcard_flat'] ?? ['free' => 30, 'paid' => 25];
         $totalCost = is_array($flashcardRates) ? ($flashcardRates[$planTier] ?? 25) : $flashcardRates;
 
-        if (!$user->is_unlimited_student && $user->credits < $totalCost) {
-            return response()->json(['message' => "Insufficient credits. You need $totalCost credits."], 403);
+        if (!$user->is_unlimited_student && $user->credits <= 0) {
+            return response()->json(['message' => "Insufficient credits. You need at least 1 credit to generate."], 403);
         }
 
         $requestId = (string) Str::uuid();

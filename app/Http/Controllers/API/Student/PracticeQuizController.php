@@ -63,8 +63,8 @@ class PracticeQuizController extends Controller
         $quizRates = $pricingConfig['rates']['quiz_flat'] ?? ['free' => 30, 'paid' => 30];
         $totalCost = is_array($quizRates) ? ($quizRates[$planTier] ?? 30) : $quizRates;
 
-        if (!$user->is_unlimited_student && $user->credits < $totalCost) {
-            return response()->json(['message' => "Insufficient credits. You need $totalCost credits."], 403);
+        if (!$user->is_unlimited_student && $user->credits <= 0) {
+            return response()->json(['message' => "Insufficient credits. You need at least 1 credit to generate."], 403);
         }
 
         $requestId = (string) Str::uuid();
@@ -292,11 +292,10 @@ class PracticeQuizController extends Controller
 
             Log::info("[AI Quiz] Cost Calculated", ['cost' => $totalCost, 'words' => $wordCount, 'plan' => $planTier]);
 
-            // 3. Check & Lock Credits (Atomic)
-            $canProceed = DB::transaction(function () use ($user, $totalCost) {
+            $canProceed = DB::transaction(function () use ($user) {
                 $lockedUser = \App\Models\User::where('id', $user->id)->lockForUpdate()->first();
 
-                if (!$lockedUser->is_unlimited_student && $lockedUser->credits < $totalCost) {
+                if (!$lockedUser->is_unlimited_student && $lockedUser->credits <= 0) {
                     return false;
                 }
                 return true;

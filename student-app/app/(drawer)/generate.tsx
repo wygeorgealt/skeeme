@@ -333,9 +333,23 @@ export default function GenerateQuizScreen() {
         const flatCost = (pricingConfig?.rates?.quiz_generation as any)?.[planTier] ?? 30;
 
         // Pre-flight check
-        if (!user?.is_unlimited && (user?.credits ?? 0) <= 0) {
-            setShowOutOfCredits(true);
-            return;
+        let currentCredits = user?.credits ?? 0;
+        let isUnlimited = user?.is_unlimited ?? false;
+
+        if (!isUnlimited && currentCredits <= 0) {
+            try {
+                const userRes = await api.get('me');
+                if (userRes.data) {
+                    updateUser(userRes.data);
+                    currentCredits = userRes.data.credits ?? 0;
+                    isUnlimited = userRes.data.is_unlimited ?? false;
+                }
+            } catch (e) { }
+
+            if (!isUnlimited && currentCredits <= 0) {
+                setShowOutOfCredits(true);
+                return;
+            }
         }
 
         setIsLoading(true);
