@@ -6,7 +6,7 @@ import '../global.css';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { QueryProvider } from '@/components/QueryProvider';
-import { View, useColorScheme as useNativeColorScheme, LogBox, TouchableOpacity, TextStyle, Platform } from 'react-native';
+import { View, useColorScheme as useNativeColorScheme, LogBox, TouchableOpacity, TextStyle, Platform, AppState } from 'react-native';
 import { cssInterop, useColorScheme as useTailwindColorScheme } from 'nativewind';
 import AnimatedSplash from '@/components/AnimatedSplash';
 import Animated, { FadeOut } from 'react-native-reanimated';
@@ -42,7 +42,7 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const { hydrate, isLoading, user, onboardingComplete, onboardingStep, storedEmail } = useAuthStore();
+  const { hydrate, isLoading, user, onboardingComplete, onboardingStep, storedEmail, checkAuth } = useAuthStore();
   const [isAnimationFinished, setIsAnimationFinished] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -63,6 +63,31 @@ export default function RootLayout() {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  // Foreground sync (AppState change to active) & background poll (every 30 seconds)
+  useEffect(() => {
+    if (!user) return;
+
+    // 1. Listen for AppState changes (Sync instantly when app returns to foreground)
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        checkAuth();
+      }
+    });
+
+    // 2. Poll every 30 seconds to keep limits/credits synced dynamically
+    const interval = setInterval(() => {
+      checkAuth();
+    }, 30000);
+
+    // Initial check on mount
+    checkAuth();
+
+    return () => {
+      subscription.remove();
+      clearInterval(interval);
+    };
+  }, [user, checkAuth]);
 
   // Initialize RevenueCat SDK with the authenticated user ID
   useEffect(() => {
