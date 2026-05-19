@@ -170,12 +170,15 @@ class PaymentController extends Controller
                 ], 404);
             }
 
+            $authorizationCode = $paystackData['authorization']['authorization_code'] ?? null;
+            $encryptedAuthCode = $authorizationCode ? \Illuminate\Support\Facades\Crypt::encryptString($authorizationCode) : null;
+
             // Update payment with Paystack data
             $payment->update([
                 'status' => $this->mapPaystackStatus($paystackData['status']),
                 'paid_at' => $paystackData['paid_at'] ? \Carbon\Carbon::parse($paystackData['paid_at']) : null,
                 'metadata' => json_encode([
-                    'authorization_code' => $paystackData['authorization']['authorization_code'] ?? null,
+                    'authorization_code' => $encryptedAuthCode,
                     'customer_code' => $paystackData['customer']['customer_code'] ?? null,
                     'last_4' => $paystackData['authorization']['last_4'] ?? null,
                     'card_type' => $paystackData['authorization']['card_type'] ?? null,

@@ -165,10 +165,11 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('sync', [\App\Http\Controllers\API\Student\SyncController::class, 'index']);
             
             // File Pre-processing
-            Route::post('files/extract', [\App\Http\Controllers\API\Student\FileExtractionController::class, 'extract']);
+            Route::post('files/extract', [\App\Http\Controllers\API\Student\FileExtractionController::class, 'extract'])
+                ->middleware('throttle:30,1');
 
             // AI-Intensive Routes (Throttled based on plan)
-            Route::group(['middleware' => ['throttle:ai-generation', 'sufficient.credits']], function () {
+            Route::group(['middleware' => ['throttle:ai-generation', 'sufficient.credits', 'rate.limit.ai']], function () {
                 Route::post('quizzes/generate', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'generate']);
                 Route::post('quizzes/generate/stream', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'streamGenerate']);
                 Route::post('flashcards/generate/stream', [\App\Http\Controllers\API\Student\FlashcardController::class, 'streamGenerate']);
@@ -188,7 +189,8 @@ Route::group(['prefix' => 'v1'], function () {
             
             // System Health & Config
             Route::get('system/pricing', [\App\Http\Controllers\API\SystemController::class, 'getPricing']);
-            Route::get('diag/system', [StudentSubscriptionController::class, 'debug']); // Performance diag
+            // Local/staging only — controller returns 404 in production
+            Route::get('diag/system', [StudentSubscriptionController::class, 'debug']);
             
             Route::post('quizzes/grade-theory', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'gradeTheory'])->middleware('sufficient.credits');
             
@@ -227,7 +229,8 @@ Route::group(['prefix' => 'v1'], function () {
 
             Route::post('preferences', [\App\Http\Controllers\API\Student\AuthController::class, 'updatePreferences']);
             Route::post('device-token', [\App\Http\Controllers\API\Student\DeviceTokenController::class, 'store']);
-            Route::post('translate', [\App\Http\Controllers\API\Student\TranslationController::class, 'translate']);
+            Route::post('translate', [\App\Http\Controllers\API\Student\TranslationController::class, 'translate'])
+                ->middleware('throttle:30,1');
             Route::post('support/contact', [\App\Http\Controllers\API\Student\SupportController::class, 'contact']);
 
             // Credit Awareness

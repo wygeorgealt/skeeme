@@ -2,8 +2,8 @@ import { Platform } from 'react-native';
 import Purchases, { LOG_LEVEL, PurchasesEntitlementInfo } from 'react-native-purchases';
 
 const API_KEYS = {
-  apple: 'goog_api_key_placeholder', // Replace with your actual Apple key
-  google: 'goog_ZUwiPwLYzGscZwqYfxzfsVxSEor', 
+  apple: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY || 'goog_api_key_placeholder',
+  google: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || 'goog_api_key_placeholder', 
 };
 
 /**

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use App\Jobs\ProcessAIFlashcards;
 use Illuminate\Support\Facades\Auth;
+use App\Support\InsufficientCreditsResponse;
 
 class FlashcardController extends Controller
 {
@@ -35,7 +36,6 @@ class FlashcardController extends Controller
     public function streamGenerate(Request $request)
     {
         set_time_limit(300);
-        error_log("[DEBUG] Flashcard streamGenerate hit by User: " . (Auth::id() ?? 'Guest'));
 
         $user = $request->user();
 
@@ -48,11 +48,9 @@ class FlashcardController extends Controller
                 'deck_id'        => 'nullable|integer|exists:flashcard_decks,id',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            error_log("[DEBUG] Flashcard Validation FAILED: " . json_encode($e->errors()));
-            Log::warning("[AI Flashcard Validation Failed]", [
+            Log::warning('[AI Flashcard Validation Failed]', [
                 'user_id' => $user->id,
                 'errors' => $e->errors(),
-                'input' => $request->all()
             ]);
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
         }
@@ -76,7 +74,11 @@ class FlashcardController extends Controller
         $totalCost = is_array($flashcardRates) ? ($flashcardRates[$planTier] ?? 25) : $flashcardRates;
 
         if (!$user->is_unlimited_student && $user->credits <= 0) {
-            return response()->json(['message' => "Insufficient credits. You need at least 1 credit to generate."], 403);
+            return InsufficientCreditsResponse::make(
+                $totalCost,
+                (int) $user->credits,
+                "Insufficient credits. You need at least {$totalCost} credits to generate flashcards."
+            );
         }
 
         $requestId = (string) Str::uuid();

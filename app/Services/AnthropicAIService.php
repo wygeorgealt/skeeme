@@ -104,6 +104,12 @@ class AnthropicAIService
         try {
             set_time_limit(300);
 
+            // Sanitize user inputs to protect against prompt injection
+            $notes = array_map(fn($note) => \App\Support\PromptSanitizer::sanitize($note), $notes);
+            if (!empty($prompt)) {
+                $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
+            }
+
             if ($progressCallback) $progressCallback(10);
 
             // Check cache first (24 hour TTL) - ELIMINATES REDUNDANT API CALLS
@@ -191,6 +197,13 @@ class AnthropicAIService
     ): array {
         try {
             set_time_limit(300);
+
+            // Sanitize user inputs to protect against prompt injection
+            $notes = array_map(fn($note) => \App\Support\PromptSanitizer::sanitize($note), $notes);
+            if (!empty($prompt)) {
+                $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
+            }
+
             if ($progressCallback) $progressCallback(10);
 
             $sanitizedNotes = array_map([$this, 'sanitizeUtf8'], $notes);
@@ -257,6 +270,7 @@ class AnthropicAIService
     public function generateText(string $prompt, string $systemPrompt = "You are a helpful assistant."): string
     {
         try {
+            $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
             $response = $this->client->post($this->baseUrl, [
                 'headers' => $this->buildHeaders(),
                 'json' => [
@@ -282,6 +296,7 @@ class AnthropicAIService
     public function translateText(string $text, string $targetLanguage): string
     {
         try {
+            $text = \App\Support\PromptSanitizer::sanitize($text);
             $systemPrompt = "You are a professional translator. Translate the provided text to {$targetLanguage}. Return ONLY the translated text.";
 
             $response = $this->client->post($this->baseUrl, [
@@ -315,6 +330,11 @@ class AnthropicAIService
         float $maxMarks = 10.0
     ): array {
         try {
+            $questionText = \App\Support\PromptSanitizer::sanitize($questionText);
+            $studentAnswer = \App\Support\PromptSanitizer::sanitize($studentAnswer);
+            if (!empty($modelAnswer)) {
+                $modelAnswer = \App\Support\PromptSanitizer::sanitize($modelAnswer);
+            }
             $rubricText = !empty($rubric) ? json_encode($rubric) : 'Grade based on accuracy and completeness.';
             $modelAnswerText = !empty($modelAnswer) ? "MODEL ANSWER: {$modelAnswer}" : "No model answer provided. Use general knowledge of the topic.";
 

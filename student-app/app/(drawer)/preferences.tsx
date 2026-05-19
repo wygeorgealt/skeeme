@@ -242,7 +242,7 @@ export default function PreferencesScreen() {
 
                 {/* AI Tutor Personality */}
                 <Animated.View entering={FadeInDown.delay(320)} style={s.section}>
-                    <Text style={[s.sectionLabel, { color: C.textTertiary }]}>AI TUTOR PERSONALITY</Text>
+                    <Text style={[s.sectionLabel, { color: C.textTertiary }]}>AI PERSONALITY</Text>
                     <View style={cardStyle(C)}>
                         {TONES.map((item, index) => {
                             const isSelected = tone === item.key;

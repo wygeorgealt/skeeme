@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use App\Jobs\ProcessAIQuiz;
+use App\Support\InsufficientCreditsResponse;
 
 class PracticeQuizController extends Controller
 {
@@ -33,9 +34,13 @@ class PracticeQuizController extends Controller
     public function streamGenerate(Request $request)
     {
         set_time_limit(600);
-        error_log("[DEBUG] Quiz streamGenerate hit by User: " . (Auth::id() ?? 'Guest'));
 
-        Log::info("[AI Quiz] streamGenerate attempt", ['input' => $request->all()]);
+        Log::info('[AI Quiz] streamGenerate attempt', [
+            'user_id' => Auth::id(),
+            'has_file' => $request->hasFile('file'),
+            'has_extraction_id' => $request->filled('extraction_id'),
+            'question_count' => $request->input('question_count'),
+        ]);
 
         try {
             $validated = $request->validate([
@@ -48,11 +53,9 @@ class PracticeQuizController extends Controller
                 'difficulty' => 'nullable|in:easy,medium,hard',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            error_log("[DEBUG] Quiz Validation FAILED: " . json_encode($e->errors()));
-            Log::warning("[AI Quiz Validation Failed]", [
+            Log::warning('[AI Quiz Validation Failed]', [
                 'user_id' => Auth::id(),
                 'errors' => $e->errors(),
-                'input' => $request->all()
             ]);
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 422);
         }
@@ -64,16 +67,17 @@ class PracticeQuizController extends Controller
         $totalCost = is_array($quizRates) ? ($quizRates[$planTier] ?? 30) : $quizRates;
 
         if (!$user->is_unlimited_student && $user->credits <= 0) {
-            return response()->json(['message' => "Insufficient credits. You need at least 1 credit to generate."], 403);
+            return InsufficientCreditsResponse::make(
+                $totalCost,
+                (int) $user->credits,
+                "Insufficient credits. You need at least {$totalCost} credits to generate a quiz."
+            );
         }
 
         $requestId = (string) Str::uuid();
 
         return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId) {
             $emit = function (array $payload) use ($requestId) {
-                if (isset($payload['type']) && $payload['type'] === 'status') {
-                    error_log("[DEBUG] [$requestId] Emitting status: " . $payload['message']);
-                }
                 echo "data: " . json_encode($payload) . "\n\n";
                 if (ob_get_level() > 0) ob_flush();
                 flush();
@@ -302,12 +306,12 @@ class PracticeQuizController extends Controller
             });
 
             if (!$canProceed) {
-                Log::warning("Insufficient Credits", ['user_id' => $user->id, 'credits' => $user->credits, 'needed' => $totalCost]);
-                return response()->json([
-                    'message' => "Insufficient credits. This generation costs $totalCost credits.",
-                    'credits' => $user->credits,
-                    'required_credits' => $totalCost
-                ], 403);
+                Log::warning('Insufficient Credits', ['user_id' => $user->id, 'credits' => $user->credits, 'needed' => $totalCost]);
+                return InsufficientCreditsResponse::make(
+                    $totalCost,
+                    (int) $user->credits,
+                    "Insufficient credits. This generation costs {$totalCost} credits."
+                );
             }
 
             // 5. Generate Synchronously (Circuit Breaker implementation)

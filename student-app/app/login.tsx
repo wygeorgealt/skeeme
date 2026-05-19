@@ -26,16 +26,33 @@ export default function LoginScreen() {
     const [emailError, setEmailError] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const [failedAttempts, setFailedAttempts] = useState(0);
+    const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0);
 
     useEffect(() => {
         if (storedEmail) setEmail(storedEmail);
     }, [storedEmail]);
 
+    useEffect(() => {
+        if (lockoutTimeLeft <= 0) return;
+        const timer = setInterval(() => {
+            setLockoutTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [lockoutTimeLeft]);
+
     const handleLogin = async () => {
         setEmailError(''); setPasswordError('');
+        if (lockoutTimeLeft > 0) {
+            return setPasswordError(`Too many failed attempts. Try again in ${lockoutTimeLeft} seconds.`);
+        }
         if (!email.trim()) return setEmailError('Please enter your email address.');
         if (!password) return setPasswordError('Please enter your password.');
-        if (failedAttempts >= 5) return setPasswordError('Too many attempts. Please wait a moment.');
 
         setIsLoading(true);
         try {
@@ -47,16 +64,31 @@ export default function LoginScreen() {
             const { token, user } = response.data;
             login(user, token);
             setFailedAttempts(0);
+            setLockoutTimeLeft(0);
             router.replace('/(drawer)');
         } catch (error: any) {
-            setFailedAttempts(prev => prev + 1);
             const status = error.response?.status;
-            if (status === 401 || status === 404 || status === 422) {
-                setPasswordError('Incorrect email or password.');
-            } else if (status === 429) {
+            
+            if (status === 429) {
+                setLockoutTimeLeft(60);
                 setPasswordError('Too many attempts. Please wait 1 minute.');
+                setFailedAttempts(0);
             } else {
-                setPasswordError('Something went wrong. Check your connection.');
+                setFailedAttempts(prev => {
+                    const newAttempts = prev + 1;
+                    if (newAttempts >= 5) {
+                        setLockoutTimeLeft(60);
+                        setPasswordError('Too many attempts. Please wait 1 minute.');
+                        return 0;
+                    }
+                    return newAttempts;
+                });
+
+                if (status === 401 || status === 404 || status === 422) {
+                    setPasswordError('Incorrect email or password.');
+                } else {
+                    setPasswordError('Something went wrong. Check your connection.');
+                }
             }
         } finally {
             setIsLoading(false);

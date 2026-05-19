@@ -40,7 +40,7 @@ class SupportController extends Controller
             $content .= "----------------------------------------\n\n";
             $content .= "Message:\n" . $request->message . "\n";
 
-            $recipient = 'otuturusolomom@gmail.com';
+            $recipient = config('mail.support_address', config('mail.from.address'));
  
             // Save to database for Filament visibility
             \App\Models\SupportTicket::create([
@@ -53,12 +53,11 @@ class SupportController extends Controller
                 'category' => 'other',
             ]);
  
-            Mail::raw($content, function ($msg) use ($user, $recipient, $screenshotPath) {
-                $mail = $msg->to($recipient)
+            Mail::mailer('resend')->raw($content, function ($msg) use ($user, $recipient, $screenshotPath) {
+                $msg->to($recipient)
                     ->replyTo($user->email, $user->name)
                     ->subject("Skeeme Support Ticket - {$user->name}");
 
-                // Attach screenshot to email if present
                 if ($screenshotPath) {
                     $fullPath = storage_path('app/public/' . $screenshotPath);
                     if (file_exists($fullPath)) {

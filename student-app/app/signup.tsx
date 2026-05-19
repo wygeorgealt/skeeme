@@ -11,7 +11,8 @@ import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { AltArrowLeft } from '@solar-icons/react-native/Bold';
 
 import { StatusBar } from 'expo-status-bar';
-import { posthog } from '@/lib/posthog';
+import { posthog, isPostHogEnabled } from '@/lib/posthog';
+import { openLegalLink, PRIVACY_URL, TERMS_URL } from '@/lib/legalLinks';
 
 export default function SignupScreen() {
     const scheme = useColorScheme();
@@ -32,11 +33,14 @@ export default function SignupScreen() {
 
     const getPasswordStrength = () => {
         if (!password) return { label: '', color: 'transparent', pct: 0 };
-        if (password.length < 6) return { label: 'Too weak', color: C.destructive, pct: 15 };
-        if (password.length < 8) return { label: 'Weak', color: '#FF9500', pct: 35 };
-        const score = [/[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(r => r.test(password)).length;
-        if (score >= 2 && password.length >= 10) return { label: 'Strong', color: C.success, pct: 100 };
-        if (score >= 1) return { label: 'Good', color: '#FF9500', pct: 65 };
+        if (password.length < 8) return { label: 'Too weak', color: C.destructive, pct: 15 };
+        if (password.length < 10) return { label: 'Weak', color: '#FF9500', pct: 35 };
+        const hasUpper = /[A-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecial = /[^A-Za-z0-9]/.test(password);
+        const score = [hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
+        if (score === 3 && password.length >= 10) return { label: 'Strong', color: C.success, pct: 100 };
+        if (score >= 2) return { label: 'Good', color: '#FF9500', pct: 65 };
         return { label: 'Fair', color: '#FF9500', pct: 45 };
     };
     const strength = getPasswordStrength();
@@ -46,7 +50,14 @@ export default function SignupScreen() {
         let hasError = false;
         if (!name.trim()) { setNameError('Please enter your full name.'); hasError = true; }
         if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setEmailError('Please enter a valid email.'); hasError = true; }
-        if (!password || password.length < 8) { setPasswordError('Password must be at least 8 characters.'); hasError = true; }
+        
+        const hasUpper = /[A-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecial = /[^A-Za-z0-9]/.test(password);
+        if (!password || password.length < 10 || !hasUpper || !hasNumber || !hasSpecial) {
+            setPasswordError('Password must be at least 10 characters and contain uppercase, number, and special character.');
+            hasError = true;
+        }
         if (hasError) return;
 
         setIsLoading(true);
@@ -65,7 +76,9 @@ export default function SignupScreen() {
                 ...(onboardingData?.age && { age: onboardingData.age }),
                 ...(referralCode.trim() && { referral_code: referralCode.trim() }),
             });
-            posthog.capture('account_created');
+            if (isPostHogEnabled) {
+                posthog.capture('account_created');
+            }
             router.replace({ pathname: '/otp', params: { email: email.trim().toLowerCase(), type: 'verification' } });
         } catch (error: any) {
             const status = error.response?.status;
@@ -201,7 +214,21 @@ export default function SignupScreen() {
                     </TouchableOpacity>
 
                     <Text style={[s.terms, { color: C.textTertiary }]}>
-                        By creating an account you agree to our Terms of Service and Privacy Policy.
+                        By creating an account you agree to our{' '}
+                        <Text
+                            style={[s.linkText, { color: C.primary }]}
+                            onPress={() => openLegalLink(TERMS_URL)}
+                        >
+                            Terms of Service
+                        </Text>
+                        {' '}and confirm you have read our{' '}
+                        <Text
+                            style={[s.linkText, { color: C.primary }]}
+                            onPress={() => openLegalLink(PRIVACY_URL)}
+                        >
+                            Privacy Policy
+                        </Text>
+                        .
                     </Text>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -236,4 +263,5 @@ const s = StyleSheet.create({
     loginRow: { marginTop: Spacing.xxl, alignItems: 'center' },
     signupText: { fontSize: FontSize.subhead },
     terms: { fontSize: FontSize.caption2, textAlign: 'center', marginTop: Spacing.xl, lineHeight: 18, paddingHorizontal: 24 },
+    linkText: { fontWeight: '600' },
 });

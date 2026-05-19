@@ -150,8 +150,11 @@ class SubscriptionController extends Controller
                 $authData = $verification['data']['authorization'] ?? [];
                 $currentMetadata = is_array($payment->metadata) ? $payment->metadata : json_decode($payment->metadata ?? '[]', true);
                 
+                $authorizationCode = $authData['authorization_code'] ?? null;
+                $encryptedAuthCode = $authorizationCode ? \Illuminate\Support\Facades\Crypt::encryptString($authorizationCode) : null;
+
                 $payment->metadata = array_merge($currentMetadata, [
-                    'authorization_code' => $authData['authorization_code'] ?? null,
+                    'authorization_code' => $encryptedAuthCode,
                     'last_4' => $authData['last_4'] ?? null,
                     'brand' => $authData['brand'] ?? null,
                 ]);
@@ -184,6 +187,10 @@ class SubscriptionController extends Controller
      */
     public function debug()
     {
+        if (!app()->environment(['local', 'staging'])) {
+            return response()->json(['message' => 'Not found.'], 404);
+        }
+
         try {
             // Check default cache store
             Cache::put('health_check', true, 10);

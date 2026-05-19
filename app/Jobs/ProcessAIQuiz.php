@@ -10,6 +10,7 @@ use App\Services\DeepseekAIService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
+use App\Support\AiJobCache;
 
 class ProcessAIQuiz implements ShouldQueue
 {
@@ -44,8 +45,14 @@ class ProcessAIQuiz implements ShouldQueue
      */
     public function handle(DeepseekAIService $aiService): void
     {
-        Cache::put("ai_job_status:{$this->jobId}", "processing", 1800);
-        
+        if (Cache::get("ai_job_status:{$this->jobId}") === 'completed') {
+            Log::info("AI Quiz Job already processed successfully.", ['job_id' => $this->jobId]);
+            return;
+        }
+
+        Cache::put("ai_job_status:{$this->jobId}", "processing", AiJobCache::TTL_SECONDS);
+        AiJobCache::register($this->jobId, $this->userId);
+
         try {
             $user = User::find($this->userId);
             

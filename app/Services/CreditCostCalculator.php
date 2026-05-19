@@ -46,7 +46,9 @@ class CreditCostCalculator
     {
         $path = $request->path();
 
-        $config = \App\Models\SystemSetting::getPricingConfig();
+        $config = \Illuminate\Support\Facades\Cache::remember('pricing_config', 3600, function () {
+            return \App\Models\SystemSetting::getPricingConfig();
+        });
         $rates = $config['rates'] ?? [];
         $planTier = $this->getPlanTier($request);
 

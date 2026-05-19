@@ -50,11 +50,11 @@ class ProfileController extends Controller
     public function completeOnboarding(Request $request)
     {
         $validated = $request->validate([
-            'education_level' => 'nullable|string',
-            'field_of_study' => 'nullable|string',
+            'education_level' => 'nullable|string|in:high_school,undergraduate,masters,professional',
+            'field_of_study' => 'nullable|string|max:100',
             'dob_month' => 'nullable|integer|between:1,12',
-            'dob_year' => 'nullable|integer',
-            'age' => 'nullable|integer',
+            'dob_year' => 'nullable|integer|min:1900|max:' . now()->year,
+            'age' => 'nullable|integer|min:13|max:120',
             'next_exam_date' => 'nullable|date',
             'next_exam_title' => 'nullable|string|max:100',
         ]);
@@ -142,6 +142,7 @@ class ProfileController extends Controller
             'first_name'    => null,
             'last_name'     => null,
             'credits'       => 0,
+            'status'        => 'deleted',
         ]);
 
         return response()->json(['message' => 'Your account has been permanently deleted.']);

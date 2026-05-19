@@ -75,6 +75,16 @@ class ReferralController extends Controller
         if (empty($code)) {
             return response()->json(['message' => 'The referral code field is required.'], 422);
         }
+
+        if ($referredUser->role !== 'student') {
+            return response()->json(['message' => 'You do not have permission to use referral codes.'], 403);
+        }
+
+        if ($referredUser->status !== 'active' || !$referredUser->email_verified_at) {
+            return response()->json([
+                'message' => 'Verify your email before applying a referral code.',
+            ], 403);
+        }
         // Find the referrer by code
         $referrer = User::where('referral_code', $code)->first();
 

@@ -68,7 +68,14 @@ class UpdateSubscriptionOnPayment
                     'last_credit_refill_at' => now(), 
                 ]);
 
-                $authCode = $metadata['authorization_code'] ?? null;
+                $authCode = null;
+                if (!empty($metadata['authorization_code'])) {
+                    try {
+                        $authCode = \Illuminate\Support\Facades\Crypt::decryptString($metadata['authorization_code']);
+                    } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                        $authCode = $metadata['authorization_code'];
+                    }
+                }
 
                 // Create or update subscription record
                 \App\Models\IndividualSubscription::updateOrCreate(

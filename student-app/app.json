@@ -2,7 +2,7 @@
   "expo": {
     "name": "Skeeme",
     "slug": "skeeme",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "skeeme",
@@ -21,14 +21,14 @@
     },
     "android": {
       "package": "com.skeeme.app",
-      "versionCode": 16,
+      "versionCode": 17,
       "permissions": [
-        "INTERNET",
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED"
+        "android.permission.INTERNET",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#007AFF",
@@ -68,8 +68,10 @@
             "enableProguardInReleaseBuilds": true,
             "blockedPermissions": [
               "android.permission.ACTIVITY_RECOGNITION",
-              "com.google.android.gms.permission.ACTIVITY_RECOGNITION"
-            ]
+              "com.google.android.gms.permission.ACTIVITY_RECOGNITION",
+              "android.permission.RECORD_AUDIO"
+            ],
+            "enableMinifyInReleaseBuilds": true
           }
         }
       ],
@@ -99,15 +101,15 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "299bfccb-a625-4a0c-885d-f9e6c4369396"
+        "projectId": "66791392-9f56-438c-ac13-594d2b47fafc"
       }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
-    "owner": "yeezykng_dom",
+    "owner": "george.allday",
     "updates": {
-      "url": "https://u.expo.dev/299bfccb-a625-4a0c-885d-f9e6c4369396"
+      "url": "https://u.expo.dev/66791392-9f56-438c-ac13-594d2b47fafc"
     }
   }
 }

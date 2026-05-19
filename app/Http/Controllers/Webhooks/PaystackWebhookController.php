@@ -56,8 +56,11 @@ class PaystackWebhookController extends Controller
         $authData = $data['authorization'] ?? [];
         $currentMetadata = is_array($payment->metadata) ? $payment->metadata : json_decode($payment->metadata ?? '[]', true);
         
+        $authorizationCode = $authData['authorization_code'] ?? null;
+        $encryptedAuthCode = $authorizationCode ? \Illuminate\Support\Facades\Crypt::encryptString($authorizationCode) : null;
+
         $payment->metadata = array_merge($currentMetadata, [
-            'authorization_code' => $authData['authorization_code'] ?? null,
+            'authorization_code' => $encryptedAuthCode,
             'last_4' => $authData['last_4'] ?? null,
             'brand' => $authData['brand'] ?? null,
             'reusable' => $authData['reusable'] ?? false,

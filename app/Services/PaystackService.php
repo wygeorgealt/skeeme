@@ -156,6 +156,9 @@ class PaystackService
         array $paystackData,
         Invoice $invoice
     ): Payment {
+        $authorizationCode = $paystackData['authorization']['authorization_code'] ?? null;
+        $encryptedAuthCode = $authorizationCode ? \Illuminate\Support\Facades\Crypt::encryptString($authorizationCode) : null;
+
         $payment = Payment::create([
             'school_id' => $invoice->school_id,
             'subscription_id' => $invoice->subscription_id,
@@ -166,7 +169,7 @@ class PaystackService
             'currency' => $paystackData['currency'] ?? $invoice->currency,
             'status' => $this->mapPaystackStatus($paystackData['status'] ?? 'pending'),
             'metadata' => json_encode([
-                'authorization_code' => $paystackData['authorization']['authorization_code'] ?? null,
+                'authorization_code' => $encryptedAuthCode,
                 'bin' => $paystackData['authorization']['bin'] ?? null,
                 'last_four' => $paystackData['authorization']['last_4'] ?? null,
                 'customer_code' => $paystackData['customer']['customer_code'] ?? null,
@@ -343,8 +346,15 @@ class PaystackService
                 return null;
             }
 
-            $metadata = json_decode($lastPayment->metadata, true);
+            $metadata = is_array($lastPayment->metadata) ? $lastPayment->metadata : json_decode($lastPayment->metadata ?? '[]', true);
             $authorizationCode = $metadata['authorization_code'] ?? null;
+            if ($authorizationCode) {
+                try {
+                    $authorizationCode = \Illuminate\Support\Facades\Crypt::decryptString($authorizationCode);
+                } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+                    // Fallback to plain text if not encrypted
+                }
+            }
 
             if (!$authorizationCode) {
                 Log::warning('No authorization code found for auto-renewal', [

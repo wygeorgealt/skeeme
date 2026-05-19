@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use App\Jobs\ProcessAIScanSolve;
 use App\Http\Controllers\Controller;
+use App\Support\InsufficientCreditsResponse;
 
 class ScanController extends Controller
 {
@@ -68,25 +69,50 @@ class ScanController extends Controller
             $scanCost = is_array($scanRates) ? ($scanRates[$planTier] ?? 25) : $scanRates;
         }
 
-        $canProceed = DB::transaction(function () use ($user, $scanCost) {
-            $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
-            if ($lockedUser->is_unlimited_student) return true;
-            
-            // Safety Net: Allow if user has any credits left (one last ride)
-            if ($lockedUser->credits <= 0) return false;
+        $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
+        $activeProvider = $aiConfig['provider'];
+        $useDeepseek = ($activeProvider === 'deepseek');
+        $modelUsed = $useDeepseek ? 'deepseek-chat' : AIService::MODEL_SONNET;
 
-            return true;
-        });
+        $deducted = false;
+        if (!$user->is_unlimited_student) {
+            $deducted = DB::transaction(function () use ($user, $scanCost, $requestId, $modelUsed) {
+                $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
+                if ($lockedUser->credits < $scanCost) {
+                    return false;
+                }
+                $lockedUser->decrement('credits', $scanCost);
+                
+                $lockedUser->transactions()->create([
+                    'type' => 'usage',
+                    'action_type' => 'scan_solve',
+                    'amount' => -$scanCost,
+                    'description' => "Scan & Solve (Streaming)",
+                    'model_used' => $modelUsed,
+                    'request_id' => $requestId,
+                ]);
 
-        if (!$canProceed) {
-            return response()->json([
-                'message' => "Insufficient credits. You need at least {$scanCost} credits for a scan.",
-                'required' => $scanCost,
-                'available' => $user->credits,
-            ], 403);
+                if ($lockedUser->fresh()->credits <= 0 && $lockedUser->getStudentPlan() === 'free') {
+                    \Illuminate\Support\Facades\Cache::put(
+                        "credits_emptied_at:{$lockedUser->id}",
+                        now()->toIso8601String(),
+                        now()->addDays(30)
+                    );
+                }
+                return true;
+            });
+
+            if (!$deducted) {
+                return InsufficientCreditsResponse::make(
+                    $scanCost,
+                    (int) $user->credits,
+                    "Insufficient credits. You need at least {$scanCost} credits for a scan."
+                );
+            }
+            Cache::forget("user_credits_{$user->id}");
         }
 
-        return response()->stream(function () use ($request, $user, $scanCost, $requestId, $idempotencyKey) {
+        return response()->stream(function () use ($request, $user, $scanCost, $requestId, $idempotencyKey, $deducted, $useDeepseek, $modelUsed, $activeProvider) {
             $emit = function (array $payload) {
                 echo "data: " . json_encode($payload) . "\n\n";
                 if (ob_get_level() > 0) ob_flush();
@@ -177,6 +203,9 @@ class ScanController extends Controller
                         $emit(['type' => 'full_result', 'data' => $deepseekResult]);
                     } catch (\Exception $e2) {
                         Log::error("Deepseek fallback also failed: " . $e2->getMessage());
+                        if ($deducted) {
+                            $this->refundCredits($user, $scanCost, $requestId);
+                        }
                         $emit(['type' => 'error', 'message' => 'Skeeme is down, Please try again later.']);
                         echo "data: [DONE]\n\n";
                         return;
@@ -185,16 +214,18 @@ class ScanController extends Controller
                     if ($isManualOverride) {
                         \App\Models\SystemSetting::triggerManualFailureAlert($activeProvider, 'Scan & Solve Streaming', $e->getMessage());
                     }
+                    if ($deducted) {
+                        $this->refundCredits($user, $scanCost, $requestId);
+                    }
                     $emit(['type' => 'error', 'message' => 'Skeeme is down, Please try again later.']);
                     echo "data: [DONE]\n\n";
                     return;
                 }
             }
 
-            // Atomic credit deduction
-            $user->deductCredits($scanCost, 'scan_solve', "Scan & Solve (Streaming)", $requestId, $modelUsed);
-            Cache::forget("user_credits_{$user->id}");
-            \App\Jobs\CheckLowCredits::dispatch($user->id);
+            if (!$user->is_unlimited_student) {
+                \App\Jobs\CheckLowCredits::dispatch($user->id);
+            }
 
             // Log Study Activity for Streak and calculate reward
             $streakResult = null;
@@ -301,38 +332,57 @@ class ScanController extends Controller
 
 
 
-        // 3. Preliminary Check & Lock Credits (Atomic)
-        $canProceed = DB::transaction(function () use ($user, $scanCost) {
-            $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
+        $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
+        $activeProvider = $aiConfig['provider'];
+        $isManualOverride = $aiConfig['is_manual'] ?? false;
 
-            if (!$lockedUser->is_unlimited_student && $lockedUser->credits <= 0) {
-                return false;
+        if ($activeProvider === 'none') {
+            return response()->json(['message' => 'Skeeme AI is currently undergoing scheduled maintenance. Please try again later.'], 503);
+        }
+
+        $useDeepseek = ($activeProvider === 'deepseek');
+        $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-haiku-4-5-20251001';
+
+        $deducted = false;
+        if (!$user->is_unlimited_student) {
+            $deducted = DB::transaction(function () use ($user, $scanCost, $requestId, $modelUsed) {
+                $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
+                if ($lockedUser->credits < $scanCost) {
+                    return false;
+                }
+                $lockedUser->decrement('credits', $scanCost);
+                $lockedUser->transactions()->create([
+                    'type' => 'usage',
+                    'action_type' => 'scan_solve',
+                    'amount' => -$scanCost,
+                    'description' => "Scan & Solve",
+                    'model_used' => $modelUsed,
+                    'request_id' => $requestId,
+                ]);
+
+                if ($lockedUser->fresh()->credits <= 0 && $lockedUser->getStudentPlan() === 'free') {
+                    \Illuminate\Support\Facades\Cache::put(
+                        "credits_emptied_at:{$lockedUser->id}",
+                        now()->toIso8601String(),
+                        now()->addDays(30)
+                    );
+                }
+                return true;
+            });
+
+            if (!$deducted) {
+                return InsufficientCreditsResponse::make(
+                    $scanCost,
+                    (int) $user->credits,
+                    "Insufficient credits. You need at least {$scanCost} credits for a scan."
+                );
             }
-            return true;
-        });
-
-        if (!$canProceed) {
-            return response()->json([
-                'message' => "Insufficient credits. You need at least {$scanCost} credits for a scan.",
-                'required' => $scanCost,
-                'available' => $user->credits,
-            ], 403);
+            Cache::forget("user_credits_{$user->id}");
         }
 
         try {
             // 4. Generate Synchronously (Circuit Breaker implementation)
             Log::info('Processing Scan & Solve Synchronously...', ['user_id' => $user->id]);
-
-            $aiConfig = \App\Models\SystemSetting::getActiveAIProvider();
-            $activeProvider = $aiConfig['provider'];
-            $isManualOverride = $aiConfig['is_manual'] ?? false;
-
-            if ($activeProvider === 'none') {
-                throw new \Exception('Skeeme AI is currently undergoing scheduled maintenance. Please try again later.');
-            }
-
-            $useDeepseek = ($activeProvider === 'deepseek');
-            $modelUsed = $useDeepseek ? 'deepseek-chat' : 'claude-haiku-4-5-20251001';
 
             // Complex images (like medical scripts) take Claude a long time to parse.
             // Give the AI 3 full minutes (180s) to generate the response before timing out.
@@ -371,29 +421,8 @@ class ScanController extends Controller
             // 5. Final Cost (Flat Rate)
             $finalCost = $scanCost;
 
-            // 6. Deduct Usage (Atomic)
+            // 6. Deduct Usage (Atomic) - removed because we deducted up-front
             if (!$user->is_unlimited_student) {
-                DB::transaction(function () use ($user, $finalCost, $solutionsCount, $modelUsed, $requestId) {
-                    $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
-                    $lockedUser->decrement('credits', $finalCost);
-
-                    try {
-                        $lockedUser->transactions()->create([
-                            'type' => 'usage',
-                            'action_type' => 'scan_solve',
-                            'amount' => -$finalCost,
-                            'description' => "Scan & Solve: " . $solutionsCount . " questions processed",
-                            'model_used' => $modelUsed ?? 'claude-haiku-4-5-20251001',
-                            'request_id' => $requestId,
-                        ]);
-                    } catch (\Exception $e) {
-                        Log::error("Failed to log scan transaction: " . $e->getMessage());
-                    }
-                });
-
-                // Invalidate credit cache
-                Cache::forget("user_credits_{$user->id}");
-
                 // Check if user is running low on credits
                 \App\Jobs\CheckLowCredits::dispatch($user->id);
             }
@@ -424,6 +453,10 @@ class ScanController extends Controller
         } catch (\Exception $e) {
             Log::error("API Quiz Gen Critical Error: " . $e->getMessage());
 
+            if ($deducted) {
+                $this->refundCredits($user, $scanCost, $requestId);
+            }
+
             $message = $e->getMessage();
             if (
                 str_contains(strtolower($message), 'failed') ||
@@ -434,5 +467,24 @@ class ScanController extends Controller
             }
             return response()->json(['message' => $message], 500);
         }
+    }
+
+    /**
+     * Refund credits atomically to user on error.
+     */
+    protected function refundCredits($user, int $amount, string $requestId): void
+    {
+        DB::transaction(function () use ($user, $amount, $requestId) {
+            $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first();
+            $lockedUser->increment('credits', $amount);
+            $lockedUser->transactions()->create([
+                'type' => 'reward',
+                'action_type' => 'refund',
+                'amount' => $amount,
+                'description' => "Refund: Failed Scan & Solve",
+                'request_id' => $requestId,
+            ]);
+        });
+        Cache::forget("user_credits_{$user->id}");
     }
 }

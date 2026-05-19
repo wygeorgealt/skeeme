@@ -116,4 +116,15 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Support Inbox
+    |--------------------------------------------------------------------------
+    |
+    | Destination for mobile app support/contact form submissions.
+    |
+    */
+
+    'support_address' => env('MAIL_SUPPORT_ADDRESS', env('MAIL_FROM_ADDRESS', 'support@skeeme.com')),
+
 ];

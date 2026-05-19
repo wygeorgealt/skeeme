@@ -133,6 +133,12 @@ PROMPT;
     ): array {
         try {
             set_time_limit(300);
+
+            // Sanitize user inputs to protect against prompt injection
+            $notes = array_map(fn($note) => \App\Support\PromptSanitizer::sanitize($note), $notes);
+            if (!empty($prompt)) {
+                $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
+            }
             
             if ($progressCallback) $progressCallback(10);
             
@@ -221,6 +227,7 @@ PROMPT;
      */
     public function generateAnnouncementDraft(string $prompt): array
     {
+        $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
         try {
             $currentDate = now()->toDateTimeString();
             $systemPrompt = "You are an assistant for a school administrator. Generate a professional and engaging announcement based on the user's prompt. 
@@ -278,6 +285,11 @@ PROMPT;
         array $rubric = [],
         float $maxMarks = 10.0
     ): array {
+        $questionText = \App\Support\PromptSanitizer::sanitize($questionText);
+        $studentAnswer = \App\Support\PromptSanitizer::sanitize($studentAnswer);
+        if (!empty($modelAnswer)) {
+            $modelAnswer = \App\Support\PromptSanitizer::sanitize($modelAnswer);
+        }
         try {
             $rubricText = !empty($rubric) ? json_encode($rubric) : 'Grade based on accuracy and completeness.';
             $modelAnswerText = !empty($modelAnswer) ? "MODEL ANSWER: {$modelAnswer}" : "No model answer provided. Use general knowledge of the topic.";
@@ -550,6 +562,12 @@ SYSTEM;
         string $prompt = '',
         ?callable $progressCallback = null
     ): array {
+        // Sanitize user inputs to protect against prompt injection
+        $notes = array_map(fn($note) => \App\Support\PromptSanitizer::sanitize($note), $notes);
+        if (!empty($prompt)) {
+            $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
+        }
+
         $optimizedPrompt = $this->buildFlashcardPrompt(
             $notes,
             $numberOfCards,
@@ -675,6 +693,7 @@ PROMPT;
      */
     public function generateText(string $prompt, string $systemPrompt = "You are a helpful assistant."): string
     {
+        $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
         try {
             $response = $this->client->post(
                 $this->baseUrl . '/chat/completions',

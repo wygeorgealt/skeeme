@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform, Dimensions, Linking, Image } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform, Dimensions, Image } from 'react-native';
+import { openLegalLink, PRIVACY_URL, TERMS_URL } from '@/lib/legalLinks';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
@@ -66,8 +67,6 @@ export default function AuthSelectScreen() {
     useEffect(() => {
         SystemUI.setBackgroundColorAsync(C.background);
     }, [C.background]);
-
-    const openLink = (url: string) => Linking.openURL(url);
 
     return (
         <View style={[s.container, { backgroundColor: C.background }]}>
@@ -173,11 +172,11 @@ export default function AuthSelectScreen() {
                     <View style={s.termsContainer}>
                         <Text style={[s.termsText, { color: C.textTertiary }]}>
                             By continuing, you agree to our{' '}
-                            <Text style={[s.linkText, { color: C.primary }]} onPress={() => openLink('https://skeeme.com/terms')}>
+                            <Text style={[s.linkText, { color: C.primary }]} onPress={() => openLegalLink(TERMS_URL)}>
                                 Terms of Service
                             </Text>
                             , and confirm you have read our{' '}
-                            <Text style={[s.linkText, { color: C.primary }]} onPress={() => openLink('https://skeeme.com/privacy')}>
+                            <Text style={[s.linkText, { color: C.primary }]} onPress={() => openLegalLink(PRIVACY_URL)}>
                                 Privacy Policy
                             </Text>
                             .

@@ -14,18 +14,40 @@ class SessionRecoveryService
      */
     public function logConnectionLoss(ExamSession $examSession, User $student, int $lastQuestionIndex, array $autoSavedData = []): ExamSessionRecovery
     {
-        return ExamSessionRecovery::updateOrCreate(
-            [
-                'exam_session_id' => $examSession->id,
-                'student_id' => $student->id,
-            ],
-            [
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($examSession, $student, $lastQuestionIndex, $autoSavedData) {
+            $recovery = ExamSessionRecovery::where('exam_session_id', $examSession->id)
+                ->where('student_id', $student->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$recovery) {
+                try {
+                    $recovery = ExamSessionRecovery::create([
+                        'exam_session_id' => $examSession->id,
+                        'student_id' => $student->id,
+                        'last_question_index' => $lastQuestionIndex,
+                        'auto_saved_data' => $autoSavedData,
+                        'connection_lost_at' => now(),
+                        'is_recovered' => false,
+                    ]);
+                    return $recovery;
+                } catch (\Illuminate\Database\QueryException $e) {
+                    $recovery = ExamSessionRecovery::where('exam_session_id', $examSession->id)
+                        ->where('student_id', $student->id)
+                        ->lockForUpdate()
+                        ->first();
+                }
+            }
+
+            $recovery->update([
                 'last_question_index' => $lastQuestionIndex,
                 'auto_saved_data' => $autoSavedData,
                 'connection_lost_at' => now(),
                 'is_recovered' => false,
-            ]
-        );
+            ]);
+
+            return $recovery;
+        });
     }
 
     /**
@@ -65,25 +87,37 @@ class SessionRecoveryService
         int $questionIndex,
         array $answerData
     ): void {
-        $recovery = ExamSessionRecovery::where('exam_session_id', $examSession->id)
-            ->where('student_id', $student->id)
-            ->first();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($examSession, $student, $questionIndex, $answerData) {
+            $recovery = ExamSessionRecovery::where('exam_session_id', $examSession->id)
+                ->where('student_id', $student->id)
+                ->lockForUpdate()
+                ->first();
 
-        if (!$recovery) {
-            $recovery = new ExamSessionRecovery([
-                'exam_session_id' => $examSession->id,
-                'student_id' => $student->id,
-                'last_question_index' => $questionIndex,
-            ]);
-        }
+            if (!$recovery) {
+                try {
+                    $recovery = ExamSessionRecovery::create([
+                        'exam_session_id' => $examSession->id,
+                        'student_id' => $student->id,
+                        'last_question_index' => $questionIndex,
+                        'auto_saved_data' => [],
+                    ]);
+                    $recovery = ExamSessionRecovery::where('id', $recovery->id)->lockForUpdate()->first();
+                } catch (\Illuminate\Database\QueryException $e) {
+                    $recovery = ExamSessionRecovery::where('exam_session_id', $examSession->id)
+                        ->where('student_id', $student->id)
+                        ->lockForUpdate()
+                        ->first();
+                }
+            }
 
-        $autoSavedData = $recovery->auto_saved_data ?? [];
-        $autoSavedData[$questionIndex] = $answerData;
-        $autoSavedData['last_saved_at'] = now()->toIso8601String();
+            $autoSavedData = $recovery->auto_saved_data ?? [];
+            $autoSavedData[$questionIndex] = $answerData;
+            $autoSavedData['last_saved_at'] = now()->toIso8601String();
 
-        $recovery->auto_saved_data = $autoSavedData;
-        $recovery->last_question_index = $questionIndex;
-        $recovery->save();
+            $recovery->auto_saved_data = $autoSavedData;
+            $recovery->last_question_index = $questionIndex;
+            $recovery->save();
+        });
     }
 
     /**

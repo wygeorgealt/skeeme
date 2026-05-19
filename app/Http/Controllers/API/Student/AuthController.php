@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
+use App\Support\PendingReferralCache;
 
 class AuthController extends Controller
 {
@@ -62,18 +63,7 @@ class AuthController extends Controller
         $pricing = $this->getLocalizedPrice($request);
 
         return response()->json([
-            'user' => [
-                'name' => $user->name,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'email' => $user->email,
-                'credits' => $user->credits,
-                'is_unlimited' => (bool) $user->is_unlimited_student,
-                'plan_name' => $user->getStudentPlan(),
-                'next_free_refill_at' => $user->next_free_refill_at,
-                'ai_preferences' => $user->ai_preferences,
-                'nearest_exam' => $user->nearest_exam,
-            ],
+            'user' => $this->studentUserPayload($user),
             'token' => $token,
             'pricing' => $pricing,
         ], 200);
@@ -114,6 +104,18 @@ class AuthController extends Controller
         $isNewUser = false;
 
         if ($user) {
+            if ($user->role !== 'student') {
+                return response()->json([
+                    'message' => 'You do not have permission to access the student portal.',
+                ], 403);
+            }
+
+            if ($user->status !== 'active') {
+                return response()->json([
+                    'message' => 'Your account is ' . $user->status . '. Please contact support.',
+                ], 403);
+            }
+
             // Link social provider if not yet linked
             if (!$user->provider) {
                 $user->update([
@@ -133,6 +135,7 @@ class AuthController extends Controller
                 'password' => \Illuminate\Support\Facades\Hash::make(Str::random(32)),
                 'role' => 'student',
                 'status' => 'active',
+                'email_verified_at' => now(),
                 'approved_at' => now(),
                 'credits' => 100,
                 'provider' => $provider,
@@ -170,18 +173,7 @@ class AuthController extends Controller
         $pricing = $this->getLocalizedPrice($request);
 
         return response()->json([
-            'user' => [
-                'name' => $user->name,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'email' => $user->email,
-                'credits' => $user->credits,
-                'is_unlimited' => (bool) $user->is_unlimited_student,
-                'plan_name' => $user->getStudentPlan(),
-                'next_free_refill_at' => $user->next_free_refill_at,
-                'ai_preferences' => $user->ai_preferences,
-                'nearest_exam' => $user->nearest_exam,
-            ],
+            'user' => $this->studentUserPayload($user),
             'token' => $token,
             'pricing' => $pricing,
             'is_new_user' => $isNewUser,
@@ -199,9 +191,17 @@ class AuthController extends Controller
             'last_name' => 'required_without:name|string|max:127',
             'dob_month' => 'nullable|integer|between:1,12',
             'dob_year' => 'nullable|integer|min:1900',
-            'age' => 'nullable|integer|min:0',
+            'age' => 'nullable|integer|min:13|max:120',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                \Illuminate\Validation\Rules\Password::min(10)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols(),
+                'confirmed'
+            ],
             'device_name' => 'nullable|string',
             'education_level' => 'nullable|string|in:high_school,undergraduate,masters,professional',
             'field_of_study' => 'nullable|string|max:100',
@@ -255,14 +255,9 @@ class AuthController extends Controller
             'metadata' => json_encode(['source' => 'signup']),
         ]);
 
-        // Process Referral if provided (Note: User is pending, but we credit them now as requested)
+        // Defer referral until email is verified (prevents abuse on pending accounts)
         if ($request->filled('referral_code')) {
-            try {
-                Auth::login($user); 
-                app(\App\Http\Controllers\API\Student\ReferralController::class)->redeem($request);
-            } catch (\Exception $e) {
-                Log::error("Referral redemption failed during registration", ['error' => $e->getMessage()]);
-            }
+            PendingReferralCache::store($user->id, $request->referral_code);
         }
 
         $deviceName = $request->input('device_name', 'mobile_app');
@@ -415,20 +410,11 @@ class AuthController extends Controller
 
             Cache::forget('otp_token_' . $request->token);
 
+            $this->applyPendingReferral($user);
+
             return response()->json([
                 'message' => 'Account verified successfully.',
-                'user' => [
-                    'name' => $user->name,
-                    'first_name' => $user->first_name,
-                    'last_name' => $user->last_name,
-                    'email' => $user->email,
-                    'credits' => $user->credits,
-                    'is_unlimited' => (bool) $user->is_unlimited_student,
-                    'plan_name' => $user->getStudentPlan(),
-                    'next_free_refill_at' => $user->next_free_refill_at,
-                    'ai_preferences' => $user->ai_preferences,
-                    'nearest_exam' => $user->nearest_exam,
-                ],
+                'user' => $this->studentUserPayload($user->fresh()),
                 'token' => $authToken,
                 'pricing' => $pricing,
             ]);
@@ -445,7 +431,15 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
             'token' => 'required|string',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                \Illuminate\Validation\Rules\Password::min(10)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols(),
+                'confirmed'
+            ],
         ]);
 
         $cachedEmail = Cache::get('otp_token_' . $request->token);
@@ -465,5 +459,52 @@ class AuthController extends Controller
         Cache::forget('otp_token_' . $request->token); // Invalidate token immediately
 
         return response()->json(['message' => 'Password reset successfully.', 'success' => true]);
+    }
+
+    /**
+     * Standard student user payload for auth responses (includes id for mobile clients).
+     */
+    private function studentUserPayload(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'email' => $user->email,
+            'credits' => $user->credits,
+            'is_unlimited' => (bool) $user->is_unlimited_student,
+            'plan_name' => $user->getStudentPlan(),
+            'next_free_refill_at' => $user->next_free_refill_at,
+            'ai_preferences' => $user->ai_preferences,
+            'nearest_exam' => $user->nearest_exam,
+        ];
+    }
+
+    /**
+     * Apply a referral code stored during registration, after the account is verified.
+     */
+    private function applyPendingReferral(User $user): void
+    {
+        $code = PendingReferralCache::pull($user->id);
+        if (!$code) {
+            return;
+        }
+
+        try {
+            Auth::setUser($user);
+            $redeemRequest = Request::create(
+                '/api/v1/student/referral/redeem',
+                'POST',
+                ['referral_code' => $code]
+            );
+            $redeemRequest->setUserResolver(fn () => $user);
+            app(ReferralController::class)->redeem($redeemRequest);
+        } catch (\Exception $e) {
+            Log::error('Referral redemption failed after verification', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

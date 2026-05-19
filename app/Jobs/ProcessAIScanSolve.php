@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use App\Support\AiJobCache;
 
 class ProcessAIScanSolve implements ShouldQueue
 {
@@ -41,7 +42,13 @@ class ProcessAIScanSolve implements ShouldQueue
      */
     public function handle(DeepseekAIService $aiService): void
     {
-        Cache::put("ai_job_status:{$this->jobId}", "processing", 1800);
+        if (Cache::get("ai_job_status:{$this->jobId}") === 'completed') {
+            Log::info("AI Scan Solve Job already processed successfully.", ['job_id' => $this->jobId]);
+            return;
+        }
+
+        Cache::put("ai_job_status:{$this->jobId}", "processing", AiJobCache::TTL_SECONDS);
+        AiJobCache::register($this->jobId, $this->userId);
 
         try {
             Log::info('Job: Calling Deepseek Multi-Solve AI...', ['job_id' => $this->jobId]);

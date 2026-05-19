@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\Student;
 
 use App\Http\Controllers\Controller;
+use App\Support\AiJobCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -11,8 +12,16 @@ class AIJobStatusController extends Controller
     /**
      * Check the status of an AI generation job.
      */
-    public function show($jobId)
+    public function show(Request $request, $jobId)
     {
+        $ownerId = AiJobCache::ownerId($jobId);
+        if ($ownerId === null || $ownerId !== $request->user()->id) {
+            return response()->json([
+                'status' => 'not_found',
+                'message' => 'Job ID not found or expired.',
+            ], 404);
+        }
+
         $status = Cache::get("ai_job_status:{$jobId}", "not_found");
 
         if ($status === "not_found") {
