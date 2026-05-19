@@ -375,8 +375,9 @@ Rules:
 - `steps`: always `[]` (put steps in explanation instead)
 - `summary`: always ""
 - `explanation`: State the answer upfront, then justify it.
-- `Math Formatting`: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs `$ ... $` (e.g. `$\frac{1}{2}g$` or `$2^5$` or `$x^2$`). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text, as the KaTeX renderer will not parse them.
+- `Math Formatting`: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs \$ ... \$ (e.g. \$\\frac{1}{2}g\$ or \$2^5\$ or \$x^2\$). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text, as the KaTeX renderer will not parse them.
 PROMPT;
+
 
 
             $systemPrompt = <<<'SYSTEM'
@@ -664,7 +665,7 @@ Rules:
 1. The 'front' should be a clear, concise question, term, or concept.
 2. The 'back' must be the direct answer or definition. Keep it under 3 sentences.
 3. Output ONLY valid JSON.
-4. MATH/SCIENCE: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs `$ ... $` (e.g. `$\frac{1}{2}g$` or `$2^5$` or `$x^2$`). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text.
+4. MATH/SCIENCE: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs \$ ... \$ (e.g. \$\\frac{1}{2}g\$ or \$2^5\$ or \$x^2\$). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text.
 PROMPT;
     }
 

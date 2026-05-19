@@ -45,6 +45,12 @@ import {
     Forward,
     UsersGroupTwoRounded,
     WalletMoney,
+    Stars,
+    Stopwatch,
+    Heart,
+    Rocket,
+    Compass,
+    Layers
 } from '@solar-icons/react-native/Bold';
 import { Colors, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
@@ -175,9 +181,30 @@ const LEVELS = [
 ];
 
 const STYLES = [
-    { key: 'simple',   label: 'Simple & Easy', desc: 'Everyday language, no jargon',    Icon: LightbulbBolt },
-    { key: 'detailed', label: 'Detailed',       desc: 'In-depth academic breakdowns',    Icon: DocumentText },
+    { key: 'simple',   label: 'Simple & Easy', desc: 'Everyday language, simplified analogies', Icon: LightbulbBolt },
+    { key: 'detailed', label: 'Detailed',       desc: 'In-depth academic breakdowns',          Icon: DocumentText },
 ] as const;
+
+const TONES = [
+    { key: 'supportive', label: 'Supportive Coach', desc: 'Warm, highly encouraging cheerleader', Icon: CupStar },
+    { key: 'strict',     label: 'Strict Coach',     desc: 'Serious, rigorous, like a professor',   Icon: MedalRibbonsStar },
+    { key: 'concise',    label: 'Concise & Direct', desc: 'Straight to the point, minimal chatter', Icon: Stopwatch },
+    { key: 'fun',        label: 'Fun & Humorous',   desc: 'Witty, casual, uses pop references',    Icon: Stars },
+];
+
+const ANALOGIES = [
+    { key: 'general',     label: 'General Academic', desc: 'Standard classroom illustrations',        Icon: Diploma },
+    { key: 'tech',        label: 'Tech & Coding',     desc: 'Software, coding, hardware metaphors',    Icon: Settings },
+    { key: 'sports',      label: 'Sports & Fitness', desc: 'Athletic, training, force and dynamics',   Icon: Heart },
+    { key: 'gaming',      label: 'Gaming & Anime',   desc: 'Levels, RPG stats, gaming lore, fantasy', Icon: Rocket },
+    { key: 'pop_culture', label: 'Pop Culture / Biz', desc: 'Coffee shops, trends, movies, business', Icon: Compass },
+];
+
+const GOALS = [
+    { key: 'conceptual', label: 'Conceptual Deep-Dive', desc: 'First-principles and core theory focus',  Icon: Notebook },
+    { key: 'exam',       label: 'Exam Prep Tactics',     desc: 'High-yield tips, drills, common traps', Icon: Layers },
+    { key: 'cheat',      label: 'Quick Cheat-Sheet',     desc: 'Mnemonics, active recall, summaries',   Icon: DocumentText },
+];
 
 function PreferencesView({ onBack }: { onBack: () => void }) {
     const scheme = useColorScheme();
@@ -189,6 +216,13 @@ function PreferencesView({ onBack }: { onBack: () => void }) {
     const [level, setLevel] = useState<string>(prefs?.education_level || '');
     const [field, setField] = useState<string>(prefs?.field_of_study || '');
     const [style, setStyle] = useState<string>(prefs?.learning_style || '');
+    
+    // New parameters
+    const [tone, setTone] = useState<string>(prefs?.tone || 'supportive');
+    const [analogyFocus, setAnalogyFocus] = useState<string>(prefs?.analogy_focus || 'general');
+    const [academicGoal, setAcademicGoal] = useState<string>(prefs?.academic_goal || 'conceptual');
+    const [customWeakness, setCustomWeakness] = useState<string>(prefs?.custom_weakness || '');
+
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -196,6 +230,10 @@ function PreferencesView({ onBack }: { onBack: () => void }) {
             setLevel(prefs.education_level || '');
             setField(prefs.field_of_study || '');
             setStyle(prefs.learning_style || '');
+            setTone(prefs.tone || 'supportive');
+            setAnalogyFocus(prefs.analogy_focus || 'general');
+            setAcademicGoal(prefs.academic_goal || 'conceptual');
+            setCustomWeakness(prefs.custom_weakness || '');
         }
     }, [prefs]);
 
@@ -208,6 +246,10 @@ function PreferencesView({ onBack }: { onBack: () => void }) {
                 education_level: level || null,
                 field_of_study: field.trim() || null,
                 learning_style: style || null,
+                tone: tone || null,
+                analogy_focus: analogyFocus || null,
+                academic_goal: academicGoal || null,
+                custom_weakness: customWeakness.trim() || null,
             });
             updateUser({ ai_preferences: res.data.ai_preferences });
             Alert.alert('Success', 'Preferences updated successfully.');
@@ -225,7 +267,7 @@ function PreferencesView({ onBack }: { onBack: () => void }) {
     return (
         <View style={{ flex: 1 }}>
             <ScrollView 
-                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 140 }} 
+                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 180 }} 
                 showsVerticalScrollIndicator={false}
             >
                 <Animated.View entering={FadeInDown.duration(300)}>
@@ -244,7 +286,7 @@ function PreferencesView({ onBack }: { onBack: () => void }) {
                                     activeOpacity={0.7}
                                     style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingRight: 16, borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth, borderBottomColor: C.separator }}
                                 >
-                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: isSelected ? 'rgba(0,122,255,0.15)' : iconBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                                         <item.Icon size={20} color="#007AFF" />
                                     </View>
                                     <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: C.text }}>{item.label}</Text>
@@ -279,7 +321,7 @@ function PreferencesView({ onBack }: { onBack: () => void }) {
                                     activeOpacity={0.7}
                                     style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingRight: 16, borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth, borderBottomColor: C.separator }}
                                 >
-                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: iconBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: isSelected ? 'rgba(0,122,255,0.15)' : iconBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                                         <item.Icon size={20} color="#007AFF" />
                                     </View>
                                     <View style={{ flex: 1 }}>
@@ -290,6 +332,100 @@ function PreferencesView({ onBack }: { onBack: () => void }) {
                                 </TouchableOpacity>
                             );
                         })}
+                    </GroupedCard>
+
+                    <Text style={{ fontSize: 11, fontWeight: '700', textTransform: 'uppercase', color: C.textTertiary, letterSpacing: 1.2, marginBottom: 10, marginLeft: 4 }}>AI TUTOR PERSONALITY</Text>
+                    <GroupedCard isDark={isDark}>
+                        {TONES.map((item, index) => {
+                            const isSelected = tone === item.key;
+                            const isLast = index === TONES.length - 1;
+                            return (
+                                <TouchableOpacity
+                                    key={item.key}
+                                    onPress={() => setTone(item.key)}
+                                    activeOpacity={0.7}
+                                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingRight: 16, borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth, borderBottomColor: C.separator }}
+                                >
+                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: isSelected ? 'rgba(0,122,255,0.15)' : iconBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                        <item.Icon size={20} color="#007AFF" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 16, fontWeight: '600', color: C.text }}>{item.label}</Text>
+                                        <Text style={{ fontSize: 13, color: C.textSecondary, marginTop: 2 }}>{item.desc}</Text>
+                                    </View>
+                                    {isSelected && <CheckCircle size={22} color="#007AFF" />}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </GroupedCard>
+
+                    <Text style={{ fontSize: 11, fontWeight: '700', textTransform: 'uppercase', color: C.textTertiary, letterSpacing: 1.2, marginBottom: 10, marginLeft: 4 }}>ANALOGY FOCUS / INTERESTS</Text>
+                    <GroupedCard isDark={isDark}>
+                        {ANALOGIES.map((item, index) => {
+                            const isSelected = analogyFocus === item.key;
+                            const isLast = index === ANALOGIES.length - 1;
+                            return (
+                                <TouchableOpacity
+                                    key={item.key}
+                                    onPress={() => setAnalogyFocus(item.key)}
+                                    activeOpacity={0.7}
+                                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingRight: 16, borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth, borderBottomColor: C.separator }}
+                                >
+                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: isSelected ? 'rgba(0,122,255,0.15)' : iconBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                        <item.Icon size={20} color="#007AFF" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 16, fontWeight: '600', color: C.text }}>{item.label}</Text>
+                                        <Text style={{ fontSize: 13, color: C.textSecondary, marginTop: 2 }}>{item.desc}</Text>
+                                    </View>
+                                    {isSelected && <CheckCircle size={22} color="#007AFF" />}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </GroupedCard>
+
+                    <Text style={{ fontSize: 11, fontWeight: '700', textTransform: 'uppercase', color: C.textTertiary, letterSpacing: 1.2, marginBottom: 10, marginLeft: 4 }}>STUDY GOAL & FOCUS</Text>
+                    <GroupedCard isDark={isDark}>
+                        {GOALS.map((item, index) => {
+                            const isSelected = academicGoal === item.key;
+                            const isLast = index === GOALS.length - 1;
+                            return (
+                                <TouchableOpacity
+                                    key={item.key}
+                                    onPress={() => setAcademicGoal(item.key)}
+                                    activeOpacity={0.7}
+                                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingRight: 16, borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth, borderBottomColor: C.separator }}
+                                >
+                                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: isSelected ? 'rgba(0,122,255,0.15)' : iconBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                                        <item.Icon size={20} color="#007AFF" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 16, fontWeight: '600', color: C.text }}>{item.label}</Text>
+                                        <Text style={{ fontSize: 13, color: C.textSecondary, marginTop: 2 }}>{item.desc}</Text>
+                                    </View>
+                                    {isSelected && <CheckCircle size={22} color="#007AFF" />}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </GroupedCard>
+
+                    <Text style={{ fontSize: 11, fontWeight: '700', textTransform: 'uppercase', color: C.textTertiary, letterSpacing: 1.2, marginBottom: 10, marginLeft: 4 }}>WEAKNESSES / CUSTOM INSTRUCTIONS</Text>
+                    <GroupedCard isDark={isDark}>
+                        <View style={{ paddingVertical: 12, paddingRight: 16 }}>
+                            <TextInput
+                                value={customWeakness}
+                                onChangeText={setCustomWeakness}
+                                placeholder="E.g. Explain like I'm 5; focus on step-by-step math conversions..."
+                                placeholderTextColor={C.textTertiary}
+                                multiline
+                                numberOfLines={3}
+                                maxLength={500}
+                                style={{ color: C.text, fontSize: 16, fontWeight: '500', height: 100, textAlignVertical: 'top' }}
+                            />
+                            <Text style={{ alignSelf: 'flex-end', fontSize: 10, color: C.textTertiary, marginTop: 4 }}>
+                                {customWeakness.length}/500 chars
+                            </Text>
+                        </View>
                     </GroupedCard>
                 </Animated.View>
             </ScrollView>
