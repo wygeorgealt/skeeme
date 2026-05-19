@@ -374,8 +374,9 @@ Rules:
 - `solution`: Start with a conversational phrase like "The answer is..." or "Your pick should be..." followed by the final answer. e.g. "The answer is **D**".
 - `steps`: always `[]` (put steps in explanation instead)
 - `summary`: always ""
-- `explanation`: State the answer upfront, then justify it.
+- `explanation`: State the answer upfront, then justify it. You MUST structure the explanation into clear, step-by-step paragraphs separated by double newlines (\n\n) to ensure high readability. Do NOT merge multiple equations and steps into a single dense block of text.
 - `Math Formatting`: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs \$ ... \$ (e.g. \$\\frac{1}{2}g\$ or \$2^5\$ or \$x^2\$). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text, as the KaTeX renderer will not parse them.
+- `Decimal Fractions Rule`: When writing fractions with decimal numbers (e.g. 8.42 / 9.8), always wrap the entire decimal numbers in the numerator and denominator (e.g. \$\\frac{8.42}{9.8}\$). Never split inside a decimal point (do NOT write 8.\\frac{42}{9}.8 under any circumstances).
 PROMPT;
 
 
@@ -988,9 +989,9 @@ Rules:
 - `solution`: bold final answer, e.g. "**D**" or "**\$42\$**"
 - `steps`: always `[]` (put steps in explanation instead)
 - `summary`: always ""
-- `explanation`: State the answer upfront, then justify it. Use double newlines (\n\n) to create distinct paragraphs.
-- **Math Formatting**: Place each step on a new line. Put prose labels (e.g., "Inner integral:") on their own line ABOVE the math expression. Use `$$ ... $$` for dedicated math lines.
-- Wrap ALL math in delimiters, e.g. \$x^2\$ for inline or \$\$y = mx + b\$\$ for blocks.
+- `explanation`: State the answer upfront, then justify it. You MUST structure the explanation into clear, step-by-step paragraphs separated by double newlines (\n\n) to ensure high readability. Do NOT merge multiple equations and steps into a single dense block of text.
+- **Math Formatting**: Place each step on a new line. Put prose labels (e.g., "Inner integral:") on their own line ABOVE the math expression. Use `$$ ... $$` for dedicated math lines. Wrap ALL math in delimiters, e.g. \$x^2\$ for inline or \$\$y = mx + b\$\$ for blocks.
+- `Decimal Fractions Rule`: When writing fractions with decimal numbers (e.g. 8.42 / 9.8), always wrap the entire decimal numbers in the numerator and denominator (e.g. \$\\frac{8.42}{9.8}\$). Never split inside a decimal point (do NOT write 8.\\frac{42}{9}.8 under any circumstances).
 - Never skip a question.
 PROMPT;
 

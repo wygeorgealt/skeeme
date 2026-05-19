@@ -390,8 +390,9 @@ Rules:
 - `solution`: Start with a conversational phrase like "The answer is..." or "Your pick should be..." followed by the final answer. e.g. "The answer is **D**".
 - `steps`: always `[]`
 - `summary`: always `""`
-- `explanation`: Use rich Markdown formatting for theoretical or note-based answers. Include **### Headings**, **bullet points**, and **bold text** to organize the content. Use double newlines (\n\n) to create distinct paragraphs and sections.
+- `explanation`: State the answer upfront, then justify it. You MUST structure the explanation into clear, step-by-step paragraphs separated by double newlines (\n\n) to ensure high readability. Do NOT merge multiple equations and steps into a single dense block of text.
 - `Math Formatting`: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs `$ ... $` (e.g. `$\frac{1}{2}g$` or `$2^5$` or `$x^2$`). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text, as the KaTeX renderer will not parse them.
+- `Decimal Fractions Rule`: When writing fractions with decimal numbers (e.g. 8.42 / 9.8), always wrap the entire decimal numbers in the numerator and denominator (e.g. `$\frac{8.42}{9.8}$`). Never split inside a decimal point (do NOT write 8.`\frac{42}{9}`.8 under any circumstances).
 - Never skip a question.
 PROMPT;
             $systemPrompt = <<<'SYSTEM'
@@ -530,8 +531,9 @@ Rules:
 - `solution`: Start with a conversational phrase like "The answer is..." or "Your pick should be..." followed by the final answer. e.g. "The answer is **D**".
 - `steps`: always `[]`
 - `summary`: always `""`
-- `explanation`: State the answer upfront, then justify it. Use double newlines (\n\n) to create distinct paragraphs.
+- `explanation`: State the answer upfront, then justify it. You MUST structure the explanation into clear, step-by-step paragraphs separated by double newlines (\n\n) to ensure high readability. Do NOT merge multiple equations and steps into a single dense block of text.
 - `Math Formatting`: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs `$ ... $` (e.g. `$\frac{1}{2}g$` or `$2^5$` or `$x^2$`). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text, as the KaTeX renderer will not parse them.
+- `Decimal Fractions Rule`: When writing fractions with decimal numbers (e.g. 8.42 / 9.8), always wrap the entire decimal numbers in the numerator and denominator (e.g. `$\frac{8.42}{9.8}$`). Never split inside a decimal point (do NOT write 8.`\frac{42}{9}`.8 under any circumstances).
 - Never skip a question.
 PROMPT;
 
