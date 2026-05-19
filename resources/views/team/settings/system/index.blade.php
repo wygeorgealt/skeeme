@@ -1,4 +1,4 @@
-﻿@extends('team.layout')
+@extends('team.layout')
 
 @section('team-content')
     <div class="admin-page">
@@ -89,7 +89,7 @@
 
                     <div class="form-group">
                         <label>SMTP Password</label>
-                        <input type="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" class="form-input" />
+                        <input type="password" placeholder="••••••••" class="form-input" />
                     </div>
 
                     <div class="form-group">

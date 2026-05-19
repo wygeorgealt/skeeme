@@ -1,4 +1,4 @@
-﻿@extends('layouts.landing')
+@extends('layouts.landing')
 
 @section('content')
     <style>
@@ -17,59 +17,66 @@
         .legal-container {
             max-width: 900px;
             margin: 0 auto;
-            padding: 4rem 2rem;
+            padding: 9rem 2rem 5rem 2rem;
         }
 
         .legal-title {
-            font-size: 2.5rem;
-            font-weight: 700;
+            font-size: 2.75rem;
+            font-weight: 800;
             margin-bottom: 1rem;
             color: #ffffff;
+            letter-spacing: -0.025em;
         }
 
         .legal-updated {
             color: var(--text-muted);
-            margin-bottom: 3rem;
-            font-size: 0.9rem;
+            margin-bottom: 4rem;
+            font-size: 0.95rem;
+            font-weight: 500;
         }
 
         .legal-section {
-            margin-bottom: 2.5rem;
+            margin-bottom: 3.5rem;
         }
 
         .legal-section h2 {
-            font-size: 1.5rem;
+            font-size: 1.65rem;
             font-weight: 700;
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
             color: #ffffff;
-            margin-top: 2rem;
+            margin-top: 2.5rem;
+            letter-spacing: -0.01em;
         }
 
         .legal-section p {
             color: var(--text-muted);
-            line-height: 1.7;
-            margin-bottom: 1rem;
+            line-height: 1.8;
+            margin-bottom: 1.25rem;
+            font-size: 1.05rem;
         }
 
         .legal-section ul {
             list-style: none;
             padding-left: 1.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .legal-section ul li {
             color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            padding-left: 1.5rem;
+            margin-bottom: 0.75rem;
+            padding-left: 1.75rem;
             position: relative;
-            line-height: 1.6;
+            line-height: 1.8;
+            font-size: 1.05rem;
         }
 
         .legal-section ul li:before {
-            content: "â€¢";
+            content: "\2022";
             position: absolute;
             left: 0;
             color: #3b82f6;
+            font-size: 1.2rem;
+            top: -0.1rem;
         }
     </style>
 
