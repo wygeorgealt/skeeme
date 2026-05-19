@@ -42,12 +42,17 @@ class ReferralController extends Controller
         $user = Auth::user();
 
         $totalReferrals = Referral::where('referrer_user_id', $user->id)->count();
-        $creditedReferrals = Referral::where('referrer_user_id', $user->id)->where('status', 'credited')->count();
-        $creditsEarned = $creditedReferrals * 100;
+        $indirectReferrals = Referral::where('indirect_referrer_user_id', $user->id)->count();
+        
+        $directCredits = Referral::where('referrer_user_id', $user->id)->where('status', 'credited')->sum('direct_reward_amount');
+        $indirectCredits = Referral::where('indirect_referrer_user_id', $user->id)->where('status', 'credited')->sum('indirect_reward_amount');
+        $creditsEarned = $directCredits + $indirectCredits;
 
         return response()->json([
             'total_referrals' => $totalReferrals,
-            'credited_referrals' => $creditedReferrals,
+            'total_referred' => $totalReferrals,
+            'indirect_referrals' => $indirectReferrals,
+            'credited_referrals' => Referral::where('referrer_user_id', $user->id)->where('status', 'credited')->count(),
             'credits_earned' => $creditsEarned,
         ]);
     }
@@ -60,12 +65,16 @@ class ReferralController extends Controller
     public function redeem(Request $request)
     {
         $validated = $request->validate([
-            'referral_code' => 'required|string|max:12',
+            'referral_code' => 'nullable|string|max:12',
+            'code' => 'nullable|string|max:12',
         ]);
 
         $referredUser = Auth::user();
-        $code = strtoupper(trim($validated['referral_code']));
+        $code = strtoupper(trim($validated['referral_code'] ?? $validated['code'] ?? ''));
 
+        if (empty($code)) {
+            return response()->json(['message' => 'The referral code field is required.'], 422);
+        }
         // Find the referrer by code
         $referrer = User::where('referral_code', $code)->first();
 

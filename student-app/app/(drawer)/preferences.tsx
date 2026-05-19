@@ -27,7 +27,8 @@ import {
     Heart,
     Rocket,
     Compass,
-    Layers
+    Layers,
+    AltArrowLeft
 } from '@solar-icons/react-native/Bold';
 
 import { Colors } from '@/constants/theme';
@@ -138,8 +139,21 @@ export default function PreferencesScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
             {/* Header */}
-            <View style={[s.header, { paddingTop: Math.max(insets.top, 20) }]}>
-                <Text style={[s.title, { color: C.text }]}>Personalize</Text>
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        activeOpacity={0.7}
+                        style={{
+                            width: 40, height: 40, borderRadius: 12,
+                            alignItems: 'center', justifyContent: 'center',
+                            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9'
+                        }}
+                    >
+                        <AltArrowLeft size={24} color={C.text} />
+                    </TouchableOpacity>
+                    <Text style={[s.title, { color: C.text, marginBottom: 0 }]}>Personalize</Text>
+                </View>
                 <Text style={[s.subtitle, { color: C.textSecondary }]}>
                     Tailor your AI experience to match your academic level and learning preferences.
                 </Text>

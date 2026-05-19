@@ -7,7 +7,6 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useEffect } from 'react';
 import { registerForPushNotificationsAsync } from '@/lib/notifications';
-import AccountModal from '@/components/AccountModal';
 import ClaimRewardModal from '@/components/ClaimRewardModal';
 import { useState } from 'react';
 
@@ -133,7 +132,8 @@ function TabBar({ state, descriptors, navigation }: any) {
                         <TouchableOpacity
                             key={route.key}
                             onPress={() => {
-                                toggleAccountModal(true);
+                                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                                if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
                             }}
                             activeOpacity={0.7}
                             style={bar.sideTab}
@@ -226,7 +226,7 @@ export default function TabLayout() {
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
-    const { user, token, accountModalOpen, toggleAccountModal } = useAuthStore();
+    const { user, token } = useAuthStore();
     const pathname = usePathname();
     const [pendingReward, setPendingReward] = useState<{ total: number } | null>(null);
 
@@ -295,10 +295,10 @@ export default function TabLayout() {
                 <Tabs.Screen name="preferences" options={{ href: null }} />
                 <Tabs.Screen name="streak" options={{ href: null }} />
                 <Tabs.Screen name="support" options={{ href: null }} />
+                <Tabs.Screen name="referral" options={{ href: null }} />
+                <Tabs.Screen name="exams" options={{ href: null }} />
+                <Tabs.Screen name="generate" options={{ href: null }} />
             </Tabs>
-
-            {/* Account Modal */}
-            <AccountModal visible={accountModalOpen} onDismiss={() => toggleAccountModal(false)} />
 
             {/* Claim Reward Modal */}
             <ClaimRewardModal

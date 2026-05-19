@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { AltArrowLeft, Gift } from '@solar-icons/react-native/Bold';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
 
@@ -15,6 +16,7 @@ export default function ReferralScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
+    const insets = useSafeAreaInsets();
     
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
@@ -24,7 +26,7 @@ export default function ReferralScreen() {
     useEffect(() => {
         Promise.all([
             api.get('referral/my-code').then(res => setStats(prev => ({ ...prev, code: res.data.code }))).catch(() => {}),
-            api.get('referral/stats').then(res => setStats(prev => ({ ...prev, total_referred: res.data.total_referred || 0, credits_earned: res.data.credits_earned || 0 }))).catch(() => {})
+            api.get('referral/stats').then(res => setStats(prev => ({ ...prev, total_referred: res.data.total_referred ?? res.data.total_referrals ?? 0, credits_earned: res.data.credits_earned || 0 }))).catch(() => {})
         ]).finally(() => setLoadingStats(false));
     }, []);
 
@@ -32,7 +34,7 @@ export default function ReferralScreen() {
         if (!code.trim()) return;
         setLoading(true);
         try {
-            const res = await api.post('referral/redeem', { code: code.trim().toUpperCase() });
+            const res = await api.post('referral/redeem', { referral_code: code.trim().toUpperCase() });
             Alert.alert('Success!', res.data.message || '100 Credits added to your account!');
             setCode('');
             // RefreshCcw user credits
@@ -41,7 +43,7 @@ export default function ReferralScreen() {
             
             // RefreshCcw stats
             const statsRes = await api.get('referral/stats');
-            if(statsRes.data) setStats(prev => ({...prev, total_referred: statsRes.data.total_referred, credits_earned: statsRes.data.credits_earned}));
+            if(statsRes.data) setStats(prev => ({...prev, total_referred: statsRes.data.total_referred ?? statsRes.data.total_referrals ?? 0, credits_earned: statsRes.data.credits_earned}));
             
         } catch (err: any) {
             Alert.alert('Error', err.response?.data?.message || 'Invalid or expired referral code.');
@@ -55,7 +57,7 @@ export default function ReferralScreen() {
             <Stack.Screen options={{ headerShown: false }} />
 
             {/* Header */}
-            <View style={s.header}>
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 12) }]}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
                     <AltArrowLeft size={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
@@ -95,6 +97,37 @@ export default function ReferralScreen() {
                         >
                             {loading ? <LoadingSpinner size={20} color="#fff" /> : <Text style={s.claimBtnText}>Claim</Text>}
                         </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* How it Works Section */}
+                <View style={[s.sectionCard, isDark ? s.sectionCardDark : s.sectionCardLight, { marginBottom: 24 }]}>
+                    <Text style={[s.sectionTitle, { color: C.text, fontSize: 18, marginBottom: 12 }]}>How Rewards Work</Text>
+                    <View style={{ gap: 12 }}>
+                        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.primary + '15', alignItems: 'center', justifyContent: 'center' }}>
+                                <Text style={{ color: C.primary, fontWeight: '700', fontSize: 13 }}>1</Text>
+                            </View>
+                            <Text style={{ flex: 1, fontSize: 13, color: C.textSecondary }}>
+                                <Text style={{ fontWeight: '700', color: C.text }}>Direct Referral:</Text> You get <Text style={{ fontWeight: '700', color: C.primary }}>200 credits</Text> when a friend joins using your code.
+                            </Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#34C75915', alignItems: 'center', justifyContent: 'center' }}>
+                                <Text style={{ color: '#34C759', fontWeight: '700', fontSize: 13 }}>2</Text>
+                            </View>
+                            <Text style={{ flex: 1, fontSize: 13, color: C.textSecondary }}>
+                                <Text style={{ fontWeight: '700', color: C.text }}>Indirect Referral:</Text> You get <Text style={{ fontWeight: '700', color: '#34C759' }}>50 credits</Text> when your friend refers someone else.
+                            </Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#FF950015', alignItems: 'center', justifyContent: 'center' }}>
+                                <Text style={{ color: '#FF9500', fontWeight: '700', fontSize: 13 }}>3</Text>
+                            </View>
+                            <Text style={{ flex: 1, fontSize: 13, color: C.textSecondary }}>
+                                <Text style={{ fontWeight: '700', color: C.text }}>New User Bonus:</Text> Redeem a code to get <Text style={{ fontWeight: '700', color: '#FF9500' }}>100 credits</Text> instantly.
+                            </Text>
+                        </View>
                     </View>
                 </View>
 

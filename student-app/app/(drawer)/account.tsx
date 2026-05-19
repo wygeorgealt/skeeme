@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AltArrowRight, Pen, Bill, RoundArrowUp, Settings, Bell, QuestionCircle, CheckCircle, DocumentText, Logout, TrashBinTrash } from '@solar-icons/react-native/Bold';
+import { AltArrowRight, Pen, Bill, RoundArrowUp, Settings, Bell, QuestionCircle, CheckCircle, DocumentText, Logout, TrashBinTrash, CupStar } from '@solar-icons/react-native/Bold';
 
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
@@ -181,12 +181,8 @@ export default function AccountScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
-            {/* Close Button Header */}
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingRight: 16, paddingTop: insets.top + 12, paddingBottom: 8 }}>
-                <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <Text style={{ fontSize: 28, fontWeight: '600', color: C.text }}>×</Text>
-                </TouchableOpacity>
-            </View>
+            {/* Top spacing */}
+            <View style={{ paddingTop: insets.top + 16 }} />
             <ScrollView
                 contentContainerStyle={[s.scroll, { paddingTop: 20, paddingBottom: 150 }]}
                 showsVerticalScrollIndicator={false}
@@ -230,6 +226,12 @@ export default function AccountScreen() {
                             } catch (e) {}
                         }}
 
+                        isDark={isDark}
+                    />
+                    <SettingsRow
+                        icon={CupStar} iconBg="#34C759"
+                        label="Refer a Friend"
+                        onPress={() => router.push('/referral')}
                         isLast={true}
                         isDark={isDark}
                     />

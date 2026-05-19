@@ -25,7 +25,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const user = useAuthStore((s) => s.user);
-    const toggleAccountModal = useAuthStore((s) => s.toggleAccountModal);
+
     const [timeLeft, setTimeLeft] = React.useState('');
 
     // Log the event to backend
@@ -171,9 +171,8 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                                 onPress={() => {
                                     onDismiss();
                                     // Small delay to ensure the OutOfCreditsModal is fully dismissed 
-                                    // before opening the AccountModal (prevents UI freeze/conflict)
                                     setTimeout(() => {
-                                        toggleAccountModal(true, 'referral');
+                                        router.push('/referral');
                                     }, 500);
                                 }}
                                 activeOpacity={0.8}
