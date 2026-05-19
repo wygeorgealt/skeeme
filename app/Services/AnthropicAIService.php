@@ -391,7 +391,7 @@ Rules:
 - `steps`: always `[]`
 - `summary`: always `""`
 - `explanation`: Use rich Markdown formatting for theoretical or note-based answers. Include **### Headings**, **bullet points**, and **bold text** to organize the content. Use double newlines (\n\n) to create distinct paragraphs and sections.
-- `Math Formatting`: Wrap ALL math in dollar signs, e.g. $x^2 + y = 2$.
+- `Math Formatting`: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs `$ ... $` (e.g. `$\frac{1}{2}g$` or `$2^5$` or `$x^2$`). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text, as the KaTeX renderer will not parse them.
 - Never skip a question.
 PROMPT;
             $systemPrompt = <<<'SYSTEM'
@@ -531,7 +531,7 @@ Rules:
 - `steps`: always `[]`
 - `summary`: always `""`
 - `explanation`: State the answer upfront, then justify it. Use double newlines (\n\n) to create distinct paragraphs.
-- `Math Formatting`: Wrap ALL math in dollar signs, e.g. $x^2 + y = 2$.
+- `Math Formatting`: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs `$ ... $` (e.g. `$\frac{1}{2}g$` or `$2^5$` or `$x^2$`). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text, as the KaTeX renderer will not parse them.
 - Never skip a question.
 PROMPT;
 
@@ -804,13 +804,47 @@ SYSTEM;
         if ($prefs) {
             $parts = [];
             $levelMap = ['high_school' => 'High School', 'undergraduate' => 'Undergraduate', 'masters' => 'Masters/Graduate', 'professional' => 'Professional'];
-            $styleMap = ['simple' => 'Use ultra-simple language and everyday analogies', 'detailed' => 'Give detailed academic breakdowns', 'analogies' => 'Explain with real-world analogies and examples'];
-            $toneMap = ['encouraging' => 'Be warm and encouraging', 'strict' => 'Be strict and formal', 'concise' => 'Be very concise and direct'];
+            $styleMap = ['simple' => 'Use ultra-simple language and simplified analogies', 'detailed' => 'Give detailed academic breakdowns'];
+            $toneMap = [
+                'supportive' => 'Be extremely warm, encouraging, and motivational (Supportive Coach)',
+                'strict' => 'Be strict, formal, and precise (Strict Academic Coach)',
+                'concise' => 'Be extremely concise and direct',
+                'fun' => 'Be fun, humorous, witty, and use pop-culture references'
+            ];
+            $analogyMap = [
+                'general' => 'Standard academic analogies',
+                'tech' => 'Explain abstract concepts using software, coding, hardware, or tech analogies',
+                'sports' => 'Explain abstract concepts using athletic dynamics, training, or sports analogies',
+                'gaming' => 'Explain abstract concepts using video games, levels, RPG mechanics, anime, or gaming analogies',
+                'pop_culture' => 'Explain abstract concepts using grocery store dynamics, coffee shops, or business model analogies'
+            ];
+            $goalMap = [
+                'conceptual' => 'Focus heavily on deep conceptual, first-principles understanding',
+                'exam' => 'Focus heavily on exam preparation tactics, high-yield facts, and test traps',
+                'cheat' => 'Focus heavily on cheat-sheet style summaries, mnemonics, and active recall elements'
+            ];
 
-            if (!empty($prefs['education_level'])) $parts[] = 'Level: ' . ($levelMap[$prefs['education_level']] ?? $prefs['education_level']);
-            if (!empty($prefs['field_of_study'])) $parts[] = 'Field: ' . $prefs['field_of_study'];
-            if (!empty($prefs['learning_style'])) $parts[] = 'Style: ' . ($styleMap[$prefs['learning_style']] ?? $prefs['learning_style']);
-            if (!empty($prefs['tone'])) $parts[] = 'Tone: ' . ($toneMap[$prefs['tone']] ?? $prefs['tone']);
+            if (!empty($prefs['education_level'])) {
+                $parts[] = 'Level: ' . ($levelMap[$prefs['education_level']] ?? $prefs['education_level']);
+            }
+            if (!empty($prefs['field_of_study'])) {
+                $parts[] = 'Field: ' . $prefs['field_of_study'];
+            }
+            if (!empty($prefs['learning_style'])) {
+                $parts[] = 'Style: ' . ($styleMap[$prefs['learning_style']] ?? $prefs['learning_style']);
+            }
+            if (!empty($prefs['tone'])) {
+                $parts[] = 'Tone: ' . ($toneMap[$prefs['tone']] ?? $prefs['tone']);
+            }
+            if (!empty($prefs['analogy_focus'])) {
+                $parts[] = 'Analogies: ' . ($analogyMap[$prefs['analogy_focus']] ?? $analogyMap[$prefs['analogy_focus']]);
+            }
+            if (!empty($prefs['academic_goal'])) {
+                $parts[] = 'Goal: ' . ($goalMap[$prefs['academic_goal']] ?? $goalMap[$prefs['academic_goal']]);
+            }
+            if (!empty($prefs['custom_weakness'])) {
+                $parts[] = 'Custom Weakness: ' . $prefs['custom_weakness'];
+            }
 
             if (!empty($parts)) {
                 $personalization = "\nSTUDENT PROFILE: " . implode('. ', $parts) . ". Tailor ALL questions and explanations to this profile.";

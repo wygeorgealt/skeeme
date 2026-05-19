@@ -27,6 +27,9 @@ export interface User {
         learning_style?: string;
         tone?: string;
         language?: string;
+        analogy_focus?: string;
+        academic_goal?: string;
+        custom_weakness?: string;
     };
     avatar?: string;
     avatar_url?: string;

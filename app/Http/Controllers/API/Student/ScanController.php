@@ -196,15 +196,21 @@ class ScanController extends Controller
             Cache::forget("user_credits_{$user->id}");
             \App\Jobs\CheckLowCredits::dispatch($user->id);
 
-            $remaining = $user->fresh()->credits;
-            $emit(['type' => 'complete', 'credits_remaining' => $remaining]);
-
-            // Log Study Activity for Streak
+            // Log Study Activity for Streak and calculate reward
+            $streakResult = null;
             try {
-                app(\App\Services\StreakService::class)->logActivity($user->id);
+                $streakResult = app(\App\Services\StreakService::class)->logActivity($user->id);
             } catch (\Exception $e) {
                 Log::error("Streak update failed during scan: " . $e->getMessage());
             }
+
+            $remaining = $user->fresh()->credits;
+            $emit([
+                'type' => 'complete',
+                'credits_remaining' => $remaining,
+                'streak' => $streakResult ? ($streakResult['streak'] ?? null) : null,
+                'reward' => $streakResult ? ($streakResult['reward'] ?? null) : null,
+            ]);
 
             // Idempotency cache
             if ($idempotencyKey) {
@@ -392,20 +398,23 @@ class ScanController extends Controller
                 \App\Jobs\CheckLowCredits::dispatch($user->id);
             }
 
+            // Log Study Activity for Streak and calculate reward
+            $streakResult = null;
+            try {
+                $streakResult = app(\App\Services\StreakService::class)->logActivity($user->id);
+            } catch (\Exception $e) {
+                Log::error("Streak update failed during scan solve: " . $e->getMessage());
+            }
+
             $responseData = [
                 'message' => 'Image processed successfully.',
                 'results' => $solutions,
                 'cost' => $finalCost,
                 'credits_deducted' => $user->is_unlimited_student ? 0 : $finalCost,
-                'remaining_credits' => $user->fresh()->credits
+                'remaining_credits' => $user->fresh()->credits,
+                'streak' => $streakResult ? ($streakResult['streak'] ?? null) : null,
+                'reward' => $streakResult ? ($streakResult['reward'] ?? null) : null,
             ];
-
-            // Log Study Activity for Streak
-            try {
-                app(\App\Services\StreakService::class)->logActivity($user->id);
-            } catch (\Exception $e) {
-                Log::error("Streak update failed during scan solve: " . $e->getMessage());
-            }
 
             if ($idempotencyKey) {
                 Cache::put("idempotency_{$idempotencyKey}", $responseData, now()->addHours(24));

@@ -581,6 +581,10 @@ export default function GenerateQuizScreen() {
             const res = await api.post('quizzes/history', payload);
             setIsSaved(true);
             
+            if (res.data?.reward?.earned) {
+                useAuthStore.getState().toggleStreakRewardModal(true, res.data.reward);
+            }
+
             // RefreshCcw user stats for the dashboard
             const userRes = await api.get('me');
             if (userRes.data) {

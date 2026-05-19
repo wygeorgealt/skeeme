@@ -58,7 +58,6 @@ export default function ScanScreen() {
     const [loading, setLoading] = useState(false);
     const [loadingStage, setLoadingStage] = useState('');
     const [results, setResults] = useState<ScanResult[]>([]);
-    const [showOutOfCredits, setShowOutOfCredits] = useState(false);
     const [scanError, setScanError] = useState<string | null>(null);
     const [isNetworkError, setIsNetworkError] = useState(false);
     const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'unhelpful'>>({});
@@ -96,6 +95,13 @@ export default function ScanScreen() {
     }));
 
     const pickImage = async (useCamera: boolean) => {
+        const currentCredits = user?.credits ?? 0;
+        const isUnlimited = user?.is_unlimited ?? false;
+        if (!isUnlimited && currentCredits <= 0) {
+            useAuthStore.getState().toggleCreditsModal(true, 'scan');
+            return;
+        }
+
         setResults([]);
 
         const permissionMethod = useCamera
@@ -133,6 +139,13 @@ export default function ScanScreen() {
     };
 
     const handleCapture = async () => {
+        const currentCredits = user?.credits ?? 0;
+        const isUnlimited = user?.is_unlimited ?? false;
+        if (!isUnlimited && currentCredits <= 0) {
+            useAuthStore.getState().toggleCreditsModal(true, 'scan');
+            return;
+        }
+
         if (!cameraRef.current) return;
         try {
             const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
@@ -186,7 +199,7 @@ export default function ScanScreen() {
             } catch (e) { }
 
             if (!isUnlimited && currentCredits <= 0) {
-                setShowOutOfCredits(true);
+                useAuthStore.getState().toggleCreditsModal(true, 'scan');
                 return;
             }
         }
@@ -224,12 +237,16 @@ export default function ScanScreen() {
                     finalResults = fullResults;
                     setResults(fullResults);
                 },
-                onComplete: (creditsRemaining) => {
+                onComplete: (creditsRemaining, reward, streak) => {
+                    const isUnlimited = user?.is_unlimited ?? false;
                     if (user) {
                         updateUser({ ...user, credits: creditsRemaining } as any);
                         if (creditsRemaining === 0 && !isUnlimited) {
-                            setShowOutOfCredits(true);
+                            useAuthStore.getState().toggleCreditsModal(true, 'scan');
                         }
+                    }
+                    if (reward?.earned) {
+                        useAuthStore.getState().toggleStreakRewardModal(true, reward);
                     }
                 },
                 onError: (message) => {

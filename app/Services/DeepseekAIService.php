@@ -375,7 +375,7 @@ Rules:
 - `steps`: always `[]` (put steps in explanation instead)
 - `summary`: always ""
 - `explanation`: State the answer upfront, then justify it.
-- `Math Formatting`: Wrap ALL math in dollar signs.
+- `Math Formatting`: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs `$ ... $` (e.g. `$\frac{1}{2}g$` or `$2^5$` or `$x^2$`). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text, as the KaTeX renderer will not parse them.
 PROMPT;
 
 
@@ -780,8 +780,25 @@ PROMPT;
         if ($aiPreferences) {
             $parts = [];
             $levelMap = ['high_school' => 'High School', 'undergraduate' => 'Undergraduate', 'masters' => 'Masters/Graduate', 'professional' => 'Professional'];
-            $styleMap = ['simple' => 'Use ultra-simple language and everyday analogies', 'detailed' => 'Give detailed academic breakdowns', 'analogies' => 'Explain with real-world analogies and examples'];
-            $toneMap = ['encouraging' => 'Be warm and encouraging', 'strict' => 'Be strict and formal', 'concise' => 'Be very concise and direct'];
+            $styleMap = ['simple' => 'Use ultra-simple language and simplified analogies', 'detailed' => 'Give detailed academic breakdowns'];
+            $toneMap = [
+                'supportive' => 'Be extremely warm, encouraging, and motivational (Supportive Coach)',
+                'strict' => 'Be strict, formal, and precise (Strict Academic Coach)',
+                'concise' => 'Be extremely concise and direct',
+                'fun' => 'Be fun, humorous, witty, and use pop-culture references'
+            ];
+            $analogyMap = [
+                'general' => 'Standard academic analogies',
+                'tech' => 'Explain abstract concepts using software, coding, hardware, or tech analogies',
+                'sports' => 'Explain abstract concepts using athletic dynamics, training, or sports analogies',
+                'gaming' => 'Explain abstract concepts using video games, levels, RPG mechanics, anime, or gaming analogies',
+                'pop_culture' => 'Explain abstract concepts using grocery store dynamics, coffee shops, or business model analogies'
+            ];
+            $goalMap = [
+                'conceptual' => 'Focus heavily on deep conceptual, first-principles understanding',
+                'exam' => 'Focus heavily on exam preparation tactics, high-yield facts, and test traps',
+                'cheat' => 'Focus heavily on cheat-sheet style summaries, mnemonics, and active recall elements'
+            ];
 
             if (!empty($aiPreferences['education_level'])) {
                 $parts[] = 'Level: ' . ($levelMap[$aiPreferences['education_level']] ?? $aiPreferences['education_level']);
@@ -794,6 +811,15 @@ PROMPT;
             }
             if (!empty($aiPreferences['tone'])) {
                 $parts[] = 'Tone: ' . ($toneMap[$aiPreferences['tone']] ?? $aiPreferences['tone']);
+            }
+            if (!empty($aiPreferences['analogy_focus'])) {
+                $parts[] = 'Analogies: ' . ($analogyMap[$aiPreferences['analogy_focus']] ?? $aiPreferences['analogy_focus']);
+            }
+            if (!empty($aiPreferences['academic_goal'])) {
+                $parts[] = 'Goal: ' . ($goalMap[$aiPreferences['academic_goal']] ?? $aiPreferences['academic_goal']);
+            }
+            if (!empty($aiPreferences['custom_weakness'])) {
+                $parts[] = 'Custom Weakness: ' . $aiPreferences['custom_weakness'];
             }
 
             if (!empty($parts)) {

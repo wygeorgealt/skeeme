@@ -353,14 +353,20 @@ class AuthController extends Controller
         $validated = $request->validate([
             'education_level' => 'nullable|string|in:high_school,undergraduate,masters,professional',
             'field_of_study' => 'nullable|string|max:100',
-            'learning_style' => 'nullable|string|in:simple,detailed,analogies',
-            'tone' => 'nullable|string|in:encouraging,strict,concise',
-            'language' => 'nullable|string|max:50',
+            'learning_style' => 'nullable|string|in:simple,detailed',
+            'tone' => 'nullable|string|in:supportive,strict,concise,fun',
+            'analogy_focus' => 'nullable|string|in:general,tech,sports,gaming,pop_culture',
+            'academic_goal' => 'nullable|string|in:conceptual,exam,cheat',
+            'custom_weakness' => 'nullable|string|max:500',
         ]);
 
         $user = $request->user();
-        $user->ai_preferences = $validated;
+        $currentPrefs = $user->ai_preferences ?? [];
+        $user->ai_preferences = array_merge($currentPrefs, array_filter($validated, fn($v) => !is_null($v)));
         $user->save();
+
+        // Clear personalization cache
+        app(\App\Services\UserPersonalizationService::class)->clearCache($user);
 
         return response()->json([
             'message' => 'AI preferences updated successfully.',

@@ -1,0 +1,34 @@
+[2026-05-19 01:34:01] production.ERROR: Class "App\Models\CreditTransaction" not found {"exception":"[object] (Error(code: 0): Class \"App\\Models\\CreditTransaction\" not found at C:/Users/kritex/Herd/skeeme/check_streak.php:33)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-19 01:36:33] production.INFO: Streak reward awarded {"user_id":2516,"milestone":7,"reward":50} 
+[2026-05-19 01:37:17] production.ERROR: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'user_id' in 'where clause' (Connection: mysql, Host: junction.proxy.rlwy.net, Port: 23310, Database: railway, SQL: select * from `users` where `user_id` = 2516 and `updated_at` like 2026-05-19%) {"exception":"[object] (Illuminate\\Database\\QueryException(code: 42S22): SQLSTATE[42S22]: Column not found: 1054 Unknown column 'user_id' in 'where clause' (Connection: mysql, Host: junction.proxy.rlwy.net, Port: 23310, Database: railway, SQL: select * from `users` where `user_id` = 2516 and `updated_at` like 2026-05-19%) at C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Connection.php:838)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Connection.php(794): Illuminate/Database/Connection->runQueryCallback('select * from `...', Array, Object(Closure))
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Connection.php(411): Illuminate/Database/Connection->run('select * from `...', Array, Object(Closure))
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3386): Illuminate/Database/Connection->select('select * from `...', Array, true)
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3371): Illuminate/Database/Query/Builder->runSelect()
+#4 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3961): Illuminate/Database/Query/Builder->Illuminate/Database/Query/{closure}()
+#5 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3370): Illuminate/Database/Query/Builder->onceWithColumns(Array, Object(Closure))
+#6 C:/Users/kritex/Herd/skeeme/check_recent_db.php(22): Illuminate/Database/Query/Builder->get()
+#7 {main}
+
+[previous exception] [object] (PDOException(code: 42S22): SQLSTATE[42S22]: Column not found: 1054 Unknown column 'user_id' in 'where clause' at C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Connection.php:420)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Connection.php(420): PDO->prepare('select * from `...')
+#1 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Connection.php(827): Illuminate/Database/Connection->Illuminate/Database/{closure}('select * from `...', Array)
+#2 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Connection.php(794): Illuminate/Database/Connection->runQueryCallback('select * from `...', Array, Object(Closure))
+#3 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Connection.php(411): Illuminate/Database/Connection->run('select * from `...', Array, Object(Closure))
+#4 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3386): Illuminate/Database/Connection->select('select * from `...', Array, true)
+#5 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3371): Illuminate/Database/Query/Builder->runSelect()
+#6 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3961): Illuminate/Database/Query/Builder->Illuminate/Database/Query/{closure}()
+#7 C:/Users/kritex/Herd/skeeme/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php(3370): Illuminate/Database/Query/Builder->onceWithColumns(Array, Object(Closure))
+#8 C:/Users/kritex/Herd/skeeme/check_recent_db.php(22): Illuminate/Database/Query/Builder->get()
+#9 {main}
+"} 
+[2026-05-19 01:37:59] production.ERROR: in_array(): Argument #2 ($haystack) must be of type array, false given {"exception":"[object] (TypeError(code: 0): in_array(): Argument #2 ($haystack) must be of type array, false given at C:/Users/kritex/Herd/skeeme/check_timestamp_db.php:30)
+[stacktrace]
+#0 C:/Users/kritex/Herd/skeeme/check_timestamp_db.php(30): in_array('id', false)
+#1 {main}
+"} 

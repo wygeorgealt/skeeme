@@ -87,7 +87,7 @@ export default function RootLayout() {
       subscription.remove();
       clearInterval(interval);
     };
-  }, [user, checkAuth]);
+  }, [user?.id, checkAuth]);
 
   // Initialize RevenueCat SDK with the authenticated user ID
   useEffect(() => {
@@ -199,6 +199,7 @@ export default function RootLayout() {
               <OutOfCreditsModalWrapper />
               <CooldownModalWrapper />
               <GlobalErrorModalWrapper />
+              <StreakRewardModalWrapper />
 
               <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} />
             </ThemeProvider>
@@ -243,6 +244,19 @@ function GlobalErrorModalWrapper() {
       visible={globalError !== null}
       error={globalError}
       onDismiss={() => setGlobalError(null)}
+    />
+  );
+}
+
+function StreakRewardModalWrapper() {
+  const { showStreakRewardModal, streakRewardData, toggleStreakRewardModal } = useAuthStore();
+  const { RewardModal } = require('@/components/RewardModal');
+
+  return (
+    <RewardModal
+      isVisible={showStreakRewardModal}
+      onClose={() => toggleStreakRewardModal(false)}
+      reward={streakRewardData}
     />
   );
 }

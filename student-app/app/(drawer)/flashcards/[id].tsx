@@ -376,11 +376,15 @@ export default function StudyDeckScreen() {
         setIsSavingSession(true);
         try {
             // Record the completion in history/sessions
-            await api.post('flashcards/history', {
+            const res = await api.post('flashcards/history', {
                 deck_id: id,
                 cards_count: deck.flashcards.length,
                 completed_at: new Date().toISOString(),
             });
+
+            if (res.data?.reward?.earned) {
+                useAuthStore.getState().toggleStreakRewardModal(true, res.data.reward);
+            }
 
             // RefreshCcw user stats for the dashboard
             const userRes = await api.get('me');

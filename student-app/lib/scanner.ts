@@ -53,7 +53,7 @@ export const scannerService = {
             onStatus?: (message: string) => void;
             onDelta?: (partialResults: ScanResult[]) => void;
             onFullResult?: (results: ScanResult[]) => void;
-            onComplete?: (creditsRemaining: number) => void;
+            onComplete?: (creditsRemaining: number, reward?: any, streak?: any) => void;
             onError?: (error: string) => void;
             onDone?: () => void;
         }
@@ -110,7 +110,7 @@ export const scannerService = {
                     }
                     case 'complete': {
                         if (typeof chunk.credits_remaining === 'number') {
-                            callbacks.onComplete?.(chunk.credits_remaining);
+                            callbacks.onComplete?.(chunk.credits_remaining, chunk.reward, chunk.streak);
                         }
                         break;
                     }
