@@ -5,37 +5,13 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AltArrowRight, Pen, Bill, RoundArrowUp, Settings, Bell, QuestionCircle, CheckCircle, DocumentText, Logout, TrashBinTrash, CupStar } from '@solar-icons/react-native/Bold';
+import { AltArrowRight, Bill, RoundArrowUp, Settings, Bell, QuestionCircle, CheckCircle, DocumentText, Logout, TrashBinTrash, CupStar } from '@solar-icons/react-native/Bold';
 
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
 
 import RevenueCatUI from 'react-native-purchases-ui';
-
-
-
 import { Modal } from 'react-native';
-
-const PREDEFINED_AVATARS = [
-    'https://api.dicebear.com/7.x/notionists/png?seed=Felix&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Aneka&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Mimi&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Oreo&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Nala&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Milo&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Lily&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Leo&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Bella&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Loki&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Chloe&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Simba&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Max&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Jack&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Zoe&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Charlie&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Oscar&backgroundColor=f8fafc',
-    'https://api.dicebear.com/7.x/notionists/png?seed=Lucy&backgroundColor=f8fafc',
-];
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
@@ -45,7 +21,6 @@ const s = StyleSheet.create({
     avatarCircle: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 12, overflow: 'hidden' },
     avatarImg: { width: '100%', height: '100%' },
     avatarInitial: { fontSize: 36, fontWeight: '700' },
-    editBadge: { position: 'absolute', bottom: -4, right: -4, backgroundColor: '#007AFF', width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFF' },
     profileName: { fontSize: 24, fontWeight: '700', marginBottom: 4, letterSpacing: -0.5 },
     profileEmail: { fontSize: 15 },
 
@@ -116,22 +91,6 @@ export default function AccountScreen() {
 
     const { user, login, logout, theme, setTheme, hapticsEnabled } = useAuthStore();
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-    const [avatarModalVisible, setAvatarModalVisible] = useState(false);
-    const [updatingAvatar, setUpdatingAvatar] = useState(false);
-
-    const handleAvatarSelect = async (url: string) => {
-        if (!user) return;
-        setUpdatingAvatar(true);
-        try {
-            await api.patch('profile', { avatar_url: url });
-            login({ ...user, avatar: url, avatar_url: url }, useAuthStore.getState().token!);
-            setAvatarModalVisible(false);
-        } catch (error) {
-            Alert.alert('Error', 'Failed to update avatar.');
-        } finally {
-            setUpdatingAvatar(false);
-        }
-    };
 
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [deleteConfirmationCode, setDeleteConfirmationCode] = useState('');
@@ -189,7 +148,7 @@ export default function AccountScreen() {
             >
                 {/* ── Avatar + Name ── */}
                 <View style={s.profileSection}>
-                    <TouchableOpacity onPress={() => setAvatarModalVisible(true)} activeOpacity={0.8} style={{ marginBottom: 12 }}>
+                    <View style={{ marginBottom: 12 }}>
                         <View style={[s.avatarCircle, { backgroundColor: C.primary + '20', marginBottom: 0 }]}>
                             {user.avatar || user.avatar_url ? (
                                 <Image source={{ uri: user.avatar || user.avatar_url }} style={s.avatarImg} />
@@ -197,10 +156,8 @@ export default function AccountScreen() {
                                 <Text style={[s.avatarInitial, { color: C.primary }]}>{user.name?.charAt(0)}</Text>
                             )}
                         </View>
-                        <View style={[s.editBadge, { borderColor: C.background }]}>
-                            <Pen size={14} color="#FFF" />
-                        </View>
-                    </TouchableOpacity>
+                    </View>
+
                     <Text style={[s.profileName, { color: C.text }]}>{user.name}</Text>
                     <Text style={[s.profileEmail, { color: C.textSecondary }]}>{user.email}</Text>
                 </View>
@@ -323,56 +280,13 @@ export default function AccountScreen() {
                     <SettingsRow
                         icon={TrashBinTrash} iconBg="#FF3B30"
                         label="Delete Account"
-                        onPress={() => {
-                            Alert.alert("Permanent Action", "Are you sure you want to permanently delete your account?", [
-                                { text: "Cancel", style: "cancel" },
-                                { text: "Delete Account", style: "destructive", onPress: () => setDeleteModalVisible(true) }
-                            ]);
-                        }}
+                        onPress={() => setDeleteModalVisible(true)}
                         isLast={true}
                         isDark={isDark}
                         destructive={true}
                     />
                 </GroupedCard>
             </ScrollView>
-
-            {/* Avatar Picker Modal */}
-            <Modal
-                visible={avatarModalVisible}
-                animationType="slide"
-                presentationStyle="pageSheet"
-                onRequestClose={() => setAvatarModalVisible(false)}
-            >
-                <View style={{ flex: 1, backgroundColor: isDark ? 'transparent' : '#F2F2F7' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator, backgroundColor: C.background }}>
-                        <Text style={{ fontSize: 17, fontWeight: '600', color: C.text }}>Choose Avatar</Text>
-                        <TouchableOpacity onPress={() => setAvatarModalVisible(false)}>
-                            <Text style={{ fontSize: 17, color: C.primary, fontWeight: '600' }}>Done</Text>
-                        </TouchableOpacity>
-                    </View>
-                    
-                    <ScrollView contentContainerStyle={{ padding: 16 }}>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'center' }}>
-                            {PREDEFINED_AVATARS.map((url, i) => (
-                                <TouchableOpacity 
-                                    key={i} 
-                                    onPress={() => handleAvatarSelect(url)}
-                                    disabled={updatingAvatar}
-                                    style={{ 
-                                        width: 80, height: 80, borderRadius: 40,
-                                        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#E5E5EA',
-                                        overflow: 'hidden',
-                                        borderWidth: (user.avatar === url || user.avatar_url === url) ? 3 : 0,
-                                        borderColor: C.primary
-                                    }}
-                                >
-                                    <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} />
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </ScrollView>
-                </View>
-            </Modal>
 
             {/* Account Deletion Modal */}
             <Modal

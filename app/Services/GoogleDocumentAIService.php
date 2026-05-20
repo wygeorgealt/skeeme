@@ -55,6 +55,11 @@ class GoogleDocumentAIService
             $content = file_get_contents($filePath);
             $mimeType = $this->getMimeType($filePath);
 
+            if (empty($mimeType)) {
+                Log::error("GoogleDocumentAIService: Unsupported mime type for file {$filePath}");
+                return null;
+            }
+
             $rawDocument = new RawDocument([
                 'content' => $content,
                 'mime_type' => $mimeType,
@@ -81,15 +86,55 @@ class GoogleDocumentAIService
     /**
      * Helper to determine MIME type for Document AI
      */
-    protected function getMimeType(string $filePath): string
+    protected function getMimeType(string $filePath): ?string
     {
+        $supportedMimeTypes = [
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+            'image/tiff',
+            'image/gif',
+            'image/bmp',
+            'image/webp',
+        ];
+
+        $mimeType = null;
+
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo !== false) {
+                $mimeType = finfo_file($finfo, $filePath) ?: null;
+                finfo_close($finfo);
+            }
+        }
+
+        if (empty($mimeType) && function_exists('mime_content_type')) {
+            $mimeType = mime_content_type($filePath) ?: null;
+        }
+
+        $mimeType = $mimeType ? strtolower($mimeType) : null;
+
         $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-        return match ($extension) {
+        $extension = ltrim($extension, '.');
+        $extensionMimeType = match ($extension) {
             'pdf' => 'application/pdf',
             'jpg', 'jpeg' => 'image/jpeg',
             'png' => 'image/png',
-            'tiff' => 'image/tiff',
-            default => 'application/octet-stream',
+            'tiff', 'tif' => 'image/tiff',
+            'gif' => 'image/gif',
+            'bmp' => 'image/bmp',
+            'webp' => 'image/webp',
+            default => null,
         };
+
+        if ($mimeType && in_array($mimeType, $supportedMimeTypes, true)) {
+            return $mimeType;
+        }
+
+        if ($extensionMimeType && in_array($extensionMimeType, $supportedMimeTypes, true)) {
+            return $extensionMimeType;
+        }
+
+        return null;
     }
 }

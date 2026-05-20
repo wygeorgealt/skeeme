@@ -83,6 +83,8 @@ export default function GenerateFlashcardScreen() {
     const [difficulty, setDifficulty] = useState<Difficulty>('medium');
     const [isLoading, setIsLoading] = useState(false);
     const [globalError, setGlobalError] = useState<string | null>(null);
+
+    const clampedCardCount = Math.min(Math.max(parseInt(cardCount) || 10, 5), 30);
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [showOutOfCredits, setShowOutOfCredits] = useState(false);
     const [extractionId, setExtractionId] = useState<string | null>(null);
@@ -169,6 +171,7 @@ export default function GenerateFlashcardScreen() {
         const pricingConfig = useAuthStore.getState().pricingConfig;
         const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
         const flatCost = (pricingConfig?.rates?.flashcard_flat as any)?.[planTier] ?? (planTier === 'free' ? 30 : 25);
+        const cardCountValue = clampedCardCount;
         
         // Pre-flight check
         let currentCredits = user?.credits ?? 0;
@@ -204,6 +207,7 @@ export default function GenerateFlashcardScreen() {
         }, 2500);
 
         try {
+            const cardCountValue = clampedCardCount;
             const idempotencyKey = generateUUID();
             let res;
 
@@ -228,7 +232,7 @@ export default function GenerateFlashcardScreen() {
             const params = new URLSearchParams({
                 autoStart: 'true',
                 topic: topic || '',
-                card_count: cardCount,
+                card_count: String(cardCountValue),
                 difficulty: difficulty,
                 mode: mode,
                 idempotency: idempotencyKey
@@ -266,8 +270,7 @@ export default function GenerateFlashcardScreen() {
     };
 
     const canGenerate = mode === 'topic' ? topic.trim().length > 0 : (selectedFile !== null && !isExtracting);
-    const estimatedCost = parseInt(cardCount) || 10;
-
+    const estimatedCost = clampedCardCount;
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
             {/* Header */}
@@ -368,7 +371,7 @@ export default function GenerateFlashcardScreen() {
                         <Text style={[s.stepperValue, { color: C.text }]}>{cardCount}</Text>
                         <TouchableOpacity 
                             style={s.stepperBtn}
-                            onPress={() => setCardCount(prev => String(Math.min(50, parseInt(prev) + 5)))}
+                            onPress={() => setCardCount(prev => String(Math.min(30, parseInt(prev) + 5)))}
                         >
                             <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>+</Text>
                         </TouchableOpacity>

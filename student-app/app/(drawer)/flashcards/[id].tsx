@@ -182,6 +182,16 @@ export default function StudyDeckScreen() {
         return [...base, ...streaming];
     }, [deck?.flashcards, streamingCards]);
 
+    const totalCards = Math.max(cards.length, parseInt(card_count as string) || 0);
+    const maxVisibleDots = 15;
+    const visibleDotCount = Math.min(cards.length, maxVisibleDots);
+    const dotWindowStart = cards.length > visibleDotCount
+        ? Math.min(Math.max(0, currentIndex - Math.floor(visibleDotCount / 2)), cards.length - visibleDotCount)
+        : 0;
+    const visibleDotIndexes = Array.from({ length: visibleDotCount }, (_, idx) => dotWindowStart + idx);
+    const activeDotIndex = currentIndex - dotWindowStart;
+    const headerTitle = deck?.title || (isGenerating ? `Generating ${cards.length}/${totalCards}` : 'Study Deck');
+
     // Sync animation for loading state
     useEffect(() => {
         if (isLoading && !remoteDeck) {
@@ -541,11 +551,11 @@ export default function StudyDeckScreen() {
                 </TouchableOpacity>
                 <View style={s.headerTextContainer}>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        {currentIndex + 1} of {Math.max(cards.length, parseInt(card_count as string) || 0)}
+                        {currentIndex + 1} of {totalCards}
                     </Text>
                     <View style={s.flexRowGap2}>
                         <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900, { maxWidth: SCREEN_WIDTH * 0.5, marginTop: 4 }]} numberOfLines={1}>
-                            {deck?.title || 'Study Deck'}
+                            {headerTitle}
                         </Text>
                         {isGenerating && (
                             <Animated.View style={syncAnimatedStyle}>
@@ -588,12 +598,12 @@ export default function StudyDeckScreen() {
 
             {/* Bottom Progress Dots */}
             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginVertical: 4 }}>
-                {cards.map((_: any, idx: number) => (
+                {visibleDotIndexes.map((idx: number, dotIdx: number) => (
                     <View key={idx} style={{
-                        width: currentIndex === idx ? 8 : 6,
-                        height: currentIndex === idx ? 8 : 6,
+                        width: activeDotIndex === dotIdx ? 8 : 6,
+                        height: activeDotIndex === dotIdx ? 8 : 6,
                         borderRadius: 4,
-                        backgroundColor: currentIndex === idx ? '#007AFF' : (isDark ? '#3A3A3C' : '#D1D1D6')
+                        backgroundColor: activeDotIndex === dotIdx ? '#007AFF' : (isDark ? '#3A3A3C' : '#D1D1D6')
                     }} />
                 ))}
             </View>
