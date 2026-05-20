@@ -41,7 +41,9 @@ class FileExtractionService
 
         try {
             $text = match ($extension) {
-                'pdf' => $this->docAiService->processDocument($filePath) ?? $this->extractFromPdf($filePath),
+                'pdf' => $this->shouldUseDocumentAiForPdf($filePath)
+                    ? $this->docAiService->processDocument($filePath) ?? $this->extractFromPdf($filePath)
+                    : $this->extractFromPdf($filePath),
                 'docx', 'doc' => $this->extractFromDocx($filePath),
                 'txt', 'md' => file_get_contents($filePath),
                 'png', 'jpg', 'jpeg' => $this->docAiService->processDocument($filePath) ?? $this->visionService->ocr(base64_encode(file_get_contents($filePath)))['text'],
@@ -79,6 +81,26 @@ class FileExtractionService
         } catch (\Exception $e) {
             Log::warning("FileExtractionService: PDFParser failed (" . $e->getMessage() . "), falling back to OCR if available.");
             return "";
+        }
+    }
+
+    /**
+     * Only use Document AI for PDFs within the page limit.
+     */
+    protected function shouldUseDocumentAiForPdf(string $filePath): bool
+    {
+        try {
+            $parser = new PdfParser();
+            $pdf = $parser->parseFile($filePath);
+            $pageCount = count($pdf->getPages());
+            if ($pageCount > 30) {
+                Log::info("FileExtractionService: PDF page count {$pageCount} exceeds Document AI limit, using fallback extraction.");
+                return false;
+            }
+            return true;
+        } catch (\Exception $e) {
+            Log::warning("FileExtractionService: Failed to count PDF pages ({$e->getMessage()}), avoiding Document AI.");
+            return false;
         }
     }
 
