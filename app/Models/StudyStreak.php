@@ -12,6 +12,7 @@ class StudyStreak extends Model
         'current_streak',
         'longest_streak',
         'last_study_date',
+        'unclaimed_reward',
     ];
 
     public function user(): BelongsTo

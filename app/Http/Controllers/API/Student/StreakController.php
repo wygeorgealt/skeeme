@@ -66,4 +66,44 @@ class StreakController extends Controller
             'used_this_month' => $record->freezes_used,
         ]);
     }
+
+    /**
+     * Claim the pending streak reward
+     */
+    public function claimReward(Request $request)
+    {
+        $user = $request->user();
+        
+        return DB::transaction(function () use ($user) {
+            $user = \App\Models\User::lockForUpdate()->find($user->id);
+            $streak = \App\Models\StudyStreak::where('user_id', $user->id)->first();
+
+            if (!$streak || $streak->unclaimed_reward <= 0) {
+                return response()->json(['message' => 'No reward to claim'], 400);
+            }
+
+            $reward = $streak->unclaimed_reward;
+            $milestone = $streak->current_streak;
+
+            $user->increment('credits', $reward);
+
+            try {
+                $user->transactions()->create([
+                    'type' => 'reward',
+                    'amount' => $reward,
+                    'description' => "{$milestone}-Day Study Streak Reward",
+                ]);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("Streak reward transaction log failed for user {$user->id}: " . $e->getMessage());
+            }
+
+            $streak->unclaimed_reward = 0;
+            $streak->save();
+
+            return response()->json([
+                'message' => 'Reward claimed successfully',
+                'credits' => $user->credits
+            ]);
+        });
+    }
 }

@@ -245,9 +245,6 @@ export default function ScanScreen() {
                             useAuthStore.getState().toggleCreditsModal(true, 'scan');
                         }
                     }
-                    if (reward?.earned) {
-                        useAuthStore.getState().toggleStreakRewardModal(true, reward);
-                    }
                 },
                 onError: (message) => {
                     streamErrored = true;

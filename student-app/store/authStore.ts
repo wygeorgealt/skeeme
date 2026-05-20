@@ -33,10 +33,6 @@ interface AuthState {
     // Cooldown Modal
     showCooldownModal: boolean;
     toggleCooldownModal: (show: boolean) => void;
-    // Streak Reward Modal
-    showStreakRewardModal: boolean;
-    streakRewardData: any;
-    toggleStreakRewardModal: (show: boolean, data?: any) => void;
     // Haptics
     hapticsEnabled: boolean;
     setHapticsEnabled: (enabled: boolean) => Promise<void>;
@@ -153,10 +149,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     toggleCooldownModal: (show) => {
         set({ showCooldownModal: show });
-    },
-
-    toggleStreakRewardModal: (show, data = null) => {
-        set({ showStreakRewardModal: show, streakRewardData: data });
     },
 
     setOnboardingData: async (data) => {

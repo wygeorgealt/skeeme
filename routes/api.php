@@ -214,6 +214,7 @@ Route::group(['prefix' => 'v1'], function () {
 
             Route::get('streaks/heatmap', [\App\Http\Controllers\API\Student\StreakController::class, 'heatmap']);
             Route::get('streaks/freezes', [\App\Http\Controllers\API\Student\StreakController::class, 'freezes']);
+            Route::post('streaks/claim-reward', [\App\Http\Controllers\API\Student\StreakController::class, 'claimReward']);
             
             // Export Results
             Route::get('quizzes/history/{id}/export', [\App\Http\Controllers\API\Student\ExportController::class, 'quizExport']);

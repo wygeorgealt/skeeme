@@ -1,8 +1,8 @@
 import { Text } from '@/components/ui/Text';
-import { View, ScrollView, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, useColorScheme, StyleSheet, Modal, Alert } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sharing from 'expo-sharing';
 import { ShareCard } from '@/components/ui/ShareCard';
@@ -12,6 +12,7 @@ import { Colors } from '@/constants/theme';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { api } from '@/lib/api';
 
 const MILESTONES = [
     { title: '7 Day Streak', target: 7, reward: '50 Credits' },
@@ -57,7 +58,7 @@ function MilestoneRow({ milestone, current, C, isDark }: { milestone: { title: s
 }
 
 export default function StreakScreen() {
-    const { user } = useAuthStore();
+    const { user, updateUser } = useAuthStore();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
@@ -66,6 +67,32 @@ export default function StreakScreen() {
 
     const current = user?.streak?.current_streak || 0;
     const longest = user?.streak?.longest_streak || 0;
+
+    const [claimModalVisible, setClaimModalVisible] = useState(false);
+    const [isClaiming, setIsClaiming] = useState(false);
+
+    useEffect(() => {
+        if (user?.streak?.unclaimed_reward && user.streak.unclaimed_reward > 0) {
+            setClaimModalVisible(true);
+        }
+    }, [user?.streak?.unclaimed_reward]);
+
+    const handleClaimReward = async () => {
+        setIsClaiming(true);
+        try {
+            const res = await api.post('streaks/claim-reward');
+            const userRes = await api.get('me');
+            if (userRes.data) {
+                updateUser(userRes.data);
+            }
+            setClaimModalVisible(false);
+            Alert.alert('Reward Claimed!', `You received ${user?.streak?.unclaimed_reward} credits!`);
+        } catch (e: any) {
+            Alert.alert('Error', e.response?.data?.message || 'Could not claim reward');
+        } finally {
+            setIsClaiming(false);
+        }
+    };
 
     const shareStreak = async () => {
         try {
@@ -125,6 +152,43 @@ export default function StreakScreen() {
                     </View>
                 </Animated.View>
             </ScrollView>
+
+            {/* Claim Reward Modal */}
+            <Modal
+                visible={claimModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setClaimModalVisible(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
+                    <View style={{ backgroundColor: C.card, borderRadius: 16, padding: 24, alignItems: 'center' }}>
+                        <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(52,199,89,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                            <Text style={{ fontSize: 32 }}>🎁</Text>
+                        </View>
+                        <Text style={{ fontSize: 24, fontWeight: '800', color: C.text, marginBottom: 8 }}>Claim Reward</Text>
+                        <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 24, textAlign: 'center', lineHeight: 22 }}>
+                            You have an unclaimed reward of <Text style={{ fontWeight: '700', color: '#34C759' }}>{user?.streak?.unclaimed_reward} Credits</Text> for your study streak!
+                        </Text>
+                        
+                        <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+                            <TouchableOpacity 
+                                style={{ flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA', alignItems: 'center' }}
+                                onPress={() => setClaimModalVisible(false)}
+                                disabled={isClaiming}
+                            >
+                                <Text style={{ color: C.text, fontWeight: '600', fontSize: 16 }}>Later</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={{ flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: '#34C759', alignItems: 'center', opacity: isClaiming ? 0.5 : 1 }}
+                                onPress={handleClaimReward}
+                                disabled={isClaiming}
+                            >
+                                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>{isClaiming ? 'Claiming...' : 'Claim Now'}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }

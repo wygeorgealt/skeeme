@@ -93,23 +93,28 @@ class StreakService
                     return false;
                 }
 
-                $user->increment('credits', $credits);
-                
-                try {
-                    $user->transactions()->create([
-                        'type' => 'reward',
-                        'amount' => $credits,
-                        'description' => "{$milestone}-Day Study Streak Reward",
-                    ]);
-                } catch (\Exception $e) {
-                    Log::warning("Streak reward transaction log failed for user {$user->id}: " . $e->getMessage());
-                }
+                // Instead of granting credits, set it as unclaimed
+                $streak->unclaimed_reward = $credits;
+                $streak->save();
 
-                Log::info("Streak reward awarded", [
+                Log::info("Streak reward pending", [
                     'user_id' => $user->id,
                     'milestone' => $milestone,
                     'reward' => $credits
                 ]);
+
+                // Send Push Notification
+                try {
+                    $pushService = app(\App\Services\PushNotificationService::class);
+                    $pushService->sendToUser(
+                        $user->id,
+                        "Claim Your Reward! \u{1F389}",
+                        "You studied for $milestone days straight! Tap here to claim your $credits credits.",
+                        ['screen' => 'streak']
+                    );
+                } catch (\Exception $e) {
+                    Log::warning("Failed to send streak reward notification for user {$user->id}: " . $e->getMessage());
+                }
 
                 return true;
             });
