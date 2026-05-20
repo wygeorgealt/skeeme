@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect, memo, useMemo, useCallback } from 'react';
 import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, LayoutAnimation, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Colors } from '@/constants/theme';
@@ -223,10 +223,20 @@ export default function StudyDeckScreen() {
         };
     });
 
+    // Reset completion state when screen regains focus (fixes returning from history)
+    useFocusEffect(
+        useCallback(() => {
+            setIsComplete(false);
+        }, [])
+    );
+
     // Reset state when deck ID changes
     useEffect(() => {
         setCurrentIndex(0);
         setIsComplete(false);
+        setStreamingCards([]);
+        setGenStage('Researching...');
+        setIsGenerating(false);
         progressAnim.value = 0;
     }, [id]);
 
@@ -268,19 +278,7 @@ export default function StudyDeckScreen() {
             if (event.data === '[DONE]') {
                 es.close();
                 esRef.current = null;
-                
-                // Wait longer to ensure backend has persisted all cards, then refetch
-                // Don't set isGenerating = false until cards are confirmed in DB
-                setTimeout(() => {
-                    queryClient.invalidateQueries({ queryKey: ['deck', id] });
-                    refetch().then(() => {
-                        // Only stop generating after DB cards are loaded
-                        setIsGenerating(false);
-                    }).catch(() => {
-                        // Even on error, stop generating after timeout
-                        setIsGenerating(false);
-                    });
-                }, 1000); // Wait 1s for DB persistence
+                handleStreamComplete(accumulatedJson);
                 return;
             }
 
@@ -303,9 +301,14 @@ export default function StudyDeckScreen() {
                     const partial = parsePartialJson(accumulatedJson);
                     if (partial && Array.isArray(partial)) {
                         setStreamingCards(partial);
+                        if (__DEV__) {
+                            console.log(`Streaming: ${partial.length} cards accumulated (expecting ~${card_count})`);
+                        }
                     }
                 }
-            } catch (e) { }
+            } catch (e) {
+                if (__DEV__) console.warn('Message parse error:', e);
+            }
         });
 
         es.addEventListener('error', (event: any) => {
@@ -322,6 +325,48 @@ export default function StudyDeckScreen() {
                 router.back();
             }
         });
+    };
+
+    const saveGeneratedFlashcards = async (cards: any[]) => {
+        if (!id || cards.length === 0) return;
+        await api.post(`flashcards/decks/${id}/cards`, { cards });
+    };
+
+    const handleStreamComplete = async (fullJson: string) => {
+        const cards = parsePartialJson(fullJson);
+        if (!cards || !Array.isArray(cards)) {
+            Alert.alert('Generation Error', 'Unable to parse generated flashcards. Please try again.');
+            setIsGenerating(false);
+            if (autoStart === 'true') {
+                api.delete(`/flashcards/decks/${id}`).catch(() => {});
+            }
+            router.back();
+            return;
+        }
+
+        setStreamingCards(cards);
+
+        try {
+            await saveGeneratedFlashcards(cards);
+            queryClient.invalidateQueries({ queryKey: ['deck', id] });
+            const res = await refetch();
+            if (__DEV__) {
+                console.log('Saved and refetched deck:', {
+                    deckCardCount: res.data?.data?.flashcards?.length,
+                    streamedCount: cards.length,
+                    id
+                });
+            }
+        } catch (err) {
+            if (__DEV__) console.warn('Failed to save streamed flashcards:', err);
+            Alert.alert('Save Failed', 'Unable to persist generated flashcards. Please try again.');
+            if (autoStart === 'true') {
+                api.delete(`/flashcards/decks/${id}`).catch(() => {});
+            }
+            router.back();
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const parsePartialJson = (json: string) => {

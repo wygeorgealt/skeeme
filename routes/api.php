@@ -206,6 +206,7 @@ Route::group(['prefix' => 'v1'], function () {
                 Route::get('decks', [\App\Http\Controllers\API\Student\FlashcardController::class, 'index']);
                 Route::get('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'show']);
                 Route::delete('decks/{id}', [\App\Http\Controllers\API\Student\FlashcardController::class, 'destroy']);
+                Route::post('decks/{id}/cards', [\App\Http\Controllers\API\Student\FlashcardController::class, 'saveCards']);
                 
                 // Session history
                 Route::get('history', [\App\Http\Controllers\API\Student\FlashcardSessionController::class, 'index']);

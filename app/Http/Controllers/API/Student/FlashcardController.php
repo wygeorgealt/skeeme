@@ -19,9 +19,9 @@ use App\Support\InsufficientCreditsResponse;
 
 class FlashcardController extends Controller
 {
-    protected $aiService;
-    protected $deepseek;
-    protected $extractionService;
+    protected AIService $aiService;
+    protected DeepseekAIService $deepseek;
+    protected FileExtractionService $extractionService;
 
     public function __construct(AIService $aiService, DeepseekAIService $deepseek, FileExtractionService $extractionService)
     {
@@ -159,40 +159,7 @@ class FlashcardController extends Controller
                     $modelUsed
                 );
 
-                // Final Persistence logic (Ensure all are saved)
-                try {
-                    $cleanJson = preg_replace('/```(?:json)?|```/s', '', $fullContent);
-                    $cardsData = json_decode(trim($cleanJson), true);
-                    
-                    if (is_array($cardsData)) {
-                        DB::transaction(function () use ($cardsData, $deck) {
-                            $existingCount = $deck->flashcards()->count();
-                            
-                            $toInsert = [];
-                            foreach ($cardsData as $idx => $c) {
-                                if (empty($c['front']) || empty($c['back'])) continue;
-                                
-                                // Avoid duplicates if possible (simple check by index or content)
-                                if ($idx < $existingCount) continue;
-
-                                $toInsert[] = [
-                                    'flashcard_deck_id' => $deck->id,
-                                    'front' => $c['front'],
-                                    'back' => $c['back'],
-                                    'order_column' => $idx,
-                                    'created_at' => now(),
-                                    'updated_at' => now()
-                                ];
-                            }
-                            if (!empty($toInsert)) {
-                                \App\Models\Flashcard::insert($toInsert);
-                            }
-                        });
-                    }
-                } catch (\Exception $saveEx) {
-                    Log::error("Failed to final save streamed flashcards: " . $saveEx->getMessage());
-                }
-
+                // Stream only; persistence happens after final JSON is returned to the client.
                 echo "data: [DONE]\n\n";
             } catch (\Exception $e) {
                 Log::error("[Streaming Flashcards Error] " . $e->getMessage(), [
@@ -295,7 +262,7 @@ class FlashcardController extends Controller
     /**
      * Get a specific deck and its cards
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, int $id)
     {
         $deck = FlashcardDeck::where('user_id', $request->user()->id)
             ->with(['flashcards' => function ($q) {
@@ -306,12 +273,47 @@ class FlashcardController extends Controller
         return response()->json(['data' => $deck]);
     }
 
+    /**
+     * Persist generated flashcards for a deck after streaming.
+     */
+    public function saveCards(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'cards' => 'required|array|min:1',
+            'cards.*.front' => 'required|string',
+            'cards.*.back' => 'required|string',
+        ]);
 
+        $deck = FlashcardDeck::where('user_id', $request->user()->id)->findOrFail($id);
+
+        $cardsData = $validated['cards'];
+        $insertRows = [];
+
+        foreach ($cardsData as $index => $card) {
+            $insertRows[] = [
+                'flashcard_deck_id' => $deck->id,
+                'front' => $card['front'],
+                'back' => $card['back'],
+                'order_column' => $index,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        DB::transaction(function () use ($deck, $insertRows) {
+            $deck->flashcards()->delete();
+            if (!empty($insertRows)) {
+                Flashcard::insert($insertRows);
+            }
+        });
+
+        return response()->json([ 'message' => 'Flashcards saved', 'count' => count($insertRows) ]);
+    }
 
     /**
      * Delete a deck
      */
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, int $id)
     {
         $deck = FlashcardDeck::where('user_id', $request->user()->id)->findOrFail($id);
         $deck->delete();
