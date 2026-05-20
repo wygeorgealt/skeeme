@@ -53,7 +53,7 @@ export default function CreateAccountScreen() {
                                 style={[s.socialBtn, { backgroundColor: btnAppleBg }]}
                             >
                                 <AppleIcon width={20} height={20} color={btnAppleText} />
-                                <Text style={[s.socialBtnText, { color: btnAppleText }]}>Continue with AppleIcon</Text>
+                                <Text style={[s.socialBtnText, { color: btnAppleText }]}>Continue with Apple</Text>
                             </TouchableOpacity>
                         )}
 
@@ -62,8 +62,8 @@ export default function CreateAccountScreen() {
                             activeOpacity={0.8}
                             style={[s.socialBtn, isDark ? s.googleDark : s.googleLight]}
                         >
-                            <GoogleIcon width={20} height={20} color={textColor} />
-                            <Text style={[s.socialBtnText, { color: textColor }]}>Continue with GoogleIcon</Text>
+                            <GoogleIcon width={20} height={20} />
+                            <Text style={[s.socialBtnText, { color: textColor }]}>Continue with Google</Text>
                         </TouchableOpacity>
 
                         <View style={s.dividerRow}>

@@ -20,6 +20,52 @@ import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 type QuizMode = 'topic' | 'file';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
+const MODE_OPTIONS = [
+    { key: 'topic', label: 'By Topic', emoji: '🧠' },
+    { key: 'file', label: 'From File', emoji: '📄' },
+];
+
+const DIFFICULTY_OPTIONS = [
+    { key: 'easy', label: 'Easy', emoji: '🌱', desc: 'Focus on fundamentals' },
+    { key: 'medium', label: 'Medium', emoji: '💡', desc: 'Balanced challenge' },
+    { key: 'hard', label: 'Hard', emoji: '🔥', desc: 'Deep analytical questions' },
+];
+
+function ChipButton({
+    label,
+    emoji,
+    isSelected,
+    onPress,
+    isDark,
+    C,
+    small,
+}: {
+    label: string;
+    emoji: string;
+    isSelected: boolean;
+    onPress: () => void;
+    isDark: boolean;
+    C: typeof Colors.light;
+    small?: boolean;
+}) {
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.75}
+            style={[
+                s.chip,
+                small ? s.chipSmall : null,
+                isSelected
+                    ? { backgroundColor: '#007AFF', borderColor: '#007AFF' }
+                    : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F2F4F8', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E0E4EF' },
+            ]}
+        >
+            <Text style={small ? s.chipEmojiSmall : s.chipEmoji}>{emoji}</Text>
+            <Text style={[small ? s.chipLabelSmall : s.chipLabel, { color: isSelected ? '#fff' : C.text }]}>{label}</Text>
+        </TouchableOpacity>
+    );
+}
+
 export default function GenerateFlashcardScreen() {
     const { user, updateUser } = useAuthStore();
     const queryClient = useQueryClient();
@@ -243,21 +289,18 @@ export default function GenerateFlashcardScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 {/* Segmented Control */}
-                <View style={[s.segmentedControl, isDark ? s.segmentedControlDark : s.segmentedControlLight]}>
-                    {(['topic', 'file'] as QuizMode[]).map(m => {
-                        const isSelected = mode === m;
-                        return (
-                            <TouchableOpacity 
-                                key={m} 
-                                onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                style={[s.segmentBtn, isSelected && (isDark ? s.segmentBtnActiveDark : s.segmentBtnActiveLight)]}
-                            >
-                                <Text style={[s.segmentText, { color: isSelected ? C.text : C.textTertiary, fontWeight: isSelected ? '700' : '500' }]}>
-                                    {m === 'topic' ? 'By Topic' : 'From File'}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
+<View style={[s.chipRow, { marginBottom: 24 }]}> 
+                    {MODE_OPTIONS.map(option => (
+                        <ChipButton
+                            key={option.key}
+                            label={option.label}
+                            emoji={option.emoji}
+                            isSelected={mode === option.key}
+                            onPress={() => { setMode(option.key as QuizMode); if (option.key === 'topic') setSelectedFile(null); }}
+                            isDark={isDark}
+                            C={C}
+                        />
+                    ))}
                 </View>
 
                 {/* Input Area */}
@@ -334,36 +377,21 @@ export default function GenerateFlashcardScreen() {
 
                 {/* Difficulty */}
                 <Text style={[s.sectionTitle, { color: '#94a3b8' }]}>DIFFICULTY</Text>
-                <View style={[s.card, { backgroundColor: C.card }]}>
-                    {[
-                        { key: 'easy',   label: 'Easy',   Icon: Leaf,               desc: 'Focus on fundamentals'    },
-                        { key: 'medium', label: 'Medium', Icon: LightbulbBolt,     desc: 'Comprehensive coverage'   },
-                        { key: 'hard',   label: 'Hard',   Icon: Rocket,      desc: 'Deep analytical questions' },
-                    ].map((opt, index, arr) => {
-                        const isSelected = difficulty === opt.key;
-                        const isLast = index === arr.length - 1;
-                        const iconBg = isDark ? 'rgba(0,122,255,0.15)' : '#EBF3FF';
-                        return (
-                            <TouchableOpacity
+                <View style={[s.card, { backgroundColor: C.card, padding: 16 }]}> 
+                    <View style={s.chipRow}>
+                        {DIFFICULTY_OPTIONS.map(opt => (
+                            <ChipButton
                                 key={opt.key}
+                                label={opt.label}
+                                emoji={opt.emoji}
+                                isSelected={difficulty === opt.key}
                                 onPress={() => setDifficulty(opt.key as Difficulty)}
-                                activeOpacity={0.75}
-                                style={[
-                                    s.optRow,
-                                    !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-                                ]}
-                            >
-                                <View style={[s.optIcon, { backgroundColor: iconBg }]}>
-                                    <opt.Icon size={20} color="#007AFF" />
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={[s.optLabel, { color: C.text }]}>{opt.label}</Text>
-                                    <Text style={[s.optDesc, { color: C.textSecondary }]}>{opt.desc}</Text>
-                                </View>
-                                {isSelected && <CheckCircle size={22} color="#007AFF" />}
-                            </TouchableOpacity>
-                        );
-                    })}
+                                isDark={isDark}
+                                C={C}
+                                small
+                            />
+                        ))}
+                    </View>
                 </View>
             </ScrollView>
 
@@ -408,6 +436,8 @@ export default function GenerateFlashcardScreen() {
     );
 }
 
+
+
 const s = StyleSheet.create({
     header: { paddingHorizontal: 24, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1 },
@@ -447,6 +477,14 @@ const s = StyleSheet.create({
     optIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     optLabel: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
     optDesc: { fontSize: 13, fontWeight: '500' },
+
+    chipRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'nowrap', marginHorizontal: 0, marginBottom: 0 },
+    chip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 999, borderWidth: 1, marginHorizontal: 6, minHeight: 52, flex: 1, minWidth: 110, maxWidth: 160 },
+    chipSmall: { paddingHorizontal: 10, paddingVertical: 8, minHeight: 44, minWidth: 90, maxWidth: 130 },
+    chipEmoji: { fontSize: 18, marginRight: 10 },
+    chipEmojiSmall: { fontSize: 16, marginRight: 8 },
+    chipLabel: { fontSize: 14, fontWeight: '700' },
+    chipLabelSmall: { fontSize: 13, fontWeight: '700' },
 
     // Footer
     formFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24, paddingTop: 16 },

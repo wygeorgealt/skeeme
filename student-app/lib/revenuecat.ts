@@ -1,21 +1,28 @@
 import { Platform } from 'react-native';
 import Purchases, { LOG_LEVEL, PurchasesEntitlementInfo } from 'react-native-purchases';
 
-const API_KEYS = {
-  apple: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY || 'goog_api_key_placeholder',
-  google: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || 'goog_api_key_placeholder', 
-};
+// Read keys directly from environment; do NOT provide a silent placeholder fallback.
+const APPLE_KEY = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY;
+const ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
 
 /**
  * Initialize RevenueCat SDK
  */
 export const initializeRevenueCat = async (userId?: string) => {
-  if (Platform.OS === 'ios') {
-    await Purchases.configure({ apiKey: API_KEYS.apple, appUserID: userId });
-  } else if (Platform.OS === 'android') {
-    await Purchases.configure({ apiKey: API_KEYS.google, appUserID: userId });
+  const apiKey = Platform.OS === 'ios' ? APPLE_KEY : ANDROID_KEY;
+
+  if (!apiKey) {
+    const envName = Platform.OS === 'ios' ? 'EXPO_PUBLIC_REVENUECAT_APPLE_KEY' : 'EXPO_PUBLIC_REVENUECAT_ANDROID_KEY';
+    const msg = `[RevenueCat] Missing API key (${envName}) for platform '${Platform.OS}'. Purchases will be unavailable.`;
+
+    // In dev, log a warning but do NOT throw — allows the app to run on the other platform
+    // (e.g. testing on Android without an Apple key configured, or vice versa).
+    console.warn(msg);
+    return;
   }
-  
+
+  await Purchases.configure({ apiKey, appUserID: userId });
+
   if (__DEV__) {
     await Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
   }

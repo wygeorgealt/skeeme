@@ -4,8 +4,6 @@ import { Platform } from 'react-native';
 import { User, PricingConfig } from '@/types';
 import { posthog } from '@/lib/posthog';
 
-export type AccountModalView = 'main' | 'preferences' | 'support' | 'referral' | 'delete_account';
-
 interface AuthState {
     user: User | null;
     token: string | null;
@@ -45,9 +43,6 @@ interface AuthState {
     // Global Error
     globalError: string | null;
     setGlobalError: (error: string | null) => void;
-    accountModalOpen: boolean;
-    accountModalView: AccountModalView;
-    toggleAccountModal: (show: boolean, view?: AccountModalView) => void;
     notificationsEnabled: boolean;
     setNotificationsEnabled: (enabled: boolean) => Promise<void>;
 }
@@ -131,13 +126,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     streakRewardData: null,
     hapticsEnabled: true,
     globalError: null,
-    accountModalOpen: false,
-    accountModalView: 'main',
     notificationsEnabled: true,
 
     setGlobalError: (error) => set({ globalError: error }),
-
-    toggleAccountModal: (show, view = 'main') => set({ accountModalOpen: show, accountModalView: view }),
 
     fetchPricingConfig: async () => {
         try {

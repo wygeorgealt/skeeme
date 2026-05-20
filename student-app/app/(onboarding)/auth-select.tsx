@@ -11,7 +11,8 @@ import { Colors, Spacing, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'expo-status-bar';
-import { IPhone } from '@solar-icons/react-native/Bold';
+import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
+import { FallingAssets } from '@/components/ui/FallingAssets';
 
 
 const MASCOT_IMAGE = require('../../assets/images/splash-icon.png');
@@ -71,6 +72,7 @@ export default function AuthSelectScreen() {
     return (
         <View style={[s.container, { backgroundColor: C.background }]}>
             <StatusBar style={isDark ? "light" : "dark"} />
+            <FallingAssets />
 
             {/* Mascot Area with Glow */}
             <View style={s.mascotContainer}>
@@ -123,11 +125,7 @@ export default function AuthSelectScreen() {
                         ) : (
                             <>
                                 <View style={s.authBtnIcon}>
-                                    <Image 
-                                        source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }} 
-                                        style={{ width: 24, height: 24 }} 
-                                        resizeMode="contain"
-                                    />
+                                    <GoogleIcon width={20} height={20} />
                                 </View>
                                 <Text style={[s.authBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
                                     Continue with Google
@@ -146,7 +144,7 @@ export default function AuthSelectScreen() {
                             style={[s.authBtn, s.appleBtn, { backgroundColor: isDark ? '#FFFFFF' : '#000000' }]}
                         >
                             <View style={s.authBtnIcon}>
-                                <IPhone size={20} color={isDark ? '#000000' : '#FFFFFF'} />
+                                <AppleIcon width={20} height={20} color={isDark ? '#000000' : '#FFFFFF'} />
                             </View>
                             <Text style={[s.authBtnText, { color: isDark ? '#000000' : '#FFFFFF' }]}>Continue with Apple</Text>
                         </TouchableOpacity>
@@ -197,7 +195,7 @@ const s = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 60,
+        paddingTop: 20,
     },
     mascotWrapper: {
         width: 200,
@@ -230,7 +228,7 @@ const s = StyleSheet.create({
     },
 
     textSection: {
-        marginBottom: 40,
+        marginBottom: 20,
     },
     greeting: {
         fontSize: 48,

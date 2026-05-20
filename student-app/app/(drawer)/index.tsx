@@ -24,10 +24,10 @@ const cardStyle = (C: typeof Colors.light) => ({
 
 // ─── Quick Action config ──────────────────────────────────────────────────────
 const QUICK_ACTIONS = [
-    { label: 'Quiz',       Icon: Notebook, route: '/generate',   bg: '#EBF3FF', color: '#007AFF' },
-    { label: 'Flashcards', Icon: Layers,    route: '/flashcards', bg: '#E6F9EE', color: '#34C759' },
-    { label: 'History',    Icon: History,  route: '/history',    bg: '#FFF4E6', color: '#FF9500' },
-    { label: 'Streak',     Icon: Fire,     route: '/streak',     bg: '#FFEBEA', color: '#FF3B30' },
+    { label: 'Quiz',       Icon: Notebook, route: '/generate',        bg: '#EBF3FF', color: '#007AFF' },
+    { label: 'Flashcards', Icon: Layers,    route: '/flashcards/create', bg: '#E6F9EE', color: '#34C759' },
+    { label: 'History',    Icon: History,  route: '/history',         bg: '#FFF4E6', color: '#FF9500' },
+    { label: 'Streak',     Icon: Fire,     route: '/streak',          bg: '#FFEBEA', color: '#FF3B30' },
 ] as const;
 
 // ─── 7-Day Streak Calendar ────────────────────────────────────────────────────

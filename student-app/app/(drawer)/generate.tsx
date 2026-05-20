@@ -36,6 +36,7 @@ import {
     Lightbulb,
     Stopwatch,
     AltArrowRight,
+    AltArrowLeft,
     Share,
     InfoCircle,
     Danger,
@@ -75,17 +76,57 @@ const SkeletonCard = ({ isDark }: { isDark: boolean }) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & OPTIONS
 // ══════════════════════════════════════════════════════════════════════════════
+const MODE_OPTIONS = [
+    { key: 'topic', label: 'By Topic', emoji: '🧠' },
+    { key: 'file',  label: 'From File', emoji: '📄' },
+];
+
 const DIFFICULTY_OPTIONS = [
-    { key: 'easy',   label: 'Easy',   Icon: Leaf,                  desc: 'Focus on fundamentals'    },
-    { key: 'medium', label: 'Medium', Icon: LightbulbBolt,        desc: 'Comprehensive coverage'   },
-    { key: 'hard',   label: 'Hard',   Icon: Fire,  desc: 'Deep analytical questions' },
+    { key: 'easy',   label: 'Easy',   emoji: '🌱', desc: 'Focus on fundamentals'    },
+    { key: 'medium', label: 'Medium', emoji: '💡', desc: 'Comprehensive coverage'   },
+    { key: 'hard',   label: 'Hard',   emoji: '🔥', desc: 'Deep analytical questions' },
 ];
 
 const FORMAT_OPTIONS = [
-    { key: 'mcq',    label: 'MCQ',    Icon: List,     desc: 'Multiple choice questions' },
-    { key: 'theory', label: 'Theory', Icon: DocumentText, desc: 'Essay & analysis'           },
-    { key: 'both',   label: 'Mixed',  Icon: UsersGroupRounded,        desc: 'Combination of both'        },
+    { key: 'mcq',    label: 'MCQ',    emoji: '📋', desc: 'Multiple choice questions' },
+    { key: 'theory', label: 'Theory', emoji: '🧠', desc: 'Essay & analysis'           },
+    { key: 'both',   label: 'Mixed',  emoji: '🎯', desc: 'Combination of both'        },
 ];
+
+function ChipButton({
+    label,
+    emoji,
+    isSelected,
+    onPress,
+    isDark,
+    C,
+    small,
+}: {
+    label: string;
+    emoji: string;
+    isSelected: boolean;
+    onPress: () => void;
+    isDark: boolean;
+    C: typeof Colors.light;
+    small?: boolean;
+}) {
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.75}
+            style={[
+                sf.chipBtn,
+                small ? sf.chipSmall : null,
+                isSelected
+                    ? { backgroundColor: '#007AFF', borderColor: '#007AFF' }
+                    : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F2F4F8', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E0E4EF' },
+            ]}
+        >
+            <Text style={small ? sf.chipEmojiSmall : sf.chipEmoji}>{emoji}</Text>
+            <Text style={[small ? sf.chipLabelSmall : sf.chipLabel, { color: isSelected ? '#FFF' : C.text }]}>{label}</Text>
+        </TouchableOpacity>
+    );
+}
 
 // Card shadow helper
 const cardShadow = (C: typeof Colors.light) => ({
@@ -678,31 +719,36 @@ export default function GenerateQuizScreen() {
         return (
             <View style={{ flex: 1, backgroundColor: C.background }}>
                 {/* Header */}
-                <View style={[sf.header, { paddingTop: Math.max(insets.top, 20) }]}>
+                <View style={[sf.header, { paddingTop: Math.max(insets.top, 16) }] }>
+                    <TouchableOpacity 
+                        onPress={() => navigation.goBack()} 
+                        activeOpacity={0.7} 
+                        style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
+                    >
+                        <AltArrowLeft size={24} color={isDark ? 'white' : '#0f172a'} />
+                    </TouchableOpacity>
                     <Text style={[sf.headerTitle, { color: C.text }]}>Build Quiz</Text>
+                    <View style={{ width: 44 }} />
                 </View>
 
                 <ScrollView
                     style={{ flex: 1 }}
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 220, paddingTop: 4 }}
+                    contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220, paddingTop: 10 }}
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Segmented Control */}
-                    <View style={[sf.segCtrl, isDark ? sf.segCtrlDark : sf.segCtrlLight]}>
-                        {(['topic', 'file'] as QuizMode[]).map(m => {
-                            const isSelected = mode === m;
-                            return (
-                                <TouchableOpacity
-                                    key={m}
-                                    onPress={() => { setMode(m); if (m === 'topic') setSelectedFile(null); }}
-                                    style={[sf.segBtn, isSelected && (isDark ? sf.segBtnActiveDark : sf.segBtnActiveLight)]}
-                                >
-                                    <Text style={[sf.segText, { color: isSelected ? C.text : C.textTertiary, fontWeight: isSelected ? '700' : '500' }]}>
-                                        {m === 'topic' ? 'By Topic' : 'From File'}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
+                    <View style={[sf.chipRow, { marginBottom: 24 }]}> 
+                        {MODE_OPTIONS.map(option => (
+                            <ChipButton
+                                key={option.key}
+                                label={option.label}
+                                emoji={option.emoji}
+                                isSelected={mode === option.key}
+                                onPress={() => { setMode(option.key as QuizMode); if (option.key === 'topic') setSelectedFile(null); }}
+                                isDark={isDark}
+                                C={C}
+                            />
+                        ))}
                     </View>
 
                     {/* Input */}
@@ -774,62 +820,41 @@ export default function GenerateQuizScreen() {
 
                     {/* Difficulty */}
                     <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>DIFFICULTY</Text>
-                    <View style={[cardShadow(C), { marginBottom: 20 }]}>
-                        {DIFFICULTY_OPTIONS.map((opt, index) => {
-                            const isSelected = difficulty === opt.key;
-                            const isLast = index === DIFFICULTY_OPTIONS.length - 1;
-                            return (
-                                <TouchableOpacity
+                    <View style={[cardShadow(C), { marginBottom: 20, padding: 16 }]}> 
+                        <View style={sf.chipRow}>
+                            {DIFFICULTY_OPTIONS.map(opt => (
+                                <ChipButton
                                     key={opt.key}
+                                    label={opt.label}
+                                    emoji={opt.emoji}
+                                    isSelected={difficulty === opt.key}
                                     onPress={() => setDifficulty(opt.key as Difficulty)}
-                                    activeOpacity={0.75}
-                                    style={[
-                                        sf.optRow,
-                                        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-                                    ]}
-                                >
-                                    <View style={[sf.optIcon, { backgroundColor: iconBg }]}>
-                                        <opt.Icon size={20} color="#007AFF" />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[sf.optLabel, { color: C.text }]}>{opt.label}</Text>
-                                        <Text style={[sf.optDesc, { color: C.textSecondary }]}>{opt.desc}</Text>
-                                    </View>
-                                    {isSelected && <CheckCircle size={22} color="#007AFF" />}
-                                </TouchableOpacity>
-                            );
-                        })}
+                                    isDark={isDark}
+                                    C={C}
+                                    small
+                                />
+                            ))}
+                        </View>
                     </View>
 
                     {/* Question Format */}
                     <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>QUESTION FORMAT</Text>
-                    <View style={[cardShadow(C), { marginBottom: 20}]}>
-                        {FORMAT_OPTIONS.map((opt, index) => {
-                            const isSelected = format === opt.key;
-                            const isLast = index === FORMAT_OPTIONS.length - 1;
-                            return (
-                                <TouchableOpacity
+                    <View style={[cardShadow(C), { marginBottom: 20, padding: 16 }]}> 
+                        <View style={sf.chipRow}>
+                            {FORMAT_OPTIONS.map(opt => (
+                                <ChipButton
                                     key={opt.key}
+                                    label={opt.label}
+                                    emoji={opt.emoji}
+                                    isSelected={format === opt.key}
                                     onPress={() => setFormat(opt.key as FormatType)}
-                                    activeOpacity={0.75}
-                                    style={[
-                                        sf.optRow,
-                                        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-                                    ]}
-                                >
-                                    <View style={[sf.optIcon, { backgroundColor: iconBg }]}>
-                                        <opt.Icon size={20} color="#007AFF" />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[sf.optLabel, { color: C.text }]}>{opt.label}</Text>
-                                        <Text style={[sf.optDesc, { color: C.textSecondary }]}>{opt.desc}</Text>
-                                    </View>
-                                    {isSelected && <CheckCircle size={22} color="#007AFF" />}
-                                </TouchableOpacity>
-                            );
-                        })}
+                                    isDark={isDark}
+                                    C={C}
+                                    small
+                                />
+                            ))}
+                        </View>
                     </View>
-
                 </ScrollView>
 
                 {/* Sticky Footer */}
@@ -1490,7 +1515,7 @@ const s = StyleSheet.create({
 
 // ── Setup Form StyleSheet (sf) ───────────────────────────────────────────────
 const sf = StyleSheet.create({
-    header: { paddingHorizontal: 20, paddingBottom: 16 },
+    header: { paddingHorizontal: 24, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1 },
 
     segCtrl: { flexDirection: 'row', borderRadius: 999, padding: 4, marginBottom: 20 },
@@ -1500,6 +1525,13 @@ const sf = StyleSheet.create({
     segBtnActiveLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
     segBtnActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
     segText: { fontSize: 15 },
+    chipRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'nowrap', marginHorizontal: 0, marginBottom: 0 },
+    chipBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 999, borderWidth: 1, marginHorizontal: 6, minHeight: 52, flex: 1, minWidth: 110, maxWidth: 160 },
+    chipSmall: { paddingHorizontal: 10, paddingVertical: 8, minHeight: 44, minWidth: 90, maxWidth: 130 },
+    chipEmojiSmall: { fontSize: 16, marginRight: 8 },
+    chipLabelSmall: { fontSize: 13, fontWeight: '700' },
+    chipEmoji: { fontSize: 18, marginRight: 10 },
+    chipLabel: { fontSize: 14, fontWeight: '700' },
 
     inputCard: { paddingHorizontal: 16, paddingVertical: 4, marginBottom: 24 },
     textInput: { height: 52, fontSize: 16, fontWeight: '500' },

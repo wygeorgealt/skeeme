@@ -21,7 +21,6 @@ function TabBar({ state, descriptors, navigation }: any) {
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
-    const { toggleAccountModal } = useAuthStore();
 
     // Find scan route to get its onPress
     const scanRouteIndex = state.routes.findIndex((r: any) => r.name === 'scan');
@@ -290,7 +289,6 @@ export default function TabLayout() {
                 />
 
                 {/* Hidden screens — accessible via router.push() */}
-                <Tabs.Screen name="flashcards" options={{ href: null }} />
                 <Tabs.Screen name="history" options={{ href: null }} />
                 <Tabs.Screen name="preferences" options={{ href: null }} />
                 <Tabs.Screen name="streak" options={{ href: null }} />

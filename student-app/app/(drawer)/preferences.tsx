@@ -1,8 +1,10 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet } from 'react-native';
+import {
+    View, TextInput, TouchableOpacity, ScrollView, Alert,
+    useColorScheme, StyleSheet, Platform
+} from 'react-native';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-
 import { useAuthStore } from '@/store/authStore';
 import * as ExpoHaptics from 'expo-haptics';
 import { api } from '@/lib/api';
@@ -10,72 +12,106 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import {
-    Diploma,
-    Notebook,
-    MedalRibbonsStar,
-    Case,
-    CheckCircle,
-    LightbulbBolt,
-    DocumentText,
-    CupStar,
-    Stars,
-    Stopwatch,
-    Settings,
-    Heart,
-    Rocket,
-    Compass,
-    Layers,
-    AltArrowLeft
+    Diploma, Notebook, MedalRibbonsStar, Case,
+    LightbulbBolt, DocumentText, CupStar, Stars, Stopwatch,
+    Settings, Heart, Rocket, Compass, Layers, AltArrowLeft,
+    Book
 } from '@solar-icons/react-native/Bold';
 
 import { Colors } from '@/constants/theme';
 
+// ─── Data ──────────────────────────────────────────────────────────────────────
+
 const LEVELS = [
-    { key: 'high_school',   label: 'High School',      Icon: Diploma },
-    { key: 'undergraduate', label: 'Undergraduate',     Icon: Notebook },
-    { key: 'masters',       label: 'Masters / Graduate', Icon: MedalRibbonsStar },
-    { key: 'professional',  label: 'Professional',       Icon: Case },
+    { key: 'high_school',   label: 'High School',       emoji: '🎒', Icon: Diploma },
+    { key: 'undergraduate', label: 'Undergraduate',      emoji: '📘', Icon: Notebook },
+    { key: 'masters',       label: 'Masters / Grad',     emoji: '🎓', Icon: MedalRibbonsStar },
+    { key: 'professional',  label: 'Professional',       emoji: '💼', Icon: Case },
 ];
 
 const STYLES = [
-    { key: 'simple',   label: 'Simple & Easy', desc: 'Everyday language, simplified analogies', Icon: LightbulbBolt },
-    { key: 'detailed', label: 'Detailed',       desc: 'In-depth academic breakdowns',          Icon: DocumentText },
-] as const;
+    { key: 'simple',   label: 'Simple & Easy', desc: 'Everyday language, simplified analogies',  Icon: LightbulbBolt, gradient: ['#667eea', '#764ba2'] as const },
+    { key: 'detailed', label: 'Detailed',       desc: 'In-depth academic breakdowns',             Icon: DocumentText,  gradient: ['#f093fb', '#f5576c'] as const },
+];
 
 const TONES = [
-    { key: 'supportive', label: 'Supportive Coach', desc: 'Warm, highly encouraging cheerleader', Icon: CupStar },
-    { key: 'strict',     label: 'Strict Coach',     desc: 'Serious, rigorous, like a professor',   Icon: MedalRibbonsStar },
-    { key: 'concise',    label: 'Concise & Direct', desc: 'Straight to the point, minimal chatter', Icon: Stopwatch },
-    { key: 'fun',        label: 'Fun & Humorous',   desc: 'Witty, casual, uses pop references',    Icon: Stars },
+    { key: 'supportive', label: 'Supportive',  emoji: '🤗', Icon: CupStar },
+    { key: 'strict',     label: 'Strict',      emoji: '📐', Icon: MedalRibbonsStar },
+    { key: 'concise',    label: 'Concise',     emoji: '⚡', Icon: Stopwatch },
+    { key: 'fun',        label: 'Fun & Witty', emoji: '😂', Icon: Stars },
 ];
 
 const ANALOGIES = [
-    { key: 'general',     label: 'General Academic', desc: 'Standard classroom illustrations',        Icon: Diploma },
-    { key: 'tech',        label: 'Tech & Coding',     desc: 'Software, coding, hardware metaphors',    Icon: Settings },
-    { key: 'sports',      label: 'Sports & Fitness', desc: 'Athletic, training, force and dynamics',   Icon: Heart },
-    { key: 'gaming',      label: 'Gaming & Anime',   desc: 'Levels, RPG stats, gaming lore, fantasy', Icon: Rocket },
-    { key: 'pop_culture', label: 'Pop Culture / Biz', desc: 'Coffee shops, trends, movies, business', Icon: Compass },
+    { key: 'general',     label: 'Academic',   emoji: '📚', Icon: Diploma },
+    { key: 'tech',        label: 'Tech',        emoji: '💻', Icon: Settings },
+    { key: 'sports',      label: 'Sports',      emoji: '⚽', Icon: Heart },
+    { key: 'gaming',      label: 'Gaming',      emoji: '🎮', Icon: Rocket },
+    { key: 'pop_culture', label: 'Pop Culture', emoji: '🎬', Icon: Compass },
 ];
 
 const GOALS = [
-    { key: 'conceptual', label: 'Conceptual Deep-Dive', desc: 'First-principles and core theory focus',  Icon: Notebook },
-    { key: 'exam',       label: 'Exam Prep Tactics',     desc: 'High-yield tips, drills, common traps', Icon: Layers },
-    { key: 'cheat',      label: 'Quick Cheat-Sheet',     desc: 'Mnemonics, active recall, summaries',   Icon: DocumentText },
+    { key: 'conceptual', label: 'Deep Dive',    desc: 'First-principles and core theory',    Icon: Book, gradient: ['#4facfe', '#00f2fe'] as const },
+    { key: 'exam',       label: 'Exam Prep',    desc: 'High-yield tips, drills, traps',       Icon: MedalRibbonsStar, gradient: ['#f7971e', '#ffd200'] as const },
+    { key: 'cheat',      label: 'Cheat Sheet',  desc: 'Mnemonics, recall, summaries',         Icon: DocumentText, gradient: ['#56ab2f', '#a8e063'] as const },
 ];
 
-// ─── Card shadow helper ───────────────────────────────────────────────────────
-const cardStyle = (C: typeof Colors.light) => ({
-    backgroundColor: C.card,
-    borderRadius: 20,
-    shadowColor: C.cardShadowColor,
-    shadowOpacity: C.cardShadowOpacity,
-    shadowRadius: C.cardShadowRadius,
-    shadowOffset: C.cardShadowOffset,
-    elevation: C.cardElevation,
-});
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
+/** Chip pill — used for Academic Level, AI Tone, Analogy Focus */
+function ChipButton({
+    label, emoji, isSelected, onPress, isDark, C,
+}: {
+    label: string; emoji: string; isSelected: boolean;
+    onPress: () => void; isDark: boolean; C: typeof Colors.light;
+}) {
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.75}
+            style={[
+                styles.chip,
+                isSelected
+                    ? { backgroundColor: '#007AFF', borderColor: '#007AFF' }
+                    : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F2F4F8', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E0E4EF' },
+            ]}
+        >
+            <Text style={styles.chipEmoji}>{emoji}</Text>
+            <Text style={[styles.chipLabel, { color: isSelected ? '#fff' : C.text }]}>{label}</Text>
+        </TouchableOpacity>
+    );
+}
+
+/** Large gradient card — used for Learning Style and Study Goal */
+function GradientCard({
+    label, desc, isSelected, onPress, Icon, gradient,
+}: {
+    label: string; desc: string; isSelected: boolean;
+    onPress: () => void; Icon: any;
+    gradient: readonly [string, string];
+}) {
+    return (
+        <TouchableOpacity onPress={onPress} activeOpacity={0.82} style={styles.gradCard}>
+            <LinearGradient
+                colors={isSelected ? gradient : ['#2C2C2E', '#1C1C1E']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.gradCardInner, isSelected && styles.gradCardSelected]}
+            >
+                <View style={styles.gradCardIconWrap}>
+                    <Icon size={22} color={isSelected ? '#fff' : 'rgba(255,255,255,0.4)'} />
+                </View>
+                <Text style={[styles.gradCardLabel, !isSelected && { opacity: 0.55 }]}>{label}</Text>
+                <Text style={[styles.gradCardDesc, !isSelected && { opacity: 0.35 }]}>{desc}</Text>
+            </LinearGradient>
+        </TouchableOpacity>
+    );
+}
+
+// ─── Screen ────────────────────────────────────────────────────────────────────
 
 export default function PreferencesScreen() {
     const { user, updateUser } = useAuthStore();
@@ -84,14 +120,12 @@ export default function PreferencesScreen() {
     const [level, setLevel] = useState<string>(prefs?.education_level || '');
     const [field, setField] = useState<string>(prefs?.field_of_study || '');
     const [style, setStyle] = useState<string>(prefs?.learning_style || '');
-    
-    // New parameters
     const [tone, setTone] = useState<string>(prefs?.tone || 'supportive');
     const [analogyFocus, setAnalogyFocus] = useState<string>(prefs?.analogy_focus || 'general');
     const [academicGoal, setAcademicGoal] = useState<string>(prefs?.academic_goal || 'conceptual');
     const [customWeakness, setCustomWeakness] = useState<string>(prefs?.custom_weakness || '');
-
     const [saving, setSaving] = useState(false);
+
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
@@ -124,7 +158,7 @@ export default function PreferencesScreen() {
             updateUser({ ai_preferences: res.data.ai_preferences });
             haptics.notificationAsync(ExpoHaptics.NotificationFeedbackType.Success, true);
             Alert.alert('Saved!', 'Your AI will now adapt to your preferences.', [
-                { text: 'OK', onPress: () => router.replace('/') },
+                { text: 'Got it', onPress: () => router.replace('/') },
             ]);
         } catch (e: any) {
             haptics.notificationAsync(ExpoHaptics.NotificationFeedbackType.Error, true);
@@ -134,273 +168,290 @@ export default function PreferencesScreen() {
         }
     };
 
-    const iconBg = isDark ? 'rgba(0,122,255,0.15)' : '#EBF3FF';
-
     return (
-        <View style={{ flex: 1, backgroundColor: C.background }}>
-            {/* Header */}
-            <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        activeOpacity={0.7}
-                        style={{
-                            width: 40, height: 40, borderRadius: 12,
-                            alignItems: 'center', justifyContent: 'center',
-                            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9'
-                        }}
-                    >
-                        <AltArrowLeft size={24} color={C.text} />
-                    </TouchableOpacity>
-                    <Text style={[s.title, { color: C.text, marginBottom: 0 }]}>Personalize</Text>
-                </View>
-                <Text style={[s.subtitle, { color: C.textSecondary }]}>
-                    Tailor your AI experience to match your academic level and learning preferences.
+        <View style={[styles.screen, { backgroundColor: C.background }]}>
+
+            {/* ── Hero Header ── */}
+            <Animated.View entering={FadeInUp.duration(500)} style={[styles.hero, { paddingTop: Math.max(insets.top, 16) }]}>
+                <TouchableOpacity
+                    onPress={() => router.canGoBack() ? router.back() : router.replace('/')}
+                    activeOpacity={0.7}
+                    style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
+                >
+                    <AltArrowLeft size={22} color={C.text} />
+                </TouchableOpacity>
+                <Text style={[styles.heroTitle, { color: C.text }]}>Make your AI{'\n'}truly <Text style={{ color: '#007AFF' }}>yours</Text>.</Text>
+                <Text style={[styles.heroSub, { color: C.textSecondary }]}>
+                    Your tutor adapts its tone, depth, and analogies based on these settings.
                 </Text>
-            </View>
+            </Animated.View>
 
             <ScrollView
-                style={s.scrollView}
-                contentContainerStyle={{ paddingBottom: 220 }}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 220 }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Academic Level */}
-                <Animated.View entering={FadeInDown.delay(80)} style={s.section}>
-                    <Text style={[s.sectionLabel, { color: C.textTertiary }]}>ACADEMIC LEVEL</Text>
-                    <View style={cardStyle(C)}>
-                        {LEVELS.map((item, index) => {
-                            const isSelected = level === item.key;
-                            const isLast = index === LEVELS.length - 1;
-                            return (
-                                <TouchableOpacity
-                                    key={item.key}
-                                    onPress={() => { haptics.selectionAsync(); setLevel(isSelected ? '' : item.key); }}
-                                    activeOpacity={0.75}
-                                    style={[
-                                        s.row,
-                                        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-                                    ]}
-                                >
-                                    <View style={[s.iconBox, { backgroundColor: isSelected ? 'rgba(0,122,255,0.15)' : iconBg }]}>
-                                        <item.Icon size={20} color={isSelected ? '#007AFF' : '#007AFF'} />
-                                    </View>
-                                    <Text style={[s.rowLabel, { color: C.text }]}>{item.label}</Text>
-                                    {isSelected && (
-                                        <CheckCircle size={24} color="#007AFF" />
-                                    )}
-                                </TouchableOpacity>
-                            );
-                        })}
+                {/* ── Academic Level ── */}
+                <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.section}>
+                    <SectionLabel label="🎓 Academic Level" />
+                    <View style={styles.chipRow}>
+                        {LEVELS.map(item => (
+                            <ChipButton
+                                key={item.key}
+                                label={item.label}
+                                emoji={item.emoji}
+                                isSelected={level === item.key}
+                                onPress={() => { haptics.selectionAsync(); setLevel(level === item.key ? '' : item.key); }}
+                                isDark={isDark}
+                                C={C}
+                            />
+                        ))}
                     </View>
                 </Animated.View>
 
-                {/* Field of Study */}
-                <Animated.View entering={FadeInDown.delay(160)} style={s.section}>
-                    <Text style={[s.sectionLabel, { color: C.textTertiary }]}>FIELD OF STUDY</Text>
-                    <View style={[cardStyle(C), s.inputCard]}>
+                {/* ── Field of Study ── */}
+                <Animated.View entering={FadeInDown.delay(160).duration(400)} style={styles.section}>
+                    <SectionLabel label="📖 Field of Study" />
+                    <View style={[styles.inputCard, {
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F8F9FB',
+                        borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E8ECF4',
+                    }]}>
                         <TextInput
                             value={field}
                             onChangeText={setField}
                             placeholder="E.g. Computer Science, Medicine..."
                             placeholderTextColor={C.textTertiary}
-                            style={[s.textInput, { color: C.text }]}
+                            style={[styles.textInput, { color: C.text }]}
                         />
                     </View>
                 </Animated.View>
 
-                {/* Learning Style */}
-                <Animated.View entering={FadeInDown.delay(240)} style={s.section}>
-                    <Text style={[s.sectionLabel, { color: C.textTertiary }]}>LEARNING STYLE</Text>
-                    <View style={cardStyle(C)}>
-                        {STYLES.map((item, index) => {
-                            const isSelected = style === item.key;
-                            const isLast = index === STYLES.length - 1;
-                            return (
-                                <TouchableOpacity
-                                    key={item.key}
-                                    onPress={() => { haptics.selectionAsync(); setStyle(isSelected ? '' : item.key); }}
-                                    activeOpacity={0.75}
-                                    style={[
-                                        s.row,
-                                        s.rowTall,
-                                        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-                                    ]}
-                                >
-                                    <View style={[s.iconBox, { backgroundColor: isSelected ? 'rgba(0,122,255,0.15)' : iconBg }]}>
-                                        <item.Icon size={20} color={isSelected ? '#007AFF' : '#007AFF'} />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[s.rowLabel, { color: C.text }]}>{item.label}</Text>
-                                        <Text style={[s.rowDesc, { color: C.textSecondary }]}>{item.desc}</Text>
-                                    </View>
-                                    {isSelected && <CheckCircle size={24} color="#007AFF" />}
-                                </TouchableOpacity>
-                            );
-                        })}
+                {/* ── Learning Style ── */}
+                <Animated.View entering={FadeInDown.delay(240).duration(400)} style={styles.section}>
+                    <SectionLabel label="💡 Learning Style" />
+                    <View style={styles.gradRow}>
+                        {STYLES.map(item => (
+                            <GradientCard
+                                key={item.key}
+                                label={item.label}
+                                desc={item.desc}
+                                isSelected={style === item.key}
+                                onPress={() => { haptics.selectionAsync(); setStyle(style === item.key ? '' : item.key); }}
+                                Icon={item.Icon}
+                                gradient={item.gradient}
+                            />
+                        ))}
                     </View>
                 </Animated.View>
 
-                {/* AI Tutor Personality */}
-                <Animated.View entering={FadeInDown.delay(320)} style={s.section}>
-                    <Text style={[s.sectionLabel, { color: C.textTertiary }]}>AI PERSONALITY</Text>
-                    <View style={cardStyle(C)}>
-                        {TONES.map((item, index) => {
-                            const isSelected = tone === item.key;
-                            const isLast = index === TONES.length - 1;
-                            return (
-                                <TouchableOpacity
-                                    key={item.key}
-                                    onPress={() => { haptics.selectionAsync(); setTone(item.key); }}
-                                    activeOpacity={0.75}
-                                    style={[
-                                        s.row,
-                                        s.rowTall,
-                                        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-                                    ]}
-                                >
-                                    <View style={[s.iconBox, { backgroundColor: isSelected ? 'rgba(0,122,255,0.15)' : iconBg }]}>
-                                        <item.Icon size={20} color={isSelected ? '#007AFF' : '#007AFF'} />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[s.rowLabel, { color: C.text }]}>{item.label}</Text>
-                                        <Text style={[s.rowDesc, { color: C.textSecondary }]}>{item.desc}</Text>
-                                    </View>
-                                    {isSelected && <CheckCircle size={24} color="#007AFF" />}
-                                </TouchableOpacity>
-                            );
-                        })}
+                {/* ── AI Personality / Tone ── */}
+                <Animated.View entering={FadeInDown.delay(320).duration(400)} style={styles.section}>
+                    <SectionLabel label="🤖 AI Personality" />
+                    <View style={styles.chipRow}>
+                        {TONES.map(item => (
+                            <ChipButton
+                                key={item.key}
+                                label={item.label}
+                                emoji={item.emoji}
+                                isSelected={tone === item.key}
+                                onPress={() => { haptics.selectionAsync(); setTone(item.key); }}
+                                isDark={isDark}
+                                C={C}
+                            />
+                        ))}
                     </View>
                 </Animated.View>
 
-                {/* Analogy Focus */}
-                <Animated.View entering={FadeInDown.delay(400)} style={s.section}>
-                    <Text style={[s.sectionLabel, { color: C.textTertiary }]}>ANALOGY FOCUS / INTERESTS</Text>
-                    <View style={cardStyle(C)}>
-                        {ANALOGIES.map((item, index) => {
-                            const isSelected = analogyFocus === item.key;
-                            const isLast = index === ANALOGIES.length - 1;
-                            return (
-                                <TouchableOpacity
-                                    key={item.key}
-                                    onPress={() => { haptics.selectionAsync(); setAnalogyFocus(item.key); }}
-                                    activeOpacity={0.75}
-                                    style={[
-                                        s.row,
-                                        s.rowTall,
-                                        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-                                    ]}
-                                >
-                                    <View style={[s.iconBox, { backgroundColor: isSelected ? 'rgba(0,122,255,0.15)' : iconBg }]}>
-                                        <item.Icon size={20} color={isSelected ? '#007AFF' : '#007AFF'} />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[s.rowLabel, { color: C.text }]}>{item.label}</Text>
-                                        <Text style={[s.rowDesc, { color: C.textSecondary }]}>{item.desc}</Text>
-                                    </View>
-                                    {isSelected && <CheckCircle size={24} color="#007AFF" />}
-                                </TouchableOpacity>
-                            );
-                        })}
+                {/* ── Analogy Focus ── */}
+                <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.section}>
+                    <SectionLabel label="🔗 Analogy Style" />
+                    <View style={styles.chipRow}>
+                        {ANALOGIES.map(item => (
+                            <ChipButton
+                                key={item.key}
+                                label={item.label}
+                                emoji={item.emoji}
+                                isSelected={analogyFocus === item.key}
+                                onPress={() => { haptics.selectionAsync(); setAnalogyFocus(item.key); }}
+                                isDark={isDark}
+                                C={C}
+                            />
+                        ))}
                     </View>
                 </Animated.View>
 
-                {/* Academic Goal */}
-                <Animated.View entering={FadeInDown.delay(480)} style={s.section}>
-                    <Text style={[s.sectionLabel, { color: C.textTertiary }]}>STUDY GOAL & FOCUS</Text>
-                    <View style={cardStyle(C)}>
-                        {GOALS.map((item, index) => {
-                            const isSelected = academicGoal === item.key;
-                            const isLast = index === GOALS.length - 1;
-                            return (
-                                <TouchableOpacity
-                                    key={item.key}
-                                    onPress={() => { haptics.selectionAsync(); setAcademicGoal(item.key); }}
-                                    activeOpacity={0.75}
-                                    style={[
-                                        s.row,
-                                        s.rowTall,
-                                        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator },
-                                    ]}
-                                >
-                                    <View style={[s.iconBox, { backgroundColor: isSelected ? 'rgba(0,122,255,0.15)' : iconBg }]}>
-                                        <item.Icon size={20} color={isSelected ? '#007AFF' : '#007AFF'} />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[s.rowLabel, { color: C.text }]}>{item.label}</Text>
-                                        <Text style={[s.rowDesc, { color: C.textSecondary }]}>{item.desc}</Text>
-                                    </View>
-                                    {isSelected && <CheckCircle size={24} color="#007AFF" />}
-                                </TouchableOpacity>
-                            );
-                        })}
+                {/* ── Study Goal ── */}
+                <Animated.View entering={FadeInDown.delay(480).duration(400)} style={styles.section}>
+                    <SectionLabel label="🎯 Study Goal" />
+                    <View style={styles.gradRow}>
+                        {GOALS.map(item => (
+                            <GradientCard
+                                key={item.key}
+                                label={item.label}
+                                desc={item.desc}
+                                isSelected={academicGoal === item.key}
+                                onPress={() => { haptics.selectionAsync(); setAcademicGoal(item.key); }}
+                                Icon={item.Icon}
+                                gradient={item.gradient}
+                            />
+                        ))}
                     </View>
                 </Animated.View>
 
-                {/* Custom Weakness / Instructions */}
-                <Animated.View entering={FadeInDown.delay(560)} style={s.section}>
-                    <Text style={[s.sectionLabel, { color: C.textTertiary }]}>WEAKNESSES / CUSTOM INSTRUCTIONS</Text>
-                    <View style={[cardStyle(C), s.inputCard, { paddingVertical: 12 }]}>
+                {/* ── Custom Instructions ── */}
+                <Animated.View entering={FadeInDown.delay(560).duration(400)} style={styles.section}>
+                    <SectionLabel label="✍️ Custom Instructions" />
+                    <View style={[styles.inputCard, styles.inputCardMulti, {
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F8F9FB',
+                        borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E8ECF4',
+                    }]}>
                         <TextInput
                             value={customWeakness}
                             onChangeText={setCustomWeakness}
-                            placeholder="E.g. Explain like I'm 5; focus on step-by-step math conversions; use analogies related to anime..."
+                            placeholder={"E.g. Explain like I'm 5; focus on step-by-step math; use anime analogies..."}
                             placeholderTextColor={C.textTertiary}
                             multiline
-                            numberOfLines={3}
+                            numberOfLines={4}
                             maxLength={500}
-                            style={[s.textInput, { color: C.text, height: 100, textAlignVertical: 'top' }]}
+                            style={[styles.textInput, styles.textInputMulti, { color: C.text }]}
                         />
-                        <Text style={{ alignSelf: 'flex-end', fontSize: 10, color: C.textTertiary, marginTop: 4 }}>
-                            {customWeakness.length}/500 chars
+                        <Text style={[styles.charCount, { color: C.textTertiary }]}>
+                            {customWeakness.length}/500
                         </Text>
                     </View>
                 </Animated.View>
             </ScrollView>
 
+            {/* ── Sticky Save Footer ── */}
             <BlurView
-                intensity={50}
+                intensity={60}
                 tint={isDark ? 'dark' : 'light'}
-                style={[s.footer, {
-                    paddingBottom: Math.max(insets.bottom, 16) + 75,
-                    backgroundColor: 'transparent',
-                    borderTopWidth: 0,
-                }]}
+                style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) + 75 }]}
             >
                 <TouchableOpacity
                     onPress={handleSave}
                     disabled={saving}
                     activeOpacity={0.85}
-                    style={s.saveBtn}
+                    style={styles.saveBtn}
                 >
-                    {saving
-                        ? <LoadingSpinner size={24} color="white" strokeWidth={3} />
-                        : <Text style={s.saveBtnText}>Save Preferences</Text>
-                    }
+                    <LinearGradient
+                        colors={['#0A84FF', '#007AFF']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.saveBtnGrad}
+                    >
+                        {saving
+                            ? <LoadingSpinner size={24} color="white" strokeWidth={3} />
+                            : <Text style={styles.saveBtnText}>Save Preferences</Text>
+                        }
+                    </LinearGradient>
                 </TouchableOpacity>
             </BlurView>
         </View>
     );
 }
 
-const s = StyleSheet.create({
-    header: { paddingHorizontal: 20, paddingBottom: 20 },
-    title: { fontSize: 34, fontWeight: '800', letterSpacing: -1, marginBottom: 6 },
-    subtitle: { fontSize: 14, fontWeight: '400', lineHeight: 20 },
+function SectionLabel({ label }: { label: string }) {
+    return <Text style={styles.sectionLabel}>{label}</Text>;
+}
 
-    scrollView: { flex: 1, paddingHorizontal: 16 },
-    section: { marginBottom: 28 },
-    sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, marginLeft: 4 },
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
-    row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14, minHeight: 58 },
-    rowTall: { paddingVertical: 16, minHeight: 72 },
-    iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    rowLabel: { flex: 1, fontSize: 16, fontWeight: '600' },
-    rowDesc: { fontSize: 13, marginTop: 2, fontFamily: 'Outfit-Regular' },
+const styles = StyleSheet.create({
+    screen: { flex: 1 },
 
-    inputCard: { paddingHorizontal: 16, paddingVertical: 4 },
-    textInput: { height: 52, fontSize: 16, fontWeight: '500', fontFamily: 'Outfit-Medium' },
+    // Hero Header
+    hero: {
+        paddingHorizontal: 22,
+        paddingBottom: 24,
+    },
+    backBtn: {
+        width: 42, height: 42, borderRadius: 14,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 20,
+    },
+    heroBadge: {
+        alignSelf: 'flex-start',
+        backgroundColor: 'rgba(0,122,255,0.12)',
+        borderRadius: 100,
+        paddingHorizontal: 12, paddingVertical: 5,
+        marginBottom: 12,
+    },
+    heroBadgeText: {
+        color: '#007AFF', fontSize: 12, fontWeight: '700', letterSpacing: 0.3,
+    },
+    heroTitle: {
+        fontSize: 36, fontWeight: '900', letterSpacing: -1.2, lineHeight: 42, marginBottom: 10,
+    },
+    heroSub: {
+        fontSize: 14, lineHeight: 21, fontWeight: '400',
+    },
 
-    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16 },
-    saveBtn: { width: '100%', height: 56, borderRadius: 100, backgroundColor: '#007AFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
-    saveBtnText: { color: 'white', fontWeight: '700', fontSize: 16 },
+    // Sections
+    section: { marginBottom: 30 },
+    sectionLabel: {
+        fontSize: 15, fontWeight: '700', marginBottom: 12, color: '#007AFF',
+    },
+
+    // Chips
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    chip: {
+        flexDirection: 'row', alignItems: 'center', gap: 6,
+        paddingHorizontal: 14, paddingVertical: 10,
+        borderRadius: 100, borderWidth: 1.5,
+    },
+    chipEmoji: { fontSize: 15 },
+    chipLabel: { fontSize: 14, fontWeight: '600' },
+
+    // Gradient Cards
+    gradRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    gradCard: { width: '47%' },
+    gradCardInner: {
+        borderRadius: 20, padding: 18, minHeight: 130,
+        justifyContent: 'flex-end', overflow: 'hidden',
+    },
+    gradCardSelected: {
+        shadowColor: '#007AFF',
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 8,
+    },
+    gradCardIconWrap: {
+        width: 42, height: 42, borderRadius: 13,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 14,
+    },
+    gradCardLabel: { color: '#fff', fontSize: 15, fontWeight: '800', marginBottom: 4 },
+    gradCardDesc: { color: 'rgba(255,255,255,0.8)', fontSize: 12, lineHeight: 16 },
+    gradCardCheck: {
+        position: 'absolute', top: 12, right: 12,
+        backgroundColor: 'rgba(255,255,255,0.25)',
+        borderRadius: 100, padding: 4,
+    },
+
+    // Inputs
+    inputCard: {
+        borderRadius: 18, borderWidth: 1.5,
+        paddingHorizontal: 16,
+    },
+    inputCardMulti: { paddingBottom: 10 },
+    textInput: { height: 52, fontSize: 16, fontWeight: '500' },
+    textInputMulti: { height: 110, textAlignVertical: 'top', paddingTop: 14 },
+    charCount: { fontSize: 11, alignSelf: 'flex-end', marginTop: 4 },
+
+    // Footer
+    footer: {
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        paddingHorizontal: 20, paddingTop: 16,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: 'rgba(128,128,128,0.2)',
+    },
+    saveBtn: { borderRadius: 100, overflow: 'hidden' },
+    saveBtnGrad: {
+        height: 56, alignItems: 'center', justifyContent: 'center',
+        borderRadius: 100,
+    },
+    saveBtnText: { color: 'white', fontWeight: '800', fontSize: 16, letterSpacing: 0.2 },
 });
