@@ -86,6 +86,7 @@ class FileExtractionService
 
     /**
      * Only use Document AI for PDFs within the page limit.
+     * Document AI standard mode supports up to 15 pages.
      */
     protected function shouldUseDocumentAiForPdf(string $filePath): bool
     {
@@ -93,8 +94,8 @@ class FileExtractionService
             $parser = new PdfParser();
             $pdf = $parser->parseFile($filePath);
             $pageCount = count($pdf->getPages());
-            if ($pageCount > 30) {
-                Log::info("FileExtractionService: PDF page count {$pageCount} exceeds Document AI limit, using fallback extraction.");
+            if ($pageCount > 15) {
+                Log::info("FileExtractionService: PDF page count {$pageCount} exceeds Document AI limit (15 pages), using fallback extraction.");
                 return false;
             }
             return true;

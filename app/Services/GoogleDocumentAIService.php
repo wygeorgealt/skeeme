@@ -4,7 +4,6 @@ namespace App\Services;
 
 use Google\Cloud\DocumentAI\V1\Client\DocumentProcessorServiceClient;
 use Google\Cloud\DocumentAI\V1\ProcessRequest;
-use Google\Cloud\DocumentAI\V1\ProcessOptions;
 use Google\Cloud\DocumentAI\V1\RawDocument;
 use Illuminate\Support\Facades\Log;
 
@@ -68,14 +67,9 @@ class GoogleDocumentAIService
 
             $name = $client->processorName($this->projectId, $this->location, $this->processorId);
 
-            $processOptions = new ProcessOptions([
-                'enable_native_pdf_parsing' => true,
-            ]);
-
             $request = new ProcessRequest([
                 'name' => $name,
                 'raw_document' => $rawDocument,
-                'process_options' => $processOptions,
             ]);
 
             $response = $client->processDocument($request);
