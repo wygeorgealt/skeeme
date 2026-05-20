@@ -113,9 +113,13 @@ class FileExtractionService
         $useErrors = libxml_use_internal_errors(true);
         $phpWord = null;
         try {
-            $phpWord = WordIOFactory::load($filePath);
+            // Suppress warnings for unsupported MathML tags; fallback will handle extraction
+            @$phpWord = WordIOFactory::load($filePath);
         } catch (\Exception $e) {
-            Log::warning("FileExtractionService: PHPWord failed to load DOCX (" . $e->getMessage() . "), using ZipArchive fallback.");
+            $errorMsg = $e->getMessage();
+            // MathML parsing failures are expected with complex documents; use info level
+            $logLevel = str_contains($errorMsg, 'not implemented') ? 'info' : 'warning';
+            Log::$logLevel("FileExtractionService: PHPWord failed to load DOCX (" . $errorMsg . "), using ZipArchive fallback.");
             return $this->extractDocxTextFallback($filePath);
         } finally {
             libxml_clear_errors();

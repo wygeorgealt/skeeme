@@ -6,8 +6,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Colors } from '@/constants/theme';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { SparklesIcon, CheckmarkCircle01Icon, Alert01Icon, ArrowLeft01Icon, ArrowRight01Icon, Tick01Icon, ReloadIcon } from '@hugeicons/core-free-icons';
+import { CheckCircle, AltArrowLeft, AltArrowRight, Refresh, DangerTriangle, LightbulbBolt } from '@solar-icons/react-native/Bold';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { MathText } from '@/components/ui/MathText';
 import { useAuthStore } from '@/store/authStore';
@@ -109,7 +108,7 @@ const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: 
         <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderRadius: 24, padding: 32, justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 8, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent' }}>
             <View style={{ position: 'absolute', top: 24, left: 24, right: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1 }}>{type}</Text>
-                {type === 'QUESTION' ? <HugeiconsIcon icon={SparklesIcon} size={20} color="#007AFF" /> : <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} color="#34C759" />}
+                {type === 'QUESTION' ? <LightbulbBolt size={20} color="#007AFF" /> : <CheckCircle size={20} color="#34C759" />}
             </View>
 
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -182,7 +181,7 @@ export default function StudyDeckScreen() {
         return [...base, ...streaming];
     }, [deck?.flashcards, streamingCards]);
 
-    const totalCards = Math.max(cards.length, parseInt(card_count as string) || 0);
+    const totalCards = parseInt(card_count as string) || 0;
     const maxVisibleDots = 15;
     const visibleDotCount = Math.min(cards.length, maxVisibleDots);
     const dotWindowStart = cards.length > visibleDotCount
@@ -190,7 +189,18 @@ export default function StudyDeckScreen() {
         : 0;
     const visibleDotIndexes = Array.from({ length: visibleDotCount }, (_, idx) => dotWindowStart + idx);
     const activeDotIndex = currentIndex - dotWindowStart;
-    const headerTitle = deck?.title || (isGenerating ? `Generating ${cards.length}/${totalCards}` : 'Study Deck');
+    
+    // Decode title if it's URL-encoded
+    const decodedTitle = deck?.title 
+        ? decodeURIComponent(deck.title).replace(/\.pdf$|\.docx?$|\.txt$|\.md$/i, '')
+        : '';
+    
+    // Show generation progress while generating (X/30), otherwise show card counter (X of Y)
+    const cardCounterDisplay = isGenerating 
+        ? `${cards.length}/${totalCards}`
+        : `${currentIndex + 1}/${cards.length}`;
+    
+    const headerTitle = decodedTitle || (isGenerating ? 'Generating...' : 'Study Deck');
 
     // Sync animation for loading state
     useEffect(() => {
@@ -258,9 +268,19 @@ export default function StudyDeckScreen() {
             if (event.data === '[DONE]') {
                 es.close();
                 esRef.current = null;
-                setIsGenerating(false);
-                queryClient.invalidateQueries({ queryKey: ['deck', id] });
-                refetch(); // Final sync with DB
+                
+                // Wait longer to ensure backend has persisted all cards, then refetch
+                // Don't set isGenerating = false until cards are confirmed in DB
+                setTimeout(() => {
+                    queryClient.invalidateQueries({ queryKey: ['deck', id] });
+                    refetch().then(() => {
+                        // Only stop generating after DB cards are loaded
+                        setIsGenerating(false);
+                    }).catch(() => {
+                        // Even on error, stop generating after timeout
+                        setIsGenerating(false);
+                    });
+                }, 1000); // Wait 1s for DB persistence
                 return;
             }
 
@@ -434,7 +454,7 @@ export default function StudyDeckScreen() {
     if (error && !deck) return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.errorCenter}>
-                <HugeiconsIcon icon={Alert01Icon} size={64} color="#ef4444" />
+                <DangerTriangle size={64} color="#ef4444" />
                 <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Deck not found</Text>
                 <Text style={s.errorSubtitle}>
                     We couldn't load this flashcard deck. It might have been deleted or there was a connection issue.
@@ -461,7 +481,8 @@ export default function StudyDeckScreen() {
         </View>
     );
 
-    if (!deck || !deck.flashcards || (!isGenerating && deck.flashcards.length === 0)) return (
+    // Show "no cards" only if we're NOT generating AND don't have streaming cards AND deck is empty
+    if (!deck || !deck.flashcards || (!isGenerating && streamingCards.length === 0 && deck.flashcards.length === 0)) return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.errorCenter}>
                 <Text style={s.noCardsText}>No cards found in this deck.</Text>
@@ -509,7 +530,7 @@ export default function StudyDeckScreen() {
                     <Animated.View entering={ZoomIn.duration(800)}>
                         <View style={s.successIconBox}>
                             <View style={[s.successIconGradient, { backgroundColor: '#34C759' }]}>
-                                <HugeiconsIcon icon={Tick01Icon} size={48} color="white" strokeWidth={3} />
+                                <CheckCircle size={48} color="white" />
                             </View>
                         </View>
                     </Animated.View>
@@ -522,7 +543,7 @@ export default function StudyDeckScreen() {
                     <Animated.View entering={FadeIn.delay(600).duration(600)} style={s.successActions}>
                         <TouchableOpacity onPress={restartSession} activeOpacity={0.8} style={s.flex1}>
                             <View style={[s.outlineBtn, isDark ? s.outlineBtnDark : s.outlineBtnLight]}>
-                                <HugeiconsIcon icon={ReloadIcon} size={20} color={isDark ? 'white' : '#0f172a'} />
+                                <Refresh size={20} color={isDark ? 'white' : '#0f172a'} />
                                 <Text style={[s.outlineBtnText, isDark ? s.textWhite : s.textSlate900]}>Retake</Text>
                             </View>
                         </TouchableOpacity>
@@ -547,24 +568,17 @@ export default function StudyDeckScreen() {
             {/* Header */}
             <View style={[s.headerRow, { paddingBottom: 16 }]}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.backBtn, isDark ? s.bgWhite10 : s.bgWhite60]}>
-                    <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={isDark ? 'white' : '#1e293b'} />
+                    <AltArrowLeft size={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <View style={s.headerTextContainer}>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        {currentIndex + 1} of {totalCards}
+                        {cardCounterDisplay}
                     </Text>
-                    <View style={s.flexRowGap2}>
-                        <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900, { maxWidth: SCREEN_WIDTH * 0.5, marginTop: 4 }]} numberOfLines={1}>
-                            {headerTitle}
-                        </Text>
-                        {isGenerating && (
-                            <Animated.View style={syncAnimatedStyle}>
-                                <HugeiconsIcon icon={SparklesIcon} size={14} color="#007AFF" />
-                            </Animated.View>
-                        )}
-                    </View>
+                    <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900, { maxWidth: SCREEN_WIDTH * 0.65, marginTop: 4 }]} numberOfLines={1}>
+                        {headerTitle}
+                    </Text>
                     {isGenerating && (
-                        <Text style={{ fontSize: 10, color: '#007AFF', fontWeight: '700', marginTop: 2 }}>{genStage}</Text>
+                        <Text style={{ fontSize: 10, color: '#007AFF', fontWeight: '700', marginTop: 4 }}>{genStage}</Text>
                     )}
                 </View>
                 <View style={s.size10} />
@@ -618,7 +632,7 @@ export default function StudyDeckScreen() {
                     >
                         <View style={[s.mainActionGradient, { backgroundColor: '#007AFF' }]}>
                             <Text style={s.mainActionLabel}>Finish Deck</Text>
-                            <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} color="white" />
+                            <CheckCircle size={20} color="white" />
                         </View>
                     </TouchableOpacity>
                 ) : (
@@ -629,7 +643,7 @@ export default function StudyDeckScreen() {
                             activeOpacity={0.7}
                             style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite, currentIndex === 0 && { opacity: 0.3 }]}
                         >
-                            <HugeiconsIcon icon={ArrowLeft01Icon} size={24} color={isDark ? 'white' : '#1e293b'} />
+                            <AltArrowLeft size={24} color={isDark ? 'white' : '#1e293b'} />
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -637,7 +651,7 @@ export default function StudyDeckScreen() {
                             activeOpacity={0.8}
                             style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite]}
                         >
-                            <HugeiconsIcon icon={ArrowRight01Icon} size={24} color={isDark ? 'white' : '#1e293b'} />
+                            <AltArrowRight size={24} color={isDark ? 'white' : '#1e293b'} />
                         </TouchableOpacity>
                     </View>
                 )}

@@ -12,8 +12,7 @@ import Animated, {
     useAnimatedStyle,
 } from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { HugeiconsIcon } from '@hugeicons/react-native';
-import { FireIcon } from '@hugeicons/core-free-icons';
+import { Fire } from '@solar-icons/react-native/Bold';
 import { Text } from './ui/Text';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -135,7 +134,7 @@ export const StreakAnimation: React.FC<StreakAnimationProps> = ({
                 <View style={StyleSheet.absoluteFill}>
                     <View style={styles.content}>
                         <Animated.View style={fireIconStyle}>
-                            <HugeiconsIcon icon={FireIcon} size={size * 0.35} color="#FF4500" />
+                            <Fire size={size * 0.35} color="#FF4500" />
                         </Animated.View>
                         
                         <Animated.View style={[styles.countContainer, countStyle]}>

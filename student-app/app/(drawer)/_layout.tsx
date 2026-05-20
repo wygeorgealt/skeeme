@@ -13,8 +13,6 @@ import { useState } from 'react';
 import { Home, User, CameraAdd } from '@solar-icons/react-native/Bold';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, SharedValue } from 'react-native-reanimated';
 
-// ─── Icons logic moved to TabBar / TabLayout with direct HugeiconsIcon imports ───
-
 // ─── Custom glass tab bar with center camera FAB ─────────────────────────────
 function TabBar({ state, descriptors, navigation }: any) {
     const insets = useSafeAreaInsets();
