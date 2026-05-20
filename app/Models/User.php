@@ -238,20 +238,25 @@ class User extends Authenticatable implements FilamentUser
         \Illuminate\Support\Facades\DB::transaction(function () use ($amount, $actionType, $description, $requestId, $modelUsed) {
             $user = self::where('id', $this->id)->lockForUpdate()->first();
             
+            $oldCredits = $user->credits;
+            
             // Safety net: amount to deduct is limited by current balance
-            $actualDeduction = min($user->credits, $amount);
+            $actualDeduction = min($oldCredits, $amount);
             
             $user->decrement('credits', $actualDeduction);
 
             // If this deduction just emptied a free user's credits, start the 5-hour refill clock
             // via Redis — keeps last_credit_refill_at clean for the monthly cron's 30-day check
             $freshCredits = $user->fresh()->credits;
-            if ($freshCredits <= 0 && $user->getStudentPlan() === 'free') {
+            if ($oldCredits > 0 && $freshCredits <= 0 && $user->getStudentPlan() === 'free') {
                 \Illuminate\Support\Facades\Cache::put(
                     "credits_emptied_at:{$user->id}",
                     now()->toIso8601String(),
                     now()->addDays(30) // 30-day TTL — keeps the stamp safe so refills are never lost
                 );
+                
+                // Dispatch delayed notification job for the 5-hour refill
+                \App\Jobs\NotifyFreeUserCreditRefilled::dispatch($user->id)->delay(now()->addHours(5));
             }
             
             $user->transactions()->create([
