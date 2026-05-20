@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Log;
 
 class GoogleDocumentAIService
 {
-    protected $projectId;
-    protected $location;
-    protected $processorId;
-    protected $credentialsPath;
-    protected $credentialsRaw;
+    protected ?string $projectId;
+    protected string $location;
+    protected ?string $processorId;
+    protected ?string $credentialsPath;
+    protected ?string $credentialsRaw;
 
     public function __construct()
     {

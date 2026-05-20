@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Storage;
 
 class FileExtractionService
 {
-    protected $visionService;
-    protected $docAiService;
+    protected GoogleVisionService $visionService;
+    protected GoogleDocumentAIService $docAiService;
 
     public function __construct(GoogleVisionService $visionService, GoogleDocumentAIService $docAiService)
     {
@@ -141,7 +141,7 @@ class FileExtractionService
     /**
      * Helper to extract text from nested PHPWord elements
      */
-    protected function extractNestedText($container): string
+    protected function extractNestedText(object $container): string
     {
         $text = '';
         foreach ($container->getElements() as $element) {
