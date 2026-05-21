@@ -32,7 +32,13 @@ class NotifyFreeUserCreditRefilled implements ShouldQueue
     {
         $user = User::find($this->userId);
         
-        if (!$user || $user->getStudentPlan() !== 'free' || !$user->expo_push_token || !$user->notifications_enabled) {
+        if (!$user) {
+            Log::warning("Credit refill job: User not found", ['user_id' => $this->userId]);
+            return;
+        }
+
+        if ($user->getStudentPlan() !== 'free') {
+            Log::info("Credit refill job: User is not on free plan", ['user_id' => $user->id, 'plan' => $user->getStudentPlan()]);
             return;
         }
 
@@ -40,13 +46,30 @@ class NotifyFreeUserCreditRefilled implements ShouldQueue
 
         // Trigger the refill logic to see if they are eligible now
         $user->checkAndRefillCredits();
-
         $user->refresh();
+
+        Log::info("Credit refill check completed", [
+            'user_id' => $user->id,
+            'credits_before' => $creditsBefore,
+            'credits_after' => $user->credits,
+            'expo_token_exists' => !empty($user->expo_push_token),
+            'notifications_enabled' => $user->notifications_enabled,
+        ]);
 
         // If their credits just went from 0 to >0 during this job, it means the 5 hours just finished
         // and we were the ones to refill it (they didn't trigger it manually by opening the app).
         if ($creditsBefore <= 0 && $user->credits > 0) {
             try {
+                if (!$user->expo_push_token) {
+                    Log::warning("Cannot send credit refill notification: No expo push token", ['user_id' => $user->id]);
+                    return;
+                }
+
+                if (!$user->notifications_enabled) {
+                    Log::warning("Cannot send credit refill notification: Notifications disabled", ['user_id' => $user->id]);
+                    return;
+                }
+
                 $push = app(PushNotificationService::class);
                 $push->send(
                     $user->expo_push_token,
@@ -55,10 +78,27 @@ class NotifyFreeUserCreditRefilled implements ShouldQueue
                     ['screen' => 'home']
                 );
                 
-                Log::info("Free user credit refill push sent", ['user_id' => $user->id]);
+                Log::info("Free user credit refill push sent successfully", [
+                    'user_id' => $user->id,
+                    'credits_before' => $creditsBefore,
+                    'credits_after' => $user->credits,
+                ]);
             } catch (\Exception $e) {
-                Log::error("Credit refill push failed: " . $e->getMessage());
+                Log::error("Credit refill push failed", [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage(),
+                    'trace' => substr($e->getTraceAsString(), 0, 500),
+                ]);
+                // Re-throw to let the queue retry if it's a transient error
+                throw $e;
             }
+        } else {
+            Log::info("Credit refill: No notification needed", [
+                'user_id' => $user->id,
+                'credits_before' => $creditsBefore,
+                'credits_after' => $user->credits,
+                'reason' => $creditsBefore > 0 ? 'User had credits' : 'Refill did not occur',
+            ]);
         }
     }
 }
