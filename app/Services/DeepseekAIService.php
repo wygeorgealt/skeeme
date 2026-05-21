@@ -4,17 +4,18 @@ namespace App\Services;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class DeepseekAIService
 {
-    protected $client;
-    protected $apiKey;
-    protected $baseUrl = 'https://api.deepseek.com/v1';
-    protected $visionService;
-    protected $personalizationService;
-    protected $timeout = 60; // Default 60s
+    protected Client $client;
+    protected string $apiKey;
+    protected string $baseUrl = 'https://api.deepseek.com/v1';
+    protected GoogleVisionService $visionService;
+    protected UserPersonalizationService $personalizationService;
+    protected int $timeout = 60; // Default 60s
 
     public function __construct(GoogleVisionService $visionService)
     {
@@ -1249,11 +1250,12 @@ SYSTEM
      */
     protected function getPersonalizedSystemPrompt(string $basePrompt): string
     {
-        $user = auth()->user();
-        if (!$user) return $basePrompt;
+        $user = Auth::user();
+        if (!$user) {
+            return $basePrompt;
+        }
 
         $context = $this->personalizationService ? $this->personalizationService->getSystemContext($user) : '';
-        
         return $basePrompt . "\n\n" . $context;
     }
 }

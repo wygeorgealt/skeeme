@@ -225,14 +225,29 @@ class FlashcardController extends Controller
         ]);
 
         $title = $validated['topic'] ?? 'New Flashcard Set';
-        
+        $sourceTitle = $title;
+        $sourceContent = '';
+
         if ($request->has('extraction_id')) {
             $extractionData = Cache::get("extraction_{$validated['extraction_id']}");
-            if ($extractionData && isset($extractionData['original_name'])) {
-                $title = $extractionData['original_name'];
+            if ($extractionData) {
+                if (isset($extractionData['original_name'])) {
+                    $sourceTitle = urldecode($extractionData['original_name']);
+                    $title = $sourceTitle;
+                }
+                $sourceContent = $extractionData['text'] ?? '';
             }
         } elseif ($request->hasFile('file')) {
-            $title = $request->file('file')->getClientOriginalName();
+            $file = $request->file('file');
+            $sourceTitle = urldecode($file->getClientOriginalName());
+            $title = $sourceTitle;
+            $sourceContent = $this->extractionService->extractText($file->getPathname(), $file->getClientOriginalExtension());
+        } else {
+            $sourceContent = $validated['topic'] ?? '';
+        }
+
+        if (($request->has('extraction_id') || $request->hasFile('file')) && !empty(trim($sourceContent))) {
+            $title = $this->generateDeckTitle($sourceContent, $title);
         }
 
         $deck = FlashcardDeck::create([
@@ -241,22 +256,46 @@ class FlashcardController extends Controller
             'source_type' => ($request->hasFile('file') || $request->has('extraction_id')) ? 'file' : 'topic',
         ]);
 
-        $sourceContent = '';
-        if ($request->has('extraction_id')) {
-            $extractionData = Cache::get("extraction_{$validated['extraction_id']}");
-            $sourceContent = $extractionData ? $extractionData['text'] : '';
-        } elseif ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $sourceContent = $this->extractionService->extractText($file->getPathname(), $file->getClientOriginalExtension());
-        } else {
-            $sourceContent = $validated['topic'] ?? '';
-        }
-
         if (!empty(trim((string)$sourceContent))) {
             Cache::put("deck_{$deck->id}_source", $sourceContent, now()->addMinutes(60));
         }
 
         return response()->json(['data' => $deck]);
+    }
+
+    /**
+     * Generate a friendly title for a file-based deck, falling back to the original name.
+     */
+    protected function generateDeckTitle(string $sourceContent, string $fallbackTitle): string
+    {
+        $sourceContent = trim($sourceContent);
+        if (empty($sourceContent)) {
+            return $fallbackTitle;
+        }
+
+        $summaryPrompt = "Create a short, descriptive flashcard deck title based on the following document content. " .
+            "Return only the title, no extra explanation, and keep it under 8 words.\n\n" .
+            Str::limit($sourceContent, 3000, '');
+
+        $activeProvider = \App\Models\SystemSetting::getActiveAIProvider()['provider'] ?? 'anthropic';
+        $service = $activeProvider === 'deepseek' ? $this->deepseek : $this->aiService;
+
+        try {
+            $generated = trim($service->generateText($summaryPrompt, 'You are an expert educational assistant. Provide a short deck title.'));
+            $generated = preg_replace('/^Title:\s*/i', '', $generated);
+            $generated = trim($generated, "\"' .-\t\n\r");
+
+            if (!empty($generated)) {
+                return Str::limit($generated, 80, '');
+            }
+        } catch (\Exception $e) {
+            Log::warning('[Flashcard Title Generation Failed]', [
+                'message' => $e->getMessage(),
+                'fallback' => $fallbackTitle,
+            ]);
+        }
+
+        return $fallbackTitle;
     }
 
     /**

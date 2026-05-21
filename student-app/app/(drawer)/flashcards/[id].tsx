@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect, memo, useMemo, useCallback } from 'react';
-import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, LayoutAnimation, Alert } from 'react-native';
+import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, LayoutAnimation, Alert, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -63,7 +63,7 @@ const REWARD_MESSAGES = [
 ];
 
 
-const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: boolean; isDark: boolean }) => {
+const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Card; isActive: boolean; isDark: boolean; isGenerating: boolean }) => {
     const flipAnim = useSharedValue(0);
     const scaleAnim = useSharedValue(1);
     const [flipped, setFlipped] = useState(false);
@@ -104,27 +104,37 @@ const FlashcardItem = memo(({ card, isActive, isDark }: { card: Card; isActive: 
         };
     });
 
-    const CardSide = ({ type, text, footer, rotateY }: any) => (
-        <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderRadius: 24, padding: 32, justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 8, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent' }}>
-            <View style={{ position: 'absolute', top: 24, left: 24, right: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1 }}>{type}</Text>
-                {type === 'QUESTION' ? <LightbulbBolt size={20} color="#007AFF" /> : <CheckCircle size={20} color="#34C759" />}
-            </View>
+    const CardSide = ({ type, text, footer, rotateY }: any) => {
+        const showLoading = isGenerating && !text;
+        return (
+            <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderRadius: 24, padding: 32, justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 8, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent' }}>
+                <View style={{ position: 'absolute', top: 24, left: 24, right: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1 }}>{type}</Text>
+                    {type === 'QUESTION' ? <LightbulbBolt size={20} color="#007AFF" /> : <CheckCircle size={20} color="#34C759" />}
+                </View>
 
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <MathText
-                    content={text}
-                    color={isDark ? '#FFF' : '#000'}
-                    fontSize={type === 'QUESTION' ? 22 : 18}
-                    containerStyle={{ width: '100%' }}
-                />
-            </View>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    {showLoading ? (
+                        <View style={{ alignItems: 'center' }}>
+                            <ActivityIndicator size="large" color="#007AFF" />
+                            <Text style={{ marginTop: 14, fontSize: 16, color: isDark ? '#FFFFFF' : '#1E293B', textAlign: 'center', maxWidth: 260 }}>Generating card...</Text>
+                        </View>
+                    ) : (
+                        <MathText
+                            content={text}
+                            color={isDark ? '#FFF' : '#000'}
+                            fontSize={type === 'QUESTION' ? 22 : 18}
+                            containerStyle={{ width: '100%' }}
+                        />
+                    )}
+                </View>
 
-            <View style={{ position: 'absolute', bottom: 24, left: 0, right: 0, alignItems: 'center' }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#C7C7CC', textTransform: 'uppercase', letterSpacing: 1.5 }}>{footer}</Text>
+                <View style={{ position: 'absolute', bottom: 24, left: 0, right: 0, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#C7C7CC', textTransform: 'uppercase', letterSpacing: 1.5 }}>{footer}</Text>
+                </View>
             </View>
-        </View>
-    );
+        );
+    };
 
     return (
         <View style={s.cardContainer}>
@@ -638,7 +648,7 @@ export default function StudyDeckScreen() {
             >
                 {cards.map((card: any, index: number) => (
                     <View key={card.id?.toString() || `stream-${index}`} style={{ width: SCREEN_WIDTH, height: '100%', paddingHorizontal: 24 }}>
-                        <FlashcardItem card={card} isActive={currentIndex === index} isDark={isDark} />
+                        <FlashcardItem card={card} isActive={currentIndex === index} isDark={isDark} isGenerating={isGenerating} />
                     </View>
                 ))}
                 {isGenerating && cards.length < (parseInt(card_count as string) || 0) && (
