@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+
 import {
     View, TextInput, TouchableOpacity, ScrollView, Alert,
     useColorScheme, StyleSheet, Platform
@@ -10,6 +11,8 @@ import * as ExpoHaptics from 'expo-haptics';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
+
 import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
 import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
@@ -115,6 +118,15 @@ function GradientCard({
 
 export default function PreferencesScreen() {
     const { user, updateUser } = useAuthStore();
+
+    const [animKey, setAnimKey] = useState(0);
+
+    useFocusEffect(
+        useCallback(() => {
+            setAnimKey(prev => prev + 1);
+        }, [])
+    );
+
     const prefs = user?.ai_preferences;
 
     const [level, setLevel] = useState<string>(prefs?.education_level || '');
@@ -172,7 +184,8 @@ export default function PreferencesScreen() {
         <View style={[styles.screen, { backgroundColor: C.background }]}>
 
             {/* ── Hero Header ── */}
-            <Animated.View entering={FadeInUp.duration(500)} style={[styles.hero, { paddingTop: Math.max(insets.top, 16) }]}>
+<Animated.View key={`hero-${animKey}`} entering={FadeInUp.duration(500)} style={[styles.hero, { paddingTop: Math.max(insets.top, 16) }]}>
+
                 <TouchableOpacity
                     onPress={() => router.navigate({ pathname: '/(drawer)/account' })}
                     activeOpacity={0.7}
@@ -192,7 +205,8 @@ export default function PreferencesScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 {/* ── Academic Level ── */}
-                <Animated.View entering={FadeInDown.delay(80).duration(400)} style={styles.section}>
+<Animated.View key={`lvl-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={styles.section}>
+
                     <SectionLabel label="🎓 Academic Level" />
                     <View style={styles.chipRow}>
                         {LEVELS.map(item => (
@@ -210,7 +224,8 @@ export default function PreferencesScreen() {
                 </Animated.View>
 
                 {/* ── Field of Study ── */}
-                <Animated.View entering={FadeInDown.delay(160).duration(400)} style={styles.section}>
+<Animated.View key={`field-${animKey}`} entering={FadeInDown.delay(160).duration(400)} style={styles.section}>
+
                     <SectionLabel label="📖 Field of Study" />
                     <View style={[styles.inputCard, {
                         backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F8F9FB',
@@ -227,7 +242,8 @@ export default function PreferencesScreen() {
                 </Animated.View>
 
                 {/* ── Learning Style ── */}
-                <Animated.View entering={FadeInDown.delay(240).duration(400)} style={styles.section}>
+<Animated.View key={`style-${animKey}`} entering={FadeInDown.delay(240).duration(400)} style={styles.section}>
+
                     <SectionLabel label="💡 Learning Style" />
                     <View style={styles.gradRow}>
                         {STYLES.map(item => (
@@ -245,7 +261,8 @@ export default function PreferencesScreen() {
                 </Animated.View>
 
                 {/* ── AI Personality / Tone ── */}
-                <Animated.View entering={FadeInDown.delay(320).duration(400)} style={styles.section}>
+<Animated.View key={`tone-${animKey}`} entering={FadeInDown.delay(320).duration(400)} style={styles.section}>
+
                     <SectionLabel label="🤖 AI Personality" />
                     <View style={styles.chipRow}>
                         {TONES.map(item => (
@@ -263,7 +280,8 @@ export default function PreferencesScreen() {
                 </Animated.View>
 
                 {/* ── Analogy Focus ── */}
-                <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.section}>
+<Animated.View key={`anal-${animKey}`} entering={FadeInDown.delay(400).duration(400)} style={styles.section}>
+
                     <SectionLabel label="🔗 Analogy Style" />
                     <View style={styles.chipRow}>
                         {ANALOGIES.map(item => (
@@ -281,7 +299,8 @@ export default function PreferencesScreen() {
                 </Animated.View>
 
                 {/* ── Study Goal ── */}
-                <Animated.View entering={FadeInDown.delay(480).duration(400)} style={styles.section}>
+<Animated.View key={`goal-${animKey}`} entering={FadeInDown.delay(480).duration(400)} style={styles.section}>
+
                     <SectionLabel label="🎯 Study Goal" />
                     <View style={styles.gradRow}>
                         {GOALS.map(item => (
@@ -299,7 +318,8 @@ export default function PreferencesScreen() {
                 </Animated.View>
 
                 {/* ── Custom Instructions ── */}
-                <Animated.View entering={FadeInDown.delay(560).duration(400)} style={styles.section}>
+<Animated.View key={`custom-${animKey}`} entering={FadeInDown.delay(560).duration(400)} style={styles.section}>
+
                     <SectionLabel label="✍️ Custom Instructions" />
                     <View style={[styles.inputCard, styles.inputCardMulti, {
                         backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F8F9FB',

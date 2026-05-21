@@ -1,8 +1,10 @@
 import { Text } from '@/components/ui/Text';
 import { View, ScrollView, RefreshControl, useColorScheme, StyleSheet, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius } from '@/constants/theme';
@@ -16,11 +18,18 @@ export default function ExamsScreen() {
     const insets = useSafeAreaInsets();
     const isDark = useColorScheme() === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
+    const [animKey, setAnimKey] = useState(0);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newDate, setNewDate] = useState(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
     const [showDatePicker, setShowDatePicker] = useState(false);
+
+    useFocusEffect(
+        useCallback(() => {
+            setAnimKey(prev => prev + 1);
+        }, [])
+    );
 
     const { data: exams = [], isLoading, refetch } = useQuery({
         queryKey: ['user-exams'],
@@ -82,7 +91,7 @@ export default function ExamsScreen() {
                 contentContainerStyle={[s.scroll, { paddingTop: insets.top + Spacing.sm, paddingBottom: 120 }]}
                 refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={C.primary} />}
             >
-                <View style={s.header}>
+                <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(500)} style={s.header}>
                     <View>
                         <Text style={[s.title, { color: textColor }]}>Your Exams</Text>
                         <Text style={[s.subtitle, { color: C.textSecondary }]}>Track your upcoming tests and reminders</Text>
@@ -93,40 +102,42 @@ export default function ExamsScreen() {
                     >
                         <AddCircle size={20} color="#FFF" />
                     </TouchableOpacity>
-                </View>
+                </Animated.View>
 
-                {exams.length === 0 ? (
-                    <View style={s.emptyState}>
-                        <Calendar size={64} color={C.textTertiary} />
-                        <Text style={[s.emptyText, { color: C.textSecondary }]}>No upcoming exams set.</Text>
-                    </View>
-                ) : (
-                    exams.map((exam: any) => {
-                        const daysLeft = Math.ceil((new Date(exam.exam_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                        return (
-                            <IosCard key={exam.id} style={s.examCard} padding="md">
-                                <View style={s.examRow}>
-                                    <View style={[s.examIcon, { backgroundColor: C.primary + '15' }]}>
-                                        <Calendar size={20} color={C.primary} />
+                <Animated.View key={`exams-${animKey}`} entering={FadeInDown.delay(80).duration(400)}>
+                    {exams.length === 0 ? (
+                        <View style={s.emptyState}>
+                            <Calendar size={64} color={C.textTertiary} />
+                            <Text style={[s.emptyText, { color: C.textSecondary }]}>No upcoming exams set.</Text>
+                        </View>
+                    ) : (
+                        exams.map((exam: any) => {
+                            const daysLeft = Math.ceil((new Date(exam.exam_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                            return (
+                                <IosCard key={exam.id} style={s.examCard} padding="md">
+                                    <View style={s.examRow}>
+                                        <View style={[s.examIcon, { backgroundColor: C.primary + '15' }]}>
+                                            <Calendar size={20} color={C.primary} />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[s.examTitle, { color: textColor }]}>{exam.title}</Text>
+                                            <Text style={[s.examDate, { color: C.textSecondary }]}>
+                                                {new Date(exam.exam_date).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                                            </Text>
+                                        </View>
+                                        <View style={s.daysBox}>
+                                            <Text style={[s.daysNum, { color: C.primary }]}>{daysLeft < 0 ? 0 : daysLeft}</Text>
+                                            <Text style={[s.daysLabel, { color: C.textSecondary }]}>days left</Text>
+                                        </View>
+                                        <TouchableOpacity onPress={() => handleDelete(exam.id)} style={s.deleteBtn}>
+                                            <TrashBinTrash size={20} color="#FF3B30" />
+                                        </TouchableOpacity>
                                     </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[s.examTitle, { color: textColor }]}>{exam.title}</Text>
-                                        <Text style={[s.examDate, { color: C.textSecondary }]}>
-                                            {new Date(exam.exam_date).toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                                        </Text>
-                                    </View>
-                                    <View style={s.daysBox}>
-                                        <Text style={[s.daysNum, { color: C.primary }]}>{daysLeft < 0 ? 0 : daysLeft}</Text>
-                                        <Text style={[s.daysLabel, { color: C.textSecondary }]}>days left</Text>
-                                    </View>
-                                    <TouchableOpacity onPress={() => handleDelete(exam.id)} style={s.deleteBtn}>
-                                        <TrashBinTrash size={20} color="#FF3B30" />
-                                    </TouchableOpacity>
-                                </View>
-                            </IosCard>
-                        );
-                    })
-                )}
+                                </IosCard>
+                            );
+                        })
+                    )}
+                </Animated.View>
             </ScrollView>
 
             <Modal visible={isModalOpen} animationType="slide" transparent>

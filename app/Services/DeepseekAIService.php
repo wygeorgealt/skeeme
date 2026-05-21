@@ -670,6 +670,18 @@ SYSTEM;
             default => 'E/M/H',
         };
 
+        // Word limits based on difficulty to keep cards concise
+        switch ($difficulty) {
+            case 'easy':
+                $frontLimit = 12; $backLimit = 25; break;
+            case 'medium':
+                $frontLimit = 10; $backLimit = 20; break;
+            case 'hard':
+                $frontLimit = 8;  $backLimit = 15; break;
+            default:
+                $frontLimit = 10; $backLimit = 20; break;
+        }
+
         $focusSection = !empty($userPrompt) ? "\nFOCUS: {$userPrompt}" : '';
 
         return <<<PROMPT
@@ -682,8 +694,8 @@ Language: Ultra-simple English.
 Schema: [{"front": "Question or concept (short)", "back": "Answer or definition"}]
 
 Rules:
-1. The 'front' should be a clear, concise question, term, or concept.
-2. The 'back' must be the direct answer or definition. Keep it under 3 sentences.
+1. The 'front' should be a clear, concise question, term, or concept. Keep it under {$frontLimit} words.
+2. The 'back' must be the direct answer or definition. Keep it concise and under {$backLimit} words (no more than {$backLimit} words). If the answer requires more detail, shorten to a precise summary.
 3. Output ONLY valid JSON.
 4. MATH/SCIENCE: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs \$ ... \$ (e.g. \$\\frac{1}{2}g\$ or \$2^5\$ or \$x^2\$). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text.
 PROMPT;

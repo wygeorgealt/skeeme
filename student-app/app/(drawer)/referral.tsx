@@ -1,11 +1,12 @@
 import { Text } from '@/components/ui/Text';
+import { useFocusEffect } from 'expo-router';
 import { View, ScrollView, TouchableOpacity, useColorScheme, StyleSheet, Share } from 'react-native';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Stack } from 'expo-router';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AltArrowLeft, Copy, Share as ShareIcon } from '@solar-icons/react-native/Bold';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -22,6 +23,15 @@ import { Colors } from '@/constants/theme';
 
 export default function ReferralScreen() {
     const { user, updateUser } = useAuthStore();
+
+    const [animKey, setAnimKey] = useState(0);
+
+    useFocusEffect(
+        useCallback(() => {
+            setAnimKey(prev => prev + 1);
+        }, [])
+    );
+
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
@@ -31,7 +41,6 @@ export default function ReferralScreen() {
     const [loadingStats, setLoadingStats] = useState(true);
     const [copied, setCopied] = useState(false);
 
-    // Reanimated shared value for copy button scale
     const copyScale = useSharedValue(1);
     const copyScaleStyle = useAnimatedStyle(() => ({
         transform: [{ scale: copyScale.value }],
@@ -39,8 +48,16 @@ export default function ReferralScreen() {
 
     useEffect(() => {
         Promise.all([
-            api.get('referral/my-code').then(res => setStats(prev => ({ ...prev, code: res.data.code }))).catch(() => {}),
-            api.get('referral/stats').then(res => setStats(prev => ({ ...prev, total_referred: res.data.total_referred ?? res.data.total_referrals ?? 0, credits_earned: res.data.credits_earned || 0 }))).catch(() => {})
+            api.get('referral/my-code')
+                .then(res => setStats(prev => ({ ...prev, code: res.data.code })))
+                .catch(() => {}),
+            api.get('referral/stats')
+                .then(res => setStats(prev => ({
+                    ...prev,
+                    total_referred: res.data.total_referred ?? res.data.total_referrals ?? 0,
+                    credits_earned: res.data.credits_earned || 0,
+                })))
+                .catch(() => {}),
         ]).finally(() => setLoadingStats(false));
     }, []);
 
@@ -60,13 +77,10 @@ export default function ReferralScreen() {
         if (!stats.code) return;
         await Clipboard.setStringAsync(stats.code);
         setCopied(true);
-
-        // Animate scale using reanimated
         copyScale.value = withSequence(
             withTiming(0.85, { duration: 100 }),
             withTiming(1, { duration: 100 })
         );
-
         setTimeout(() => setCopied(false), 2000);
     };
 
@@ -74,9 +88,12 @@ export default function ReferralScreen() {
         <View style={{ flex: 1, backgroundColor: C.background }}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            {/* Header */}
-            <Animated.View entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 12) }]}>
-                <TouchableOpacity onPress={() => router.navigate({ pathname: '/(drawer)/account' })} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
+            <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 12) }]}>
+                <TouchableOpacity
+                    onPress={() => router.navigate({ pathname: '/(drawer)/account' })}
+                    activeOpacity={0.7}
+                    style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
+                >
                     <AltArrowLeft size={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <View style={s.headerTextContainer}>
@@ -86,48 +103,52 @@ export default function ReferralScreen() {
                 <View style={{ width: 44 }} />
             </Animated.View>
 
-            <ScrollView style={s.scrollView} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-
+            <ScrollView
+                style={s.scrollView}
+                contentContainerStyle={{ paddingBottom: 100 }}
+                showsVerticalScrollIndicator={false}
+            >
                 {/* Hero Code Card */}
-                <Animated.View entering={FadeInUp.duration(500)}>
-                    <View style={[s.heroCard, { backgroundColor: C.primary }]}>  {/* ← now properly closed below */}
-                        <Text style={s.heroLabel}>Your Referral Code</Text>
-                        {loadingStats ? (
-                            <LoadingSpinner size={20} color="rgba(255,255,255,0.7)" />
-                        ) : (
-                            <TouchableOpacity onPress={handleCopy} activeOpacity={0.7}>
-                                <Text style={s.heroCode}>{stats.code || '...'}</Text>
-                            </TouchableOpacity>
-                        )}
-
-                        <View style={s.buttonRow}>
-                            <Animated.View style={[{ flex: 1 }, copyScaleStyle]}>
-                                <TouchableOpacity
-                                    onPress={handleCopy}
-                                    disabled={loadingStats || !stats.code}
-                                    activeOpacity={0.8}
-                                    style={[s.actionBtn, s.copyBtn, { backgroundColor: copied ? 'rgba(52, 199, 89, 0.3)' : 'rgba(255,255,255,0.2)' }]}
-                                >
-                                    <Copy size={20} color="white" />
-                                    <Text style={s.btnText}>{copied ? 'Copied!' : 'Copy'}</Text>
-                                </TouchableOpacity>
-                            </Animated.View>
-
+                <Animated.View key={`hero-${animKey}`} entering={FadeInUp.duration(500)} style={[s.heroCard, { backgroundColor: C.primary }]}>
+                    <Text style={s.heroLabel}>Your Referral Code</Text>
+                    {loadingStats ? (
+                        <LoadingSpinner size={20} color="rgba(255,255,255,0.7)" />
+                    ) : (
+                        <TouchableOpacity onPress={handleCopy} activeOpacity={0.7}>
+                            <Text style={s.heroCode}>{stats.code || '...'}</Text>
+                        </TouchableOpacity>
+                    )}
+                    
+                    <View style={s.buttonRow}>
+                        <Animated.View style={[{ flex: 1 }, copyScaleStyle]}>
                             <TouchableOpacity
-                                onPress={handleShare}
+                                onPress={handleCopy}
                                 disabled={loadingStats || !stats.code}
                                 activeOpacity={0.8}
-                                style={[s.actionBtn, s.shareActionBtn, { backgroundColor: 'rgba(255,255,255,0.95)' }]}
+                                style={[
+                                    s.actionBtn,
+                                    s.copyBtn,
+                                    { backgroundColor: copied ? 'rgba(52, 199, 89, 0.3)' : 'rgba(255,255,255,0.2)' },
+                                ]}
                             >
-                                <ShareIcon size={20} color={C.primary} />
-                                <Text style={[s.btnText, { color: C.primary, fontWeight: '800' }]}>Share</Text>
+                                <Copy size={20} color="white" />
+                                <Text style={s.btnText}>{copied ? 'Copied!' : 'Copy'}</Text>
                             </TouchableOpacity>
-                        </View>
-                    </View>  {/* ← closes heroCard View */}
+                        </Animated.View>
+                        <TouchableOpacity
+                            onPress={handleShare}
+                            disabled={loadingStats || !stats.code}
+                            activeOpacity={0.8}
+                            style={[s.actionBtn, s.shareActionBtn, { backgroundColor: 'rgba(255,255,255,0.95)' }]}
+                        >
+                            <ShareIcon size={20} color={C.primary} />
+                            <Text style={[s.btnText, { color: C.primary, fontWeight: '800' }]}>Share</Text>
+                        </TouchableOpacity>
+                    </View>
                 </Animated.View>
 
                 {/* Stats Summary */}
-                <Animated.View entering={FadeInDown.delay(160).duration(400)} style={s.statsRow}>
+                <Animated.View key={`stats-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={s.statsRow}>
                     <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
                         <Text style={[s.statNum, { color: C.primary }]}>{stats.total_referred}</Text>
                         <Text style={[s.statLabel, { color: C.textSecondary }]}>Friends Joined</Text>
@@ -138,41 +159,48 @@ export default function ReferralScreen() {
                     </View>
                 </Animated.View>
 
-                {/* How It Works */}
-                <Animated.View entering={FadeInDown.delay(240).duration(400)}>
+                {/* How It Works - Improved Design */}
+                <Animated.View key={`how-${animKey}`} entering={FadeInDown.delay(160).duration(400)}>
                     <Text style={[s.sectionHeading, { color: C.text }]}>How It Works</Text>
                     <View style={{ gap: 12 }}>
-                        <RewardStep
-                            number="1"
-                            title="Share Your Code"
-                            desc="Send your code to friends or on social media"
-                            color={C.primary}
-                            isDark={isDark}
-                        />
-                        <RewardStep
-                            number="2"
-                            title="Friend Joins Skeeme"
-                            desc="They download and enter your code during signup"
-                            color="#34C759"
-                            isDark={isDark}
-                        />
-                        <RewardStep
-                            number="3"
-                            title="You Both Win"
-                            desc="You get 200 credits, they get 100 bonus credits"
-                            color="#FF9500"
-                            isDark={isDark}
-                        />
-                        <RewardStep
-                            number="4"
-                            title="Earn More"
-                            desc="Get 50 credits when your friends refer others"
-                            color="#A78BFA"
-                            isDark={isDark}
-                        />
+                        <Animated.View key={`step1-${animKey}`} entering={FadeInDown.delay(180).duration(400)}>
+                            <RewardStep
+                                number="1"
+                                title="Share Your Code"
+                                desc="Send your code to friends or on social media"
+                                color={C.primary}
+                                isDark={isDark}
+                            />
+                        </Animated.View>
+                        <Animated.View key={`step2-${animKey}`} entering={FadeInDown.delay(240).duration(400)}>
+                            <RewardStep
+                                number="2"
+                                title="Friend Joins Skeeme"
+                                desc="They download and enter your code during signup"
+                                color="#34C759"
+                                isDark={isDark}
+                            />
+                        </Animated.View>
+                        <Animated.View key={`step3-${animKey}`} entering={FadeInDown.delay(300).duration(400)}>
+                            <RewardStep
+                                number="3"
+                                title="You Both Win"
+                                desc="You get 200 credits, they get 100 bonus credits"
+                                color="#FF9500"
+                                isDark={isDark}
+                            />
+                        </Animated.View>
+                        <Animated.View key={`step4-${animKey}`} entering={FadeInDown.delay(360).duration(400)}>
+                            <RewardStep
+                                number="4"
+                                title="Earn More"
+                                desc="Get 50 credits when your friends refer others"
+                                color="#A78BFA"
+                                isDark={isDark}
+                            />
+                        </Animated.View>
                     </View>
                 </Animated.View>
-
             </ScrollView>
         </View>
     );
@@ -210,7 +238,7 @@ const s = StyleSheet.create({
 
     buttonRow: { flexDirection: 'row', gap: 12, marginTop: 28, width: '100%' },
     actionBtn: { flex: 1, paddingVertical: 14, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
-    copyBtn: {},
+    copyBtn: {paddingHorizontal: 30},
     shareActionBtn: {},
     btnText: { color: 'white', fontWeight: '700', fontSize: 15 },
 
@@ -222,12 +250,6 @@ const s = StyleSheet.create({
     statLabel: { fontWeight: '600', fontSize: 12, textAlign: 'center' },
 
     sectionHeading: { fontSize: 18, fontWeight: '800', marginBottom: 16, letterSpacing: -0.3 },
-
-    bonusCard: { borderRadius: 18, padding: 20, marginTop: 24, borderWidth: 1 },
-    bonusCardDark: { backgroundColor: '#1C1C1E', borderColor: 'transparent' },
-    bonusCardLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
-    bonusTitle: { fontWeight: '700', fontSize: 14, marginBottom: 8 },
-    bonusDesc: { fontSize: 13, lineHeight: 20, fontWeight: '500' },
 
     textWhite: { color: 'white' },
     textSlate900: { color: '#0f172a' },

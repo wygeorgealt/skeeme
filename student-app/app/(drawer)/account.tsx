@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, TouchableOpacity, Alert, TextInput, Platform, useColorScheme, Image, StyleSheet, Switch } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '@/store/authStore';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+
 import { api } from '@/lib/api';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AltArrowRight, Bill, RoundArrowUp, Settings, Bell, QuestionCircle, CheckCircle, DocumentText, TrashBinTrash, CupStar } from '@solar-icons/react-native/Bold';
 
@@ -92,6 +94,15 @@ export default function AccountScreen() {
     const { user, login, logout, theme, setTheme, hapticsEnabled } = useAuthStore();
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
+    const [animKey, setAnimKey] = useState(0);
+
+    useFocusEffect(
+        useCallback(() => {
+            setAnimKey(prev => prev + 1);
+        }, [])
+    );
+
+
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [deleteConfirmationCode, setDeleteConfirmationCode] = useState('');
     const [deleteInput, setDeleteInput] = useState('');
@@ -140,8 +151,14 @@ export default function AccountScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
+
+            <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(500)}>
+                <View style={{ paddingTop: insets.top + 16 }} />
+            </Animated.View>
+
             {/* Top spacing */}
-            <View style={{ paddingTop: insets.top + 16 }} />
+            <Animated.View key={`top-${animKey}`} entering={FadeInDown.duration(500)} style={{ paddingTop: insets.top + 16 }} />
+
             <ScrollView
                 contentContainerStyle={[s.scroll, { paddingTop: 20, paddingBottom: 150 }]}
                 showsVerticalScrollIndicator={false}
@@ -163,85 +180,80 @@ export default function AccountScreen() {
                 </View>
 
                 {/* ── Section 1: Plan & Credits ── */}
-                <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Account</Text>
-                <GroupedCard isDark={isDark}>
-                    <SettingsRow
-                        icon={Bill} iconBg="#007AFF"
-                        label="Subscription"
+                <Animated.View key={`acc-content-${animKey}`} entering={FadeInUp.duration(400)}>
+                    <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Account</Text>
+                    <GroupedCard isDark={isDark}>
+                        <SettingsRow
+                            icon={Bill} iconBg="#007AFF"
+                            label="Subscription"
+                            value={user.plan_name === 'elite' || user.is_unlimited ? 'Skeeme Max' : (user.plan_name === 'standard' ? 'Skeeme Pro' : 'Skeeme Free')}
+                            isDark={isDark}
+                        />
+                        <SettingsRow
+                            icon={RoundArrowUp} iconBg="#FF9500"
+                            label="Upgrade"
+                            onPress={() => {
+                                try {
+                                    router.push('/paywall');
+                                } catch (e) { }
+                            }}
+                            isDark={isDark}
+                        />
+                        <SettingsRow
+                            icon={CupStar} iconBg="#34C759"
+                            label="Refer a Friend"
+                            onPress={() => router.push('/(drawer)/referral')}
+                            isLast={true}
+                            isDark={isDark}
+                        />
+                    </GroupedCard>
 
-                        value={user.plan_name === 'elite' || user.is_unlimited ? 'Skeeme Max' : (user.plan_name === 'standard' ? 'Skeeme Pro' : 'Skeeme Free')}
-
-                        isDark={isDark}
-                    />
-                    <SettingsRow
-                        icon={RoundArrowUp} iconBg="#FF9500"
-                        label="Upgrade"
-
-                        onPress={() => {
-                            try {
-                                router.push('/paywall');
-                            } catch (e) {}
-                        }}
-
-                        isDark={isDark}
-                    />
-                    <SettingsRow
-                        icon={CupStar} iconBg="#34C759"
-                        label="Refer a Friend"
-                        onPress={() => router.push('/(drawer)/referral')}
-                        isLast={true}
-                        isDark={isDark}
-                    />
-                </GroupedCard>
-
-                {/* ── Section 2: Preferences ── */}
-                <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Preferences</Text>
-                <GroupedCard isDark={isDark}>
-                    <SettingsRow
-                        icon={Settings} iconBg="#5E5CE6"
-                        label="Personalization"
-
-                        onPress={() => router.push('/(drawer)/preferences')}
-                        isDark={isDark}
-                    />
-                    <SettingsRow
-                        icon={Bell} iconBg="#FF2D55"
-                        label="Notifications"
-                        hasSwitch={true}
-                        switchValue={notificationsEnabled}
-                        onSwitch={setNotificationsEnabled}
-                        isDark={isDark}
-                    />
-                    <SettingsRow
-                        icon={Settings} iconBg="#FF9500"
-                        label="Haptic Feedback"
-
-                        hasSwitch={true}
-                        switchValue={hapticsEnabled}
-                        onSwitch={(val) => useAuthStore.getState().setHapticsEnabled(val)}
-                        isDark={isDark}
-                    />
-                    <View style={{ paddingVertical: 12, paddingRight: 16 }}>
-                        <View style={{ flexDirection: 'row', gap: 8 }}>
-                            {(['light', 'dark', 'system'] as const).map((t) => (
-                                <TouchableOpacity
-                                    key={t}
-                                    onPress={() => setTheme(t)}
-                                    style={{
-                                        flex: 1, paddingVertical: 8, borderRadius: 8,
-                                        alignItems: 'center', backgroundColor: theme === t ? C.primary : (isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9')
-                                    }}
-                                >
-                                    <Text style={{ fontSize: 12, fontWeight: '700', color: theme === t ? '#FFF' : C.text, textTransform: 'capitalize' }}>{t}</Text>
-                                </TouchableOpacity>
-                            ))}
+                    {/* ── Section 2: Preferences ── */}
+                    <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Preferences</Text>
+                    <GroupedCard isDark={isDark}>
+                        <SettingsRow
+                            icon={Settings} iconBg="#5E5CE6"
+                            label="Personalization"
+                            onPress={() => router.push('/(drawer)/preferences')}
+                            isDark={isDark}
+                        />
+                        <SettingsRow
+                            icon={Bell} iconBg="#FF2D55"
+                            label="Notifications"
+                            hasSwitch={true}
+                            switchValue={notificationsEnabled}
+                            onSwitch={setNotificationsEnabled}
+                            isDark={isDark}
+                        />
+                        <SettingsRow
+                            icon={Settings} iconBg="#FF9500"
+                            label="Haptic Feedback"
+                            hasSwitch={true}
+                            switchValue={hapticsEnabled}
+                            onSwitch={(val) => useAuthStore.getState().setHapticsEnabled(val)}
+                            isDark={isDark}
+                        />
+                        <View style={{ paddingVertical: 12, paddingRight: 16 }}>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                {(['light', 'dark', 'system'] as const).map((t) => (
+                                    <TouchableOpacity
+                                        key={t}
+                                        onPress={() => setTheme(t)}
+                                        style={{
+                                            flex: 1, paddingVertical: 8, borderRadius: 8,
+                                            alignItems: 'center', backgroundColor: theme === t ? C.primary : (isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9')
+                                        }}
+                                    >
+                                        <Text style={{ fontSize: 12, fontWeight: '700', color: theme === t ? '#FFF' : C.text, textTransform: 'capitalize' }}>{t}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
                         </View>
-                    </View>
-                </GroupedCard>
+                    </GroupedCard>
 
-                {/* ── Section 3: Support ── */}
-                <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Support</Text>
-                <GroupedCard isDark={isDark}>
+                    {/* ── Section 3: Support ── */}
+                    <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Support</Text>
+                    <GroupedCard isDark={isDark}>
                     <SettingsRow
                         icon={QuestionCircle} iconBg="#8E8E93"
                         label="Report Issue"
@@ -261,31 +273,32 @@ export default function AccountScreen() {
                         isLast={true}
                         isDark={isDark}
                     />
-                </GroupedCard>
+                    </GroupedCard>
 
-                {/* ── Section 4: Log Out ── */}
-                <GroupedCard isDark={isDark}>
-                    <SettingsRow
-                        icon={RoundArrowUp} iconBg="#8E8E93"
-                        label="Log Out"
-                        onPress={handleSignOut}
-                        isLast={true}
-                        isDark={isDark}
-                    />
-                </GroupedCard>
+                    {/* ── Section 4: Log Out ── */}
+                    <GroupedCard isDark={isDark}>
+                        <SettingsRow
+                            icon={RoundArrowUp} iconBg="#8E8E93"
+                            label="Log Out"
+                            onPress={handleSignOut}
+                            isLast={true}
+                            isDark={isDark}
+                        />
+                    </GroupedCard>
 
-                {/* ── Section 5: Danger Zone ── */}
-                <Text style={[s.sectionLabel, { color: C.destructive }]}>Danger Zone</Text>
-                <GroupedCard isDark={isDark}>
-                    <SettingsRow
-                        icon={TrashBinTrash} iconBg="#FF3B30"
-                        label="Delete Account"
-                        onPress={() => setDeleteModalVisible(true)}
-                        isLast={true}
-                        isDark={isDark}
-                        destructive={true}
-                    />
-                </GroupedCard>
+                    {/* ── Section 5: Danger Zone ── */}
+                    <Text style={[s.sectionLabel, { color: C.destructive }]}>Danger Zone</Text>
+                    <GroupedCard isDark={isDark}>
+                        <SettingsRow
+                            icon={TrashBinTrash} iconBg="#FF3B30"
+                            label="Delete Account"
+                            onPress={() => setDeleteModalVisible(true)}
+                            isLast={true}
+                            isDark={isDark}
+                            destructive={true}
+                        />
+                    </GroupedCard>
+                </Animated.View>
             </ScrollView>
 
             {/* Account Deletion Modal */}

@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import React, { useCallback, useState } from 'react';
+
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Platform } from 'react-native';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
@@ -14,7 +16,7 @@ import { posthog } from '@/lib/posthog';
 import { CheckCircle, DocumentText, CloudUpload, Leaf, LightbulbBolt, Rocket, AltArrowLeft } from '@solar-icons/react-native/Bold';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
 import { useNavigation } from '@react-navigation/native';
-import React, { useCallback } from 'react';
+
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 
 type QuizMode = 'topic' | 'file';
@@ -73,6 +75,7 @@ export default function GenerateFlashcardScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
+    const [animKey, setAnimKey] = useState(0);
 
     const [mode, setMode] = useState<QuizMode>('topic');
     const [topic, setTopic] = useState('');
@@ -92,6 +95,7 @@ export default function GenerateFlashcardScreen() {
     const navigation = useNavigation();
     useFocusEffect(
         useCallback(() => {
+            setAnimKey(prev => prev + 1);
             const onBeforeRemove = (e: any) => {
                 if (!isLoading) return;
                 e.preventDefault();
@@ -110,7 +114,7 @@ export default function GenerateFlashcardScreen() {
             };
             navigation.addListener('beforeRemove', onBeforeRemove);
             return () => navigation.removeListener('beforeRemove', onBeforeRemove);
-        }, [navigation, isLoading])
+        }, [navigation])
     );
 
     const handleFileSelect = async () => {
@@ -274,9 +278,9 @@ export default function GenerateFlashcardScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
             {/* Header */}
-            <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
+            <Animated.View entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}> 
                 <TouchableOpacity 
-                    onPress={() => router.back()} 
+                    onPress={() => router.replace('/')} 
                     activeOpacity={0.7} 
                     style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                 >
@@ -284,7 +288,7 @@ export default function GenerateFlashcardScreen() {
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Create Deck</Text>
                 <View style={{ width: 44 }} />
-            </View>
+            </Animated.View>
 
                 <ScrollView 
                 style={{ flex: 1 }} 
@@ -292,7 +296,7 @@ export default function GenerateFlashcardScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 {/* Segmented Control */}
-<View style={[s.chipRow, { marginBottom: 24 }]}> 
+                <Animated.View entering={FadeInDown.delay(80).duration(400)} style={[s.chipRow, { marginBottom: 24 }]}> 
                     {MODE_OPTIONS.map(option => (
                         <ChipButton
                             key={option.key}
@@ -304,11 +308,11 @@ export default function GenerateFlashcardScreen() {
                             C={C}
                         />
                     ))}
-                </View>
+                </Animated.View>
 
                 {/* Input Area */}
                 {mode === 'topic' ? (
-                    <View style={[s.card, { backgroundColor: C.card, marginBottom: 32 }]}>
+                    <Animated.View entering={FadeInDown.delay(160).duration(400)} style={[s.card, { backgroundColor: C.card, marginBottom: 32 }]}>
                         <TextInput
                             style={[s.textInput, { color: C.text }]}
                             placeholder="E.g. Cell Biology, World War II..."
@@ -317,14 +321,15 @@ export default function GenerateFlashcardScreen() {
                             onChangeText={setTopic}
                             multiline={false}
                         />
-                    </View>
+                    </Animated.View>
                 ) : (
-                    <TouchableOpacity
-                        onPress={handleFileSelect}
-                        disabled={isProcessingFile || isExtracting}
-                        activeOpacity={0.7}
-                        style={[s.card, s.uploadBox, { backgroundColor: C.card, marginBottom: 32 }]}
-                    >
+                    <Animated.View entering={FadeInDown.delay(160).duration(400)}>
+                        <TouchableOpacity
+                            onPress={handleFileSelect}
+                            disabled={isProcessingFile || isExtracting}
+                            activeOpacity={0.7}
+                            style={[s.card, s.uploadBox, { backgroundColor: C.card, marginBottom: 32 }]}
+                        >
                         {isProcessingFile ? (
                             <View style={s.centered}>
                                 <LoadingSpinner size={32} />
@@ -355,47 +360,52 @@ export default function GenerateFlashcardScreen() {
                             </>
                         )}
                     </TouchableOpacity>
+                    </Animated.View>
                 )}
 
                 {/* Number of Cards (Stepper) */}
-                <Text style={[s.sectionTitle, { color: '#94a3b8' }]}>NUMBER OF CARDS</Text>
-                <View style={[s.card, s.stepperCard, { backgroundColor: C.card, marginBottom: 32 }]}>
-                    <Text style={[s.stepperLabel, { color: C.text }]}>Cards</Text>
-                    <View style={s.stepperControls}>
-                        <TouchableOpacity 
-                            style={s.stepperBtn}
-                            onPress={() => setCardCount(prev => String(Math.max(5, parseInt(prev) - 5)))}
-                        >
-                            <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>-</Text>
-                        </TouchableOpacity>
-                        <Text style={[s.stepperValue, { color: C.text }]}>{cardCount}</Text>
-                        <TouchableOpacity 
-                            style={s.stepperBtn}
-                            onPress={() => setCardCount(prev => String(Math.min(30, parseInt(prev) + 5)))}
-                        >
-                            <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>+</Text>
-                        </TouchableOpacity>
-                    </View>
+                <Animated.View entering={FadeInDown.delay(240).duration(400)}>
+                    <Text style={[s.sectionTitle, { color: '#94a3b8' }]}>NUMBER OF CARDS</Text>
+                    <View style={[s.card, s.stepperCard, { backgroundColor: C.card, marginBottom: 32 }]}>
+                        <Text style={[s.stepperLabel, { color: C.text }]}>Cards</Text>
+                        <View style={s.stepperControls}>
+                            <TouchableOpacity 
+                                style={s.stepperBtn}
+                                onPress={() => setCardCount(prev => String(Math.max(5, parseInt(prev) - 5)))}
+                            >
+                                <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>-</Text>
+                            </TouchableOpacity>
+                            <Text style={[s.stepperValue, { color: C.text }]}>{cardCount}</Text>
+                            <TouchableOpacity 
+                                style={s.stepperBtn}
+                                onPress={() => setCardCount(prev => String(Math.min(30, parseInt(prev) + 5)))}
+                            >
+                                <Text style={[s.stepperBtnText, { color: '#007AFF' }]}>+</Text>
+                            </TouchableOpacity>
+                        </View>
                 </View>
+                </Animated.View>
 
                 {/* Difficulty */}
-                <Text style={[s.sectionTitle, { color: '#94a3b8' }]}>DIFFICULTY</Text>
-                <View style={[s.card, { backgroundColor: C.card, padding: 16 }]}> 
-                    <View style={s.chipRow}>
-                        {DIFFICULTY_OPTIONS.map(opt => (
-                            <ChipButton
-                                key={opt.key}
-                                label={opt.label}
-                                emoji={opt.emoji}
-                                isSelected={difficulty === opt.key}
-                                onPress={() => setDifficulty(opt.key as Difficulty)}
-                                isDark={isDark}
-                                C={C}
-                                small
-                            />
-                        ))}
+                <Animated.View entering={FadeInDown.delay(320).duration(400)}>
+                    <Text style={[s.sectionTitle, { color: '#94a3b8' }]}>DIFFICULTY</Text>
+                    <View style={[s.card, { backgroundColor: C.card, padding: 16 }]}> 
+                        <View style={s.chipRow}>
+                            {DIFFICULTY_OPTIONS.map(opt => (
+                                <ChipButton
+                                    key={opt.key}
+                                    label={opt.label}
+                                    emoji={opt.emoji}
+                                    isSelected={difficulty === opt.key}
+                                    onPress={() => setDifficulty(opt.key as Difficulty)}
+                                    isDark={isDark}
+                                    C={C}
+                                    small
+                                />
+                            ))}
                     </View>
                 </View>
+                </Animated.View>
             </ScrollView>
 
             <BlurView
@@ -498,4 +508,3 @@ const s = StyleSheet.create({
     centered: { alignItems: 'center', justifyContent: 'center' },
     processingText: { fontSize: 13, fontWeight: '600', marginTop: 12 },
 });
-

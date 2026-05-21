@@ -111,12 +111,24 @@ class FlashcardController extends Controller
                 $modelUsed = $useDeepseek ? 'deepseek-chat' : AIService::MODEL_HAIKU;
                 $service = $useDeepseek ? $this->deepseek : $this->aiService;
 
+                // Enforce concise cards via per-difficulty word limits
+                switch ($validated['difficulty'] ?? 'medium') {
+                    case 'easy':
+                        $frontLimit = 12; $backLimit = 25; break;
+                    case 'medium':
+                        $frontLimit = 10; $backLimit = 20; break;
+                    case 'hard':
+                        $frontLimit = 8;  $backLimit = 15; break;
+                    default:
+                        $frontLimit = 10; $backLimit = 20; break;
+                }
+
                 $params = [
                     'model' => $modelUsed,
                     'max_tokens' => $this->aiService->calculateMaxTokens('flashcard', $validated['card_count']),
                     'system' => "You are an expert tutor creating highly effective flashcards. Return ONLY valid JSON in a flat array: [{\"front\":\"\",\"back\":\"\"}]. No markdown, no preambles.",
                     'messages' => [
-                        ['role' => 'user', 'content' => "Generate " . ($validated['card_count'] ?? 10) . " " . ($validated['difficulty'] ?? 'medium') . " difficulty flashcards on: " . $sourceContent]
+                        ['role' => 'user', 'content' => "Generate " . ($validated['card_count'] ?? 10) . " " . ($validated['difficulty'] ?? 'medium') . " difficulty flashcards on: " . $sourceContent . " Additional rules: Keep 'front' under {$frontLimit} words and 'back' under {$backLimit} words. If necessary, shorten the back to a concise definition within the word limit." ]
                     ],
                     'temperature' => 0.7,
                 ];

@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/Text';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, useColorScheme, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
@@ -9,8 +9,17 @@ import { IosPillButton } from '@/components/ui/IosPillButton';
 import { AltArrowLeft } from '@solar-icons/react-native/Bold';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 export default function ForgotPasswordScreen() {
+    const [animKey, setAnimKey] = useState(0);
+
+    useFocusEffect(
+        useCallback(() => {
+            setAnimKey(prev => prev + 1);
+        }, [])
+    );
+
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
@@ -42,7 +51,7 @@ export default function ForgotPasswordScreen() {
     };
 
     return (
-        <View style={s.flex1}>
+        <View style={s.flex1} key={`forgot-${animKey}`}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={s.flex1}
@@ -50,7 +59,7 @@ export default function ForgotPasswordScreen() {
                 <StatusBar style={isDark ? "light" : "dark"} />
 
                 {/* Header with Back Button */}
-                <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+                <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(400)} style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity
                         onPress={() => router.back()}
                         style={[s.backBtn, { backgroundColor: C.card }]}
@@ -58,22 +67,22 @@ export default function ForgotPasswordScreen() {
                     >
                         <AltArrowLeft size={24} color={C.text} />
                     </TouchableOpacity>
-                </View>
+                </Animated.View>
 
                 <ScrollView 
                     contentContainerStyle={s.scrollContent}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    <View style={s.heroSection}>
+                    <Animated.View key={`hero-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={s.heroSection}>
                         <Text style={[s.heroTitle, { color: C.text }]}>Reset Password</Text>
                         <Text style={[s.heroSubtitle, { color: C.textSecondary }]}>
                             Enter your email address and we'll send you a 6-digit code to reset your account.
                         </Text>
-                    </View>
+                    </Animated.View>
 
                     {/* Form Grouped Item */}
-                    <View style={[s.groupedList, { backgroundColor: C.card }]}>
+                    <Animated.View key={`form-${animKey}`} entering={FadeInDown.delay(140).duration(400)} style={[s.groupedList, { backgroundColor: C.card }]}>
                         <View style={s.groupedRow}>
                             <Text style={[s.groupedLabel, { color: C.text }]}>Email</Text>
                             <TextInput
@@ -86,7 +95,7 @@ export default function ForgotPasswordScreen() {
                                 onChangeText={t => { setEmail(t); setError(''); }}
                             />
                         </View>
-                    </View>
+                    </Animated.View>
 
                     {error ? (
                         <Text style={[s.errorText, { color: C.destructive }]}>{error}</Text>
@@ -94,13 +103,15 @@ export default function ForgotPasswordScreen() {
 
                     <View style={{ height: Spacing.xl }} />
 
-                    <IosPillButton
-                        label="Send Reset Code"
+                    <Animated.View key={`cta-${animKey}`} entering={FadeInDown.delay(220).duration(400)}>
+                        <IosPillButton
+                            label="Send Reset Code"
                         onPress={handleSend}
                         loading={isLoading}
                         fullWidth
                         size="lg"
                     />
+                    </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
         </View>

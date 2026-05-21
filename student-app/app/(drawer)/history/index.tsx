@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { View, TouchableOpacity, SectionList, RefreshControl, useColorScheme, Platform, StyleSheet, Alert } from 'react-native';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
@@ -187,11 +188,11 @@ export default function StudyHistoryDashboard() {
 
     return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
+            <Animated.View entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
                 <Text style={[s.headerTitle, { color: C.text }]}>History</Text>
-            </View>
+            </Animated.View>
 
-            <View style={s.tabContainer}>
+            <Animated.View entering={FadeInDown.delay(80).duration(400)} style={s.tabContainer}>
                 <View style={[s.segmentContainer, isDark ? s.segmentContainerDark : s.segmentContainerLight]}>
                     {(['quizzes', 'flashcards'] as const).map(tab => {
                         const isActive = activeTab === tab;
@@ -222,9 +223,9 @@ export default function StudyHistoryDashboard() {
                         );
                     })}
                 </View>
-            </View>
+            </Animated.View>
 
-            <View style={{ flex: 1, paddingHorizontal: 20 }}>
+            <Animated.View entering={FadeInDown.delay(160).duration(400)} style={{ flex: 1, paddingHorizontal: 20 }}>
                 <SectionList
                     sections={sections}
                     keyExtractor={(item, index) => item.id.toString() + index}
@@ -309,7 +310,7 @@ export default function StudyHistoryDashboard() {
                     }}
                     contentContainerStyle={{ paddingBottom: 100 }}
                 />
-            </View>
+            </Animated.View>
         </View>
     );
 }

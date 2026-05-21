@@ -1,7 +1,8 @@
 import { Text } from '@/components/ui/Text';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useColorScheme, StyleSheet } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { PasswordField } from '@/components/ui/PasswordField';
@@ -15,6 +16,13 @@ import { posthog, isPostHogEnabled } from '@/lib/posthog';
 import { openLegalLink, PRIVACY_URL, TERMS_URL } from '@/lib/legalLinks';
 
 export default function SignupScreen() {
+    const [animKey, setAnimKey] = useState(0);
+
+    useFocusEffect(
+        useCallback(() => {
+            setAnimKey(prev => prev + 1);
+        }, [])
+    );
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
@@ -116,12 +124,12 @@ export default function SignupScreen() {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    <View style={s.heroSection}>
+                    <Animated.View key={`hero-${animKey}`} entering={FadeInUp.duration(500)} style={s.heroSection}>
                         <Text style={[s.title, { color: C.text }]}>Create account</Text>
                         <Text style={[s.subtitle, { color: C.textSecondary }]}>Join Skeeme and study 5× faster</Text>
-                    </View>
+                    </Animated.View>
 
-                    <View style={[s.groupedList, { backgroundColor: C.card }]}>
+                    <Animated.View key={`grouped-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={[s.groupedList, { backgroundColor: C.card }]}> 
                         <View style={s.groupedRow}>
                             <Text style={[s.groupedLabel, { color: C.text }]}>Name</Text>
                             <TextInput
@@ -169,10 +177,10 @@ export default function SignupScreen() {
                                 onChangeText={setReferralCode}
                             />
                         </View>
-                    </View>
+                    </Animated.View>
 
                     {/* Footer / Errors / Strength */}
-                    <View style={s.listFooter}>
+                    <Animated.View key={`footer-${animKey}`} entering={FadeInDown.delay(160).duration(400)} style={s.listFooter}>
                         {(!!nameError || !!emailError || !!passwordError) ? (
                             <View style={{ flex: 1 }}>
                                 {!!nameError && <Text style={[s.errorFooter, { color: C.destructive }]}>{nameError}</Text>}
@@ -194,42 +202,48 @@ export default function SignupScreen() {
                                 <Text style={[s.strengthLabel, { color: strength.color }]}>{strength.label}</Text>
                             </View>
                         ) : <View style={{ height: 20 }} />}
-                    </View>
+                    </Animated.View>
 
                     <View style={{ height: Spacing.xl }} />
 
-                    <IosPillButton 
-                        label="Create Account" 
-                        onPress={handleSignup} 
-                        loading={isLoading} 
-                        fullWidth 
-                        size="lg" 
-                    />
+                    <Animated.View key={`cta-${animKey}`} entering={FadeInDown.delay(240).duration(400)}>
+                        <IosPillButton 
+                            label="Create Account" 
+                            onPress={handleSignup} 
+                            loading={isLoading} 
+                            fullWidth 
+                            size="lg" 
+                        />
+                    </Animated.View>
 
-                    <TouchableOpacity onPress={() => router.push('/login')} style={s.loginRow}>
-                        <Text style={[s.signupText, { color: C.textSecondary }]}>
-                            Already have an account?{' '}
-                            <Text style={[s.signupText, { color: C.primary, fontWeight: '700' }]}>Log in</Text>
-                        </Text>
-                    </TouchableOpacity>
+                    <Animated.View key={`login-${animKey}`} entering={FadeInDown.delay(320).duration(400)}>
+                        <TouchableOpacity onPress={() => router.push('/login')} style={s.loginRow}>
+                            <Text style={[s.signupText, { color: C.textSecondary }]}>
+                                Already have an account?{' '}
+                                <Text style={[s.signupText, { color: C.primary, fontWeight: '700' }]}>Log in</Text>
+                            </Text>
+                        </TouchableOpacity>
+                    </Animated.View>
 
-                    <Text style={[s.terms, { color: C.textTertiary }]}>
-                        By creating an account you agree to our{' '}
-                        <Text
-                            style={[s.linkText, { color: C.primary }]}
-                            onPress={() => openLegalLink(TERMS_URL)}
-                        >
-                            Terms of Service
+                    <Animated.View key={`terms-${animKey}`} entering={FadeInDown.delay(360).duration(400)}>
+                        <Text style={[s.terms, { color: C.textTertiary }]}>
+                            By creating an account you agree to our{' '}
+                            <Text
+                                style={[s.linkText, { color: C.primary }]}
+                                onPress={() => openLegalLink(TERMS_URL)}
+                            >
+                                Terms of Service
+                            </Text>
+                            {' '}and confirm you have read our{' '}
+                            <Text
+                                style={[s.linkText, { color: C.primary }]}
+                                onPress={() => openLegalLink(PRIVACY_URL)}
+                            >
+                                Privacy Policy
+                            </Text>
+                            .
                         </Text>
-                        {' '}and confirm you have read our{' '}
-                        <Text
-                            style={[s.linkText, { color: C.primary }]}
-                            onPress={() => openLegalLink(PRIVACY_URL)}
-                        >
-                            Privacy Policy
-                        </Text>
-                        .
-                    </Text>
+                    </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
         </View>

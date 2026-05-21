@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/Text';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, useColorScheme, StyleSheet, ScrollView, Dimensions } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { StatusBar } from 'expo-status-bar';
@@ -9,11 +9,22 @@ import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AltArrowLeft, Letter } from '@solar-icons/react-native/Bold';
 
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+
 import RevenueCatUI from 'react-native-purchases-ui';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 
+/* Animated re-trigger on focus */
+
 
 export default function OtpScreen() {
+    const [animKey, setAnimKey] = useState(0);
+
+    useFocusEffect(
+        useCallback(() => {
+            setAnimKey(prev => prev + 1);
+        }, [])
+    );
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
@@ -144,7 +155,7 @@ export default function OtpScreen() {
     };
 
     return (
-        <View style={s.flex1}>
+        <View style={s.flex1} key={`otp-screen-${animKey}`}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.flex1}>
                 <StatusBar style={isDark ? "light" : "dark"} />
 
@@ -157,21 +168,26 @@ export default function OtpScreen() {
                 </View>
 
 
-                <ScrollView 
+                <ScrollView
                     contentContainerStyle={s.scrollContent}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    <View style={[s.iconCircle, { backgroundColor: C.primaryLight }]}>
+                    <Animated.View key={`icon-${animKey}`} entering={FadeInUp.duration(500)} style={[s.iconCircle, { backgroundColor: C.primaryLight }]}>
                         <Letter size={32} color={C.primary} />
-                    </View>
+                    </Animated.View>
 
-                    <Text style={[s.title, { color: C.text }]}>Check your email</Text>
-                    <Text style={[s.subtitle, { color: C.textSecondary }]}>
-                        We've sent a 6-digit code to <Text style={{ color: C.text, fontWeight: '700' }}>{email}</Text>.
-                    </Text>
+                    <Animated.View key={`title-${animKey}`} entering={FadeInDown.delay(80).duration(400)}>
+                        <Text style={[s.title, { color: C.text }]}>Check your email</Text>
+                    </Animated.View>
+                    <Animated.View key={`subtitle-${animKey}`} entering={FadeInDown.delay(140).duration(400)}>
+                        <Text style={[s.subtitle, { color: C.textSecondary }]}>
+                            We've sent a 6-digit code to <Text style={{ color: C.text, fontWeight: '700' }}>{email}</Text>.
+                        </Text>
+                    </Animated.View>
 
-                    <View style={s.otpRow}>
+                    <Animated.View key={`inputs-${animKey}`} entering={FadeInDown.delay(200).duration(400)}>
+                        <View style={s.otpRow}>
                         {code.map((digit, index) => (
                             <TextInput
                                 key={index}
@@ -194,7 +210,8 @@ export default function OtpScreen() {
                                 ]}
                             />
                         ))}
-                    </View>
+                        </View>
+                    </Animated.View>
 
                     {errorMsg ? (
                         <View style={[s.alert, { backgroundColor: C.destructive + '15', borderColor: C.destructive + '30' }]}>

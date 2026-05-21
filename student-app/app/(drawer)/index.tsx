@@ -1,7 +1,8 @@
 import { Text } from '@/components/ui/Text';
 import { View, ScrollView, RefreshControl, useColorScheme, StyleSheet, TouchableOpacity } from 'react-native';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useAuthStore } from '@/store/authStore';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -71,12 +72,19 @@ function StreakCalendar({ data, isDark, C }: { data: any[]; isDark: boolean; C: 
 export default function DashboardScreen() {
     const { user, updateUser } = useAuthStore();
     const [refreshing, setRefreshing] = useState(false);
+    const [animKey, setAnimKey] = useState(0);
 
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
     const queryClient = useQueryClient();
+
+    useFocusEffect(
+        useCallback(() => {
+            setAnimKey(prev => prev + 1);
+        }, [])
+    );
 
     const daysUntilExam = user?.nearest_exam
         ? Math.ceil((new Date(user.nearest_exam.exam_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
@@ -139,7 +147,7 @@ export default function DashboardScreen() {
                 }
             >
                 {/* ── Hero: Balance + Upgrade (no card) ── */}
-                <View style={s.heroSection}>
+                <Animated.View key={`hero-${animKey}`} entering={FadeInUp.duration(500)} style={s.heroSection}>
                     <View>
                         <Text style={[s.heroLabel, { color: C.textSecondary }]}>AVAILABLE BALANCE</Text>
                         <Text style={[s.heroValue, { color: C.text }]}>
@@ -152,10 +160,10 @@ export default function DashboardScreen() {
                             <Text style={s.upgradeText}>Upgrade</Text>
                         </TouchableOpacity>
                     )}
-                </View>
+                </Animated.View>
 
                 {/* ── Quick Actions Grid ── */}
-                <View style={s.quickRow}>
+                <Animated.View key={`quick-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={s.quickRow}>
                     {QUICK_ACTIONS.map((action) => (
                         <TouchableOpacity
                             key={action.route}
@@ -169,10 +177,10 @@ export default function DashboardScreen() {
                             <Text style={[s.quickLabel, { color: C.textSecondary }]}>{action.label}</Text>
                         </TouchableOpacity>
                     ))}
-                </View>
+                </Animated.View>
 
                 {/* ── Stats Row ── */}
-                <View style={{ flexDirection: 'row', gap: 12 }}>
+                <Animated.View key={`stats-${animKey}`} entering={FadeInDown.delay(160).duration(400)} style={{ flexDirection: 'row', gap: 12 }}>
                     <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/exams' as any)} activeOpacity={0.75}>
                         <View style={[s.statCard, cardStyle(C)]}>
                             <View style={[s.statIconBox, { backgroundColor: isDark ? '#5856D622' : '#EEF0FF' }]}>
@@ -194,10 +202,10 @@ export default function DashboardScreen() {
                         <Text style={[s.statNum, { color: C.text }]}>{user.study_sessions_this_week ?? 0}</Text>
                         <Text style={[s.statDesc, { color: C.textSecondary }]}>Study Sessions</Text>
                     </View>
-                </View>
+                </Animated.View>
 
                 {/* ── Weekly Activity ── */}
-                <View style={[s.activityCard, cardStyle(C)]}>
+                <Animated.View key={`activity-${animKey}`} entering={FadeInDown.delay(240).duration(400)} style={[s.activityCard, cardStyle(C)]}>
                     <View style={s.activityHeader}>
                         <View>
                             <Text style={[s.activityTitle, { color: C.text }]}>Weekly Activity</Text>
@@ -206,13 +214,15 @@ export default function DashboardScreen() {
                         <Chart2 size={20} color={C.primary} />
                     </View>
                     <StreakCalendar data={weeklyCalendarData} isDark={isDark} C={C} />
-                </View>
+                </Animated.View>
 
                 {/* ── Streaks Header ── */}
-                <Text style={[s.sectionTitle, { color: C.text }]}>Streaks</Text>
+                <Animated.View key={`header-${animKey}`} entering={FadeInDown.delay(320).duration(400)}>
+                    <Text style={[s.sectionTitle, { color: C.text }]}>Streaks</Text>
+                </Animated.View>
 
                 {/* ── Streaks Card ── */}
-                <View style={[cardStyle(C), { overflow: 'hidden', borderRadius: 20 }]}>
+                <Animated.View key={`streaks-${animKey}`} entering={FadeInDown.delay(400).duration(400)} style={[cardStyle(C), { overflow: 'hidden', borderRadius: 20 }]}>
                     <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.75}>
                         <View style={[s.streakIcon, { backgroundColor: isDark ? '#FF3B3022' : '#FFEBEA' }]}>
                             <Fire size={18} color="#FF3B30" />
@@ -238,7 +248,7 @@ export default function DashboardScreen() {
                         <Text style={[s.streakCount, { color: C.text }]}>{user.streak?.longest_streak ?? 0}</Text>
                         <AltArrowRight size={18} color={C.textTertiary} />
                     </TouchableOpacity>
-                </View>
+                </Animated.View>
             </ScrollView>
         </View>
     );

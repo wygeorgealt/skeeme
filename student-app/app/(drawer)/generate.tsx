@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, Animated, StyleSheet, Modal, Platform } from 'react-native';
+import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import EventSource from 'react-native-sse';
 
-import { useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import * as DocumentPicker from 'expo-document-picker';
@@ -148,6 +149,13 @@ const PROGRESS_STAGES = ['Skeeming', 'Extracting', 'Generating', 'Finalizing'];
 // ══════════════════════════════════════════════════════════════════════════════
 export default function GenerateQuizScreen() {
     const { user, updateUser } = useAuthStore();
+    const [animKey, setAnimKey] = useState(0);
+
+    useFocusEffect(
+        useCallback(() => {
+            setAnimKey(prev => prev + 1);
+        }, [])
+    );
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -708,7 +716,7 @@ export default function GenerateQuizScreen() {
     }, [navigation, questions.length, currentQIndex]);
 
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
-    if (questions.length === 0 && !isLoading) {
+    if (questions.length === 0) {
         const canGenerate = mode === 'topic' ? topic.trim().length > 0 : (selectedFile !== null && !isExtracting);
         const iconBg = isDark ? 'rgba(0,122,255,0.15)' : '#EBF3FF';
 
@@ -717,23 +725,30 @@ export default function GenerateQuizScreen() {
                 {/* Header */}
                 <View style={[sf.header, { paddingTop: Math.max(insets.top, 16) }] }>
                     <TouchableOpacity 
-                        onPress={() => navigation.goBack()} 
+                        onPress={() => router.replace('/')} 
                         activeOpacity={0.7} 
                         style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                     >
                         <AltArrowLeft size={24} color={isDark ? 'white' : '#0f172a'} />
                     </TouchableOpacity>
-                    <Text style={[sf.headerTitle, { color: C.text }]}>Build Quiz</Text>
+                    <Text style={[sf.headerTitle, { color: C.text }]}>
+                        {isLoading ? (loadingStage || 'Skeeming...') : 'Build Quiz'}
+                    </Text>
                     <View style={{ width: 44 }} />
                 </View>
 
+                {isLoading ? (
+                    <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 20 }}>
+                        <SkeletonCard isDark={isDark} />
+                    </View>
+                ) : (
                 <ScrollView
                     style={{ flex: 1 }}
                     contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220, paddingTop: 10 }}
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Segmented Control */}
-                    <View style={[sf.chipRow, { marginBottom: 24 }]}> 
+                    <ReanimatedAnimated.View entering={FadeInDown.delay(80).duration(400)} style={[sf.chipRow, { marginBottom: 24 }]}> 
                         {MODE_OPTIONS.map(option => (
                             <ChipButton
                                 key={option.key}
@@ -745,59 +760,62 @@ export default function GenerateQuizScreen() {
                                 C={C}
                             />
                         ))}
-                    </View>
+                    </ReanimatedAnimated.View>
 
                     {/* Input */}
-                    {mode === 'topic' ? (
-                        <View style={[cardShadow(C), sf.inputCard]}>
-                            <TextInput
-                                style={[sf.textInput, { color: C.text }]}
-                                placeholder="E.g. Cell Biology, World War II..."
-                                placeholderTextColor={C.textTertiary}
-                                value={topic}
-                                onChangeText={setTopic}
-                            />
-                        </View>
-                    ) : (
-                        <TouchableOpacity
-                            onPress={handleFileSelect}
-                            disabled={isProcessingFile}
-                            activeOpacity={0.75}
-                            style={[cardShadow(C), sf.uploadBox]}
-                        >
-                            {isProcessingFile ? (
-                                <View style={sf.centered}>
-                                    <LoadingSpinner size={32} />
-                                    <Text style={[sf.uploadSub, { color: C.primary, marginTop: 10 }]}>Analyzing document...</Text>
-                                </View>
-                            ) : selectedFile ? (
-                                <>
-                                    <FolderOpen size={32} color={C.primary} />
-                                    <Text style={[sf.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
-                                    {isExtracting ? (
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                                            <LoadingSpinner size={14} color={C.primary} />
-                                            <Text style={[sf.uploadSub, { color: C.primary, marginLeft: 6 }]}>Extracting text...</Text>
-                                        </View>
-                                    ) : (
-                                        <Text style={[sf.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
-                                    )}
-                                </>
-                            ) : (
-                                <>
-                                    <CloudUpload size={32} color={C.textTertiary} />
-                                    <Text style={[sf.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
-                                    <Text style={[sf.uploadSub, { color: C.textTertiary }]}>Maximum 5MB</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    )}
+                    <ReanimatedAnimated.View entering={FadeInDown.delay(160).duration(400)}>
+                        {mode === 'topic' ? (
+                            <View style={[cardShadow(C), sf.inputCard]}>
+                                <TextInput
+                                    style={[sf.textInput, { color: C.text }]}
+                                    placeholder="E.g. Cell Biology, World War II..."
+                                    placeholderTextColor={C.textTertiary}
+                                    value={topic}
+                                    onChangeText={setTopic}
+                                />
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                onPress={handleFileSelect}
+                                disabled={isProcessingFile}
+                                activeOpacity={0.75}
+                                style={[cardShadow(C), sf.uploadBox]}
+                            >
+                                {isProcessingFile ? (
+                                    <View style={sf.centered}>
+                                        <LoadingSpinner size={32} />
+                                        <Text style={[sf.uploadSub, { color: C.primary, marginTop: 10 }]}>Analyzing document...</Text>
+                                    </View>
+                                ) : selectedFile ? (
+                                    <>
+                                        <FolderOpen size={32} color={C.primary} />
+                                        <Text style={[sf.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
+                                        {isExtracting ? (
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                                                <LoadingSpinner size={14} color={C.primary} />
+                                                <Text style={[sf.uploadSub, { color: C.primary, marginLeft: 6 }]}>Extracting text...</Text>
+                                            </View>
+                                        ) : (
+                                            <Text style={[sf.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        <CloudUpload size={32} color={C.textTertiary} />
+                                        <Text style={[sf.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
+                                        <Text style={[sf.uploadSub, { color: C.textTertiary }]}>Maximum 5MB</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        )}
+                    </ReanimatedAnimated.View>
 
                     {/* Number of Questions */}
-                    <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>NUMBER OF QUESTIONS</Text>
-                    <View style={[cardShadow(C), sf.stepperCard]}>
-                        <Text style={[sf.stepperLabel, { color: C.text }]}>Questions</Text>
-                        <View style={sf.stepperRow}>
+                    <ReanimatedAnimated.View entering={FadeInDown.delay(240).duration(400)}>
+                        <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>NUMBER OF QUESTIONS</Text>
+                        <View style={[cardShadow(C), sf.stepperCard]}>
+                            <Text style={[sf.stepperLabel, { color: C.text }]}>Questions</Text>
+                            <View style={sf.stepperRow}>
                             <TouchableOpacity
                                 style={[sf.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F0F2F7' }]}
                                 onPress={() => setQuestionCount(prev => String(Math.max(10, parseInt(prev) - 5)))}
@@ -813,45 +831,51 @@ export default function GenerateQuizScreen() {
                             </TouchableOpacity>
                         </View>
                     </View>
+                    </ReanimatedAnimated.View>
 
                     {/* Difficulty */}
-                    <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>DIFFICULTY</Text>
-                    <View style={[cardShadow(C), { marginBottom: 20, padding: 16 }]}> 
-                        <View style={sf.chipRow}>
-                            {DIFFICULTY_OPTIONS.map(opt => (
-                                <ChipButton
-                                    key={opt.key}
-                                    label={opt.label}
-                                    emoji={opt.emoji}
-                                    isSelected={difficulty === opt.key}
-                                    onPress={() => setDifficulty(opt.key as Difficulty)}
-                                    isDark={isDark}
-                                    C={C}
-                                    small
-                                />
-                            ))}
+                    <ReanimatedAnimated.View entering={FadeInDown.delay(320).duration(400)}>
+                        <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>DIFFICULTY</Text>
+                        <View style={[cardShadow(C), { marginBottom: 20, padding: 16 }]}> 
+                            <View style={sf.chipRow}>
+                                {DIFFICULTY_OPTIONS.map(opt => (
+                                    <ChipButton
+                                        key={opt.key}
+                                        label={opt.label}
+                                        emoji={opt.emoji}
+                                        isSelected={difficulty === opt.key}
+                                        onPress={() => setDifficulty(opt.key as Difficulty)}
+                                        isDark={isDark}
+                                        C={C}
+                                        small
+                                    />
+                                ))}
+                            </View>
                         </View>
-                    </View>
+                    </ReanimatedAnimated.View>
 
                     {/* Question Format */}
-                    <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>QUESTION FORMAT</Text>
-                    <View style={[cardShadow(C), { marginBottom: 20, padding: 16 }]}> 
-                        <View style={sf.chipRow}>
-                            {FORMAT_OPTIONS.map(opt => (
-                                <ChipButton
-                                    key={opt.key}
-                                    label={opt.label}
-                                    emoji={opt.emoji}
-                                    isSelected={format === opt.key}
-                                    onPress={() => setFormat(opt.key as FormatType)}
-                                    isDark={isDark}
-                                    C={C}
-                                    small
-                                />
-                            ))}
+                    <ReanimatedAnimated.View entering={FadeInDown.delay(400).duration(400)}>
+                        <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>QUESTION FORMAT</Text>
+                        <View style={[cardShadow(C), { marginBottom: 20, padding: 16 }]}> 
+                            <View style={sf.chipRow}>
+                                {FORMAT_OPTIONS.map(opt => (
+                                    <ChipButton
+                                        key={opt.key}
+                                        label={opt.label}
+                                        emoji={opt.emoji}
+                                        isSelected={format === opt.key}
+                                        onPress={() => setFormat(opt.key as FormatType)}
+                                        isDark={isDark}
+                                        C={C}
+                                        small
+                                    />
+                                ))}
+                            </View>
                         </View>
-                    </View>
+                    </ReanimatedAnimated.View>
                 </ScrollView>
+                )}
 
                 {/* Sticky Footer */}
                 <BlurView
@@ -865,11 +889,15 @@ export default function GenerateQuizScreen() {
                 >
                     <TouchableOpacity
                         onPress={handleGenerate}
-                        disabled={!canGenerate}
+                        disabled={!canGenerate || isLoading}
                         activeOpacity={0.85}
                         style={[sf.generateBtn, { backgroundColor: canGenerate ? '#007AFF' : (isDark ? '#1E3A5F' : '#A2C9F4') }]}
                     >
-                        <Text style={sf.generateBtnText}>Generate Quiz</Text>
+                        {isLoading ? (
+                            <LoadingSpinner size={24} color="white" />
+                        ) : (
+                            <Text style={sf.generateBtnText}>Generate Quiz</Text>
+                        )}
                     </TouchableOpacity>
                 </BlurView>
 

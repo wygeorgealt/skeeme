@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, useColorScheme, StyleSheet, ScrollView, Alert, Image } from 'react-native';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { StatusBar } from 'expo-status-bar'
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -15,6 +16,15 @@ import { Text } from '@/components/ui/Text';
 
 export default function SupportScreen() {
     const router = useRouter();
+
+    const [animKey, setAnimKey] = useState(0);
+
+    useFocusEffect(
+        useCallback(() => {
+            setAnimKey(prev => prev + 1);
+        }, [])
+    );
+
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
@@ -92,7 +102,7 @@ export default function SupportScreen() {
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
             {/* Header */}
-            <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
+            <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
                 <TouchableOpacity
                     onPress={() => router.navigate({ pathname: '/(drawer)/account' })}
                     activeOpacity={0.7}
@@ -102,7 +112,7 @@ export default function SupportScreen() {
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Support</Text>
                 <View style={{ width: 44 }} />
-            </View>
+            </Animated.View>
 
             <ScrollView
                 style={{ flex: 1 }}
@@ -110,14 +120,16 @@ export default function SupportScreen() {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={[s.heroTitle, { color: C.text }]}>
-                    How can we help?
-                </Text>
-                <Text style={[s.heroSubtitle, { color: C.textSecondary }]}>
-                    Describe the issue or feedback below
-                </Text>
+                <Animated.View key={`hero-${animKey}`} entering={FadeInDown.delay(80).duration(400)}>
+                    <Text style={[s.heroTitle, { color: C.text }]}>
+                        How can we help?
+                    </Text>
+                    <Text style={[s.heroSubtitle, { color: C.textSecondary }]}>
+                        Describe the issue or feedback below
+                    </Text>
+                </Animated.View>
 
-                <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
+                <Animated.View key={`card-${animKey}`} entering={FadeInDown.delay(160).duration(400)} style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
                     <View style={s.userInfoBadge}>
                         <Text style={s.userInfoText}>
                             Sending as <Text style={{ fontWeight: '700' }}>{user?.name || 'User'}</Text>
@@ -185,7 +197,7 @@ export default function SupportScreen() {
                             </View>
                         )}
                     </TouchableOpacity>
-                </View>
+                </Animated.View>
             </ScrollView>
         </KeyboardAvoidingView>
     );

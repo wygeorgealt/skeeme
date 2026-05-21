@@ -1,7 +1,8 @@
 import { Text } from '@/components/ui/Text';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useColorScheme, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { PasswordField } from '@/components/ui/PasswordField';
@@ -19,6 +20,7 @@ export default function LoginScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { login, storedEmail } = useAuthStore();
+    const [animKey, setAnimKey] = useState(0);
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -27,6 +29,12 @@ export default function LoginScreen() {
     const [passwordError, setPasswordError] = useState('');
     const [failedAttempts, setFailedAttempts] = useState(0);
     const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0);
+
+    useFocusEffect(
+        useCallback(() => {
+            setAnimKey(prev => prev + 1);
+        }, [])
+    );
 
     useEffect(() => {
         if (storedEmail) setEmail(storedEmail);
@@ -116,12 +124,12 @@ export default function LoginScreen() {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    <View style={s.heroSection}>
+                    <Animated.View key={`hero-${animKey}`} entering={FadeInUp.duration(500)} style={s.heroSection}>
                         <Text style={[s.title, { color: C.text }]}>Welcome back</Text>
                         <Text style={[s.subtitle, { color: C.textSecondary }]}>Sign in to continue to Skeeme</Text>
-                    </View>
+                    </Animated.View>
 
-                    <View style={[s.groupedList, { backgroundColor: C.card }]}>
+                    <Animated.View key={`inputs-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={[s.groupedList, { backgroundColor: C.card }]}>
                         <View style={s.groupedRow}>
                             <Text style={[s.groupedLabel, { color: C.text }]}>Email</Text>
                             <TextInput
@@ -146,10 +154,10 @@ export default function LoginScreen() {
                                 placeholder=""
                             />
                         </View>
-                    </View>
+                    </Animated.View>
 
                     {/* Footer / Errors */}
-                    <View style={s.listFooter}>
+                    <Animated.View key={`footer-${animKey}`} entering={FadeInDown.delay(160).duration(400)} style={s.listFooter}>
                         <View style={{ flex: 1 }}>
                             {(!!emailError || !!passwordError) && (
                                 <Text style={[s.errorFooter, { color: C.destructive }]}>
@@ -160,24 +168,28 @@ export default function LoginScreen() {
                         <TouchableOpacity onPress={() => router.push('/forgot-password')} activeOpacity={0.7}>
                             <Text style={[s.forgotLink, { color: C.primary }]}>Forgot Password?</Text>
                         </TouchableOpacity>
-                    </View>
+                    </Animated.View>
 
                     <View style={{ height: Spacing.xl }} />
 
-                    <IosPillButton
-                        label="Sign In"
-                        onPress={handleLogin}
-                        loading={isLoading}
-                        fullWidth
-                        size="lg"
-                    />
+                    <Animated.View key={`button-${animKey}`} entering={FadeInDown.delay(240).duration(400)}>
+                        <IosPillButton
+                            label="Sign In"
+                            onPress={handleLogin}
+                            loading={isLoading}
+                            fullWidth
+                            size="lg"
+                        />
+                    </Animated.View>
 
-                    <TouchableOpacity onPress={() => router.push('/signup')} style={s.signupRow}>
-                        <Text style={[s.signupText, { color: C.textSecondary }]}>
-                            New to Skeeme?{' '}
-                            <Text style={[s.signupText, { color: C.primary, fontWeight: '700' }]}>Create account</Text>
-                        </Text>
-                    </TouchableOpacity>
+                    <Animated.View key={`signup-${animKey}`} entering={FadeInDown.delay(320).duration(400)}>
+                        <TouchableOpacity onPress={() => router.push('/signup')} style={s.signupRow}>
+                            <Text style={[s.signupText, { color: C.textSecondary }]}>
+                                New to Skeeme?{' '}
+                                <Text style={[s.signupText, { color: C.primary, fontWeight: '700' }]}>Create account</Text>
+                            </Text>
+                        </TouchableOpacity>
+                    </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>
         </View>
