@@ -1,13 +1,22 @@
 import { Text } from '@/components/ui/Text';
-import { View, ScrollView, TouchableOpacity, TextInput, Alert, useColorScheme, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, useColorScheme, StyleSheet, Share } from 'react-native';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Stack } from 'expo-router';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useState, useEffect } from 'react';
-import { AltArrowLeft, Gift } from '@solar-icons/react-native/Bold';
+import { AltArrowLeft, Copy, Share as ShareIcon } from '@solar-icons/react-native/Bold';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
+import Animated, {
+    FadeInDown,
+    FadeInUp,
+    useSharedValue,
+    useAnimatedStyle,
+    withSequence,
+    withTiming,
+} from 'react-native-reanimated';
 
 import { Colors } from '@/constants/theme';
 
@@ -17,12 +26,17 @@ export default function ReferralScreen() {
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
-    
-    const [code, setCode] = useState('');
-    const [loading, setLoading] = useState(false);
+
     const [stats, setStats] = useState({ code: '', total_referred: 0, credits_earned: 0 });
     const [loadingStats, setLoadingStats] = useState(true);
-    
+    const [copied, setCopied] = useState(false);
+
+    // Reanimated shared value for copy button scale
+    const copyScale = useSharedValue(1);
+    const copyScaleStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: copyScale.value }],
+    }));
+
     useEffect(() => {
         Promise.all([
             api.get('referral/my-code').then(res => setStats(prev => ({ ...prev, code: res.data.code }))).catch(() => {}),
@@ -30,26 +44,30 @@ export default function ReferralScreen() {
         ]).finally(() => setLoadingStats(false));
     }, []);
 
-    const handleRedeem = async () => {
-        if (!code.trim()) return;
-        setLoading(true);
+    const handleShare = async () => {
+        if (!stats.code) return;
         try {
-            const res = await api.post('referral/redeem', { referral_code: code.trim().toUpperCase() });
-            Alert.alert('Success!', res.data.message || '100 Credits added to your account!');
-            setCode('');
-            // RefreshCcw user credits
-            const userRes = await api.get('me');
-            if (userRes.data) updateUser(userRes.data);
-            
-            // RefreshCcw stats
-            const statsRes = await api.get('referral/stats');
-            if(statsRes.data) setStats(prev => ({...prev, total_referred: statsRes.data.total_referred ?? statsRes.data.total_referrals ?? 0, credits_earned: statsRes.data.credits_earned}));
-            
-        } catch (err: any) {
-            Alert.alert('Error', err.response?.data?.message || 'Invalid or expired referral code.');
-        } finally {
-            setLoading(false);
+            await Share.share({
+                message: `I've been using Skeeme to study smarter — it builds quizzes and flashcards from my notes using AI. Use my code ${stats.code} and get 100 bonus credits free. Download: https://play.google.com/store/apps/details?id=com.skeeme.app`,
+                title: 'Join me on Skeeme!',
+            });
+        } catch (error) {
+            console.error('Share error:', error);
         }
+    };
+
+    const handleCopy = async () => {
+        if (!stats.code) return;
+        await Clipboard.setStringAsync(stats.code);
+        setCopied(true);
+
+        // Animate scale using reanimated
+        copyScale.value = withSequence(
+            withTiming(0.85, { duration: 100 }),
+            withTiming(1, { duration: 100 })
+        );
+
+        setTimeout(() => setCopied(false), 2000);
     };
 
     return (
@@ -57,115 +75,119 @@ export default function ReferralScreen() {
             <Stack.Screen options={{ headerShown: false }} />
 
             {/* Header */}
-            <View style={[s.header, { paddingTop: Math.max(insets.top, 12) }]}>
-                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
+            <Animated.View entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 12) }]}>
+                <TouchableOpacity onPress={() => router.navigate({ pathname: '/(drawer)/account' })} activeOpacity={0.7} style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}>
                     <AltArrowLeft size={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <View style={s.headerTextContainer}>
-                    <Text style={[s.headerTitle, { color: C.text }]}>Rewards</Text>
-                    <Text style={[s.headerSubtitle, { color: C.textSecondary }]}>Redeem codes or invite classmates to earn learning credits.</Text>
+                    <Text style={[s.headerTitle, { color: C.text }]}>Earn Rewards</Text>
+                    <Text style={[s.headerSubtitle, { color: C.textSecondary }]}>Invite friends & earn credits</Text>
                 </View>
                 <View style={{ width: 44 }} />
-            </View>
+            </Animated.View>
 
             <ScrollView style={s.scrollView} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
 
-                {/* Redeem Section */}
-                <View style={[s.sectionCard, isDark ? s.sectionCardDark : s.sectionCardLight]}>
-                    <View style={s.iconBox}>
-                        <Gift size={18} color={C.primary} />
-                    </View>
-                    <Text style={[s.sectionTitle, { color: C.text }]}>Redeem an Invitation</Text>
-                    <Text style={s.sectionDesc}>
-                        Enter a friend's referral code to instantly claim 100 bonus credits.
-                    </Text>
-                    
-                    <View style={s.inputRow}>
-                        <TextInput
-                            style={[s.textInput, isDark ? s.textInputDark : s.textInputLight]}
-                            placeholder="SK-A1B2C3"
-                            placeholderTextColor={isDark ? '#4b5563' : '#94a3b8'}
-                            autoCapitalize="characters"
-                            value={code}
-                            onChangeText={setCode}
-                        />
-                        <TouchableOpacity 
-                            onPress={handleRedeem}
-                            disabled={loading || !code.trim()}
-                            activeOpacity={0.8}
-                            style={[s.claimBtn, code.trim() && !loading ? s.claimBtnActive : (isDark ? s.claimBtnDark : s.claimBtnLight)]}
-                        >
-                            {loading ? <LoadingSpinner size={20} color="#fff" /> : <Text style={s.claimBtnText}>Claim</Text>}
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                {/* Hero Code Card */}
+                <Animated.View entering={FadeInUp.duration(500)}>
+                    <View style={[s.heroCard, { backgroundColor: C.primary }]}>  {/* ← now properly closed below */}
+                        <Text style={s.heroLabel}>Your Referral Code</Text>
+                        {loadingStats ? (
+                            <LoadingSpinner size={20} color="rgba(255,255,255,0.7)" />
+                        ) : (
+                            <TouchableOpacity onPress={handleCopy} activeOpacity={0.7}>
+                                <Text style={s.heroCode}>{stats.code || '...'}</Text>
+                            </TouchableOpacity>
+                        )}
 
-                {/* How it Works Section */}
-                <View style={[s.sectionCard, isDark ? s.sectionCardDark : s.sectionCardLight, { marginBottom: 24 }]}>
-                    <Text style={[s.sectionTitle, { color: C.text, fontSize: 18, marginBottom: 12 }]}>How Rewards Work</Text>
+                        <View style={s.buttonRow}>
+                            <Animated.View style={[{ flex: 1 }, copyScaleStyle]}>
+                                <TouchableOpacity
+                                    onPress={handleCopy}
+                                    disabled={loadingStats || !stats.code}
+                                    activeOpacity={0.8}
+                                    style={[s.actionBtn, s.copyBtn, { backgroundColor: copied ? 'rgba(52, 199, 89, 0.3)' : 'rgba(255,255,255,0.2)' }]}
+                                >
+                                    <Copy size={20} color="white" />
+                                    <Text style={s.btnText}>{copied ? 'Copied!' : 'Copy'}</Text>
+                                </TouchableOpacity>
+                            </Animated.View>
+
+                            <TouchableOpacity
+                                onPress={handleShare}
+                                disabled={loadingStats || !stats.code}
+                                activeOpacity={0.8}
+                                style={[s.actionBtn, s.shareActionBtn, { backgroundColor: 'rgba(255,255,255,0.95)' }]}
+                            >
+                                <ShareIcon size={20} color={C.primary} />
+                                <Text style={[s.btnText, { color: C.primary, fontWeight: '800' }]}>Share</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>  {/* ← closes heroCard View */}
+                </Animated.View>
+
+                {/* Stats Summary */}
+                <Animated.View entering={FadeInDown.delay(160).duration(400)} style={s.statsRow}>
+                    <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
+                        <Text style={[s.statNum, { color: C.primary }]}>{stats.total_referred}</Text>
+                        <Text style={[s.statLabel, { color: C.textSecondary }]}>Friends Joined</Text>
+                    </View>
+                    <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
+                        <Text style={[s.statNum, { color: '#34C759' }]}>{stats.credits_earned}</Text>
+                        <Text style={[s.statLabel, { color: C.textSecondary }]}>Credits Earned</Text>
+                    </View>
+                </Animated.View>
+
+                {/* How It Works */}
+                <Animated.View entering={FadeInDown.delay(240).duration(400)}>
+                    <Text style={[s.sectionHeading, { color: C.text }]}>How It Works</Text>
                     <View style={{ gap: 12 }}>
-                        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-                            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.primary + '15', alignItems: 'center', justifyContent: 'center' }}>
-                                <Text style={{ color: C.primary, fontWeight: '700', fontSize: 13 }}>1</Text>
-                            </View>
-                            <Text style={{ flex: 1, fontSize: 13, color: C.textSecondary }}>
-                                <Text style={{ fontWeight: '700', color: C.text }}>Direct Referral:</Text> You get <Text style={{ fontWeight: '700', color: C.primary }}>200 credits</Text> when a friend joins using your code.
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-                            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#34C75915', alignItems: 'center', justifyContent: 'center' }}>
-                                <Text style={{ color: '#34C759', fontWeight: '700', fontSize: 13 }}>2</Text>
-                            </View>
-                            <Text style={{ flex: 1, fontSize: 13, color: C.textSecondary }}>
-                                <Text style={{ fontWeight: '700', color: C.text }}>Indirect Referral:</Text> You get <Text style={{ fontWeight: '700', color: '#34C759' }}>50 credits</Text> when your friend refers someone else.
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-                            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#FF950015', alignItems: 'center', justifyContent: 'center' }}>
-                                <Text style={{ color: '#FF9500', fontWeight: '700', fontSize: 13 }}>3</Text>
-                            </View>
-                            <Text style={{ flex: 1, fontSize: 13, color: C.textSecondary }}>
-                                <Text style={{ fontWeight: '700', color: C.text }}>New User Bonus:</Text> Redeem a code to get <Text style={{ fontWeight: '700', color: '#FF9500' }}>100 credits</Text> instantly.
-                            </Text>
-                        </View>
+                        <RewardStep
+                            number="1"
+                            title="Share Your Code"
+                            desc="Send your code to friends or on social media"
+                            color={C.primary}
+                            isDark={isDark}
+                        />
+                        <RewardStep
+                            number="2"
+                            title="Friend Joins Skeeme"
+                            desc="They download and enter your code during signup"
+                            color="#34C759"
+                            isDark={isDark}
+                        />
+                        <RewardStep
+                            number="3"
+                            title="You Both Win"
+                            desc="You get 200 credits, they get 100 bonus credits"
+                            color="#FF9500"
+                            isDark={isDark}
+                        />
+                        <RewardStep
+                            number="4"
+                            title="Earn More"
+                            desc="Get 50 credits when your friends refer others"
+                            color="#A78BFA"
+                            isDark={isDark}
+                        />
                     </View>
-                </View>
-
-                {/* My Code Section */}
-                <View style={s.statsSection}>
-                    <Text style={s.sectionLabel}>Your Network</Text>
-                    <View style={[s.codeCard, { backgroundColor: C.primary }]}>
-                        <View style={s.codeHeader}>
-                            <Text style={s.codeLabel}>Referral Code</Text>
-                            {loadingStats ? (
-                                <LoadingSpinner size={20} color="rgba(255,255,255,0.7)" />
-                            ) : (
-                                <Text style={s.codeValue}>{stats.code || '...'}</Text>
-                            )}
-                        </View>
-                        
-                        <View style={s.statsGrid}>
-                            <View style={s.statBox}>
-                                <Text style={s.statLabel}>Friends Joined</Text>
-                                {loadingStats ? (
-                                    <LoadingSpinner size={20} color="rgba(255,255,255,0.7)" />
-                                ) : (
-                                    <Text style={s.statValue}>{stats.total_referred}</Text>
-                                )}
-                            </View>
-                            <View style={s.statBox}>
-                                <Text style={s.statLabel}>Rewards Earned</Text>
-                                {loadingStats ? (
-                                    <LoadingSpinner size={20} color="rgba(255,255,255,0.7)" />
-                                ) : (
-                                    <Text style={s.statValue}>{stats.credits_earned}</Text>
-                                )}
-                            </View>
-                        </View>
-                    </View>
-                </View>
+                </Animated.View>
 
             </ScrollView>
+        </View>
+    );
+}
+
+function RewardStep({ number, title, desc, color, isDark }: any) {
+    return (
+        <View style={{ flexDirection: 'row', gap: 16, alignItems: 'flex-start', paddingVertical: 4 }}>
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: color + '20', alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
+                <Text style={{ color, fontWeight: '800', fontSize: 14 }}>{number}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+                <Text style={{ fontWeight: '700', fontSize: 15, color: isDark ? 'white' : '#0f172a', marginBottom: 4 }}>{title}</Text>
+                <Text style={{ fontSize: 13, color: isDark ? '#94a3b8' : '#64748b', lineHeight: 18 }}>{desc}</Text>
+            </View>
         </View>
     );
 }
@@ -173,45 +195,39 @@ export default function ReferralScreen() {
 const s = StyleSheet.create({
     header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     headerTextContainer: { flex: 1, paddingHorizontal: 16, alignItems: 'center' },
-    headerTitle: { fontSize: 26, fontWeight: '700', letterSpacing: -1 },
-    headerSubtitle: { fontWeight: '500', fontSize: 13, marginTop: 4, textAlign: 'center' },
+    headerTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
+    headerSubtitle: { fontWeight: '500', fontSize: 13, marginTop: 2, textAlign: 'center' },
     menuBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     menuBtnDark: { backgroundColor: 'rgba(255,255,255,0.1)' },
     menuBtnLight: { backgroundColor: '#F1F5F9' },
 
-    scrollView: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
-    
-    sectionCard: { borderRadius: 24, padding: 24, borderWidth: 1, marginBottom: 32 },
-    sectionCardDark: { backgroundColor: '#1C1C1E', borderColor: 'transparent' },
-    sectionCardLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
-    
-    iconBox: { backgroundColor: 'rgba(0,122,255,0.1)', width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-    sectionTitle: { fontSize: 22, fontWeight: '700', marginBottom: 12, letterSpacing: -0.5 },
-    sectionDesc: { color: '#64748b', fontWeight: '500', fontSize: 13, lineHeight: 20, marginBottom: 24 },
-    
-    inputRow: { flexDirection: 'row', gap: 12 },
-    textInput: { flex: 1, height: 52, paddingHorizontal: 20, borderRadius: 12, borderWidth: 1, fontWeight: '700', fontSize: 15 },
-    textInputDark: { backgroundColor: 'transparent', borderColor: 'transparent', color: 'white' },
-    textInputLight: { backgroundColor: '#F8FAFC', borderColor: '#F1F5F9', color: '#0f172a' },
-    
-    claimBtn: { width: 80, height: 52, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-    claimBtnActive: { backgroundColor: '#007AFF' },
-    claimBtnLight: { backgroundColor: '#CBD5E1' },
-    claimBtnDark: { backgroundColor: '#334155' },
-    claimBtnText: { color: 'white', fontWeight: '700' },
+    scrollView: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
 
-    statsSection: { marginBottom: 32 },
-    sectionLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 20, marginLeft: 4 },
-    
-    codeCard: { borderRadius: 24, padding: 32 },
-    codeHeader: { alignItems: 'center', marginBottom: 32 },
-    codeLabel: { color: 'rgba(255,255,255,0.6)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2, fontSize: 11, marginBottom: 16 },
-    codeValue: { color: 'white', fontWeight: '900', fontSize: 32, letterSpacing: 4 },
-    
-    statsGrid: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 40 },
-    statBox: { flex: 1, alignItems: 'center' },
-    statLabel: { color: 'rgba(255,255,255,0.6)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, fontSize: 10, marginBottom: 8, textAlign: 'center' },
-    statValue: { color: 'white', fontWeight: '900', fontSize: 20, letterSpacing: -1 },
+    heroCard: { borderRadius: 28, padding: 36, marginBottom: 24, alignItems: 'center' },
+    heroLabel: { color: 'rgba(255,255,255,0.7)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2, fontSize: 10, marginBottom: 16 },
+    heroCode: { color: 'white', fontWeight: '900', fontSize: 40, letterSpacing: 3, marginBottom: 6 },
+    copiedLabel: { color: 'rgba(255,255,255,0.8)', fontWeight: '600', fontSize: 12, marginTop: 8 },
+
+    buttonRow: { flexDirection: 'row', gap: 12, marginTop: 28, width: '100%' },
+    actionBtn: { flex: 1, paddingVertical: 14, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
+    copyBtn: {},
+    shareActionBtn: {},
+    btnText: { color: 'white', fontWeight: '700', fontSize: 15 },
+
+    statsRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
+    statCard: { flex: 1, paddingVertical: 20, paddingHorizontal: 16, borderRadius: 18, borderWidth: 1, alignItems: 'center' },
+    statCardDark: { backgroundColor: '#1C1C1E', borderColor: 'transparent' },
+    statCardLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
+    statNum: { fontWeight: '900', fontSize: 28, marginBottom: 6 },
+    statLabel: { fontWeight: '600', fontSize: 12, textAlign: 'center' },
+
+    sectionHeading: { fontSize: 18, fontWeight: '800', marginBottom: 16, letterSpacing: -0.3 },
+
+    bonusCard: { borderRadius: 18, padding: 20, marginTop: 24, borderWidth: 1 },
+    bonusCardDark: { backgroundColor: '#1C1C1E', borderColor: 'transparent' },
+    bonusCardLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
+    bonusTitle: { fontWeight: '700', fontSize: 14, marginBottom: 8 },
+    bonusDesc: { fontSize: 13, lineHeight: 20, fontWeight: '500' },
 
     textWhite: { color: 'white' },
     textSlate900: { color: '#0f172a' },

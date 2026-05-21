@@ -74,7 +74,7 @@ export default function SupportScreen() {
             });
 
             Alert.alert('Message Sent', 'Our support team will get back to you shortly.', [
-                { text: 'Okay', onPress: () => router.back() }
+                { text: 'Okay', onPress: () => router.navigate({ pathname: '/(drawer)/account' }) }
             ]);
         } catch (error: any) {
             const msg = error.response?.data?.message || 'Something went wrong. Please try again.';
@@ -94,7 +94,7 @@ export default function SupportScreen() {
             {/* Header */}
             <View style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
                 <TouchableOpacity
-                    onPress={() => router.back()}
+                    onPress={() => router.navigate({ pathname: '/(drawer)/account' })}
                     activeOpacity={0.7}
                     style={[s.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}
                 >

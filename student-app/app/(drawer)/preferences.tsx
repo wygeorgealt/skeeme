@@ -174,7 +174,7 @@ export default function PreferencesScreen() {
             {/* ── Hero Header ── */}
             <Animated.View entering={FadeInUp.duration(500)} style={[styles.hero, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity
-                    onPress={() => router.canGoBack() ? router.back() : router.replace('/')}
+                    onPress={() => router.navigate({ pathname: '/(drawer)/account' })}
                     activeOpacity={0.7}
                     style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
                 >

@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AltArrowRight, Bill, RoundArrowUp, Settings, Bell, QuestionCircle, CheckCircle, DocumentText, Logout, TrashBinTrash, CupStar } from '@solar-icons/react-native/Bold';
+import { AltArrowRight, Bill, RoundArrowUp, Settings, Bell, QuestionCircle, CheckCircle, DocumentText, TrashBinTrash, CupStar } from '@solar-icons/react-native/Bold';
 
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
@@ -53,7 +53,7 @@ function SettingsRow({
                     <Icon size={18} color="#fff" />
                 </View>
             )}
-            <Text style={[s.rowLabel, { color: destructive ? C.destructive : C.text, marginLeft: Icon ? 0 : 16, textAlign: destructive ? 'center' : 'left' }]} numberOfLines={1}>
+            <Text style={[s.rowLabel, { color: destructive ? C.destructive : C.text, marginLeft: Icon ? 0 : 16, textAlign: (destructive && !Icon) ? 'center' : 'left' }]} numberOfLines={1}>
                 {label}
             </Text>
             {value ? <Text style={[s.rowValue, { color: C.textSecondary }]}>{value}</Text> : null}
@@ -188,7 +188,7 @@ export default function AccountScreen() {
                     <SettingsRow
                         icon={CupStar} iconBg="#34C759"
                         label="Refer a Friend"
-                        onPress={() => router.push('/referral')}
+                        onPress={() => router.push('/(drawer)/referral')}
                         isLast={true}
                         isDark={isDark}
                     />
@@ -201,7 +201,7 @@ export default function AccountScreen() {
                         icon={Settings} iconBg="#5E5CE6"
                         label="Personalization"
 
-                        onPress={() => router.push('/preferences')}
+                        onPress={() => router.push('/(drawer)/preferences')}
                         isDark={isDark}
                     />
                     <SettingsRow
@@ -245,7 +245,7 @@ export default function AccountScreen() {
                     <SettingsRow
                         icon={QuestionCircle} iconBg="#8E8E93"
                         label="Report Issue"
-                        onPress={() => router.push('/support')}
+                        onPress={() => router.push('/(drawer)/support')}
                         isDark={isDark}
                     />
                     <SettingsRow
@@ -266,7 +266,7 @@ export default function AccountScreen() {
                 {/* ── Section 4: Log Out ── */}
                 <GroupedCard isDark={isDark}>
                     <SettingsRow
-                        icon={Logout} iconBg="#8E8E93"
+                        icon={RoundArrowUp} iconBg="#8E8E93"
                         label="Log Out"
                         onPress={handleSignOut}
                         isLast={true}
