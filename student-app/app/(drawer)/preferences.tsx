@@ -143,8 +143,10 @@ export default function PreferencesScreen() {
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
 
+    const [hasInitialized, setHasInitialized] = useState(false);
+
     useEffect(() => {
-        if (prefs) {
+        if (prefs && !hasInitialized) {
             setLevel(prefs.education_level || '');
             setField(prefs.field_of_study || '');
             setStyle(prefs.learning_style || '');
@@ -152,8 +154,9 @@ export default function PreferencesScreen() {
             setAnalogyFocus(prefs.analogy_focus || 'general');
             setAcademicGoal(prefs.academic_goal || 'conceptual');
             setCustomWeakness(prefs.custom_weakness || '');
+            setHasInitialized(true);
         }
-    }, [prefs]);
+    }, [prefs, hasInitialized]);
 
     const handleSave = async () => {
         setSaving(true);
