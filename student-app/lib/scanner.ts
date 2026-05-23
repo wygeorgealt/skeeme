@@ -54,7 +54,7 @@ export const scannerService = {
             onDelta?: (partialResults: ScanResult[]) => void;
             onFullResult?: (results: ScanResult[]) => void;
             onComplete?: (creditsRemaining: number, reward?: any, streak?: any) => void;
-            onError?: (error: string) => void;
+            onError?: (error: string, isInsufficientCredits?: boolean) => void;
             onDone?: () => void;
         }
     ): (() => void) => {
@@ -132,6 +132,25 @@ export const scannerService = {
             
             if (!streamErrored) {
                 streamErrored = true;
+
+                // The server can send a JSON body (e.g. 402 insufficient_credits) as event.message.
+                // Try to parse it before falling back to generic messaging.
+                if (event?.message) {
+                    try {
+                        // event.message may be the raw JSON string from the server response body
+                        const parsed = typeof event.message === 'string' ? JSON.parse(event.message) : event.message;
+                        if (parsed?.error === 'insufficient_credits') {
+                            callbacks.onError?.('insufficient_credits', true);
+                            return;
+                        }
+                    } catch (_) { /* not JSON, fall through */ }
+                }
+
+                // Also check xhrStatus 402 directly (some SSE impls expose status)
+                if (event?.xhrStatus === 402) {
+                    callbacks.onError?.('insufficient_credits', true);
+                    return;
+                }
                 
                 // Differentiate between intentional server errors and network/client errors
                 let errorMessage = 'Connection interrupted. Please check your internet and try again.';
@@ -146,7 +165,7 @@ export const scannerService = {
                     }
                 }
                 
-                callbacks.onError?.(errorMessage);
+                callbacks.onError?.(errorMessage, false);
             }
         });
 

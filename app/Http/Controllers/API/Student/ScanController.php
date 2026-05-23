@@ -78,15 +78,17 @@ class ScanController extends Controller
         if (!$user->is_unlimited_student) {
             $deducted = DB::transaction(function () use ($user, $scanCost, $requestId, $modelUsed) {
                 $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
-                if ($lockedUser->credits < $scanCost) {
+                if ($lockedUser->credits <= 0) {
                     return false;
                 }
-                $lockedUser->decrement('credits', $scanCost);
+                
+                $actualDeduction = min($lockedUser->credits, $scanCost);
+                $lockedUser->decrement('credits', $actualDeduction);
                 
                 $lockedUser->transactions()->create([
                     'type' => 'usage',
                     'action_type' => 'scan_solve',
-                    'amount' => -$scanCost,
+                    'amount' => -$actualDeduction,
                     'description' => "Scan & Solve (Streaming)",
                     'model_used' => $modelUsed,
                     'request_id' => $requestId,
@@ -347,14 +349,17 @@ class ScanController extends Controller
         if (!$user->is_unlimited_student) {
             $deducted = DB::transaction(function () use ($user, $scanCost, $requestId, $modelUsed) {
                 $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
-                if ($lockedUser->credits < $scanCost) {
+                if ($lockedUser->credits <= 0) {
                     return false;
                 }
-                $lockedUser->decrement('credits', $scanCost);
+                
+                $actualDeduction = min($lockedUser->credits, $scanCost);
+                $lockedUser->decrement('credits', $actualDeduction);
+                
                 $lockedUser->transactions()->create([
                     'type' => 'usage',
                     'action_type' => 'scan_solve',
-                    'amount' => -$scanCost,
+                    'amount' => -$actualDeduction,
                     'description' => "Scan & Solve",
                     'model_used' => $modelUsed,
                     'request_id' => $requestId,

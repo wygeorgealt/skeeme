@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.skeeme.app",
-      "versionCode": 17,
+      "versionCode": 18,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.CAMERA",

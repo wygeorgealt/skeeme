@@ -246,10 +246,18 @@ export default function ScanScreen() {
                         }
                     }
                 },
-                onError: (message) => {
+                onError: (message, isInsufficientCredits) => {
                     streamErrored = true;
                     esRef.current = null;
                     setLoading(false);
+
+                    if (isInsufficientCredits) {
+                        // Server rejected with 402 — not enough credits for the scan cost.
+                        // Show the credits modal (same flow as the local pre-check).
+                        useAuthStore.getState().toggleCreditsModal(true, 'scan');
+                        return;
+                    }
+
                     setScanError(message);
                     setGlobalErrorMessage('Skeeme is down, Please try again later.');
                     setShowErrorModal(true);
