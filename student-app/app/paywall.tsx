@@ -96,7 +96,7 @@ const s = StyleSheet.create({
         height: 40,
         paddingHorizontal: 16,
         borderRadius: 20,
-        backgroundColor: '#8B5CF6',
+        backgroundColor: '#007aff',
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 9999,

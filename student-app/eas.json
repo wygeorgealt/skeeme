@@ -18,7 +18,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://skeeme.com/api/v1/student/",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "677120499703-77ktccne1953v7uci57q5qcl7lls27b9.apps.googleusercontent.com",
-        "EXPO_PUBLIC_POSTHOG_HOST": "https://us.i.posthog.com"
+        "EXPO_PUBLIC_POSTHOG_HOST": "https://us.i.posthog.com",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_ZUwiPwLYzGscZwqYfxzfsVxSEor"
       }
     },
     "production": {
@@ -26,11 +27,17 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://skeeme.com/api/v1/student/",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "677120499703-77ktccne1953v7uci57q5qcl7lls27b9.apps.googleusercontent.com",
-        "EXPO_PUBLIC_POSTHOG_HOST": "https://us.i.posthog.com"
+        "EXPO_PUBLIC_POSTHOG_HOST": "https://us.i.posthog.com",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_ZUwiPwLYzGscZwqYfxzfsVxSEor"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "internal"
+      }
+    }
   }
 }
