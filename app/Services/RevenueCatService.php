@@ -88,7 +88,7 @@ class RevenueCatService
         $creditMap = [
             'skeeme_credits_1000' => 1000,
             'skeeme_credits_5000' => 5000,
-            'skeeme_credits_20000' => 20000,
+            'skeeme_credits_10000' => 10000,
         ];
 
         $amount = $creditMap[$productId] ?? 0;
