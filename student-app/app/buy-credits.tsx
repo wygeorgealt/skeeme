@@ -8,6 +8,7 @@ import { posthog } from '@/lib/posthog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CloseCircle } from '@solar-icons/react-native/Bold';
 import { Text } from '@/components/ui/Text';
+import { initializeRevenueCat } from '@/lib/revenuecat';
 
 export default function BuyCreditsScreen() {
     const { checkAuth } = useAuthStore();
@@ -22,6 +23,13 @@ export default function BuyCreditsScreen() {
 
     const loadCreditsOffering = async () => {
         try {
+            // Guard: ensure SDK is configured before calling getOfferings().
+            // This handles the race condition where the screen opens before
+            // _layout.tsx's useEffect has had a chance to call configure().
+            if (!Purchases.isConfigured) {
+                const { user } = useAuthStore.getState();
+                await initializeRevenueCat(user?.id?.toString());
+            }
             const offerings = await Purchases.getOfferings();
             if (offerings.all && offerings.all['credits']) {
                 setOffering(offerings.all['credits']);
