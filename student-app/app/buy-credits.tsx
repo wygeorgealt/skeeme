@@ -26,10 +26,12 @@ export default function BuyCreditsScreen() {
             // Guard: ensure SDK is configured before calling getOfferings().
             // This handles the race condition where the screen opens before
             // _layout.tsx's useEffect has had a chance to call configure().
-            if (!Purchases.isConfigured) {
+            const isConfigured = await Purchases.isConfigured();
+            if (!isConfigured) {
                 const { user } = useAuthStore.getState();
                 await initializeRevenueCat(user?.id?.toString());
             }
+            
             const offerings = await Purchases.getOfferings();
             if (offerings.all && offerings.all['credits']) {
                 setOffering(offerings.all['credits']);
