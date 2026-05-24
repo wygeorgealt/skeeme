@@ -162,9 +162,17 @@ export default function BillingHistoryScreen() {
                         <Text style={[s.planTitle, isDark ? s.textWhite : s.textSlate900]}>
                             {user?.plan_name === 'elite' ? 'Skeeme Max' : (user?.plan_name === 'standard' ? 'Skeeme Pro' : 'Skeeme Free')}
                         </Text>
-                        <Text style={s.planSubtitle}>
-                            {`${user?.credits ?? 0} Credits remaining`}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+                            <Text style={s.planSubtitle}>
+                                {`${user?.credits?.toLocaleString() ?? 0} Credits remaining`}
+                            </Text>
+                            <TouchableOpacity
+                                onPress={() => router.push('/buy-credits')}
+                                style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.2)' }}
+                            >
+                                <Text style={{ color: '#3b82f6', fontWeight: '700', fontSize: 12 }}>Top Up</Text>
+                            </TouchableOpacity>
+                        </View>
 
                     </View>
 
