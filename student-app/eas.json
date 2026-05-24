@@ -35,7 +35,7 @@
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./google-service-account.json",
+        "serviceAccountKeyPath": "C:/Users/kritex/Documents/favicon/skeeme-1759220244534-0f674930f0a9.json",
         "track": "internal"
       }
     }
