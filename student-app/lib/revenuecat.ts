@@ -9,7 +9,14 @@ const ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
  * Initialize RevenueCat SDK
  */
 export const initializeRevenueCat = async (userId?: string) => {
-  const apiKey = Platform.OS === 'ios' ? APPLE_KEY : ANDROID_KEY;
+  let apiKey = Platform.OS === 'ios' ? APPLE_KEY : ANDROID_KEY;
+  
+  // DEV HACK: If you're testing on iOS but only have an Android key (or vice versa),
+  // use the available key to initialize the SDK so the app doesn't crash.
+  // Note: Actual purchases won't work across platforms, but the UI will load!
+  if (!apiKey && __DEV__) {
+      apiKey = APPLE_KEY || ANDROID_KEY;
+  }
 
   if (!apiKey) {
     const envName = Platform.OS === 'ios' ? 'EXPO_PUBLIC_REVENUECAT_APPLE_KEY' : 'EXPO_PUBLIC_REVENUECAT_ANDROID_KEY';
