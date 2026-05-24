@@ -89,11 +89,10 @@ export default function RootLayout() {
     };
   }, [user?.id, checkAuth]);
 
-  // Initialize RevenueCat SDK with the authenticated user ID
+  // Initialize RevenueCat SDK — configure immediately on mount (anonymous),
+  // then re-configure with the real user ID once authenticated.
   useEffect(() => {
-    if (user?.id) {
-      initializeRevenueCat(user.id.toString());
-    }
+    initializeRevenueCat(user?.id?.toString());
   }, [user?.id]);
 
   useEffect(() => {
@@ -191,6 +190,7 @@ export default function RootLayout() {
                 <Stack.Screen name="new-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
                 <Stack.Screen name="(drawer)" options={{ headerShown: false, animation: 'fade', headerTransparent: true }} />
                 <Stack.Screen name="paywall" options={{ headerShown: false, animation: 'fade' }} />
+                <Stack.Screen name="buy-credits" options={{ headerShown: false, animation: 'slide_from_bottom', presentation: 'modal' }} />
 
                 <Stack.Screen name="+not-found" />
               </Stack>
