@@ -21,23 +21,32 @@ export default function BuyCreditsScreen() {
         loadCreditsOffering();
     }, []);
 
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
     const loadCreditsOffering = async () => {
         try {
-            // Guard: ensure SDK is configured before calling getOfferings().
-            // This handles the race condition where the screen opens before
-            // _layout.tsx's useEffect has had a chance to call configure().
             const isConfigured = await Purchases.isConfigured();
             if (!isConfigured) {
                 const { user } = useAuthStore.getState();
                 await initializeRevenueCat(user?.id?.toString());
             }
             
+            // Double check if it actually configured successfully
+            const configuredNow = await Purchases.isConfigured();
+            if (!configuredNow) {
+                setErrorMsg("RevenueCat SDK is not initialized. Check your Expo .env API keys and restart the server.");
+                setIsLoading(false);
+                return;
+            }
+
             const offerings = await Purchases.getOfferings();
             if (offerings.all && offerings.all['credits']) {
                 setOffering(offerings.all['credits']);
+            } else {
+                setErrorMsg("The 'credits' offering was not found in RevenueCat. Have you created it in the dashboard?");
             }
-        } catch (e) {
-            console.error('Failed to load credits offering', e);
+        } catch (e: any) {
+            setErrorMsg(e?.message || "Failed to load credits offering");
         } finally {
             setIsLoading(false);
         }
@@ -71,10 +80,12 @@ export default function BuyCreditsScreen() {
         );
     }
 
-    if (!offering) {
+    if (!offering || errorMsg) {
         return (
-            <View style={[s.container, s.center]}>
-                <Text style={s.errorText}>No credit packs available.</Text>
+            <View style={[s.container, s.center, { padding: 20 }]}>
+                <Text style={[s.errorText, { textAlign: 'center' }]}>
+                    {errorMsg || "No credit packs available."}
+                </Text>
                 <TouchableOpacity onPress={handleClose} style={s.closeErrorBtn}>
                     <Text style={s.closeErrorText}>Go Back</Text>
                 </TouchableOpacity>
