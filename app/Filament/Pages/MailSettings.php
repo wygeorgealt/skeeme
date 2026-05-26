@@ -15,9 +15,20 @@ class MailSettings extends Page implements Forms\Contracts\HasForms
 {
     use Forms\Concerns\InteractsWithForms;
 
-    public static \UnitEnum|string|null $navigationIcon = 'heroicon-o-envelope';
-    public static \UnitEnum|string|null $navigationGroup = 'Settings';
-    public static \UnitEnum|string|null $navigationLabel = 'Mail Configuration';
+    public static function getNavigationIcon(): ?string
+    {
+        return 'heroicon-o-envelope';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Settings';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Mail Configuration';
+    }
 
     protected string $view = 'filament.pages.mail-settings';
 
