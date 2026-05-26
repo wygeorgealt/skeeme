@@ -15,11 +15,9 @@ class MailSettings extends Page implements Forms\Contracts\HasForms
 {
     use Forms\Concerns\InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-envelope';
-
-    public static $navigationGroup = 'Settings';
-
-    protected static ?string $navigationLabel = 'Mail Configuration';
+    public static ?string $navigationIcon = 'heroicon-o-envelope';
+    public static ?string $navigationGroup = 'Settings';
+    public static ?string $navigationLabel = 'Mail Configuration';
 
     protected string $view = 'filament.pages.mail-settings';
 
