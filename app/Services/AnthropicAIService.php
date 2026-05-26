@@ -101,6 +101,7 @@ class AnthropicAIService
         ?callable $progressCallback = null,
         ?array $aiPreferences = null
     ): array {
+        $startTime = microtime(true);
         try {
             set_time_limit(300);
 
@@ -121,6 +122,26 @@ class AnthropicAIService
                     'questions_count' => count($questions),
                     'estimated_time_saved' => '15-30s (AI API Bypass)'
                 ]);
+
+                \App\Support\AILogger::log([
+                    'provider' => 'anthropic',
+                    'model' => self::MODEL_HAIKU,
+                    'action' => 'generate_questions',
+                    'cache' => ['status' => 'hit', 'key' => $cacheKey],
+                    'request' => [
+                        'notes_count' => count($notes),
+                        'notes_char_length' => strlen(implode('', $notes)),
+                        'number_of_questions' => $numberOfQuestions,
+                        'difficulty' => $difficulty,
+                        'question_types' => $questionTypes,
+                        'prompt' => $prompt,
+                    ],
+                    'response' => [
+                        'questions_count' => count($questions),
+                    ],
+                    'latency_ms' => (microtime(true) - $startTime) * 1000,
+                ], auth()->user());
+
                 if ($progressCallback) $progressCallback(100);
                 return $questions;
             }
@@ -179,8 +200,47 @@ class AnthropicAIService
 
             Cache::put($cacheKey, $questions, now()->addHours(24));
 
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_HAIKU,
+                'action' => 'generate_questions',
+                'cache' => ['status' => 'miss', 'key' => $cacheKey],
+                'request' => [
+                    'notes_count' => count($notes),
+                    'notes_char_length' => strlen(implode('', $notes)),
+                    'number_of_questions' => $numberOfQuestions,
+                    'difficulty' => $difficulty,
+                    'question_types' => $questionTypes,
+                    'prompt' => $prompt,
+                ],
+                'response' => [
+                    'questions_count' => count($questions),
+                    'input_tokens' => $data['usage']['input_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['output_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
             return $questions;
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_HAIKU,
+                'action' => 'generate_questions',
+                'cache' => ['status' => 'miss', 'key' => $cacheKey ?? null],
+                'request' => [
+                    'notes_count' => count($notes),
+                    'notes_char_length' => strlen(implode('', $notes)),
+                    'number_of_questions' => $numberOfQuestions,
+                    'difficulty' => $difficulty,
+                    'question_types' => $questionTypes,
+                    'prompt' => $prompt,
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             throw $this->handleApiException($e, 'Questions');
         }
     }
@@ -195,6 +255,7 @@ class AnthropicAIService
         string $prompt = '',
         ?callable $progressCallback = null
     ): array {
+        $startTime = microtime(true);
         try {
             set_time_limit(300);
 
@@ -258,8 +319,43 @@ class AnthropicAIService
                 $decoded = $decoded['flashcards'];
             }
 
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_HAIKU,
+                'action' => 'generate_flashcards',
+                'request' => [
+                    'notes_count' => count($notes),
+                    'notes_char_length' => strlen(implode('', $notes)),
+                    'number_of_cards' => $numberOfCards,
+                    'difficulty' => $difficulty,
+                    'prompt' => $prompt,
+                ],
+                'response' => [
+                    'cards_count' => is_array($decoded) ? count($decoded) : 0,
+                    'input_tokens' => $data['usage']['input_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['output_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
             return is_array($decoded) ? $decoded : [];
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_HAIKU,
+                'action' => 'generate_flashcards',
+                'request' => [
+                    'notes_count' => count($notes),
+                    'notes_char_length' => strlen(implode('', $notes)),
+                    'number_of_cards' => $numberOfCards,
+                    'difficulty' => $difficulty,
+                    'prompt' => $prompt,
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             throw $this->handleApiException($e, 'Flashcards');
         }
     }
@@ -269,6 +365,7 @@ class AnthropicAIService
      */
     public function generateText(string $prompt, string $systemPrompt = "You are a helpful assistant."): string
     {
+        $startTime = microtime(true);
         try {
             $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
             $response = $this->client->post($this->baseUrl, [
@@ -283,8 +380,39 @@ class AnthropicAIService
             ]);
 
             $data = json_decode($response->getBody()->getContents(), true);
-            return $data['content'][0]['text'] ?? "Error generating response.";
+            $text = $data['content'][0]['text'] ?? "Error generating response.";
+
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_HAIKU,
+                'action' => 'generate_text',
+                'request' => [
+                    'prompt_length' => strlen($prompt),
+                    'system_prompt_length' => strlen($systemPrompt),
+                ],
+                'response' => [
+                    'text_length' => strlen($text),
+                    'input_tokens' => $data['usage']['input_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['output_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
+            return $text;
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_HAIKU,
+                'action' => 'generate_text',
+                'request' => [
+                    'prompt_length' => strlen($prompt),
+                    'system_prompt_length' => strlen($systemPrompt),
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             $msg = $this->handleApiException($e, 'Text')->getMessage();
             return $msg;
         }
@@ -295,6 +423,7 @@ class AnthropicAIService
      */
     public function translateText(string $text, string $targetLanguage): string
     {
+        $startTime = microtime(true);
         try {
             $text = \App\Support\PromptSanitizer::sanitize($text);
             $systemPrompt = "You are a professional translator. Translate the provided text to {$targetLanguage}. Return ONLY the translated text.";
@@ -311,8 +440,39 @@ class AnthropicAIService
             ]);
 
             $data = json_decode($response->getBody()->getContents(), true);
-            return $data['content'][0]['text'] ?? $text;
+            $translated = $data['content'][0]['text'] ?? $text;
+
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_HAIKU,
+                'action' => 'translate_text',
+                'request' => [
+                    'text_length' => strlen($text),
+                    'target_language' => $targetLanguage,
+                ],
+                'response' => [
+                    'translated_length' => strlen($translated),
+                    'input_tokens' => $data['usage']['input_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['output_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
+            return $translated;
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_HAIKU,
+                'action' => 'translate_text',
+                'request' => [
+                    'text_length' => strlen($text),
+                    'target_language' => $targetLanguage,
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             Log::error('Claude Translation Error: ' . $e->getMessage());
             return $text; // Fallback to original text
         }
@@ -329,6 +489,7 @@ class AnthropicAIService
         array $rubric = [],
         float $maxMarks = 10.0
     ): array {
+        $startTime = microtime(true);
         try {
             $questionText = \App\Support\PromptSanitizer::sanitize($questionText);
             $studentAnswer = \App\Support\PromptSanitizer::sanitize($studentAnswer);
@@ -372,14 +533,52 @@ class AnthropicAIService
             $content = $data['content'][0]['text'] ?? '{}';
             $decoded = json_decode(trim(preg_replace('/```(?:json)?|```/', '', $content)), true);
 
-            return [
+            $result = [
                 'marks' => (float) ($decoded['marks'] ?? 0),
                 'confidence' => (float) ($decoded['confidence'] ?? 50),
                 'reasoning' => $decoded['reasoning'] ?? 'AI graded response.',
                 'ai_feedback' => $decoded['feedback'] ?? '',
                 'analysis' => $decoded['analysis'] ?? '',
             ];
+
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_SONNET,
+                'action' => 'grade_theory_answer',
+                'request' => [
+                    'question_length' => strlen($questionText),
+                    'student_answer_length' => strlen($studentAnswer),
+                    'model_answer_length' => strlen($modelAnswer),
+                    'rubric_provided' => !empty($rubric),
+                    'max_marks' => $maxMarks,
+                ],
+                'response' => [
+                    'marks_awarded' => $result['marks'],
+                    'confidence' => $result['confidence'],
+                    'input_tokens' => $data['usage']['input_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['output_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
+            return $result;
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_SONNET,
+                'action' => 'grade_theory_answer',
+                'request' => [
+                    'question_length' => strlen($questionText),
+                    'student_answer_length' => strlen($studentAnswer),
+                    'model_answer_length' => strlen($modelAnswer),
+                    'rubric_provided' => !empty($rubric),
+                    'max_marks' => $maxMarks,
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             throw $this->handleApiException($e, 'Grading');
         }
     }
@@ -390,6 +589,7 @@ class AnthropicAIService
      */
     public function solveFromImage(string $base64Image): array
     {
+        $startTime = microtime(true);
         try {
             set_time_limit(300);
 
@@ -449,7 +649,7 @@ Structure as: `{"results": [{"question": "", "topic": "", "type": "", "solution"
 - `steps`: always `[]`
 - `summary`: always `""`
 
-**Tone and Approach:**
+# Tone and Approach
 - Be direct and authoritative.
 - **For Theoretical Subjects:** Adopt a "Deep Dive" mentality. Length and detail are required.
 - Don't seek clarification; deliver the response.
@@ -519,8 +719,35 @@ SYSTEM;
                 $decoded = ['results' => $decoded];
             }
 
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_SONNET,
+                'action' => 'solve_from_image',
+                'request' => [
+                    'image_length' => strlen($base64Image),
+                ],
+                'response' => [
+                    'results_count' => isset($decoded['results']) ? count($decoded['results']) : 0,
+                    'input_tokens' => $data['usage']['input_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['output_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
             return $decoded;
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => self::MODEL_SONNET,
+                'action' => 'solve_from_image',
+                'request' => [
+                    'image_length' => strlen($base64Image),
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             throw $this->handleApiException($e, 'Image Solve');
         }
     }
@@ -624,6 +851,7 @@ SYSTEM;
                     ],
                 ],
                 'temperature' => 0.3,
+                'stream_action' => 'stream_solve_from_image',
             ];
 
             $this->streamRequest($params, $onChunk);
@@ -637,44 +865,80 @@ SYSTEM;
      */
     public function streamRequest(array $params, callable $onChunk)
     {
-        if (isset($params['system'])) {
-            $systemContent = $this->getPersonalizedSystemPrompt($params['system']);
-            if (!isset($params['messages'])) {
-                $params['messages'] = [];
+        $startTime = microtime(true);
+        $action = $params['stream_action'] ?? 'stream_request';
+        $model = $params['model'] ?? self::MODEL_HAIKU;
+        unset($params['stream_action']);
+
+        try {
+            if (isset($params['system'])) {
+                $systemContent = $this->getPersonalizedSystemPrompt($params['system']);
+                if (!isset($params['messages'])) {
+                    $params['messages'] = [];
+                }
+                array_unshift($params['messages'], ['role' => 'system', 'content' => $systemContent]);
+                unset($params['system']);
             }
-            array_unshift($params['messages'], ['role' => 'system', 'content' => $systemContent]);
-            unset($params['system']);
-        }
-        $params['stream'] = true;
+            $params['stream'] = true;
 
-        $response = $this->client->post($this->baseUrl, [
-            'headers' => $this->buildHeaders(),
-            'json' => $params,
-            'stream' => true,
-        ]);
+            $response = $this->client->post($this->baseUrl, [
+                'headers' => $this->buildHeaders(),
+                'json' => $params,
+                'stream' => true,
+            ]);
 
-        $body = $response->getBody();
-        $buffer = '';
+            $body = $response->getBody();
+            $buffer = '';
 
-        while (!$body->eof()) {
-            $chunk = $body->read(1024);
-            if ($chunk === '') continue;
-            $buffer .= $chunk;
+            // Log stream initiation
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => $model,
+                'action' => $action . '_start',
+                'request' => [
+                    'stream_params_keys' => array_keys($params),
+                ],
+            ], auth()->user());
 
-            while (($pos = strpos($buffer, "\n\n")) !== false) {
-                $event = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 2);
+            while (!$body->eof()) {
+                $chunk = $body->read(1024);
+                if ($chunk === '') continue;
+                $buffer .= $chunk;
 
-                if (str_starts_with($event, 'data: ')) {
-                    $data = substr($event, 6);
-                    if ($data === '[DONE]') break;
+                while (($pos = strpos($buffer, "\n\n")) !== false) {
+                    $event = substr($buffer, 0, $pos);
+                    $buffer = substr($buffer, $pos + 2);
 
-                    $decoded = json_decode($data, true);
-                    if ($decoded && isset($decoded['type'])) {
-                        $onChunk($decoded);
+                    if (str_starts_with($event, 'data: ')) {
+                        $data = substr($event, 6);
+                        if ($data === '[DONE]') break;
+
+                        $decoded = json_decode($data, true);
+                        if ($decoded && isset($decoded['type'])) {
+                            $onChunk($decoded);
+                        }
                     }
                 }
             }
+
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => $model,
+                'action' => $action . '_end',
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
+        } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'anthropic',
+                'model' => $model,
+                'action' => $action . '_error',
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+            throw $e;
         }
     }
 

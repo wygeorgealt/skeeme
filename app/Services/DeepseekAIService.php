@@ -45,6 +45,7 @@ class DeepseekAIService
      */
     public function condenseMaterial(string $content, int $targetCards = 10, string $context = 'flashcards'): string
     {
+        $startTime = microtime(true);
         $wordCount = str_word_count($content);
 
         // Below threshold — raw text is fine, no API call needed
@@ -102,14 +103,40 @@ PROMPT;
 
             if (!empty(trim($condensed))) {
                 $newWordCount = str_word_count($condensed);
-                Log::info("[AI Condense] Success", [
-                    'original_words' => $wordCount,
-                    'condensed_words' => $newWordCount,
-                    'reduction' => round((1 - $newWordCount / $wordCount) * 100) . '%',
-                ]);
+                $latencyMs = (microtime(true) - $startTime) * 1000;
+                
+                \App\Support\AILogger::log([
+                    'provider' => 'deepseek',
+                    'model' => 'deepseek-v4-flash',
+                    'action' => 'condense_material',
+                    'request' => [
+                        'original_words' => $wordCount,
+                        'context' => $context,
+                        'target_cards' => $targetCards,
+                    ],
+                    'response' => [
+                        'condensed_words' => $newWordCount,
+                        'reduction_ratio' => round((1 - $newWordCount / $wordCount) * 100) . '%',
+                    ],
+                    'latency_ms' => $latencyMs,
+                ], auth()->user());
+
                 return $condensed;
             }
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-flash',
+                'action' => 'condense_material',
+                'request' => [
+                    'original_words' => $wordCount,
+                    'context' => $context,
+                    'target_cards' => $targetCards,
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             Log::warning("[AI Condense] Summarization failed, using raw text", [
                 'error' => $e->getMessage(),
             ]);
@@ -132,6 +159,7 @@ PROMPT;
         ?callable $progressCallback = null,
         ?array $aiPreferences = null
     ): array {
+        $startTime = microtime(true);
         try {
             set_time_limit(300);
 
@@ -152,6 +180,26 @@ PROMPT;
                     'questions_count' => count($questions),
                     'estimated_time_saved' => '15-30s (AI API Bypass)'
                 ]);
+
+                \App\Support\AILogger::log([
+                    'provider' => 'deepseek',
+                    'model' => 'deepseek-v4-flash',
+                    'action' => 'generate_questions',
+                    'cache' => ['status' => 'hit', 'key' => $cacheKey],
+                    'request' => [
+                        'notes_count' => count($notes),
+                        'notes_char_length' => strlen(implode('', $notes)),
+                        'number_of_questions' => $numberOfQuestions,
+                        'difficulty' => $difficulty,
+                        'question_types' => $questionTypes,
+                        'prompt' => $prompt,
+                    ],
+                    'response' => [
+                        'questions_count' => count($questions),
+                    ],
+                    'latency_ms' => (microtime(true) - $startTime) * 1000,
+                ], auth()->user());
+
                 if ($progressCallback) $progressCallback(100);
                 return $questions;
             }
@@ -159,7 +207,7 @@ PROMPT;
             if ($progressCallback) $progressCallback(30);
 
             // Build optimized prompt
-            $prompt = $this->buildOptimizedPrompt(
+            $promptText = $this->buildOptimizedPrompt(
                 array_map([$this, 'sanitizeUtf8'], $notes), 
                 $numberOfQuestions, 
                 $difficulty, 
@@ -191,7 +239,7 @@ PROMPT;
                             ],
                             [
                                 'role' => 'user',
-                                'content' => $prompt,
+                                'content' => $promptText,
                             ],
                         ],
                         'temperature' => 0.5,
@@ -217,8 +265,47 @@ PROMPT;
             // Cache for 24 hours - automatic token reuse
             Cache::put($cacheKey, $questions, now()->addHours(24));
             
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-flash',
+                'action' => 'generate_questions',
+                'cache' => ['status' => 'miss', 'key' => $cacheKey],
+                'request' => [
+                    'notes_count' => count($notes),
+                    'notes_char_length' => strlen(implode('', $notes)),
+                    'number_of_questions' => $numberOfQuestions,
+                    'difficulty' => $difficulty,
+                    'question_types' => $questionTypes,
+                    'prompt' => $prompt,
+                ],
+                'response' => [
+                    'questions_count' => count($questions),
+                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
             return $questions;
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-flash',
+                'action' => 'generate_questions',
+                'cache' => ['status' => 'miss', 'key' => $cacheKey ?? null],
+                'request' => [
+                    'notes_count' => count($notes),
+                    'notes_char_length' => strlen(implode('', $notes)),
+                    'number_of_questions' => $numberOfQuestions,
+                    'difficulty' => $difficulty,
+                    'question_types' => $questionTypes,
+                    'prompt' => $prompt,
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             throw $this->handleApiException($e, 'Questions');
         }
     }
@@ -228,6 +315,7 @@ PROMPT;
      */
     public function generateAnnouncementDraft(string $prompt): array
     {
+        $startTime = microtime(true);
         $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
         try {
             $currentDate = now()->toDateTimeString();
@@ -265,13 +353,42 @@ PROMPT;
             $data = json_decode($response->getBody()->getContents(), true);
             $content = json_decode($data['choices'][0]['message']['content'], true);
 
-            return [
+            $result = [
                 'title' => $content['title'] ?? '',
                 'content' => $content['content'] ?? '',
                 'event_start_date' => $content['event_start_date'] ?? null,
                 'event_end_date' => $content['event_end_date'] ?? null,
             ];
+
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-flash',
+                'action' => 'draft_announcement',
+                'request' => [
+                    'prompt_length' => strlen($prompt),
+                ],
+                'response' => [
+                    'title' => $result['title'],
+                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
+            return $result;
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-flash',
+                'action' => 'draft_announcement',
+                'request' => [
+                    'prompt_length' => strlen($prompt),
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             throw $this->handleApiException($e, 'Announcement');
         }
     }
@@ -286,6 +403,7 @@ PROMPT;
         array $rubric = [],
         float $maxMarks = 10.0
     ): array {
+        $startTime = microtime(true);
         $questionText = \App\Support\PromptSanitizer::sanitize($questionText);
         $studentAnswer = \App\Support\PromptSanitizer::sanitize($studentAnswer);
         if (!empty($modelAnswer)) {
@@ -336,7 +454,7 @@ PROMPT;
             $data = json_decode($response->getBody()->getContents(), true);
             $content = json_decode($data['choices'][0]['message']['content'], true);
 
-            return [
+            $result = [
                 'marks' => (float) ($content['marks'] ?? 0),
                 'confidence' => (float) ($content['confidence'] ?? 50),
                 'reasoning' => $content['reasoning'] ?? 'AI graded response.',
@@ -345,7 +463,45 @@ PROMPT;
                 'plagiarism_score' => 0, // Deepseek doesn't natively provide this yet
                 'consistency_score' => 100,
             ];
+
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-pro',
+                'action' => 'grade_theory_answer',
+                'request' => [
+                    'question_length' => strlen($questionText),
+                    'student_answer_length' => strlen($studentAnswer),
+                    'model_answer_length' => strlen($modelAnswer),
+                    'rubric_provided' => !empty($rubric),
+                    'max_marks' => $maxMarks,
+                ],
+                'response' => [
+                    'marks_awarded' => $result['marks'],
+                    'confidence' => $result['confidence'],
+                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
+            return $result;
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-pro',
+                'action' => 'grade_theory_answer',
+                'request' => [
+                    'question_length' => strlen($questionText),
+                    'student_answer_length' => strlen($studentAnswer),
+                    'model_answer_length' => strlen($modelAnswer),
+                    'rubric_provided' => !empty($rubric),
+                    'max_marks' => $maxMarks,
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             throw $this->handleApiException($e, 'Grading');
         }
     }
@@ -356,7 +512,6 @@ PROMPT;
      * Matches Anthropic streaming approach (SSE), but uses DeepSeek stream over /chat/completions.
      *
      * Expects the caller to pass a callback that receives decoded JSON chunk payloads.
-     */
     public function streamSolveFromImage(string $base64Image, callable $onChunk, ?callable $onStatus = null): void
     {
         try {
@@ -391,8 +546,6 @@ Rules:
 - `Math Formatting`: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs \$ ... \$ (e.g. \$\\frac{1}{2}g\$ or \$2^5\$ or \$x^2\$). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text, as the KaTeX renderer will not parse them.
 - `Decimal Fractions Rule`: When writing fractions with decimal numbers (e.g. 8.42 / 9.8), always wrap the entire decimal numbers in the numerator and denominator (e.g. \$\\frac{8.42}{9.8}\$). Never split inside a decimal point (do NOT write 8.\\frac{42}{9}.8 under any circumstances).
 PROMPT;
-
-
 
             $systemPrompt = <<<'SYSTEM'
 # Role
@@ -450,23 +603,58 @@ SYSTEM;
                         'content' => $prompt,
                     ],
                 ],
+                'stream_action' => 'stream_solve_from_image',
             ];
 
-            $response = $this->client->post(
-                $this->baseUrl . '/chat/completions',
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json',
-                    ],
-                    'timeout' => $this->timeout,
-                    'json' => $params,
-                    'stream' => true,
-                ]
-            );
+            $this->streamRequest($params, $onChunk);
+        } catch (\Exception $e) {
+            throw $this->handleApiException($e, 'Image Stream Solve');
+        }
+    }
+
+    /**
+     * Stream a request to DeepSeek (SSE)
+     */
+    public function streamRequest(array $params, callable $onChunk)
+    {
+        $startTime = microtime(true);
+        $action = $params['stream_action'] ?? 'stream_request';
+        $model = $params['model'] ?? 'deepseek-v4-flash';
+        unset($params['stream_action']);
+
+        try {
+            if (isset($params['system'])) {
+                $systemContent = $this->getPersonalizedSystemPrompt($params['system']);
+                if (!isset($params['messages'])) {
+                    $params['messages'] = [];
+                }
+                array_unshift($params['messages'], ['role' => 'system', 'content' => $systemContent]);
+                unset($params['system']);
+            }
+            
+            $params['stream'] = true;
+
+            $response = $this->client->post($this->baseUrl . '/chat/completions', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $this->apiKey,
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => $params,
+                'stream' => true,
+            ]);
 
             $body = $response->getBody();
             $buffer = '';
+
+            // Log stream initiation
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => $model,
+                'action' => $action . '_start',
+                'request' => [
+                    'stream_params_keys' => array_keys($params),
+                ],
+            ], auth()->user());
 
             while (!$body->eof()) {
                 $chunk = $body->read(1024);
@@ -483,73 +671,35 @@ SYSTEM;
 
                         $data = substr($line, 6);
                         if ($data === '[DONE]') {
-                            return;
+                            break 2;
                         }
 
                         $decoded = json_decode($data, true);
-                        if (!is_array($decoded)) continue;
-
-                        // DeepSeek typically sends deltas under choices[0].delta.content
-                        // We forward chunk to caller; caller can concatenate.
-                        $onChunk($decoded);
+                        if ($decoded) {
+                            $onChunk($decoded);
+                        }
                     }
                 }
             }
+
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => $model,
+                'action' => $action . '_end',
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
         } catch (\Exception $e) {
-            throw $this->handleApiException($e, 'Image Stream Solve');
-        }
-    }
-
-    /**
-     * Stream a generic request to DeepSeek (SSE)
-     */
-    public function streamRequest(array $params, callable $onChunk)
-    {
-        if (isset($params['system'])) {
-            $systemContent = $this->getPersonalizedSystemPrompt($params['system']);
-            if (!isset($params['messages'])) {
-                $params['messages'] = [];
-            }
-            array_unshift($params['messages'], ['role' => 'system', 'content' => $systemContent]);
-            unset($params['system']);
-        }
-        
-        $params['stream'] = true;
-
-        $response = $this->client->post($this->baseUrl . '/chat/completions', [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type' => 'application/json',
-            ],
-            'json' => $params,
-            'stream' => true,
-        ]);
-
-        $body = $response->getBody();
-        $buffer = '';
-
-        while (!$body->eof()) {
-            $chunk = $body->read(1024);
-            if ($chunk === '') continue;
-            $buffer .= $chunk;
-
-            while (($pos = strpos($buffer, "\n\n")) !== false) {
-                $event = substr($buffer, 0, $pos);
-                $buffer = substr($buffer, $pos + 2);
-
-                foreach (explode("\n", str_replace("\r", "", $event)) as $line) {
-                    $line = trim($line);
-                    if ($line === '' || !str_starts_with($line, 'data: ')) continue;
-
-                    $data = substr($line, 6);
-                    if ($data === '[DONE]') break;
-
-                    $decoded = json_decode($data, true);
-                    if ($decoded) {
-                        $onChunk($decoded);
-                    }
-                }
-            }
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => $model,
+                'action' => $action . '_error',
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+            throw $e;
         }
     }
 
@@ -563,6 +713,7 @@ SYSTEM;
         string $prompt = '',
         ?callable $progressCallback = null
     ): array {
+        $startTime = microtime(true);
         // Sanitize user inputs to protect against prompt injection
         $notes = array_map(fn($note) => \App\Support\PromptSanitizer::sanitize($note), $notes);
         if (!empty($prompt)) {
@@ -639,9 +790,45 @@ SYSTEM;
                 throw new \Exception("AI generated invalid JSON: " . substr($jsonString, 0, 100));
             }
 
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-flash',
+                'action' => 'generate_flashcards',
+                'request' => [
+                    'notes_count' => count($notes),
+                    'notes_char_length' => strlen(implode('', $notes)),
+                    'number_of_cards' => $numberOfCards,
+                    'difficulty' => $difficulty,
+                    'prompt' => $prompt,
+                ],
+                'response' => [
+                    'cards_count' => count($decoded),
+                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
             return $decoded;
 
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-flash',
+                'action' => 'generate_flashcards',
+                'request' => [
+                    'notes_count' => count($notes),
+                    'notes_char_length' => strlen(implode('', $notes)),
+                    'number_of_cards' => $numberOfCards,
+                    'difficulty' => $difficulty,
+                    'prompt' => $prompt,
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
             Log::error('Flashcard Generation Error: ' . $e->getMessage(), [
                 'prompt_preview' => substr($optimizedPrompt, 0, 200),
                 'error' => $e->getMessage()
@@ -706,6 +893,7 @@ PROMPT;
      */
     public function generateText(string $prompt, string $systemPrompt = "You are a helpful assistant."): string
     {
+        $startTime = microtime(true);
         $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
         try {
             $response = $this->client->post(
@@ -728,8 +916,40 @@ PROMPT;
             );
 
             $data = json_decode($response->getBody()->getContents(), true);
-            return $data['choices'][0]['message']['content'] ?? "I'm sorry, I couldn't generate a response.";
+            $text = $data['choices'][0]['message']['content'] ?? "I'm sorry, I couldn't generate a response.";
+
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-flash',
+                'action' => 'generate_text',
+                'request' => [
+                    'prompt_length' => strlen($prompt),
+                    'system_prompt_length' => strlen($systemPrompt),
+                ],
+                'response' => [
+                    'text_length' => strlen($text),
+                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
+            return $text;
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-flash',
+                'action' => 'generate_text',
+                'request' => [
+                    'prompt_length' => strlen($prompt),
+                    'system_prompt_length' => strlen($systemPrompt),
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
             Log::error('Text Generation Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return "I'm having trouble connecting to my brain right now. Please try again later.";
         }
@@ -993,6 +1213,7 @@ PROMPT;
      */
     public function solveFromImage(string $base64Image): array
     {
+        $startTime = microtime(true);
         try {
             set_time_limit(300);
 
@@ -1107,9 +1328,37 @@ SYSTEM
                 throw new \Exception('AI returned invalid JSON structure for multi-scan');
             }
 
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-pro',
+                'action' => 'solve_from_image',
+                'request' => [
+                    'image_length' => strlen($base64Image),
+                    'ocr_text_length' => strlen($extractedText),
+                ],
+                'response' => [
+                    'results_count' => count($decoded['results']),
+                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
             return $decoded;
 
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-pro',
+                'action' => 'solve_from_image',
+                'request' => [
+                    'image_length' => strlen($base64Image),
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             throw $this->handleApiException($e, 'Image Solve');
         }
     }
@@ -1173,6 +1422,7 @@ SYSTEM
      */
     public function translateText(string $text, string $targetLanguage): string
     {
+        $startTime = microtime(true);
         try {
             $response = $this->client->post(
                 $this->baseUrl . '/chat/completions',
@@ -1199,8 +1449,39 @@ SYSTEM
             );
 
             $data = json_decode($response->getBody()->getContents(), true);
-            return $data['choices'][0]['message']['content'] ?? $text;
+            $translated = $data['choices'][0]['message']['content'] ?? $text;
+
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-flash',
+                'action' => 'translate_text',
+                'request' => [
+                    'text_length' => strlen($text),
+                    'target_language' => $targetLanguage,
+                ],
+                'response' => [
+                    'translated_length' => strlen($translated),
+                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
+                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+                ],
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
+
+            return $translated;
         } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            \App\Support\AILogger::log([
+                'provider' => 'deepseek',
+                'model' => 'deepseek-v4-flash',
+                'action' => 'translate_text',
+                'request' => [
+                    'text_length' => strlen($text),
+                    'target_language' => $targetLanguage,
+                ],
+                'error' => $e,
+                'latency_ms' => $latencyMs,
+            ], auth()->user());
             Log::error('Translation Error: ' . $e->getMessage());
             return $text;
         }
