@@ -90,11 +90,9 @@ return [
         ],
 
         'campusbites_resend' => [
-            'transport' => 'smtp',
-            'host' => 'smtp.resend.com',
-            'port' => 465,
-            'encryption' => 'tls',
-            'username' => 'resend',
+            'transport' => 'resend',
+            // Uses the Resend API (same as the `resend` mailer). Ensure
+            // CAMPUSBITES_RESEND_API_KEY is set in the environment.
             'password' => env('CAMPUSBITES_RESEND_API_KEY'),
             'timeout' => null,
         ],
