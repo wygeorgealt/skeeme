@@ -103,12 +103,21 @@ class AppServiceProvider extends ServiceProvider
 
         // Dynamic Mail Configuration Override
         try {
-            // Check request cache first, then database with short TTL to ensure fresh values when changed
-            $cacheKey = 'app:mail_config';
-            $mailConfig = \Illuminate\Support\Facades\Cache::remember($cacheKey, 1, function () {
+            // Try to load from cache first, but fall back to direct query if cache fails
+            $mailConfig = null;
+            
+            try {
+                $cacheKey = 'app:mail_config';
+                $mailConfig = \Illuminate\Support\Facades\Cache::remember($cacheKey, 1, function () {
+                    $setting = \App\Models\SystemSetting::where('key', 'mail_config')->first();
+                    return $setting ? $setting->value : ['active_resend_account' => 'skeeme'];
+                });
+            } catch (\Throwable $cacheError) {
+                // If cache fails (e.g., missing db file), query directly
+                Log::debug('Cache lookup failed, querying database directly: ' . $cacheError->getMessage());
                 $setting = \App\Models\SystemSetting::where('key', 'mail_config')->first();
-                return $setting ? $setting->value : ['active_resend_account' => 'skeeme'];
-            });
+                $mailConfig = $setting ? $setting->value : ['active_resend_account' => 'skeeme'];
+            }
             
             $activeAccount = $mailConfig['active_resend_account'] ?? 'skeeme';
             
