@@ -15,11 +15,7 @@
             
             <!-- Left Content: Hero Text -->
             <div data-aos="fade-right" data-aos-duration="800">
-                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 mb-6">
-                    <span class="flex h-2 w-2 rounded-full bg-indigo-600 animate-pulse"></span>
-                    <span class="text-xs font-bold text-indigo-900 tracking-wide uppercase">Launching Soon</span>
-                </div>
-                
+
                 <h1 class="text-5xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6">
                     Ace your exams <br> <span class="text-gradient">with AI.</span>
                 </h1>
@@ -88,15 +84,9 @@
                 <!-- Decorative rings around phone -->
                 <div class="absolute w-[120%] h-[120%] bg-indigo-50 rounded-full blur-3xl opacity-50 z-0"></div>
                 
-                <!-- Phone Silhouette Frame -->
-                <div class="relative z-10 w-[300px] lg:w-[340px] aspect-[9/19] bg-slate-900 rounded-[3rem] p-3 shadow-2xl shadow-indigo-500/20 border-4 border-slate-800 rotate-[-2deg] hover:rotate-0 transition-transform duration-700">
-                    <!-- Notch -->
-                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-900 rounded-b-3xl z-30"></div>
-                    
-                    <!-- Screen Container inside Phone -->
-                    <div class="w-full h-full bg-slate-50 rounded-[2.25rem] overflow-hidden relative border border-slate-800/50">
-                        <img src="{{ asset('images/student_app_mockup.png') }}" class="w-full h-full object-cover" alt="Skeeme App Screenshot" />
-                    </div>
+                <!-- App Screenshot -->
+                <div class="relative z-10 w-full max-w-md mx-auto hover:-translate-y-2 transition-transform duration-700">
+                    <img src="{{ asset('images/student_app_mockup.png') }}" class="w-full h-auto drop-shadow-2xl rounded-[2rem]" alt="Skeeme App Screenshot" />
                 </div>
 
                 <!-- Floating Badge 1 -->
