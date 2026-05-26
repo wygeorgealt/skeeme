@@ -38,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.team.permission' => \App\Http\Middleware\CheckTeamPermission::class,
             'sufficient.credits' => \App\Http\Middleware\CheckSufficientCredits::class,
             'rate.limit.ai' => \App\Http\Middleware\RateLimitAiEndpoints::class,
+            'ensure.user.exists' => \App\Http\Middleware\EnsureUserExists::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

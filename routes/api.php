@@ -68,7 +68,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('/webhooks/revenuecat', [\App\Http\Controllers\API\Webhooks\RevenueCatWebhookController::class, 'handle']);
 
     // Authenticated routes
-    Route::group(['middleware' => ['auth:sanctum', 'throttle:api']], function () {
+    Route::group(['middleware' => ['auth:sanctum', 'ensure.user.exists', 'throttle:api']], function () {
         Route::apiResources([
             'announcements' => AnnouncementController::class,
             'attendances' => AttendanceController::class,
@@ -157,7 +157,7 @@ Route::group(['prefix' => 'v1'], function () {
             Route::post('otp/resend', [\App\Http\Controllers\API\OtpController::class, 'resend']);
         });
 
-        Route::group(['middleware' => 'auth:sanctum'], function () {
+        Route::group(['middleware' => ['auth:sanctum', 'ensure.user.exists']], function () {
             Route::post('logout', [\App\Http\Controllers\API\Student\AuthController::class, 'logout']);
             Route::get('me', [\App\Http\Controllers\API\Student\AuthController::class, 'me']);
             Route::post('me/onboarding', [\App\Http\Controllers\API\Student\ProfileController::class, 'completeOnboarding']);
@@ -252,7 +252,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['prefix' => 'team', 'middleware' => 'throttle:auth'], function () {
         Route::post('login', [\App\Http\Controllers\API\Team\AuthController::class, 'login']);
 
-        Route::group(['middleware' => 'auth:sanctum'], function () {
+        Route::group(['middleware' => ['auth:sanctum', 'ensure.user.exists']], function () {
             Route::post('logout', [\App\Http\Controllers\API\Team\AuthController::class, 'logout']);
             Route::get('me', [\App\Http\Controllers\API\Team\AuthController::class, 'user']);
             
