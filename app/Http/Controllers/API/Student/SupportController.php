@@ -53,7 +53,7 @@ class SupportController extends Controller
                 'category' => 'other',
             ]);
  
-            Mail::mailer('resend')->raw($content, function ($msg) use ($user, $recipient, $screenshotPath) {
+            Mail::mailer(config('mail.default'))->raw($content, function ($msg) use ($user, $recipient, $screenshotPath) {
                 $msg->to($recipient)
                     ->replyTo($user->email, $user->name)
                     ->subject("Skeeme Support Ticket - {$user->name}");

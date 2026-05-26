@@ -47,7 +47,7 @@ class SendMarketingEmail extends Command
         $this->info("Contact: {$contactName}");
 
         try {
-            Mail::mailer('resend')->to($email)->send(new MarketingMail(
+            Mail::mailer(config('mail.default'))->to($email)->send(new MarketingMail(
                 schoolName: $schoolName,
                 contactName: $contactName,
                 customMessage: $customMessage

@@ -112,7 +112,7 @@ class UsersTable
                     ])
                     ->action(function (User $record, array $data) {
                         try {
-                            Mail::mailer('resend')->to($record->email)->send(new DynamicBulkMail($data['subject'], $data['header'], $data['body']));
+                            Mail::mailer(config('mail.default'))->to($record->email)->send(new DynamicBulkMail($data['subject'], $data['header'], $data['body']));
                             Notification::make()
                                 ->title('Email sent successfully')
                                 ->success()
@@ -151,7 +151,7 @@ class UsersTable
                             $mailable = new DynamicBulkMail($data['subject'], $data['header'], $data['body']);
                             
                             $records->each(function (User $user) use ($mailable) {
-                                Mail::mailer('resend')->to($user->email)->queue($mailable);
+                                Mail::mailer(config('mail.default'))->to($user->email)->queue($mailable);
                             });
 
                             Notification::make()

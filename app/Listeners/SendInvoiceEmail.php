@@ -52,7 +52,7 @@ class SendInvoiceEmail implements ShouldQueue
             }
 
             // Send the invoice email
-            Mail::mailer('resend')->to($schoolEmail)->send(
+                Mail::mailer(config('mail.default'))->to($schoolEmail)->send(
                 new InvoiceEmail(
                     invoice: $invoice,
                     recipientEmail: $schoolEmail,

@@ -38,10 +38,10 @@ class OtpService
         ]);
 
         try {
-            if ($type === 'verification') {
-                Mail::mailer('resend')->to($email)->queue(new SignupVerificationMail($code, $email));
+                if ($type === 'verification') {
+                Mail::mailer(config('mail.default'))->to($email)->queue(new SignupVerificationMail($code, $email));
             } else {
-                Mail::mailer('resend')->to($email)->queue(new ForgotPasswordMail($code, $email));
+                Mail::mailer(config('mail.default'))->to($email)->queue(new ForgotPasswordMail($code, $email));
             }
             \Illuminate\Support\Facades\Log::info("OTP email queued successfully to {$email}", ['type' => $type]);
         } catch (\Exception $e) {

@@ -48,8 +48,8 @@ class EmailCampaign extends Model
 
         // Send emails
         foreach ($recipients as $recipient) {
-            try {
-                \Mail::mailer('resend')->to($recipient->email)
+                try {
+                \Mail::mailer(config('mail.default'))->to($recipient->email)
                     ->queue(new \App\Mail\CampaignEmail($this));
                 $this->increment('sent_count');
             } catch (\Exception $e) {

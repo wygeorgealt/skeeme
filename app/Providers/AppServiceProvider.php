@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Cache\RateLimiting\Limit;
 
@@ -102,6 +103,12 @@ class AppServiceProvider extends ServiceProvider
                 \Illuminate\Support\Facades\Config::set('mail.default', 'campusbites_resend');
                 \Illuminate\Support\Facades\Config::set('mail.from.address', 'noreply@campusbites.org');
                 \Illuminate\Support\Facades\Config::set('mail.from.name', 'Skeeme');
+
+                // Warn at runtime if the campusbites resend API key isn't configured
+                $campusKey = config('mail.mailers.campusbites_resend.password') ?: env('CAMPUSBITES_RESEND_API_KEY');
+                if (empty($campusKey)) {
+                    Log::warning('campusbites_resend selected but CAMPUSBITES_RESEND_API_KEY is not set. Emails may fail. Set CAMPUSBITES_RESEND_API_KEY in the environment or update Mail Settings in Filament.');
+                }
             } else {
                 \Illuminate\Support\Facades\Config::set('mail.default', 'resend');
                 // Rely on the standard .env configuration for from address/name

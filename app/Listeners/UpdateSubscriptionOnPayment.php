@@ -102,7 +102,7 @@ class UpdateSubscriptionOnPayment
 
                 // Send Upgrade Confirmation Email
                 try {
-                    Mail::mailer('resend')->to($user->email)->send(new \App\Mail\UpgradeConfirmationMail($user, $planName));
+                    Mail::mailer(config('mail.default'))->to($user->email)->send(new \App\Mail\UpgradeConfirmationMail($user, $planName));
                 } catch (\Exception $e) {
                     Log::error('Failed to send upgrade confirmation email', ['error' => $e->getMessage()]);
                 }

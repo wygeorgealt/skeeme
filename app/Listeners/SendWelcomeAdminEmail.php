@@ -22,7 +22,7 @@ class SendWelcomeAdminEmail implements ShouldQueue
         $school = $event->user->school;
 
         if ($school) {
-            Mail::mailer('resend')->to($event->user->email)->send(
+                Mail::mailer(config('mail.default'))->to($event->user->email)->send(
                 new WelcomeAdminEmail($event->user, $school->name)
             );
         }

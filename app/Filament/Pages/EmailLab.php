@@ -182,9 +182,9 @@ class EmailLab extends Page implements HasForms
             foreach ($recipients as $recipient) {
                 // If it's test, send synchronously so we see errors immediately
                 if ($audience === 'test') {
-                    Mail::mailer('resend')->to($recipient->email)->send($mailable);
+                    Mail::mailer(config('mail.default'))->to($recipient->email)->send($mailable);
                 } else {
-                    Mail::mailer('resend')->to($recipient->email)->queue($mailable);
+                    Mail::mailer(config('mail.default'))->to($recipient->email)->queue($mailable);
                 }
             }
 
