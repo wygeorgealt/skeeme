@@ -85,6 +85,12 @@ class AppServiceProvider extends ServiceProvider
             \SocialiteProviders\Zoom\ZoomExtendSocialite::class.'@handle',
         );
 
+        // Log mail errors to help debug sending issues
+        Event::listen(
+            \Illuminate\Mail\Events\MessageFailed::class,
+            \App\Listeners\LogMailError::class,
+        );
+
         // Authorization Gates for Creator Tools
         Gate::define('viewWebTinker', function ($user) {
             return $user->isCreator();
@@ -105,23 +111,24 @@ class AppServiceProvider extends ServiceProvider
             });
             
             $activeAccount = $mailConfig['active_resend_account'] ?? 'skeeme';
-            Log::debug("Mail config loaded: {$activeAccount}");
             
             if (isset($mailConfig['active_resend_account']) && $mailConfig['active_resend_account'] === 'campusbites') {
                 \Illuminate\Support\Facades\Config::set('mail.default', 'campusbites_resend');
                 \Illuminate\Support\Facades\Config::set('mail.from.address', 'noreply@campusbites.org');
                 \Illuminate\Support\Facades\Config::set('mail.from.name', 'Skeeme');
-                Log::info('Switched to campusbites_resend mailer');
-
-                // Warn at runtime if the campusbites resend API key isn't configured
-                $campusKey = config('mail.mailers.campusbites_resend.password') ?: env('CAMPUSBITES_RESEND_API_KEY');
-                if (empty($campusKey)) {
-                    Log::warning('campusbites_resend selected but CAMPUSBITES_RESEND_API_KEY is not set. Emails may fail. Set CAMPUSBITES_RESEND_API_KEY in the environment or update Mail Settings in Filament.');
+                
+                // Ensure the campusbites API key is set in the transport config
+                $campusKey = env('CAMPUSBITES_RESEND_API_KEY');
+                if (!empty($campusKey)) {
+                    // Set the API key for the Resend transport to use
+                    \Illuminate\Support\Facades\Config::set('services.resend.key', $campusKey);
+                } else {
+                    Log::warning('campusbites_resend selected but CAMPUSBITES_RESEND_API_KEY is not set. Emails will use default RESEND_API_KEY.');
                 }
             } else {
                 \Illuminate\Support\Facades\Config::set('mail.default', 'resend');
-                Log::info('Using default resend mailer (skeeme account)');
-                // Rely on the standard .env configuration for from address/name
+                // Ensure we use the main Skeeme API key
+                \Illuminate\Support\Facades\Config::set('services.resend.key', env('RESEND_API_KEY'));
             }
         } catch (\Throwable $th) {
             Log::error('Error loading mail config: ' . $th->getMessage());
