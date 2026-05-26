@@ -56,18 +56,18 @@
                 <!-- Store Badges -->
                 <div class="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
                     <!-- Apple App Store Badge Mock -->
-                    <div class="flex items-center justify-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-xl border border-slate-800 opacity-60 cursor-not-allowed hover:opacity-75 transition-opacity w-fit select-none shadow-lg">
+                    <div class="flex items-center justify-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-xl border border-slate-800 hover:opacity-90 transition-opacity w-fit select-none shadow-lg cursor-pointer">
                         <svg class="size-7" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                             <path d="M16.92 13.9c.02 3.12 2.67 4.14 2.7 4.16-.02.05-.42 1.44-1.42 2.89-1.01 1.48-2.07 2.95-3.69 2.98-1.61.03-2.12-.97-3.95-.97-1.84 0-2.4.94-3.92 1.01-1.57.07-2.77-1.55-3.79-3.03-2.1-3.03-3.71-8.56-1.57-12.27 1.06-1.84 2.94-3.01 4.98-3.04 1.57-.03 3.03 1.05 3.99 1.05.95 0 2.68-1.3 4.54-1.11 1.95.2 3.51 1.07 4.49 2.6-.08.05-2.69 1.53-2.7 4.62M14.77 4.09c.87-1.04 1.46-2.5 1.3-3.95-1.28.05-2.82.85-3.72 1.93-.81.95-1.49 2.45-1.3 3.86 1.44.11 2.85-.75 3.72-1.84"/>
                         </svg>
                         <div class="text-left">
-                            <div class="text-[10px] leading-tight text-slate-300">Coming soon to the</div>
+                            <div class="text-[10px] leading-tight text-slate-300">Download on the</div>
                             <div class="text-lg font-semibold leading-tight tracking-tight">App Store</div>
                         </div>
                     </div>
                     
                     <!-- Google Play Badge Mock -->
-                    <div class="flex items-center justify-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-xl border border-slate-800 opacity-60 cursor-not-allowed hover:opacity-75 transition-opacity w-fit select-none shadow-lg whitespace-nowrap">
+                    <div class="flex items-center justify-center gap-3 bg-slate-900 text-white px-5 py-3 rounded-xl border border-slate-800 hover:opacity-90 transition-opacity w-fit select-none shadow-lg whitespace-nowrap cursor-pointer">
                         <svg class="size-7" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                             <path d="M2.5 1.5L14.5 12L2.5 22.5V1.5Z" fill="#3BCAE6"/>
                             <path fill-rule="evenodd" clip-rule="evenodd" d="M14.5 12L21.5 16L18 19L14.5 12Z" fill="#D5163D"/>
@@ -75,7 +75,7 @@
                             <path d="M14.5 12L2.5 1.5L12.5 7L14.5 12Z" fill="#25A054"/>
                         </svg>
                         <div class="text-left">
-                            <div class="text-[10px] leading-tight text-slate-300">Coming soon to</div>
+                            <div class="text-[10px] leading-tight text-slate-300">GET IT ON</div>
                             <div class="text-lg font-semibold leading-tight tracking-tight">Google Play</div>
                         </div>
                     </div>
@@ -94,32 +94,8 @@
                     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-900 rounded-b-3xl z-30"></div>
                     
                     <!-- Screen Container inside Phone -->
-                    <div class="w-full h-full bg-slate-50 rounded-[2.25rem] overflow-hidden relative border border-slate-800/50 flex flex-col items-center justify-center p-6 text-center">
-                        <img src="{{ asset('logo.svg') }}" class="w-24 h-auto mb-6 drop-shadow-md opacity-90" onerror="this.src='{{ asset('images/logo.png') }}'" alt="Skeeme Logo" />
-                        
-                        <div class="w-full space-y-4">
-                            <!-- Mock UI Elements -->
-                            <div class="h-28 w-full bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center flex-col animate-pulse">
-                                <flux:icon.camera class="size-8 text-indigo-400 mb-2" />
-                                <div class="w-24 h-2 bg-slate-200 rounded-full"></div>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="h-24 w-full bg-indigo-600 rounded-2xl shadow-md flex items-center justify-center flex-col">
-                                    <div class="w-12 h-2 bg-indigo-300 rounded-full mb-2"></div>
-                                    <div class="w-16 h-2 bg-indigo-400 rounded-full"></div>
-                                </div>
-                                <div class="h-24 w-full bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center">
-                                    <div class="w-16 h-16 rounded-full border-4 border-slate-100 border-t-indigo-500"></div>
-                                </div>
-                            </div>
-
-                            <div class="h-16 w-full bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center px-4 gap-3">
-                                <div class="w-8 h-8 rounded-full border border-slate-100 bg-slate-50 flex items-center justify-center"><flux:icon.check class="size-4 text-emerald-500"/></div>
-                                <div class="flex-1 h-2 bg-slate-100 rounded-full"></div>
-                            </div>
-                        </div>
-
+                    <div class="w-full h-full bg-slate-50 rounded-[2.25rem] overflow-hidden relative border border-slate-800/50">
+                        <img src="{{ asset('images/student_app_mockup.png') }}" class="w-full h-full object-cover" alt="Skeeme App Screenshot" />
                     </div>
                 </div>
 
