@@ -241,11 +241,19 @@ class User extends Authenticatable implements FilamentUser
                 \Illuminate\Support\Facades\Cache::put(
                     "credits_emptied_at:{$user->id}",
                     now()->toIso8601String(),
-                    now()->addDays(30) // 30-day TTL — keeps the stamp safe so refills are never lost
+                    now()->addDay() // 1-day TTL – prevents stale stamp
                 );
                 
                 // Dispatch delayed notification job for the 5-hour refill
                 \App\Jobs\NotifyFreeUserCreditRefilled::dispatch($user->id)->delay(now()->addHours(5));
+
+                // Record a credit-refill transaction for audit purposes
+                \App\Models\Transaction::create([
+                    'user_id' => $user->id,
+                    'type' => 'credit_refill',
+                    'amount' => 100,
+                    'description' => 'Free plan 5-hour refill (100 credits)',
+                ]);
             }
             
             $user->transactions()->create([

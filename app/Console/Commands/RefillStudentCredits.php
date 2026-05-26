@@ -54,13 +54,29 @@ class RefillStudentCredits extends Command
             };
 
             // Hard SET to the monthly allocation — does not stack with existing balance
-            $user->update([
-                'credits'               => $refillAmount,
-                'last_credit_refill_at' => now(),
-            ]);
-
-            // Clear the daily allowance Redis key so the new month starts clean
-            Cache::forget("daily_allowance_date:{$user->id}");
+// Safely credit the user – increment instead of overwriting existing balance
+                try {
+                    // Increment credits (adds to any existing balance)
+                    $user->increment('credits', $refillAmount);
+                    // Record the monthly refill transaction
+                    Transaction::create([
+                        'user_id' => $user->id,
+                        'type' => 'credit_refill',
+                        'amount' => $refillAmount,
+                        'description' => $desc,
+                        'metadata' => json_encode(['plan' => $plan, 'type' => 'monthly_grant']),
+                    ]);
+                    // Update the refill timestamp for the monthly cron
+                    $user->update(['last_credit_refill_at' => now()]);
+                } catch (\Exception $e) {
+                    Log::error('Monthly credit refill failed for user', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    continue; // skip to next user
+                }
+                // Clear the daily allowance Redis key so the new month starts clean
+                Cache::forget("daily_allowance_date:{$user->id}");
 
             Transaction::create([
                 'user_id'     => $user->id,
