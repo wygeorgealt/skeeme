@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'smtp'),
+    'default' => env('MAIL_MAILER', 'campusbites_resend'),
 
     /*
     |--------------------------------------------------------------------------
@@ -120,8 +120,8 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        'address' => env('MAIL_FROM_ADDRESS', 'noreply@campusbites.org'),
+        'name' => env('MAIL_FROM_NAME', 'Skeeme'),
     ],
 
     /*

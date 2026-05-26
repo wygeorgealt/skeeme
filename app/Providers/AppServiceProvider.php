@@ -85,12 +85,6 @@ class AppServiceProvider extends ServiceProvider
             \SocialiteProviders\Zoom\ZoomExtendSocialite::class.'@handle',
         );
 
-        // Log mail errors to help debug sending issues
-        Event::listen(
-            \Illuminate\Mail\Events\MessageFailed::class,
-            \App\Listeners\LogMailError::class,
-        );
-
         // Authorization Gates for Creator Tools
         Gate::define('viewWebTinker', function ($user) {
             return $user->isCreator();
@@ -100,40 +94,8 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\SupportTicket::observe(\App\Observers\SupportTicketObserver::class);
  
         $this->configureRateLimiting();
-
-        // Dynamic Mail Configuration Override (same pattern as AI config)
-        try {
-            $mailConfig = \App\Models\SystemSetting::get('mail_config', ['active_resend_account' => 'skeeme']);
-            
-            if ($mailConfig['active_resend_account'] === 'campusbites') {
-                \Illuminate\Support\Facades\Config::set('mail.default', 'campusbites_resend');
-                \Illuminate\Support\Facades\Config::set('mail.from.address', 'noreply@campusbites.org');
-                \Illuminate\Support\Facades\Config::set('mail.from.name', 'Skeeme');
-                
-                $campusKey = env('CAMPUSBITES_RESEND_API_KEY');
-                if (!empty($campusKey)) {
-                    // Set API key in both places to ensure transport reads it
-                    \Illuminate\Support\Facades\Config::set('services.resend.key', $campusKey);
-                    \Illuminate\Support\Facades\Config::set('mail.mailers.campusbites_resend.password', $campusKey);
-                    // Reset the mail manager's mailer cache to force reload with new config
-                    \Illuminate\Support\Facades\Mail::forgetMailers();
-                    Log::info('✓ Mail: Switched to campusbites_resend');
-                } else {
-                    Log::warning('✗ Mail: campusbites_resend selected but CAMPUSBITES_RESEND_API_KEY is not set.');
-                }
-            } else {
-                \Illuminate\Support\Facades\Config::set('mail.default', 'resend');
-                $skeeemeKey = env('RESEND_API_KEY');
-                \Illuminate\Support\Facades\Config::set('services.resend.key', $skeeemeKey);
-                \Illuminate\Support\Facades\Config::set('mail.mailers.resend.password', $skeeemeKey);
-                // Reset the mail manager's mailer cache
-                \Illuminate\Support\Facades\Mail::forgetMailers();
-                Log::info('✓ Mail: Using skeeme resend account');
-            }
-        } catch (\Throwable $th) {
-            // Ignore during setup/migrations — defaults will be used
-        }
     }
+
 
     /**
      * Configure the rate limiters for the application.
