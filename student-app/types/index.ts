@@ -7,9 +7,7 @@ export interface User {
     name: string;
     email: string;
     credits: number;
-    is_unlimited: boolean;
-    is_unlimited_student?: boolean;
-    plan_name?: string; // 'free', 'standard', 'elite', etc.
+    plan_name?: string; // 'free', 'pro', 'max'
     next_free_refill_at?: string | null;
     streak?: {
         current_streak: number;

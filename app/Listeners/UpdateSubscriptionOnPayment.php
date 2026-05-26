@@ -42,28 +42,28 @@ class UpdateSubscriptionOnPayment
         }
 
         // Handle Individual Student Subscriptions
-        if ($payment->user_id && (str_contains($invoice->plan_name, 'Standard') || str_contains($invoice->plan_name, 'Elite') || str_contains($invoice->plan_name, 'Unlimited'))) {
+        if ($payment->user_id && (str_contains($invoice->plan_name, 'Pro') || str_contains($invoice->plan_name, 'Max') || str_contains($invoice->plan_name, 'Standard') || str_contains($invoice->plan_name, 'Elite') || str_contains($invoice->plan_name, 'Unlimited'))) {
             $user = $payment->user;
             if ($user && $user->role === 'student') {
                 // Parse metadata
                 $metadata = is_array($payment->metadata) ? $payment->metadata : json_decode($payment->metadata ?? '[]', true);
                 $isTrial = $metadata['is_trial'] ?? false;
-                $intendedPlan = $metadata['plan'] ?? (str_contains($invoice->plan_name, 'Elite') ? 'Elite' : 'Standard');
+                $intendedPlan = $metadata['plan'] ?? (str_contains($invoice->plan_name, 'Max') || str_contains($invoice->plan_name, 'Elite') || str_contains($invoice->plan_name, 'Unlimited') ? 'Max' : 'Pro');
                 $isYearly = ($metadata['cycle'] ?? '') === 'yearly' || str_contains($invoice->plan_name, 'yearly');
                 
-                $isElite = strtolower($intendedPlan) === 'elite';
-                $planName = $isElite ? 'Elite' : 'Standard';
+                $isMax = strtolower($intendedPlan) === 'max';
+                $planName = $isMax ? 'Skeeme_Max' : 'Skeeme_Pro';
                 
                 // Trial logic
                 $trialEndsAt = $isTrial ? now()->addDays(3) : null;
                 $duration = $isTrial ? 3 : ($isYearly ? 366 : 31);
                 
-                // Credits: Elite gets 20k, Standard gets 6k (From SystemSetting)
+                // Credits: Max gets 100k, Pro gets 20k
                 $pricing = \App\Models\SystemSetting::getPricingConfig();
-                $creditsToAdd = $pricing['ngn'][strtolower($planName)]['credits'] ?? ($isElite ? 20000 : 6000);
+                $creditsToAdd = $pricing['ngn'][strtolower($planName)]['credits'] ?? ($isMax ? 100000 : 20000);
 
                 $user->update([
-                    'is_unlimited_student' => true,
+                    'subscription_tier' => $isMax ? 'max' : 'pro',
                     'credits' => min(999999, $user->credits + $creditsToAdd),
                     'last_credit_refill_at' => now(), 
                 ]);

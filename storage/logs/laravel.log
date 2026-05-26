@@ -491,3 +491,125 @@
 #5 C:/Users/kritex/Herd/skeeme/artisan(16): Illuminate/Foundation/Application->handleCommand(Object(Symfony/Component/Console/Input/ArgvInput))
 #6 {main}
 "} 
+[2026-05-26 08:22:48] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:22:48] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:22:49] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"","timezone":"Africa/Lagos","theme":"light"} 
+[2026-05-26 08:22:49] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:22:53] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:22:53] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:22:53] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"","timezone":"Africa/Lagos","theme":"light"} 
+[2026-05-26 08:22:53] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:22:57] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:22:57] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:22:57] testing.DEBUG: Property updated: academicYear {"value":"2024/2025","step":1} 
+[2026-05-26 08:22:57] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:22:57] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:22:58] testing.INFO: nextStep called {"step":2,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:22:58] testing.INFO: Step 2 validation passed {"academicYear":"2024/2025","timezone":"America/New_York","theme":"light","address":"","logo":null} 
+[2026-05-26 08:23:04] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:23:04] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:23:04] testing.DEBUG: Property updated: academicYear {"value":"2024/2025","step":1} 
+[2026-05-26 08:23:04] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:23:04] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:23:04] testing.INFO: nextStep called {"step":2,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:23:04] testing.INFO: Step 2 validation passed {"academicYear":"2024/2025","timezone":"America/New_York","theme":"light","address":"","logo":null} 
+[2026-05-26 08:23:10] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:23:10] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:23:10] testing.DEBUG: Property updated: academicYear {"value":"2024/2025","step":1} 
+[2026-05-26 08:23:11] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:23:11] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:23:11] testing.INFO: nextStep called {"step":2,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:23:11] testing.INFO: Step 2 validation passed {"academicYear":"2024/2025","timezone":"America/New_York","theme":"light","address":"","logo":null} 
+[2026-05-26 08:39:02] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:39:02] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:39:02] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"","timezone":"Africa/Lagos","theme":"light"} 
+[2026-05-26 08:39:02] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:39:06] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:39:06] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:39:06] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"","timezone":"Africa/Lagos","theme":"light"} 
+[2026-05-26 08:39:06] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:39:10] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:39:10] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:39:10] testing.DEBUG: Property updated: academicYear {"value":"2024/2025","step":1} 
+[2026-05-26 08:39:11] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:39:11] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:39:11] testing.INFO: nextStep called {"step":2,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:39:11] testing.INFO: Step 2 validation passed {"academicYear":"2024/2025","timezone":"America/New_York","theme":"light","address":"","logo":null} 
+[2026-05-26 08:39:17] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:39:18] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:39:18] testing.DEBUG: Property updated: academicYear {"value":"2024/2025","step":1} 
+[2026-05-26 08:39:18] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:39:18] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:39:18] testing.INFO: nextStep called {"step":2,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:39:18] testing.INFO: Step 2 validation passed {"academicYear":"2024/2025","timezone":"America/New_York","theme":"light","address":"","logo":null} 
+[2026-05-26 08:39:37] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:39:37] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:39:37] testing.DEBUG: Property updated: academicYear {"value":"2024/2025","step":1} 
+[2026-05-26 08:39:37] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:39:37] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:39:37] testing.INFO: nextStep called {"step":2,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:39:37] testing.INFO: Step 2 validation passed {"academicYear":"2024/2025","timezone":"America/New_York","theme":"light","address":"","logo":null} 
+[2026-05-26 08:40:53] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:40:53] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:40:53] testing.DEBUG: Property updated: academicYear {"value":"2024/2025","step":1} 
+[2026-05-26 08:40:53] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:40:53] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:40:53] testing.INFO: nextStep called {"step":2,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:40:53] testing.INFO: Step 2 validation passed {"academicYear":"2024/2025","timezone":"America/New_York","theme":"light","address":"","logo":null} 
+[2026-05-26 08:41:18] testing.DEBUG: Property updated: firstName {"value":"John","step":1} 
+[2026-05-26 08:41:18] testing.DEBUG: Property updated: lastName {"value":"Doe","step":1} 
+[2026-05-26 08:41:19] testing.DEBUG: Property updated: academicYear {"value":"2024/2025","step":1} 
+[2026-05-26 08:41:19] testing.INFO: nextStep called {"step":1,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:41:19] testing.INFO: Step 1 validation passed {"schoolName":"Test School","firstName":"John","lastName":"Doe"} 
+[2026-05-26 08:41:19] testing.INFO: nextStep called {"step":2,"schoolName":"Test School","firstName":"John","lastName":"Doe","academicYear":"2024/2025","timezone":"America/New_York","theme":"light"} 
+[2026-05-26 08:41:19] testing.INFO: Step 2 validation passed {"academicYear":"2024/2025","timezone":"America/New_York","theme":"light","address":"","logo":null} 
+[2026-05-26 08:44:39] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2565,"user_role":"student","current_route":"students.subscribe","path":"students/subscribe","url":"http://skeeme.test/students/subscribe"} 
+[2026-05-26 08:44:39] testing.INFO: Student currency detection {"user_id":2565,"timezone":"UTC","detected_currency":"NGN","amount":5000,"cookie_timezone":null,"user_timezone":null} 
+[2026-05-26 08:44:48] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2566,"user_role":"student","current_route":"students.callback","path":"students/callback","url":"http://skeeme.test/students/callback"} 
+[2026-05-26 08:44:52] testing.INFO: No school associated with invoice (likely B2C student purchase), skipping invoice email. {"invoice_id":28} 
+[2026-05-26 08:44:52] testing.INFO: Processing subscription update for payment {"payment_id":23} 
+[2026-05-26 08:44:55] testing.INFO: Student Subscription Activated/Renewed (Dynamic) {"user_id":2566,"plan":"Standard","is_trial":false,"auth_captured":false} 
+[2026-05-26 08:45:05] testing.INFO: No school associated with invoice (likely B2C student purchase), skipping invoice email. {"invoice_id":28} 
+[2026-05-26 08:45:05] testing.INFO: Processing subscription update for payment {"payment_id":23} 
+[2026-05-26 08:45:07] testing.INFO: Student Subscription Activated/Renewed (Dynamic) {"user_id":2566,"plan":"Standard","is_trial":false,"auth_captured":false} 
+[2026-05-26 08:45:13] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2567,"user_role":"student","current_route":"students.callback","path":"students/callback","url":"http://skeeme.test/students/callback"} 
+[2026-05-26 08:45:56] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2568,"user_role":"student","current_route":"students.subscribe","path":"students/subscribe","url":"http://skeeme.test/students/subscribe"} 
+[2026-05-26 08:45:56] testing.INFO: Student currency detection {"user_id":2568,"timezone":"UTC","detected_currency":"NGN","amount":5000,"cookie_timezone":null,"user_timezone":null} 
+[2026-05-26 08:46:03] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2569,"user_role":"student","current_route":"students.callback","path":"students/callback","url":"http://skeeme.test/students/callback"} 
+[2026-05-26 08:46:07] testing.INFO: No school associated with invoice (likely B2C student purchase), skipping invoice email. {"invoice_id":30} 
+[2026-05-26 08:46:07] testing.INFO: Processing subscription update for payment {"payment_id":25} 
+[2026-05-26 08:46:10] testing.INFO: Student Subscription Activated/Renewed (Dynamic) {"user_id":2569,"plan":"Skeeme_Max","is_trial":false,"auth_captured":false} 
+[2026-05-26 08:46:13] testing.INFO: No school associated with invoice (likely B2C student purchase), skipping invoice email. {"invoice_id":30} 
+[2026-05-26 08:46:13] testing.INFO: Processing subscription update for payment {"payment_id":25} 
+[2026-05-26 08:46:15] testing.INFO: Student Subscription Activated/Renewed (Dynamic) {"user_id":2569,"plan":"Skeeme_Max","is_trial":false,"auth_captured":false} 
+[2026-05-26 08:46:21] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2570,"user_role":"student","current_route":"students.callback","path":"students/callback","url":"http://skeeme.test/students/callback"} 
+[2026-05-26 08:47:02] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2571,"user_role":"student","current_route":"students.subscribe","path":"students/subscribe","url":"http://skeeme.test/students/subscribe"} 
+[2026-05-26 08:47:02] testing.INFO: Student currency detection {"user_id":2571,"timezone":"UTC","detected_currency":"NGN","amount":5000,"cookie_timezone":null,"user_timezone":null} 
+[2026-05-26 08:47:04] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2572,"user_role":"student","current_route":"students.subscribe","path":"students/subscribe","url":"http://skeeme.test/students/subscribe"} 
+[2026-05-26 08:47:04] testing.INFO: Student currency detection {"user_id":2572,"timezone":"UTC","detected_currency":"NGN","amount":5000,"cookie_timezone":null,"user_timezone":null} 
+[2026-05-26 08:47:10] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2573,"user_role":"student","current_route":"students.callback","path":"students/callback","url":"http://skeeme.test/students/callback"} 
+[2026-05-26 08:47:12] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2574,"user_role":"student","current_route":"students.callback","path":"students/callback","url":"http://skeeme.test/students/callback"} 
+[2026-05-26 08:47:14] testing.INFO: No school associated with invoice (likely B2C student purchase), skipping invoice email. {"invoice_id":33} 
+[2026-05-26 08:47:14] testing.INFO: Processing subscription update for payment {"payment_id":28} 
+[2026-05-26 08:47:16] testing.INFO: No school associated with invoice (likely B2C student purchase), skipping invoice email. {"invoice_id":34} 
+[2026-05-26 08:47:16] testing.INFO: Processing subscription update for payment {"payment_id":29} 
+[2026-05-26 08:47:18] testing.INFO: Student Subscription Activated/Renewed (Dynamic) {"user_id":2573,"plan":"Skeeme_Max","is_trial":false,"auth_captured":false} 
+[2026-05-26 08:47:20] testing.INFO: Student Subscription Activated/Renewed (Dynamic) {"user_id":2574,"plan":"Skeeme_Max","is_trial":false,"auth_captured":false} 
+[2026-05-26 08:47:21] testing.INFO: No school associated with invoice (likely B2C student purchase), skipping invoice email. {"invoice_id":33} 
+[2026-05-26 08:47:21] testing.INFO: Processing subscription update for payment {"payment_id":28} 
+[2026-05-26 08:47:23] testing.INFO: No school associated with invoice (likely B2C student purchase), skipping invoice email. {"invoice_id":34} 
+[2026-05-26 08:47:23] testing.INFO: Processing subscription update for payment {"payment_id":29} 
+[2026-05-26 08:47:24] testing.INFO: Student Subscription Activated/Renewed (Dynamic) {"user_id":2573,"plan":"Skeeme_Max","is_trial":false,"auth_captured":false} 
+[2026-05-26 08:47:25] testing.INFO: Student Subscription Activated/Renewed (Dynamic) {"user_id":2574,"plan":"Skeeme_Max","is_trial":false,"auth_captured":false} 
+[2026-05-26 08:47:30] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2575,"user_role":"student","current_route":"students.callback","path":"students/callback","url":"http://skeeme.test/students/callback"} 
+[2026-05-26 08:47:31] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2576,"user_role":"student","current_route":"students.callback","path":"students/callback","url":"http://skeeme.test/students/callback"} 
+[2026-05-26 08:49:14] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2577,"user_role":"student","current_route":"students.subscribe","path":"students/subscribe","url":"http://skeeme.test/students/subscribe"} 
+[2026-05-26 08:49:14] testing.INFO: Student currency detection {"user_id":2577,"timezone":"UTC","detected_currency":"NGN","amount":5000,"cookie_timezone":null,"user_timezone":null} 
+[2026-05-26 08:49:21] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2578,"user_role":"student","current_route":"students.callback","path":"students/callback","url":"http://skeeme.test/students/callback"} 
+[2026-05-26 08:49:25] testing.INFO: No school associated with invoice (likely B2C student purchase), skipping invoice email. {"invoice_id":36} 
+[2026-05-26 08:49:25] testing.INFO: Processing subscription update for payment {"payment_id":31} 
+[2026-05-26 08:49:28] testing.INFO: Student Subscription Activated/Renewed (Dynamic) {"user_id":2578,"plan":"Skeeme_Max","is_trial":false,"auth_captured":false} 
+[2026-05-26 08:49:37] testing.INFO: No school associated with invoice (likely B2C student purchase), skipping invoice email. {"invoice_id":36} 
+[2026-05-26 08:49:37] testing.INFO: Processing subscription update for payment {"payment_id":31} 
+[2026-05-26 08:49:39] testing.INFO: Student Subscription Activated/Renewed (Dynamic) {"user_id":2578,"plan":"Skeeme_Max","is_trial":false,"auth_captured":false} 
+[2026-05-26 08:49:45] testing.ERROR: RedirectBasedOnRole DEBUG {"user_id":2579,"user_role":"student","current_route":"students.callback","path":"students/callback","url":"http://skeeme.test/students/callback"} 

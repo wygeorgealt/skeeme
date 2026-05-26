@@ -36,8 +36,8 @@ class IndividualSubscription extends Model
 
     // Plan constants for students
     const PLAN_FREE = 'Free';
-    const PLAN_STANDARD = 'Standard';
-    const PLAN_ELITE = 'Elite';
+    const PLAN_PRO = 'Skeeme_Pro';
+    const PLAN_MAX = 'Skeeme_Max';
 
     const PLANS = [
         self::PLAN_FREE => [
@@ -51,29 +51,29 @@ class IndividualSubscription extends Model
                 'speed' => 'Basic',
             ],
         ],
-        self::PLAN_STANDARD => [
-            'name' => 'Skeeme Standard',
-            'credits_monthly' => 5000,
+        self::PLAN_PRO => [
+            'name' => 'Skeeme Pro',
+            'credits_monthly' => 20000,
             'price_monthly_ngn' => 5000,
             'price_yearly_ngn' => 29999,
             'price_monthly_usd' => 12.99,
             'price_yearly_usd' => 99.99, // Calculated as ~7.5 months
             'features' => [
-                'credits' => '5,000 / month',
+                'credits' => '20,000 / month',
                 'queue' => 'Priority',
                 'speed' => 'Fast AI',
                 'badge' => 'Most Popular',
             ],
         ],
-        self::PLAN_ELITE => [
-            'name' => 'Skeeme Elite',
-            'credits_monthly' => 15000,
+        self::PLAN_MAX => [
+            'name' => 'Skeeme Max',
+            'credits_monthly' => 100000,
             'price_monthly_ngn' => 13000,
             'price_yearly_ngn' => 119000,
             'price_monthly_usd' => 29.99,
             'price_yearly_usd' => 249.99,
             'features' => [
-                'credits' => '15,000 / month',
+                'credits' => '100,000 / month',
                 'queue' => 'Highest Priority',
                 'speed' => 'Best Performance',
                 'badge' => 'For Power Users',

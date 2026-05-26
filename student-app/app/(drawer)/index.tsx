@@ -151,7 +151,7 @@ export default function DashboardScreen() {
                     <View>
                         <Text style={[s.heroLabel, { color: C.textSecondary }]}>AVAILABLE BALANCE</Text>
                         <Text style={[s.heroValue, { color: C.text }]}>
-                            {user.is_unlimited ? '∞' : user.credits?.toLocaleString() ?? '0'}
+                            {user.credits?.toLocaleString() ?? '0'}
                         </Text>
                     </View>
                     {user.plan_name === 'free' && (

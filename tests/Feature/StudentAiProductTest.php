@@ -59,7 +59,7 @@ class StudentAiProductTest extends TestCase
      */
     public function test_registered_student_deducts_credits()
     {
-        $user = User::factory()->create(['role' => 'student', 'credits' => 100, 'is_unlimited_student' => false]);
+        $user = User::factory()->create(['role' => 'student', 'credits' => 100, 'subscription_tier' => 'free']);
         $this->actingAs($user);
 
         $this->mock(DeepseekAIService::class, function (MockInterface $mock) {
@@ -77,34 +77,14 @@ class StudentAiProductTest extends TestCase
         $this->assertEquals(50, $user->credits);
     }
 
-    /**
-     * Test unlimited student does not deduct credits.
-     */
-    public function test_unlimited_student_does_not_deduct_credits()
-    {
-        $user = User::factory()->create(['role' => 'student', 'credits' => 100, 'is_unlimited_student' => true]);
-        $this->actingAs($user);
 
-        $this->mock(DeepseekAIService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('generateQuestions')->once()->andReturn([
-                ['question_text' => 'Test Q', 'options' => ['A', 'B'], 'correct_answer' => 'A', 'question_type' => 'multiple_choice']
-            ]);
-        });
-
-        Livewire::test(StudentAiProduct::class)
-            ->set('topic', 'Math')
-            ->call('generate');
-
-        $user->refresh();
-        $this->assertEquals(100, $user->credits);
-    }
 
     /**
      * Test access is blocked when credits are low.
      */
     public function test_access_blocked_when_credits_low()
     {
-        $user = User::factory()->create(['role' => 'student', 'credits' => 40, 'is_unlimited_student' => false]);
+        $user = User::factory()->create(['role' => 'student', 'credits' => 40, 'subscription_tier' => 'free']);
         $this->actingAs($user);
 
         Livewire::test(StudentAiProduct::class)

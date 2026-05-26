@@ -41,7 +41,6 @@ class User extends Authenticatable implements FilamentUser
         'approved_at',
         'timezone',
         'credits',
-        'is_unlimited_student',
         'last_credit_refill_at',
         'ai_preferences',
         'provider',
@@ -50,6 +49,7 @@ class User extends Authenticatable implements FilamentUser
         'notifications_enabled',
         'referral_code',
         'last_credit_alert_at',
+        'subscription_tier',
     ];
 
     /**
@@ -86,22 +86,13 @@ class User extends Authenticatable implements FilamentUser
             'approved_at' => 'datetime',
             'last_credit_refill_at' => 'datetime',
             'password' => 'hashed',
-            'is_unlimited_student' => 'boolean',
             'ai_preferences' => 'array',
             'notifications_enabled' => 'boolean',
             'last_credit_alert_at' => 'datetime',
         ];
     }
 
-    /**
-     * Get the user's unlimited status (Alias for is_unlimited_student)
-     */
-    protected function isUnlimited(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->is_unlimited_student,
-        );
-    }
+
 
     /**
      * Get the exact time the next credit refill will occur, for UI countdowns.
@@ -233,8 +224,6 @@ class User extends Authenticatable implements FilamentUser
      */
     public function deductCredits(int $amount, string $actionType, string $description, string $requestId, ?string $modelUsed = null): void
     {
-        if ($this->is_unlimited_student) return;
-
         \Illuminate\Support\Facades\DB::transaction(function () use ($amount, $actionType, $description, $requestId, $modelUsed) {
             $user = self::where('id', $this->id)->lockForUpdate()->first();
             
@@ -346,8 +335,12 @@ class User extends Authenticatable implements FilamentUser
      */
     public function getStudentPlan(): string
     {
-        if ($this->is_unlimited_student) {
+        if ($this->subscription_tier === 'max') {
             return 'max';
+        }
+
+        if ($this->subscription_tier === 'pro') {
+            return 'pro';
         }
 
         $sub = \App\Models\IndividualSubscription::where('user_id', $this->id)
@@ -359,8 +352,10 @@ class User extends Authenticatable implements FilamentUser
         if (!$sub) return 'free';
 
         $name = strtolower($sub->plan_name);
-        if ($name === 'elite' || $name === 'max') return 'max';
-        return 'pro';
+        if (str_contains($name, 'max') || str_contains($name, 'elite')) return 'max';
+        if (str_contains($name, 'pro') || str_contains($name, 'standard')) return 'pro';
+        
+        return 'free';
     }
 
     /**

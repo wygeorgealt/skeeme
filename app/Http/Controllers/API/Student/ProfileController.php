@@ -37,7 +37,6 @@ class ProfileController extends Controller
                 'email' => $user->email,
                 'phone_number' => $user->phone_number,
                 'credits' => $user->credits,
-                'is_unlimited' => $user->is_unlimited_student,
                 'plan_name' => $user->getStudentPlan(),
                 'next_free_refill_at' => $user->next_free_refill_at,
             ]
@@ -94,7 +93,6 @@ class ProfileController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'credits' => $user->credits,
-                'is_unlimited' => $user->is_unlimited_student,
                 'plan_name' => $user->getStudentPlan(),
                 'next_free_refill_at' => $user->next_free_refill_at,
                 'ai_preferences' => $user->ai_preferences,

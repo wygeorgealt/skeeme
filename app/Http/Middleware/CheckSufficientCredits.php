@@ -28,8 +28,8 @@ class CheckSufficientCredits
             return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
-        // 1. Skip unlimited users (Elite Plan or Team members)
-        if ($user->is_unlimited_student) {
+        // 1. Skip unlimited users (Team members only now)
+        if ($user->role !== 'student' && $user->teamMember) {
             return $next($request);
         }
 

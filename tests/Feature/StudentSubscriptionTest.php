@@ -24,7 +24,7 @@ class StudentSubscriptionTest extends TestCase
      */
     public function test_student_can_initiate_subscription()
     {
-        $user = User::factory()->create(['role' => 'student', 'is_unlimited_student' => false]);
+        $user = User::factory()->create(['role' => 'student', 'subscription_tier' => 'free']);
         $this->actingAs($user);
 
         $this->mock(PaystackService::class, function (MockInterface $mock) use ($user) {
@@ -42,7 +42,7 @@ class StudentSubscriptionTest extends TestCase
         
         $this->assertDatabaseHas('invoices', [
             'user_id' => $user->id,
-            'plan_name' => 'Student Unlimited',
+            'plan_name' => 'Skeeme Max',
             'amount' => 5000,
             'currency' => 'NGN',
         ]);
@@ -60,7 +60,7 @@ class StudentSubscriptionTest extends TestCase
      */
     public function test_student_subscription_callback_upgrades_user()
     {
-        $user = User::factory()->create(['role' => 'student', 'is_unlimited_student' => false, 'credits' => 100]);
+        $user = User::factory()->create(['role' => 'student', 'subscription_tier' => 'free', 'credits' => 100]);
         $this->actingAs($user);
 
         $reference = 'test_ref_' . uniqid();
@@ -69,7 +69,7 @@ class StudentSubscriptionTest extends TestCase
         $invoice = Invoice::create([
             'user_id' => $user->id,
             'invoice_number' => $invoiceNumber,
-            'plan_name' => 'Student Unlimited',
+            'plan_name' => 'Skeeme Max',
             'amount' => 5000,
             'currency' => 'NGN',
             'status' => 'draft',
@@ -104,8 +104,7 @@ class StudentSubscriptionTest extends TestCase
         $response->assertSessionHas('success');
 
         $user->refresh();
-        $this->assertTrue($user->is_unlimited_student);
-        $this->assertEquals(999999, $user->credits);
+        $this->assertEquals('max', $user->subscription_tier);
 
         $this->assertDatabaseHas('payments', [
             'transaction_id' => $reference,
@@ -118,7 +117,7 @@ class StudentSubscriptionTest extends TestCase
      */
     public function test_student_subscription_callback_handles_failure()
     {
-        $user = User::factory()->create(['role' => 'student', 'is_unlimited_student' => false]);
+        $user = User::factory()->create(['role' => 'student', 'subscription_tier' => 'free']);
         $this->actingAs($user);
 
         $reference = 'test_ref_fail';
@@ -136,6 +135,6 @@ class StudentSubscriptionTest extends TestCase
         $response->assertSessionHas('error');
 
         $user->refresh();
-        $this->assertFalse($user->is_unlimited_student);
+        $this->assertEquals('free', $user->subscription_tier);
     }
 }

@@ -49,13 +49,13 @@ class StudentSubscriptionController extends Controller
                 'user_id' => $user->id,
                 'subscription_id' => null,
                 'invoice_number' => Invoice::generateInvoiceNumber(),
-                'plan_name' => 'Student Unlimited',
+                'plan_name' => 'Skeeme Max',
                 'amount' => $amount,
                 'currency' => $currency,
                 'invoice_date' => now(),
                 'due_date' => now()->addDays(1),
                 'status' => 'draft',
-                'description' => 'Skeeme Student Unlimited Plan (Monthly)',
+                'description' => 'Skeeme Max Plan (Monthly)',
             ]);
 
             // Initialize Payment
@@ -124,13 +124,13 @@ class StudentSubscriptionController extends Controller
 
                      if ($user) {
                          $user->fresh()->update([
-                             'is_unlimited_student' => true,
-                             'credits' => 999999, // Visual helper, though boolean flag takes precedence
+                             'subscription_tier' => 'max',
+                             'credits' => min(999999, $user->credits + 100000), 
                          ]);
                      }
                 }
 
-                return redirect()->route('student.profile')->with('success', 'Upgrade successful! You now have unlimited access.');
+                return redirect()->route('student.profile')->with('success', 'Upgrade successful!');
             } else {
                  return redirect()->route('student.profile')->with('error', 'Payment verification failed.');
             }

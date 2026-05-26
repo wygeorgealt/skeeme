@@ -33,13 +33,11 @@ class RevenueCatService
             if ($entitlementId === 'Skeeme_Pro') {
                 $user->update([
                     'subscription_tier' => 'pro',
-                    'is_unlimited_student' => false,
                     'rc_app_user_id' => $user->rc_app_user_id ?? $user->id,
                 ]);
             } elseif ($entitlementId === 'Skeeme_Max') {
                 $user->update([
                     'subscription_tier' => 'max',
-                    'is_unlimited_student' => false,
                     'rc_app_user_id' => $user->rc_app_user_id ?? $user->id,
                 ]);
             }
@@ -119,7 +117,7 @@ class RevenueCatService
 
         return DB::transaction(function () use ($user, $entitlementId) {
             if (in_array($entitlementId, ['Skeeme_Pro', 'Skeeme_Max'])) {
-                $user->update(['subscription_tier' => 'free', 'is_unlimited_student' => false]);
+                $user->update(['subscription_tier' => 'free']);
             }
 
             IndividualSubscription::where('user_id', $user->id)
