@@ -112,14 +112,22 @@ class AppServiceProvider extends ServiceProvider
                 
                 $campusKey = env('CAMPUSBITES_RESEND_API_KEY');
                 if (!empty($campusKey)) {
+                    // Set API key in both places to ensure transport reads it
                     \Illuminate\Support\Facades\Config::set('services.resend.key', $campusKey);
+                    \Illuminate\Support\Facades\Config::set('mail.mailers.campusbites_resend.password', $campusKey);
+                    // Reset the mail manager's mailer cache to force reload with new config
+                    \Illuminate\Support\Facades\Mail::forgetMailers();
                     Log::info('✓ Mail: Switched to campusbites_resend');
                 } else {
                     Log::warning('✗ Mail: campusbites_resend selected but CAMPUSBITES_RESEND_API_KEY is not set.');
                 }
             } else {
                 \Illuminate\Support\Facades\Config::set('mail.default', 'resend');
-                \Illuminate\Support\Facades\Config::set('services.resend.key', env('RESEND_API_KEY'));
+                $skeeemeKey = env('RESEND_API_KEY');
+                \Illuminate\Support\Facades\Config::set('services.resend.key', $skeeemeKey);
+                \Illuminate\Support\Facades\Config::set('mail.mailers.resend.password', $skeeemeKey);
+                // Reset the mail manager's mailer cache
+                \Illuminate\Support\Facades\Mail::forgetMailers();
                 Log::info('✓ Mail: Using skeeme resend account');
             }
         } catch (\Throwable $th) {
