@@ -36,6 +36,7 @@
         "socialiteproviders/zoom": "^4.0",
         "spatie/laravel-web-tinker": "^1.10",
         "symfony/http-client": "^7.4",
+        "symfony/resend-mailer": "^7.4",
         "tecnickcom/tcpdf": "^6.10"
     },
     "require-dev": {
