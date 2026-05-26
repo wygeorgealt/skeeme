@@ -22,3 +22,5 @@ yarn-error.log
 /.vscode
 /.zed
 create_tester.php
+delete_all_users.php
+clear_mock_users.php
