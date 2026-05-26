@@ -512,6 +512,7 @@ PROMPT;
      * Matches Anthropic streaming approach (SSE), but uses DeepSeek stream over /chat/completions.
      *
      * Expects the caller to pass a callback that receives decoded JSON chunk payloads.
+     */
     public function streamSolveFromImage(string $base64Image, callable $onChunk, ?callable $onStatus = null): void
     {
         try {
