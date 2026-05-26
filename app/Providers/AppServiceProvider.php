@@ -101,7 +101,7 @@ class AppServiceProvider extends ServiceProvider
             if (isset($mailConfig['active_resend_account']) && $mailConfig['active_resend_account'] === 'campusbites') {
                 \Illuminate\Support\Facades\Config::set('mail.default', 'campusbites_resend');
                 \Illuminate\Support\Facades\Config::set('mail.from.address', 'noreply@campusbites.org');
-                \Illuminate\Support\Facades\Config::set('mail.from.name', 'CampusBites');
+                \Illuminate\Support\Facades\Config::set('mail.from.name', 'Skeeme');
             } else {
                 \Illuminate\Support\Facades\Config::set('mail.default', 'resend');
                 // Rely on the standard .env configuration for from address/name
