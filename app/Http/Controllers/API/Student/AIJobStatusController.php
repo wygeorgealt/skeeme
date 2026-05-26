@@ -14,8 +14,12 @@ class AIJobStatusController extends Controller
      */
     public function show(Request $request, $jobId)
     {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated. Please log in.'], 401);
+        }
         $ownerId = AiJobCache::ownerId($jobId);
-        if ($ownerId === null || $ownerId !== $request->user()->id) {
+        if ($ownerId === null || $ownerId !== $user->id) {
             return response()->json([
                 'status' => 'not_found',
                 'message' => 'Job ID not found or expired.',

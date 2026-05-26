@@ -277,7 +277,11 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+        $user->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out successfully']);
     }
 
@@ -287,6 +291,9 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated. Please log in.'], 401);
+        }
         $user->checkAndRefillCredits();
 
         // Ensure user has a streak record initialized
