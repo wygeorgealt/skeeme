@@ -83,10 +83,20 @@ return [
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
-                'smtp',
                 'resend',
+                'campusbites_resend',
             ],
             'retry_after' => 60,
+        ],
+
+        'campusbites_resend' => [
+            'transport' => 'smtp',
+            'host' => 'smtp.resend.com',
+            'port' => 465,
+            'encryption' => 'tls',
+            'username' => 'resend',
+            'password' => env('CAMPUSBITES_RESEND_API_KEY'),
+            'timeout' => null,
         ],
 
         'roundrobin' => [
