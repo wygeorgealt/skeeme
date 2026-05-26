@@ -101,46 +101,29 @@ class AppServiceProvider extends ServiceProvider
  
         $this->configureRateLimiting();
 
-        // Dynamic Mail Configuration Override
+        // Dynamic Mail Configuration Override (same pattern as AI config)
         try {
-            // Try to load from cache first, but fall back to direct query if cache fails
-            $mailConfig = null;
+            $mailConfig = \App\Models\SystemSetting::get('mail_config', ['active_resend_account' => 'skeeme']);
             
-            try {
-                $cacheKey = 'app:mail_config';
-                $mailConfig = \Illuminate\Support\Facades\Cache::remember($cacheKey, 1, function () {
-                    $setting = \App\Models\SystemSetting::where('key', 'mail_config')->first();
-                    return $setting ? $setting->value : ['active_resend_account' => 'skeeme'];
-                });
-            } catch (\Throwable $cacheError) {
-                // If cache fails (e.g., missing db file), query directly
-                Log::debug('Cache lookup failed, querying database directly: ' . $cacheError->getMessage());
-                $setting = \App\Models\SystemSetting::where('key', 'mail_config')->first();
-                $mailConfig = $setting ? $setting->value : ['active_resend_account' => 'skeeme'];
-            }
-            
-            $activeAccount = $mailConfig['active_resend_account'] ?? 'skeeme';
-            
-            if (isset($mailConfig['active_resend_account']) && $mailConfig['active_resend_account'] === 'campusbites') {
+            if ($mailConfig['active_resend_account'] === 'campusbites') {
                 \Illuminate\Support\Facades\Config::set('mail.default', 'campusbites_resend');
                 \Illuminate\Support\Facades\Config::set('mail.from.address', 'noreply@campusbites.org');
                 \Illuminate\Support\Facades\Config::set('mail.from.name', 'Skeeme');
                 
-                // Ensure the campusbites API key is set in the transport config
                 $campusKey = env('CAMPUSBITES_RESEND_API_KEY');
                 if (!empty($campusKey)) {
-                    // Set the API key for the Resend transport to use
                     \Illuminate\Support\Facades\Config::set('services.resend.key', $campusKey);
+                    Log::info('✓ Mail: Switched to campusbites_resend');
                 } else {
-                    Log::warning('campusbites_resend selected but CAMPUSBITES_RESEND_API_KEY is not set. Emails will use default RESEND_API_KEY.');
+                    Log::warning('✗ Mail: campusbites_resend selected but CAMPUSBITES_RESEND_API_KEY is not set.');
                 }
             } else {
                 \Illuminate\Support\Facades\Config::set('mail.default', 'resend');
-                // Ensure we use the main Skeeme API key
                 \Illuminate\Support\Facades\Config::set('services.resend.key', env('RESEND_API_KEY'));
+                Log::info('✓ Mail: Using skeeme resend account');
             }
         } catch (\Throwable $th) {
-            Log::error('Error loading mail config: ' . $th->getMessage());
+            // Ignore during setup/migrations — defaults will be used
         }
     }
 
