@@ -149,8 +149,12 @@ class SystemSetting extends Model
             ]
         );
 
+        // Clear relevant caches when settings change
         if ($key === 'pricing') {
             \Illuminate\Support\Facades\Cache::forget('system_pricing_config');
+        } elseif ($key === 'mail_config') {
+            // Clear query cache and any related caches when mail config changes
+            \Illuminate\Support\Facades\Cache::forget('mail_config');
         }
 
         return $setting;

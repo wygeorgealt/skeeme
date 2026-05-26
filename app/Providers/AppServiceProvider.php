@@ -97,12 +97,21 @@ class AppServiceProvider extends ServiceProvider
 
         // Dynamic Mail Configuration Override
         try {
-            $mailConfig = \App\Models\SystemSetting::get('mail_config', ['active_resend_account' => 'skeeme']);
+            // Check request cache first, then database with short TTL to ensure fresh values when changed
+            $cacheKey = 'app:mail_config';
+            $mailConfig = \Illuminate\Support\Facades\Cache::remember($cacheKey, 1, function () {
+                $setting = \App\Models\SystemSetting::where('key', 'mail_config')->first();
+                return $setting ? $setting->value : ['active_resend_account' => 'skeeme'];
+            });
+            
+            $activeAccount = $mailConfig['active_resend_account'] ?? 'skeeme';
+            Log::debug("Mail config loaded: {$activeAccount}");
             
             if (isset($mailConfig['active_resend_account']) && $mailConfig['active_resend_account'] === 'campusbites') {
                 \Illuminate\Support\Facades\Config::set('mail.default', 'campusbites_resend');
                 \Illuminate\Support\Facades\Config::set('mail.from.address', 'noreply@campusbites.org');
                 \Illuminate\Support\Facades\Config::set('mail.from.name', 'Skeeme');
+                Log::info('Switched to campusbites_resend mailer');
 
                 // Warn at runtime if the campusbites resend API key isn't configured
                 $campusKey = config('mail.mailers.campusbites_resend.password') ?: env('CAMPUSBITES_RESEND_API_KEY');
@@ -111,10 +120,11 @@ class AppServiceProvider extends ServiceProvider
                 }
             } else {
                 \Illuminate\Support\Facades\Config::set('mail.default', 'resend');
+                Log::info('Using default resend mailer (skeeme account)');
                 // Rely on the standard .env configuration for from address/name
             }
         } catch (\Throwable $th) {
-            // Ignore during setup/migrations
+            Log::error('Error loading mail config: ' . $th->getMessage());
         }
     }
 
