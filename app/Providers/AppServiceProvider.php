@@ -119,10 +119,10 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $plan = $user->getStudentPlan();
-            $limit = match ($plan) {
-                'max' => 20,
-                'pro' => 15,
-                default => 5,
+                        $limit = match ($plan) {
+                'max' => 100,
+                'pro' => 50,
+                default => 30,
             };
 
             return Limit::perMinute($limit)->by($user->id);
