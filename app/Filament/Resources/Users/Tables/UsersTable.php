@@ -33,11 +33,11 @@ class UsersTable
                     ->disk('s3'),
                 TextColumn::make('subscription_tier')
                     ->badge()
-                    ->enum([
+                    ->formatStateUsing(fn (string $state): string => [
                         'free' => 'Free',
                         'pro' => 'Pro',
                         'max' => 'Max',
-                    ]),
+                    ][$state] ?? $state),
                 TextColumn::make('name')
                     ->searchable()
                     ->sortable()
