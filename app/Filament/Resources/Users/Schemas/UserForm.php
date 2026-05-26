@@ -50,8 +50,14 @@ class UserForm
                             ])
                             ->default('active')
                             ->required(),
-                        Toggle::make('is_unlimited_student')
-                            ->label('Pro / Unlimited Student')
+                                                Select::make('subscription_tier')
+                            ->label('Subscription Tier')
+                            ->options([
+                                'free' => 'Free',
+                                'pro' => 'Pro',
+                                'max' => 'Max',
+                            ])
+                            ->required()
                             ->columnSpanFull(),
                     ])->columns(2),
 

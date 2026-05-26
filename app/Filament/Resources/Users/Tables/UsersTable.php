@@ -31,6 +31,13 @@ class UsersTable
                 ImageColumn::make('avatar')
                     ->circular()
                     ->disk('s3'),
+                TextColumn::make('subscription_tier')
+                    ->badge()
+                    ->enum([
+                        'free' => 'Free',
+                        'pro' => 'Pro',
+                        'max' => 'Max',
+                    ]),
                 TextColumn::make('name')
                     ->searchable()
                     ->sortable()
@@ -55,14 +62,7 @@ class UsersTable
                 TextColumn::make('credits')
                     ->numeric()
                     ->sortable(),
-                IconColumn::make('is_unlimited_student')
-                    ->label('Pro')
-                    ->boolean()
-                    ->sortable(),
-                TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+
             ])
             ->filters([
                 SelectFilter::make('role')
@@ -89,17 +89,6 @@ class UsersTable
                         $record->update(['credits' => 100]);
                         Notification::make()
                             ->title('Credits reset to 100')
-                            ->success()
-                            ->send();
-                    }),
-                Action::make('togglePro')
-                    ->label(fn (User $record) => $record->is_unlimited_student ? 'Revoke Pro' : 'Make Pro')
-                    ->icon('heroicon-o-sparkles')
-                    ->color('info')
-                    ->action(function (User $record) {
-                        $record->update(['is_unlimited_student' => !$record->is_unlimited_student]);
-                        Notification::make()
-                            ->title($record->is_unlimited_student ? 'User is now Pro' : 'Pro status revoked')
                             ->success()
                             ->send();
                     }),
