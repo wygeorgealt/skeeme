@@ -93,6 +93,22 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\SupportTicket::observe(\App\Observers\SupportTicketObserver::class);
  
         $this->configureRateLimiting();
+
+        // Dynamic Mail Configuration Override
+        try {
+            $mailConfig = \App\Models\SystemSetting::get('mail_config', ['active_resend_account' => 'skeeme']);
+            
+            if (isset($mailConfig['active_resend_account']) && $mailConfig['active_resend_account'] === 'campusbites') {
+                \Illuminate\Support\Facades\Config::set('mail.default', 'campusbites_resend');
+                \Illuminate\Support\Facades\Config::set('mail.from.address', 'noreply@campusbites.org');
+                \Illuminate\Support\Facades\Config::set('mail.from.name', 'CampusBites');
+            } else {
+                \Illuminate\Support\Facades\Config::set('mail.default', 'resend');
+                // Rely on the standard .env configuration for from address/name
+            }
+        } catch (\Throwable $th) {
+            // Ignore during setup/migrations
+        }
     }
 
     /**
