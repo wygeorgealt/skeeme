@@ -11,6 +11,17 @@
 |
 */
 
+// Safety: refuse to run tests if environment looks like production or using a remote MySQL
+// Prevents accidental destructive commands against production databases.
+$dbConnection = getenv('DB_CONNECTION') ?: env('DB_CONNECTION');
+$dbHost = getenv('DB_HOST') ?: env('DB_HOST');
+$appEnv = getenv('APP_ENV') ?: env('APP_ENV');
+
+if ($appEnv === 'production' || ($dbConnection === 'mysql' && $dbHost && !in_array($dbHost, ['127.0.0.1', 'localhost', '::1']))) {
+    fwrite(STDERR, "Refusing to run tests: environment looks like production or remote MySQL.\n");
+    exit(1);
+}
+
 pest()->extend(Tests\TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');

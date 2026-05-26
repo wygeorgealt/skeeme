@@ -56,7 +56,7 @@ class NotifyFreeUserCreditRefilled implements ShouldQueue
             'notifications_enabled' => $user->notifications_enabled,
         ]);
 
-        // If their credits just went from 0 to >0 during this job, it means the 5 hours just finished
+        // If their credits just went from 0 to >0 during this job, it means the 14 days just finished
         // and we were the ones to refill it (they didn't trigger it manually by opening the app).
         if ($creditsBefore <= 0 && $user->credits > 0) {
             try {

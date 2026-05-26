@@ -12,7 +12,7 @@ class RefillStudentCredits extends Command
 {
     protected $signature = 'app:refill-student-credits';
 
-    protected $description = 'Monthly credit refill for Pro (20,000) and Max (100,000) subscribers. Free users are excluded — they use the 5-hour on-demand refill instead.';
+    protected $description = 'Monthly credit refill for Pro (20,000) and Max (100,000) subscribers. Free users are excluded — they use the 14-day on-demand refill instead.';
 
     public function handle()
     {
@@ -25,7 +25,7 @@ class RefillStudentCredits extends Command
         foreach ($users as $user) {
             $plan = $user->getStudentPlan();
 
-            // Free users: no monthly batch refill — they use the 5-hour Redis timer
+            // Free users: no monthly batch refill — they use the 14-day Redis timer
             if ($plan === 'free') {
                 continue;
             }

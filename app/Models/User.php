@@ -96,7 +96,7 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * Get the exact time the next credit refill will occur, for UI countdowns.
-     * Free: 5hrs from depletion (Redis). Pro/Max: next 2:00 AM.
+     * Free: 14 days from depletion (Redis). Pro/Max: next 2:00 AM.
      */
     protected function nextFreeRefillAt(): Attribute
     {
@@ -109,7 +109,7 @@ class User extends Authenticatable implements FilamentUser
                     if ($this->credits > 0) return null;
                     $depletedAt = \Illuminate\Support\Facades\Cache::get("credits_emptied_at:{$this->id}");
                     if (!$depletedAt) return null;
-                    return \Carbon\Carbon::parse($depletedAt)->addHours(5)->ceilMinute(10)->toIso8601String();
+                    return \Carbon\Carbon::parse($depletedAt)->addDays(14)->ceilMinute(10)->toIso8601String();
                 }
 
                 if ($plan === 'pro' || $plan === 'max') {
@@ -141,7 +141,7 @@ class User extends Authenticatable implements FilamentUser
     /**
      * Check if the user is eligible for a credit refill and apply it.
      *
-     * FREE:     5-hour timer via Redis from depletion point.
+    * FREE:     14-day timer via Redis from depletion point.
      * PRO:      500 daily allowance (calendar-day reset) when monthly runs out.
      * MAX:      1,000 daily allowance (calendar-day reset) when monthly runs out.
      *
@@ -169,8 +169,8 @@ class User extends Authenticatable implements FilamentUser
                 $lastTx = $this->transactions()->where('type', 'usage')->latest('id')->first();
                 $depletionTime = $lastTx ? \Carbon\Carbon::parse($lastTx->created_at) : $this->updated_at;
 
-                // If they ran out of credits more than 5 hours ago, refill them immediately!
-                if ($depletionTime->copy()->addHours(5)->ceilMinute(10)->isPast()) {
+                // If they ran out of credits more than 14 days ago, refill them immediately!
+                if ($depletionTime->copy()->addDays(14)->ceilMinute(10)->isPast()) {
                     $this->update([
                         'credits'              => 100,
                         'last_credit_refill_at' => now(),
@@ -187,7 +187,7 @@ class User extends Authenticatable implements FilamentUser
                 return;
             }
 
-            $refillTime = \Carbon\Carbon::parse($depletedAt)->addHours(5)->ceilMinute(10);
+                $refillTime = \Carbon\Carbon::parse($depletedAt)->addDays(14)->ceilMinute(10);
             if (now()->greaterThanOrEqualTo($refillTime)) {
                 $this->update([
                     'credits'              => 100,
@@ -219,7 +219,7 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * Deduct credits safely, capping at 0 (Safety Net Logic).
-     * When a free user's credits hit 0, stamps a Redis key to start the 5-hour refill countdown.
+    * When a free user's credits hit 0, stamps a Redis key to start the 14-day refill countdown.
      * Does NOT touch last_credit_refill_at — that field is reserved for the monthly cron.
      */
     public function deductCredits(int $amount, string $actionType, string $description, string $requestId, ?string $modelUsed = null): void
@@ -234,25 +234,25 @@ class User extends Authenticatable implements FilamentUser
             
             $user->decrement('credits', $actualDeduction);
 
-            // If this deduction just emptied a free user's credits, start the 5-hour refill clock
+            // If this deduction just emptied a free user's credits, start the 14-day refill clock
             // via Redis — keeps last_credit_refill_at clean for the monthly cron's 30-day check
             $freshCredits = $user->fresh()->credits;
             if ($oldCredits > 0 && $freshCredits <= 0 && $user->getStudentPlan() === 'free') {
                 \Illuminate\Support\Facades\Cache::put(
                     "credits_emptied_at:{$user->id}",
                     now()->toIso8601String(),
-                    now()->addDay() // 1-day TTL – prevents stale stamp
+                    now()->addDays(30) // TTL ensures stamp persists across the 14-day window
                 );
-                
-                // Dispatch delayed notification job for the 5-hour refill
-                \App\Jobs\NotifyFreeUserCreditRefilled::dispatch($user->id)->delay(now()->addHours(5));
+
+                // Dispatch delayed notification job for the 14-day refill
+                \App\Jobs\NotifyFreeUserCreditRefilled::dispatch($user->id)->delay(now()->addDays(14));
 
                 // Record a credit-refill transaction for audit purposes
                 \App\Models\Transaction::create([
                     'user_id' => $user->id,
                     'type' => 'credit_refill',
                     'amount' => 100,
-                    'description' => 'Free plan 5-hour refill (100 credits)',
+                    'description' => 'Free plan 14-day refill (100 credits)',
                 ]);
             }
             
