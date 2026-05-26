@@ -51,13 +51,26 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             if ($request->is('api/*')) {
-                // If it's a 500 error or a connection error, mask it with the friendly message
+                // Let Laravel handle auth failures natively (returns 401)
+                if ($e instanceof \Illuminate\Auth\AuthenticationException) {
+                    return response()->json([
+                        'message' => 'Unauthenticated. Your session has expired, please log in again.',
+                    ], 401);
+                }
+
+                // Let Laravel handle validation errors natively (returns 422)
+                if ($e instanceof \Illuminate\Validation\ValidationException) {
+                    return null; // Fall through to Laravel's default handler
+                }
+
+                // For HTTP exceptions, use their actual status code
                 if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
                     $status = $e->getStatusCode();
                 } else {
                     $status = 500;
                 }
 
+                // Only mask genuine 500 server errors
                 if ($status >= 500) {
                     return response()->json([
                         'message' => 'Skeeme is down, Please try again later.',
