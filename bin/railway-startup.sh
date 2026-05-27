@@ -39,6 +39,10 @@ php artisan config:cache
 php artisan route:cache
 php artisan event:cache
 
+# Run backup on deployment
+echo "💾 Running pre-deployment backup..."
+php artisan db:backup || echo "⚠️ Backup failed, but proceeding with startup."
+
 echo "========================================"
 echo "✅ Startup tasks complete!"
 echo "========================================"
