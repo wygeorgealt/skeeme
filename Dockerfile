@@ -6,7 +6,7 @@ USER root
 # Install PHP extensions (pcntl needed for queue:work signal handling)
 RUN install-php-extensions intl gd bcmath pcntl
 
-# Install Node.js, NPM
+# Install Node.js, NPM and MySQL client (for mysqldump)
 RUN apt-get update && \
     apt-get install -y ca-certificates curl gnupg && \
     mkdir -p /etc/apt/keyrings && \
@@ -14,7 +14,7 @@ RUN apt-get update && \
     NODE_MAJOR=20 && \
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
     apt-get update && \
-    apt-get install nodejs -y && \
+    apt-get install -y nodejs default-mysql-client && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Increase Nginx and PHP limits for high-res image scans
