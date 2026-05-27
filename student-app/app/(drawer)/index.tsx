@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Fire, RoundArrowUp, Calendar, ClockCircle, Notebook, History, MedalRibbonsStar, AltArrowRight, Chart2, Layers } from '@solar-icons/react-native/Bold';
 
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
+import { tryPromptForReview } from '@/lib/storeReview';
 
 // ─── Card shadow helper ───────────────────────────────────────────────────────
 const cardStyle = (C: typeof Colors.light) => ({
@@ -83,6 +84,10 @@ export default function DashboardScreen() {
     useFocusEffect(
         useCallback(() => {
             setAnimKey(prev => prev + 1);
+            const timer = setTimeout(() => {
+                tryPromptForReview().catch(() => {});
+            }, 800);
+            return () => clearTimeout(timer);
         }, [])
     );
 

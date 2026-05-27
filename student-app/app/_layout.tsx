@@ -200,6 +200,7 @@ export default function RootLayout() {
               <CooldownModalWrapper />
               <GlobalErrorModalWrapper />
               <StreakRewardModalWrapper />
+              <EnjoyReviewModalWrapper />
 
               <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} />
             </ThemeProvider>
@@ -257,6 +258,18 @@ function StreakRewardModalWrapper() {
       isVisible={showStreakRewardModal}
       onClose={() => toggleStreakRewardModal(false)}
       reward={streakRewardData}
+    />
+  );
+}
+
+function EnjoyReviewModalWrapper() {
+  const { showEnjoyReviewModal, toggleEnjoyReviewModal } = useAuthStore();
+  const EnjoyReviewModal = require('@/components/EnjoyReviewModal').default;
+
+  return (
+    <EnjoyReviewModal
+      visible={showEnjoyReviewModal}
+      onDismiss={() => toggleEnjoyReviewModal(false)}
     />
   );
 }

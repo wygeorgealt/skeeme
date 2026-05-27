@@ -31,6 +31,7 @@ import * as Print from 'expo-print';
 import { generateScanHTML } from '@/lib/pdfGenerator';
 import { scannerService, ScanResult } from '@/lib/scanner';
 import { posthog } from '@/lib/posthog';
+import { markGenerationSuccess } from '@/lib/storeReview';
 
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import EventSource from 'react-native-sse';
@@ -275,6 +276,9 @@ export default function ScanScreen() {
                         try {
                             posthog.capture('scan_solved_stream', { questions_found: finalResults.length });
                         } catch (e) { }
+                        if (finalResults.length > 0) {
+                            markGenerationSuccess('scan').catch(() => {});
+                        }
                     }
                 }
             });

@@ -15,6 +15,7 @@ import { generateQuizHTML } from '@/lib/pdfGenerator';
 import { generateUUID } from '@/lib/utils';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 import { posthog } from '@/lib/posthog';
+import { markGenerationSuccess } from '@/lib/storeReview';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
 
 import { haptics } from '@/lib/haptics';
@@ -566,7 +567,8 @@ export default function GenerateQuizScreen() {
             setQuestions(questionsArr);
             
             posthog.capture('quiz_generated_stream', { mode, difficulty, format });
-            
+            markGenerationSuccess('quiz').catch(() => {});
+
             // Refresh user credits
             const userRes = await api.get('me');
             if (userRes.data) {

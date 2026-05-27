@@ -45,6 +45,11 @@ interface AuthState {
     setGlobalError: (error: string | null) => void;
     notificationsEnabled: boolean;
     setNotificationsEnabled: (enabled: boolean) => Promise<void>;
+    // App Reviews
+    shouldAskForReview: boolean;
+    setShouldAskForReview: (ask: boolean) => void;
+    showEnjoyReviewModal: boolean;
+    toggleEnjoyReviewModal: (show: boolean) => void;
 }
 
 // Secure storage for sensitive data (tokens)
@@ -127,8 +132,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     hapticsEnabled: true,
     globalError: null,
     notificationsEnabled: true,
+    shouldAskForReview: false,
+    showEnjoyReviewModal: false,
 
     setGlobalError: (error) => set({ globalError: error }),
+    setShouldAskForReview: (ask) => set({ shouldAskForReview: ask }),
+    toggleEnjoyReviewModal: (show) => set({ showEnjoyReviewModal: show }),
 
     fetchPricingConfig: async () => {
         try {

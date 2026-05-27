@@ -32,17 +32,9 @@
                 
                 <!-- Action Buttons -->
                 <div class="flex flex-wrap items-center gap-4 mb-8">
-                    <!-- App Store -->
-                    <a href="#" class="flex items-center gap-3 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3.5 rounded-2xl transition-colors shadow-lg">
-                        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M16.92 13.9c.02 3.12 2.67 4.14 2.7 4.16-.02.05-.42 1.44-1.42 2.89-1.01 1.48-2.07 2.95-3.69 2.98-1.61.03-2.12-.97-3.95-.97-1.84 0-2.4.94-3.92 1.01-1.57.07-2.77-1.55-3.79-3.03-2.1-3.03-3.71-8.56-1.57-12.27 1.06-1.84 2.94-3.01 4.98-3.04 1.57-.03 3.03 1.05 3.99 1.05.95 0 2.68-1.3 4.54-1.11 1.95.2 3.51 1.07 4.49 2.6-.08.05-2.69 1.53-2.7 4.62M14.77 4.09c.87-1.04 1.46-2.5 1.3-3.95-1.28.05-2.82.85-3.72 1.93-.81.95-1.49 2.45-1.3 3.86 1.44.11 2.85-.75 3.72-1.84"/></svg>
-                        <div class="text-left">
-                            <div class="text-[11px] leading-tight text-slate-300">Download on the</div>
-                            <div class="text-xl font-semibold leading-tight">App Store</div>
-                        </div>
-                    </a>
-                    
+
                     <!-- Google Play -->
-                    <a href="#" class="flex items-center gap-3 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3.5 rounded-2xl transition-colors shadow-lg">
+                    <a href="https://play.google.com/store/apps/details?id=com.skeeme.app" class="flex items-center gap-3 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3.5 rounded-2xl transition-colors shadow-lg">
                         <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M2.5 1.5L14.5 12L2.5 22.5V1.5Z" fill="#3BCAE6"/>
                             <path fill-rule="evenodd" clip-rule="evenodd" d="M14.5 12L21.5 16L18 19L14.5 12Z" fill="#D5163D"/>
@@ -222,7 +214,7 @@
             <!-- Right Column: Hero Image -->
             <div class="lg:col-span-7 relative flex justify-center lg:justify-end" data-aos="fade-left" data-aos-duration="1000">
                 <div class="relative w-full max-w-[800px] xl:max-w-[950px] lg:-mr-12 xl:-mr-24">
-                    <img src="<?php echo e(asset('images/student_app_mockup.png')); ?>" class="w-full h-auto object-contain scale-[1.05] lg:scale-[1.15] origin-right drop-shadow-xl" alt="Skeeme App Experience" />
+                    <img src="<?php echo e(asset('images/student_app_mockup.png')); ?>" class="w-full h-auto object-contain scale-[1.05] lg:scale-[1.15] origin-right mix-blend-multiply" alt="Skeeme App Experience" />
                 </div>
             </div>
         </div>
@@ -381,29 +373,6 @@
                     <p class="text-slate-600">Join thousands of students who are already studying smarter with Skeeme.</p>
                 </div>
             </div>
-            <a href="<?php echo e(route('register')); ?>" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-full text-lg transition-colors whitespace-nowrap shadow-lg shadow-blue-500/30 flex items-center gap-2">
-                Get Started Free
-                <?php if (isset($component)) { $__componentOriginal5c84e1af936cb00c34687173a7f14ca8 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginal5c84e1af936cb00c34687173a7f14ca8 = $attributes; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'e60dd9d2c3a62d619c9acb38f20d5aa5::icon.arrow-right','data' => ['class' => 'w-5 h-5']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('flux::icon.arrow-right'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['class' => 'w-5 h-5']); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginal5c84e1af936cb00c34687173a7f14ca8)): ?>
-<?php $attributes = $__attributesOriginal5c84e1af936cb00c34687173a7f14ca8; ?>
-<?php unset($__attributesOriginal5c84e1af936cb00c34687173a7f14ca8); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginal5c84e1af936cb00c34687173a7f14ca8)): ?>
-<?php $component = $__componentOriginal5c84e1af936cb00c34687173a7f14ca8; ?>
-<?php unset($__componentOriginal5c84e1af936cb00c34687173a7f14ca8); ?>
-<?php endif; ?>
-            </a>
         </div>
 
     </div>

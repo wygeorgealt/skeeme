@@ -28,6 +28,7 @@ import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
 import { Flashcard as Card, FlashcardDeck } from '@/types';
 import { StreakAnimation } from '@/components/StreakAnimation';
+import { markGenerationSuccess } from '@/lib/storeReview';
 
 // Storage helpers
 const storage = {
@@ -367,6 +368,7 @@ export default function StudyDeckScreen() {
                     id
                 });
             }
+            markGenerationSuccess('flashcard').catch(() => {});
         } catch (err) {
             if (__DEV__) console.warn('Failed to save streamed flashcards:', err);
             Alert.alert('Save Failed', 'Unable to persist generated flashcards. Please try again.');

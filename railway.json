@@ -13,8 +13,18 @@
   },
   "crons": [
     {
+      "name": "hourly-backup",
+      "command": "bash bin/backup-cron.sh",
+      "schedule": "0 * * * *"
+    },
+    {
+      "name": "daily-backup-lock-health-check",
+      "command": "bash bin/backup-health-cron.sh",
+      "schedule": "15 4 * * *"
+    },
+    {
       "name": "daily-backup-3am",
-      "command": "php artisan database:backup --keep=7",
+      "command": "bash bin/backup-cron.sh",
       "schedule": "0 3 * * *"
     }
   ]

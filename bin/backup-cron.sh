@@ -1,19 +1,27 @@
 #!/bin/bash
 
-# Daily Database Backup Script for Railway
-# Add to railway.json cron jobs:
-# "backup-database": "0 2 * * * bash bin/backup-cron.sh"
+set -euo pipefail
 
-cd /var/www/html 2>/dev/null || cd $(dirname "$0")/../
+# Database backup script for Railway cron
+# - Creates compressed MySQL dump
+# - Uploads to Cloudflare R2
+# - Applies object retention lock (immutable window)
 
-# Run the PHP backup script
-php scripts/backup_database.php
+cd /var/www/html 2>/dev/null || cd "$(dirname "$0")/../"
 
-if [ $? -eq 0 ]; then
-    # Backup succeeded
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Database backup completed successfully" >> storage/logs/backup.log
+mkdir -p storage/logs
+LOG_FILE="storage/logs/backup.log"
+
+echo "[$(date -u +'%Y-%m-%d %H:%M:%S UTC')] Starting backup run" >> "$LOG_FILE"
+
+if php artisan database:backup \
+  --keep-local="${BACKUP_KEEP_LOCAL:-240}" \
+  --prefix="${BACKUP_R2_PREFIX:-DB backups}" \
+  --lock-mode="${BACKUP_LOCK_MODE:-COMPLIANCE}" \
+  --lock-days="${BACKUP_LOCK_DAYS:-365}" \
+  ${BACKUP_REQUIRE_LOCK:+--require-lock} >> "$LOG_FILE" 2>&1; then
+    echo "[$(date -u +'%Y-%m-%d %H:%M:%S UTC')] Database backup completed successfully" >> "$LOG_FILE"
 else
-    # Backup failed
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] Database backup FAILED" >> storage/logs/backup.log
+    echo "[$(date -u +'%Y-%m-%d %H:%M:%S UTC')] Database backup FAILED" >> "$LOG_FILE"
     exit 1
 fi
