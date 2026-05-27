@@ -2,12 +2,17 @@
 
 set -euo pipefail
 
+
 cd /var/www/html 2>/dev/null || cd "$(dirname "$0")/../"
 
 mkdir -p storage/logs
 LOG_FILE="storage/logs/backup-health.log"
 
 echo "[$(date -u +'%Y-%m-%d %H:%M:%S UTC')] Starting retention health check" >> "$LOG_FILE"
+
+
+
+
 
 if php artisan database:backup:test \
   --prefix="${BACKUP_HEALTH_PREFIX:-DB backups/retention-tests}" \

@@ -59,6 +59,15 @@ Schedule::command('app:cleanup-pending-students')
     ->hourly()
     ->description('Deletes student accounts that have been in pending status for more than 2 hours');
 
+// Hourly DB backup to Cloudflare R2
+Schedule::command('database:backup')
+    ->hourly()
+    ->description('Create a compressed MySQL backup and upload it to R2');
+
+// Daily backup retention health-check (R2 object lock verification)
+// NOTE: This intentionally does NOT run hourly; it’s the separate test job.
+// If you want it, wire it to a daily time you prefer.
+
 // AI provider health check — every 2.5 hours
 // Split into two cron entries since cron can't express 150-minute intervals
 Schedule::command('app:ai-health-check')
