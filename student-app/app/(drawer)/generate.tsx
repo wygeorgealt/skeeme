@@ -5,6 +5,7 @@ import EventSource from 'react-native-sse';
 
 import { useFocusEffect, useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { api } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import * as DocumentPicker from 'expo-document-picker';
 import { captureRef } from 'react-native-view-shot';
@@ -151,6 +152,7 @@ const PROGRESS_STAGES = ['Skeeming', 'Extracting', 'Generating', 'Finalizing'];
 // ══════════════════════════════════════════════════════════════════════════════
 export default function GenerateQuizScreen() {
     const { user, updateUser } = useAuthStore();
+    const queryClient = useQueryClient();
     const [animKey, setAnimKey] = useState(0);
 
     useFocusEffect(
@@ -399,11 +401,11 @@ export default function GenerateQuizScreen() {
 
         if (!isUnlimited && currentCredits <= 0) {
             try {
-                const userRes = await api.get('me');
-                if (userRes.data) {
-                    updateUser(userRes.data);
-                    currentCredits = userRes.data.credits ?? 0;
-                    isUnlimited = (userRes.data.plan_name ?? 'free') !== 'free';
+                await queryClient.refetchQueries({ queryKey: ['student', 'me'] });
+                const refreshed = useAuthStore.getState().user;
+                if (refreshed) {
+                    currentCredits = refreshed.credits ?? currentCredits;
+                    isUnlimited = (refreshed.plan_name ?? 'free') !== 'free';
                 }
             } catch (e) { }
 
@@ -580,11 +582,11 @@ export default function GenerateQuizScreen() {
             posthog.capture('quiz_generated_stream', { mode, difficulty, format });
             markGenerationSuccess('quiz').catch(() => {});
 
-            // Refresh user credits
-            const userRes = await api.get('me');
-            if (userRes.data) {
-                updateUser(userRes.data);
-                if (userRes.data.credits === 0 && (userRes.data.plan_name ?? 'free') === 'free') {
+            // Refresh user credits via React Query
+            await queryClient.refetchQueries({ queryKey: ['student', 'me'] });
+            const refreshed = useAuthStore.getState().user;
+            if (refreshed) {
+                if (refreshed.credits === 0 && (refreshed.plan_name ?? 'free') === 'free') {
                     setShowOutOfCredits(true);
                 }
             }
@@ -643,11 +645,8 @@ export default function GenerateQuizScreen() {
             const res = await api.post('quizzes/history', payload);
             setIsSaved(true);
             
-            // RefreshCcw user stats for the dashboard
-            const userRes = await api.get('me');
-            if (userRes.data) {
-                updateUser(userRes.data);
-            }
+            // Refresh user stats via React Query
+            queryClient.invalidateQueries({ queryKey: ['student', 'me'] });
         } catch (err) {
             if (__DEV__) console.warn('Failed to save quiz history', err);
             setSaveError(true);

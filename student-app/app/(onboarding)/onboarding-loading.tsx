@@ -5,6 +5,7 @@ import Animated, { Easing, useSharedValue, withTiming } from 'react-native-reani
 import { Text } from '@/components/ui/Text';
 import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
+import { useStudent } from '@/hooks/useStudent';
 import { api } from '@/lib/api';
 
 const BIG = 220;
@@ -17,6 +18,7 @@ export default function OnboardingLoadingScreen() {
   const C = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
 
   const { onboardingData, completeOnboarding } = useAuthStore();
+  const studentQuery = useStudent();
 
   const [progressText, setProgressText] = useState('Saving preferences...');
   const [progress, setProgress] = useState(0);
@@ -125,14 +127,8 @@ export default function OnboardingLoadingScreen() {
 
       // Pull latest user so ai_preferences.education_level exists before guards run.
       try {
-        const res = await api.get('me');
-        const freshUser = res.data?.user ?? res.data;
-        // Only update if the shape matches.
-        if (freshUser && typeof freshUser === 'object') {
-          useAuthStore.getState().updateUser(freshUser);
-        }
+        await studentQuery.refetch();
       } catch (e) {
-        // Non-fatal: onboarding completion can still proceed.
         if (__DEV__) console.warn('Failed to refresh user after onboarding', e);
       }
 

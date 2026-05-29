@@ -16,6 +16,7 @@ import Animated, {
 import { QuestionCircle, AltArrowLeft, AltArrowRight, Bolt, CameraAdd, CheckCircle, Dislike, Gallery, Like, Refresh, Scanner, Share, List } from '@solar-icons/react-native/Bold';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { Stack, useRouter } from 'expo-router';
 import { Colors, Spacing, Radius } from '@/constants/theme';
@@ -52,6 +53,7 @@ export default function ScanScreen() {
     const C = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
 
     const { user, updateUser } = useAuthStore();
+    const queryClient = useQueryClient();
     const [permission, requestPermission] = useCameraPermissions();
     const cameraRef = useRef<CameraView>(null);
 
@@ -202,11 +204,11 @@ export default function ScanScreen() {
 
         if (!isUnlimited && currentCredits <= 0) {
             try {
-                const userRes = await api.get('me');
-                if (userRes.data) {
-                    updateUser(userRes.data);
-                    currentCredits = userRes.data.credits ?? 0;
-                    isUnlimited = (userRes.data.plan_name ?? 'free') !== 'free';
+                await queryClient.refetchQueries({ queryKey: ['student', 'me'] });
+                const refreshed = useAuthStore.getState().user;
+                if (refreshed) {
+                    currentCredits = refreshed.credits ?? currentCredits;
+                    isUnlimited = (refreshed.plan_name ?? 'free') !== 'free';
                 }
             } catch (e) { }
 

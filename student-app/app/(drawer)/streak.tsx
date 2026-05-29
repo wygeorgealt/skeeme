@@ -3,6 +3,7 @@ import { View, ScrollView, TouchableOpacity, useColorScheme, StyleSheet, Modal, 
 import { Stack, router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useRef, useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sharing from 'expo-sharing';
 import { ShareCard } from '@/components/ui/ShareCard';
@@ -68,6 +69,8 @@ export default function StreakScreen() {
     const current = user?.streak?.current_streak || 0;
     const longest = user?.streak?.longest_streak || 0;
 
+    const queryClient = useQueryClient();
+
     const [claimModalVisible, setClaimModalVisible] = useState(false);
     const [isClaiming, setIsClaiming] = useState(false);
 
@@ -80,11 +83,9 @@ export default function StreakScreen() {
     const handleClaimReward = async () => {
         setIsClaiming(true);
         try {
-            const res = await api.post('streaks/claim-reward');
-            const userRes = await api.get('me');
-            if (userRes.data) {
-                updateUser(userRes.data);
-            }
+                const res = await api.post('streaks/claim-reward');
+                // Refresh cached user state
+                queryClient.invalidateQueries({ queryKey: ['student', 'me'] });
             setClaimModalVisible(false);
             Alert.alert('Reward Claimed!', `You received ${user?.streak?.unclaimed_reward} credits!`);
         } catch (e: any) {

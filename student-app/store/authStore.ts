@@ -316,10 +316,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
                 // C5: Validate token in background — if expired, force logout
                 try {
-                    const { api } = await import('../lib/api');
-                    const response = await api.get('me');
-                    if (response.data) {
-                        const refreshedUser = response.data.user || response.data;
+                    const { apiStandard } = await import('../lib/api');
+                    const data = await apiStandard.get('me');
+                    if (data) {
+                        const refreshedUser = data.user || data;
                         const currentUser = get().user;
                         const mergedUser = { ...currentUser, ...refreshedUser };
                         set({ user: mergedUser });
@@ -366,20 +366,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     checkAuth: async () => {
-        try {
-            // Import api dynamically to avoid circular dependency
-            const { api } = await import('../lib/api');
-            const response = await api.get('me');
-            if (response.data) {
-                const refreshedUser = response.data.user || response.data;
-                const currentUser = get().user;
-                const newUser = { ...currentUser, ...refreshedUser };
-                set({ user: newUser });
-                await standardStorage.setItem('auth_user', JSON.stringify(newUser));
+            try {
+                // Import api dynamically to avoid circular dependency
+                const { apiStandard } = await import('../lib/api');
+                const data = await apiStandard.get('me');
+                if (data) {
+                    const refreshedUser = data.user || data;
+                    const currentUser = get().user;
+                    const newUser = { ...currentUser, ...refreshedUser };
+                    set({ user: newUser });
+                    await standardStorage.setItem('auth_user', JSON.stringify(newUser));
+                }
+            } catch (e) {
+                if (__DEV__) console.error('Failed to refresh auth state', e);
             }
-        } catch (e) {
-            if (__DEV__) console.error('Failed to refresh auth state', e);
-        }
     },
 
     setTheme: async (theme) => {

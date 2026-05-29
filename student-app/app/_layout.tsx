@@ -6,6 +6,7 @@ import '../global.css';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { QueryProvider } from '@/components/QueryProvider';
+import { useStudent } from '@/hooks/useStudent';
 import { View, useColorScheme as useNativeColorScheme, LogBox, TouchableOpacity, TextStyle, Platform, AppState } from 'react-native';
 import { cssInterop, useColorScheme as useTailwindColorScheme } from 'nativewind';
 import AnimatedSplash from '@/components/AnimatedSplash';
@@ -65,29 +66,31 @@ export default function RootLayout() {
   }, [hydrate]);
 
   // Foreground sync (AppState change to active) & background poll (every 30 seconds)
+  const studentQuery = useStudent();
+
   useEffect(() => {
     if (!user) return;
 
     // 1. Listen for AppState changes (Sync instantly when app returns to foreground)
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
-        checkAuth();
+        studentQuery.refetch();
       }
     });
 
     // 2. Poll every 30 seconds to keep limits/credits synced dynamically
     const interval = setInterval(() => {
-      checkAuth();
+      studentQuery.refetch();
     }, 30000);
 
     // Initial check on mount
-    checkAuth();
+    studentQuery.refetch();
 
     return () => {
       subscription.remove();
       clearInterval(interval);
     };
-  }, [user?.id, checkAuth]);
+  }, [user?.id, studentQuery]);
 
   // Initialize RevenueCat SDK — configure immediately on mount (anonymous),
   // then re-configure with the real user ID once authenticated.

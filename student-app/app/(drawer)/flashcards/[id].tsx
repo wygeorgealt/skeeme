@@ -469,17 +469,14 @@ export default function StudyDeckScreen() {
                 completed_at: new Date().toISOString(),
             });
 
-            // RefreshCcw user stats for the dashboard
-            const userRes = await api.get('me');
-            if (userRes.data) {
-                updateUser(userRes.data);
-            }
+            // Refresh user stats via React Query cache
+            queryClient.invalidateQueries({ queryKey: ['student', 'me'] });
         } catch (err) {
             if (__DEV__) console.warn('Failed to save flashcard session:', err);
         } finally {
             setIsSavingSession(false);
         }
-    }, [id, deck, isSavingSession, updateUser]);
+    }, [id, deck, isSavingSession]);
 
     useEffect(() => {
         if (isComplete) {

@@ -2,6 +2,7 @@ import { Text } from '@/components/ui/Text';
 import { View, ScrollView, RefreshControl, useColorScheme, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useAuthStore } from '@/store/authStore';
+import { useStudent } from '@/hooks/useStudent';
 import { router, useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 import { useCallback, useState } from 'react';
@@ -104,25 +105,13 @@ export default function DashboardScreen() {
         enabled: !!user,
         staleTime: 1000 * 60 * 60 * 4,
     });
-
-    useQuery({
-        queryKey: ['me'],
-        queryFn: async () => {
-            const res = await api.get('me');
-            if (res.data) updateUser(res.data);
-            return res.data;
-        },
-        enabled: !!user,
-        staleTime: 300000,
-        refetchInterval: 300000,
-        refetchOnWindowFocus: true,
-    });
+    const studentQuery = useStudent();
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
         try {
             await Promise.all([
-                queryClient.refetchQueries({ queryKey: ['me'] }),
+                queryClient.refetchQueries({ queryKey: ['student', 'me'] }),
                 queryClient.refetchQueries({ queryKey: ['streak-heatmap'] }),
             ]);
         } finally {

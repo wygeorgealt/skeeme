@@ -148,7 +148,8 @@ class ProfileController extends Controller
                 'first_name'    => null,
                 'last_name'     => null,
                 'credits'       => 0,
-                'status'        => 'deleted',
+                // Use an allowed enum value for `status` to avoid SQL truncation errors
+                'status'        => 'inactive',
             ]);
 
             // 2. Revoke all API tokens after anonymization

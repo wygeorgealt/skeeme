@@ -194,11 +194,11 @@ export default function GenerateFlashcardScreen() {
 
         if (!isUnlimited && currentCredits <= 0) {
             try {
-                const userRes = await api.get('me');
-                if (userRes.data) {
-                    updateUser(userRes.data);
-                    currentCredits = userRes.data.credits ?? 0;
-                    isUnlimited = (userRes.data.plan_name ?? 'free') !== 'free';
+                await queryClient.refetchQueries({ queryKey: ['student', 'me'] });
+                const refreshed = useAuthStore.getState().user;
+                if (refreshed) {
+                    currentCredits = refreshed.credits ?? currentCredits;
+                    isUnlimited = (refreshed.plan_name ?? 'free') !== 'free';
                 }
             } catch (e) { }
 
