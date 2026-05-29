@@ -640,6 +640,9 @@ SYSTEM;
         $model = $params['model'] ?? 'deepseek-v4-flash';
         unset($params['stream_action']);
 
+        // Keep a buffer visible to the catch block for diagnostics
+        $buffer = '';
+
         try {
             if (isset($params['system'])) {
                 $systemContent = $this->getPersonalizedSystemPrompt($params['system']);
@@ -662,7 +665,6 @@ SYSTEM;
             ]);
 
             $body = $response->getBody();
-            $buffer = '';
 
             // Log stream initiation
             \App\Support\AILogger::log([
@@ -693,8 +695,41 @@ SYSTEM;
                         }
 
                         $decoded = json_decode($data, true);
-                        if ($decoded) {
+                        if (json_last_error() !== JSON_ERROR_NONE) {
+                            $err = json_last_error_msg();
+                            \App\Support\AILogger::log([
+                                'provider' => 'deepseek',
+                                'model' => $model,
+                                'action' => $action . '_parse_error',
+                                'error' => $err,
+                                'raw_snippet' => substr($data, 0, 2000),
+                            ], auth()->user());
+                            \Illuminate\Support\Facades\Log::error("Deepseek stream parse error: {$err}", ['model' => $model, 'action' => $action, 'snippet' => substr($data, 0, 2000)]);
+                            continue;
+                        }
+
+                        if (!is_array($decoded)) {
+                            \App\Support\AILogger::log([
+                                'provider' => 'deepseek',
+                                'model' => $model,
+                                'action' => $action . '_unexpected_chunk',
+                                'raw_snippet' => substr($data, 0, 2000),
+                            ], auth()->user());
+                            \Illuminate\Support\Facades\Log::warning('Deepseek stream unexpected chunk', ['model' => $model, 'action' => $action, 'snippet' => substr($data, 0, 2000)]);
+                            continue;
+                        }
+
+                        try {
                             $onChunk($decoded);
+                        } catch (\Exception $eh) {
+                            \App\Support\AILogger::log([
+                                'provider' => 'deepseek',
+                                'model' => $model,
+                                'action' => $action . '_onchunk_error',
+                                'error' => $eh->getMessage(),
+                                'chunk_snippet' => substr($data, 0, 2000),
+                            ], auth()->user());
+                            \Illuminate\Support\Facades\Log::error('Deepseek onChunk handler error: ' . $eh->getMessage(), ['model' => $model, 'action' => $action]);
                         }
                     }
                 }
@@ -708,15 +743,40 @@ SYSTEM;
                 'latency_ms' => $latencyMs,
             ], auth()->user());
 
-        } catch (\Exception $e) {
+        } catch (RequestException $e) {
             $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
+            $resp = $e->getResponse();
+            $httpBody = $resp ? (string) $resp->getBody() : null;
+            $httpStatus = $resp ? $resp->getStatusCode() : null;
+
+            $log = [
                 'provider' => 'deepseek',
                 'model' => $model,
                 'action' => $action . '_error',
-                'error' => $e,
+                'exception' => $e->getMessage(),
+                'http_status' => $httpStatus,
+                'http_body_snippet' => $httpBody ? substr($httpBody, 0, 4000) : null,
+                'stream_buffer_tail' => substr($buffer, -4000),
                 'latency_ms' => $latencyMs,
-            ], auth()->user());
+            ];
+
+            \App\Support\AILogger::log($log, auth()->user());
+            \Illuminate\Support\Facades\Log::error('Deepseek streamRequest RequestException: ' . $e->getMessage(), $log);
+            throw $e;
+
+        } catch (\Exception $e) {
+            $latencyMs = (microtime(true) - $startTime) * 1000;
+            $log = [
+                'provider' => 'deepseek',
+                'model' => $model,
+                'action' => $action . '_error',
+                'exception' => $e->getMessage(),
+                'stream_buffer_tail' => substr($buffer, -4000),
+                'latency_ms' => $latencyMs,
+            ];
+
+            \App\Support\AILogger::log($log, auth()->user());
+            \Illuminate\Support\Facades\Log::error('Deepseek streamRequest error: ' . $e->getMessage(), $log);
             throw $e;
         }
     }

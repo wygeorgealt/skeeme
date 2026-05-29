@@ -76,19 +76,23 @@ class ScanController extends Controller
 
         $deducted = false;
         if (!$user->is_unlimited_student) {
+            // Require the user to have at least the full scan cost before starting
+            // this prevents multiple partial deductions across retries that can
+            // deplete credits while the external provider still fails due to
+            // insufficient provider-side credits.
             $deducted = DB::transaction(function () use ($user, $scanCost, $requestId, $modelUsed) {
                 $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
-                if ($lockedUser->credits <= 0) {
+                if ($lockedUser->credits < $scanCost) {
                     return false;
                 }
-                
-                $actualDeduction = min($lockedUser->credits, $scanCost);
-                $lockedUser->decrement('credits', $actualDeduction);
-                
+
+                // Deduct the full scan cost atomically
+                $lockedUser->decrement('credits', $scanCost);
+
                 $lockedUser->transactions()->create([
                     'type' => 'usage',
                     'action_type' => 'scan_solve',
-                    'amount' => -$actualDeduction,
+                    'amount' => -$scanCost,
                     'description' => "Scan & Solve (Streaming)",
                     'model_used' => $modelUsed,
                     'request_id' => $requestId,
@@ -141,6 +145,17 @@ class ScanController extends Controller
 
             $this->aiService->setTimeout(180);
             $this->deepseek->setTimeout(180);
+
+            // Prevent concurrent duplicate scans for the same user
+            $inProgressKey = "scan_in_progress:{$user->id}";
+            if (Cache::has($inProgressKey)) {
+                Log::warning("Scan request rejected: already in progress", ['user_id' => $user->id, 'request_id' => $requestId]);
+                $emit(['type' => 'error', 'message' => 'Another scan is already in progress. Please wait for it to complete.']);
+                echo "data: [DONE]\n\n";
+                return;
+            }
+            Cache::put($inProgressKey, true, now()->addMinutes(5));
+            Log::info("Scan in-progress lock set", ['user_id' => $user->id, 'request_id' => $requestId]);
 
             try {
                 if ($useDeepseek) {
@@ -210,6 +225,7 @@ class ScanController extends Controller
                         }
                         $emit(['type' => 'error', 'message' => 'Skeeme is down, Please try again later.']);
                         echo "data: [DONE]\n\n";
+                        Cache::forget($inProgressKey);
                         return;
                     }
                 } else {
@@ -221,8 +237,12 @@ class ScanController extends Controller
                     }
                     $emit(['type' => 'error', 'message' => 'Skeeme is down, Please try again later.']);
                     echo "data: [DONE]\n\n";
+                    Cache::forget($inProgressKey);
                     return;
                 }
+            } finally {
+                // Ensure we always clear the in-progress lock
+                Cache::forget($inProgressKey);
             }
 
             if (!$user->is_unlimited_student) {

@@ -305,7 +305,12 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated. Please log in.'], 401);
         }
+        // Ensure we operate on the latest DB state in case an admin modified
+        // credits outside the user's session (e.g. Filament/admin UI).
+        $user->refresh();
         $user->checkAndRefillCredits();
+        // Re-load after any potential refill/deduction to return accurate values
+        $user->refresh();
 
         // Ensure user has a streak record initialized
         $streak = StudyStreak::firstOrCreate(
