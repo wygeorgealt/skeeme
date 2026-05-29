@@ -21,6 +21,7 @@ class AccountDeletionSurveyEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
+            to: $this->user->email,
             subject: 'We would love to hear from you — Help us improve 💙',
             from: config('mail.from.address'),
         );

@@ -223,18 +223,30 @@ export default function TabLayout() {
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
-    const { user, token, onboardingComplete } = useAuthStore();
+    const { user, token, onboardingComplete, onboardingJustCompleted, clearOnboardingJustCompleted } = useAuthStore();
     const pathname = usePathname();
     const [pendingReward, setPendingReward] = useState<{ total: number } | null>(null);
+
+    useEffect(() => {
+        // Clear the "just completed" flag after 2 seconds to let data settle
+        if (onboardingJustCompleted) {
+            const timer = setTimeout(() => {
+                clearOnboardingJustCompleted();
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [onboardingJustCompleted, clearOnboardingJustCompleted]);
 
     useEffect(() => {
         // AI Personalization Guard — if logged in but no education level, force preferences
         // IMPORTANT: don't interrupt onboarding flow. Only enforce after onboarding is completed,
         // and don't redirect if the user is currently inside /(onboarding) routes.
+        // Also skip if onboarding was JUST completed (give time for data to sync).
         if (
             token &&
             user &&
             onboardingComplete &&
+            !onboardingJustCompleted &&
             !user.ai_preferences?.education_level &&
             !String(pathname || '').startsWith('/(onboarding)')
         ) {
@@ -257,7 +269,7 @@ export default function TabLayout() {
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [token, user, pathname, onboardingComplete]);
+    }, [token, user, pathname, onboardingComplete, onboardingJustCompleted]);
 
     return (
         <>

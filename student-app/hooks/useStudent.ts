@@ -6,9 +6,11 @@ export function useStudent() {
     const token = useAuthStore((s) => s.token);
     const updateUser = useAuthStore((s) => s.updateUser);
 
-    return useQuery(['student', 'me'], async () => {
-        return await apiStandard.get('me');
-    }, {
+    return useQuery({
+        queryKey: ['student', 'me'],
+        queryFn: async () => {
+            return await apiStandard.get('me');
+        },
         staleTime: 5 * 60 * 1000,
         retry: 1,
         enabled: !!token,

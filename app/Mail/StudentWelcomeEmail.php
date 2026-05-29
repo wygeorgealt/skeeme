@@ -21,6 +21,7 @@ class StudentWelcomeEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
+            to: $this->user->email,
             subject: 'Welcome to Skeeme — Your AI Study Partner Awaits 🎉',
             from: config('mail.from.address'),
         );

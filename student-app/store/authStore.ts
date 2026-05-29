@@ -22,9 +22,11 @@ interface AuthState {
     onboardingData: Record<string, any>;
     storedEmail: string | null;
     onboardingComplete: boolean;
+    onboardingJustCompleted: boolean;
     setOnboardingStep: (step: number) => Promise<void>;
     setOnboardingData: (data: Record<string, any>) => Promise<void>;
     completeOnboarding: () => Promise<void>;
+    clearOnboardingJustCompleted: () => void;
     devReset: () => Promise<void>;
     // Credits Modal
     showCreditsModal: boolean;
@@ -124,6 +126,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     onboardingData: {},
     storedEmail: null,
     onboardingComplete: false,
+    onboardingJustCompleted: false,
     showCreditsModal: false,
     creditsModalFeature: null,
     showCooldownModal: false,
@@ -178,12 +181,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     completeOnboarding: async () => {
-        set({ onboardingComplete: true, onboardingStep: 0 });
+        set({ onboardingComplete: true, onboardingJustCompleted: true, onboardingStep: 0 });
         try {
             await standardStorage.setItem('onboarding_complete', 'true');
             await standardStorage.deleteItem('onboarding_step');
             await standardStorage.deleteItem('onboarding_data');
         } catch (e) {}
+    },
+
+    clearOnboardingJustCompleted: () => {
+        set({ onboardingJustCompleted: false });
     },
 
     setHapticsEnabled: async (enabled: boolean) => {

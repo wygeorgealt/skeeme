@@ -65,33 +65,6 @@ export default function RootLayout() {
     hydrate();
   }, [hydrate]);
 
-  // Foreground sync (AppState change to active) & background poll (every 30 seconds)
-  const studentQuery = useStudent();
-
-  useEffect(() => {
-    if (!user) return;
-
-    // 1. Listen for AppState changes (Sync instantly when app returns to foreground)
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState === 'active') {
-        studentQuery.refetch();
-      }
-    });
-
-    // 2. Poll every 30 seconds to keep limits/credits synced dynamically
-    const interval = setInterval(() => {
-      studentQuery.refetch();
-    }, 30000);
-
-    // Initial check on mount
-    studentQuery.refetch();
-
-    return () => {
-      subscription.remove();
-      clearInterval(interval);
-    };
-  }, [user?.id, studentQuery]);
-
   // Initialize RevenueCat SDK — configure immediately on mount (anonymous),
   // then re-configure with the real user ID once authenticated.
   useEffect(() => {
@@ -169,6 +142,7 @@ export default function RootLayout() {
       <View style={{ flex: 1, backgroundColor: rootBg }}>
         <PostHogProvider client={posthog}>
           <QueryProvider>
+            <PollingSync user={user} />
             <ThemeProvider value={{
               ...(tailwindScheme === 'dark' ? DarkTheme : DefaultTheme),
               colors: {
@@ -215,6 +189,37 @@ export default function RootLayout() {
       </View>
     </GestureHandlerRootView>
   );
+}
+
+// Polling component that syncs user data and runs inside QueryProvider context
+function PollingSync({ user }: { user: any }) {
+  const studentQuery = useStudent();
+
+  useEffect(() => {
+    if (!user) return;
+
+    // 1. Listen for AppState changes (Sync instantly when app returns to foreground)
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        studentQuery.refetch();
+      }
+    });
+
+    // 2. Poll every 30 seconds to keep limits/credits synced dynamically
+    const interval = setInterval(() => {
+      studentQuery.refetch();
+    }, 30000);
+
+    // Initial check on mount
+    studentQuery.refetch();
+
+    return () => {
+      subscription.remove();
+      clearInterval(interval);
+    };
+  }, [user?.id, studentQuery]);
+
+  return null;
 }
 
 function OutOfCreditsModalWrapper() {
