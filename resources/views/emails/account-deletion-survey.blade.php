@@ -33,7 +33,7 @@
 
 <!-- CTA -->
 <div style="text-align: center; margin: 0 0 32px;">
-    <a href="{{ $surveyUrl }}" style="display: inline-block; background-color: #8B5CF6; color: #ffffff; padding: 14px 32px; border-radius: 10px; font-weight: 700; font-size: 14px; text-decoration: none;">Share Your Feedback</a>
+    <a href="mailto:{{ $feedbackEmail }}?subject=Skeeme%20Account%20Deletion%20Feedback&body=Hi%20Skeeme%20Team,%0A%0AI%20recently%20deleted%20my%20account.%20Here's%20why%20I%20left:%0A%0A[Please%20tell%20us%20why%20you%20left%20and%20how%20we%20can%20improve]%0A%0AThank%20you!" style="display: inline-block; background-color: #8B5CF6; color: #ffffff; padding: 14px 32px; border-radius: 10px; font-weight: 700; font-size: 14px; text-decoration: none;">Share Your Feedback</a>
 </div>
 
 <p style="font-size: 13px; color: #9ca3af; line-height: 1.6; margin: 0 0 24px; text-align: center;">

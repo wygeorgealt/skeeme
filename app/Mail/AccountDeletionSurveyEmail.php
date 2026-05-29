@@ -33,7 +33,7 @@ class AccountDeletionSurveyEmail extends Mailable
             with: [
                 'user' => $this->user,
                 'firstName' => explode(' ', $this->user->name ?? 'Student')[0],
-                'surveyUrl' => route('feedback.survey', ['reason' => 'account_deletion'], false),
+                'feedbackEmail' => 'support@skeeme.com',
             ],
         );
     }
