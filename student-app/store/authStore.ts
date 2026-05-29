@@ -31,7 +31,9 @@ interface AuthState {
     // Credits Modal
     showCreditsModal: boolean;
     creditsModalFeature: 'scan' | 'quiz' | 'flashcard' | null;
-    toggleCreditsModal: (show: boolean, feature?: 'scan' | 'quiz' | 'flashcard' | null) => void;
+    // Only show the credits modal once per app session unless forced
+    creditsModalShownThisSession: boolean;
+    toggleCreditsModal: (show: boolean, feature?: 'scan' | 'quiz' | 'flashcard' | null, force?: boolean) => void;
     // Cooldown Modal
     showCooldownModal: boolean;
     toggleCooldownModal: (show: boolean) => void;
@@ -129,6 +131,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     onboardingJustCompleted: false,
     showCreditsModal: false,
     creditsModalFeature: null,
+    creditsModalShownThisSession: false,
     showCooldownModal: false,
     showStreakRewardModal: false,
     streakRewardData: null,
@@ -159,8 +162,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         } catch (e) {}
     },
 
-    toggleCreditsModal: (show, feature) => {
-        set({ showCreditsModal: show, creditsModalFeature: feature || null });
+    toggleCreditsModal: async (show, feature, force) => {
+        // If asking to show, only show once per session unless force=true
+        const alreadyShown = get().creditsModalShownThisSession;
+        if (show) {
+            if (alreadyShown && !force) return;
+
+            // Defensive check: re-fetch latest user from server to avoid showing modal when credits were refreshed
+            try {
+                const { apiStandard } = await import('@/lib/api');
+                const latest = await apiStandard.get('me').catch(() => null) as any;
+                if (latest) {
+                    // Update local user with fresh data
+                    const currentUser = get().user || {};
+                    const merged = { ...currentUser, ...latest } as any;
+                    set({ user: merged });
+
+                    const currentCredits = merged.credits ?? 0;
+                    const isUnlimited = (merged.plan_name ?? 'free') !== 'free';
+                    if (!isUnlimited && currentCredits > 0 && !force) {
+                        // They have credits now — don't show modal
+                        return;
+                    }
+                }
+            } catch (e) {
+                // ignore — fallthrough to showing modal
+            }
+
+            set({ showCreditsModal: true, creditsModalFeature: feature || null, creditsModalShownThisSession: true });
+            return;
+        }
+
+        // Always allow dismissal
+        set({ showCreditsModal: false, creditsModalFeature: null });
     },
 
     toggleCooldownModal: (show) => {

@@ -133,7 +133,8 @@ export default function OnboardingLoadingScreen() {
       }
 
       await completeOnboarding();
-      router.replace('/(drawer)');
+      // After onboarding, show paywall as an ad so users can start free or begin trial
+      router.replace('/paywall?fromOnboarding=true' as any);
     };
 
     run();

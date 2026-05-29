@@ -1,6 +1,10 @@
 import { Platform } from 'react-native';
 import Purchases, { LOG_LEVEL, PurchasesEntitlementInfo } from 'react-native-purchases';
 
+// Init guards to avoid duplicate configuration/races
+let _rcInitPromise: Promise<void> | null = null;
+let _rcInitialized = false;
+
 // Read keys directly from environment; do NOT provide a silent placeholder fallback.
 const APPLE_KEY = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY;
 const ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
@@ -28,10 +32,46 @@ export const initializeRevenueCat = async (userId?: string) => {
     return;
   }
 
-  await Purchases.configure({ apiKey, appUserID: userId });
+  // If we've already finished initialization in this session, just log in userId if provided
+  if (_rcInitialized) {
+    if (userId) {
+      try { await Purchases.logIn(userId); } catch (e) { if (__DEV__) console.warn('[RevenueCat] logIn after init failed', e); }
+    }
+    return;
+  }
 
-  if (__DEV__) {
-    await Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+  // If another call is already initializing, await it instead of starting another configure
+  if (_rcInitPromise) {
+    await _rcInitPromise;
+    if (userId) {
+      try { await Purchases.logIn(userId); } catch (e) { if (__DEV__) console.warn('[RevenueCat] logIn after concurrent init failed', e); }
+    }
+    return;
+  }
+
+  _rcInitPromise = (async () => {
+    try {
+      const already = await Purchases.isConfigured();
+      if (already) {
+        if (userId) {
+          try { await Purchases.logIn(userId); } catch (e) { if (__DEV__) console.warn('[RevenueCat] Failed to logIn existing instance', e); }
+        }
+        _rcInitialized = true;
+        return;
+      }
+
+      await Purchases.configure({ apiKey, appUserID: userId });
+      if (__DEV__) { await Purchases.setLogLevel(LOG_LEVEL.VERBOSE); }
+      _rcInitialized = true;
+    } catch (e) {
+      if (__DEV__) console.warn('[RevenueCat] initializeRevenueCat error', e);
+    }
+  })();
+
+  try {
+    await _rcInitPromise;
+  } finally {
+    _rcInitPromise = null;
   }
 };
 

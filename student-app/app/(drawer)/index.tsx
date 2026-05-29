@@ -9,7 +9,7 @@ import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Fire, RoundArrowUp, Calendar, ClockCircle, Notebook, History, MedalRibbonsStar, AltArrowRight, Chart2, Layers } from '@solar-icons/react-native/Bold';
+import { Fire, RoundArrowUp, Calendar, ClockCircle, Notebook, History, MedalRibbonsStar, AltArrowRight, Chart2, Layers, WalletMoney } from '@solar-icons/react-native/Bold';
 
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { tryPromptForReview } from '@/lib/storeReview';
@@ -157,12 +157,23 @@ export default function DashboardScreen() {
                             {user.credits?.toLocaleString() ?? '0'}
                         </Text>
                     </View>
-                    {user.plan_name === 'free' && (
-                        <TouchableOpacity onPress={() => router.push('/paywall')} style={[s.upgradePill, { backgroundColor: C.primary }]}>
-                            <RoundArrowUp size={14} color="#FFF" />
-                            <Text style={s.upgradeText}>Upgrade</Text>
-                        </TouchableOpacity>
-                    )}
+                    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                        {user.plan_name === 'free' && (
+                            <TouchableOpacity onPress={() => router.push('/paywall')} style={[s.iconCircle, { backgroundColor: C.primary }]}>
+                                <RoundArrowUp size={18} color="#FFF" />
+                            </TouchableOpacity>
+                        )}
+
+                        {/* Buy Credits button: show for free users always; for pro/max show only when credits < 1000 */}
+                        {(
+                            user.plan_name === 'free' ||
+                            ((user.plan_name === 'pro' || user.plan_name === 'max') && (user.credits ?? 0) < 1000)
+                        ) && (
+                            <TouchableOpacity onPress={() => router.push('/buy-credits')} style={[s.iconCircle, { backgroundColor: isDark ? '#0A84FF' : '#007AFF' }]}>
+                                <WalletMoney size={18} color="#FFF" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </Animated.View>
 
                 {/* ── Quick Actions Grid ── */}
@@ -263,6 +274,7 @@ const s = StyleSheet.create({
     heroValue: { fontSize: 48, fontWeight: '800', letterSpacing: -2, lineHeight: 54 },
     upgradePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 100, gap: 6 },
     upgradeText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
+    iconCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
 
     quickRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4, marginBottom: 4 },
     quickItem: { alignItems: 'center', gap: 8, flex: 1 },

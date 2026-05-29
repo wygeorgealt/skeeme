@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { router } from 'expo-router';
 import RevenueCatUI from 'react-native-purchases-ui';
-import Purchases, { PurchasesOffering } from 'react-native-purchases';
 import { posthog } from '@/lib/posthog';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CloseCircle } from '@solar-icons/react-native/Bold';
@@ -13,44 +12,18 @@ import { initializeRevenueCat } from '@/lib/revenuecat';
 export default function BuyCreditsScreen() {
     const { checkAuth } = useAuthStore();
     const insets = useSafeAreaInsets();
-    
-    const [offering, setOffering] = useState<PurchasesOffering | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        loadCreditsOffering();
-    }, []);
-
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-    const loadCreditsOffering = async () => {
-        try {
-            const isConfigured = await Purchases.isConfigured();
-            if (!isConfigured) {
+        // Initialize RevenueCat in background; do not block UI rendering on empty offerings
+        (async () => {
+            try {
                 const { user } = useAuthStore.getState();
                 await initializeRevenueCat(user?.id?.toString());
+            } catch (e) {
+                // ignore — we still render the RevenueCat paywall component which will show helpful debug
             }
-            
-            // Double check if it actually configured successfully
-            const configuredNow = await Purchases.isConfigured();
-            if (!configuredNow) {
-                setErrorMsg("RevenueCat SDK is not initialized. Check your Expo .env API keys and restart the server.");
-                setIsLoading(false);
-                return;
-            }
-
-            const offerings = await Purchases.getOfferings();
-            if (offerings.all && offerings.all['credits']) {
-                setOffering(offerings.all['credits']);
-            } else {
-                setErrorMsg("The 'credits' offering was not found in RevenueCat. Have you created it in the dashboard?");
-            }
-        } catch (e: any) {
-            setErrorMsg(e?.message || "Failed to load credits offering");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        })();
+    }, []);
 
     const handleClose = () => {
         if (router.canGoBack()) {
@@ -71,40 +44,15 @@ export default function BuyCreditsScreen() {
         handleClose();
     };
 
-    if (isLoading) {
-        return (
-            <View style={[s.container, s.center]}>
-                <ActivityIndicator size="large" color="#8B5CF6" />
-                <Text style={s.loadingText}>Loading Credit Packs...</Text>
-            </View>
-        );
-    }
-
-    if (!offering || errorMsg) {
-        return (
-            <View style={[s.container, s.center, { padding: 20 }]}>
-                <Text style={[s.errorText, { textAlign: 'center' }]}>
-                    {errorMsg || "No credit packs available."}
-                </Text>
-                <TouchableOpacity onPress={handleClose} style={s.closeErrorBtn}>
-                    <Text style={s.closeErrorText}>Go Back</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
-
     return (
         <View style={s.container}>
             <RevenueCatUI.Paywall 
                 style={s.paywall}
-                options={{
-                    offering: offering,
-                }}
                 onPurchaseCompleted={handlePurchaseCompleted}
                 onRestoreCompleted={handleRestoreCompleted}
                 onDismiss={handleClose}
             />
-            
+
             {/* Custom Close Button overlaid on top to guarantee visibility */}
             <TouchableOpacity 
                 style={[s.closeBtn, { top: Math.max(insets.top, 20) + 10 }]}

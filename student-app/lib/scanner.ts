@@ -115,11 +115,20 @@ export const scannerService = {
                         break;
                     }
                     case 'error': {
-                        streamErrored = true;
-                        es.close();
-                        callbacks.onError?.(chunk.message || 'Failed to solve. Please try again.');
-                        break;
-                    }
+                            streamErrored = true;
+                            es.close();
+                            // If server included remaining credits info, sync it to local user immediately
+                            try {
+                                const parsedPayload = chunk || {};
+                                if (typeof parsedPayload.available === 'number') {
+                                    const update = useAuthStore.getState().updateUser;
+                                    if (update) update({ credits: parsedPayload.available } as any);
+                                }
+                            } catch (_) { /* ignore */ }
+
+                            callbacks.onError?.(chunk.message || 'Failed to solve. Please try again.');
+                            break;
+                        }
                 }
             } catch (e) {
                 if (__DEV__) console.error('Stream parse error', e);

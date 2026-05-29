@@ -11,7 +11,6 @@ import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { MathText } from '@/components/ui/MathText';
 import { useAuthStore } from '@/store/authStore';
 import EventSource from 'react-native-sse';
-
 import * as SecureStore from 'expo-secure-store';
 import Animated, {
     interpolate,

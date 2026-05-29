@@ -102,7 +102,7 @@ export default function ScanScreen() {
         const currentCredits = user?.credits ?? 0;
         const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
         if (!isUnlimited && currentCredits <= 0) {
-            useAuthStore.getState().toggleCreditsModal(true, 'scan');
+            await useAuthStore.getState().toggleCreditsModal(true, 'scan');
             return;
         }
 
@@ -146,7 +146,7 @@ export default function ScanScreen() {
         const currentCredits = user?.credits ?? 0;
         const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
         if (!isUnlimited && currentCredits <= 0) {
-            useAuthStore.getState().toggleCreditsModal(true, 'scan');
+            await useAuthStore.getState().toggleCreditsModal(true, 'scan');
             return;
         }
 
@@ -192,13 +192,13 @@ export default function ScanScreen() {
         const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
         const scanCost = (pricingConfig?.rates?.scan_solve as any)?.[planTier] ?? (planTier === 'free' ? 50 : 30);
 
-        // Occasional upsell: for free users, show a paywall offer even if credits exist.
+        // Occasional upsell: for free users, show a non-blocking paywall offer (do not abort generation)
         if (user?.plan_name === 'free') {
             const shouldShow = await shouldShowFreePaywallOffer({ feature: 'scan' });
             if (shouldShow) {
                 await markFreePaywallOfferShown({ feature: 'scan' });
-                router.push('/paywall?offer=free&feature=scan&fromOffer=true' as any);
-                return;
+                await useAuthStore.getState().toggleCreditsModal(true, 'scan');
+                // continue with generation in background
             }
         }
 
@@ -213,7 +213,7 @@ export default function ScanScreen() {
             } catch (e) { }
 
             if (!isUnlimited && currentCredits <= 0) {
-                useAuthStore.getState().toggleCreditsModal(true, 'scan');
+                await useAuthStore.getState().toggleCreditsModal(true, 'scan');
                 return;
             }
         }
@@ -251,16 +251,16 @@ export default function ScanScreen() {
                     finalResults = fullResults;
                     setResults(fullResults);
                 },
-                onComplete: (creditsRemaining, reward, streak) => {
+                onComplete: async (creditsRemaining, reward, streak) => {
                     const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
                     if (user) {
                         updateUser({ ...user, credits: creditsRemaining } as any);
                         if (creditsRemaining === 0 && !isUnlimited) {
-                            useAuthStore.getState().toggleCreditsModal(true, 'scan');
+                            await useAuthStore.getState().toggleCreditsModal(true, 'scan');
                         }
                     }
                 },
-                onError: (message, isInsufficientCredits) => {
+                onError: async (message, isInsufficientCredits) => {
                     streamErrored = true;
                     esRef.current = null;
                     setLoading(false);
@@ -268,7 +268,7 @@ export default function ScanScreen() {
                     if (isInsufficientCredits) {
                         // Server rejected with 402 — not enough credits for the scan cost.
                         // Show the credits modal (same flow as the local pre-check).
-                        useAuthStore.getState().toggleCreditsModal(true, 'scan');
+                        await useAuthStore.getState().toggleCreditsModal(true, 'scan');
                         return;
                     }
 

@@ -130,14 +130,6 @@ export default function SupportScreen() {
                 </Animated.View>
 
                 <Animated.View key={`card-${animKey}`} entering={FadeInDown.delay(160).duration(400)} style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
-                    <View style={s.userInfoBadge}>
-                        <Text style={s.userInfoText}>
-                            Sending as <Text style={{ fontWeight: '700' }}>{user?.name || 'User'}</Text>
-                        </Text>
-                        <Text style={[s.userInfoSub, { color: C.textTertiary }]}>{user?.email}</Text>
-                    </View>
-
-                    <Text style={[s.inputLabel, { color: C.textSecondary }]}>What Happened?</Text>
                     <TextInput
                         style={[
                             s.textArea,

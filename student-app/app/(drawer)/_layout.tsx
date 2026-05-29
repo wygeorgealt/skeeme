@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useEffect } from 'react';
 import { registerForPushNotificationsAsync } from '@/lib/notifications';
+import { AppState, AppStateStatus } from 'react-native';
 import ClaimRewardModal from '@/components/ClaimRewardModal';
 import { useState } from 'react';
 
@@ -236,6 +237,20 @@ export default function TabLayout() {
             return () => clearTimeout(timer);
         }
     }, [onboardingJustCompleted, clearOnboardingJustCompleted]);
+
+    useEffect(() => {
+        // Refresh auth state when app becomes active to pick up remote changes (credits, plan updates)
+        const handleAppState = (next: AppStateStatus) => {
+            if (next === 'active') {
+                try {
+                    useAuthStore.getState().checkAuth().catch(() => {});
+                } catch (e) { }
+            }
+        };
+
+        const subscription = AppState.addEventListener('change', handleAppState);
+        return () => subscription.remove();
+    }, []);
 
     useEffect(() => {
         // AI Personalization Guard — if logged in but no education level, force preferences
