@@ -171,7 +171,21 @@ class AnthropicAIService
                 'json' => [
                     'model' => self::MODEL_HAIKU,
                     'max_tokens' => $maxTokens,
-                    'system' => $this->getPersonalizedSystemPrompt('You are a quiz generator. Return ONLY raw JSON matching the requested schema. Wrap all math/formulas in dollar signs. No conversational text.'),
+                    // MATH FORMATTING RULES added
+                    'system' => $this->getPersonalizedSystemPrompt('You are a quiz generator. Return ONLY raw JSON matching the requested schema. Wrap all math/formulas in dollar signs. No conversational text.
+
+MATH FORMATTING RULES:
+1. Inline math: Use $...$ delimiters. Inline fractions should be compact, e.g., $\frac{a}{b}$.
+2. Display math: Use $$...$$ delimiters on separate lines for important equations, limits, or complex expressions.
+3. Structured lists: Use enumerate environments or numbered lists with math expressions where needed.
+4. Align environments: For multiple equations, use $$\begin{align}...\\end{align}$$ with proper line breaks.
+5. Braces: Always wrap command arguments in braces, e.g., $\sqrt{x}$ not $\sqrt x$.
+6. Command groups: Commands like \sin, \cos, \lim must be followed by argument braces or left/right delimiters.
+7. Limits: Use underscore and caret with braces for limits, e.g., $\sum_{i=1}^{n}$ not $\sum_i^n$.
+8. Subscripts/superscripts: Always brace multicharacter subscripts/superscripts, e.g., $x_{ij}$ or $a^{2n}$.
+9. Text within math: Use $\text{word}$ for text inside math mode, never mix plain text.
+10. Percent signs: Escape as \\% inside math mode; use plain % in prose.
+11. Chemistry notation: Use element symbols directly (e.g., H2O, CO2) without math mode unless in calculation contexts.'),
                     'messages' => [
                         [
                             'role' => 'user', 
@@ -279,7 +293,21 @@ class AnthropicAIService
                 'json' => [
                     'model' => self::MODEL_HAIKU,
                     'max_tokens' => $maxTokens,
-                    'system' => $this->getPersonalizedSystemPrompt('You are an expert tutor creating highly effective flashcards. Return only JSON. Wrap all math/formulas in dollar signs.'),
+                    // MATH FORMATTING RULES added
+                    'system' => $this->getPersonalizedSystemPrompt('You are an expert tutor creating highly effective flashcards. Return only JSON. Wrap all math/formulas in dollar signs.
+
+MATH FORMATTING RULES:
+1. Inline math: Use $...$ delimiters. Inline fractions should be compact, e.g., $\frac{a}{b}$.
+2. Display math: Use $$...$$ delimiters on separate lines for important equations, limits, or complex expressions.
+3. Structured lists: Use enumerate environments or numbered lists with math expressions where needed.
+4. Align environments: For multiple equations, use $$\begin{align}...\\end{align}$$ with proper line breaks.
+5. Braces: Always wrap command arguments in braces, e.g., $\sqrt{x}$ not $\sqrt x$.
+6. Command groups: Commands like \sin, \cos, \lim must be followed by argument braces or left/right delimiters.
+7. Limits: Use underscore and caret with braces for limits, e.g., $\sum_{i=1}^{n}$ not $\sum_i^n$.
+8. Subscripts/superscripts: Always brace multicharacter subscripts/superscripts, e.g., $x_{ij}$ or $a^{2n}$.
+9. Text within math: Use $\text{word}$ for text inside math mode, never mix plain text.
+10. Percent signs: Escape as \\% inside math mode; use plain % in prose.
+11. Chemistry notation: Use element symbols directly (e.g., H2O, CO2) without math mode unless in calculation contexts.'),
                     'messages' => [
                         [
                             'role' => 'user', 

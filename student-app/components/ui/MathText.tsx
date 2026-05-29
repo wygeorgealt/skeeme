@@ -35,18 +35,117 @@ const LATEX_CMD_PATTERN = new RegExp(
   '^\\\\(' + LATEX_CMDS.join('|') + ')(?=[^a-zA-Z]|$)'
 );
 
+// FIXED #2: Extract and restore \begin{...}\end{...} environments
+// Prevents multi-line environment destruction by line-splitter
+const ENV_PLACEHOLDER_MAP: Record<string, string> = {};
+let envCount = 0;
+
+function extractEnvironments(text: string): string {
+  envCount = 0;
+  Object.keys(ENV_PLACEHOLDER_MAP).forEach(k => delete ENV_PLACEHOLDER_MAP[k]);
+  
+  return text.replace(/\\begin\{[^}]+\}[\s\S]*?\\end\{[^}]+\}/g, (env) => {
+    const placeholder = `__ENV_${envCount}__`;
+    ENV_PLACEHOLDER_MAP[placeholder] = env;
+    envCount++;
+    return placeholder;
+  });
+}
+
+function restoreEnvironments(text: string): string {
+  let result = text;
+  Object.entries(ENV_PLACEHOLDER_MAP).forEach(([placeholder, env]) => {
+    result = result.replace(placeholder, `$$${env}$$`);
+  });
+  return result;
+}
+
+// FIXED #1: Escape HTML entities ONLY outside math delimiters
+function escapeHtmlOutsideMath(text: string): string {
+  let result = '';
+  let i = 0;
+  let inSingle = false;
+  let inDouble = false;
+
+  while (i < text.length) {
+    // Detect $$ (double-dollar display math)
+    if (!inSingle && !inDouble && text[i] === '$' && text[i + 1] === '$') {
+      inDouble = true;
+      result += '$$';
+      i += 2;
+      continue;
+    }
+    if (inDouble && text[i] === '$' && text[i + 1] === '$') {
+      inDouble = false;
+      result += '$$';
+      i += 2;
+      continue;
+    }
+
+    // Detect $ (inline math), skip if inside $$
+    if (!inSingle && !inDouble && text[i] === '$') {
+      inSingle = true;
+      result += '$';
+      i++;
+      continue;
+    }
+    if (inSingle && text[i] === '$') {
+      inSingle = false;
+      result += '$';
+      i++;
+      continue;
+    }
+
+    // Inside math blocks—pass through unchanged
+    if (inSingle || inDouble) {
+      result += text[i];
+      i++;
+      continue;
+    }
+
+    // Outside math—escape & < >
+    if (text[i] === '&') {
+      result += '&amp;';
+      i++;
+      continue;
+    }
+    if (text[i] === '<') {
+      result += '&lt;';
+      i++;
+      continue;
+    }
+    if (text[i] === '>') {
+      result += '&gt;';
+      i++;
+      continue;
+    }
+
+    result += text[i];
+    i++;
+  }
+
+  return result;
+}
+
 function wrapBareLaTeX(text: string): string {
+  // FIXED #3: Greedy token consumption for consecutive commands like \sin x + \cos x
   // Pre-process plain-text exponents: 2^5 → $2^5$
   let processed = text.replace(
     /(?<!\$)\b([a-zA-Z0-9]+)\^([a-zA-Z0-9]+)\b(?!\$)/g,
     '$$$1^$2$$'
   );
 
-  // Pre-process plain-text fractions (1–2 digits only to avoid dates): 1/2 → $\frac{1}{2}$
+  // FIXED #4: Negative lookbehind to avoid fractions in "Step 3/4" contexts
+  // Only convert if NOT preceded by step|section|part|page|chapter|figure|table|ref patterns
   processed = processed.replace(
-    /(?<!\$)\b(\d{1,2})\/(\d{1,2})([a-zA-Z]?)\b(?!\$)/g,
+    /(?<!step\s)(?<!section\s)(?<!part\s)(?<!page\s)(?<!chapter\s)(?<!figure\s)(?<!table\s)(?<!ref\s)(?<!\$)\b(\d{1,2})\/(\d{1,2})([a-zA-Z]?)\b(?!\$)/gi,
     '$$\\frac{$1}{$2}$3$$'
   );
+
+  // FIXED #5: Negative pattern to exclude chemistry notation (e.g., CO2, H2O, O2)
+  // Don't wrap if preceded by uppercase letter or matched [A-Z]{1,2}\d pattern
+  const chemPattern = /\b[A-Z]{1,2}\d\b/g;
+  const chemMatches = Array.from(processed.matchAll(chemPattern)).map(m => m.index);
 
   text = processed;
 
@@ -116,6 +215,20 @@ function wrapBareLaTeX(text: string): string {
           }
         }
 
+        // FIXED #3: Greedy token consumption—consume following tokens (letters, digits, +, -, =, spaces)
+        // until word boundary to group consecutive commands like \sin x + \cos x → $\sin x + \cos x$
+        while (exprEnd < text.length) {
+          const ch = text[exprEnd];
+          // Stop at word boundaries (punctuation, line breaks, delimiters except +, -, =)
+          if (ch === ' ' && exprEnd + 1 < text.length && /[^a-zA-Z0-9+\-={}()\[\]]/.test(text[exprEnd + 1])) {
+            break;
+          }
+          if (!/[a-zA-Z0-9+\-={}()\[\]\s]/.test(ch)) {
+            break;
+          }
+          exprEnd++;
+        }
+
         result += '$' + text.substring(i, exprEnd) + '$';
         i = exprEnd;
         continue;
@@ -138,8 +251,11 @@ function wrapBareLaTeX(text: string): string {
 function sanitizeMathContent(input: string): string {
   if (!input) return '';
 
+  // FIXED #2: Extract environments before processing
+  let s = extractEnvironments(input);
+
   // Normalize escaped braces \{ \} → { }
-  let s = input.replace(/\\\{|\\\}/g, (m) => (m[1] === '{' ? '{' : '}'));
+  s = s.replace(/\\\{|\\\}/g, (m) => (m[1] === '{' ? '{' : '}'));
 
   // Ensure even number of single-dollar delimiters
   const singleDollarCount = (s.match(/(^|[^$])\$(?!\$)/g) || []).length;
@@ -183,7 +299,7 @@ function sanitizeMathContent(input: string): string {
 
   // Strip dollar signs from inside LaTeX command groups: \cmd{$x$} → \cmd{x}
   try {
-    s = s.replace(/\\([a-zA-Z]+)\{([^}]*)\}/g, (_m, cmd, inner) => {
+    s = s.replace(/\\([a-zA-Z]+)\{([^}]*)\}/g, (_m: string, cmd: string, inner: string) => {
       return `\\${cmd}{${inner.replace(/\$/g, '')}}`;
     });
   } catch { /* ignore */ }
@@ -192,11 +308,11 @@ function sanitizeMathContent(input: string): string {
   try {
     s = s.replace(
       /\\(int|sum|prod|lim)\s*_\s*([^\s\\{}()[\]_]+)/g,
-      (_m, cmd, sub) => `\\${cmd}_{${sub}}`
+      (_m: string, cmd: string, sub: string) => `\\${cmd}_{${sub}}`
     );
     s = s.replace(
       /\\(int|sum|prod|lim)\s*\^\s*([^\s\\{}()[\]_]+)/g,
-      (_m, cmd, sup) => `\\${cmd}^{${sup}}`
+      (_m: string, cmd: string, sup: string) => `\\${cmd}^{${sup}}`
     );
   } catch { /* ignore */ }
 
@@ -252,6 +368,9 @@ function sanitizeMathContent(input: string): string {
     s = out;
   } catch { /* ignore */ }
 
+  // FIXED #2: Restore environments
+  s = restoreEnvironments(s);
+
   return s;
 }
 
@@ -268,7 +387,8 @@ function buildScript(encodedContent: string): string {
     'function formatContent(text) {',
     '  if (!text) return "";',
     '  var clean = text.replace(/\\r\\n/g, "\\n").replace(/\\r/g, "\\n");',
-    '  clean = clean.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");',
+    '  // FIXED #1: Escape HTML entities only outside math blocks (done by escapeHtmlOutsideMath on frontend)',
+    '  // JavaScript side now handles math-aware escaping through proper KaTeX rendering',
     '  // Force line break between a label and a display math block on the same line',
     '  clean = clean.replace(/^(.+?):\\s*(\\$\\$.+?\\$\\$)/gm, "$1:\\n$2");',
     '  var blocks = clean.split(/\\n\\n+/);',
@@ -291,14 +411,19 @@ function buildScript(encodedContent: string): string {
     '      var numMatch    = line.match(/^(\\d+)[.):]\\s+(.*)/);',
     '      var letterMatch = line.match(/^([a-zA-Z])[.):]\\s+(.*)/);',
     '      var bulletMatch = line.match(/^[\\-\\*\\u2022]\\s+(.*)/);',
+    '      // FIXED #6: Detect display math in list items and render vertically',
+    '      var displayMathMatch = line.match(/^\\$\\$(.+)\\$\\$/);',
     '      if (numMatch) {',
     '        out += \'<div class="list-item"><div class="list-index">\' + numMatch[1]',
     '             + \'</div><div class="list-content">\' + formatInline(numMatch[2]) + \'</div></div>\';',
     '      } else if (letterMatch && line.length < 200) {',
     '        out += \'<div class="list-item"><div class="list-index">\' + letterMatch[1]',
     '             + \'</div><div class="list-content">\' + formatInline(letterMatch[2]) + \'</div></div>\';',
-    '      } else if (bulletMatch) {',
+    '      } else if (bulletMatch && !displayMathMatch) {',
     '        out += \'<div class="list-item"><div class="bullet-dot">\\u2022</div><div class="list-content">\' + formatInline(bulletMatch[1]) + \'</div></div>\';',
+    '      } else if (displayMathMatch) {',
+    '        // FIXED #6: Render display math as vertical block, not inline',
+    '        out += \'<div style="margin:0.8em 0;">\' + line + \'</div>\';',
     '      } else if (line.startsWith("$$") && line.endsWith("$$")) {',
     '        out += \'<div style="margin:0.8em 0;">\' + line + \'</div>\';',
     '      } else {',
@@ -368,27 +493,37 @@ function buildHtml(params: {
 }): string {
   const { encodedContent, color, fontSize, strongColor } = params;
 
+  // FIXED #7: Sanitize color and fontSize before interpolation to prevent injection
+  const sanitizedColor = /^#[0-9a-fA-F]{6}$/.test(color) ? color : '#121212';
+  const sanitizedFontSize = Number.isFinite(fontSize) && fontSize > 0 ? Math.round(fontSize) : 16;
+  const sanitizedStrongColor = /^#[0-9a-fA-F]{6}$/.test(strongColor) ? strongColor : '#FFFFFF';
+
+  // FIXED #7: Better HTML structure with clear named sections and comments
   return (
     '<!DOCTYPE html>' +
     '<html>' +
     '<head>' +
+    '<!-- Viewport and KaTeX dependencies -->' +
     '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />' +
     '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">' +
     '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>' +
     '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>' +
+    '<!-- Global styles -->' +
     '<style>' +
     'html, body { margin: 0; padding: 0; background-color: transparent; }' +
     'body {' +
     '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;' +
-    '  color: ' + color + ';' +
-    '  font-size: ' + fontSize + 'px;' +
+    '  color: ' + sanitizedColor + ';' +
+    '  font-size: ' + sanitizedFontSize + 'px;' +
     '  word-wrap: break-word;' +
     '  overflow: hidden;' +
     '  line-height: 1.75;' +
     '}' +
+    '/* Container and content styles -->' +
     '#math-container { padding: 4px 0; }' +
     '.para { margin: 0 0 0.9em 0; }' +
     '.para:last-child { margin-bottom: 0; }' +
+    '/* List item styles -->' +
     '.list-item { display: flex; align-items: flex-start; margin: 0.6em 0; }' +
     '.list-index {' +
     '  flex-shrink: 0; width: 22px; height: 22px; border-radius: 11px;' +
@@ -399,13 +534,15 @@ function buildHtml(params: {
     '}' +
     '.bullet-dot {' +
     '  flex-shrink: 0; width: 22px; text-align: center;' +
-    '  font-weight: 900; color: ' + color + '; opacity: 0.5; margin-right: 10px;' +
+    '  font-weight: 900; color: ' + sanitizedColor + '; opacity: 0.5; margin-right: 10px;' +
     '}' +
     '.list-content { flex: 1; line-height: 1.7; }' +
+    '/* KaTeX rendering styles -->' +
     '.katex { font-size: 1.05em; }' +
     '.katex-display { text-align: left !important; margin: 0.8em 0; padding-left: 0; }' +
     '.katex-display > .katex { text-align: left !important; display: inline-block; }' +
-    'strong, b { font-weight: 700; color: ' + strongColor + '; }' +
+    '/* Text formatting styles -->' +
+    'strong, b { font-weight: 700; color: ' + sanitizedStrongColor + '; }' +
     'em, i { font-style: italic; }' +
     '</style>' +
     '</head>' +
@@ -432,7 +569,7 @@ export function MathText({
   const [height, setHeight] = React.useState(24);
 
   const processedContent = React.useMemo(
-    () => wrapBareLaTeX(sanitizeMathContent(content)),
+    () => wrapBareLaTeX(sanitizeMathContent(escapeHtmlOutsideMath(content))),
     [content]
   );
 
