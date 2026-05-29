@@ -6,8 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use App\Mail\AccountDeletionSurveyEmail;
 
 class ProfileController extends Controller
 {
@@ -127,21 +131,43 @@ class ProfileController extends Controller
 
         // Password check has been replaced with a frontend random word confirmation challenge.
 
-        // 1. Revoke all API tokens
-        $user->tokens()->delete();
+        // Capture email before anonymization (needed for sending goodbye email)
+        $userEmail = $user->email;
+        $userName = $user->name;
 
-        // 2. Anonymize personal data (GDPR-friendly — account becomes unusable)
-        $user->update([
-            'name'          => 'Deleted User',
-            'email'         => 'deleted_' . $user->id . '@removed.skeeme.com',
-            'password'      => Hash::make(Str::random(64)), // Scramble password
-            'phone_number'  => null,
-            'avatar_url'    => null,
-            'first_name'    => null,
-            'last_name'     => null,
-            'credits'       => 0,
-            'status'        => 'deleted',
-        ]);
+        // Make anonymization + token revocation atomic so a partial failure
+        // doesn't leave the client logged out while the account remains intact.
+        DB::transaction(function () use ($user) {
+            // 1. Anonymize personal data (GDPR-friendly — account becomes unusable)
+            $user->update([
+                'name'          => 'Deleted User',
+                'email'         => 'deleted_' . $user->id . '@removed.skeeme.com',
+                'password'      => Hash::make(Str::random(64)), // Scramble password
+                'phone_number'  => null,
+                'avatar_url'    => null,
+                'first_name'    => null,
+                'last_name'     => null,
+                'credits'       => 0,
+                'status'        => 'deleted',
+            ]);
+
+            // 2. Revoke all API tokens after anonymization
+            $user->tokens()->delete();
+        });
+
+        // Send goodbye email with survey link to their original email
+        try {
+            $tempUser = clone $user;
+            $tempUser->email = $userEmail;
+            $tempUser->name = $userName;
+            Mail::to($userEmail)->queue(new AccountDeletionSurveyEmail($tempUser));
+        } catch (\Exception $e) {
+            // Silently fail — don't block account deletion
+            \Illuminate\Support\Facades\Log::error('Failed to queue account deletion survey email', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+        }
 
         return response()->json(['message' => 'Your account has been permanently deleted.']);
     }

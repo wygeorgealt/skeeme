@@ -223,13 +223,21 @@ export default function TabLayout() {
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
-    const { user, token } = useAuthStore();
+    const { user, token, onboardingComplete } = useAuthStore();
     const pathname = usePathname();
     const [pendingReward, setPendingReward] = useState<{ total: number } | null>(null);
 
     useEffect(() => {
         // AI Personalization Guard — if logged in but no education level, force preferences
-        if (token && user && !user.ai_preferences?.education_level) {
+        // IMPORTANT: don't interrupt onboarding flow. Only enforce after onboarding is completed,
+        // and don't redirect if the user is currently inside /(onboarding) routes.
+        if (
+            token &&
+            user &&
+            onboardingComplete &&
+            !user.ai_preferences?.education_level &&
+            !String(pathname || '').startsWith('/(onboarding)')
+        ) {
             if (pathname !== '/preferences') {
                 router.replace('/preferences');
             }
@@ -249,7 +257,7 @@ export default function TabLayout() {
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [token, user, pathname]);
+    }, [token, user, pathname, onboardingComplete]);
 
     return (
         <>

@@ -32,6 +32,7 @@ import { generateScanHTML } from '@/lib/pdfGenerator';
 import { scannerService, ScanResult } from '@/lib/scanner';
 import { posthog } from '@/lib/posthog';
 import { markGenerationSuccess } from '@/lib/storeReview';
+import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/freeOffer';
 
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import EventSource from 'react-native-sse';
@@ -97,7 +98,7 @@ export default function ScanScreen() {
 
     const pickImage = async (useCamera: boolean) => {
         const currentCredits = user?.credits ?? 0;
-        const isUnlimited = user?.is_unlimited ?? false;
+        const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
         if (!isUnlimited && currentCredits <= 0) {
             useAuthStore.getState().toggleCreditsModal(true, 'scan');
             return;
@@ -141,7 +142,7 @@ export default function ScanScreen() {
 
     const handleCapture = async () => {
         const currentCredits = user?.credits ?? 0;
-        const isUnlimited = user?.is_unlimited ?? false;
+        const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
         if (!isUnlimited && currentCredits <= 0) {
             useAuthStore.getState().toggleCreditsModal(true, 'scan');
             return;
@@ -183,11 +184,21 @@ export default function ScanScreen() {
         if (!targetBase64) return;
 
         let currentCredits = user?.credits ?? 0;
-        let isUnlimited = user?.is_unlimited ?? false;
+        let isUnlimited = (user?.plan_name ?? 'free') !== 'free';
 
         const pricingConfig = useAuthStore.getState().pricingConfig;
         const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
         const scanCost = (pricingConfig?.rates?.scan_solve as any)?.[planTier] ?? (planTier === 'free' ? 50 : 30);
+
+        // Occasional upsell: for free users, show a paywall offer even if credits exist.
+        if (user?.plan_name === 'free') {
+            const shouldShow = await shouldShowFreePaywallOffer({ feature: 'scan' });
+            if (shouldShow) {
+                await markFreePaywallOfferShown({ feature: 'scan' });
+                router.push('/paywall?offer=free&feature=scan&fromOffer=true' as any);
+                return;
+            }
+        }
 
         if (!isUnlimited && currentCredits <= 0) {
             try {
@@ -195,7 +206,7 @@ export default function ScanScreen() {
                 if (userRes.data) {
                     updateUser(userRes.data);
                     currentCredits = userRes.data.credits ?? 0;
-                    isUnlimited = userRes.data.is_unlimited ?? false;
+                    isUnlimited = (userRes.data.plan_name ?? 'free') !== 'free';
                 }
             } catch (e) { }
 
@@ -239,7 +250,7 @@ export default function ScanScreen() {
                     setResults(fullResults);
                 },
                 onComplete: (creditsRemaining, reward, streak) => {
-                    const isUnlimited = user?.is_unlimited ?? false;
+                    const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
                     if (user) {
                         updateUser({ ...user, credits: creditsRemaining } as any);
                         if (creditsRemaining === 0 && !isUnlimited) {

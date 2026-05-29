@@ -7,7 +7,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { api } from '@/lib/api';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AltArrowRight, Bill, RoundArrowUp, Settings, Bell, QuestionCircle, CheckCircle, DocumentText, TrashBinTrash, CupStar } from '@solar-icons/react-native/Bold';
+import { AltArrowRight, Bill, RoundArrowUp, Settings, Bell, QuestionCircle, CheckCircle, DocumentText, TrashBinTrash, CupStar, WalletMoney } from '@solar-icons/react-native/Bold';
 
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
@@ -186,7 +186,13 @@ export default function AccountScreen() {
                         <SettingsRow
                             icon={Bill} iconBg="#007AFF"
                             label="Subscription"
-                            value={user.plan_name === 'elite' || user.is_unlimited ? 'Skeeme Max' : (user.plan_name === 'standard' ? 'Skeeme Pro' : 'Skeeme Free')}
+                            value={
+                                user.plan_name === 'max' || user.plan_name === 'elite'
+                                    ? 'Skeeme Max'
+                                    : (user.plan_name === 'pro' || user.plan_name === 'standard')
+                                        ? 'Skeeme Pro'
+                                        : 'Skeeme Free'
+                            }
                             isDark={isDark}
                         />
                         <SettingsRow
@@ -197,6 +203,12 @@ export default function AccountScreen() {
                                     router.push('/paywall');
                                 } catch (e) { }
                             }}
+                            isDark={isDark}
+                        />
+                        <SettingsRow
+                            icon={WalletMoney} iconBg="#007AFF"
+                            label="Buy Credits"
+                            onPress={() => router.push('/buy-credits')}
                             isDark={isDark}
                         />
                         <SettingsRow

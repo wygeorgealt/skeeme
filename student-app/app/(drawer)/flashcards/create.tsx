@@ -18,6 +18,7 @@ import GlobalErrorModal from '@/components/GlobalErrorModal';
 import { useNavigation } from '@react-navigation/native';
 
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
+import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/freeOffer';
 
 type QuizMode = 'topic' | 'file';
 type Difficulty = 'easy' | 'medium' | 'hard';
@@ -176,10 +177,20 @@ export default function GenerateFlashcardScreen() {
         const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
         const flatCost = (pricingConfig?.rates?.flashcard_flat as any)?.[planTier] ?? (planTier === 'free' ? 30 : 25);
         const cardCountValue = clampedCardCount;
+
+        // Occasional upsell: for free users, show a paywall offer even if credits exist.
+        if (user?.plan_name === 'free') {
+            const shouldShow = await shouldShowFreePaywallOffer({ feature: 'flashcard' });
+            if (shouldShow) {
+                await markFreePaywallOfferShown({ feature: 'flashcard' });
+                router.push('/paywall?offer=free&feature=flashcard&fromOffer=true' as any);
+                return;
+            }
+        }
         
         // Pre-flight check
         let currentCredits = user?.credits ?? 0;
-        let isUnlimited = user?.is_unlimited ?? false;
+        let isUnlimited = (user?.plan_name ?? 'free') !== 'free';
 
         if (!isUnlimited && currentCredits <= 0) {
             try {
@@ -187,7 +198,7 @@ export default function GenerateFlashcardScreen() {
                 if (userRes.data) {
                     updateUser(userRes.data);
                     currentCredits = userRes.data.credits ?? 0;
-                    isUnlimited = userRes.data.is_unlimited ?? false;
+                    isUnlimited = (userRes.data.plan_name ?? 'free') !== 'free';
                 }
             } catch (e) { }
 

@@ -15,6 +15,7 @@ import * as Print from 'expo-print';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
 import { MathText } from '@/components/ui/MathText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/store/authStore';
 
 import { 
     CheckCircle, 
@@ -187,6 +188,7 @@ export default function QuizHistoryDetailScreen() {
     const { id } = useLocalSearchParams();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const { user } = useAuthStore();
     const bgColor = isDark ? '#121212' : '#f8fafc';
     const tintColor = isDark ? '#fff' : '#121212';
     const [isSharing, setIsSharing] = useState(false);
@@ -194,6 +196,13 @@ export default function QuizHistoryDetailScreen() {
     const [cachedSession, setCachedSession] = useState<QuizSessionDetail | null>(null);
     const viewShotRef = useRef<View>(null);
     const insets = useSafeAreaInsets();
+
+    useEffect(() => {
+        // History detail is a paid feature. Free users should be redirected to the paywall.
+        if (user?.plan_name === 'free') {
+            router.replace('/paywall');
+        }
+    }, [user?.plan_name]);
 
     // Hydrate cache on mount
     useEffect(() => {

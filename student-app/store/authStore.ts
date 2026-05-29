@@ -220,7 +220,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     login: async (user, token) => {
-        set({ user, token, onboardingComplete: true });
+        // Keep onboardingComplete until the onboarding flow explicitly finishes.
+        // Hydration/guards will read persisted flags once available.
+        set({ user, token, onboardingComplete: false });
         try {
             await standardStorage.setItem('onboarding_complete', 'true');
             await secureStorage.setItem('auth_token', token);
@@ -287,14 +289,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 const haptics = await standardStorage.getItem('haptics_enabled');
                 const user = JSON.parse(userStr);
                 // Optimistically set user from cache for instant UI
-                set({ 
-                    token, 
-                    user, 
-                    theme: themeStr || 'system', 
+                // Important: do NOT assume onboarding is complete just because we have a cached session.
+                // Hydrate onboarding state from persisted onboarding flags so signup → onboarding flow is preserved.
+                const obComplete = await standardStorage.getItem('onboarding_complete');
+                const obStep = await standardStorage.getItem('onboarding_step');
+                const obData = await standardStorage.getItem('onboarding_data');
+
+                set({
+                    token,
+                    user,
+                    theme: themeStr || 'system',
                     hapticsEnabled: haptics === null ? true : haptics === 'true',
                     notificationsEnabled: (await standardStorage.getItem('notifications_enabled')) !== 'false',
-                    onboardingComplete: true, 
-                    isLoading: false 
+                    onboardingComplete: obComplete === 'true',
+                    onboardingStep: obStep ? parseInt(obStep, 10) : 0,
+                    onboardingData: obData ? JSON.parse(obData) : {},
+                    isLoading: false,
                 });
 
                 try {

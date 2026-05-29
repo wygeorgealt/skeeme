@@ -16,6 +16,7 @@ import { generateUUID } from '@/lib/utils';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 import { posthog } from '@/lib/posthog';
 import { markGenerationSuccess } from '@/lib/storeReview';
+import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/freeOffer';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
 
 import { haptics } from '@/lib/haptics';
@@ -382,9 +383,19 @@ export default function GenerateQuizScreen() {
         const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
         const flatCost = (pricingConfig?.rates?.quiz_generation as any)?.[planTier] ?? 30;
 
+        // Occasional upsell: for free users, show a paywall offer even if credits exist.
+        if (user?.plan_name === 'free') {
+            const shouldShow = await shouldShowFreePaywallOffer({ feature: 'quiz' });
+            if (shouldShow) {
+                await markFreePaywallOfferShown({ feature: 'quiz' });
+                router.push('/paywall?offer=free&feature=quiz&fromOffer=true' as any);
+                return;
+            }
+        }
+
         // Pre-flight check
         let currentCredits = user?.credits ?? 0;
-        let isUnlimited = user?.is_unlimited ?? false;
+        let isUnlimited = (user?.plan_name ?? 'free') !== 'free';
 
         if (!isUnlimited && currentCredits <= 0) {
             try {
@@ -392,7 +403,7 @@ export default function GenerateQuizScreen() {
                 if (userRes.data) {
                     updateUser(userRes.data);
                     currentCredits = userRes.data.credits ?? 0;
-                    isUnlimited = userRes.data.is_unlimited ?? false;
+                    isUnlimited = (userRes.data.plan_name ?? 'free') !== 'free';
                 }
             } catch (e) { }
 
@@ -573,7 +584,7 @@ export default function GenerateQuizScreen() {
             const userRes = await api.get('me');
             if (userRes.data) {
                 updateUser(userRes.data);
-                if (userRes.data.credits === 0 && !userRes.data.is_unlimited) {
+                if (userRes.data.credits === 0 && (userRes.data.plan_name ?? 'free') === 'free') {
                     setShowOutOfCredits(true);
                 }
             }

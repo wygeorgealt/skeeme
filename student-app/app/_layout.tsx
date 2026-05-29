@@ -92,7 +92,10 @@ export default function RootLayout() {
   // Initialize RevenueCat SDK — configure immediately on mount (anonymous),
   // then re-configure with the real user ID once authenticated.
   useEffect(() => {
-    initializeRevenueCat(user?.id?.toString());
+    // RevenueCat "offerings" can be empty in Expo Go/dev if appUserID changes or is undefined.
+    // Use a stable fallback anon id when logged out so paywalls render correctly.
+    const stableAnonId = user?.id?.toString() ?? 'anon';
+    initializeRevenueCat(stableAnonId);
   }, [user?.id]);
 
   useEffect(() => {

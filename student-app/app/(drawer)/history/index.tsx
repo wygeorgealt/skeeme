@@ -12,8 +12,8 @@ import { haptics } from '@/lib/haptics';
 import { Swipeable } from 'react-native-gesture-handler';
 import { AltArrowRight, Book, Copy, DocumentText, Notebook, TrashBinTrash } from '@solar-icons/react-native/Bold';
 
-
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuthStore } from '@/store/authStore';
 
 type QuizSession = {
     id: number;
@@ -60,6 +60,7 @@ export default function StudyHistoryDashboard() {
     const queryClient = useQueryClient();
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'quizzes' | 'flashcards'>('quizzes');
+    const { user } = useAuthStore();
     
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -152,6 +153,13 @@ export default function StudyHistoryDashboard() {
         if (activeTab === 'quizzes') refetchQuizzes();
         else refetchDecks();
     }, [activeTab, refetchQuizzes, refetchDecks]);
+
+    useEffect(() => {
+        // History is a paid feature. Free users should be redirected to the paywall.
+        if (user?.plan_name === 'free') {
+            router.replace('/paywall');
+        }
+    }, [user?.plan_name]);
 
     const getSections = (items: any[]) => {
         const today = new Date();

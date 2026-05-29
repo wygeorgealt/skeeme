@@ -166,6 +166,8 @@ export default function AuthSelectScreen() {
                         <Text style={s.emailBtnText}>Continue with Email</Text>
                     </TouchableOpacity>
 
+                    {/* (Preview onboarding removed) */}
+
                     {/* Terms of Service */}
                     <View style={s.termsContainer}>
                         <Text style={[s.termsText, { color: C.textTertiary }]}>

@@ -5,11 +5,13 @@ namespace App\Http\Controllers\API\Student;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use App\Models\StudyStreak;
 use App\Models\QuizSession;
 use App\Models\FlashcardSession;
 use App\Models\Transaction;
+use App\Mail\StudentWelcomeEmail;
 use Illuminate\Support\Facades\Log;
 
 use Illuminate\Support\Facades\Http;
@@ -169,6 +171,15 @@ class AuthController extends Controller
         $token = $user->createToken($deviceName)->plainTextToken;
 
         Log::info("Student OAuth login via {$provider}", ['user_id' => $user->id, 'new' => $isNewUser]);
+
+        // Send welcome email to new OAuth users
+        if ($isNewUser) {
+            try {
+                Mail::queue(new StudentWelcomeEmail($user));
+            } catch (\Exception $e) {
+                Log::error('Failed to queue welcome email for OAuth user', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            }
+        }
 
         $pricing = $this->getLocalizedPrice($request);
 
@@ -417,6 +428,13 @@ class AuthController extends Controller
             Cache::forget('otp_token_' . $request->token);
 
             $this->applyPendingReferral($user);
+
+            // Send welcome email to new student
+            try {
+                Mail::queue(new StudentWelcomeEmail($user));
+            } catch (\Exception $e) {
+                Log::error('Failed to queue welcome email', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            }
 
             return response()->json([
                 'message' => 'Account verified successfully.',
