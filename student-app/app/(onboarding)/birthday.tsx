@@ -23,7 +23,7 @@ export default function BirthdayScreen() {
     const [showPicker, setShowPicker] = useState(Platform.OS === 'ios'); // iOS shows inline/modal by default
 
     useEffect(() => {
-        setOnboardingStep(6);
+        setOnboardingStep(8);
     }, []);
 
     const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -51,15 +51,12 @@ export default function BirthdayScreen() {
                 <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
                     <Animated.View entering={FadeInDown.duration(600).delay(100)}>
                         <View style={s.stepRow}>
-                            <Text style={[s.stepText, { color: C.primary }]}>Step 6 of 7</Text>
+                            <Text style={[s.stepText, { color: C.primary }]}>Step 8 of 8</Text>
                             <View style={s.progressBar}>
                                 <View style={[s.progressFill, { width: '85%', backgroundColor: C.primary }]} />
                             </View>
                         </View>
-                        <Text style={[s.heroTitle, { color: C.text }]}>When is your next test?</Text>
-                        <Text style={[s.heroSubtitle, { color: C.textSecondary }]}>
-                            Add a date and we’ll prep you with the right reminders.
-                        </Text>
+                        <Text style={[s.heroTitle, { color: C.text }]}>When is your next exam?</Text>
                     </Animated.View>
                 </View>
 

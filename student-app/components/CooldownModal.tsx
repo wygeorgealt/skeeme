@@ -105,7 +105,7 @@ export default function CooldownModal({ visible, onDismiss }: CooldownModalProps
                                 style={!isFree ? styles.primaryBtn : [styles.secondaryBtn, { borderColor: isDark ? '#3A3A3C' : '#E5E5EA' }]}
                             >
                                 <Text style={!isFree ? styles.primaryBtnText : [styles.secondaryBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
-                                    Okay, I'll wait
+                                    Okay, I&apos;ll wait
                                 </Text>
                             </TouchableOpacity>
                         </View>

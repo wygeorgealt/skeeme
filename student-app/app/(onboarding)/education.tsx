@@ -53,17 +53,12 @@ export default function EducationScreen() {
                 <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
                     <Animated.View entering={FadeInDown.duration(600).delay(100)}>
                         <View style={s.stepRow}>
-                            <Text style={[s.stepText, { color: iconColor }]}>Step 2 of 7</Text>
+                            <Text style={[s.stepText, { color: iconColor }]}>Step 2 of 8</Text>
                             <View style={s.progressBar}>
                                 <View style={[s.progressFill, { width: '28%', backgroundColor: iconColor }]} />
                             </View>
                         </View>
-                        <Text style={[s.heroTitle, { color: textColor }]}>
-                            Academic Level
-                        </Text>
-                        <Text style={[s.heroSubtitle, { color: subtextColor }]}>
-                            This helps us calibrate the AI to your specific learning stage.
-                        </Text>
+                        <Text style={[s.heroTitle, { color: textColor }]}>What’s your learning level?</Text>
                     </Animated.View>
                 </View>
 

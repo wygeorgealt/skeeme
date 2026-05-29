@@ -44,7 +44,7 @@ export default function StyleScreen() {
 
     const handleNext = () => {
         if (selected) {
-            router.push('/(onboarding)/exam-date' as any);
+            router.push('/(onboarding)/tone' as any);
         }
     };
 
@@ -59,17 +59,12 @@ export default function StyleScreen() {
                 <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
                     <Animated.View entering={FadeInDown.duration(600).delay(100)}>
                         <View style={s.stepRow}>
-                            <Text style={[s.stepText, { color: iconColor }]}>Step 4 of 7</Text>
+                            <Text style={[s.stepText, { color: iconColor }]}>Step 4 of 8</Text>
                             <View style={s.progressBar}>
                                 <View style={[s.progressFill, { width: '57%', backgroundColor: iconColor }]} />
                             </View>
                         </View>
-                        <Text style={[s.heroTitle, { color: textColor }]}>
-                            Learning Style
-                        </Text>
-                        <Text style={[s.heroSubtitle, { color: subtextColor }]}>
-                            How should Skeeme explain concepts to you?
-                        </Text>
+                        <Text style={[s.heroTitle, { color: textColor }]}>What kind of explanations do you like?</Text>
                     </Animated.View>
                 </View>
 

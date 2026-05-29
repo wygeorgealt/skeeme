@@ -57,7 +57,7 @@ export default function NotificationScreen() {
             <SafeAreaView style={s.safeArea}>
                 <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
                     <View style={s.stepRow}>
-                        <Text style={[s.stepText, { color: '#007AFF' }]}>Step 7 of 7</Text>
+                        <Text style={[s.stepText, { color: '#007AFF' }]}>Finally</Text>
                         <View style={s.progressBar}>
                             <View style={[s.progressFill, { width: '100%', backgroundColor: '#007AFF' }]} />
                         </View>
@@ -99,10 +99,7 @@ export default function NotificationScreen() {
 
                 {/* Text */}
                 <Animated.View entering={FadeInDown.duration(600).delay(420)} style={s.textSection}>
-                    <Text style={[s.titleBig, { color: C.text }]}>Never miss a study session</Text>
-                    <Text style={[s.subtitle, { color: C.textSecondary }]}>
-                        Get smart reminders and tips to keep you on track. You can change this later in Settings.
-                    </Text>
+                    <Text style={[s.titleBig, { color: C.text }]}>Stay on track—on autopilot.</Text>
                 </Animated.View>
 
                 {/* Buttons */}

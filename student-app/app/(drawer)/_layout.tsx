@@ -247,7 +247,7 @@ export default function TabLayout() {
             user &&
             onboardingComplete &&
             !onboardingJustCompleted &&
-            !user.ai_preferences?.education_level &&
+            (!user.ai_preferences || !user.ai_preferences.tone) &&
             !String(pathname || '').startsWith('/(onboarding)')
         ) {
             if (pathname !== '/preferences') {

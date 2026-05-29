@@ -11,11 +11,11 @@ import { Colors } from '@/constants/theme';
 import { Diploma, Settings, Heart, Rocket, Compass, CheckCircle } from '@solar-icons/react-native/Bold';
 
 const ANALOGIES = [
-  { key: 'general', label: 'Academic', emoji: '📚', Icon: Diploma },
-  { key: 'tech', label: 'Tech', emoji: '💻', Icon: Settings },
-  { key: 'sports', label: 'Sports', emoji: '⚽', Icon: Heart },
-  { key: 'gaming', label: 'Gaming', emoji: '🎮', Icon: Rocket },
-  { key: 'pop_culture', label: 'Pop Culture', emoji: '🎬', Icon: Compass },
+  { key: 'general', label: 'Academic', Icon: Diploma },
+  { key: 'tech', label: 'Tech', Icon: Settings },
+  { key: 'sports', label: 'Sports', Icon: Heart },
+  { key: 'gaming', label: 'Gaming', Icon: Rocket },
+  { key: 'pop_culture', label: 'Pop Culture', Icon: Compass },
 ];
 
 export default function AnalogyScreen() {
@@ -58,10 +58,7 @@ export default function AnalogyScreen() {
                 <View style={[s.progressFill, { width: '72%', backgroundColor: iconColor }]} />
               </View>
             </View>
-            <Text style={[s.heroTitle, { color: textColor }]}>Analogy Style</Text>
-            <Text style={[s.heroSubtitle, { color: subtextColor }]}>
-              Choose the vibe your tutor uses when it explains hard concepts.
-            </Text>
+            <Text style={[s.heroTitle, { color: textColor }]}>How should it explain tough stuff?</Text>
           </Animated.View>
         </View>
 
@@ -85,8 +82,8 @@ export default function AnalogyScreen() {
                       <Icon size={20} color={iconColor} />
                     </View>
 
-                    <View style={{ flex: 1 }}>
-                      <Text style={[s.optionLabel, { color: textColor }]}>{a.emoji} {a.label}</Text>
+                    <View style={s.textWrap}>
+                      <Text style={[s.optionLabel, { color: textColor }]}>{a.label}</Text>
                     </View>
 
                     {isSelected ? (
@@ -145,7 +142,8 @@ const s = StyleSheet.create({
   cardSelected: { borderColor: '#007AFF', borderWidth: 2 },
 
   iconBox: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  optionLabel: { fontSize: 17, fontWeight: '700', flex: 1 },
+  textWrap: { flex: 1, justifyContent: 'center' },
+  optionLabel: { fontSize: 17, fontWeight: '700' },
 
   checkWrap: { paddingLeft: 12, paddingRight: 4 },
 

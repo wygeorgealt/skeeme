@@ -96,10 +96,10 @@ export default function AuthSelectScreen() {
                 <Animated.View entering={FadeInDown.duration(800).delay(300)} style={s.textSection}>
                     <Text style={[s.greeting, { color: C.primary }]}>Hi!</Text>
                     <Text style={[s.title, { color: C.text }]}>
-                        I'm Skeeme,
+                        I&apos;m Skeeme,
                     </Text>
                     <Text style={[s.subtitle, { color: C.textSecondary }]}>
-                        Your study friend for success. Let's ace those exams together!
+                        Your study friend for success. Let&apos;s ace those exams together!
                     </Text>
                 </Animated.View>
 

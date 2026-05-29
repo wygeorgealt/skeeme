@@ -182,7 +182,7 @@ export default function OtpScreen() {
                     </Animated.View>
                     <Animated.View key={`subtitle-${animKey}`} entering={FadeInDown.delay(140).duration(400)}>
                         <Text style={[s.subtitle, { color: C.textSecondary }]}>
-                            We've sent a 6-digit code to <Text style={{ color: C.text, fontWeight: '700' }}>{email}</Text>.
+                            We&apos;ve sent a 6-digit code to <Text style={{ color: C.text, fontWeight: '700' }}>{email}</Text>.
                         </Text>
                     </Animated.View>
 
@@ -226,7 +226,7 @@ export default function OtpScreen() {
                     ) : null}
 
                     <View style={s.resendContainer}>
-                        <Text style={[s.resendText, { color: C.textSecondary }]}>Didn't receive the code?</Text>
+                        <Text style={[s.resendText, { color: C.textSecondary }]}>Didn&apos;t receive the code?</Text>
                         <TouchableOpacity onPress={handleResend} disabled={countdown > 0 || isLoading}>
                             <Text style={[s.resendLink, { color: countdown > 0 ? C.textTertiary : C.primary }]}>
                                 {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend code'}

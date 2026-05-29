@@ -92,8 +92,18 @@ export default function DashboardScreen() {
         }, [])
     );
 
-    const daysUntilExam = user?.nearest_exam
-        ? Math.ceil((new Date(user.nearest_exam.exam_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+    const studentQuery = useStudent();
+
+    const studentMe = studentQuery.data as any;
+    const nearestExamDate =
+        studentMe?.nearest_exam?.exam_date ??
+        user?.nearest_exam?.exam_date ??
+        studentMe?.next_exam_date ??
+        (user as any)?.next_exam_date ??
+        null;
+
+    const daysUntilExam = nearestExamDate
+        ? Math.ceil((new Date(nearestExamDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
         : null;
 
     const { data: heatmapDates = [] } = useQuery({
@@ -105,7 +115,6 @@ export default function DashboardScreen() {
         enabled: !!user,
         staleTime: 1000 * 60 * 60 * 4,
     });
-    const studentQuery = useStudent();
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -184,7 +193,7 @@ export default function DashboardScreen() {
                                 {daysUntilExam !== null ? (daysUntilExam < 0 ? 0 : daysUntilExam) : '—'}
                             </Text>
                             <Text style={[s.statDesc, { color: C.textSecondary }]}>
-                                {user.nearest_exam ? 'Days to Exam' : 'Add Exam'}
+                                {nearestExamDate ? 'Days to Exam' : 'Add Exam'}
                             </Text>
                         </View>
                     </TouchableOpacity>

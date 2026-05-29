@@ -77,7 +77,7 @@ export default function ForgotPasswordScreen() {
                     <Animated.View key={`hero-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={s.heroSection}>
                         <Text style={[s.heroTitle, { color: C.text }]}>Reset Password</Text>
                         <Text style={[s.heroSubtitle, { color: C.textSecondary }]}>
-                            Enter your email address and we'll send you a 6-digit code to reset your account.
+                            Enter your email address and we&apos;ll send you a 6-digit code to reset your account.
                         </Text>
                     </Animated.View>
 

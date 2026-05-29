@@ -114,7 +114,7 @@ export default function BillingHistoryScreen() {
                     </View>
                     <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Unable to load</Text>
                     <Text style={s.errorSubtitle}>
-                        We couldn't retrieve your billing history. Please check your connection.
+                        We couldn&apos;t retrieve your billing history. Please check your connection.
                     </Text>
                     <TouchableOpacity 
                         onPress={() => refetch()}
@@ -143,7 +143,7 @@ export default function BillingHistoryScreen() {
                     <Text style={s.sectionLabel}>Subscription Status</Text>
                     <View style={[s.planCard, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
                         <View style={s.planHeaderRow}>
-                            <View style={[s.planIconBox, user?.is_unlimited ? s.bgBrandSoft : (isDark ? s.bgSlate800 : s.bgSlate100)]}>
+                            <View style={[s.planIconBox, user?.plan_name !== 'free' ? s.bgBrandSoft : (isDark ? s.bgSlate800 : s.bgSlate100)]}>
                                 <RoundArrowUp size={18} color={user?.plan_name !== 'free' ? "#8B5CF6" : "#94a3b8"} />
 
                             </View>

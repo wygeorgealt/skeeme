@@ -8,38 +8,38 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import { Colors } from '@/constants/theme';
-import { CupStar, MedalRibbonsStar, Stopwatch, Stars } from '@solar-icons/react-native/Bold';
+import { Book, MedalRibbonsStar, DocumentText } from '@solar-icons/react-native/Bold';
 
-const TONES = [
-  { key: 'supportive', label: 'Supportive', emoji: '🤗', Icon: CupStar },
-  { key: 'strict', label: 'Strict', emoji: '📐', Icon: MedalRibbonsStar },
-  { key: 'concise', label: 'Concise', emoji: '⚡', Icon: Stopwatch },
-  { key: 'fun', label: 'Fun & Witty', emoji: '😂', Icon: Stars },
+const GOALS = [
+  { key: 'conceptual', label: 'Deep Dive', desc: 'First-principles and core theory.', icon: Book },
+  { key: 'exam', label: 'Exam Prep', desc: 'High-yield tips, drills, traps.', icon: MedalRibbonsStar },
+  { key: 'cheat', label: 'Cheat Sheet', desc: 'Mnemonics, recall, summaries.', icon: DocumentText },
 ];
 
-export default function ToneScreen() {
+export default function GoalScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const C = Colors[isDark ? 'dark' : 'light'];
 
   const { setOnboardingStep, setOnboardingData, onboardingData } = useAuthStore();
 
-  const [selected, setSelected] = useState<string>(onboardingData?.tone || onboardingData?.ai_tone || '');
+  const [selected, setSelected] = useState<string>(onboardingData?.academic_goal || '');
 
   useEffect(() => {
-    setOnboardingStep(5);
+    setOnboardingStep(7);
   }, []);
 
   const handleSelect = async (key: string) => {
     setSelected(key);
-    setOnboardingData({ tone: key });
+    setOnboardingData({ academic_goal: key });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const handleNext = () => {
-    if (selected) router.push('/(onboarding)/analogy');
+    if (selected) router.push('/(onboarding)/birthday');
   };
 
   const textColor = isDark ? '#FFFFFF' : '#000000';
@@ -52,24 +52,25 @@ export default function ToneScreen() {
         <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
           <Animated.View entering={FadeInDown.duration(600).delay(100)}>
             <View style={s.stepRow}>
-              <Text style={[s.stepText, { color: iconColor }]}>Step 5 of 8</Text>
+              <Text style={[s.stepText, { color: iconColor }]}>Step 7 of 8</Text>
               <View style={s.progressBar}>
-                <View style={[s.progressFill, { width: '62%', backgroundColor: iconColor }]} />
+                <View style={[s.progressFill, { width: '85%', backgroundColor: iconColor }]} />
               </View>
             </View>
-            <Text style={[s.heroTitle, { color: textColor }]}>How should your tutor feel?</Text>
+            <Text style={[s.heroTitle, { color: textColor }]}>What’s your study goal?</Text>
           </Animated.View>
         </View>
 
         <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={s.optionsGap}>
-            {TONES.map((t, idx) => {
-              const isSelected = selected === t.key;
-              const Icon = t.Icon;
+            {GOALS.map((g, idx) => {
+              const isSelected = selected === g.key;
+              const Icon = g.icon;
+
               return (
-                <Animated.View key={t.key} entering={FadeInDown.duration(600).delay(120 + idx * 60)}>
+                <Animated.View key={g.key} entering={FadeInDown.duration(600).delay(120 + idx * 60)}>
                   <TouchableOpacity
-                    onPress={() => handleSelect(t.key)}
+                    onPress={() => handleSelect(g.key)}
                     activeOpacity={0.8}
                     style={[
                       s.card,
@@ -80,8 +81,15 @@ export default function ToneScreen() {
                     <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
                       <Icon size={20} color={iconColor} />
                     </View>
-                    <Text style={[s.optionLabel, { color: textColor }]}>{t.emoji} {t.label}</Text>
-                    {isSelected ? <Text style={s.check}>✓</Text> : null}
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.optionLabel, { color: textColor }]}>{g.label}</Text>
+                      <Text style={[s.optionDesc, { color: subtextColor }]}>{g.desc}</Text>
+                    </View>
+
+                    {isSelected ? (
+                      <Text style={s.check}>&#10003;</Text>
+                    ) : null}
                   </TouchableOpacity>
                 </Animated.View>
               );
@@ -96,7 +104,9 @@ export default function ToneScreen() {
             activeOpacity={0.8}
             style={[s.primaryBtn, !selected && s.primaryBtnDisabled]}
           >
-            <Text style={[s.primaryBtnText, !selected && { color: 'rgba(255,255,255,0.5)' }]}>Continue</Text>
+            <Text style={[s.primaryBtnText, !selected && { color: 'rgba(255,255,255,0.5)' }]}>
+              Continue
+            </Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -107,20 +117,18 @@ export default function ToneScreen() {
 const s = StyleSheet.create({
   container: { flex: 1 },
   headerSection: { paddingHorizontal: 24, paddingBottom: 24 },
-  heroTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1, marginBottom: 8 },
-  heroSubtitle: { fontSize: 17, fontWeight: '500', lineHeight: 24, opacity: 0.8 },
 
-  scrollContent: { paddingHorizontal: 24, paddingBottom: 120 },
+  heroTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1, marginBottom: 8 },
+
+  scrollContent: { paddingHorizontal: 24, paddingBottom: 140, paddingTop: 10 },
   optionsGap: { gap: 10 },
 
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
+  stepRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  stepText: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+  progressBar: { flex: 1, height: 4, backgroundColor: 'rgba(0,122,255,0.1)', borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 2 },
+
+  card: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 18, borderWidth: 1, borderColor: 'transparent' },
   cardLight: {
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
@@ -130,22 +138,16 @@ const s = StyleSheet.create({
     elevation: 2,
     borderColor: 'rgba(0,0,0,0.05)',
   },
-  cardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  cardSelected: {
-    borderColor: '#007AFF',
-    borderWidth: 2,
-  },
+  cardDark: { backgroundColor: '#1C1C1E', borderColor: 'rgba(255,255,255,0.08)' },
+  cardSelected: { borderColor: '#007AFF', borderWidth: 2 },
 
   iconBox: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   optionLabel: { fontSize: 17, fontWeight: '700', flex: 1 },
+  optionDesc: { fontSize: 13, fontWeight: '500', lineHeight: 20 },
 
-  check: { fontSize: 18, fontWeight: '900', color: '#007AFF' },
+  check: { fontSize: 18, fontWeight: '900', color: '#007AFF', paddingLeft: 8 },
 
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 24 },
-
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 0 },
   primaryBtn: {
     backgroundColor: '#007AFF',
     height: 56,
@@ -160,9 +162,4 @@ const s = StyleSheet.create({
   },
   primaryBtnDisabled: { backgroundColor: '#A2C9F4' },
   primaryBtnText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', letterSpacing: -0.41 },
-
-  stepRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  stepText: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-  progressBar: { flex: 1, height: 4, backgroundColor: 'rgba(0,122,255,0.1)', borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 2 },
 });

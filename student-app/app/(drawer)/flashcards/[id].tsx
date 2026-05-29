@@ -152,6 +152,8 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
     );
 });
 
+FlashcardItem.displayName = 'FlashcardItem';
+
 export default function StudyDeckScreen() {
     const { id, autoStart, topic, card_count, difficulty, mode, idempotency } = useLocalSearchParams();
     const scrollRef = useRef<ScrollView>(null);
@@ -560,7 +562,7 @@ export default function StudyDeckScreen() {
                                 {streak} Day Streak!
                             </Text>
                             <Text style={[s.successSubtitle, { marginBottom: 40 }]}>
-                                You're on fire! Keep up the amazing work.
+                                You&apos;re on fire! Keep up the amazing work.
                             </Text>
 
                             <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={{ width: '100%' }}>
@@ -587,7 +589,7 @@ export default function StudyDeckScreen() {
 
                     <Animated.View entering={FadeIn.delay(300).duration(600)}>
                         <Text style={[s.successTitle, isDark ? s.textWhite : s.textSlate900]}>Good Job! 👍</Text>
-                        <Text style={s.successSubtitle}>{rewardMessage || "You've mastered all " + deck.flashcards.length + " cards in this set. Great job!"}</Text>
+                        <Text style={s.successSubtitle}>{rewardMessage || "You&apos;ve mastered all " + deck.flashcards.length + " cards in this set. Great job!"}</Text>
                     </Animated.View>
 
                     <Animated.View entering={FadeIn.delay(600).duration(600)} style={s.successActions}>

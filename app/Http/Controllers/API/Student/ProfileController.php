@@ -55,9 +55,17 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'education_level' => 'nullable|string|in:high_school,undergraduate,masters,professional',
             'field_of_study' => 'nullable|string|max:100',
+
+            'tone' => 'nullable|string|in:supportive,strict,concise,fun',
+            'analogy_focus' => 'nullable|string|in:general,tech,sports,gaming,pop_culture',
+            'academic_goal' => 'nullable|string|in:conceptual,exam,cheat',
+            'learning_style' => 'nullable|string|in:simple,detailed',
+            'custom_weakness' => 'nullable|string|max:500',
+
             'dob_month' => 'nullable|integer|between:1,12',
             'dob_year' => 'nullable|integer|min:1900|max:' . now()->year,
             'age' => 'nullable|integer|min:13|max:120',
+
             'next_exam_date' => 'nullable|date',
             'next_exam_title' => 'nullable|string|max:100',
         ]);
@@ -67,19 +75,36 @@ class ProfileController extends Controller
         if (isset($validated['dob_year']) && isset($validated['dob_month'])) {
             $user->dob = $validated['dob_year'] . '-' . str_pad($validated['dob_month'], 2, '0', STR_PAD_LEFT) . '-01';
         }
-        
+
         if (isset($validated['age'])) {
             $user->age = $validated['age'];
         }
 
         $aiPreferences = $user->ai_preferences ?? [];
-        if (isset($validated['education_level'])) {
+
+        if (array_key_exists('education_level', $validated)) {
             $aiPreferences['education_level'] = $validated['education_level'];
         }
-        if (isset($validated['field_of_study'])) {
+        if (array_key_exists('field_of_study', $validated)) {
             $aiPreferences['field_of_study'] = $validated['field_of_study'];
         }
-        
+
+        if (array_key_exists('tone', $validated)) {
+            $aiPreferences['tone'] = $validated['tone'];
+        }
+        if (array_key_exists('analogy_focus', $validated)) {
+            $aiPreferences['analogy_focus'] = $validated['analogy_focus'];
+        }
+        if (array_key_exists('academic_goal', $validated)) {
+            $aiPreferences['academic_goal'] = $validated['academic_goal'];
+        }
+        if (array_key_exists('learning_style', $validated)) {
+            $aiPreferences['learning_style'] = $validated['learning_style'];
+        }
+        if (array_key_exists('custom_weakness', $validated)) {
+            $aiPreferences['custom_weakness'] = $validated['custom_weakness'];
+        }
+
         $user->ai_preferences = $aiPreferences;
         $user->save();
 
