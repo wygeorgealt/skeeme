@@ -14,9 +14,107 @@ interface MathTextProps {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// wrapBareLaTeX
-// Safety net: wraps bare LaTeX commands (e.g. \frac{a}{b}) in $…$ delimiters
-// if they are not already inside math delimiters.
+// protectMathBlocks / restoreMathBlocks
+//
+// FIX #1 (root cause of \frac{\$partial^2$ u}):
+// Before ANY pre-processing regex runs, snapshot every existing $...$ and
+// $$...$$ span into a placeholder.  This makes every subsequent regex
+// incapable of touching math that is already correctly delimited.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function protectMathBlocks(text: string): { safe: string; map: Map<string, string> } {
+  const map = new Map<string, string>();
+  let n = 0;
+
+  // $$...$$ must be extracted before $...$ to avoid partial matches
+  let safe = text.replace(/\$\$[\s\S]*?\$\$/g, (m) => {
+    const k = `\x00MATHD${n++}\x00`;
+    map.set(k, m);
+    return k;
+  });
+
+  // $...$ — single-line only (don't swallow paragraph breaks)
+  safe = safe.replace(/\$[^$\n]+?\$/g, (m) => {
+    const k = `\x00MATHS${n++}\x00`;
+    map.set(k, m);
+    return k;
+  });
+
+  return { safe, map };
+}
+
+function restoreMathBlocks(text: string, map: Map<string, string>): string {
+  let result = text;
+  map.forEach((value, key) => {
+    // Use split/join to handle multiple occurrences safely
+    result = result.split(key).join(value);
+  });
+  return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// \begin{...}\end{...} environment protection
+// Prevents multi-line environments from being split by the paragraph splitter
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ENV_PLACEHOLDER_MAP: Record<string, string> = {};
+let envCount = 0;
+
+function extractEnvironments(text: string): string {
+  envCount = 0;
+  Object.keys(ENV_PLACEHOLDER_MAP).forEach(k => delete ENV_PLACEHOLDER_MAP[k]);
+  return text.replace(/\\begin\{[^}]+\}[\s\S]*?\\end\{[^}]+\}/g, (env) => {
+    const placeholder = `__ENV_${envCount}__`;
+    ENV_PLACEHOLDER_MAP[placeholder] = env;
+    envCount++;
+    return placeholder;
+  });
+}
+
+function restoreEnvironments(text: string): string {
+  let result = text;
+  Object.entries(ENV_PLACEHOLDER_MAP).forEach(([placeholder, env]) => {
+    result = result.replace(placeholder, `$$${env}$$`);
+  });
+  return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// escapeHtmlOutsideMath
+// Escapes & < > only in prose regions; passes math spans through unchanged.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function escapeHtmlOutsideMath(text: string): string {
+  let result = '';
+  let i = 0;
+  let inSingle = false;
+  let inDouble = false;
+
+  while (i < text.length) {
+    if (!inSingle && !inDouble && text[i] === '$' && text[i + 1] === '$') {
+      inDouble = true; result += '$$'; i += 2; continue;
+    }
+    if (inDouble && text[i] === '$' && text[i + 1] === '$') {
+      inDouble = false; result += '$$'; i += 2; continue;
+    }
+    if (!inSingle && !inDouble && text[i] === '$') {
+      inSingle = true; result += '$'; i++; continue;
+    }
+    if (inSingle && text[i] === '$') {
+      inSingle = false; result += '$'; i++; continue;
+    }
+    if (inSingle || inDouble) { result += text[i++]; continue; }
+
+    if (text[i] === '&') { result += '&amp;'; i++; continue; }
+    if (text[i] === '<') { result += '&lt;'; i++; continue; }
+    if (text[i] === '>') { result += '&gt;'; i++; continue; }
+    result += text[i++];
+  }
+  return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LATEX_CMDS — commands wrapBareLaTeX can auto-wrap
 // ─────────────────────────────────────────────────────────────────────────────
 
 const LATEX_CMDS = [
@@ -35,223 +133,180 @@ const LATEX_CMD_PATTERN = new RegExp(
   '^\\\\(' + LATEX_CMDS.join('|') + ')(?=[^a-zA-Z]|$)'
 );
 
-// FIXED #2: Extract and restore \begin{...}\end{...} environments
-// Prevents multi-line environment destruction by line-splitter
-const ENV_PLACEHOLDER_MAP: Record<string, string> = {};
-let envCount = 0;
-
-function extractEnvironments(text: string): string {
-  envCount = 0;
-  Object.keys(ENV_PLACEHOLDER_MAP).forEach(k => delete ENV_PLACEHOLDER_MAP[k]);
-  
-  return text.replace(/\\begin\{[^}]+\}[\s\S]*?\\end\{[^}]+\}/g, (env) => {
-    const placeholder = `__ENV_${envCount}__`;
-    ENV_PLACEHOLDER_MAP[placeholder] = env;
-    envCount++;
-    return placeholder;
-  });
-}
-
-function restoreEnvironments(text: string): string {
-  let result = text;
-  Object.entries(ENV_PLACEHOLDER_MAP).forEach(([placeholder, env]) => {
-    result = result.replace(placeholder, `$$${env}$$`);
-  });
-  return result;
-}
-
-// FIXED #1: Escape HTML entities ONLY outside math delimiters
-function escapeHtmlOutsideMath(text: string): string {
-  let result = '';
-  let i = 0;
-  let inSingle = false;
-  let inDouble = false;
-
-  while (i < text.length) {
-    // Detect $$ (double-dollar display math)
-    if (!inSingle && !inDouble && text[i] === '$' && text[i + 1] === '$') {
-      inDouble = true;
-      result += '$$';
-      i += 2;
-      continue;
-    }
-    if (inDouble && text[i] === '$' && text[i + 1] === '$') {
-      inDouble = false;
-      result += '$$';
-      i += 2;
-      continue;
-    }
-
-    // Detect $ (inline math), skip if inside $$
-    if (!inSingle && !inDouble && text[i] === '$') {
-      inSingle = true;
-      result += '$';
-      i++;
-      continue;
-    }
-    if (inSingle && text[i] === '$') {
-      inSingle = false;
-      result += '$';
-      i++;
-      continue;
-    }
-
-    // Inside math blocks—pass through unchanged
-    if (inSingle || inDouble) {
-      result += text[i];
-      i++;
-      continue;
-    }
-
-    // Outside math—escape & < >
-    if (text[i] === '&') {
-      result += '&amp;';
-      i++;
-      continue;
-    }
-    if (text[i] === '<') {
-      result += '&lt;';
-      i++;
-      continue;
-    }
-    if (text[i] === '>') {
-      result += '&gt;';
-      i++;
-      continue;
-    }
-
-    result += text[i];
-    i++;
-  }
-
-  return result;
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// wrapBareLaTeX
+//
+// Wraps undelimited LaTeX so KaTeX can render it.
+//
+// FIX SUMMARY vs. previous version:
+//   #1  protectMathBlocks() runs BEFORE every pre-processing regex, so
+//       patterns like partial^2 inside an existing $...$ are never touched.
+//   #2  Greedy consumption is now conservative: after consuming a command
+//       and its brace groups / sub+superscripts, we only continue past a
+//       space if the very next token is a single-letter variable or another
+//       backslash command — never a prose word.
+//   #3  A pre-processing pass wraps bare subscript/superscript expressions
+//       like u_{xx}, T_n, x_1 that have no leading backslash.
+// ─────────────────────────────────────────────────────────────────────────────
 
 function wrapBareLaTeX(text: string): string {
-  // FIXED #3: Greedy token consumption for consecutive commands like \sin x + \cos x
-  // Pre-process plain-text exponents: 2^5 → $2^5$
-  let processed = text.replace(
-    /(?<!\$)\b([a-zA-Z0-9]+)\^([a-zA-Z0-9]+)\b(?!\$)/g,
-    '$$$1^$2$$'
-  );
+  // ── Phase 1: Protect all existing math so no regex below can touch it ──────
+  const { safe: protected_, map: mathMap } = protectMathBlocks(text);
+  let processed = protected_;
 
-  // FIXED #4: Negative lookbehind to avoid fractions in "Step 3/4" contexts
-  // Only convert if NOT preceded by step|section|part|page|chapter|figure|table|ref patterns
+  // ── Phase 2: Pre-processing transforms (safe — math is now placeholders) ──
+
+  // 2a. Bare superscripts:  2^5 → $2^{5}$,  x^2 → $x^{2}$
+  //     Skip chemistry-style uppercase+digit (e.g. CO2 matched elsewhere)
   processed = processed.replace(
-    /(?<!step\s)(?<!section\s)(?<!part\s)(?<!page\s)(?<!chapter\s)(?<!figure\s)(?<!table\s)(?<!ref\s)(?<!\$)\b(\d{1,2})\/(\d{1,2})([a-zA-Z]?)\b(?!\$)/gi,
-    '$$\\frac{$1}{$2}$3$$'
+    /(?<![\\$\w])([a-z][a-zA-Z0-9]*|[0-9]+)\^([a-zA-Z0-9]+)(?![{$])/g,
+    (_, base, exp) => `$${base}^{${exp}}$`
   );
 
-  // FIXED #5: Negative pattern to exclude chemistry notation (e.g., CO2, H2O, O2)
-  // Don't wrap if preceded by uppercase letter or matched [A-Z]{1,2}\d pattern
-  const chemPattern = /\b[A-Z]{1,2}\d\b/g;
-  const chemMatches = Array.from(processed.matchAll(chemPattern)).map(m => m.index);
+  // 2b. Bare subscript expressions:  u_{xx}, T_{ij}, x_n, u_x
+  //     Matches 1-3 letter variable + _ + (braced or single-char) subscript
+  //     outside existing math blocks.
+  processed = processed.replace(
+    /\b([a-zA-Z]{1,3})_(\{[^}]+\}|[a-zA-Z0-9])/g,
+    (_, v, sub) => `$${v}_{${sub.startsWith('{') ? sub.slice(1, -1) : sub}}$`
+  );
 
-  text = processed;
+  // 2c. Simple numeric fractions:  1/2 → $\frac{1}{2}$
+  //     Guarded against step/section/page/figure labels.
+  processed = processed.replace(
+    /(?<!(?:step|section|part|page|chapter|figure|table|ref)\s)(?<![/$])\b(\d{1,2})\/(\d{1,2})([a-zA-Z]?)\b(?!\$)/gi,
+    (_, n, d, suffix) => `$\\frac{${n}}{${d}}${suffix}$`
+  );
+
+  // ── Phase 3: Restore protected blocks before the command scan ──────────────
+  processed = restoreMathBlocks(processed, mathMap);
+
+  // ── Phase 4: Scan for bare \commands and wrap them ────────────────────────
+  // Protect again so the scan loop doesn't re-enter already-wrapped content.
+  const { safe: scanText, map: scanMap } = protectMathBlocks(processed);
 
   let result = '';
-  let inDollar = false;
-  let inDoubleDollar = false;
   let i = 0;
 
-  while (i < text.length) {
-    // Handle $$
-    if (text[i] === '$' && i + 1 < text.length && text[i + 1] === '$') {
-      inDoubleDollar = !inDoubleDollar;
-      result += '$$';
-      i += 2;
+  while (i < scanText.length) {
+    // ── Double $$ ──
+    if (scanText[i] === '$' && scanText[i + 1] === '$') {
+      // Already protected into placeholder — shouldn't normally appear here,
+      // but pass through safely if it does.
+      result += '$$'; i += 2; continue;
+    }
+    // ── Single $ ──
+    if (scanText[i] === '$') {
+      result += '$'; i++; continue;
+    }
+    // ── Placeholder characters (\x00) — pass through intact ──
+    if (scanText[i] === '\x00') {
+      let end = scanText.indexOf('\x00', i + 1);
+      if (end === -1) end = scanText.length - 1;
+      result += scanText.substring(i, end + 1);
+      i = end + 1;
       continue;
     }
 
-    // Handle single $
-    if (text[i] === '$' && !inDoubleDollar) {
-      inDollar = !inDollar;
-      result += '$';
-      i++;
-      continue;
-    }
-
-    // Inside math — pass through unchanged
-    if (inDollar || inDoubleDollar) {
-      result += text[i];
-      i++;
-      continue;
-    }
-
-    // Outside math — check for bare LaTeX command
-    if (text[i] === '\\') {
-      const remaining = text.substring(i);
-      const cmdMatch = remaining.match(LATEX_CMD_PATTERN);
+    // ── Bare \command detection ──────────────────────────────────────────────
+    if (scanText[i] === '\\') {
+      const remaining = scanText.substring(i);
+      const cmdMatch  = remaining.match(LATEX_CMD_PATTERN);
 
       if (cmdMatch) {
         let exprEnd = i + cmdMatch[0].length;
 
         // Consume all brace groups {…}
-        while (exprEnd < text.length && text[exprEnd] === '{') {
+        while (exprEnd < scanText.length && scanText[exprEnd] === '{') {
           let depth = 0;
-          for (let j = exprEnd; j < text.length; j++) {
-            if (text[j] === '{') depth++;
-            else if (text[j] === '}') {
+          for (let j = exprEnd; j < scanText.length; j++) {
+            if (scanText[j] === '{') depth++;
+            else if (scanText[j] === '}') {
               depth--;
               if (depth === 0) { exprEnd = j + 1; break; }
             }
           }
         }
 
-        // Consume trailing sub/superscripts
-        while (exprEnd < text.length && (text[exprEnd] === '_' || text[exprEnd] === '^')) {
+        // Consume trailing _subscript and ^superscript groups
+        while (exprEnd < scanText.length && (scanText[exprEnd] === '_' || scanText[exprEnd] === '^')) {
           exprEnd++;
-          if (exprEnd < text.length && text[exprEnd] === '{') {
-            let depth2 = 0;
-            for (let k = exprEnd; k < text.length; k++) {
-              if (text[k] === '{') depth2++;
-              else if (text[k] === '}') {
-                depth2--;
-                if (depth2 === 0) { exprEnd = k + 1; break; }
+          if (exprEnd < scanText.length && scanText[exprEnd] === '{') {
+            let depth = 0;
+            for (let k = exprEnd; k < scanText.length; k++) {
+              if (scanText[k] === '{') depth++;
+              else if (scanText[k] === '}') {
+                depth--;
+                if (depth === 0) { exprEnd = k + 1; break; }
               }
             }
-          } else if (exprEnd < text.length && text[exprEnd] !== ' ') {
+          } else if (exprEnd < scanText.length && scanText[exprEnd] !== ' ') {
             exprEnd++;
           }
         }
 
-        // FIXED #3: Greedy token consumption—consume following tokens (letters, digits, +, -, =, spaces)
-        // until word boundary to group consecutive commands like \sin x + \cos x → $\sin x + \cos x$
-        while (exprEnd < text.length) {
-          const ch = text[exprEnd];
-          // Stop at word boundaries (punctuation, line breaks, delimiters except +, -, =)
-          if (ch === ' ' && exprEnd + 1 < text.length && /[^a-zA-Z0-9+\-={}()\[\]]/.test(text[exprEnd + 1])) {
+        // FIX #2: Conservative greedy continuation.
+        // Only keep consuming past a space if what follows is:
+        //   (a) a single-letter variable  (e.g. \sin x)
+        //   (b) another backslash command (e.g. \sin x + \cos x)
+        //   (c) a math operator char      (+, -, =, *, /)
+        // Stop immediately at ANY prose word (2+ consecutive letters).
+        while (exprEnd < scanText.length) {
+          const ch   = scanText[exprEnd];
+          const next = scanText[exprEnd + 1] ?? '';
+
+          if (ch === ' ') {
+            const afterSpace = scanText[exprEnd + 1] ?? '';
+            const charAfterNext = scanText[exprEnd + 2] ?? '';
+
+            const isSingleLetterVar =
+              /[a-zA-Z]/.test(afterSpace) &&
+              /[^a-zA-Z]/.test(charAfterNext || ' '); // next is isolated letter
+
+            const isBackslashCmd  = afterSpace === '\\';
+            const isMathOperator  = /[+\-=*/]/.test(afterSpace);
+
+            if (isSingleLetterVar || isBackslashCmd || isMathOperator) {
+              exprEnd++; // consume the space
+              continue;
+            }
+            // It's a prose word or something else — stop here
             break;
           }
-          if (!/[a-zA-Z0-9+\-={}()\[\]\s]/.test(ch)) {
-            break;
+
+          // Non-space: consume only math-safe characters (operators, digits, letters)
+          // Stop at anything that clearly isn't math (comma, quote, colon, etc.)
+          if (/[a-zA-Z0-9+\-=*/]/.test(ch)) {
+            exprEnd++;
+            continue;
           }
-          exprEnd++;
+
+          break;
         }
 
-        result += '$' + text.substring(i, exprEnd) + '$';
+        result += '$' + scanText.substring(i, exprEnd) + '$';
         i = exprEnd;
         continue;
       }
     }
 
-    result += text[i];
+    result += scanText[i];
     i++;
   }
 
-  return result;
+  // ── Phase 5: Restore the scan-phase placeholders ──────────────────────────
+  return restoreMathBlocks(result, scanMap);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // sanitizeMathContent
-// Cleans AI/user-generated math text to avoid malformed dollar-delimited
-// blocks and stray escaped braces that break KaTeX rendering.
+// Cleans up malformed delimiter counts and fixes unbraced sub/superscripts
+// INSIDE math blocks.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function sanitizeMathContent(input: string): string {
   if (!input) return '';
 
-  // FIXED #2: Extract environments before processing
   let s = extractEnvironments(input);
 
   // Normalize escaped braces \{ \} → { }
@@ -269,115 +324,74 @@ function sanitizeMathContent(input: string): string {
   // Strip stray $ characters inside already-delimited math blocks
   {
     let out = '';
-    let i = 0;
+    let idx = 0;
     let inSingle = false;
     let inDouble = false;
-
-    while (i < s.length) {
-      if (!inSingle && !inDouble && s[i] === '$' && s[i + 1] === '$') {
-        inDouble = true; out += '$$'; i += 2; continue;
-      }
-      if (inDouble && s[i] === '$' && s[i + 1] === '$') {
-        inDouble = false; out += '$$'; i += 2; continue;
-      }
-      if (!inSingle && !inDouble && s[i] === '$') {
-        inSingle = true; out += '$'; i++; continue;
-      }
-      if (inSingle && s[i] === '$') {
-        inSingle = false; out += '$'; i++; continue;
-      }
-      // Drop raw $ inside math blocks
-      if ((inSingle || inDouble) && s[i] === '$') {
-        i++; continue;
-      }
-      out += s[i];
-      i++;
+    while (idx < s.length) {
+      if (!inSingle && !inDouble && s[idx] === '$' && s[idx + 1] === '$') { inDouble = true; out += '$$'; idx += 2; continue; }
+      if (inDouble && s[idx] === '$' && s[idx + 1] === '$')              { inDouble = false; out += '$$'; idx += 2; continue; }
+      if (!inSingle && !inDouble && s[idx] === '$')                      { inSingle = true; out += '$'; idx++; continue; }
+      if (inSingle && s[idx] === '$')                                    { inSingle = false; out += '$'; idx++; continue; }
+      if ((inSingle || inDouble) && s[idx] === '$')                      { idx++; continue; } // drop stray $
+      out += s[idx++];
     }
-
     s = out;
   }
 
-  // Strip dollar signs from inside LaTeX command groups: \cmd{$x$} → \cmd{x}
+  // Strip dollar signs inside LaTeX command groups: \cmd{$x$} → \cmd{x}
   try {
-    s = s.replace(/\\([a-zA-Z]+)\{([^}]*)\}/g, (_m: string, cmd: string, inner: string) => {
-      return `\\${cmd}{${inner.replace(/\$/g, '')}}`;
-    });
+    s = s.replace(/\\([a-zA-Z]+)\{([^}]*)\}/g, (_m, cmd, inner) => `\\${cmd}{${inner.replace(/\$/g, '')}}`);
   } catch { /* ignore */ }
 
-  // Convert unbraced integral/sum limits: \int_0^1 → \int_{0}^{1}
+  // Brace unbraced integral/sum limits: \int_0^1 → \int_{0}^{1}
   try {
-    s = s.replace(
-      /\\(int|sum|prod|lim)\s*_\s*([^\s\\{}()[\]_]+)/g,
-      (_m: string, cmd: string, sub: string) => `\\${cmd}_{${sub}}`
-    );
-    s = s.replace(
-      /\\(int|sum|prod|lim)\s*\^\s*([^\s\\{}()[\]_]+)/g,
-      (_m: string, cmd: string, sup: string) => `\\${cmd}^{${sup}}`
-    );
+    s = s.replace(/\\(int|sum|prod|lim)\s*_\s*([^\s\\{}()[\]_^]+)/g, (_m, cmd, sub) => `\\${cmd}_{${sub}}`);
+    s = s.replace(/\\(int|sum|prod|lim)\s*\^\s*([^\s\\{}()[\]_^]+)/g, (_m, cmd, sup) => `\\${cmd}^{${sup}}`);
   } catch { /* ignore */ }
 
-  // Brace bare superscripts/subscripts outside commands: x^2 → x^{2}
+  // Brace bare single-char superscripts/subscripts: x^2 → x^{2}
   try {
     s = s.replace(/(^|[^\\\w])([A-Za-z0-9)\]}])\^([A-Za-z0-9])/g, '$1$2^{$3}');
-    s = s.replace(/(^|[^\\\w])([A-Za-z0-9)\]}])_([A-Za-z0-9])/g, '$1$2_{$3}');
+    s = s.replace(/(^|[^\\\w])([A-Za-z0-9)\]}])_([A-Za-z0-9])/g,  '$1$2_{$3}');
   } catch { /* ignore */ }
 
   // Balance unmatched \left … \right pairs
   try {
-    const leftCount = (s.match(/\\left/g) || []).length;
+    const leftCount  = (s.match(/\\left/g)  || []).length;
     const rightCount = (s.match(/\\right/g) || []).length;
-    if (leftCount > rightCount) {
-      s += ' \\right.'.repeat(leftCount - rightCount);
-    }
+    if (leftCount > rightCount) s += ' \\right.'.repeat(leftCount - rightCount);
   } catch { /* ignore */ }
 
   // Balance unmatched braces
   try {
-    const open = (s.match(/\{/g) || []).length;
+    const open  = (s.match(/\{/g) || []).length;
     const close = (s.match(/\}/g) || []).length;
     if (open > close) s += '}'.repeat(open - close);
   } catch { /* ignore */ }
 
-  // Escape bare percent signs outside math (% starts a comment in LaTeX)
+  // Escape bare % outside math
   try {
     let out = '';
-    let i = 0;
+    let idx = 0;
     let inSingle = false;
     let inDouble = false;
-
-    while (i < s.length) {
-      if (!inSingle && !inDouble && s[i] === '$' && s[i + 1] === '$') {
-        inDouble = true; out += '$$'; i += 2; continue;
-      }
-      if (inDouble && s[i] === '$' && s[i + 1] === '$') {
-        inDouble = false; out += '$$'; i += 2; continue;
-      }
-      if (!inSingle && !inDouble && s[i] === '$') {
-        inSingle = true; out += '$'; i++; continue;
-      }
-      if (inSingle && s[i] === '$') {
-        inSingle = false; out += '$'; i++; continue;
-      }
-      if (!inSingle && !inDouble && s[i] === '%') {
-        out += '\\%'; i++; continue;
-      }
-      out += s[i];
-      i++;
+    while (idx < s.length) {
+      if (!inSingle && !inDouble && s[idx] === '$' && s[idx + 1] === '$') { inDouble = true; out += '$$'; idx += 2; continue; }
+      if (inDouble && s[idx] === '$' && s[idx + 1] === '$')              { inDouble = false; out += '$$'; idx += 2; continue; }
+      if (!inSingle && !inDouble && s[idx] === '$')                      { inSingle = true; out += '$'; idx++; continue; }
+      if (inSingle && s[idx] === '$')                                    { inSingle = false; out += '$'; idx++; continue; }
+      if (!inSingle && !inDouble && s[idx] === '%')                      { out += '\\%'; idx++; continue; }
+      out += s[idx++];
     }
-
     s = out;
   } catch { /* ignore */ }
 
-  // FIXED #2: Restore environments
   s = restoreEnvironments(s);
-
   return s;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// buildScript
-// Returns the browser-side JS as a plain string to avoid template-literal
-// escaping issues with nested backticks and regex.
+// buildScript — browser-side JS (plain string to avoid template literal issues)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildScript(encodedContent: string): string {
@@ -387,9 +401,7 @@ function buildScript(encodedContent: string): string {
     'function formatContent(text) {',
     '  if (!text) return "";',
     '  var clean = text.replace(/\\r\\n/g, "\\n").replace(/\\r/g, "\\n");',
-    '  // FIXED #1: Escape HTML entities only outside math blocks (done by escapeHtmlOutsideMath on frontend)',
-    '  // JavaScript side now handles math-aware escaping through proper KaTeX rendering',
-    '  // Force line break between a label and a display math block on the same line',
+    '  // Force newline between a prose label and a display math block on the same line',
     '  clean = clean.replace(/^(.+?):\\s*(\\$\\$.+?\\$\\$)/gm, "$1:\\n$2");',
     '  var blocks = clean.split(/\\n\\n+/);',
     '  var out = "";',
@@ -411,7 +423,6 @@ function buildScript(encodedContent: string): string {
     '      var numMatch    = line.match(/^(\\d+)[.):]\\s+(.*)/);',
     '      var letterMatch = line.match(/^([a-zA-Z])[.):]\\s+(.*)/);',
     '      var bulletMatch = line.match(/^[\\-\\*\\u2022]\\s+(.*)/);',
-    '      // FIXED #6: Detect display math in list items and render vertically',
     '      var displayMathMatch = line.match(/^\\$\\$(.+)\\$\\$/);',
     '      if (numMatch) {',
     '        out += \'<div class="list-item"><div class="list-index">\' + numMatch[1]',
@@ -421,10 +432,7 @@ function buildScript(encodedContent: string): string {
     '             + \'</div><div class="list-content">\' + formatInline(letterMatch[2]) + \'</div></div>\';',
     '      } else if (bulletMatch && !displayMathMatch) {',
     '        out += \'<div class="list-item"><div class="bullet-dot">\\u2022</div><div class="list-content">\' + formatInline(bulletMatch[1]) + \'</div></div>\';',
-    '      } else if (displayMathMatch) {',
-    '        // FIXED #6: Render display math as vertical block, not inline',
-    '        out += \'<div style="margin:0.8em 0;">\' + line + \'</div>\';',
-    '      } else if (line.startsWith("$$") && line.endsWith("$$")) {',
+    '      } else if (displayMathMatch || (line.startsWith("$$") && line.endsWith("$$"))) {',
     '        out += \'<div style="margin:0.8em 0;">\' + line + \'</div>\';',
     '      } else {',
     '        out += \'<div class="para">\' + formatInline(line) + \'</div>\';',
@@ -482,7 +490,6 @@ function buildScript(encodedContent: string): string {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // buildHtml
-// Assembles the full WebView HTML document.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildHtml(params: {
@@ -493,64 +500,47 @@ function buildHtml(params: {
 }): string {
   const { encodedContent, color, fontSize, strongColor } = params;
 
-  // FIXED #7: Sanitize color and fontSize before interpolation to prevent injection
-  const sanitizedColor = /^#[0-9a-fA-F]{6}$/.test(color) ? color : '#121212';
-  const sanitizedFontSize = Number.isFinite(fontSize) && fontSize > 0 ? Math.round(fontSize) : 16;
+  const sanitizedColor      = /^#[0-9a-fA-F]{6}$/.test(color)       ? color       : '#121212';
+  const sanitizedFontSize   = Number.isFinite(fontSize) && fontSize > 0 ? Math.round(fontSize) : 16;
   const sanitizedStrongColor = /^#[0-9a-fA-F]{6}$/.test(strongColor) ? strongColor : '#FFFFFF';
 
-  // FIXED #7: Better HTML structure with clear named sections and comments
   return (
     '<!DOCTYPE html>' +
-    '<html>' +
-    '<head>' +
-    '<!-- Viewport and KaTeX dependencies -->' +
+    '<html><head>' +
     '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />' +
     '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">' +
     '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>' +
     '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>' +
-    '<!-- Global styles -->' +
     '<style>' +
-    'html, body { margin: 0; padding: 0; background-color: transparent; }' +
-    'body {' +
-    '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;' +
-    '  color: ' + sanitizedColor + ';' +
-    '  font-size: ' + sanitizedFontSize + 'px;' +
-    '  word-wrap: break-word;' +
-    '  overflow: hidden;' +
-    '  line-height: 1.75;' +
+    'html,body{margin:0;padding:0;background-color:transparent;}' +
+    'body{' +
+    '  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+    '  color:' + sanitizedColor + ';' +
+    '  font-size:' + sanitizedFontSize + 'px;' +
+    '  word-wrap:break-word;overflow:hidden;line-height:1.75;' +
     '}' +
-    '/* Container and content styles -->' +
-    '#math-container { padding: 4px 0; }' +
-    '.para { margin: 0 0 0.9em 0; }' +
-    '.para:last-child { margin-bottom: 0; }' +
-    '/* List item styles -->' +
-    '.list-item { display: flex; align-items: flex-start; margin: 0.6em 0; }' +
-    '.list-index {' +
-    '  flex-shrink: 0; width: 22px; height: 22px; border-radius: 11px;' +
-    '  background-color: rgba(0, 122, 255, 0.1); color: #007AFF;' +
-    '  font-size: 11px; font-weight: 800;' +
-    '  display: flex; align-items: center; justify-content: center;' +
-    '  margin-right: 10px; margin-top: 2px;' +
+    '#math-container{padding:4px 0;}' +
+    '.para{margin:0 0 0.9em 0;}' +
+    '.para:last-child{margin-bottom:0;}' +
+    '.list-item{display:flex;align-items:flex-start;margin:0.6em 0;}' +
+    '.list-index{' +
+    '  flex-shrink:0;width:22px;height:22px;border-radius:11px;' +
+    '  background-color:rgba(0,122,255,0.1);color:#007AFF;' +
+    '  font-size:11px;font-weight:800;' +
+    '  display:flex;align-items:center;justify-content:center;' +
+    '  margin-right:10px;margin-top:2px;' +
     '}' +
-    '.bullet-dot {' +
-    '  flex-shrink: 0; width: 22px; text-align: center;' +
-    '  font-weight: 900; color: ' + sanitizedColor + '; opacity: 0.5; margin-right: 10px;' +
-    '}' +
-    '.list-content { flex: 1; line-height: 1.7; }' +
-    '/* KaTeX rendering styles -->' +
-    '.katex { font-size: 1.05em; }' +
-    '.katex-display { text-align: left !important; margin: 0.8em 0; padding-left: 0; }' +
-    '.katex-display > .katex { text-align: left !important; display: inline-block; }' +
-    '/* Text formatting styles -->' +
-    'strong, b { font-weight: 700; color: ' + sanitizedStrongColor + '; }' +
-    'em, i { font-style: italic; }' +
-    '</style>' +
-    '</head>' +
-    '<body>' +
+    '.bullet-dot{flex-shrink:0;width:22px;text-align:center;font-weight:900;color:' + sanitizedColor + ';opacity:0.5;margin-right:10px;}' +
+    '.list-content{flex:1;line-height:1.7;}' +
+    '.katex{font-size:1.05em;}' +
+    '.katex-display{text-align:left!important;margin:0.8em 0;padding-left:0;}' +
+    '.katex-display>.katex{text-align:left!important;display:inline-block;}' +
+    'strong,b{font-weight:700;color:' + sanitizedStrongColor + ';}' +
+    'em,i{font-style:italic;}' +
+    '</style></head><body>' +
     '<div id="math-container"></div>' +
     '<script>' + buildScript(encodedContent) + '</script>' +
-    '</body>' +
-    '</html>'
+    '</body></html>'
   );
 }
 
@@ -568,6 +558,7 @@ export function MathText({
 }: MathTextProps) {
   const [height, setHeight] = React.useState(24);
 
+  // Processing pipeline: escape HTML → sanitize math → wrap bare LaTeX
   const processedContent = React.useMemo(
     () => wrapBareLaTeX(sanitizeMathContent(escapeHtmlOutsideMath(content))),
     [content]
@@ -589,10 +580,8 @@ export function MathText({
     (event: { nativeEvent: { data: string } }) => {
       try {
         const data = JSON.parse(event.nativeEvent.data);
-        if (typeof data.height === 'number') {
-          setHeight(Math.ceil(data.height) + 8);
-        }
-      } catch { /* ignore malformed messages */ }
+        if (typeof data.height === 'number') setHeight(Math.ceil(data.height) + 8);
+      } catch { /* ignore */ }
     },
     []
   );

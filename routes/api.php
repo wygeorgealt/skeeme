@@ -189,6 +189,7 @@ Route::group(['prefix' => 'v1'], function () {
             
             // System Health & Config
             Route::get('system/pricing', [\App\Http\Controllers\API\SystemController::class, 'getPricing']);
+            Route::get('system/app-version', [\App\Http\Controllers\API\SystemController::class, 'getAppVersion']);
             // Local/staging only — controller returns 404 in production
             Route::get('diag/system', [StudentSubscriptionController::class, 'debug']);
             

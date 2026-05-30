@@ -20,6 +20,8 @@ import * as SystemUI from 'expo-system-ui';
 import { DangerTriangle, Refresh } from '@solar-icons/react-native/Bold';
 import { initializeRevenueCat } from '@/lib/revenuecat';
 import RevenueCatUI from 'react-native-purchases-ui';
+import * as Application from 'expo-application';
+import { apiStandard } from '@/lib/api';
 
 
 
@@ -42,9 +44,34 @@ export const unstable_settings = {
   anchor: '(drawer)',
 };
 
+function parseSemver(version: string) {
+  const parts = (version || '').split('.').map((p) => parseInt(p, 10));
+  return {
+    major: parts[0] ?? 0,
+    minor: parts[1] ?? 0,
+    patch: parts[2] ?? 0,
+  };
+}
+
+function isVersionLess(a: string, b: string) {
+  const A = parseSemver(a);
+  const B = parseSemver(b);
+
+  if (A.major !== B.major) return A.major < B.major;
+  if (A.minor !== B.minor) return A.minor < B.minor;
+  return A.patch < B.patch;
+}
+
 export default function RootLayout() {
-  const { hydrate, isLoading, user, onboardingComplete, onboardingStep, storedEmail, checkAuth } = useAuthStore();
+  const { hydrate, isLoading, user, onboardingComplete, onboardingStep, storedEmail } = useAuthStore();
   const [isAnimationFinished, setIsAnimationFinished] = useState(false);
+
+  // Force-update modal state
+  const [needsUpdate, setNeedsUpdate] = useState(false);
+  const [updateMinVersion, setUpdateMinVersion] = useState<string | null>(null);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
+  const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.skeeme.app';
 
   const [fontsLoaded] = useFonts({
     'ClashGrotesk-Regular': require('@/assets/fonts/ClashGrotesk-Regular.ttf'),
@@ -129,6 +156,44 @@ export default function RootLayout() {
   // This is the layer underneath React Native — the white/black strip
   // behind the status bar is this native view showing through.
   const rootBg = tailwindScheme === 'dark' ? '#000000' : '#F2F2F7';
+
+  // Force-update check (only once auth is hydrated)
+  useEffect(() => {
+    let cancelled = false;
+
+    async function check() {
+      if (isLoading) return;
+      if (!user) return;
+      if (checkingUpdate) return;
+
+      setCheckingUpdate(true);
+      try {
+        const appVersion =
+          Application.nativeApplicationVersion ||
+          Application.nativeBuildVersion ||
+          '0.0.0';
+
+        const res = await apiStandard.get('system/app-version');
+        const minVersion = res.data?.min_version;
+
+        if (!minVersion) return;
+
+        if (!cancelled && isVersionLess(String(appVersion), String(minVersion))) {
+          setUpdateMinVersion(String(minVersion));
+          setNeedsUpdate(true);
+        }
+      } catch (e) {
+        // Ignore update-check failures; do not block.
+      } finally {
+        if (!cancelled) setCheckingUpdate(false);
+      }
+    }
+
+    check();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading, user?.id]);
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(rootBg);
   }, [rootBg]);
@@ -174,6 +239,89 @@ export default function RootLayout() {
 
                 <Stack.Screen name="+not-found" />
               </Stack>
+
+              {/* Force-update overlay */}
+              {needsUpdate && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 999999,
+                    backgroundColor: tailwindScheme === 'dark' ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.35)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: 24,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: '100%',
+                      maxWidth: 440,
+                      backgroundColor: tailwindScheme === 'dark' ? '#0f172a' : '#ffffff',
+                      borderRadius: 20,
+                      padding: 20,
+                      borderWidth: 1,
+                      borderColor: tailwindScheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                    }}
+                  >
+                    <Text style={{ fontSize: 18, fontWeight: '900', textAlign: 'center' }}>
+                      App update needed
+                    </Text>
+                    <Text
+                      style={{
+                        marginTop: 10,
+                        fontSize: 14,
+                        fontWeight: '600',
+                        color: tailwindScheme === 'dark' ? '#CBD5E1' : '#475569',
+                        textAlign: 'center',
+                        lineHeight: 20,
+                      }}
+                    >
+                      To keep everything working properly, please update Skeeme to continue.
+                    </Text>
+
+                    {updateMinVersion && (
+                      <Text
+                        style={{
+                          marginTop: 6,
+                          fontSize: 12,
+                          fontWeight: '700',
+                          color: tailwindScheme === 'dark' ? '#94A3B8' : '#64748B',
+                          textAlign: 'center',
+                        }}
+                      >
+                        Minimum required: {updateMinVersion}
+                      </Text>
+                    )}
+
+                    <TouchableOpacity
+                      activeOpacity={0.9}
+                      onPress={() => {
+                        try {
+                          // eslint-disable-next-line @typescript-eslint/no-var-requires
+                          const Linking = require('expo-linking');
+                          Linking.openURL('https://play.google.com/store/apps/details?id=com.skeeme.app');
+                        } catch (e) {
+                          // ignore
+                        }
+                      }}
+                      style={{
+                        marginTop: 16,
+                        backgroundColor: '#007AFF',
+                        borderRadius: 14,
+                        paddingVertical: 14,
+                        paddingHorizontal: 16,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontWeight: '900' }}>Update to continue</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
 
               {/* Global Modals */}
               <OutOfCreditsModalWrapper />
