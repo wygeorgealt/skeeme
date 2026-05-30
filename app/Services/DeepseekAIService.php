@@ -457,7 +457,7 @@ DeepSeek-specific rule:
                         'Content-Type' => 'application/json',
                     ],
                     'json' => [
-                        'model' => 'deepseek-v4-pro',
+                        'model' => 'deepseek-v4-flash',
                         'messages' => [
                             ['role' => 'system', 'content' => $systemPrompt],
                             ['role' => 'user', 'content' => $prompt],
@@ -484,7 +484,7 @@ DeepSeek-specific rule:
             $latencyMs = (microtime(true) - $startTime) * 1000;
             \App\Support\AILogger::log([
                 'provider' => 'deepseek',
-                'model' => 'deepseek-v4-pro',
+                'model' => 'deepseek-v4-flash',
                 'action' => 'grade_theory_answer',
                 'request' => [
                     'question_length' => strlen($questionText),
@@ -507,7 +507,7 @@ DeepSeek-specific rule:
             $latencyMs = (microtime(true) - $startTime) * 1000;
             \App\Support\AILogger::log([
                 'provider' => 'deepseek',
-                'model' => 'deepseek-v4-pro',
+                'model' => 'deepseek-v4-flash',
                 'action' => 'grade_theory_answer',
                 'request' => [
                     'question_length' => strlen($questionText),
@@ -606,7 +606,7 @@ Structure as: `{"results": [{"question": "", "topic": "", "type": "", "solution"
 SYSTEM;
 
             $params = [
-                'model' => 'deepseek-v4-pro',
+                'model' => 'deepseek-v4-flash',
                 'stream' => true,
                 'temperature' => 0.3,
                 'max_tokens' => 8192,
@@ -1353,7 +1353,7 @@ PROMPT;
                     ],
                     'timeout' => $this->timeout,
                     'json' => [
-                        'model' => 'deepseek-v4-pro',
+                        'model' => 'deepseek-v4-flash',
                         'messages' => [
                             [
                                 'role' => 'system',
@@ -1426,7 +1426,7 @@ SYSTEM
             $latencyMs = (microtime(true) - $startTime) * 1000;
             \App\Support\AILogger::log([
                 'provider' => 'deepseek',
-                'model' => 'deepseek-v4-pro',
+                'model' => 'deepseek-v4-flash',
                 'action' => 'solve_from_image',
                 'request' => [
                     'image_length' => strlen($base64Image),
@@ -1446,7 +1446,7 @@ SYSTEM
             $latencyMs = (microtime(true) - $startTime) * 1000;
             \App\Support\AILogger::log([
                 'provider' => 'deepseek',
-                'model' => 'deepseek-v4-pro',
+                'model' => 'deepseek-v4-flash',
                 'action' => 'solve_from_image',
                 'request' => [
                     'image_length' => strlen($base64Image),

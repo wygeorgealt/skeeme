@@ -20,6 +20,9 @@ import { markGenerationSuccess } from '@/lib/storeReview';
 import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/freeOffer';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
 
+import { saveOfflineQuiz } from '@/lib/offlineSaved';
+
+
 import { haptics } from '@/lib/haptics';
 import { QuizMode, Difficulty, FormatType, Question } from '@/components/quiz/QuizTypes';
 import { MCQCard } from '@/components/quiz/MCQCard';
@@ -207,7 +210,12 @@ export default function GenerateQuizScreen() {
     const [extractionId, setExtractionId] = useState<string | null>(null);
     const [isExtracting, setIsExtracting] = useState(false);
 
+    // Offline save
+    const [isSavingOffline, setIsSavingOffline] = useState(false);
+    const [isOfflineSaved, setIsOfflineSaved] = useState(false);
+
     // Score calculations
+
     const correctCount = Object.entries(selectedAnswers).filter(([qi, ans]) => questions[+qi]?.correct_answer === ans).length
         + Object.values(theoryResults).filter(Boolean).length;
     const percentage = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
@@ -1292,6 +1300,7 @@ export default function GenerateQuizScreen() {
                 }]}
             >
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+
                     <TouchableOpacity
                         onPress={handleShare}
                         disabled={isSharing}
@@ -1328,6 +1337,62 @@ export default function GenerateQuizScreen() {
                 </View>
 
                 <TouchableOpacity
+                    disabled={isSavingOffline || isOfflineSaved || questions.length === 0}
+                    onPress={async () => {
+                        if (isSavingOffline || isOfflineSaved || questions.length === 0) return;
+                        try {
+                            setIsSavingOffline(true);
+                            const deckTopic = mode === 'topic' ? topic : (selectedFile?.name || 'File Upload');
+
+                            await saveOfflineQuiz({
+                                id: `quiz_${Date.now().toString()}`,
+                                mode,
+                                topic: deckTopic,
+                                difficulty,
+                                percentage,
+                                questions: questions.map((q, qi) => ({
+                                    // Question ids are not guaranteed in the QuizQuestion type
+                                    id: qi.toString(),
+                                    type: q.question_type,
+                                    question_type: q.question_type,
+                                    question_text: q.question_text,
+                                    options: q.options,
+                                    correct_answer: q.correct_answer,
+                                    explanation: q.explanation,
+                                    explanation_right: q.explanation_right,
+                                    explanation_wrong: q.explanation_wrong,
+                                    // runtime answers/explanation not strictly needed for offline view, but keep for consistency
+                                    user_answer: q.question_type === 'essay' ? '(Theory Answer)' : selectedAnswers[qi],
+                                })),
+                            });
+
+                            setIsOfflineSaved(true);
+                            haptics.notificationAsync('success' as any);
+                        } catch {
+                            Alert.alert('Save Failed', 'Could not save this quiz for offline use.');
+                        } finally {
+                            setIsSavingOffline(false);
+                        }
+                    }}
+                    activeOpacity={0.8}
+                    style={{
+                        width: '100%',
+                        height: 52,
+                        borderRadius: 26,
+                        backgroundColor: isDark ? 'rgba(52,199,89,0.15)' : '#E6F9EE',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginTop: 4,
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(52,199,89,0.35)' : 'rgba(52,199,89,0.35)',
+                    }}
+                >
+                    <Text style={{ color: isDark ? '#34C759' : '#34C759', fontWeight: '800', fontSize: 16 }}>
+                        {isSavingOffline ? 'Saving…' : isOfflineSaved ? 'Saved for offline' : 'Save for offline'}
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                     onPress={handleResetQuiz}
                     activeOpacity={0.8}
                     style={{
@@ -1337,13 +1402,14 @@ export default function GenerateQuizScreen() {
                         backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        marginTop: 4,
+                        marginTop: 10,
                     }}
                 >
                     <Text style={{ color: C.text, fontWeight: '700', fontSize: 16 }}>Done</Text>
                 </TouchableOpacity>
 
             </BlurView>
+
 
             <OutOfCreditsModal visible={showOutOfCredits} onDismiss={() => setShowOutOfCredits(false)} featureAttempted="quiz" />
 

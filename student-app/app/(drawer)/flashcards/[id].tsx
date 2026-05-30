@@ -28,8 +28,10 @@ import { haptics } from '@/lib/haptics';
 import { Flashcard as Card, FlashcardDeck } from '@/types';
 import { StreakAnimation } from '@/components/StreakAnimation';
 import { markGenerationSuccess } from '@/lib/storeReview';
+import { saveOfflineDeck } from '@/lib/offlineSaved';
 
 // Storage helpers
+
 const storage = {
     getItem: async (key: string) => {
         try {
@@ -172,6 +174,10 @@ export default function StudyDeckScreen() {
     const [isSavingSession, setIsSavingSession] = useState(false);
     const [rewardMessage, setRewardMessage] = useState('');
     const [showMilestone, setShowMilestone] = useState(false);
+
+    const [isSavingOffline, setIsSavingOffline] = useState(false);
+    const [isOfflineSaved, setIsOfflineSaved] = useState(false);
+
 
     const { data: remoteDeck, isLoading, error, refetch } = useQuery({
         queryKey: ['deck', id],
@@ -546,6 +552,11 @@ export default function StudyDeckScreen() {
 
     if (isComplete) {
         const streak = typeof user?.streak === 'number' ? user.streak : (user?.streak?.current_streak || 1);
+        const cardsForOffline = (deck?.flashcards || []).map((c: any) => ({
+            front: c.front,
+            back: c.back,
+        }));
+
 
         if (showMilestone) {
             return (
@@ -576,6 +587,7 @@ export default function StudyDeckScreen() {
         }
 
         return (
+
             <View style={{ flex: 1, backgroundColor: 'transparent' }}>
                 <View style={s.successCenter}>
                     <Animated.View entering={ZoomIn.duration(800)}>
@@ -599,8 +611,41 @@ export default function StudyDeckScreen() {
                             </View>
                         </TouchableOpacity>
 
+                        <TouchableOpacity
+                            disabled={isSavingOffline || isOfflineSaved || !cardsForOffline.length}
+                            activeOpacity={0.8}
+                            onPress={async () => {
+                                if (isSavingOffline || isOfflineSaved || !cardsForOffline.length) return;
+                                try {
+                                    setIsSavingOffline(true);
+                                    const decoded = deck?.title
+                                        ? decodeURIComponent(Array.isArray(deck.title) ? deck.title[0] : deck.title)
+                                        : (Array.isArray(topic) ? topic[0] : topic) || 'Flashcards';
+
+                                    await saveOfflineDeck({
+                                        id: deck?.id?.toString?.() ?? id?.toString?.() ?? `deck_${Date.now().toString()}`,
+                                        title: decoded,
+                                        cards: cardsForOffline,
+                                    });
+                                    setIsOfflineSaved(true);
+                                    haptics.notificationAsync('success' as any);
+                                } catch {
+                                    Alert.alert('Save Failed', 'Could not save this deck for offline use.');
+                                } finally {
+                                    setIsSavingOffline(false);
+                                }
+                            }}
+                            style={s.flex1}
+                        >
+                            <View style={[s.blueBtnGradient, { backgroundColor: isSavingOffline || isOfflineSaved ? (isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7') : '#007AFF' }]}> 
+                                <Text style={s.btnTextLarge}>
+                                    {isSavingOffline ? 'Saving…' : isOfflineSaved ? 'Saved for offline' : 'Save for offline'}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+
                         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={s.flex1}>
-                            <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF' }]}>
+                            <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF' }]}> 
                                 <Text style={s.btnTextLarge}>Finish</Text>
                             </View>
                         </TouchableOpacity>
@@ -608,6 +653,7 @@ export default function StudyDeckScreen() {
                 </View>
             </View>
         );
+
     }
 
     const progressWidth = cards.length > 0 ? `${((currentIndex + 1) / cards.length) * 100}%` : '0%';

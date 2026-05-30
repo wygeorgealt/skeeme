@@ -1,5 +1,7 @@
 import { Text } from '@/components/ui/Text';
+import React from 'react';
 import { View, ScrollView, RefreshControl, useColorScheme, StyleSheet, TouchableOpacity } from 'react-native';
+
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useAuthStore } from '@/store/authStore';
 import { useStudent } from '@/hooks/useStudent';
@@ -9,7 +11,8 @@ import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Fire, RoundArrowUp, Calendar, ClockCircle, Notebook, History, MedalRibbonsStar, AltArrowRight, Chart2, Layers, WalletMoney } from '@solar-icons/react-native/Bold';
+import { Fire, RoundArrowUp, Calendar, ClockCircle, MedalRibbonsStar, AltArrowRight, Chart2, WalletMoney } from '@solar-icons/react-native/Bold';
+import Svg, { Rect, Circle, Path, Line, G } from 'react-native-svg';
 
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { tryPromptForReview } from '@/lib/storeReview';
@@ -25,15 +28,79 @@ const cardStyle = (C: typeof Colors.light) => ({
     elevation: C.cardElevation,
 });
 
-// ─── Quick Action config ──────────────────────────────────────────────────────
-const QUICK_ACTIONS = [
-    { label: 'Quiz',       Icon: Notebook, route: '/generate',        bg: '#EBF3FF', color: '#007AFF' },
-    { label: 'Flashcards', Icon: Layers,    route: '/flashcards/create', bg: '#E6F9EE', color: '#34C759' },
-    { label: 'History',    Icon: History,  route: '/history',         bg: '#FFF4E6', color: '#FF9500' },
-    { label: 'Streak',     Icon: Fire,     route: '/streak',          bg: '#FFEBEA', color: '#FF3B30' },
-] as const;
+function QuizPracticeSvg() {
+    return (
+        <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
+            <Rect x="21" y="17" width="38" height="50" rx="8" fill="#007AFF" opacity={0.18} />
+            <Rect x="18" y="14" width="38" height="50" rx="8" fill="white" />
+            <Rect x="28" y="9" width="18" height="11" rx="5" fill="#007AFF" />
+            <Circle cx="37" cy="14" r="3" fill="#EBF3FF" />
+            <Circle cx="27" cy="33" r="4" fill="#007AFF" />
+            <Path d="M25 33 L27 35.5 L31 30" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <Rect x="34" y="31" width="16" height="3" rx="1.5" fill="#007AFF" opacity={0.7} />
+            <Circle cx="27" cy="44" r="4" stroke="#007AFF" strokeWidth="1.5" fill="white" />
+            <Rect x="34" y="42" width="13" height="3" rx="1.5" fill="#007AFF" opacity={0.3} />
+            <Circle cx="27" cy="55" r="4" stroke="#007AFF" strokeWidth="1.5" fill="white" />
+            <Rect x="34" y="53" width="15" height="3" rx="1.5" fill="#007AFF" opacity={0.3} />
+        </Svg>
+    );
+}
+
+function FlashcardsSvg() {
+    return (
+        <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
+            <G transform="rotate(-10 33 40)">
+                <Rect x="12" y="26" width="42" height="28" rx="7" fill="#34C759" opacity={0.2} />
+            </G>
+            <G transform="rotate(-4 33 40)">
+                <Rect x="12" y="26" width="42" height="28" rx="7" fill="#34C759" opacity={0.38} />
+            </G>
+            <Rect x="12" y="28" width="42" height="28" rx="7" fill="white" />
+            <Rect x="12" y="28" width="42" height="28" rx="7" stroke="#34C759" strokeWidth="1.5" />
+            <Rect x="20" y="36" width="28" height="3" rx="1.5" fill="#34C759" opacity={0.85} />
+            <Rect x="20" y="43" width="21" height="3" rx="1.5" fill="#34C759" opacity={0.4} />
+            <Rect x="20" y="50" width="25" height="3" rx="1.5" fill="#34C759" opacity={0.3} />
+        </Svg>
+    );
+}
+
+function HistorySvg() {
+    return (
+        <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
+            <Circle cx="43" cy="43" r="22" fill="#FF9500" opacity={0.18} />
+            <Circle cx="41" cy="41" r="22" fill="white" />
+            <Circle cx="41" cy="41" r="22" stroke="#FF9500" strokeWidth="2" />
+            <Rect x="40" y="22" width="2" height="4" rx="1" fill="#FF9500" opacity={0.4} />
+            <Rect x="40" y="57" width="2" height="4" rx="1" fill="#FF9500" opacity={0.4} />
+            <Rect x="57" y="40" width="4" height="2" rx="1" fill="#FF9500" opacity={0.4} />
+            <Rect x="22" y="40" width="4" height="2" rx="1" fill="#FF9500" opacity={0.4} />
+            <Line x1="41" y1="41" x2="41" y2="27" stroke="#FF9500" strokeWidth="2.5" strokeLinecap="round" />
+            <Line x1="41" y1="41" x2="52" y2="48" stroke="#FF9500" strokeWidth="2" strokeLinecap="round" />
+            <Circle cx="41" cy="41" r="3" fill="#FF9500" />
+            <Path d="M23 41 A18 18 0 0 1 38 24" stroke="#FF9500" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <Path d="M23 41 L18.5 37" stroke="#FF9500" strokeWidth="2" strokeLinecap="round" />
+            <Path d="M23 41 L27 37" stroke="#FF9500" strokeWidth="2" strokeLinecap="round" />
+        </Svg>
+    );
+}
+
+function SavedSvg() {
+    return (
+        <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
+            <Path d="M28 13 L52 13 L52 67 L40 57 L28 67 Z" fill="#5856D6" opacity={0.18} transform="translate(2.5 2.5)" />
+            <Path d="M28 13 L52 13 L52 67 L40 57 L28 67 Z" fill="white" />
+            <Path d="M28 13 L52 13 L52 67 L40 57 L28 67 Z" stroke="#5856D6" strokeWidth="1.5" />
+            <Path
+                d="M40 26 L42.8 34.2 L51.5 34.2 L44.5 39.3 L47.3 47.5 L40 42.4 L32.7 47.5 L35.5 39.3 L28.5 34.2 L37.2 34.2 Z"
+                fill="#5856D6"
+            />
+        </Svg>
+    );
+}
+
 
 // ─── 7-Day Streak Calendar ────────────────────────────────────────────────────
+
 function StreakCalendar({ data, isDark, C }: { data: any[]; isDark: boolean; C: typeof Colors.light }) {
     const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     const todayIndex = (new Date().getDay() + 6) % 7;
@@ -176,27 +243,35 @@ export default function DashboardScreen() {
                     </View>
                 </Animated.View>
 
-                {/* ── Quick Actions Grid ── */}
-                <Animated.View key={`quick-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={s.quickRow}>
-                    {QUICK_ACTIONS.map((action) => (
+                {/* ── Feature 2x2 Grid ── */}
+                <Animated.View key={`feature-grid-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={s.gridWrap}>
+                    {(
+                        [
+                            { label: 'Quiz Practice', route: '/generate', color: '#007AFF', bg: '#EBF3FF', Icon: QuizPracticeSvg },
+                            { label: 'Flashcards', route: '/flashcards/create', color: '#34C759', bg: '#E6F9EE', Icon: FlashcardsSvg },
+                            { label: 'History', route: '/history', color: '#FF9500', bg: '#FFF4E6', Icon: HistorySvg },
+                            { label: 'Saved', route: '/history/saved', color: '#5856D6', bg: '#EEF0FF', Icon: SavedSvg },
+                        ] as const
+                    ).map(({ label, route, color, bg, Icon }) => (
                         <TouchableOpacity
-                            key={action.route}
-                            onPress={() => router.push(action.route)}
-                            activeOpacity={0.75}
-                            style={s.quickItem}
+                            key={route}
+                            onPress={() => router.push(route as any)}
+                            activeOpacity={0.85}
+                            style={[s.gridItem, { backgroundColor: isDark ? color + '28' : bg }]}
                         >
-                            <View style={[s.quickIconBox, { backgroundColor: isDark ? action.color + '22' : action.bg }]}>
-                                <action.Icon size={26} color={action.color} />
+                            <Text style={[s.gridLabel, { color: isDark ? '#fff' : '#1A1A2E' }]}>{label}</Text>
+                            <View style={{ alignSelf: 'flex-end' }}>
+                                <Icon />
                             </View>
-                            <Text style={[s.quickLabel, { color: C.textSecondary }]}>{action.label}</Text>
                         </TouchableOpacity>
                     ))}
                 </Animated.View>
 
-                {/* ── Stats Row ── */}
+
+                {/* ── Stats Row ── (tile-like outer border/overflow, different sizing) ── */}
                 <Animated.View key={`stats-${animKey}`} entering={FadeInDown.delay(160).duration(400)} style={{ flexDirection: 'row', gap: 12 }}>
                     <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push('/exams' as any)} activeOpacity={0.75}>
-                        <View style={[s.statCard, cardStyle(C)]}>
+                        <View style={[s.tileLikeOuter, { backgroundColor: C.card, borderColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}>
                             <View style={[s.statIconBox, { backgroundColor: isDark ? '#5856D622' : '#EEF0FF' }]}>
                                 <Calendar size={18} color="#5856D6" />
                             </View>
@@ -209,7 +284,7 @@ export default function DashboardScreen() {
                         </View>
                     </TouchableOpacity>
 
-                    <View style={[{ flex: 1 }, s.statCard, cardStyle(C)]}>
+                    <View style={[{ flex: 1 }, s.tileLikeOuter, { backgroundColor: C.card, borderColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}>
                         <View style={[s.statIconBox, { backgroundColor: isDark ? '#007AFF22' : '#EBF3FF' }]}>
                             <ClockCircle size={18} color="#007AFF" />
                         </View>
@@ -218,8 +293,12 @@ export default function DashboardScreen() {
                     </View>
                 </Animated.View>
 
-                {/* ── Weekly Activity ── */}
-                <Animated.View key={`activity-${animKey}`} entering={FadeInDown.delay(240).duration(400)} style={[s.activityCard, cardStyle(C)]}>
+                {/* ── Weekly Activity ── (tile-like outer border/overflow) ── */}
+                <Animated.View
+                    key={`activity-${animKey}`}
+                    entering={FadeInDown.delay(240).duration(400)}
+                    style={[s.tileLikeOuterWide, { backgroundColor: C.card, borderColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}
+                >
                     <View style={s.activityHeader}>
                         <View>
                             <Text style={[s.activityTitle, { color: C.text }]}>Weekly Activity</Text>
@@ -235,8 +314,12 @@ export default function DashboardScreen() {
                     <Text style={[s.sectionTitle, { color: C.text }]}>Streaks</Text>
                 </Animated.View>
 
-                {/* ── Streaks Card ── */}
-                <Animated.View key={`streaks-${animKey}`} entering={FadeInDown.delay(400).duration(400)} style={[cardStyle(C), { overflow: 'hidden', borderRadius: 20 }]}>
+                {/* ── Streaks Card ── (tile-like outer border/overflow) ── */}
+                <Animated.View
+                    key={`streaks-${animKey}`}
+                    entering={FadeInDown.delay(400).duration(400)}
+                    style={[s.tileLikeOuterWide, { backgroundColor: C.card, borderColor: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}
+                >
                     <TouchableOpacity onPress={() => router.push('/streak')} style={s.streakRow} activeOpacity={0.75}>
                         <View style={[s.streakIcon, { backgroundColor: isDark ? '#FF3B3022' : '#FFEBEA' }]}>
                             <Fire size={18} color="#FF3B30" />
@@ -269,20 +352,79 @@ export default function DashboardScreen() {
 }
 
 const s = StyleSheet.create({
-    heroSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 16, paddingVertical: 12 },
-    heroLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, marginBottom: 6, textTransform: 'uppercase' },
-    heroValue: { fontSize: 48, fontWeight: '800', letterSpacing: -2, lineHeight: 54 },
-    upgradePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 100, gap: 6 },
-    upgradeText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
-    iconCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    heroSection: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    heroLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        letterSpacing: 1.2,
+        marginBottom: 6,
+        textTransform: 'uppercase',
+    },
+    heroValue: {
+        fontSize: 48,
+        fontWeight: '800',
+        letterSpacing: -2,
+        lineHeight: 54,
+    },
+    iconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 
-    quickRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4, marginBottom: 4 },
-    quickItem: { alignItems: 'center', gap: 8, flex: 1 },
-    quickIconBox: { width: 70, height: 70, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-    quickLabel: { fontSize: 13, fontWeight: '600' },
+    gridWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 4 },
+    gridItem: {
+        width: '47%',
+        aspectRatio: 1,
+        borderRadius: 24,
+        padding: 16,
+        justifyContent: 'space-between',
+        overflow: 'hidden',
+        borderWidth: 1,
+    },
+    gridLabel: { fontSize: 15, fontWeight: '800', letterSpacing: -0.3, lineHeight: 21 },
+
+    // tile-like outer styling (same border/overflow idea as quick tiles, but used on larger/smaller sections)
+    tileLikeOuter: {
+        borderRadius: 24,
+        overflow: 'hidden',
+        borderWidth: 1,
+        padding: 18,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        elevation: 1,
+    },
+    tileLikeOuterWide: {
+        borderRadius: 24,
+        overflow: 'hidden',
+        borderWidth: 1,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        elevation: 1,
+    },
 
     statCard: { padding: 18 },
-    statIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+    statIconBox: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 14,
+    },
     statNum: { fontSize: 30, fontWeight: '800', marginBottom: 2, letterSpacing: -0.5 },
     statDesc: { fontSize: 13, fontWeight: '500' },
 

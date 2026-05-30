@@ -1,0 +1,8 @@
+- [ ] Update `/ (drawer)/history/saved/index.tsx`:
+  - [ ] Add free-user redirect to `/paywall` immediately on mount (same behavior as `/(drawer)/history/index.tsx`)
+- [ ] Update `/(drawer)/index.tsx` homepage:
+  - [ ] Restyle Stats row cards, Weekly Activity card, and Streaks header+card to match 2x2 quick-action tile outer border/overflow design
+  - [ ] Use different sizes than the quick-action tiles (don’t change the quick-action grid)
+- [ ] Verify visually by navigating:
+  - [ ] Open Saved (Offline) as free user → should redirect to `/paywall`
+  - [ ] Check homepage cards appearance matches the desired border/overflow styling
