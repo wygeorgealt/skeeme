@@ -9,17 +9,22 @@ export function useStudent() {
     return useQuery({
         queryKey: ['student', 'me'],
         queryFn: async () => {
-            return await apiStandard.get('me');
+            const data: any = await apiStandard.get('me');
+
+            // Normalize API response shape so credits/fields land in the zustand user object.
+            // This mirrors the logic in authStore.hydrate/checkAuth: `data.user || data`.
+            const refreshedUser = data?.user ?? data;
+
+            try {
+                if (refreshedUser) updateUser(refreshedUser as any);
+            } catch (e) {
+                if (__DEV__) console.error('useStudent queryFn updateUser failed', e);
+            }
+
+            return refreshedUser;
         },
         staleTime: 5 * 60 * 1000,
         retry: 1,
         enabled: !!token,
-        onSuccess: (data) => {
-            try {
-                if (data) updateUser(data as any);
-            } catch (e) {
-                if (__DEV__) console.error('useStudent onSuccess updateUser failed', e);
-            }
-        }
     });
 }

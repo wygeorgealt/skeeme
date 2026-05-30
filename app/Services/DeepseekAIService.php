@@ -12,17 +12,102 @@ class DeepseekAIService
 {
     protected Client $client;
     protected string $apiKey;
-    protected string $baseUrl = 'https://api.deepseek.com/v1';
-    protected GoogleVisionService $visionService;
+    protected string $baseUrl    = 'https://api.deepseek.com/v1';
+    protected string $model      = 'deepseek-v4-flash';
+    protected int    $timeout    = 60;
+
+    protected GoogleVisionService        $visionService;
     protected UserPersonalizationService $personalizationService;
-    protected int $timeout = 60; // Default 60s
+
+    // ─── Shared Math Formatting Rules ─────────────────────────────────────────
+    // Injected into every system prompt that touches equations.
+    private const MATH_RULES = <<<'RULES'
+
+MATH FORMATTING RULES (MANDATORY):
+1. Inline math: $...$ — e.g. $x^2$, $\frac{a}{b}$.
+2. Display math: $$...$$ on its OWN dedicated line — for any important equation.
+3. ALWAYS brace command arguments: $\sqrt{x}$ not $\sqrt x$.
+4. ALWAYS brace multi-char sub/superscripts: $x_{ij}$, $a^{2n}$.
+5. Limits: $\sum_{i=1}^{n}$ not $\sum_i^n$.
+6. Text inside math: $\text{word}$ only.
+7. Decimal fractions: wrap BOTH sides — $\frac{8.42}{9.8}$, never 8.$\frac{42}{9}$.8.
+8. Percent in math: \%, plain % in prose.
+9. Chemistry (H2O, CO2): plain text unless in a calculation.
+RULES;
+
+    // ─── Scan & Solve System Prompt ───────────────────────────────────────────
+    // This is the most important prompt — drives spacing quality in Scan & Solve.
+    private const SOLVE_SYSTEM_PROMPT = <<<'SYS'
+# Role
+You are an expert academic tutor for Nigerian secondary and tertiary students.
+
+# Output Format
+Return ONLY valid JSON — no preamble, no markdown fences, no <think> blocks.
+
+# CRITICAL SPACING & STRUCTURE RULES
+These rules are non-negotiable. Violating them breaks the renderer.
+
+## Rule 1 — Every logical step is its own paragraph.
+Separate ALL paragraphs with \n\n (a blank line). Never run two steps together.
+
+## Rule 2 — Prose labels go on their OWN line, alone.
+Write the label, then \n\n, then the math. NEVER put a label and an equation on the same line.
+
+## Rule 3 — Display math goes on its OWN line.
+Wrap in $$...$$ with \n\n before and after. Never inline an important equation.
+
+## Rule 4 — State the answer FIRST, then explain.
+Open the explanation with the answer sentence, then a blank line, then the working.
+
+## CORRECT FORMAT EXAMPLE:
+```
+"explanation": "The answer is **D** — 19.6 m/s.\n\nWe use the kinematic equation:\n\n$$v = u + at$$\n\nSubstituting the known values ($u = 0$, $a = 9.8$, $t = 2$):\n\n$$v = 0 + (9.8)(2)$$\n\nSimplifying:\n\n$$v = 19.6 \\text{ m/s}$$\n\nThis matches option D."
+```
+
+## WRONG FORMAT (NEVER DO THIS):
+```
+"explanation": "Using v=u+at with u=0, a=9.8, t=2 gives v=0+(9.8)(2)=19.6m/s which is D."
+```
+
+# Subject-Specific Depth
+
+**STEM (Maths, Physics, Chemistry, Engineering)**
+- Every distinct operation = its own paragraph + display math block.
+- Label each step plainly: "Setting up the equation:", "Expanding the bracket:", etc.
+- Show ALL intermediate working — do not skip steps.
+
+**Theory (Medicine, Law, Biology, Economics, Social Sciences)**
+- Write a FULL, detailed, essay-style explanation — length and depth are required.
+- Use ### headings, bullet points, and **bold** to organise sections.
+- Cite references / clinical context where relevant.
+
+# JSON Schema
+{"results":[{
+  "question": "",
+  "topic": "subject area",
+  "type": "calculation|theory",
+  "solution": "The answer is **X**.",
+  "steps": [],
+  "explanation": "Full structured explanation with \\n\\n spacing.",
+  "summary": ""
+}]}
+
+Rules:
+- `question` → ALWAYS empty string "".
+- `solution` → Conversational opener + bold answer. e.g. "The answer is **D**." or "Your pick should be **B — Newton's Second Law**."
+- `steps` → always [].
+- `summary` → always "".
+- `explanation` → Required spacing: \n\n between every paragraph, step, and equation block.
+SYS;
+
+    // ─── Constructor ──────────────────────────────────────────────────────────
 
     public function __construct(GoogleVisionService $visionService)
     {
-        $this->apiKey = config('services.deepseek.api_key');
-        $this->visionService = $visionService;
-        $this->client = new Client([
-            'timeout' => 120, // High default, overridden per request
+        $this->apiKey         = config('services.deepseek.api_key');
+        $this->visionService  = $visionService;
+        $this->client         = new Client([
+            'timeout'         => 120,
             'connect_timeout' => 10,
         ]);
         $this->personalizationService = app(UserPersonalizationService::class);
@@ -34,28 +119,24 @@ class DeepseekAIService
         return $this;
     }
 
+    // ─── Condense Material ────────────────────────────────────────────────────
+
     /**
-     * Pre-summarize long documents into key concepts to reduce token costs.
-     * Only triggers when content exceeds the word threshold.
-     * Uses DeepSeek (cheapest model) for the summarization pass.
-     *
-     * Cost math: A 10-page doc ≈ 5000 words ≈ 7000 tokens.
-     * Summarization reduces to ~1500 words ≈ 2000 tokens.
-     * Net savings: ~5000 tokens per generation call.
+     * Pre-summarise long documents into key concepts to reduce token costs.
+     * Only triggers when content exceeds 3,000 words.
      */
     public function condenseMaterial(string $content, int $targetCards = 10, string $context = 'flashcards'): string
     {
         $startTime = microtime(true);
         $wordCount = str_word_count($content);
 
-        // Below threshold — raw text is fine, no API call needed
         if ($wordCount < 3000) {
             return $content;
         }
 
-        Log::info("[AI Condense] Pre-summarizing material", [
+        Log::info('[AI Condense] Pre-summarising material', [
             'original_words' => $wordCount,
-            'context' => $context,
+            'context'        => $context,
         ]);
 
         $contextInstruction = $context === 'flashcards'
@@ -67,468 +148,234 @@ Condense the following study material into KEY CONCEPTS ONLY.
 {$contextInstruction}
 
 Rules:
-- Output ONLY the extracted key points as a numbered list
-- Keep each point to 1-2 sentences max
-- Preserve exact technical terms, formulas, and definitions
-- Preserve the original language of the material
-- No introductions, no summaries, no filler
+- Output ONLY a numbered list of extracted key points.
+- Keep each point to 1–2 sentences max.
+- Preserve exact technical terms, formulas, and definitions.
+- Preserve the original language of the material.
+- No introductions, summaries, or filler.
 
 MATERIAL:
 {$content}
 PROMPT;
 
         try {
-            $response = $this->client->post(
-                $this->baseUrl . '/chat/completions',
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json',
+            $response = $this->client->post($this->baseUrl . '/chat/completions', [
+                'headers' => $this->headers(),
+                'timeout' => 30,
+                'json' => [
+                    'model'       => $this->model,
+                    'messages'    => [
+                        ['role' => 'system', 'content' => 'Extract key concepts from study material. Be concise. No chain-of-thought, no <think> tags.'],
+                        ['role' => 'user',   'content' => $prompt],
                     ],
-                    'timeout' => 30,
-                    'json' => [
-                        'model' => 'deepseek-v4-flash',
-                        'messages' => [
-                            ['role' => 'system', 'content' => 'Extract key concepts from study material. Be concise.'],
-                            ['role' => 'user', 'content' => $prompt],
-                        ],
-                        'temperature' => 0.2,
-                        'max_tokens' => 2000,
-                    ],
-                ]
-            );
+                    'temperature' => 0.2,
+                    'max_tokens'  => 2000,
+                ],
+            ]);
 
-            $data = json_decode($response->getBody()->getContents(), true);
+            $data      = json_decode($response->getBody()->getContents(), true);
             $condensed = $data['choices'][0]['message']['content'] ?? '';
 
             if (!empty(trim($condensed))) {
                 $newWordCount = str_word_count($condensed);
-                $latencyMs = (microtime(true) - $startTime) * 1000;
-                
-                \App\Support\AILogger::log([
-                    'provider' => 'deepseek',
-                    'model' => 'deepseek-v4-flash',
-                    'action' => 'condense_material',
-                    'request' => [
-                        'original_words' => $wordCount,
-                        'context' => $context,
-                        'target_cards' => $targetCards,
-                    ],
-                    'response' => [
-                        'condensed_words' => $newWordCount,
-                        'reduction_ratio' => round((1 - $newWordCount / $wordCount) * 100) . '%',
-                    ],
-                    'latency_ms' => $latencyMs,
-                ], auth()->user());
-
+                $this->aiLog('condense_material', [
+                    'original_words'  => $wordCount,
+                    'context'         => $context,
+                    'target_cards'    => $targetCards,
+                ], [
+                    'condensed_words'  => $newWordCount,
+                    'reduction_ratio'  => round((1 - $newWordCount / $wordCount) * 100) . '%',
+                ], null, $startTime);
                 return $condensed;
             }
         } catch (\Exception $e) {
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'condense_material',
-                'request' => [
-                    'original_words' => $wordCount,
-                    'context' => $context,
-                    'target_cards' => $targetCards,
-                ],
-                'error' => $e,
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
-            Log::warning("[AI Condense] Summarization failed, using raw text", [
-                'error' => $e->getMessage(),
-            ]);
+            $this->aiLog('condense_material', ['original_words' => $wordCount, 'context' => $context], [], $e, $startTime);
+            Log::warning('[AI Condense] Summarisation failed, using raw text', ['error' => $e->getMessage()]);
         }
 
-        // Fallback: return original content if summarization fails
         return $content;
     }
 
-    /**
-     * Generate questions using Deepseek AI with caching to reduce token usage
-     */
+    // ─── Generate Questions ───────────────────────────────────────────────────
+
     public function generateQuestions(
-        array $notes,
-        int $numberOfQuestions,
-        string $difficulty = 'mixed',
-        array $questionTypes = ['mcq', 'true_false', 'short_answer', 'essay', 'fill_blank'],
-        string $prompt = '',
-        bool $includeVisuals = false,
+        array    $notes,
+        int      $numberOfQuestions,
+        string   $difficulty     = 'mixed',
+        array    $questionTypes  = ['mcq', 'true_false', 'short_answer', 'essay', 'fill_blank'],
+        string   $prompt         = '',
+        bool     $includeVisuals = false,
         ?callable $progressCallback = null,
-        ?array $aiPreferences = null
+        ?array   $aiPreferences  = null
     ): array {
         $startTime = microtime(true);
         try {
             set_time_limit(300);
 
-            // Sanitize user inputs to protect against prompt injection
-            $notes = array_map(fn($note) => \App\Support\PromptSanitizer::sanitize($note), $notes);
-            if (!empty($prompt)) {
-                $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
-            }
-            
+            $notes  = array_map(fn($n) => \App\Support\PromptSanitizer::sanitize($n), $notes);
+            $prompt = !empty($prompt) ? \App\Support\PromptSanitizer::sanitize($prompt) : '';
+
             if ($progressCallback) $progressCallback(10);
-            
-            // Check cache first (24 hour TTL) - ELIMINATES REDUNDANT API CALLS
+
             $cacheKey = $this->generateCacheKey($notes, $numberOfQuestions, $difficulty, $questionTypes, $prompt, $includeVisuals);
+
             if (Cache::has($cacheKey)) {
                 $questions = Cache::get($cacheKey);
-                Log::info('Redis Cache Hit: Questions retrieved from cache.', [
-                    'cache_key' => $cacheKey,
-                    'questions_count' => count($questions),
-                    'estimated_time_saved' => '15-30s (AI API Bypass)'
-                ]);
-
-                \App\Support\AILogger::log([
-                    'provider' => 'deepseek',
-                    'model' => 'deepseek-v4-flash',
-                    'action' => 'generate_questions',
-                    'cache' => ['status' => 'hit', 'key' => $cacheKey],
-                    'request' => [
-                        'notes_count' => count($notes),
-                        'notes_char_length' => strlen(implode('', $notes)),
-                        'number_of_questions' => $numberOfQuestions,
-                        'difficulty' => $difficulty,
-                        'question_types' => $questionTypes,
-                        'prompt' => $prompt,
-                    ],
-                    'response' => [
-                        'questions_count' => count($questions),
-                    ],
-                    'latency_ms' => (microtime(true) - $startTime) * 1000,
-                ], auth()->user());
-
+                Log::info('Redis Cache Hit: Questions retrieved.', ['cache_key' => $cacheKey, 'count' => count($questions)]);
+                $this->aiLog('generate_questions', [
+                    'notes_count'       => count($notes),
+                    'number_of_questions' => $numberOfQuestions,
+                    'difficulty'        => $difficulty,
+                    'cache'             => 'hit',
+                ], ['questions_count' => count($questions)], null, $startTime);
                 if ($progressCallback) $progressCallback(100);
                 return $questions;
             }
-            
+
             if ($progressCallback) $progressCallback(30);
 
-            // Build optimized prompt
             $promptText = $this->buildOptimizedPrompt(
-                array_map([$this, 'sanitizeUtf8'], $notes), 
-                $numberOfQuestions, 
-                $difficulty, 
-                $questionTypes, 
-                $this->sanitizeUtf8($prompt), 
-                $includeVisuals, 
+                array_map([$this, 'sanitizeUtf8'], $notes),
+                $numberOfQuestions,
+                $difficulty,
+                $questionTypes,
+                $this->sanitizeUtf8($prompt),
+                $includeVisuals,
                 $aiPreferences
             );
 
             if ($progressCallback) $progressCallback(50);
-            
-            // Dynamic max_tokens based on count (roughly 350 tokens per question to prevent truncation)
-            $calculatedMaxTokens = min(8000, max(1500, $numberOfQuestions * 350));
 
-            $response = $this->client->post(
-                $this->baseUrl . '/chat/completions',
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json',
+            $maxTokens = min(8000, max(1500, $numberOfQuestions * 350));
+
+            $response = $this->client->post($this->baseUrl . '/chat/completions', [
+                'headers' => $this->headers(),
+                'timeout' => $this->timeout,
+                'json' => [
+                    'model'           => $this->model,
+                    'messages'        => [
+                        ['role' => 'system', 'content' => $this->personalise($this->quizSystemPrompt())],
+                        ['role' => 'user',   'content' => $promptText],
                     ],
-                    'timeout' => $this->timeout,
-                    'json' => [
-                        'model' => 'deepseek-v4-flash',
-                        'messages' => [
-                            [
-                                'role' => 'system',
-                                // MATH FORMATTING RULES added
-                                'content' => $this->getPersonalizedSystemPrompt('You are a quiz generator. Return only JSON. Wrap all math/formulas in dollar signs, e.g. $x^2$.
-
-MATH FORMATTING RULES:
-1. Inline math: Use $...$ delimiters. Inline fractions should be compact, e.g., $\frac{a}{b}$.
-2. Display math: Use $$...$$ delimiters on separate lines for important equations, limits, or complex expressions.
-3. Structured lists: Use enumerate environments or numbered lists with math expressions where needed.
-4. Align environments: For multiple equations, use $$\begin{align}...\\end{align}$$ with proper line breaks.
-5. Braces: Always wrap command arguments in braces, e.g., $\sqrt{x}$ not $\sqrt x$.
-6. Command groups: Commands like \sin, \cos, \lim must be followed by argument braces or left/right delimiters.
-7. Limits: Use underscore and caret with braces for limits, e.g., $\sum_{i=1}^{n}$ not $\sum_i^n$.
-8. Subscripts/superscripts: Always brace multicharacter subscripts/superscripts, e.g., $x_{ij}$ or $a^{2n}$.
-9. Text within math: Use $\text{word}$ for text inside math mode, never mix plain text.
-10. Percent signs: Escape as \\% inside math mode; use plain % in prose.
-11. Chemistry notation: Use element symbols directly (e.g., H2O, CO2) without math mode unless in calculation contexts.
-
-DeepSeek-specific rule:
-12. NO CHAIN-OF-THOUGHT: Never include <think> tags or reasoning blocks. Output ONLY the final JSON result.'),
-                            ],
-                            [
-                                'role' => 'user',
-                                'content' => $promptText,
-                            ],
-                        ],
-                        'temperature' => 0.5,
-                        'max_tokens' => $calculatedMaxTokens,
-                        'response_format' => ['type' => 'json_object']
-                    ]
-                ]
-            );
+                    'temperature'     => 0.5,
+                    'max_tokens'      => $maxTokens,
+                    'response_format' => ['type' => 'json_object'],
+                ],
+            ]);
 
             if ($progressCallback) $progressCallback(80);
 
-            $data = json_decode($response->getBody()->getContents(), true);
+            $data      = json_decode($response->getBody()->getContents(), true);
+            $content   = $data['choices'][0]['message']['content'] ?? null;
 
-            if (!isset($data['choices'][0]['message']['content'])) {
-                throw new \Exception('Invalid response from Deepseek API');
-            }
+            if (!$content) throw new \Exception('Invalid response from DeepSeek API');
 
-            $content = $data['choices'][0]['message']['content'];
             $questions = $this->parseQuestionsFromResponse($content);
 
             if ($progressCallback) $progressCallback(95);
 
-            // Cache for 24 hours - automatic token reuse
             Cache::put($cacheKey, $questions, now()->addHours(24));
-            
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'generate_questions',
-                'cache' => ['status' => 'miss', 'key' => $cacheKey],
-                'request' => [
-                    'notes_count' => count($notes),
-                    'notes_char_length' => strlen(implode('', $notes)),
-                    'number_of_questions' => $numberOfQuestions,
-                    'difficulty' => $difficulty,
-                    'question_types' => $questionTypes,
-                    'prompt' => $prompt,
-                ],
-                'response' => [
-                    'questions_count' => count($questions),
-                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
-                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
-                ],
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
+
+            $this->aiLog('generate_questions', [
+                'notes_count'         => count($notes),
+                'number_of_questions' => $numberOfQuestions,
+                'difficulty'          => $difficulty,
+                'cache'               => 'miss',
+            ], [
+                'questions_count' => count($questions),
+                'input_tokens'    => $data['usage']['prompt_tokens'] ?? null,
+                'output_tokens'   => $data['usage']['completion_tokens'] ?? null,
+            ], null, $startTime);
 
             return $questions;
         } catch (\Exception $e) {
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'generate_questions',
-                'cache' => ['status' => 'miss', 'key' => $cacheKey ?? null],
-                'request' => [
-                    'notes_count' => count($notes),
-                    'notes_char_length' => strlen(implode('', $notes)),
-                    'number_of_questions' => $numberOfQuestions,
-                    'difficulty' => $difficulty,
-                    'question_types' => $questionTypes,
-                    'prompt' => $prompt,
-                ],
-                'error' => $e,
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
+            $this->aiLog('generate_questions', ['notes_count' => count($notes), 'number_of_questions' => $numberOfQuestions], [], $e, $startTime);
             throw $this->handleApiException($e, 'Questions');
         }
     }
 
-    /**
-     * Generate an announcement draft using Deepseek AI.
-     */
-    public function generateAnnouncementDraft(string $prompt): array
-    {
-        $startTime = microtime(true);
-        $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
-        try {
-            $currentDate = now()->toDateTimeString();
-            $systemPrompt = "You are an assistant for a school administrator. Generate a professional and engaging announcement based on the user's prompt. 
-            The current date and time is: {$currentDate}.
-            
-            Return the result in JSON format with the following keys:
-            - 'title': A catchy and relevant title.
-            - 'content': Detailed but concise announcement content.
-            - 'event_start_date': If the user mentions a specific date or time, convert it to 'Y-m-d\TH:i' format.
-            - 'event_end_date': If the user mentions an end date/duration, convert it to 'Y-m-d\TH:i'. IF NOT MENTIONED, default it to EXACTLY ONE HOUR after the event_start_date.
-            
-            CRITICAL: If an event_start_date is generated, an event_end_date MUST also be generated.
-            Keep the content concise but informative. Use a friendly yet professional tone.";
+    // ─── Generate Flashcards ──────────────────────────────────────────────────
 
-            $response = $this->client->post(
-                $this->baseUrl . '/chat/completions',
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json',
-                    ],
-                    'json' => [
-                        'model' => 'deepseek-v4-flash',
-                        'messages' => [
-                            ['role' => 'system', 'content' => $systemPrompt],
-                            ['role' => 'user', 'content' => $prompt],
-                        ],
-                        'temperature' => 0.7,
-                        'response_format' => ['type' => 'json_object'],
-                    ],
-                ]
-            );
-
-            $data = json_decode($response->getBody()->getContents(), true);
-            $content = json_decode($data['choices'][0]['message']['content'], true);
-
-            $result = [
-                'title' => $content['title'] ?? '',
-                'content' => $content['content'] ?? '',
-                'event_start_date' => $content['event_start_date'] ?? null,
-                'event_end_date' => $content['event_end_date'] ?? null,
-            ];
-
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'draft_announcement',
-                'request' => [
-                    'prompt_length' => strlen($prompt),
-                ],
-                'response' => [
-                    'title' => $result['title'],
-                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
-                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
-                ],
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
-
-            return $result;
-        } catch (\Exception $e) {
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'draft_announcement',
-                'request' => [
-                    'prompt_length' => strlen($prompt),
-                ],
-                'error' => $e,
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
-            throw $this->handleApiException($e, 'Announcement');
-        }
-    }
-
-    /**
-     * Grade a theory/essay answer using Deepseek AI
-     */
-    public function gradeTheoryAnswer(
-        string $questionText,
-        string $studentAnswer,
-        string $modelAnswer = '',
-        array $rubric = [],
-        float $maxMarks = 10.0
+    public function generateFlashcards(
+        array    $notes,
+        int      $numberOfCards,
+        string   $difficulty = 'mixed',
+        string   $prompt     = '',
+        ?callable $progressCallback = null
     ): array {
         $startTime = microtime(true);
-        $questionText = \App\Support\PromptSanitizer::sanitize($questionText);
-        $studentAnswer = \App\Support\PromptSanitizer::sanitize($studentAnswer);
-        if (!empty($modelAnswer)) {
-            $modelAnswer = \App\Support\PromptSanitizer::sanitize($modelAnswer);
-        }
+
+        $notes  = array_map(fn($n) => \App\Support\PromptSanitizer::sanitize($n), $notes);
+        $prompt = !empty($prompt) ? \App\Support\PromptSanitizer::sanitize($prompt) : '';
+
+        $optimizedPrompt = $this->buildFlashcardPrompt($notes, $numberOfCards, $difficulty, $prompt);
+
         try {
-            $rubricText = !empty($rubric) ? json_encode($rubric) : 'Grade based on accuracy and completeness.';
-            $modelAnswerText = !empty($modelAnswer) ? "MODEL ANSWER: {$modelAnswer}" : "No model answer provided. Use general knowledge of the topic.";
+            if ($progressCallback) $progressCallback(0, 'Calling AI...');
 
-            $systemPrompt = "You are an expert academic examiner. Grade the student's answer based on the question and criteria provided.
-            
-            Return the result in JSON format with the following keys:
-            - 'marks': (float) Marks awarded out of {$maxMarks}.
-            - 'confidence': (float) Your confidence in this grade (0-100).
-            - 'reasoning': (string) Brief explanation of Why you gave this grade.
-            - 'feedback': (string) Constructive feedback for the student.
-            - 'analysis': (object) Breakdown of the grade (e.g. content, structure, grammar).
-            
-            Be fair but strict. A partially correct answer should get partial marks.";
-
-            $prompt = "QUESTION: {$questionText}
-            {$modelAnswerText}
-            RUBRIC/CRITERIA: {$rubricText}
-            STUDENT ANSWER: {$studentAnswer}
-            MAX MARKS: {$maxMarks}
-            
-            Grade this answer now.";
-
-            $response = $this->client->post(
-                $this->baseUrl . '/chat/completions',
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json',
+            $response = $this->client->post($this->baseUrl . '/chat/completions', [
+                'headers' => $this->headers(),
+                'timeout' => $this->timeout,
+                'json' => [
+                    'model'           => $this->model,
+                    'messages'        => [
+                        ['role' => 'system', 'content' => $this->personalise($this->flashcardSystemPrompt())],
+                        ['role' => 'user',   'content' => $optimizedPrompt],
                     ],
-                    'json' => [
-                        'model' => 'deepseek-v4-flash',
-                        'messages' => [
-                            ['role' => 'system', 'content' => $systemPrompt],
-                            ['role' => 'user', 'content' => $prompt],
-                        ],
-                        'temperature' => 0.3, // Lower temperature for more consistent grading
-                        'response_format' => ['type' => 'json_object'],
-                    ],
-                ]
-            );
-
-            $data = json_decode($response->getBody()->getContents(), true);
-            $content = json_decode($data['choices'][0]['message']['content'], true);
-
-            $result = [
-                'marks' => (float) ($content['marks'] ?? 0),
-                'confidence' => (float) ($content['confidence'] ?? 50),
-                'reasoning' => $content['reasoning'] ?? 'AI graded response.',
-                'ai_feedback' => $content['feedback'] ?? '',
-                'analysis' => $content['analysis'] ?? [],
-                'plagiarism_score' => 0, // Deepseek doesn't natively provide this yet
-                'consistency_score' => 100,
-            ];
-
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'grade_theory_answer',
-                'request' => [
-                    'question_length' => strlen($questionText),
-                    'student_answer_length' => strlen($studentAnswer),
-                    'model_answer_length' => strlen($modelAnswer),
-                    'rubric_provided' => !empty($rubric),
-                    'max_marks' => $maxMarks,
+                    'temperature'     => 0.5,
+                    'max_tokens'      => min(8192, max(1000, $numberOfCards * 200)),
+                    'response_format' => ['type' => 'json_object'],
                 ],
-                'response' => [
-                    'marks_awarded' => $result['marks'],
-                    'confidence' => $result['confidence'],
-                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
-                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
-                ],
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
+            ]);
 
-            return $result;
+            $data      = json_decode($response->getBody()->getContents(), true);
+            $content   = $data['choices'][0]['message']['content'] ?? null;
+
+            if (!$content) throw new \Exception('Invalid response from DeepSeek API');
+
+            if ($progressCallback) $progressCallback(50, 'Parsing flashcards...');
+
+            $jsonString = trim(preg_replace('/```(?:json)?|```/', '', $content));
+            $decoded    = json_decode($jsonString, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                preg_match('/\[.*\]/s', $jsonString, $matches);
+                $decoded = !empty($matches[0]) ? json_decode($matches[0], true) : null;
+            }
+
+            if (is_array($decoded) && isset($decoded['flashcards'])) {
+                $decoded = $decoded['flashcards'];
+            }
+
+            if (!is_array($decoded)) {
+                throw new \Exception('AI generated invalid JSON: ' . substr($jsonString, 0, 100));
+            }
+
+            $this->aiLog('generate_flashcards', [
+                'notes_count'    => count($notes),
+                'number_of_cards' => $numberOfCards,
+                'difficulty'     => $difficulty,
+            ], [
+                'cards_count'   => count($decoded),
+                'input_tokens'  => $data['usage']['prompt_tokens'] ?? null,
+                'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+            ], null, $startTime);
+
+            return $decoded;
+
         } catch (\Exception $e) {
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'grade_theory_answer',
-                'request' => [
-                    'question_length' => strlen($questionText),
-                    'student_answer_length' => strlen($studentAnswer),
-                    'model_answer_length' => strlen($modelAnswer),
-                    'rubric_provided' => !empty($rubric),
-                    'max_marks' => $maxMarks,
-                ],
-                'error' => $e,
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
-            throw $this->handleApiException($e, 'Grading');
+            $this->aiLog('generate_flashcards', ['notes_count' => count($notes), 'number_of_cards' => $numberOfCards], [], $e, $startTime);
+            Log::error('Flashcard Generation Error: ' . $e->getMessage());
+            throw new \Exception('Failed to generate flashcards: ' . $e->getMessage());
         }
     }
 
+    // ─── Scan & Solve (Streaming) ─────────────────────────────────────────────
+
     /**
-     * Stream solve for a scanned image.
-     *
-     * Matches Anthropic streaming approach (SSE), but uses DeepSeek stream over /chat/completions.
-     *
-     * Expects the caller to pass a callback that receives decoded JSON chunk payloads.
+     * Stream-solve a scanned exam image over SSE.
+     * Step 1: Google Cloud Vision OCR.
+     * Step 2: DeepSeek stream with strict formatting rules.
      */
     public function streamSolveFromImage(string $base64Image, callable $onChunk, ?callable $onStatus = null): void
     {
@@ -536,145 +383,128 @@ DeepSeek-specific rule:
             set_time_limit(300);
 
             if ($onStatus) $onStatus('Reading text from image...');
-            Log::info('Deepseek Vision: Streaming image via OCR + SSE...');
 
-            // Step 1: Cloud-Based OCR (Google Cloud Vision)
             $extractedText = $this->ocrFromBase64($base64Image);
 
             if (empty(trim($extractedText))) {
                 throw new \Exception('Could not read any text from the image. Please try a clearer photo.');
             }
 
-            if ($onStatus) $onStatus('Analyzing question...');
+            if ($onStatus) $onStatus('Analysing question...');
 
-            $prompt = <<<PROMPT
-You are a world-class tutor. The text below was extracted via OCR from a student's exam photo. Fix any OCR errors (e.g. "dy dx" -> "dy/dx").
-
-"{$extractedText}"
-
-Return ONLY a raw JSON object matching this schema. NO Conversational text. NO Thought blocks. NO code blocks.
-{"results":[{"question":"","topic":"subject area","type":"calculation|theory","solution":"**The answer is...**","steps":[],"explanation":"concise but complete explanation","summary":""}]}
-
-Rules:
-- `question`: leave this string completely EMPTY (""). DO NOT output the original question or options.
-- `solution`: Start with a conversational phrase like "The answer is..." or "Your pick should be..." followed by the final answer. e.g. "The answer is **D**".
-- `steps`: always `[]` (put steps in explanation instead)
-- `summary`: always ""
-- `explanation`: State the answer upfront, then justify it. You MUST structure the explanation into clear, step-by-step paragraphs separated by double newlines (\n\n) to ensure high readability. Do NOT merge multiple equations and steps into a single dense block of text.
-- `Math Formatting`: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs \$ ... \$ (e.g. \$\\frac{1}{2}g\$ or \$2^5\$ or \$x^2\$). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text, as the KaTeX renderer will not parse them.
-- `Decimal Fractions Rule`: When writing fractions with decimal numbers (e.g. 8.42 / 9.8), always wrap the entire decimal numbers in the numerator and denominator (e.g. \$\\frac{8.42}{9.8}\$). Never split inside a decimal point (do NOT write 8.\\frac{42}{9}.8 under any circumstances).
-PROMPT;
-
-            $systemPrompt = <<<'SYSTEM'
-# Role
-You are an expert academic tutor skilled at explaining concepts, solving problems, and designing assessments across all subjects and academic levels.
-
-# Task
-Respond to tutoring requests by providing clear, structured learning support in valid JSON format only.
-
-# Context
-Students at mixed academic levels need reliable, consistent tutoring. They expect authoritative answers formatted predictably.
-
-# Instructions
-
-**Core Behaviors:**
-- Return only valid JSON with no additional text, preamble, or meta-commentary.
-- Use Markdown formatting (headings, lists, bolding) **INSIDE** the JSON strings for better structure.
-- Do NOT wrap the entire JSON response in markdown code blocks (e.g. ```json).
-- No internal reasoning, self-corrections, or scratchpads.
-
-**Subject-Specific Rules:**
-1. **Mathematical/Problem Solving (Math, Physics, Engineering):** Focus on step-by-step logic. **Each step must be a separate block**.
-   - **Prose Labels**: Labels like "Inner integral:" or "Simplifying:" must be on their own line, followed by a newline.
-   - **Math Blocks**: Use dedicated lines for math expressions. Wrap important equations in `$$` for display-mode rendering (centered, large).
-   - **Spacing**: Use double newlines (\n\n) between logical steps.
-2. **Theoretical/Descriptive (Medicine, Law, Psychology, Social Sciences):** Provide **lengthy, detailed, and comprehensive notes**. Psychology, Medicine, and Law depend on **depth and length**, not brevity. Use rich Markdown formatting: **### Headings**, **bullet points**, and **bold text** to organize information. (Note: These Markdown elements ARE supported by the renderer). If appropriate or requested, include academic or clinical references/citations at the end of the explanation.
-
-**For Problem Solutions:**
-Structure as: `{"results": [{"question": "", "topic": "", "type": "", "solution": "", "steps": [], "explanation": "", "summary": ""}]}`
-- **Crucial**: The `question` field must be left completely empty (""). Do not transcribe the question.
-- For theoretical questions, use the "Detailed Note" approach in the `explanation` field.
-- Use double newlines (\n\n) to create distinct paragraphs.
-- `solution`: Start with a conversational phrase like "The answer is..." or "Your pick should be..." followed by the final answer. e.g. "The answer is **D**".
-- `steps`: always `[]`
-- `summary`: always `""`
-
-**Tone and Approach:**
-- Be direct and authoritative.
-- **For Theoretical Subjects:** Adopt a "Deep Dive" mentality. Length and detail are required.
-- Don't seek clarification; deliver the response.
-SYSTEM;
+            $userPrompt = $this->buildSolveUserPrompt($extractedText);
 
             $params = [
-                'model' => 'deepseek-v4-flash',
-                'stream' => true,
-                'temperature' => 0.3,
-                'max_tokens' => 8192,
+                'model'           => $this->model,
+                'stream'          => true,
+                'temperature'     => 0.3,
+                'max_tokens'      => 8192,
                 'response_format' => ['type' => 'json_object'],
-                'messages' => [
-                    [
-                        'role' => 'system',
-                        'content' => $this->getPersonalizedSystemPrompt($systemPrompt),
-                    ],
-                    [
-                        'role' => 'user',
-                        'content' => $prompt,
-                    ],
+                'messages'        => [
+                    ['role' => 'system', 'content' => $this->personalise(self::SOLVE_SYSTEM_PROMPT . self::MATH_RULES)],
+                    ['role' => 'user',   'content' => $userPrompt],
                 ],
-                'stream_action' => 'stream_solve_from_image',
+                'stream_action'   => 'stream_solve_from_image',
             ];
 
             $this->streamRequest($params, $onChunk);
+
         } catch (\Exception $e) {
             throw $this->handleApiException($e, 'Image Stream Solve');
         }
     }
 
-    /**
-     * Stream a request to DeepSeek (SSE)
-     */
-    public function streamRequest(array $params, callable $onChunk)
+    // ─── Scan & Solve (Non-Streaming) ─────────────────────────────────────────
+
+    public function solveFromImage(string $base64Image): array
     {
         $startTime = microtime(true);
-        $action = $params['stream_action'] ?? 'stream_request';
-        $model = $params['model'] ?? 'deepseek-v4-flash';
+        try {
+            set_time_limit(300);
+
+            $extractedText = $this->ocrFromBase64($base64Image);
+
+            if (empty(trim($extractedText))) {
+                throw new \Exception('Could not read any text from the image. Please try a clearer photo.');
+            }
+
+            $userPrompt = $this->buildSolveUserPrompt($extractedText);
+
+            $response = $this->client->post($this->baseUrl . '/chat/completions', [
+                'headers' => $this->headers(),
+                'timeout' => $this->timeout,
+                'json' => [
+                    'model'           => $this->model,
+                    'messages'        => [
+                        ['role' => 'system', 'content' => self::SOLVE_SYSTEM_PROMPT . self::MATH_RULES],
+                        ['role' => 'user',   'content' => $userPrompt],
+                    ],
+                    'temperature'     => 0.3,
+                    'max_tokens'      => 8192,
+                    'response_format' => ['type' => 'json_object'],
+                ],
+            ]);
+
+            $data    = json_decode($response->getBody()->getContents(), true);
+            $content = $data['choices'][0]['message']['content'] ?? null;
+
+            if (!$content) throw new \Exception('Invalid response from DeepSeek API');
+
+            $decoded = json_decode($content, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $decoded = json_decode(trim(preg_replace('/```(?:json)?|```/', '', $content)), true);
+            }
+            if (!is_array($decoded) || !isset($decoded['results'])) {
+                throw new \Exception('AI returned invalid JSON structure for scan-solve');
+            }
+
+            $this->aiLog('solve_from_image', [
+                'image_length'    => strlen($base64Image),
+                'ocr_text_length' => strlen($extractedText),
+            ], [
+                'results_count' => count($decoded['results']),
+                'input_tokens'  => $data['usage']['prompt_tokens'] ?? null,
+                'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+            ], null, $startTime);
+
+            return $decoded;
+
+        } catch (\Exception $e) {
+            $this->aiLog('solve_from_image', ['image_length' => strlen($base64Image)], [], $e, $startTime);
+            throw $this->handleApiException($e, 'Image Solve');
+        }
+    }
+
+    // ─── Stream Request (SSE core) ────────────────────────────────────────────
+
+    public function streamRequest(array $params, callable $onChunk): void
+    {
+        $startTime = microtime(true);
+        $action    = $params['stream_action'] ?? 'stream_request';
+        $model     = $params['model'] ?? $this->model;
         unset($params['stream_action']);
 
-        // Keep a buffer visible to the catch block for diagnostics
         $buffer = '';
 
         try {
+            // Hoist any top-level system key into messages[0]
             if (isset($params['system'])) {
-                $systemContent = $this->getPersonalizedSystemPrompt($params['system']);
-                if (!isset($params['messages'])) {
-                    $params['messages'] = [];
-                }
-                array_unshift($params['messages'], ['role' => 'system', 'content' => $systemContent]);
+                $sysContent = $this->personalise($params['system']);
+                $params['messages'] = array_merge([['role' => 'system', 'content' => $sysContent]], $params['messages'] ?? []);
                 unset($params['system']);
             }
-            
+
             $params['stream'] = true;
 
             $response = $this->client->post($this->baseUrl . '/chat/completions', [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $this->apiKey,
-                    'Content-Type' => 'application/json',
-                ],
-                'json' => $params,
-                'stream' => true,
+                'headers' => $this->headers(),
+                'json'    => $params,
+                'stream'  => true,
             ]);
 
             $body = $response->getBody();
 
-            // Log stream initiation
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => $model,
-                'action' => $action . '_start',
-                'request' => [
-                    'stream_params_keys' => array_keys($params),
-                ],
-            ], auth()->user());
+            $this->aiLog($action . '_start', ['stream_keys' => array_keys($params)], [], null, $startTime);
 
             while (!$body->eof()) {
                 $chunk = $body->read(1024);
@@ -682,968 +512,559 @@ SYSTEM;
                 $buffer .= $chunk;
 
                 while (($pos = strpos($buffer, "\n\n")) !== false) {
-                    $event = substr($buffer, 0, $pos);
+                    $event  = substr($buffer, 0, $pos);
                     $buffer = substr($buffer, $pos + 2);
 
-                    foreach (explode("\n", str_replace("\r", "", $event)) as $line) {
+                    foreach (explode("\n", str_replace("\r", '', $event)) as $line) {
                         $line = trim($line);
                         if ($line === '' || !str_starts_with($line, 'data: ')) continue;
 
                         $data = substr($line, 6);
-                        if ($data === '[DONE]') {
-                            break 2;
-                        }
+                        if ($data === '[DONE]') break 2;
 
                         $decoded = json_decode($data, true);
                         if (json_last_error() !== JSON_ERROR_NONE) {
-                            $err = json_last_error_msg();
-                            \App\Support\AILogger::log([
-                                'provider' => 'deepseek',
-                                'model' => $model,
-                                'action' => $action . '_parse_error',
-                                'error' => $err,
-                                'raw_snippet' => substr($data, 0, 2000),
-                            ], auth()->user());
-                            \Illuminate\Support\Facades\Log::error("Deepseek stream parse error: {$err}", ['model' => $model, 'action' => $action, 'snippet' => substr($data, 0, 2000)]);
+                            Log::error('DeepSeek stream parse error', ['model' => $model, 'snippet' => substr($data, 0, 500)]);
                             continue;
                         }
-
-                        if (!is_array($decoded)) {
-                            \App\Support\AILogger::log([
-                                'provider' => 'deepseek',
-                                'model' => $model,
-                                'action' => $action . '_unexpected_chunk',
-                                'raw_snippet' => substr($data, 0, 2000),
-                            ], auth()->user());
-                            \Illuminate\Support\Facades\Log::warning('Deepseek stream unexpected chunk', ['model' => $model, 'action' => $action, 'snippet' => substr($data, 0, 2000)]);
-                            continue;
-                        }
+                        if (!is_array($decoded)) continue;
 
                         try {
                             $onChunk($decoded);
                         } catch (\Exception $eh) {
-                            \App\Support\AILogger::log([
-                                'provider' => 'deepseek',
-                                'model' => $model,
-                                'action' => $action . '_onchunk_error',
-                                'error' => $eh->getMessage(),
-                                'chunk_snippet' => substr($data, 0, 2000),
-                            ], auth()->user());
-                            \Illuminate\Support\Facades\Log::error('Deepseek onChunk handler error: ' . $eh->getMessage(), ['model' => $model, 'action' => $action]);
+                            Log::error('DeepSeek onChunk handler error: ' . $eh->getMessage(), ['model' => $model, 'action' => $action]);
                         }
                     }
                 }
             }
 
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => $model,
-                'action' => $action . '_end',
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
+            $this->aiLog($action . '_end', [], [], null, $startTime);
 
         } catch (RequestException $e) {
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            $resp = $e->getResponse();
-            $httpBody = $resp ? (string) $resp->getBody() : null;
+            $resp      = $e->getResponse();
+            $httpBody  = $resp ? (string) $resp->getBody() : null;
             $httpStatus = $resp ? $resp->getStatusCode() : null;
-
-            $log = [
-                'provider' => 'deepseek',
-                'model' => $model,
-                'action' => $action . '_error',
-                'exception' => $e->getMessage(),
-                'http_status' => $httpStatus,
-                'http_body_snippet' => $httpBody ? substr($httpBody, 0, 4000) : null,
-                'stream_buffer_tail' => substr($buffer, -4000),
-                'latency_ms' => $latencyMs,
-            ];
-
-            \App\Support\AILogger::log($log, auth()->user());
-            \Illuminate\Support\Facades\Log::error('Deepseek streamRequest RequestException: ' . $e->getMessage(), $log);
-            throw $e;
-
-        } catch (\Exception $e) {
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            $log = [
-                'provider' => 'deepseek',
-                'model' => $model,
-                'action' => $action . '_error',
-                'exception' => $e->getMessage(),
-                'stream_buffer_tail' => substr($buffer, -4000),
-                'latency_ms' => $latencyMs,
-            ];
-
-            \App\Support\AILogger::log($log, auth()->user());
-            \Illuminate\Support\Facades\Log::error('Deepseek streamRequest error: ' . $e->getMessage(), $log);
-            throw $e;
-        }
-    }
-
-    /**
-     * Generate Flashcards from notes or a topic
-     */
-    public function generateFlashcards(
-        array $notes,
-        int $numberOfCards,
-        string $difficulty = 'mixed',
-        string $prompt = '',
-        ?callable $progressCallback = null
-    ): array {
-        $startTime = microtime(true);
-        // Sanitize user inputs to protect against prompt injection
-        $notes = array_map(fn($note) => \App\Support\PromptSanitizer::sanitize($note), $notes);
-        if (!empty($prompt)) {
-            $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
-        }
-
-        $optimizedPrompt = $this->buildFlashcardPrompt(
-            $notes,
-            $numberOfCards,
-            $difficulty,
-            $prompt
-        );
-
-        try {
-            if ($progressCallback) $progressCallback(0, 'Calling AI...');
-
-            $response = $this->client->post(
-                $this->baseUrl . '/chat/completions',
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json',
-                    ],
-                    'timeout' => $this->timeout,
-                    'json' => [
-                        'model' => 'deepseek-v4-flash',
-                        'messages' => [
-                            [
-                                'role' => 'system',
-                                // MATH FORMATTING RULES added
-                                'content' => $this->getPersonalizedSystemPrompt('You are an expert tutor creating highly effective flashcards. Return only JSON. Wrap all math/formulas in dollar signs, e.g. $x^2$.
-
-MATH FORMATTING RULES:
-1. Inline math: Use $...$ delimiters. Inline fractions should be compact, e.g., $\frac{a}{b}$.
-2. Display math: Use $$...$$ delimiters on separate lines for important equations, limits, or complex expressions.
-3. Structured lists: Use enumerate environments or numbered lists with math expressions where needed.
-4. Align environments: For multiple equations, use $$\begin{align}...\\end{align}$$ with proper line breaks.
-5. Braces: Always wrap command arguments in braces, e.g., $\sqrt{x}$ not $\sqrt x$.
-6. Command groups: Commands like \sin, \cos, \lim must be followed by argument braces or left/right delimiters.
-7. Limits: Use underscore and caret with braces for limits, e.g., $\sum_{i=1}^{n}$ not $\sum_i^n$.
-8. Subscripts/superscripts: Always brace multicharacter subscripts/superscripts, e.g., $x_{ij}$ or $a^{2n}$.
-9. Text within math: Use $\text{word}$ for text inside math mode, never mix plain text.
-10. Percent signs: Escape as \\% inside math mode; use plain % in prose.
-11. Chemistry notation: Use element symbols directly (e.g., H2O, CO2) without math mode unless in calculation contexts.
-
-DeepSeek-specific rule:
-12. NO CHAIN-OF-THOUGHT: Never include <think> tags or reasoning blocks. Output ONLY the final JSON result.'),
-                            ],
-                            [
-                                'role' => 'user',
-                                'content' => $optimizedPrompt,
-                            ],
-                        ],
-                        'temperature' => 0.5,
-                        'max_tokens' => min(8192, max(1000, $numberOfCards * 200)),
-                        'response_format' => ['type' => 'json_object'],
-                    ],
-                ]
-            );
-
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            if (!isset($data['choices'][0]['message']['content'])) {
-                throw new \Exception('Invalid response from Deepseek API');
-            }
-
-            $jsonString = $data['choices'][0]['message']['content'];
-            
-            if ($progressCallback) $progressCallback(50, 'Parsing Flashcards...');
-
-            // Clean up markdown code blocks if present
-            $jsonString = preg_replace('/```(?:json)?|```/', '', $jsonString);
-            $jsonString = trim($jsonString);
-
-            $decoded = json_decode($jsonString, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                // Fallback attempt: Try to extract JSON array using regex if raw decode fails
-                preg_match('/\[.*\]/s', $jsonString, $matches);
-                if (!empty($matches[0])) {
-                    $decoded = json_decode($matches[0], true);
-                }
-            }
-
-            // Handle {flashcards: [...]} wrapper from JSON object mode
-            if (is_array($decoded) && isset($decoded['flashcards']) && is_array($decoded['flashcards'])) {
-                $decoded = $decoded['flashcards'];
-            }
-
-            if (!is_array($decoded)) {
-                throw new \Exception("AI generated invalid JSON: " . substr($jsonString, 0, 100));
-            }
-
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'generate_flashcards',
-                'request' => [
-                    'notes_count' => count($notes),
-                    'notes_char_length' => strlen(implode('', $notes)),
-                    'number_of_cards' => $numberOfCards,
-                    'difficulty' => $difficulty,
-                    'prompt' => $prompt,
-                ],
-                'response' => [
-                    'cards_count' => count($decoded),
-                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
-                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
-                ],
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
-
-            return $decoded;
-
-        } catch (\Exception $e) {
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'generate_flashcards',
-                'request' => [
-                    'notes_count' => count($notes),
-                    'notes_char_length' => strlen(implode('', $notes)),
-                    'number_of_cards' => $numberOfCards,
-                    'difficulty' => $difficulty,
-                    'prompt' => $prompt,
-                ],
-                'error' => $e,
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
-
-            Log::error('Flashcard Generation Error: ' . $e->getMessage(), [
-                'prompt_preview' => substr($optimizedPrompt, 0, 200),
-                'error' => $e->getMessage()
+            Log::error("DeepSeek streamRequest RequestException: {$e->getMessage()}", [
+                'http_status'        => $httpStatus,
+                'http_body_snippet'  => $httpBody ? substr($httpBody, 0, 2000) : null,
+                'buffer_tail'        => substr($buffer, -2000),
             ]);
-            throw new \Exception("Failed to generate flashcards: " . $e->getMessage());
+            $this->aiLog($action . '_error', [], [], $e, $startTime);
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error("DeepSeek streamRequest error: {$e->getMessage()}", ['buffer_tail' => substr($buffer, -2000)]);
+            $this->aiLog($action . '_error', [], [], $e, $startTime);
+            throw $e;
         }
     }
 
-    /**
-     * Build OPTIMIZED prompt for flashcards
-     */
-    protected function buildFlashcardPrompt(
-        array $notes,
-        int $numberOfCards,
-        string $difficulty,
-        string $userPrompt = ''
-    ): string {
-        $notesText = implode("\n", $notes);
-        $notesText = preg_replace('/\s+/', ' ', $notesText);
-        
-        $diffShort = match($difficulty) {
-            'easy' => 'E',
-            'medium' => 'M',
-            'hard' => 'H',
-            'mixed' => 'E/M/H',
-            default => 'E/M/H',
-        };
+    // ─── Other Methods ────────────────────────────────────────────────────────
 
-        // Word limits based on difficulty to keep cards concise
-        switch ($difficulty) {
-            case 'easy':
-                $frontLimit = 12; $backLimit = 25; break;
-            case 'medium':
-                $frontLimit = 10; $backLimit = 20; break;
-            case 'hard':
-                $frontLimit = 8;  $backLimit = 15; break;
-            default:
-                $frontLimit = 10; $backLimit = 20; break;
-        }
-
-        $focusSection = !empty($userPrompt) ? "\nFOCUS: {$userPrompt}" : '';
-
-        return <<<PROMPT
-Gen EXACTLY {$numberOfCards} Flashcards. Diff: {$diffShort}.{$focusSection}
-
-INPUT: {$notesText}
-
-Format: JSON strictly. No markdown wrappers. Just a raw array.
-Language: Ultra-simple English.
-Schema: [{"front": "Question or concept (short)", "back": "Answer or definition"}]
-
-Rules:
-1. The 'front' should be a clear, concise question, term, or concept. Keep it under {$frontLimit} words.
-2. The 'back' must be the direct answer or definition. Keep it concise and under {$backLimit} words (no more than {$backLimit} words). If the answer requires more detail, shorten to a precise summary.
-3. Output ONLY valid JSON.
-4. MATH/SCIENCE: Always format ALL mathematical expressions, equations, formulas, fractions, variables, and exponents in proper LaTeX and wrap them inside standard inline dollar signs \$ ... \$ (e.g. \$\\frac{1}{2}g\$ or \$2^5\$ or \$x^2\$). Never output bare exponents (like 2^5) or un-delimited fractions (like 1/2) in plain text.
-PROMPT;
-    }
-
-    /**
-     * Generate generic text response (for Chat/Tutor mode)
-     */
-    public function generateText(string $prompt, string $systemPrompt = "You are a helpful assistant."): string
+    public function generateAnnouncementDraft(string $prompt): array
     {
         $startTime = microtime(true);
-        $prompt = \App\Support\PromptSanitizer::sanitize($prompt);
+        $prompt    = \App\Support\PromptSanitizer::sanitize($prompt);
+
         try {
-            $response = $this->client->post(
-                $this->baseUrl . '/chat/completions',
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json',
+            $currentDate  = now()->toDateTimeString();
+            $systemPrompt = "You are an assistant for a school administrator. Generate a professional and engaging announcement based on the user's prompt. The current date and time is: {$currentDate}.
+
+Return JSON with keys:
+- title: A catchy and relevant title.
+- content: Detailed but concise announcement content.
+- event_start_date: If a date is mentioned, convert to 'Y-m-d\TH:i'. Otherwise null.
+- event_end_date: If an end date/duration is mentioned, convert to 'Y-m-d\TH:i'. Otherwise default to exactly one hour after event_start_date. If event_start_date exists, event_end_date MUST exist.
+
+Use a friendly yet professional tone.";
+
+            $response = $this->client->post($this->baseUrl . '/chat/completions', [
+                'headers' => $this->headers(),
+                'json' => [
+                    'model'           => $this->model,
+                    'messages'        => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user',   'content' => $prompt],
                     ],
-                    'json' => [
-                        'model' => 'deepseek-v4-flash',
-                        'messages' => [
-                            ['role' => 'system', 'content' => $systemPrompt],
-                            ['role' => 'user', 'content' => $prompt],
-                        ],
-                        'temperature' => 0.7,
+                    'temperature'     => 0.7,
+                    'response_format' => ['type' => 'json_object'],
+                ],
+            ]);
+
+            $data    = json_decode($response->getBody()->getContents(), true);
+            $content = json_decode($data['choices'][0]['message']['content'], true);
+
+            $result = [
+                'title'            => $content['title'] ?? '',
+                'content'          => $content['content'] ?? '',
+                'event_start_date' => $content['event_start_date'] ?? null,
+                'event_end_date'   => $content['event_end_date'] ?? null,
+            ];
+
+            $this->aiLog('draft_announcement', ['prompt_length' => strlen($prompt)], [
+                'title'         => $result['title'],
+                'input_tokens'  => $data['usage']['prompt_tokens'] ?? null,
+                'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+            ], null, $startTime);
+
+            return $result;
+
+        } catch (\Exception $e) {
+            $this->aiLog('draft_announcement', ['prompt_length' => strlen($prompt)], [], $e, $startTime);
+            throw $this->handleApiException($e, 'Announcement');
+        }
+    }
+
+    public function gradeTheoryAnswer(
+        string $questionText,
+        string $studentAnswer,
+        string $modelAnswer = '',
+        array  $rubric      = [],
+        float  $maxMarks    = 10.0
+    ): array {
+        $startTime     = microtime(true);
+        $questionText  = \App\Support\PromptSanitizer::sanitize($questionText);
+        $studentAnswer = \App\Support\PromptSanitizer::sanitize($studentAnswer);
+        if (!empty($modelAnswer)) $modelAnswer = \App\Support\PromptSanitizer::sanitize($modelAnswer);
+
+        try {
+            $rubricText      = !empty($rubric) ? json_encode($rubric) : 'Grade based on accuracy and completeness.';
+            $modelAnswerText = !empty($modelAnswer) ? "MODEL ANSWER: {$modelAnswer}" : 'No model answer provided. Use general subject knowledge.';
+
+            $systemPrompt = "You are an expert academic examiner. Grade the student's answer and return JSON with keys: marks (float, out of {$maxMarks}), confidence (float 0–100), reasoning (string), feedback (string), analysis (object). Be fair but strict — partial credit for partial answers.";
+
+            $prompt = "QUESTION: {$questionText}\n{$modelAnswerText}\nRUBRIC: {$rubricText}\nSTUDENT ANSWER: {$studentAnswer}\nMAX MARKS: {$maxMarks}\n\nGrade this answer now.";
+
+            $response = $this->client->post($this->baseUrl . '/chat/completions', [
+                'headers' => $this->headers(),
+                'json' => [
+                    'model'           => $this->model,
+                    'messages'        => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user',   'content' => $prompt],
                     ],
-                    'timeout' => $this->timeout,
-                ]
-            );
+                    'temperature'     => 0.3,
+                    'response_format' => ['type' => 'json_object'],
+                ],
+            ]);
+
+            $data    = json_decode($response->getBody()->getContents(), true);
+            $content = json_decode($data['choices'][0]['message']['content'], true);
+
+            $result = [
+                'marks'             => (float) ($content['marks'] ?? 0),
+                'confidence'        => (float) ($content['confidence'] ?? 50),
+                'reasoning'         => $content['reasoning'] ?? 'AI graded response.',
+                'ai_feedback'       => $content['feedback'] ?? '',
+                'analysis'          => $content['analysis'] ?? [],
+                'plagiarism_score'  => 0,
+                'consistency_score' => 100,
+            ];
+
+            $this->aiLog('grade_theory_answer', [
+                'question_length'      => strlen($questionText),
+                'student_answer_length' => strlen($studentAnswer),
+                'max_marks'            => $maxMarks,
+            ], [
+                'marks_awarded' => $result['marks'],
+                'confidence'    => $result['confidence'],
+                'input_tokens'  => $data['usage']['prompt_tokens'] ?? null,
+                'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+            ], null, $startTime);
+
+            return $result;
+
+        } catch (\Exception $e) {
+            $this->aiLog('grade_theory_answer', ['question_length' => strlen($questionText)], [], $e, $startTime);
+            throw $this->handleApiException($e, 'Grading');
+        }
+    }
+
+    public function generateText(string $prompt, string $systemPrompt = 'You are a helpful assistant.'): string
+    {
+        $startTime = microtime(true);
+        $prompt    = \App\Support\PromptSanitizer::sanitize($prompt);
+
+        try {
+            $response = $this->client->post($this->baseUrl . '/chat/completions', [
+                'headers' => $this->headers(),
+                'timeout' => $this->timeout,
+                'json' => [
+                    'model'       => $this->model,
+                    'messages'    => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user',   'content' => $prompt],
+                    ],
+                    'temperature' => 0.7,
+                ],
+            ]);
 
             $data = json_decode($response->getBody()->getContents(), true);
             $text = $data['choices'][0]['message']['content'] ?? "I'm sorry, I couldn't generate a response.";
 
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'generate_text',
-                'request' => [
-                    'prompt_length' => strlen($prompt),
-                    'system_prompt_length' => strlen($systemPrompt),
-                ],
-                'response' => [
-                    'text_length' => strlen($text),
-                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
-                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
-                ],
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
+            $this->aiLog('generate_text', ['prompt_length' => strlen($prompt)], [
+                'text_length'   => strlen($text),
+                'input_tokens'  => $data['usage']['prompt_tokens'] ?? null,
+                'output_tokens' => $data['usage']['completion_tokens'] ?? null,
+            ], null, $startTime);
 
             return $text;
+
         } catch (\Exception $e) {
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'generate_text',
-                'request' => [
-                    'prompt_length' => strlen($prompt),
-                    'system_prompt_length' => strlen($systemPrompt),
-                ],
-                'error' => $e,
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
-
-            Log::error('Text Generation Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return "I'm having trouble connecting to my brain right now. Please try again later.";
+            $this->aiLog('generate_text', ['prompt_length' => strlen($prompt)], [], $e, $startTime);
+            Log::error('Text Generation Error: ' . $e->getMessage());
+            return "I'm having trouble connecting right now. Please try again later.";
         }
     }
 
-    /**
-     * Generate cache key - identical inputs = cached results
-     */
-    protected function generateCacheKey(array $notes, int $numberOfQuestions, string $difficulty, array $questionTypes, string $prompt = '', bool $includeVisuals = false): string
+    public function translateText(string $text, string $targetLanguage): string
     {
-        sort($questionTypes);
-        $paramString = json_encode([
-            'notes' => $notes,
-            'count' => $numberOfQuestions,
-            'diff' => $difficulty,
-            'types' => $questionTypes,
-            'prompt' => $prompt,
-            'visuals' => $includeVisuals,
-        ]);
+        $startTime = microtime(true);
+        try {
+            $response = $this->client->post($this->baseUrl . '/chat/completions', [
+                'headers' => $this->headers(),
+                'json' => [
+                    'model'       => $this->model,
+                    'messages'    => [
+                        ['role' => 'system', 'content' => "Translate the following text into {$targetLanguage}. Preserve all technical terms and formatting. Return ONLY the translated text."],
+                        ['role' => 'user',   'content' => $text],
+                    ],
+                    'temperature' => 0.3,
+                ],
+            ]);
 
-        $hash = hash('sha256', $paramString);
-        return "skeeme:ai_q:" . substr($hash, 0, 32);
+            $data       = json_decode($response->getBody()->getContents(), true);
+            $translated = $data['choices'][0]['message']['content'] ?? $text;
+
+            $this->aiLog('translate_text', ['text_length' => strlen($text), 'target_language' => $targetLanguage], [
+                'translated_length' => strlen($translated),
+                'input_tokens'      => $data['usage']['prompt_tokens'] ?? null,
+                'output_tokens'     => $data['usage']['completion_tokens'] ?? null,
+            ], null, $startTime);
+
+            return $translated;
+
+        } catch (\Exception $e) {
+            $this->aiLog('translate_text', ['text_length' => strlen($text)], [], $e, $startTime);
+            Log::error('Translation Error: ' . $e->getMessage());
+            return $text;
+        }
+    }
+
+    public function testConnection(): bool
+    {
+        try {
+            $response = $this->client->post($this->baseUrl . '/chat/completions', [
+                'headers' => $this->headers(),
+                'json'    => [
+                    'model'      => $this->model,
+                    'messages'   => [['role' => 'user', 'content' => 'Test']],
+                    'max_tokens' => 10,
+                ],
+            ]);
+            return $response->getStatusCode() === 200;
+        } catch (\Exception $e) {
+            Log::error('DeepSeek connection test failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    // ─── Private Helpers ──────────────────────────────────────────────────────
+
+    private function headers(): array
+    {
+        return [
+            'Authorization' => 'Bearer ' . $this->apiKey,
+            'Content-Type'  => 'application/json',
+        ];
     }
 
     /**
-     * Build OPTIMIZED prompt - Reduces input tokens by ~60%
-     * 
-     * TOKEN REDUCTION TECHNIQUES:
-     * 1. Abbreviate terms (MC, TF, SA, ES, FB = -30% tokens)
-     * 2. Collapse whitespace (-20% tokens)
-     * 3. Shorten system prompt (-10% tokens)
-     * 4. Use shorthand JSON keys (-10% tokens)
-     * 5. Cache identical requests (100% token saving on reuse)
+     * Build the user-side prompt for Scan & Solve (both streaming and non-streaming).
+     * Keeping this in one place ensures both methods stay in sync.
      */
-    protected function buildOptimizedPrompt(
-        array $notes,
-        int $numberOfQuestions,
-        string $difficulty,
-        array $questionTypes,
-        string $userPrompt = '',
-        bool $includeVisuals = false,
-        ?array $aiPreferences = null
-    ): string {
-        // Abbreviate question types to reduce token count
-        $typeMap = [
-            'multiple_choice' => 'MC',
-            'true_false' => 'TF',
-            'short_answer' => 'SA',
-            'essay' => 'ES',
-            'fill_blank' => 'FB',
-        ];
-        
-        $types = array_map(fn($t) => $typeMap[$t] ?? 'MC', $questionTypes);
-        $typesText = implode('/', $types);
-        
-        // Compress material by collapsing extra whitespace
-        $notesText = implode("\n", $notes);
-        $notesText = preg_replace('/\s+/', ' ', $notesText);
-        
-        // Abbreviate difficulty
-        $diffShort = match($difficulty) {
-            'easy' => 'E',
-            'medium' => 'M',
-            'hard' => 'H',
-            'mixed' => 'E/M/H',
-            default => 'E/M/H',
-        };
-
-        // Add user focus/filter if provided
-        $focusSection = !empty($userPrompt) ? "\nFOCUS: {$userPrompt}" : '';
-
-        // Add visual generation instructions if requested
-        $visualsInstruction = "\nINSTRUCTION: Text only. No LaTeX/SVG.";
-        if ($includeVisuals) {
-            $visualsInstruction = "\nVISUALS: You can include VERY SIMPLE SVG diagrams (geometry/graphs) or LaTeX math. 
-            RULES FOR SVG: MUST be <svg viewBox='0 0 300 100' preserveAspectRatio='xMidYMid meet' ...>. No width/height attributes. Keep paths simple.
-            RULES FOR MATH: MUST wrap all math in $$...$$ (e.g. \$\$x^2\$\$).";
-        }
-
-        // Build personalization instructions from user preferences
-        $personalization = '';
-        if ($aiPreferences) {
-            $parts = [];
-            $levelMap = ['high_school' => 'High School', 'undergraduate' => 'Undergraduate', 'masters' => 'Masters/Graduate', 'professional' => 'Professional'];
-            $styleMap = ['simple' => 'Use ultra-simple language and simplified analogies', 'detailed' => 'Give detailed academic breakdowns'];
-            $toneMap = [
-                'supportive' => 'Be extremely warm, encouraging, and motivational (Supportive Coach)',
-                'strict' => 'Be strict, formal, and precise (Strict Academic Coach)',
-                'concise' => 'Be extremely concise and direct',
-                'fun' => 'Be fun, humorous, witty, and use pop-culture references'
-            ];
-            $analogyMap = [
-                'general' => 'Standard academic analogies',
-                'tech' => 'Explain abstract concepts using software, coding, hardware, or tech analogies',
-                'sports' => 'Explain abstract concepts using athletic dynamics, training, or sports analogies',
-                'gaming' => 'Explain abstract concepts using video games, levels, RPG mechanics, anime, or gaming analogies',
-                'pop_culture' => 'Explain abstract concepts using grocery store dynamics, coffee shops, or business model analogies'
-            ];
-            $goalMap = [
-                'conceptual' => 'Focus heavily on deep conceptual, first-principles understanding',
-                'exam' => 'Focus heavily on exam preparation tactics, high-yield facts, and test traps',
-                'cheat' => 'Focus heavily on cheat-sheet style summaries, mnemonics, and active recall elements'
-            ];
-
-            if (!empty($aiPreferences['education_level'])) {
-                $parts[] = 'Level: ' . ($levelMap[$aiPreferences['education_level']] ?? $aiPreferences['education_level']);
-            }
-            if (!empty($aiPreferences['field_of_study'])) {
-                $parts[] = 'Field: ' . $aiPreferences['field_of_study'];
-            }
-            if (!empty($aiPreferences['learning_style'])) {
-                $parts[] = 'Style: ' . ($styleMap[$aiPreferences['learning_style']] ?? $aiPreferences['learning_style']);
-            }
-            if (!empty($aiPreferences['tone'])) {
-                $parts[] = 'Tone: ' . ($toneMap[$aiPreferences['tone']] ?? $aiPreferences['tone']);
-            }
-            if (!empty($aiPreferences['analogy_focus'])) {
-                $parts[] = 'Analogies: ' . ($analogyMap[$aiPreferences['analogy_focus']] ?? $aiPreferences['analogy_focus']);
-            }
-            if (!empty($aiPreferences['academic_goal'])) {
-                $parts[] = 'Goal: ' . ($goalMap[$aiPreferences['academic_goal']] ?? $aiPreferences['academic_goal']);
-            }
-            if (!empty($aiPreferences['custom_weakness'])) {
-                $parts[] = 'Custom Weakness: ' . $aiPreferences['custom_weakness'];
-            }
-
-            if (!empty($parts)) {
-                $personalization = "\nSTUDENT PROFILE: " . implode('. ', $parts) . ". Tailor ALL questions and explanations to this profile.";
-            }
-        }
-
-        // Minimal but effective prompt with focus capability
+    private function buildSolveUserPrompt(string $extractedText): string
+    {
         return <<<PROMPT
-Gen EXACTLY {$numberOfQuestions} Q. Types: {$typesText}. Diff: {$diffShort}.{$focusSection}{$visualsInstruction}{$personalization}
+OCR text extracted from a student's exam photo (fix OCR artifacts like "dy dx" → "dy/dx"):
 
-INPUT (Notes or Topic): {$notesText}
+"{$extractedText}"
 
-Format: JSON only. Expand on topic or extract from notes.
-Language: YOU MUST detect the language of the provided material and generate the entire output in that EXACT same language. Use simple, natural language appropriate for the detected tongue.
-Math: Use proper Unicode characters for math (e.g. sec²(x), x³, √x). Do NOT use raw caret signs like sec^2.
-Schema: [{"q":"text","t":"MC|TF|SA|ES|FB","d":"E|M|H","o":["A","B"],"c":"A","xr":"targeted feedback if correct","xw":"targeted feedback if wrong"}]
+Instructions:
+- Return ONLY the JSON object. No extra text. No <think> blocks.
+- `question` field: ALWAYS leave as empty string "".
+- `solution` field: Start with a clear sentence like "The answer is **X**." or "Your pick should be **B**."
+- `explanation` field: You MUST follow these spacing rules or the app will break:
+  1. Start with a restatement of the answer.
+  2. Put \n\n between EVERY paragraph, step, and math block — no exceptions.
+  3. Each prose label ("Step 1:", "Substituting:", "Therefore:") must be on its OWN line followed by \n\n.
+  4. Each $$...$$ math block must be on its OWN line, with \n\n before and after it.
+  5. NEVER chain steps together in a single dense paragraph.
+  6. For theory questions: write a full, structured essay with ### headings and bullet points.
 PROMPT;
     }
 
     /**
-     * Parse questions from API response
+     * System prompt for quiz generation.
      */
-    protected function parseQuestionsFromResponse(string $response): array
+    private function quizSystemPrompt(): string
     {
-        // Clean up markdown code blocks if the AI decided to wrap the JSON
-        $cleanResponse = preg_replace('/```(?:json)?|```/', '', $response);
-        $cleanResponse = trim($cleanResponse);
+        return 'You are a quiz generator. Return only JSON. No chain-of-thought, no <think> tags, no markdown fences.'
+            . self::MATH_RULES;
+    }
 
-        // Attempt 1: Direct JSON Decode (Best for JSON Object mode)
-        $data = json_decode($cleanResponse, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            if (isset($data['questions']) && is_array($data['questions'])) {
-                return $this->formatQuestions($data['questions']);
+    /**
+     * System prompt for flashcard generation.
+     */
+    private function flashcardSystemPrompt(): string
+    {
+        return 'You are an expert tutor creating highly effective flashcards. Return only JSON. No chain-of-thought, no <think> tags, no markdown fences.'
+            . self::MATH_RULES;
+    }
+
+    /**
+     * Append student personalisation context to any system prompt.
+     */
+    private function personalise(string $basePrompt): string
+    {
+        $user = Auth::user();
+        if (!$user || !$this->personalizationService) return $basePrompt;
+        $context = $this->personalizationService->getSystemContext($user);
+        return empty(trim($context)) ? $basePrompt : $basePrompt . "\n\n" . $context;
+    }
+
+    /**
+     * OCR via Google Cloud Vision.
+     */
+    private function ocrFromBase64(string $base64Image): string
+    {
+        try {
+            $result = $this->visionService->ocr($base64Image);
+            if ($result['success'] && !empty(trim($result['text']))) {
+                return $result['text'];
             }
-            if (is_array($data) && array_is_list($data)) {
-                return $this->formatQuestions($data);
-            }
+            Log::warning('Google Vision returned empty or failed', ['error' => $result['error'] ?? null]);
+        } catch (\Exception $e) {
+            Log::error('Google Vision Exception: ' . $e->getMessage());
+        }
+        return '';
+    }
+
+    /**
+     * Central AI activity logger. Keeps all log calls to one line at the call site.
+     */
+    private function aiLog(string $action, array $request, array $response, ?\Exception $error, float $startTime): void
+    {
+        $payload = [
+            'provider'   => 'deepseek',
+            'model'      => $this->model,
+            'action'     => $action,
+            'request'    => $request,
+            'latency_ms' => (microtime(true) - $startTime) * 1000,
+        ];
+
+        if (!empty($response)) $payload['response'] = $response;
+        if ($error)            $payload['error']    = $error;
+
+        \App\Support\AILogger::log($payload, auth()->user());
+    }
+
+    // ─── Prompt Builders ──────────────────────────────────────────────────────
+
+    protected function buildOptimizedPrompt(
+        array   $notes,
+        int     $numberOfQuestions,
+        string  $difficulty,
+        array   $questionTypes,
+        string  $userPrompt    = '',
+        bool    $includeVisuals = false,
+        ?array  $aiPreferences  = null
+    ): string {
+        $typeMap = ['multiple_choice' => 'MC', 'true_false' => 'TF', 'short_answer' => 'SA', 'essay' => 'ES', 'fill_blank' => 'FB'];
+        $diffMap = ['easy' => 'E', 'medium' => 'M', 'hard' => 'H', 'mixed' => 'E/M/H'];
+
+        $typesText = implode('/', array_map(fn($t) => $typeMap[$t] ?? 'MC', $questionTypes));
+        $diffShort = $diffMap[$difficulty] ?? 'E/M/H';
+        $notesText = preg_replace('/\s+/', ' ', implode("\n", $notes));
+
+        $focusSection   = !empty($userPrompt) ? "\nFOCUS: {$userPrompt}" : '';
+        $visualsSection = "\nINSTRUCTION: Text only. No LaTeX/SVG.";
+
+        if ($includeVisuals) {
+            $visualsSection = "\nVISUALS: Simple SVG (<svg viewBox='0 0 300 100'...>) or LaTeX (\$\$...\$\$) allowed.";
         }
 
-        // Attempt 2: Fallback Regex Extraction (In case there's surrounding text)
-        $jsonPattern = '/\[[\s\S]*\]/';
-        if (preg_match($jsonPattern, $response, $matches)) {
-            $questions = json_decode($matches[0], true);
-
-            if (json_last_error() === JSON_ERROR_NONE && is_array($questions)) {
-                return $this->formatQuestions($questions);
-            }
-        }
-
-        // Attempt 3: Truncated JSON Salvage (If max_tokens cut it off)
-        // Extract all complete { ... } objects from the broken array
-        preg_match_all('/\{[^{}]+\}/', $response, $objectMatches);
-        if (!empty($objectMatches[0])) {
-            $salvagedData = [];
-            foreach ($objectMatches[0] as $jsonObj) {
-                $decoded = json_decode($jsonObj, true);
-                // Ensure it has at least 'q' or 'question_text' to be considered a valid question
-                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && (isset($decoded['q']) || isset($decoded['question_text']))) {
-                    $salvagedData[] = $decoded;
+        $personalization = '';
+        if ($aiPreferences) {
+            $parts = [];
+            $maps  = [
+                'education_level' => ['high_school' => 'High School', 'undergraduate' => 'Undergraduate', 'masters' => 'Masters/Graduate', 'professional' => 'Professional'],
+                'learning_style'  => ['simple' => 'Ultra-simple language and analogies', 'detailed' => 'Detailed academic breakdowns'],
+                'tone'            => ['supportive' => 'Warm, encouraging (Supportive Coach)', 'strict' => 'Strict, formal, precise', 'concise' => 'Extremely concise and direct', 'fun' => 'Fun, humorous, witty'],
+                'analogy_focus'   => ['general' => 'Standard academic analogies', 'tech' => 'Tech/coding analogies', 'sports' => 'Sports analogies', 'gaming' => 'Gaming/RPG analogies'],
+                'academic_goal'   => ['conceptual' => 'Deep first-principles understanding', 'exam' => 'Exam tactics and high-yield facts', 'cheat' => 'Cheat-sheet style summaries and mnemonics'],
+            ];
+            foreach ($maps as $key => $labels) {
+                if (!empty($aiPreferences[$key])) {
+                    $parts[] = ucfirst(str_replace('_', ' ', $key)) . ': ' . ($labels[$aiPreferences[$key]] ?? $aiPreferences[$key]);
                 }
             }
-            if (!empty($salvagedData)) {
-                Log::warning('DeepseekAIService: JSON was truncated, but salvaged ' . count($salvagedData) . ' valid questions.');
-                return $this->formatQuestions($salvagedData);
+            if (!empty($aiPreferences['field_of_study'])) $parts[] = 'Field: ' . $aiPreferences['field_of_study'];
+            if (!empty($aiPreferences['custom_weakness'])) $parts[] = 'Weakness: ' . $aiPreferences['custom_weakness'];
+            if (!empty($parts)) $personalization = "\nSTUDENT PROFILE: " . implode('. ', $parts) . '. Tailor all questions to this profile.';
+        }
+
+        return <<<PROMPT
+Gen EXACTLY {$numberOfQuestions} Q. Types: {$typesText}. Diff: {$diffShort}.{$focusSection}{$visualsSection}{$personalization}
+
+INPUT: {$notesText}
+
+Format: JSON only. Schema:
+[{"q":"text","t":"MC|TF|SA|ES|FB","d":"E|M|H","o":["A","B"],"c":"A","xr":"feedback if correct","xw":"feedback if wrong"}]
+
+Language: Detect language of input material and match it exactly.
+Math: Use proper Unicode (sec²(x), x³, √x). No raw carets like sec^2.
+PROMPT;
+    }
+
+    protected function buildFlashcardPrompt(array $notes, int $numberOfCards, string $difficulty, string $userPrompt = ''): string
+    {
+        $diffMap     = ['easy' => 'E', 'medium' => 'M', 'hard' => 'H', 'mixed' => 'E/M/H'];
+        $diffShort   = $diffMap[$difficulty] ?? 'E/M/H';
+        $notesText   = preg_replace('/\s+/', ' ', implode("\n", $notes));
+        $focusSection = !empty($userPrompt) ? "\nFOCUS: {$userPrompt}" : '';
+
+        [$fl, $bl] = match($difficulty) {
+            'easy'   => [12, 25],
+            'medium' => [10, 20],
+            'hard'   => [8,  15],
+            default  => [10, 20],
+        };
+
+        return <<<PROMPT
+Gen EXACTLY {$numberOfCards} flashcards. Diff: {$diffShort}.{$focusSection}
+
+INPUT: {$notesText}
+
+Format: raw JSON array, no markdown fences.
+Schema: [{"front":"question or concept (max {$fl} words)","back":"answer (max {$bl} words)"}]
+Math: Wrap ALL math in \$ ... \$ (e.g. \$\\frac{1}{2}g\$). No bare exponents.
+Language: Match the detected language of the input material exactly.
+PROMPT;
+    }
+
+    // ─── Parsing & Formatting ─────────────────────────────────────────────────
+
+    protected function parseQuestionsFromResponse(string $response): array
+    {
+        $clean = trim(preg_replace('/```(?:json)?|```/', '', $response));
+
+        $data = json_decode($clean, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            if (isset($data['questions']) && is_array($data['questions'])) return $this->formatQuestions($data['questions']);
+            if (is_array($data) && array_is_list($data)) return $this->formatQuestions($data);
+        }
+
+        if (preg_match('/\[[\s\S]*\]/', $response, $matches)) {
+            $questions = json_decode($matches[0], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($questions)) return $this->formatQuestions($questions);
+        }
+
+        preg_match_all('/\{[^{}]+\}/', $response, $objectMatches);
+        if (!empty($objectMatches[0])) {
+            $salvaged = [];
+            foreach ($objectMatches[0] as $jsonObj) {
+                $decoded = json_decode($jsonObj, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && (isset($decoded['q']) || isset($decoded['question_text']))) {
+                    $salvaged[] = $decoded;
+                }
+            }
+            if (!empty($salvaged)) {
+                Log::warning('DeepSeek: JSON truncated, salvaged ' . count($salvaged) . ' questions.');
+                return $this->formatQuestions($salvaged);
             }
         }
 
         throw new \Exception('Could not parse questions from response. Raw: ' . substr($response, 0, 100));
     }
 
-    /**
-     * Format questions from API - handles both abbreviated and full keys
-     */
     protected function formatQuestions(array $rawQuestions): array
     {
-        $typeMap = [
-            'MC' => 'multiple_choice',
-            'TF' => 'true_false',
-            'SA' => 'short_answer',
-            'ES' => 'essay',
-            'FB' => 'fill_blank',
-        ];
-
-        $diffMap = [
-            'E' => 'easy',
-            'M' => 'medium',
-            'H' => 'hard',
-        ];
+        $typeMap = ['MC' => 'multiple_choice', 'TF' => 'true_false', 'SA' => 'short_answer', 'ES' => 'essay', 'FB' => 'fill_blank'];
+        $diffMap = ['E'  => 'easy',            'M'  => 'medium',      'H'  => 'hard'];
 
         return array_map(function ($q) use ($typeMap, $diffMap) {
-            // Support both abbreviated (q, t, d, o, c, x) and full (question_text, question_type, etc) keys
             $type = $q['t'] ?? $q['question_type'] ?? 'MC';
             $type = $typeMap[$type] ?? $this->mapQuestionType($type);
-            
+
             $diff = $q['d'] ?? $q['difficulty_level'] ?? 'M';
             $diff = $diffMap[$diff] ?? 'medium';
 
-            $formatted = [
-                'question_text' => $q['q'] ?? $q['question_text'] ?? '',
-                'question_type' => $type,
-                'difficulty_level' => $diff,
-                'topic' => $q['topic'] ?? 'General',
+            return [
+                'question_text'      => $q['q']   ?? $q['question_text']  ?? '',
+                'question_type'      => $type,
+                'difficulty_level'   => $diff,
+                'topic'              => $q['topic'] ?? 'General',
                 'learning_objective' => $q['learning_objective'] ?? '',
-                'explanation' => $q['x'] ?? $q['explanation'] ?? '',
-                'explanation_right' => $q['xr'] ?? $q['explanation_right'] ?? '',
-                'explanation_wrong' => $q['xw'] ?? $q['explanation_wrong'] ?? '',
-                'options' => $q['o'] ?? $q['options'] ?? [],
-                'correct_answer' => $q['c'] ?? $q['correct_answer'] ?? '',
+                'explanation'        => $q['x']   ?? $q['explanation']    ?? '',
+                'explanation_right'  => $q['xr']  ?? $q['explanation_right'] ?? '',
+                'explanation_wrong'  => $q['xw']  ?? $q['explanation_wrong'] ?? '',
+                'options'            => $q['o']   ?? $q['options']         ?? [],
+                'correct_answer'     => $q['c']   ?? $q['correct_answer']  ?? '',
             ];
-
-            return $formatted;
         }, $rawQuestions);
     }
 
-    /**
-     * Map question types to system types
-     */
     protected function mapQuestionType(string $type): string
     {
         $mapping = [
-            'mcq' => 'multiple_choice',
+            'mcq'             => 'multiple_choice',
             'multiple_choice' => 'multiple_choice',
-            'true_false' => 'true_false',
-            'short_answer' => 'short_answer',
-            'essay' => 'essay',
-            'fill_blank' => 'fill_blank',
+            'true_false'      => 'true_false',
+            'short_answer'    => 'short_answer',
+            'essay'           => 'essay',
+            'fill_blank'      => 'fill_blank',
         ];
-
         return $mapping[strtolower($type)] ?? 'multiple_choice';
     }
 
-    /**
-     * Solve a question (or multiple questions) from a scanned image.
-     * Step 1: OCR the image to extract text (via OCR.space free API)
-     * Step 2: Send extracted text to DeepSeek for solving
-     */
-    public function solveFromImage(string $base64Image): array
+    protected function generateCacheKey(array $notes, int $numberOfQuestions, string $difficulty, array $questionTypes, string $prompt, bool $includeVisuals): string
     {
-        $startTime = microtime(true);
-        try {
-            set_time_limit(300);
-
-            // ── Step 1: OCR the image ──
-            Log::info('Step 1: Running OCR on image...');
-            $extractedText = $this->ocrFromBase64($base64Image);
-
-            if (empty(trim($extractedText))) {
-                throw new \Exception('Could not read any text from the image. Please try a clearer photo.');
-            }
-
-            Log::info('OCR Success', ['text_length' => strlen($extractedText), 'preview' => substr($extractedText, 0, 100)]);
-
-            // ── Step 2: Solve with DeepSeek ──
-            Log::info('Step 2: Solving with DeepSeek...');
-
-            $prompt = <<<PROMPT
-You are a world-class tutor. The text below was extracted via OCR from a student's exam photo. Fix any OCR errors (e.g. "dy dx" -> "dy/dx").
-
-"{$extractedText}"
-
-Return ONLY a raw JSON object matching this schema. NO Conversational text. NO Thought blocks. NO code blocks.
-{"results":[{"question":"FULL TEXT of the question extracted from the image","topic":"subject area","type":"calculation|theory","solution":"**final answer**","steps":[],"explanation":"concise but complete explanation","summary":""}]}
-
-Rules:
-- `solution`: bold final answer, e.g. "**D**" or "**\$42\$**"
-- `steps`: always `[]` (put steps in explanation instead)
-- `summary`: always ""
-- `explanation`: State the answer upfront, then justify it. You MUST structure the explanation into clear, step-by-step paragraphs separated by double newlines (\n\n) to ensure high readability. Do NOT merge multiple equations and steps into a single dense block of text.
-- **Math Formatting**: Place each step on a new line. Put prose labels (e.g., "Inner integral:") on their own line ABOVE the math expression. Use `$$ ... $$` for dedicated math lines. Wrap ALL math in delimiters, e.g. \$x^2\$ for inline or \$\$y = mx + b\$\$ for blocks.
-- `Decimal Fractions Rule`: When writing fractions with decimal numbers (e.g. 8.42 / 9.8), always wrap the entire decimal numbers in the numerator and denominator (e.g. \$\\frac{8.42}{9.8}\$). Never split inside a decimal point (do NOT write 8.\\frac{42}{9}.8 under any circumstances).
-- Never skip a question.
-PROMPT;
-
-
-            $response = $this->client->post(
-                $this->baseUrl . '/chat/completions',
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json',
-                    ],
-                    'timeout' => $this->timeout,
-                    'json' => [
-                        'model' => 'deepseek-v4-flash',
-                        'messages' => [
-                            [
-                                'role' => 'system',
-                                'content' => <<<'SYSTEM'
-# Role
-You are an expert academic tutor skilled at explaining concepts, solving problems, and designing assessments across all subjects and academic levels.
-
-# Task
-Respond to tutoring requests by providing clear, structured learning support in valid JSON format only.
-
-# Context
-Students at mixed academic levels need reliable, consistent tutoring. They expect authoritative answers formatted predictably.
-
-# Instructions
-
-**Core Behaviors:**
-- Return only valid JSON with no additional text, preamble, or meta-commentary.
-- Use Markdown formatting (headings, lists, bolding) **INSIDE** the JSON strings for better structure.
-- Do NOT wrap the entire JSON response in markdown code blocks (e.g. ```json).
-- No internal reasoning, self-corrections, or scratchpads.
-
-**Subject-Specific Rules:**
-1. **Mathematical/Problem Solving (Math, Physics, Engineering):** Focus on step-by-step logic, intermediate work, and absolute accuracy. Be concise but clear.
-2. **Theoretical/Descriptive (Medicine, Law, Psychology, Social Sciences):** Provide **lengthy, detailed, and comprehensive notes**. Psychology, Medicine, and Law depend on **depth and length**, not brevity. Use rich Markdown formatting: **### Headings**, **bullet points**, and **bold text** to organize information. If appropriate or requested, include academic or clinical references/citations at the end of the explanation.
-
-**For Problem Solutions:**
-Structure as: `{"results": [{"question": "", "topic": "", "type": "", "solution": "", "steps": [], "explanation": "", "summary": ""}]}`
-- For theoretical questions, use the "Detailed Note" approach in the `explanation` field.
-- Use double newlines (\n\n) to create distinct paragraphs.
-- `solution`: bold final answer, e.g. "**D**" or "**$42$**"
-- `steps`: always `[]`
-- `summary`: always `""`
-
-**Tone and Approach:**
-- Be direct and authoritative.
-- **For Theoretical Subjects:** Adopt a "Deep Dive" mentality. Length and detail are required.
-- Don't seek clarification; deliver the response.
-SYSTEM
-                            ],
-                            [
-                                'role' => 'user',
-                                'content' => $prompt,
-                            ],
-                        ],
-                        'temperature' => 0.3,
-                        'max_tokens' => 8192,
-                        'response_format' => ['type' => 'json_object'],
-                    ],
-                ]
-            );
-
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            if (!isset($data['choices'][0]['message']['content'])) {
-                throw new \Exception('Invalid response from Deepseek API');
-            }
-
-            $content = $data['choices'][0]['message']['content'];
-            $decoded = json_decode($content, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $content = preg_replace('/```(?:json)?|```/', '', $content);
-                $decoded = json_decode(trim($content), true);
-            }
-
-            if (!is_array($decoded) || !isset($decoded['results'])) {
-                throw new \Exception('AI returned invalid JSON structure for multi-scan');
-            }
-
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'solve_from_image',
-                'request' => [
-                    'image_length' => strlen($base64Image),
-                    'ocr_text_length' => strlen($extractedText),
-                ],
-                'response' => [
-                    'results_count' => count($decoded['results']),
-                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
-                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
-                ],
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
-
-            return $decoded;
-
-        } catch (\Exception $e) {
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'solve_from_image',
-                'request' => [
-                    'image_length' => strlen($base64Image),
-                ],
-                'error' => $e,
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
-            throw $this->handleApiException($e, 'Image Solve');
-        }
+        sort($questionTypes);
+        $hash = hash('sha256', json_encode(compact('notes', 'numberOfQuestions', 'difficulty', 'questionTypes', 'prompt', 'includeVisuals')));
+        return 'skeeme:ai_q:' . substr($hash, 0, 32);
     }
 
-    /**
-     * OCR: Extract text from a base64-encoded image.
-     * Uses Google Cloud Vision (Managed, high-accuracy).
-     */
-    protected function ocrFromBase64(string $base64Image): string
-    {
-        try {
-            Log::info('Attempting OCR with Google Cloud Vision...');
-            $visionResult = $this->visionService->ocr($base64Image);
-            
-            if ($visionResult['success'] && !empty(trim($visionResult['text']))) {
-                Log::info('Google Cloud Vision Success.');
-                return $visionResult['text'];
-            }
-            
-            if (!$visionResult['success']) {
-                Log::error('Google Vision Error: ' . ($visionResult['error'] ?? 'Unknown error'));
-            } else {
-                Log::warning('Google Vision returned empty results.');
-            }
-        } catch (\Exception $e) {
-            Log::error('Google Vision Exception: ' . $e->getMessage());
-        }
+    // ─── Error Handler ────────────────────────────────────────────────────────
 
-        return '';
-    }
-
-    /**
-     * Test the API connection
-     */
-    public function testConnection(): bool
-    {
-        try {
-            $response = $this->client->post(
-                $this->baseUrl . '/chat/completions',
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json',
-                    ],
-                    'json' => [
-                        'model' => 'deepseek-v4-flash',
-                        'messages' => [['role' => 'user', 'content' => 'Test']],
-                        'max_tokens' => 10,
-                    ],
-                ]
-            );
-
-            return $response->getStatusCode() === 200;
-        } catch (\Exception $e) {
-            Log::error('Deepseek connection test failed: ' . $e->getMessage());
-            return false;
-        }
-    }
-    /**
-     * Translate text to a target language.
-     */
-    public function translateText(string $text, string $targetLanguage): string
-    {
-        $startTime = microtime(true);
-        try {
-            $response = $this->client->post(
-                $this->baseUrl . '/chat/completions',
-                [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $this->apiKey,
-                        'Content-Type' => 'application/json',
-                    ],
-                    'json' => [
-                        'model' => 'deepseek-v4-flash',
-                        'messages' => [
-                            [
-                                'role' => 'system',
-                                'content' => "You are a professional translator. Translate the following text into {$targetLanguage}. Preserve all technical terms and formatting. Return ONLY the translated text.",
-                            ],
-                            [
-                                'role' => 'user',
-                                'content' => $text,
-                            ],
-                        ],
-                        'temperature' => 0.3,
-                    ],
-                ]
-            );
-
-            $data = json_decode($response->getBody()->getContents(), true);
-            $translated = $data['choices'][0]['message']['content'] ?? $text;
-
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'translate_text',
-                'request' => [
-                    'text_length' => strlen($text),
-                    'target_language' => $targetLanguage,
-                ],
-                'response' => [
-                    'translated_length' => strlen($translated),
-                    'input_tokens' => $data['usage']['prompt_tokens'] ?? null,
-                    'output_tokens' => $data['usage']['completion_tokens'] ?? null,
-                ],
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
-
-            return $translated;
-        } catch (\Exception $e) {
-            $latencyMs = (microtime(true) - $startTime) * 1000;
-            \App\Support\AILogger::log([
-                'provider' => 'deepseek',
-                'model' => 'deepseek-v4-flash',
-                'action' => 'translate_text',
-                'request' => [
-                    'text_length' => strlen($text),
-                    'target_language' => $targetLanguage,
-                ],
-                'error' => $e,
-                'latency_ms' => $latencyMs,
-            ], auth()->user());
-            Log::error('Translation Error: ' . $e->getMessage());
-            return $text;
-        }
-    }
-
-    /**
-     * Centralized error handler — returns user-friendly messages
-     */
     protected function handleApiException(\Exception $e, string $context): \Exception
     {
-        Log::error("Deepseek {$context} Error: " . $e->getMessage());
-        
+        Log::error("DeepSeek {$context} Error: " . $e->getMessage());
+
         if ($e instanceof RequestException && $e->hasResponse()) {
-            $statusCode = $e->getResponse()->getStatusCode();
-            $body = $e->getResponse()->getBody()->getContents();
-            
-            if ($statusCode === 429) {
-                return new \Exception("Skeeme is currently experiencing high demand. Please try again in a few moments.");
-            }
-            if ($statusCode >= 400 && str_contains(strtolower($body), 'insufficient balance')) {
-                return new \Exception("Skeeme is down, Please try again later.");
-            }
-            if ($statusCode >= 500 || $statusCode >= 400) {
-                return new \Exception("Skeeme is down, Please try again later.");
-            }
+            $status = $e->getResponse()->getStatusCode();
+            $body   = $e->getResponse()->getBody()->getContents();
+
+            if ($status === 429) return new \Exception('Skeeme is experiencing high demand. Please try again in a moment.');
+            if ($status >= 400 && str_contains(strtolower($body), 'insufficient balance')) return new \Exception('Skeeme is down. Please try again later.');
+            if ($status >= 400) return new \Exception('Skeeme is down. Please try again later.');
         }
-        
+
         if (str_contains($e->getMessage(), 'cURL error 28') || str_contains($e->getMessage(), 'timed out')) {
-            return new \Exception("Skeeme is down, Please try again later.");
+            return new \Exception('Skeeme is down. Please try again later.');
         }
 
-        // If it's the specific "Could not read any text" error, keep it as is as it's helpful
-        if (str_contains($e->getMessage(), 'Could not read any text')) {
-            return $e;
-        }
+        if (str_contains($e->getMessage(), 'Could not read any text')) return $e;
 
-        return new \Exception("Skeeme encountered an unexpected error. Please try again later.");
+        return new \Exception('Skeeme encountered an unexpected error. Please try again later.');
     }
 
-    /**
-     * Sanitize text to ensure it is valid UTF-8.
-     * Prevents json_encode error: Malformed UTF-8 characters.
-     */
+    // ─── Utilities ────────────────────────────────────────────────────────────
+
     private function sanitizeUtf8(?string $text): string
     {
         if (empty($text)) return '';
-        
-        // Remove invalid UTF-8 sequences and convert to UTF-8
         $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
-        
-        // Remove non-printable control characters except newlines/tabs
         $text = preg_replace('/[^\x20-\x7E\t\n\r\x{00A0}-\x{FFFF}]/u', '', $text);
-        
         return $text;
-    }
-
-    /**
-     * Get a personalized system prompt by appending student context.
-     */
-    protected function getPersonalizedSystemPrompt(string $basePrompt): string
-    {
-        $user = Auth::user();
-        if (!$user) {
-            return $basePrompt;
-        }
-
-        $context = $this->personalizationService ? $this->personalizationService->getSystemContext($user) : '';
-        return $basePrompt . "\n\n" . $context;
     }
 }
