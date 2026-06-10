@@ -160,7 +160,7 @@ export default function BillingHistoryScreen() {
 
                         </View>
                         <Text style={[s.planTitle, isDark ? s.textWhite : s.textSlate900]}>
-                            {user?.plan_name === 'elite' ? 'Skeeme Max' : (user?.plan_name === 'standard' ? 'Skeeme Pro' : 'Skeeme Free')}
+                            {(user?.plan_name === 'standard' || user?.plan_name === 'pro' || user?.plan_name === 'elite' || user?.plan_name === 'max') ? 'Skeeme Pro' : 'Skeeme Free'}
                         </Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
                             <Text style={s.planSubtitle}>

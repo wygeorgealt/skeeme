@@ -187,11 +187,9 @@ export default function AccountScreen() {
                             icon={Bill} iconBg="#007AFF"
                             label="Subscription"
                             value={
-                                user.plan_name === 'max' || user.plan_name === 'elite'
-                                    ? 'Skeeme Max'
-                                    : (user.plan_name === 'pro' || user.plan_name === 'standard')
-                                        ? 'Skeeme Pro'
-                                        : 'Skeeme Free'
+                                (user.plan_name === 'pro' || user.plan_name === 'standard' || user.plan_name === 'max' || user.plan_name === 'elite')
+                                    ? 'Skeeme Pro'
+                                    : 'Skeeme Free'
                             }
                             isDark={isDark}
                         />

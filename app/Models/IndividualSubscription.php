@@ -53,30 +53,16 @@ class IndividualSubscription extends Model
         ],
         self::PLAN_PRO => [
             'name' => 'Skeeme Pro',
-            'credits_monthly' => 20000,
+            'credits_monthly' => 50000,
             'price_monthly_ngn' => 5000,
             'price_yearly_ngn' => 29999,
             'price_monthly_usd' => 12.99,
             'price_yearly_usd' => 99.99, // Calculated as ~7.5 months
             'features' => [
-                'credits' => '20,000 / month',
+                'credits' => '50,000 / month',
                 'queue' => 'Priority',
-                'speed' => 'Fast AI',
-                'badge' => 'Most Popular',
-            ],
-        ],
-        self::PLAN_MAX => [
-            'name' => 'Skeeme Max',
-            'credits_monthly' => 100000,
-            'price_monthly_ngn' => 13000,
-            'price_yearly_ngn' => 119000,
-            'price_monthly_usd' => 29.99,
-            'price_yearly_usd' => 249.99,
-            'features' => [
-                'credits' => '100,000 / month',
-                'queue' => 'Highest Priority',
-                'speed' => 'Best Performance',
-                'badge' => 'For Power Users',
+                'speed' => 'Faster AI',
+                'badge' => 'Pro',
             ],
         ],
     ];

@@ -37,15 +37,12 @@ class PricingSettings extends Page implements Forms\Contracts\HasForms
         $settings = SystemSetting::get('pricing', [
             'ngn' => [
                 'standard' => ['monthly' => 3500, 'yearly' => 25000, 'promoMonthly' => 2600],
-                'elite' => ['monthly' => 5000, 'yearly' => 50000, 'promoMonthly' => 3700]
             ],
             'usd' => [
                 'standard' => ['monthly' => 4.99, 'yearly' => 39.99, 'promoMonthly' => 3.4],
-                'elite' => ['monthly' => 9.99, 'yearly' => 79.99, 'promoMonthly' => 6.99]
             ],
             'promos' => [
                 'standard_end' => '2026-03-22 23:59:59',
-                'elite_end' => '2026-03-15 23:59:59'
             ],
             'credit_packs' => [
                 'ngn' => [
@@ -80,12 +77,6 @@ class PricingSettings extends Page implements Forms\Contracts\HasForms
                                         TextInput::make('ngn.standard.promoMonthly')->numeric()->required()->label('Promo Monthly (NGN)'),
                                         TextInput::make('ngn.standard.yearly')->numeric()->required()->label('Yearly (NGN)'),
                                     ])->columns(['default' => 3]),
-                                Section::make('Elite Plan')
-                                    ->schema([
-                                        TextInput::make('ngn.elite.monthly')->numeric()->required()->label('Monthly (NGN)'),
-                                        TextInput::make('ngn.elite.promoMonthly')->numeric()->required()->label('Promo Monthly (NGN)'),
-                                        TextInput::make('ngn.elite.yearly')->numeric()->required()->label('Yearly (NGN)'),
-                                    ])->columns(['default' => 3]),
                                 Section::make('Credit Packs (NGN)')
                                     ->schema([
                                         Repeater::make('credit_packs.ngn')
@@ -103,12 +94,6 @@ class PricingSettings extends Page implements Forms\Contracts\HasForms
                                         TextInput::make('usd.standard.promoMonthly')->numeric()->required()->label('Promo Monthly (USD)'),
                                         TextInput::make('usd.standard.yearly')->numeric()->required()->label('Yearly (USD)'),
                                     ])->columns(['default' => 3]),
-                                Section::make('Elite Plan')
-                                    ->schema([
-                                        TextInput::make('usd.elite.monthly')->numeric()->required()->label('Monthly (USD)'),
-                                        TextInput::make('usd.elite.promoMonthly')->numeric()->required()->label('Promo Monthly (USD)'),
-                                        TextInput::make('usd.elite.yearly')->numeric()->required()->label('Yearly (USD)'),
-                                    ])->columns(['default' => 3]),
                                 Section::make('Credit Packs (USD)')
                                     ->schema([
                                         Repeater::make('credit_packs.usd')
@@ -123,10 +108,7 @@ class PricingSettings extends Page implements Forms\Contracts\HasForms
                                 DateTimePicker::make('promos.standard_end')
                                     ->label('Standard Promo Ends At')
                                     ->required(),
-                                DateTimePicker::make('promos.elite_end')
-                                    ->label('Elite Promo Ends At')
-                                    ->required(),
-                            ])->columns(['default' => 2])
+                            ])->columns(['default' => 1])
                     ])
             ])
             ->statePath('data');

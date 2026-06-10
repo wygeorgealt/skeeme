@@ -88,8 +88,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
     if (user?.plan_name === 'pro' || user?.plan_name === 'max') {
         titleText = "Credits Exhausted";
-        const dailyAmt = user?.plan_name === 'pro' ? '500' : '1,000';
-        descText = `You've used your daily credits. Don't worry, your plan gives you a ${dailyAmt} credit refill every day.`;
+        descText = "You've used your daily credits. Don't worry, your plan gives you a 500 credit refill every day.";
     }
 
     return (
@@ -154,7 +153,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
                         {/* Actions */}
                         <View style={styles.actions}>
-                            {user?.plan_name !== 'max' && (
+                            {user?.plan_name !== 'pro' && user?.plan_name !== 'max' && (
                                 <TouchableOpacity
                                     onPress={handleUpgrade}
                                     activeOpacity={0.8}
@@ -162,7 +161,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                                 >
                                     <RoundArrowUp size={20} color="#FFFFFF" />
                                     <Text style={styles.primaryBtnText}>
-                                        {user?.plan_name === 'pro' ? 'Upgrade to Max' : 'Upgrade to Pro'}
+                                        Upgrade to Pro
                                     </Text>
                                 </TouchableOpacity>
                             )}
@@ -176,10 +175,10 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                                     }, 500);
                                 }}
                                 activeOpacity={0.8}
-                                style={user?.plan_name === 'max' ? styles.primaryBtn : [styles.secondaryBtn, { borderColor: isDark ? '#3A3A3C' : '#E5E5EA' }]}
+                                style={user?.plan_name === 'pro' || user?.plan_name === 'max' ? styles.primaryBtn : [styles.secondaryBtn, { borderColor: isDark ? '#3A3A3C' : '#E5E5EA' }]}
                             >
-                                <Forward size={20} color={user?.plan_name === 'max' ? '#FFFFFF' : (isDark ? '#FFFFFF' : '#000000')} />
-                                <Text style={user?.plan_name === 'max' ? styles.primaryBtnText : [styles.secondaryBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
+                                <Forward size={20} color={user?.plan_name === 'pro' || user?.plan_name === 'max' ? '#FFFFFF' : (isDark ? '#FFFFFF' : '#000000')} />
+                                <Text style={user?.plan_name === 'pro' || user?.plan_name === 'max' ? styles.primaryBtnText : [styles.secondaryBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
                                     Earn more credits
                                 </Text>
                             </TouchableOpacity>
