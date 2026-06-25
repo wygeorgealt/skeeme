@@ -265,13 +265,8 @@ Route::group(['prefix' => 'v1'], function () {
     // Internal Microservice API
     Route::group(['prefix' => 'internal/ai'], function () {
         // Protect with basic secret check inline or middleware if preferred
-        // We'll just do a quick secret check in the controller or a closure middleware
-        Route::middleware(function ($request, $next) {
-            if ($request->header('X-Internal-Secret') !== (env('INTERNAL_SECRET', 'skeeme-ai-secret-key-123'))) {
-                return response()->json(['error' => 'Unauthorized service access'], 401);
-            }
-            return $next($request);
-        })->group(function () {
+        // Use a dedicated middleware for internal service secret checks
+        Route::middleware(\App\Http\Middleware\EnsureInternalSecret::class)->group(function () {
             Route::post('authorize', [\App\Http\Controllers\API\Internal\AIInternalController::class, 'authorizeRequest']);
             Route::post('refund', [\App\Http\Controllers\API\Internal\AIInternalController::class, 'refund']);
         });
