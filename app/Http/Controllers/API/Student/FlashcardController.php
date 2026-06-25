@@ -64,6 +64,14 @@ class FlashcardController extends Controller
         $title = $deck->title;
         $sourceContent = Cache::get("deck_{$deck->id}_source");
 
+        $blocklist = ['weapon', 'drug', 'violenc', 'hack', 'porn', 'sex', 'explosive', 'suicide', 'murder', 'kill', 'nsfw', 'illegal'];
+        $contentToLower = strtolower($title . ' ' . $sourceContent);
+        foreach ($blocklist as $word) {
+            if (str_contains($contentToLower, $word)) {
+                return response()->json(['message' => 'This topic or content is not appropriate for educational content generation.'], 422);
+            }
+        }
+
         if (empty(trim((string)$sourceContent))) {
             return response()->json(['message' => 'No content found for generation. Please recreate the deck.'], 400);
         }
@@ -73,15 +81,30 @@ class FlashcardController extends Controller
         $flashcardRates = $pricingConfig['rates']['flashcard_flat'] ?? ['free' => 30, 'paid' => 25];
         $totalCost = is_array($flashcardRates) ? ($flashcardRates[$planTier] ?? 25) : $flashcardRates;
 
-        if (!$user->is_unlimited_student && $user->credits <= 0) {
-            return InsufficientCreditsResponse::make(
+        $requestId = (string) Str::uuid();
+
+        if (!$user->is_unlimited_student) {
+            $hasEnough = \Illuminate\Support\Facades\DB::transaction(function () use ($user, $totalCost) {
+                $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
+                return $lockedUser->credits >= $totalCost;
+            });
+            
+            if (!$hasEnough) {
+                return InsufficientCreditsResponse::make(
+                    $totalCost,
+                    (int) $user->credits,
+                    "Insufficient credits. You need at least {$totalCost} credits to generate flashcards."
+                );
+            }
+
+            $user->deductCredits(
                 $totalCost,
-                (int) $user->credits,
-                "Insufficient credits. You need at least {$totalCost} credits to generate flashcards."
+                'flashcard_generation',
+                "Flashcard Generation (Streaming): " . $title,
+                $requestId,
+                \App\Services\AIService::MODEL_SONNET
             );
         }
-
-        $requestId = (string) Str::uuid();
 
         return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId, $title, $deck, $sourceContent) {
             $emit = function (array $payload) {
@@ -162,18 +185,13 @@ class FlashcardController extends Controller
                     }
                 }
 
-                // 4. Credit Deduction (Atomic)
-                $user->deductCredits(
-                    $totalCost,
-                    'flashcard_generation',
-                    "Flashcard Generation (Streaming): " . $title,
-                    $requestId,
-                    $modelUsed
-                );
-
                 // Stream only; persistence happens after final JSON is returned to the client.
                 echo "data: [DONE]\n\n";
             } catch (\Exception $e) {
+                if (!$user->is_unlimited_student) {
+                    $user->refundCredits($totalCost, 'flashcard_generation_refund', 'Refund for failed flashcard generation', $requestId);
+                }
+                
                 Log::error("[Streaming Flashcards Error] " . $e->getMessage(), [
                     'user_id' => $user->id,
                     'request_id' => $requestId,

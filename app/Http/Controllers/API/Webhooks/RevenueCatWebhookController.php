@@ -28,7 +28,7 @@ class RevenueCatWebhookController extends Controller
         if (!$token || $token !== $expectedToken) {
             Log::warning("RevenueCat: Unauthorized Webhook Attempt", [
                 'ip' => $request->ip(),
-                'token_received' => $token
+                'token_received' => substr((string)$token, 0, 8) . '***'
             ]);
             return response()->json(['message' => 'Unauthorized'], 401);
         }

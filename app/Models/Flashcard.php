@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class Flashcard extends Model
 {
-    protected $guarded = [];
+    protected $fillable = ['flashcard_deck_id', 'front', 'back', 'order_column'];
 }

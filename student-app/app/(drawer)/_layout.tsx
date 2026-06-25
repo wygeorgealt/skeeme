@@ -253,10 +253,7 @@ export default function TabLayout() {
     }, []);
 
     useEffect(() => {
-        // AI Personalization Guard — if logged in but no education level, force preferences
-        // IMPORTANT: don't interrupt onboarding flow. Only enforce after onboarding is completed,
-        // and don't redirect if the user is currently inside /(onboarding) routes.
-        // Also skip if onboarding was JUST completed (give time for data to sync).
+        // AI Personalization Guard
         if (
             token &&
             user &&
@@ -269,8 +266,10 @@ export default function TabLayout() {
                 router.replace('/preferences');
             }
         }
+    }, [token, user, pathname, onboardingComplete, onboardingJustCompleted]);
 
-        // Defer push token registration
+    useEffect(() => {
+        // Run once per session when token becomes available
         const timer = setTimeout(() => {
             if (token) {
                 registerForPushNotificationsAsync(token).catch(() => { });
@@ -284,7 +283,7 @@ export default function TabLayout() {
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [token, user, pathname, onboardingComplete, onboardingJustCompleted]);
+    }, [token]);
 
     return (
         <>

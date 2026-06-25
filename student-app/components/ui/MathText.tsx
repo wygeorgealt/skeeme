@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { KATEX_CSS, KATEX_JS, KATEX_AUTO_RENDER } from './katex-assets';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -508,9 +509,9 @@ function buildHtml(params: {
     '<!DOCTYPE html>' +
     '<html><head>' +
     '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />' +
-    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">' +
-    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>' +
-    '<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>' +
+    '<style>' + KATEX_CSS + '</style>' +
+    '<script>' + KATEX_JS + '</script>' +
+    '<script>' + KATEX_AUTO_RENDER + '</script>' +
     '<style>' +
     'html,body{margin:0;padding:0;background-color:transparent;}' +
     'body{' +

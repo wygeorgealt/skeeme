@@ -93,7 +93,9 @@ export function MCQCard({
                             onPress={() => { if (!answered && !quizFinished) onAnswer(qi, opt); }}
                             style={[s.optionBtn, styles.container]}
                         >
-                            <Text style={[s.optionText, styles.text]}>{opt}</Text>
+                            <View style={{ flex: 1, paddingRight: 8 }}>
+                                <MathText content={opt} color={styles.text.color} fontSize={15} />
+                            </View>
                             {styles.icon === 'checkmark-circle' && <CheckCircle size={18} color={styles.iconColor} />}
                             {styles.icon === 'close-circle' && <CloseCircle size={18} color={styles.iconColor} />}
                         </TouchableOpacity>
@@ -151,9 +153,9 @@ export function MCQCard({
             {!isCorrect && q.correct_answer && (
                 <View style={[s.correctSection, { borderTopColor: C.separator }]}>
                     <Text style={[s.correctTitle, { color: C.primary }]}>Correct Answer</Text>
-                    <View style={[s.correctBox, { borderColor: C.primary + '30', backgroundColor: C.primary + '10' }]}>
-                        <Text style={[s.correctAnswerText, { color: C.text }]}>{q.correct_answer}</Text>
-                    </View>
+                        <View style={[s.correctBox, { borderColor: C.primary + '30', backgroundColor: C.primary + '10' }]}>
+                            <MathText content={q.correct_answer} color={C.text} fontSize={15} />
+                        </View>
                 </View>
             )}
         </View>

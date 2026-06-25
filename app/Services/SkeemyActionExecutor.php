@@ -463,7 +463,7 @@ class SkeemyActionExecutor
             ->where(function($q) use ($lecturerName) {
                 $q->where('first_name', 'LIKE', "%{$lecturerName}%")
                   ->orWhere('last_name', 'LIKE', "%{$lecturerName}%")
-                  ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$lecturerName}%");
+                  ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$lecturerName}%"]);
             })
             ->first();
 

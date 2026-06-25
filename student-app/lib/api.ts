@@ -32,7 +32,7 @@ api.interceptors.request.use(
             if (__DEV__) console.error('[API] Failed to fetch network info', e);
         }
 
-        if (__DEV__) {
+        if (__DEV__ && config.method?.toUpperCase() !== 'GET') {
             const fullUrl = `${config.baseURL}${config.url}`;
             console.log(`[API] ${config.method?.toUpperCase()} ${fullUrl}`);
         }
@@ -48,7 +48,7 @@ api.interceptors.request.use(
 // Response interceptor: handle 401 and Retries
 api.interceptors.response.use(
     (response) => {
-        if (__DEV__) {
+        if (__DEV__ && response.config.method?.toUpperCase() !== 'GET') {
             console.log(`[API] ✅ ${response.status} from ${response.config.url}`);
         }
         // Consistent data extraction helper:

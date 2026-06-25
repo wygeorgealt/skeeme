@@ -182,31 +182,7 @@ class SubscriptionController extends Controller
         }
     }
 
-    /**
-     * Diagnostic endpoint for System Health.
-     */
-    public function debug()
-    {
-        if (!app()->environment(['local', 'staging'])) {
-            return response()->json(['message' => 'Not found.'], 404);
-        }
 
-        try {
-            // Check default cache store
-            Cache::put('health_check', true, 10);
-            $cacheOk = Cache::get('health_check');
-            
-            return response()->json([
-                'status' => 'Healthy',
-                'cache' => $cacheOk ? 'Working' : 'Failed',
-                'cache_driver' => config('cache.default'),
-                'queue_driver' => config('queue.default'),
-                'env' => config('app.env'),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'System diagnostics unavailable.'], 500);
-        }
-    }
 
     /**
      * Initialize a single credit pack checkout.

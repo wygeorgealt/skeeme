@@ -287,26 +287,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::get('lecturer-management', \App\Livewire\LecturerManagement::class)
-        ->name('lecturer-management');
+        ->name('lecturer-management')
+        ->middleware('admin');
 
     Route::get('students-management', \App\Livewire\StudentsManagement::class)
-        ->name('students-management');
+        ->name('students-management')
+        ->middleware('admin');
 
     Route::get('classes-management', \App\Livewire\ClassesManagement::class)
-        ->name('classes-management');
+        ->name('classes-management')
+        ->middleware('admin');
 
     Route::get('announcements', \App\Livewire\AdminAnnouncements::class)
-        ->name('announcements');
+        ->name('announcements')
+        ->middleware('admin');
 
     Route::get('notification-tester', \App\Livewire\NotificationTester::class)
-        ->name('notification-tester');
+        ->name('notification-tester')
+        ->middleware('admin');
 
     Route::get('test-email-preview', \App\Livewire\TestEmailPreview::class)
         ->name('test-email-preview')
         ->middleware('admin');
 
     Route::get('manage-class/{classId}', \App\Livewire\ManageClass::class)
-        ->name('manage-class');
+        ->name('manage-class')
+        ->middleware('admin');
 
     Route::get('academic-calendar', \App\Livewire\AdminAcademicCalendar::class)
         ->name('academic-calendar')
@@ -317,13 +323,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('admin');
 
     Route::get('timetable', \App\Livewire\TimetableManagement::class)
-        ->name('timetable');
+        ->name('timetable')
+        ->middleware('admin');
 
     /* -------------------------------------------------------------- */
     /* NEW: Mock Data Generator (Livewire component)                 */
     /* -------------------------------------------------------------- */
     Route::get('mock-data-generator', \App\Livewire\MockDataGenerator::class)
-        ->name('mock-data-generator');
+        ->name('mock-data-generator')
+        ->middleware('admin');
 
     /* -------------------------------------------------------------- */
     /* Settings (Volt)                                                */
@@ -404,6 +412,12 @@ require __DIR__ . '/work.php';
 /* Email Previews (Development Only)                                  */
 /* ------------------------------------------------------------------ */
 Route::get('/email-preview/{type}', function ($type) {
+    if (!app()->environment('local')) {
+        abort(404);
+    }
+    if (!preg_match('/^[a-zA-Z0-9_-]+$/', $type)) {
+        abort(400, 'Invalid email type');
+    }
     $user = (object)[
         'first_name' => 'Kritex',
         'email' => 'user@example.com'

@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect, useState } from 'react';
@@ -53,8 +53,8 @@ export default function NotificationScreen() {
     };
 
     return (
-        <View style={[s.container, { backgroundColor: C.background }]}>
-            <SafeAreaView style={s.safeArea}>
+        <SafeAreaView style={[s.container, { backgroundColor: C.background }]}>
+            <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
                 <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
                     <View style={s.stepRow}>
                         <Text style={[s.stepText, { color: '#007AFF' }]}>Finally</Text>
@@ -117,8 +117,8 @@ export default function NotificationScreen() {
                         <Text style={[s.skipBtnText, { color: C.textSecondary }]}>Not now</Text>
                     </TouchableOpacity>
                 </Animated.View>
-            </SafeAreaView>
-        </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 

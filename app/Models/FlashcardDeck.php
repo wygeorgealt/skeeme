@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class FlashcardDeck extends Model
 {
-    protected $guarded = [];
+    protected $fillable = ['title', 'description', 'source_type'];
 
     public function flashcards()
     {

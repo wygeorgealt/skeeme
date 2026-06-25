@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, Animated, StyleSheet, Modal, Platform } from 'react-native';
 import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
-import EventSource from 'react-native-sse';
+import { streamQuizGenerate } from '@/lib/aiStream';
 
 import { useFocusEffect, useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { api } from '@/lib/api';
@@ -13,7 +13,7 @@ import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { ShareCard } from '@/components/ui/ShareCard';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
-import { generateUUID } from '@/lib/utils';
+// import { generateUUID } from '@/lib/utils';
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 import { posthog } from '@/lib/posthog';
 import { markGenerationSuccess } from '@/lib/storeReview';
@@ -438,81 +438,23 @@ export default function GenerateQuizScreen() {
         }, 4000);
 
         try {
-            const token = useAuthStore.getState().token;
             const types = format === 'both' ? ['mcq', 'theory'] : [format === 'theory' ? 'theory' : 'mcq'];
-            const idempotencyKey = generateUUID();
-            const url = `${process.env.EXPO_PUBLIC_API_URL}quizzes/generate/stream`;
             let accumulatedJson = '';
-            
-            let es: EventSource;
 
-            if (mode === 'file' && selectedFile) {
-                if (extractionId) {
-                    es = new EventSource(url, {
-                        headers: { 
-                            'Authorization': `Bearer ${token}`,
-                            'Idempotency-Key': idempotencyKey,
-                            'Content-Type': 'application/json'
-                        },
-                        method: 'POST',
-                        body: JSON.stringify({
-                            topic: topic,
-                            question_count: questionCount,
-                            difficulty: difficulty,
-                            question_types: types,
-                            extraction_id: extractionId
-                        })
-                    } as any);
-                } else {
-                    const fd = new FormData();
-                    fd.append('file', { uri: selectedFile.uri, name: selectedFile.name, type: selectedFile.mimeType || 'application/octet-stream' } as any);
-                    fd.append('question_count', questionCount);
-                    fd.append('difficulty', difficulty);
-                    types.forEach((t, i) => fd.append(`question_types[${i}]`, t));
-                    if (topic) fd.append('topic', topic);
-
-                    es = new EventSource(url, {
-                        headers: { 
-                            'Authorization': `Bearer ${token}`,
-                            'Idempotency-Key': idempotencyKey
-                        },
-                        method: 'POST',
-                        body: fd
-                    } as any);
-                }
-            } else {
-                es = new EventSource(url, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Idempotency-Key': idempotencyKey,
-                        'Content-Type': 'application/json'
+            streamQuizGenerate(
+                {
+                    topic: topic || (selectedFile?.name ?? ''),
+                    question_count: parseInt(questionCount),
+                    difficulty,
+                    question_types: types,
+                    extraction_id: extractionId,
+                },
+                {
+                    onStatus: (message) => {
+                        setLoadingStage(message);
                     },
-                    method: 'POST',
-                    body: JSON.stringify({ 
-                        topic, 
-                        question_count: parseInt(questionCount), 
-                        question_types: types, 
-                        difficulty 
-                    }),
-                } as any);
-            }
-
-            es.addEventListener('message', (event) => {
-                if (event.data === '[DONE]') {
-                    es.close();
-                    finishGeneration(accumulatedJson);
-                    clearInterval(stageInterval);
-                    return;
-                }
-
-                try {
-                    const chunk = JSON.parse(event.data || '{}');
-                    if (chunk.type === 'status') {
-                        setLoadingStage(chunk.message);
-                    }
-                    if (chunk.text) {
-                        accumulatedJson += chunk.text;
-                        // Partial parse to show questions early
+                    onToken: (token) => {
+                        accumulatedJson += token;
                         try {
                             const partial = parsePartialJson(accumulatedJson);
                             if (partial) {
@@ -520,24 +462,23 @@ export default function GenerateQuizScreen() {
                                 if (qs.length > 0) setQuestions(qs);
                             }
                         } catch (e) {}
-                    }
-                    if (chunk.error) throw new Error(chunk.error);
-                } catch (e) {}
-            });
-
-            es.addEventListener('error', (event: any) => {
-                es.close();
-                setIsLoading(false);
-                clearInterval(stageInterval);
-                
-                if (event?.xhr?.status === 429 || event?.message?.includes('429')) {
-                    useAuthStore.getState().toggleCooldownModal(true);
-                    return;
+                    },
+                    onComplete: (fullText) => {
+                        clearInterval(stageInterval);
+                        finishGeneration(fullText || accumulatedJson);
+                    },
+                    onError: (error, isInsufficientCredits) => {
+                        clearInterval(stageInterval);
+                        setIsLoading(false);
+                        if (isInsufficientCredits) {
+                            setShowOutOfCredits(true);
+                        } else {
+                            setGlobalError(error || 'Skeeme is down, Please try again later.');
+                            setShowErrorModal(true);
+                        }
+                    },
                 }
-                
-                setGlobalError('Skeeme is down, Please try again later.');
-                setShowErrorModal(true);
-            });
+            );
 
         } catch (e: any) {
             clearInterval(stageInterval);

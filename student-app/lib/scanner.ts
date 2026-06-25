@@ -1,7 +1,7 @@
 import { apiStandard } from './api';
 import { generateUUID } from './utils';
-import EventSource from 'react-native-sse';
 import { useAuthStore } from '@/store/authStore';
+import { streamScanSolve } from './aiStream';
 
 export type ScanResult = {
     question: string;
@@ -45,7 +45,8 @@ export const scannerService = {
     },
 
     /**
-     * Solves a question using streaming SSE.
+     * Solves a question using the Node.js AI microservice (streaming).
+     * Replaces the old EventSource SSE approach with a clean fetch-based stream.
      */
     streamSolve: (
         base64: string,
@@ -58,129 +59,37 @@ export const scannerService = {
             onDone?: () => void;
         }
     ): (() => void) => {
-        const token = useAuthStore.getState().token;
-        const idempotencyKey = generateUUID();
-        const url = `${process.env.EXPO_PUBLIC_API_URL}scan/solve/stream`;
+        let accumulatedText = '';
 
-        const es = new EventSource(url, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Idempotency-Key': idempotencyKey,
-                'Content-Type': 'application/json',
-                'Accept': 'text/event-stream, application/json',
+        const cleanup = streamScanSolve(base64, {
+            onStatus: (message) => {
+                callbacks.onStatus?.(message);
             },
-            method: 'POST',
-            body: JSON.stringify({ image: base64 }),
-        } as any);
-
-        let accumulatedJson = '';
-        let streamErrored = false;
-
-         es.addEventListener('message', (event: any) => {
-            if (event.data === '[DONE]') {
-                es.close();
+            onToken: (token) => {
+                accumulatedText += token;
+                // Try to parse partial results as they stream in
+                const partial = repairPartialJson(accumulatedText);
+                if (partial?.results?.length) {
+                    callbacks.onDelta?.(partial.results);
+                }
+            },
+            onComplete: (fullText) => {
+                // Parse the complete response
+                const parsed = repairPartialJson(fullText);
+                if (parsed?.results) {
+                    callbacks.onFullResult?.(parsed.results);
+                }
+                // Refresh credits from the server
+                callbacks.onComplete?.(0); // Credits will be refreshed by the UI
                 callbacks.onDone?.();
-                return;
-            }
-
-            try {
-                const chunk = JSON.parse(event.data || '{}');
-                switch (chunk.type) {
-                    case 'status': {
-                        if (chunk.message) {
-                            callbacks.onStatus?.(chunk.message);
-                        }
-                        break;
-                    }
-                    case 'text_delta': {
-                        if (chunk.text) {
-                            accumulatedJson += chunk.text;
-                            const partial = repairPartialJson(accumulatedJson);
-                            if (partial?.results?.length) {
-                                callbacks.onDelta?.(partial.results);
-                            }
-                        }
-                        break;
-                    }
-                    case 'full_result': {
-                        if (chunk.data?.results) {
-                            callbacks.onFullResult?.(chunk.data.results);
-                        }
-                        break;
-                    }
-                    case 'complete': {
-                        if (typeof chunk.credits_remaining === 'number') {
-                            callbacks.onComplete?.(chunk.credits_remaining, chunk.reward, chunk.streak);
-                        }
-                        break;
-                    }
-                    case 'error': {
-                            streamErrored = true;
-                            es.close();
-                            // If server included remaining credits info, sync it to local user immediately
-                            try {
-                                const parsedPayload = chunk || {};
-                                if (typeof parsedPayload.available === 'number') {
-                                    const update = useAuthStore.getState().updateUser;
-                                    if (update) update({ credits: parsedPayload.available } as any);
-                                }
-                            } catch (_) { /* ignore */ }
-
-                            callbacks.onError?.(chunk.message || 'Failed to solve. Please try again.');
-                            break;
-                        }
-                }
-            } catch (e) {
-                if (__DEV__) console.error('Stream parse error', e);
+            },
+            onError: (error, isInsufficientCredits) => {
+                callbacks.onError?.(error, isInsufficientCredits);
+                callbacks.onDone?.();
             }
         });
 
-        es.addEventListener('error', (event: any) => {
-            if (__DEV__) console.error('SSE Error Detail:', event);
-            es.close();
-            
-            if (!streamErrored) {
-                streamErrored = true;
-
-                // The server can send a JSON body (e.g. 402 insufficient_credits) as event.message.
-                // Try to parse it before falling back to generic messaging.
-                if (event?.message) {
-                    try {
-                        // event.message may be the raw JSON string from the server response body
-                        const parsed = typeof event.message === 'string' ? JSON.parse(event.message) : event.message;
-                        if (parsed?.error === 'insufficient_credits') {
-                            callbacks.onError?.('insufficient_credits', true);
-                            return;
-                        }
-                    } catch (_) { /* not JSON, fall through */ }
-                }
-
-                // Also check xhrStatus 402 directly (some SSE impls expose status)
-                if (event?.xhrStatus === 402) {
-                    callbacks.onError?.('insufficient_credits', true);
-                    return;
-                }
-                
-                // Differentiate between intentional server errors and network/client errors
-                let errorMessage = 'Connection interrupted. Please check your internet and try again.';
-                
-                if (event?.message) {
-                    if (event.message.includes('network connection was lost') || 
-                        event.message.includes('Network Error') || 
-                        event.xhrStatus === 0) {
-                        errorMessage = 'Network connection lost. Please try again.';
-                    } else {
-                        errorMessage = event.message;
-                    }
-                }
-                
-                callbacks.onError?.(errorMessage, false);
-            }
-        });
-
-        return () => {
-            es.close();
-        };
+        return cleanup;
     }
 };
 

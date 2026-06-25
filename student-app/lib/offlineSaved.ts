@@ -1,9 +1,12 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
 
 const QUIZ_KEY = 'cache_saved_quizzes';
 const DECK_KEY = 'cache_saved_flashcards';
+
+function getFilePath(key: string) {
+  return `${FileSystem.documentDirectory}${key}.json`;
+}
 
 async function readJson(key: string) {
   try {
@@ -12,10 +15,12 @@ async function readJson(key: string) {
       return raw ? JSON.parse(raw) : null;
     }
 
-    // expo-secure-store is available in native; but FileSystem is used elsewhere for larger payloads.
-    // For offline saved items, FileSystem can be larger; however, to keep behavior consistent
-    // across environments, we use SecureStore here for encrypted persistence on device.
-    const raw = await SecureStore.getItemAsync(key);
+    const path = getFilePath(key);
+    const info = await FileSystem.getInfoAsync(path);
+    if (!info.exists) {
+      return null;
+    }
+    const raw = await FileSystem.readAsStringAsync(path);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -29,7 +34,8 @@ async function writeJson(key: string, value: any) {
       localStorage.setItem(key, raw);
       return;
     }
-    await SecureStore.setItemAsync(key, raw);
+    const path = getFilePath(key);
+    await FileSystem.writeAsStringAsync(path, raw);
   } catch {
     // ignore
   }

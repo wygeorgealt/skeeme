@@ -14,6 +14,11 @@ class Referral extends Model
         'status',
         'referred_at',
         'credited_at',
+        'indirect_referrer_user_id',
+        'direct_reward_amount',
+        'indirect_reward_amount',
+        'direct_reward_claimed_at',
+        'indirect_reward_claimed_at',
     ];
 
     protected $casts = [

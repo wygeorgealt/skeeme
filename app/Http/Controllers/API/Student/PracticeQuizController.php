@@ -61,20 +61,46 @@ class PracticeQuizController extends Controller
         }
 
         $user = $request->user();
+
+        $blocklist = ['weapon', 'drug', 'violenc', 'hack', 'porn', 'sex', 'explosive', 'suicide', 'murder', 'kill', 'nsfw', 'illegal'];
+        $contentToLower = strtolower($validated['topic'] ?? '');
+        foreach ($blocklist as $word) {
+            if (str_contains($contentToLower, $word)) {
+                return response()->json(['message' => 'This topic is not appropriate for educational content generation.'], 422);
+            }
+        }
         $pricingConfig = \App\Models\SystemSetting::getPricingConfig();
         $planTier = $user->getStudentPlan() === 'free' ? 'free' : 'paid';
         $quizRates = $pricingConfig['rates']['quiz_flat'] ?? ['free' => 30, 'paid' => 30];
         $totalCost = is_array($quizRates) ? ($quizRates[$planTier] ?? 30) : $quizRates;
 
-        if (!$user->is_unlimited_student && $user->credits <= 0) {
-            return InsufficientCreditsResponse::make(
-                $totalCost,
-                (int) $user->credits,
-                "Insufficient credits. You need at least {$totalCost} credits to generate a quiz."
+        $requestId = (string) Str::uuid();
+
+        if (!$user->is_unlimited_student) {
+            // Check balance using lockForUpdate via a custom transaction
+            $hasEnough = \Illuminate\Support\Facades\DB::transaction(function () use ($user, $totalCost) {
+                $lockedUser = \App\Models\User::where('id', '=', $user->id)->lockForUpdate()->first(['*']);
+                return $lockedUser->credits >= $totalCost;
+            });
+            
+            if (!$hasEnough) {
+                return InsufficientCreditsResponse::make(
+                    $totalCost,
+                    (int) $user->credits,
+                    "Insufficient credits. You need at least {$totalCost} credits to generate a quiz."
+                );
+            }
+
+            // Deduct immediately before the streaming starts
+            $user->deductCredits(
+                $totalCost, 
+                'quiz_generation', 
+                "Practice Quiz (Streaming): " . ($validated['topic'] ?? 'File Content'),
+                $requestId,
+                \App\Services\AIService::MODEL_SONNET
             );
         }
 
-        $requestId = (string) Str::uuid();
 
         return response()->stream(function () use ($request, $user, $validated, $totalCost, $requestId) {
             $emit = function (array $payload) use ($requestId) {
@@ -128,7 +154,7 @@ class PracticeQuizController extends Controller
                 $params = [
                     'model' => $modelUsed,
                     'max_tokens' => $this->aiService->calculateMaxTokens("mcq_" . ($validated['difficulty'] ?? 'medium'), $validated['question_count']),
-                    'system' => "You are a quiz generator. Return ONLY raw JSON array matching the requested schema. No conversational text, no markdown. Schema: [{\"question_text\":\"\",\"options\":[\"\",\"\",\"\",\"\"],\"correct_answer\":\"\",\"explanation\":\"\",\"question_type\":\"multiple_choice|essay\"}]",
+                    'system' => "You are an educational AI assistant. If the user requests content about violence, weapons, illegal activities, adult/sexual content, self-harm, or any non-educational topic, politely refuse and suggest an educational alternative instead. Return ONLY raw JSON array matching the requested schema. No conversational text, no markdown. Schema: [{\"question_text\":\"\",\"options\":[\"\",\"\",\"\",\"\"],\"correct_answer\":\"\",\"explanation\":\"\",\"question_type\":\"multiple_choice|essay\"}]",
                     'messages' => [
                         ['role' => 'user', 'content' => "Generate a " . ($validated['difficulty'] ?? 'medium') . " quiz with " . ($validated['question_count'] ?? 10) . " questions on the following topic/material: " . $sourceContent]
                     ],
@@ -164,17 +190,12 @@ class PracticeQuizController extends Controller
                     }
                 }
 
-                // 4. Credit Deduction (Atomic)
-                $user->deductCredits(
-                    $totalCost, 
-                    'quiz_generation', 
-                    "Practice Quiz (Streaming): " . ($validated['topic'] ?? 'File Content'),
-                    $requestId,
-                    $modelUsed
-                );
-
                 echo "data: [DONE]\n\n";
             } catch (\Exception $e) {
+                if (!$user->is_unlimited_student) {
+                    $user->refundCredits($totalCost, 'quiz_generation_refund', 'Refund for failed quiz generation', $requestId);
+                }
+                
                 Log::error("[Streaming Quiz Error] " . $e->getMessage(), [
                     'user_id' => $user->id,
                     'request_id' => $requestId,
@@ -233,6 +254,14 @@ class PracticeQuizController extends Controller
             Log::info("Validation Passed");
 
             $user = Auth::user();
+
+            $blocklist = ['weapon', 'drug', 'violenc', 'hack', 'porn', 'sex', 'explosive', 'suicide', 'murder', 'kill', 'nsfw', 'illegal'];
+            $contentToLower = strtolower($validated['topic'] ?? '');
+            foreach ($blocklist as $word) {
+                if (str_contains($contentToLower, $word)) {
+                    return response()->json(['message' => 'This topic is not appropriate for educational content generation.'], 422);
+                }
+            }
             $sourceContent = '';
 
             // 1. Handle File Upload & Extraction

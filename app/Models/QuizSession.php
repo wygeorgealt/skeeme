@@ -6,7 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class QuizSession extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'topic', 'difficulty', 'total_questions', 'correct_answers', 
+        'score_percentage', 'time_spent_seconds'
+    ];
 
     public function user()
     {

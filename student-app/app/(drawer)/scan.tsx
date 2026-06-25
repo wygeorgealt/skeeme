@@ -36,7 +36,6 @@ import { markGenerationSuccess } from '@/lib/storeReview';
 import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/freeOffer';
 
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import EventSource from 'react-native-sse';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
 
 const BASE_SCAN_COST = 50;

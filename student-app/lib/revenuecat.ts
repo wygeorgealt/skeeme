@@ -116,3 +116,22 @@ export const restorePurchases = async (): Promise<boolean> => {
 export const logoutRevenueCat = async () => {
   await Purchases.logOut();
 };
+
+/**
+ * Purchase a product by its ID
+ */
+export const purchaseProductById = async (productId: string) => {
+  try {
+    const products = await Purchases.getProducts([productId]);
+    if (!products.length) {
+      throw new Error(`Product with ID ${productId} not found.`);
+    }
+    const { customerInfo } = await Purchases.purchaseStoreProduct(products[0]);
+    return typeof customerInfo.entitlements.active['pro'] !== 'undefined';
+  } catch (e: any) {
+    if (e.userCancelled) {
+      throw { userCancelled: true };
+    }
+    throw e;
+  }
+};

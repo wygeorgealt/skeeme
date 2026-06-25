@@ -10,15 +10,9 @@ use Illuminate\Support\Facades\Redis;
 
 class SystemHealthController extends Controller
 {
-    /**
-     * Secret key for accessing the health dashboard.
-     * In a production app, this should be in .env
-     */
-    protected $secretKey = 'skeeme-vital-stats-2026';
-
     public function index($key)
     {
-        if ($key !== $this->secretKey) {
+        if ($key !== config('services.health.key', 'skeeme-vital-stats-2026')) {
             abort(404);
         }
 

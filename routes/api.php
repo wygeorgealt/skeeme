@@ -190,8 +190,7 @@ Route::group(['prefix' => 'v1'], function () {
             // System Health & Config
             Route::get('system/pricing', [\App\Http\Controllers\API\SystemController::class, 'getPricing']);
             Route::get('system/app-version', [\App\Http\Controllers\API\SystemController::class, 'getAppVersion']);
-            // Local/staging only — controller returns 404 in production
-            Route::get('diag/system', [StudentSubscriptionController::class, 'debug']);
+
             
             Route::post('quizzes/grade-theory', [\App\Http\Controllers\API\Student\PracticeQuizController::class, 'gradeTheory'])->middleware('sufficient.credits');
             
@@ -260,6 +259,21 @@ Route::group(['prefix' => 'v1'], function () {
             Route::get('dashboard', [\App\Http\Controllers\API\Team\DashboardController::class, 'index']);
             Route::get('logs', [\App\Http\Controllers\API\Team\LogController::class, 'index']);
             Route::get('logs/errors', [\App\Http\Controllers\API\Team\LogController::class, 'errors']);
+        });
+    });
+
+    // Internal Microservice API
+    Route::group(['prefix' => 'internal/ai'], function () {
+        // Protect with basic secret check inline or middleware if preferred
+        // We'll just do a quick secret check in the controller or a closure middleware
+        Route::middleware(function ($request, $next) {
+            if ($request->header('X-Internal-Secret') !== (env('INTERNAL_SECRET', 'skeeme-ai-secret-key-123'))) {
+                return response()->json(['error' => 'Unauthorized service access'], 401);
+            }
+            return $next($request);
+        })->group(function () {
+            Route::post('authorize', [\App\Http\Controllers\API\Internal\AIInternalController::class, 'authorizeRequest']);
+            Route::post('refund', [\App\Http\Controllers\API\Internal\AIInternalController::class, 'refund']);
         });
     });
 

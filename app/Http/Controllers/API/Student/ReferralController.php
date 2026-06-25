@@ -103,6 +103,20 @@ class ReferralController extends Controller
             return response()->json(['message' => 'You have already used a referral code.'], 422);
         }
 
+        // Prevent abuse: same IP or device cannot use the same referral code multiple times
+        $ipKey = "referral_ip_" . md5($request->ip() . $code);
+        if (\Illuminate\Support\Facades\Cache::has($ipKey)) {
+            return response()->json(['message' => 'This referral code has already been claimed from this network.'], 422);
+        }
+        
+        $deviceId = $request->header('X-Device-Id') ?? $request->header('User-Agent');
+        if ($deviceId) {
+            $deviceKey = "referral_device_" . md5($deviceId . $code);
+            if (\Illuminate\Support\Facades\Cache::has($deviceKey)) {
+                return response()->json(['message' => 'This referral code has already been claimed from this device.'], 422);
+            }
+        }
+
         try {
             $result = DB::transaction(function () use ($referrer, $referredUser, $code) {
                 // Find indirect referrer (who referred the current referrer?)
@@ -151,6 +165,12 @@ class ReferralController extends Controller
                     'credited_at' => now(),
                 ]);
             });
+
+            // Lock the IP/Device for this code (1 year)
+            \Illuminate\Support\Facades\Cache::put($ipKey, true, now()->addYear());
+            if (isset($deviceKey)) {
+                \Illuminate\Support\Facades\Cache::put($deviceKey, true, now()->addYear());
+            }
 
             // Send Notification to Direct Referrer
             try {

@@ -16,10 +16,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
 import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '@/lib/posthog';
+import { SuperwallProviderWrapper } from '@/lib/monetization';
 import * as SystemUI from 'expo-system-ui';
 import { DangerTriangle, Refresh } from '@solar-icons/react-native/Bold';
-import { initializeRevenueCat } from '@/lib/revenuecat';
-import RevenueCatUI from 'react-native-purchases-ui';
+import { initializeMonetization } from '@/lib/monetization';
 import * as Application from 'expo-application';
 import { apiStandard } from '@/lib/api';
 
@@ -92,13 +92,13 @@ export default function RootLayout() {
     hydrate();
   }, [hydrate]);
 
-  // Initialize RevenueCat SDK — configure immediately on mount (anonymous),
+  // Initialize monetization SDK (Superwall when configured, otherwise RevenueCat),
   // then re-configure with the real user ID once authenticated.
   useEffect(() => {
     // RevenueCat "offerings" can be empty in Expo Go/dev if appUserID changes or is undefined.
     // Use a stable fallback anon id when logged out so paywalls render correctly.
     const stableAnonId = user?.id?.toString() ?? 'anon';
-    initializeRevenueCat(stableAnonId);
+    initializeMonetization(stableAnonId);
   }, [user?.id]);
 
   useEffect(() => {
@@ -205,8 +205,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: rootBg }}>
       <View style={{ flex: 1, backgroundColor: rootBg }}>
-        <PostHogProvider client={posthog}>
-          <QueryProvider>
+        <SuperwallProviderWrapper>
+          <PostHogProvider client={posthog}>
+            <QueryProvider>
             <PollingSync user={user} />
             <ThemeProvider value={{
               ...(tailwindScheme === 'dark' ? DarkTheme : DefaultTheme),
@@ -334,6 +335,7 @@ export default function RootLayout() {
             </ThemeProvider>
           </QueryProvider>
         </PostHogProvider>
+      </SuperwallProviderWrapper>
       </View>
     </GestureHandlerRootView>
   );

@@ -10,7 +10,7 @@ import { CheckCircle, AltArrowLeft, AltArrowRight, Refresh, DangerTriangle, Ligh
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { MathText } from '@/components/ui/MathText';
 import { useAuthStore } from '@/store/authStore';
-import EventSource from 'react-native-sse';
+import { streamFlashcardGenerate } from '@/lib/aiStream';
 import * as SecureStore from 'expo-secure-store';
 import Animated, {
     interpolate,
@@ -156,7 +156,7 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
 FlashcardItem.displayName = 'FlashcardItem';
 
 export default function StudyDeckScreen() {
-    const { id, autoStart, topic, card_count, difficulty, mode, idempotency } = useLocalSearchParams();
+    const { id, autoStart, topic, card_count, difficulty } = useLocalSearchParams();
     const scrollRef = useRef<ScrollView>(null);
     const esRef = useRef<any>(null);
     const queryClient = useQueryClient();
@@ -270,52 +270,21 @@ export default function StudyDeckScreen() {
 
     const startLiveGeneration = () => {
         setIsGenerating(true);
-        const token = useAuthStore.getState().token;
-        const url = `${process.env.EXPO_PUBLIC_API_URL}flashcards/generate/stream`;
-
         let accumulatedJson = '';
 
-        const es = new EventSource(url, {
-            headers: { 
-                'Authorization': `Bearer ${token}`, 
-                'Idempotency-Key': (idempotency as string) || '',
-                'Content-Type': 'application/json'
+        const cleanup = streamFlashcardGenerate(
+            {
+                deck_id: id as string,
+                topic: topic as string,
+                card_count: parseInt(card_count as string) || 10,
+                difficulty: difficulty as string,
             },
-            method: 'POST',
-            body: JSON.stringify({
-                deck_id: id,
-                topic: topic,
-                card_count: card_count,
-                difficulty: difficulty
-            })
-        } as any);
-
-        esRef.current = es;
-
-        es.addEventListener('message', (event) => {
-            if (event.data === '[DONE]') {
-                es.close();
-                esRef.current = null;
-                handleStreamComplete(accumulatedJson);
-                return;
-            }
-
-            try {
-                const chunk = JSON.parse(event.data || '{}');
-                if (chunk.error) {
-                    Alert.alert('Generation Failed', chunk.error);
-                    es.close();
-                    esRef.current = null;
-                    setIsGenerating(false);
-                    if (autoStart === 'true') {
-                        api.delete(`/flashcards/decks/${id}`).catch(() => {});
-                    }
-                    router.back();
-                    return;
-                }
-                if (chunk.type === 'status') setGenStage(chunk.message);
-                if (chunk.text) {
-                    accumulatedJson += chunk.text;
+            {
+                onStatus: (message) => {
+                    setGenStage(message);
+                },
+                onToken: (token) => {
+                    accumulatedJson += token;
                     const partial = parsePartialJson(accumulatedJson);
                     if (partial && Array.isArray(partial)) {
                         setStreamingCards(partial);
@@ -323,26 +292,26 @@ export default function StudyDeckScreen() {
                             console.log(`Streaming: ${partial.length} cards accumulated (expecting ~${card_count})`);
                         }
                     }
-                }
-            } catch (e) {
-                if (__DEV__) console.warn('Message parse error:', e);
+                },
+                onComplete: (fullText) => {
+                    handleStreamComplete(fullText || accumulatedJson);
+                },
+                onError: (error, isInsufficientCredits) => {
+                    setIsGenerating(false);
+                    if (isInsufficientCredits) {
+                        Alert.alert('Insufficient Credits', 'You need more credits to generate flashcards.');
+                    } else {
+                        Alert.alert('Generation Error', error || 'The study generation server encountered an issue. Please try again.');
+                    }
+                    if (autoStart === 'true') {
+                        api.delete(`/flashcards/decks/${id}`).catch(() => {});
+                    }
+                    router.back();
+                },
             }
-        });
+        );
 
-        es.addEventListener('error', (event: any) => {
-            es.close();
-            esRef.current = null;
-            setIsGenerating(false);
-            if (event?.xhr?.status === 429 || event?.message?.includes('429')) {
-                useAuthStore.getState().toggleCooldownModal(true);
-            } else {
-                Alert.alert('Generation Error', 'The study generation server encountered an issue. Please try again.');
-                if (autoStart === 'true') {
-                    api.delete(`/flashcards/decks/${id}`).catch(() => {});
-                }
-                router.back();
-            }
-        });
+        esRef.current = { close: cleanup } as any;
     };
 
     const saveGeneratedFlashcards = async (cards: any[]) => {
@@ -514,7 +483,7 @@ export default function StudyDeckScreen() {
                 <DangerTriangle size={64} color="#ef4444" />
                 <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Deck not found</Text>
                 <Text style={s.errorSubtitle}>
-                    We couldn't load this flashcard deck. It might have been deleted or there was a connection issue.
+                    We couldn&apos;t load this flashcard deck. It might have been deleted or there was a connection issue.
                 </Text>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
                     <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF' }]}>

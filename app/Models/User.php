@@ -34,13 +34,10 @@ class User extends Authenticatable implements FilamentUser
         'age',
         'address',
         'phone_number',
-        'role',
-        'status',
         'school_id',
         'class_id',
         'approved_at',
         'timezone',
-        'credits',
         'last_credit_refill_at',
         'ai_preferences',
         'provider',
@@ -49,7 +46,6 @@ class User extends Authenticatable implements FilamentUser
         'notifications_enabled',
         'referral_code',
         'last_credit_alert_at',
-        'subscription_tier',
     ];
 
     /**
@@ -267,6 +263,24 @@ class User extends Authenticatable implements FilamentUser
         });
     }
 
+    /**
+     * Refund credits safely.
+     */
+    public function refundCredits(int $amount, string $actionType, string $description, string $requestId): void
+    {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($amount, $actionType, $description, $requestId) {
+            $user = self::where('id', $this->id)->lockForUpdate()->first();
+            $user->increment('credits', $amount);
+
+            $user->transactions()->create([
+                'type' => 'refund',
+                'action_type' => $actionType,
+                'amount' => $amount,
+                'description' => $description,
+                'request_id' => $requestId,
+            ]);
+        });
+    }
     /**
      * Get the user's initials
      */

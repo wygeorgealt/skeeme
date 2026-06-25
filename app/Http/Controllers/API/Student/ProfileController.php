@@ -154,7 +154,16 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        // Password check has been replaced with a frontend random word confirmation challenge.
+        // Enforce password confirmation for users not authenticated via a social provider
+        if (empty($user->provider)) {
+            $request->validate([
+                'password' => 'required|string',
+            ]);
+
+            if (!Hash::check($request->password, $user->password)) {
+                return response()->json(['message' => 'The provided password does not match our records.'], 403);
+            }
+        }
 
         // Capture email before anonymization (needed for sending goodbye email)
         $userEmail = $user->email;

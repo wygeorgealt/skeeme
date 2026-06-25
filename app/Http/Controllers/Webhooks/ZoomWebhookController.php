@@ -14,6 +14,21 @@ class ZoomWebhookController extends Controller
         $event = $request->input('event');
         $payload = $request->input('payload');
 
+        // Verify Zoom Signature
+        $signature = $request->header('x-zm-signature');
+        $timestamp = $request->header('x-zm-request-timestamp');
+        $secretToken = config('services.zoom.secret_token');
+        
+        if ($secretToken && $signature && $timestamp) {
+            $message = "v0:{$timestamp}:" . $request->getContent();
+            $expectedSignature = "v0=" . hash_hmac('sha256', $message, $secretToken);
+            
+            if (!hash_equals($expectedSignature, $signature)) {
+                Log::warning('Zoom webhook signature mismatch', ['ip' => $request->ip()]);
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+        }
+
         // 1. Handle Endpoint Validation
         if ($event === 'endpoint.url_validation') {
             $plainToken = $payload['plainToken'];
