@@ -16,7 +16,7 @@ export interface AuthResult {
  */
 export async function authorizeAndDeduct(
     token: string, 
-    actionType: 'scan_solve' | 'quiz_generation' | 'flashcard_generation',
+    actionType: 'scan_solve' | 'quiz_generation' | 'flashcard_generation' | 'scan_chat',
     cost: number,
     requestId: string,
     extractionId?: string

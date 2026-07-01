@@ -117,9 +117,10 @@ export function streamFromAI(
  */
 export function streamScanSolve(
     imageBase64: string,
+    provider: 'deepseek' | 'anthropic',
     callbacks: StreamCallbacks
 ): () => void {
-    return streamFromAI('/api/scan/solve', { image: imageBase64 }, callbacks);
+    return streamFromAI('/api/scan/solve', { image: imageBase64, provider }, callbacks);
 }
 
 /**
@@ -152,4 +153,17 @@ export function streamFlashcardGenerate(
     callbacks: StreamCallbacks
 ): () => void {
     return streamFromAI('/api/flashcards/generate', params, callbacks);
+}
+
+/**
+ * Stream a follow-up chat request for a scan.
+ */
+export function streamScanFollowUpChat(
+    params: {
+        messages: { role: string; content: string }[];
+        context: string;
+    },
+    callbacks: StreamCallbacks
+): () => void {
+    return streamFromAI('/api/scan/chat', params, callbacks);
 }

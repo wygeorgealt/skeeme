@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Dimensions, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Dimensions, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,7 +13,7 @@ import Animated, {
     interpolate,
     useAnimatedStyle
 } from 'react-native-reanimated';
-import { QuestionCircle, AltArrowLeft, AltArrowRight, Bolt, CameraAdd, CheckCircle, Dislike, Gallery, Like, Refresh, Scanner, Share, List } from '@solar-icons/react-native/Bold';
+import { QuestionCircle, AltArrowLeft, AltArrowRight, Bolt, CameraAdd, CheckCircle, Dislike, Gallery, Like, Refresh, Scanner, Share, List, MenuDotsCircle } from '@solar-icons/react-native/Bold';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
@@ -37,6 +37,10 @@ import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/fre
 
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
+import { FollowUpChatModal } from '@/components/ui/FollowUpChatModal';
+import { ProgressStages } from '@/components/ui/ProgressStages';
+import { ModelSwitcher, ProviderType } from '@/components/ui/ModelSwitcher';
+import { ShareModal } from '@/components/ui/ShareModal';
 
 const BASE_SCAN_COST = 50;
 const COST_PER_SOLUTION = 0;
@@ -66,6 +70,9 @@ export default function ScanScreen() {
     const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'unhelpful'>>({});
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [globalErrorMessage, setGlobalErrorMessage] = useState('');
+    const [showChatModal, setShowChatModal] = useState(false);
+    const [selectedProvider, setSelectedProvider] = useState<ProviderType>('deepseek');
+    const [showShareModal, setShowShareModal] = useState(false);
 
     const [progressPercent, setProgressPercent] = useState(0);
 
@@ -233,7 +240,7 @@ export default function ScanScreen() {
             let streamErrored = false;
             let finalResults: ScanResult[] = [];
 
-            const cleanup = scannerService.streamSolve(targetBase64, {
+            const cleanup = scannerService.streamSolve(targetBase64, selectedProvider, {
                 onStatus: (message) => {
                     setLoadingStage(message);
                 },
@@ -415,10 +422,10 @@ export default function ScanScreen() {
                 <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
                     <AltArrowLeft size={20} color={C.text} />
                 </TouchableOpacity>
-                <Text style={[s.headerTitle, { color: C.text }]}>Results</Text>
+                <Text style={[s.headerTitle, { color: C.text }]}>Question</Text>
                 {results.length > 0 ? (
-                    <TouchableOpacity onPress={handleExport} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
-                        <Share size={20} color={C.text} />
+                    <TouchableOpacity onPress={() => setShowShareModal(true)} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
+                        <MenuDotsCircle size={20} color={C.text} />
                     </TouchableOpacity>
                 ) : (
                     <View style={{ width: 44 }} />
@@ -426,32 +433,24 @@ export default function ScanScreen() {
             </View>
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
-                {!!imageUri && !loading && results.length === 0 && (
-                    <View style={s.previewContainer}>
-                        <BlurView
-                            intensity={Platform.OS === 'ios' ? (isDark ? 30 : 60) : 0}
-                            tint={isDark ? 'dark' : 'light'}
-                            style={[s.previewCard, {
-                                backgroundColor: isDark
-                                    ? (Platform.OS === 'android' ? '#1C1C1E' : 'rgba(28,28,30,0.4)')
-                                    : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.6)')
-                            }]}
-                        >
-                            <View style={{ width: '100%', height: 350, overflow: 'hidden' }}>
-                                <ExpoImage source={{ uri: imageUri }} style={s.previewImage} contentFit="cover" />
-                            </View>
-                        </BlurView>
+                {!!imageUri && (
+                    <View style={{ width: '100%', height: 160, marginBottom: 16, borderRadius: 16, overflow: 'hidden' }}>
+                        <ExpoImage source={{ uri: imageUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                     </View>
                 )}
 
-                {!!(results.length > 0 || loading) && (
-                    <View>
-                        {!!imageUri && (
-                            <View style={s.userPromptRow}>
-                                <ExpoImage source={{ uri: imageUri }} style={s.userPromptImage} contentFit="contain" />
-                            </View>
-                        )}
+                {(loading || results.length > 0) && (
+                    <View style={{ marginBottom: 24 }}>
+                        <ModelSwitcher 
+                            selected={selectedProvider}
+                            onSelect={setSelectedProvider}
+                            isDark={isDark}
+                        />
+                    </View>
+                )}
 
+                {!!(results.length > 0 || loading || scanError) && (
+                    <View>
                         {scanError ? (
                             <View style={[s.errorContainer, isDark ? s.cardDark : s.cardLight]}>
                                 <View style={s.errorIconCircle}>
@@ -484,26 +483,16 @@ export default function ScanScreen() {
                         ) : (
                             <>
                                 {loading && (
-                                    <View style={s.aiResponseRow}>
-                                        <View style={s.thinkingBubble}>
-                                            <LoadingSpinner size={16} color={C.primary} />
-                                            <Animated.View style={pulseStyle}>
-                                                <Text style={[s.aiAnalyzingText, isDark ? { color: 'white' } : { color: '#0f172a' }]}>
-                                                    {loadingStage}
-                                                </Text>
-                                            </Animated.View>
-                                        </View>
+                                    <View style={{ backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 16, overflow: 'hidden', marginBottom: 24 }}>
+                                        <ProgressStages progressPercent={progressPercent} isDark={isDark} />
                                     </View>
                                 )}
 
                                 {results.map((item, index) => (
-                                    <View key={index} style={[s.answerCard, isDark ? s.cardDark : s.cardLight]}>
+                                    <View key={index} style={s.resultContainer}>
                                         {!!item.topic && (
                                             <View style={s.sectionHeaderRow}>
-                                                <View style={s.sectionTitleContainer} />
-                                                <View style={s.topicPill}>
-                                                    <Text style={s.topicPillText}>{item.topic}</Text>
-                                                </View>
+                                                <Text style={[s.topicTitleText, isDark ? s.textWhite : s.textSlate900]}>{item.topic}</Text>
                                             </View>
                                         )}
                                         {!!(item.solution || item.summary) && (
@@ -511,85 +500,114 @@ export default function ScanScreen() {
                                                 content={`**${item.solution || item.summary}**`}
                                                 color={isDark ? '#FFFFFF' : '#0f172a'}
                                                 fontSize={17}
-                                                containerStyle={{ marginBottom: 12, marginTop: 8 }}
+                                                containerStyle={{ marginBottom: 16, marginTop: 8 }}
                                             />
                                         )}
 
-                                        <MathText
-                                            content={
-                                                item.explanation
-                                                    ? item.explanation
-                                                    : (item.steps && item.steps.length > 0 ? item.steps.join('\n\n') : 'No detailed explanation available.')
-                                            }
-                                            color={isDark ? '#cbd5e1' : '#334155'}
-                                            fontSize={15}
-                                            containerStyle={{ marginBottom: 20 }}
-                                        />
-
-                                        <View style={s.feedbackRow}>
-                                            {feedback[index] ? (
-                                                <Animated.View entering={FadeIn.duration(300)} style={s.feedbackDone}>
-                                                    <CheckCircle size={16} color="#10b981" />
-                                                    <Text style={[s.feedbackDoneText, { color: '#10b981' }]}>
-                                                        Thanks for the feedback!
-                                                    </Text>
-                                                </Animated.View>
-                                            ) : (
-                                                <>
-                                                    <Text style={[s.feedbackPrompt, isDark ? s.textSlate400d : s.textSlate500l]}>Happy with the answer?</Text>
-                                                    <View style={s.feedbackBtns}>
-                                                        <TouchableOpacity
-                                                            onPress={() => {
-                                                                setFeedback(prev => ({ ...prev, [index]: 'helpful' }));
-                                                            }}
-                                                            activeOpacity={0.7}
-                                                            style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
-                                                        >
-                                                            <Like size={14} color={isDark ? 'white' : '#0f172a'} />
-                                                            <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Helpful</Text>
-                                                        </TouchableOpacity>
-                                                        <TouchableOpacity
-                                                            onPress={() => {
-                                                                setFeedback(prev => ({ ...prev, [index]: 'unhelpful' }));
-                                                            }}
-                                                            activeOpacity={0.7}
-                                                            style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
-                                                        >
-                                                            <Dislike size={14} color={isDark ? 'white' : '#0f172a'} />
-                                                            <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Unhelpful</Text>
-                                                        </TouchableOpacity>
+                                        {item.steps && item.steps.length > 0 ? (
+                                            item.steps.map((step, stepIdx) => (
+                                                <View key={stepIdx} style={s.stepRow}>
+                                                    <View style={[s.stepBadge, isDark ? s.bgWhite10 : s.bgSlate100]}>
+                                                        <Text style={[s.stepNumber, isDark ? s.textWhite : s.textSlate900]}>{stepIdx + 1}</Text>
                                                     </View>
-                                                </>
-                                            )}
-                                        </View>
+                                                    <View style={s.stepContent}>
+                                                        <MathText
+                                                            content={step}
+                                                            color={isDark ? '#cbd5e1' : '#334155'}
+                                                            fontSize={16}
+                                                        />
+                                                    </View>
+                                                </View>
+                                            ))
+                                        ) : (
+                                            <MathText
+                                                content={item.explanation || 'No detailed explanation available.'}
+                                                color={isDark ? '#cbd5e1' : '#334155'}
+                                                fontSize={16}
+                                                containerStyle={{ marginBottom: 20 }}
+                                            />
+                                        )}
+
+                                        {index === results.length - 1 && (
+                                            <View style={s.feedbackRow}>
+                                                {feedback[index] ? (
+                                                    <Animated.View entering={FadeIn.duration(300)} style={s.feedbackDone}>
+                                                        <CheckCircle size={16} color="#10b981" />
+                                                        <Text style={[s.feedbackDoneText, { color: '#10b981' }]}>
+                                                            Thanks for the feedback!
+                                                        </Text>
+                                                    </Animated.View>
+                                                ) : (
+                                                    <View style={s.feedbackContainerInner}>
+                                                        <Text style={[s.feedbackPrompt, isDark ? s.textSlate400d : s.textSlate500l]}>Happy with the answer?</Text>
+                                                        <View style={s.feedbackBtns}>
+                                                            <TouchableOpacity
+                                                                onPress={() => setFeedback(prev => ({ ...prev, [index]: 'helpful' }))}
+                                                                activeOpacity={0.7}
+                                                                style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
+                                                            >
+                                                                <Like size={16} color={isDark ? 'white' : '#0f172a'} />
+                                                                <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Helpful</Text>
+                                                            </TouchableOpacity>
+                                                            <TouchableOpacity
+                                                                onPress={() => setFeedback(prev => ({ ...prev, [index]: 'unhelpful' }))}
+                                                                activeOpacity={0.7}
+                                                                style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
+                                                            >
+                                                                <Dislike size={16} color={isDark ? 'white' : '#0f172a'} />
+                                                                <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Unhelpful</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        )}
                                     </View>
                                 ))}
-
-                                {!loading && results.length > 0 && (
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            const topics = results.map(r => r.topic).filter(Boolean);
-                                            const uniqueTopics = [...new Set(topics)];
-                                            const combinedTopic = uniqueTopics.join(', ') || 'General';
-                                            router.push({ pathname: '/generate', params: { topic: combinedTopic } });
-                                        }}
-                                        activeOpacity={0.8}
-                                        style={[s.followUpBar, isDark ? s.cardDark : s.cardLight]}
-                                    >
-                                        <View style={s.followUpInner}>
-                                            <Text style={[s.followUpText, isDark ? s.textSlate400d : s.textSlate500l]}>Practice similar questions...</Text>
-                                            <AltArrowRight size={16} color={C.textTertiary} />
-                                        </View>
-                                    </TouchableOpacity>
-                                )}
                             </>
                         )}
                     </View>
                 )}
-                <View style={{ height: 24 }} />
+                <View style={{ height: 100 }} />
             </ScrollView>
 
-            <GlobalErrorModal
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+                style={s.stickyFooterWrapper}
+                pointerEvents="box-none"
+            >
+                {!loading && results.length > 0 && (
+                    <View style={[s.followUpInputContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+                        <TouchableOpacity 
+                            onPress={() => setShowChatModal(true)}
+                            activeOpacity={0.8}
+                            style={[s.followUpInputWrapper, isDark ? s.bgDarkBase : s.bgWhite]}
+                        >
+                            <Text style={[s.followUpInput, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+                                Ask a follow-up...
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </KeyboardAvoidingView>
+
+            <FollowUpChatModal 
+                visible={showChatModal}
+                onClose={() => setShowChatModal(false)}
+                scanContext={results}
+            />
+
+            <ShareModal
+                visible={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                onShare={() => {
+                    setShowShareModal(false);
+                    setTimeout(() => handleExport(), 500);
+                }}
+                isDark={isDark}
+            />
+
+            <GlobalErrorModal 
                 visible={showErrorModal}
                 error={globalErrorMessage}
                 onDismiss={() => setShowErrorModal(false)}
@@ -643,6 +661,23 @@ const s = StyleSheet.create({
     answerHighlight: { borderRadius: 16, borderLeftWidth: 4, borderLeftColor: '#10b981', marginBottom: 20, padding: 25 },
     answerHighlightLight: { backgroundColor: 'rgba(16,185,129,0.03)' },
     answerHighlightDark: { backgroundColor: 'rgba(16,185,129,0.06)' },
+
+    resultContainer: { paddingVertical: 10 },
+    topicTitleText: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
+    stepRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
+    stepBadge: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 2, marginRight: 12 },
+    stepNumber: { fontSize: 13, fontWeight: '700' },
+    stepContent: { flex: 1 },
+    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    bgWhite: { backgroundColor: '#ffffff' },
+    bgSlate100: { backgroundColor: '#F1F5F9' },
+    bgDarkBase: { backgroundColor: '#1C1C1E' },
+    
+    feedbackContainerInner: { alignItems: 'center', width: '100%', marginVertical: 24 },
+    stickyFooterWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+    followUpInputContainer: { paddingHorizontal: 16, paddingTop: 16, backgroundColor: 'transparent' },
+    followUpInputWrapper: { borderRadius: 28, paddingHorizontal: 24, paddingVertical: 16, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 10, borderWidth: 1, borderColor: 'rgba(150,150,150,0.1)' },
+    followUpInput: { fontSize: 16, fontWeight: '500' },
 
     feedbackRow: { alignItems: 'center', paddingTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(148,163,184,0.08)' },
     feedbackBtns: { flexDirection: 'row', alignItems: 'center', gap: 12 },

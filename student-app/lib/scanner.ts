@@ -50,6 +50,7 @@ export const scannerService = {
      */
     streamSolve: (
         base64: string,
+        provider: 'deepseek' | 'anthropic',
         callbacks: {
             onStatus?: (message: string) => void;
             onDelta?: (partialResults: ScanResult[]) => void;
@@ -61,7 +62,7 @@ export const scannerService = {
     ): (() => void) => {
         let accumulatedText = '';
 
-        const cleanup = streamScanSolve(base64, {
+        const cleanup = streamScanSolve(base64, provider, {
             onStatus: (message) => {
                 callbacks.onStatus?.(message);
             },

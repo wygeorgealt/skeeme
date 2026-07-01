@@ -64,4 +64,51 @@ Break down your solution step by step. Use markdown formatting and valid LaTeX f
     }
 });
 
+router.post('/chat', async (req, res) => {
+    let authResult: any = null;
+    const idempotencyKey = req.headers['idempotency-key'] as string || randomUUID();
+
+    try {
+        const authHeader = req.headers.authorization;
+        const token = authHeader ? authHeader.replace('Bearer ', '') : null;
+        const { messages, context, provider } = req.body;
+
+        if (!token) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        if (!messages || !Array.isArray(messages)) {
+            return res.status(400).json({ error: 'Messages array is required' });
+        }
+
+        try {
+            // Check authorization but we don't deduct credits yet (handled by frontend limits or separate pricing)
+            authResult = await authorizeAndDeduct(token, 'scan_chat', 0, idempotencyKey);
+            if (!authResult.success) {
+                return res.status(402).json({ error: authResult.error });
+            }
+        } catch (e: any) {
+            return res.status(500).json({ error: 'Authorization service unavailable' });
+        }
+
+        const model = getModel(provider || 'anthropic');
+
+        const result = streamText({
+            model,
+            system: `You are an expert tutor helping a student with a problem they scanned.
+Here is the context of the problem and the initial solution provided:
+${context || 'No context provided.'}
+
+Answer the user's follow-up questions clearly and concisely. Use markdown and valid LaTeX for math.`,
+            messages
+        });
+
+        await result.pipeTextStreamToResponse(res);
+
+    } catch (error: any) {
+        console.error('Scan chat error:', error);
+        res.status(500).json({ error: 'Failed to process chat' });
+    }
+});
+
 export default router;
