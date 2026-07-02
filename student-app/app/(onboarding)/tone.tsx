@@ -8,13 +8,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import { Colors } from '@/constants/theme';
-import { CupStar, MedalRibbonsStar, Stopwatch, Stars } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 const TONES = [
-  { key: 'supportive', label: 'Supportive', emoji: '🤗', Icon: CupStar },
-  { key: 'strict', label: 'Strict', emoji: '📐', Icon: MedalRibbonsStar },
-  { key: 'concise', label: 'Concise', emoji: '⚡', Icon: Stopwatch },
-  { key: 'fun', label: 'Fun & Witty', emoji: '😂', Icon: Stars },
+  { key: 'supportive', label: 'Supportive', emoji: '🤗', iconSource: require('@/assets/3dicons/3dicons-trophy-front-color.png') },
+  { key: 'strict', label: 'Strict', emoji: '📐', iconSource: require('@/assets/3dicons/3dicons-medal-front-color.png') },
+  { key: 'concise', label: 'Concise', emoji: '⚡', iconSource: require('@/assets/3dicons/3dicons-clock-front-color.png') },
+  { key: 'fun', label: 'Fun & Witty', emoji: '😂', iconSource: require('@/assets/3dicons/3dicons-bookmark-fav-front-color.png') },
 ];
 
 export default function ToneScreen() {
@@ -78,7 +78,7 @@ export default function ToneScreen() {
                     ]}
                   >
                     <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                      <Icon size={20} color={iconColor} />
+                      <AnimatedIcon source={t.iconSource} size={28} animationType="wobble" />
                     </View>
                     <Text style={[s.optionLabel, { color: textColor }]}>{t.emoji} {t.label}</Text>
                     {isSelected ? <Text style={s.check}>✓</Text> : null}

@@ -1,45 +1,23 @@
-import { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert, TextInput, Platform, useColorScheme, Image, StyleSheet, Switch } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
+import { View, ScrollView, TouchableOpacity, useColorScheme, StyleSheet, Platform, Modal, TextInput, Alert, Switch } from 'react-native';
+import { Image } from 'expo-image';
 import { useAuthStore } from '@/store/authStore';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-
-import { api } from '@/lib/api';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AltArrowRight, Bill, RoundArrowUp, Settings, Bell, QuestionCircle, CheckCircle, DocumentText, TrashBinTrash, CupStar, WalletMoney } from '@solar-icons/react-native/Bold';
-
-import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { Text } from '@/components/ui/Text';
+import { Colors, Radius } from '@/constants/theme';
+import { AltArrowRight, Letter } from '@solar-icons/react-native/Bold';
+import * as WebBrowser from 'expo-web-browser';
+import React, { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
-import RevenueCatUI from 'react-native-purchases-ui';
-import { Modal } from 'react-native';
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const s = StyleSheet.create({
-    scroll: { paddingHorizontal: 16 },
-    
-    profileSection: { alignItems: 'center', marginBottom: 32 },
-    avatarCircle: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 12, overflow: 'hidden' },
-    avatarImg: { width: '100%', height: '100%' },
-    avatarInitial: { fontSize: 36, fontWeight: '700' },
-    profileName: { fontSize: 24, fontWeight: '700', marginBottom: 4, letterSpacing: -0.5 },
-    profileEmail: { fontSize: 15 },
-
-    row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingRight: 16 },
-    rowIcon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-    rowLabel: { flex: 1, fontSize: 16, fontWeight: '400' },
-    rowValue: { fontSize: 16, marginRight: 8 },
-
-    sectionLabel: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginLeft: 16, textTransform: 'uppercase' },
-});
-
-// ─── Settings Row ─────────────────────────────────────────────────────────────
+// ─── Settings Row Component ─────────────────────────────────────────────────────────────
 function SettingsRow({
-    icon: Icon, iconBg, label, value, onPress, isLast = false, isDark, destructive = false,
+    iconSource, iconBg, label, value, onPress, isLast = false, isDark, destructive = false,
     hasSwitch = false, switchValue = false, onSwitch = () => {}
 }: {
-    icon?: any; iconBg?: string; label: string; value?: string;
+    iconSource?: any; iconBg?: string; label: string; value?: string;
     onPress?: () => void; isLast?: boolean; isDark: boolean; destructive?: boolean;
     hasSwitch?: boolean; switchValue?: boolean; onSwitch?: (val: boolean) => void;
 }) {
@@ -50,12 +28,12 @@ function SettingsRow({
             activeOpacity={hasSwitch ? 1 : 0.7}
             style={[s.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }]}
         >
-            {Icon && iconBg && (
+            {iconSource && iconBg && (
                 <View style={[s.rowIcon, { backgroundColor: iconBg }]}>
-                    <Icon size={18} color="#fff" />
+                    <Image source={iconSource} style={{ width: 22, height: 22 }} contentFit="contain" />
                 </View>
             )}
-            <Text style={[s.rowLabel, { color: destructive ? C.destructive : C.text, marginLeft: Icon ? 0 : 16, textAlign: (destructive && !Icon) ? 'center' : 'left' }]} numberOfLines={1}>
+            <Text style={[s.rowLabel, { color: destructive ? C.destructive : C.text, marginLeft: iconSource ? 0 : 16, textAlign: (destructive && !iconSource) ? 'center' : 'left' }]} numberOfLines={1}>
                 {label}
             </Text>
             {value ? <Text style={[s.rowValue, { color: C.textSecondary }]}>{value}</Text> : null}
@@ -73,11 +51,11 @@ function SettingsRow({
     );
 }
 
-// ─── IosCard Component ───────────────────────────────────────────────────────
+// ─── GroupedCard Component ───────────────────────────────────────────────────────
 function GroupedCard({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
     const C = Colors[isDark ? 'dark' : 'light'];
     return (
-        <View style={[{ backgroundColor: C.card, borderRadius: Radius.lg, overflow: 'hidden', marginBottom: 24, borderWidth: 1, borderColor: isDark ? C.glassBorder : 'transparent' }]}>
+        <View style={[{ backgroundColor: C.card, borderRadius: Radius.lg, overflow: 'hidden', marginBottom: 24, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
             <View style={{ paddingLeft: 16 }}>
                 {children}
             </View>
@@ -85,275 +63,207 @@ function GroupedCard({ children, isDark }: { children: React.ReactNode; isDark: 
     );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+    scroll: { paddingHorizontal: 20 },
+    
+    // Header
+    headerWrap: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    avatarOuter: { width: 52, height: 52, borderRadius: 26, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+    avatarImg: { width: '100%', height: '100%' },
+    headerTitle: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    iconBtn: { padding: 6 },
+
+    // Premium Banner
+    premiumBanner: { borderRadius: 20, padding: 20, marginBottom: 24, overflow: 'hidden' },
+    premiumTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', marginBottom: 4 },
+    premiumSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 16 },
+    premiumBtn: { backgroundColor: '#FFFFFF', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 20, alignSelf: 'flex-start' },
+    premiumBtnText: { fontWeight: '800', fontSize: 14 },
+
+    // Grid Region (2-column)
+    gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 16, marginBottom: 32 },
+    gridItem: { width: '48%', aspectRatio: 1.1, borderRadius: 24, padding: 16, alignItems: 'center', justifyContent: 'center' },
+    gridItemFull: { width: '100%', borderRadius: 24, padding: 20, alignItems: 'center', flexDirection: 'row', justifyContent: 'flex-start' },
+    gridIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    gridTitle: { fontSize: 15, fontWeight: '800', marginBottom: 4, textAlign: 'center', marginTop: 12 },
+    gridSub: { fontSize: 12, textAlign: 'center', fontWeight: '500' },
+
+    // Settings rows
+    row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingRight: 16 },
+    rowIcon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+    rowLabel: { flex: 1, fontSize: 16, fontWeight: '400' },
+    rowValue: { fontSize: 16, marginRight: 8 },
+    sectionLabel: { fontSize: 13, fontWeight: '700', marginBottom: 10, marginLeft: 16, textTransform: 'uppercase' },
+});
+
 export default function AccountScreen() {
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
-
+    
     const { user, login, logout, theme, setTheme, hapticsEnabled } = useAuthStore();
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-
-    const [animKey, setAnimKey] = useState(0);
-
-    useFocusEffect(
-        useCallback(() => {
-            setAnimKey(prev => prev + 1);
-        }, [])
-    );
-
-
-    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-    const [deleteConfirmationCode, setDeleteConfirmationCode] = useState('');
-    const [deleteInput, setDeleteInput] = useState('');
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    useEffect(() => {
-        if (deleteModalVisible) {
-            // Generate a random 4-digit code e.g., DELETE-4921
-            setDeleteConfirmationCode(`DELETE-${Math.floor(1000 + Math.random() * 9000)}`);
-            setDeleteInput('');
-        }
-    }, [deleteModalVisible]);
-
-    const handleDeleteAccount = async () => {
-        if (deleteInput !== deleteConfirmationCode) return;
-        
-        setIsDeleting(true);
-        try {
-            await api.delete('profile');
-            setDeleteModalVisible(false);
-            Alert.alert("Account Deleted", "Your account has been deleted permanently.");
-            logout();
-            router.replace('/login');
-        } catch (error: any) {
-            const msg = error.response?.data?.message || 'Failed to delete account. Please try again.';
-            Alert.alert('Error', msg);
-        } finally {
-            setIsDeleting(false);
-        }
-    };
-
-    const handleSignOut = () => {
-        Alert.alert('Sign Out', 'Are you sure you want to log out?', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'Log Out', style: 'destructive', onPress: async () => {
-                    try { await api.post('logout'); } catch {}
-                    logout();
-                    router.replace('/login');
-                }
-            }
-        ]);
-    };
-
+    
+    // Settings and Log Out have been moved to settings.tsx
+    
     if (!user) return null;
+
+    const isPremium = user.plan_name === 'pro' || user.plan_name === 'standard' || user.plan_name === 'max' || user.plan_name === 'elite';
+    
+    const prefs = user.ai_preferences;
+    const toneStr = prefs?.tone ? prefs.tone.charAt(0).toUpperCase() + prefs.tone.slice(1) : 'Supportive';
+    const goalStr = prefs?.academic_goal === 'exam' ? 'Exam Prep' : (prefs?.academic_goal === 'cheat' ? 'Cheat Sheet' : 'Deep Dive');
+    const prefSummary = prefs?.summary ? prefs.summary : `${toneStr} • ${goalStr}`;
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
-
-            <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(500)}>
-                <View style={{ paddingTop: insets.top + 16 }} />
+            <Animated.View entering={FadeInUp.duration(500)}>
+                <View style={{ paddingTop: Math.max(insets.top, 16) }} />
             </Animated.View>
 
-            {/* Top spacing */}
-            <Animated.View key={`top-${animKey}`} entering={FadeInDown.duration(500)} style={{ paddingTop: insets.top + 16 }} />
-
-            <ScrollView
-                contentContainerStyle={[s.scroll, { paddingTop: 20, paddingBottom: 150 }]}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* ── Avatar + Name ── */}
-                <View style={s.profileSection}>
-                    <View style={{ marginBottom: 12 }}>
-                        <View style={[s.avatarCircle, { backgroundColor: C.primary + '20', marginBottom: 0 }]}>
+            <ScrollView contentContainerStyle={[s.scroll, { paddingTop: 10, paddingBottom: 150 }]} showsVerticalScrollIndicator={false}>
+                {/* ── Header ── */}
+                <Animated.View entering={FadeInDown.duration(400).delay(100)} style={s.headerWrap}>
+                    <View style={s.headerLeft}>
+                        <View style={[s.avatarOuter, { backgroundColor: C.primary + '20' }]}>
                             {user.avatar || user.avatar_url ? (
                                 <Image source={{ uri: user.avatar || user.avatar_url }} style={s.avatarImg} />
                             ) : (
-                                <Text style={[s.avatarInitial, { color: C.primary }]}>{user.name?.charAt(0)}</Text>
+                                <Text style={{ color: C.primary, fontWeight: '800', fontSize: 24 }}>
+                                    {user.name?.charAt(0).toUpperCase()}
+                                </Text>
                             )}
                         </View>
+                        <View>
+                            <Text style={[s.headerTitle, { color: C.text }]}>{user.name}</Text>
+                        </View>
                     </View>
 
-                    <Text style={[s.profileName, { color: C.text }]}>{user.name}</Text>
-                    <Text style={[s.profileEmail, { color: C.textSecondary }]}>{user.email}</Text>
-                </View>
+                    <View style={s.headerRight}>
+                        <TouchableOpacity style={s.iconBtn} activeOpacity={0.7} onPress={() => router.push('/(drawer)/settings' as any)}>
+                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-setting-front-color.png')} size={28} animationType="spin" />
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
 
-                {/* ── Section 1: Plan & Credits ── */}
-                <Animated.View key={`acc-content-${animKey}`} entering={FadeInUp.duration(400)}>
-                    <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Account</Text>
-                    <GroupedCard isDark={isDark}>
-                        <SettingsRow
-                            icon={Bill} iconBg="#007AFF"
-                            label="Subscription"
-                            value={
-                                (user.plan_name === 'pro' || user.plan_name === 'standard' || user.plan_name === 'max' || user.plan_name === 'elite')
-                                    ? 'Skeeme Pro'
-                                    : 'Skeeme Free'
-                            }
-                            isDark={isDark}
-                        />
-                        <SettingsRow
-                            icon={RoundArrowUp} iconBg="#FF9500"
-                            label="Upgrade"
-                            onPress={() => {
-                                try {
-                                    router.push('/paywall');
-                                } catch (e) { }
-                            }}
-                            isDark={isDark}
-                        />
-                        <SettingsRow
-                            icon={WalletMoney} iconBg="#007AFF"
-                            label="Buy Credits"
-                            onPress={() => router.push('/buy-credits')}
-                            isDark={isDark}
-                        />
-                        <SettingsRow
-                            icon={CupStar} iconBg="#34C759"
-                            label="Refer a Friend"
-                            onPress={() => router.push('/(drawer)/referral')}
-                            isLast={true}
-                            isDark={isDark}
-                        />
-                    </GroupedCard>
-
-                    {/* ── Section 2: Preferences ── */}
-                    <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Preferences</Text>
-                    <GroupedCard isDark={isDark}>
-                        <SettingsRow
-                            icon={Settings} iconBg="#5E5CE6"
-                            label="Personalization"
-                            onPress={() => router.push('/(drawer)/preferences')}
-                            isDark={isDark}
-                        />
-                        <SettingsRow
-                            icon={Bell} iconBg="#FF2D55"
-                            label="Notifications"
-                            hasSwitch={true}
-                            switchValue={notificationsEnabled}
-                            onSwitch={setNotificationsEnabled}
-                            isDark={isDark}
-                        />
-                        <SettingsRow
-                            icon={Settings} iconBg="#FF9500"
-                            label="Haptic Feedback"
-                            hasSwitch={true}
-                            switchValue={hapticsEnabled}
-                            onSwitch={(val) => useAuthStore.getState().setHapticsEnabled(val)}
-                            isDark={isDark}
-                        />
-                        <View style={{ paddingVertical: 12, paddingRight: 16 }}>
-                            <View style={{ flexDirection: 'row', gap: 8 }}>
-                                {(['light', 'dark', 'system'] as const).map((t) => (
-                                    <TouchableOpacity
-                                        key={t}
-                                        onPress={() => setTheme(t)}
-                                        style={{
-                                            flex: 1, paddingVertical: 8, borderRadius: 8,
-                                            alignItems: 'center', backgroundColor: theme === t ? C.primary : (isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9')
-                                        }}
-                                    >
-                                        <Text style={{ fontSize: 12, fontWeight: '700', color: theme === t ? '#FFF' : C.text, textTransform: 'capitalize' }}>{t}</Text>
-                                    </TouchableOpacity>
-                                ))}
+                {/* ── Premium Banner ── */}
+                <Animated.View entering={FadeInDown.duration(400).delay(200)}>
+                    <TouchableOpacity 
+                        activeOpacity={0.9} 
+                        style={[s.premiumBanner, { backgroundColor: isPremium ? '#FF9500' : '#007AFF' }]}
+                        onPress={() => router.push('/paywall')}
+                    >
+                        <Text style={s.premiumTitle}>
+                            {isPremium ? 'Skeeme Pro Active' : 'Skeeme Plus 3-Day Free Trial'}
+                        </Text>
+                        <Text style={s.premiumSubtitle}>
+                            {isPremium ? 'Enjoying unlimited access.' : 'Unlimited Top Models • Elevated Accuracy'}
+                        </Text>
+                        {!isPremium && (
+                            <View style={s.premiumBtn}>
+                                <Text style={[s.premiumBtnText, { color: '#007AFF' }]}>Upgrade Now</Text>
                             </View>
+                        )}
+                    </TouchableOpacity>
+                </Animated.View>
+
+                {/* ── Grid Region ── */}
+                <Animated.View entering={FadeInDown.duration(400).delay(300)} style={s.gridContainer}>
+                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#FFF0F0' }]}>
+                        <AnimatedIcon 
+                            source={require('@/assets/3dicons/3dicons-fire-iso-color.png')} 
+                            size={56} 
+                            animationType="pop"
+                            onPress={() => {
+                                // Provide empty onPress to enable animation
+                            }}
+                        >
+                            <Text style={[s.gridTitle, { color: '#FF3B30' }]}>{user.streak?.current_streak || 0} Day</Text>
+                            <Text style={[s.gridSub, { color: C.textTertiary }]}>Streak</Text>
+                        </AnimatedIcon>
+                    </View>
+
+                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
+                        <AnimatedIcon 
+                            source={require('@/assets/3dicons/3dicons-folder-front-color.png')} 
+                            size={56} 
+                            animationType="wobble"
+                            onPress={() => router.push('/(drawer)/flashcards' as any)}
+                        >
+                            <Text style={[s.gridTitle, { color: C.text }]}>Flashcards</Text>
+                            <Text style={[s.gridSub, { color: C.textTertiary }]}>Decks</Text>
+                        </AnimatedIcon>
+                    </View>
+
+                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
+                        <AnimatedIcon 
+                            source={require('@/assets/3dicons/3dicons-clock-front-color.png')} 
+                            size={56} 
+                            animationType="twist"
+                            onPress={() => router.push('/(drawer)/history' as any)}
+                        >
+                            <Text style={[s.gridTitle, { color: C.text }]}>History</Text>
+                            <Text style={[s.gridSub, { color: C.textTertiary }]}>Past scans</Text>
+                        </AnimatedIcon>
+                    </View>
+
+                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
+                        <AnimatedIcon 
+                            source={require('@/assets/3dicons/3dicons-bookmark-fav-front-color.png')} 
+                            size={56} 
+                            animationType="pop"
+                            onPress={() => router.push('/(drawer)/exams' as any)}
+                        >
+                            <Text style={[s.gridTitle, { color: C.text }]}>Saved</Text>
+                            <Text style={[s.gridSub, { color: C.textTertiary }]}>Bookmarks</Text>
+                        </AnimatedIcon>
+                    </View>
+
+                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F0F5FF' }]}>
+                        <AnimatedIcon 
+                            source={require('@/assets/3dicons/38135f41-3512-406e-9795-abe38150a9b7_removalai_preview.png')} 
+                            size={56} 
+                            animationType="twist"
+                            onPress={() => router.push('/(drawer)/generate' as any)}
+                        >
+                            <Text style={[s.gridTitle, { color: '#007AFF' }]}>Practice</Text>
+                            <Text style={[s.gridSub, { color: '#007AFF' }]}>Quizzes</Text>
+                        </AnimatedIcon>
+                    </View>
+                    
+                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
+                        <AnimatedIcon 
+                            source={require('@/assets/3dicons/3dicons-boy-front-color.png')} 
+                            size={56} 
+                            animationType="spin"
+                            onPress={() => router.push('/(drawer)/support' as any)}
+                        >
+                            <Text style={[s.gridTitle, { color: C.text }]}>Support</Text>
+                            <Text style={[s.gridSub, { color: C.textTertiary }]}>Help & Feedback</Text>
+                        </AnimatedIcon>
+                    </View>
+
+                    <TouchableOpacity 
+                        style={[s.gridItemFull, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}
+                        onPress={() => router.push('/(drawer)/preferences' as any)}
+                        activeOpacity={0.8}
+                    >
+                        <AnimatedIcon 
+                            source={require('@/assets/3dicons/3dicons-setting-front-color.png')} 
+                            size={56} 
+                            animationType="spin"
+                        />
+                        <View style={{ flex: 1, marginLeft: 16 }}>
+                            <Text style={[s.gridTitle, { color: C.text, textAlign: 'left', marginTop: 0 }]}>Personalize</Text>
+                            <Text style={[s.gridSub, { color: C.textTertiary, textAlign: 'left', lineHeight: 18 }]} numberOfLines={3}>{prefSummary}</Text>
                         </View>
-                    </GroupedCard>
-
-                    {/* ── Section 3: Support ── */}
-                    <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Support</Text>
-                    <GroupedCard isDark={isDark}>
-                    <SettingsRow
-                        icon={QuestionCircle} iconBg="#8E8E93"
-                        label="Report Issue"
-                        onPress={() => router.push('/(drawer)/support')}
-                        isDark={isDark}
-                    />
-                    <SettingsRow
-                        icon={CheckCircle} iconBg="#8E8E93"
-                        label="Privacy Policy"
-                        onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/privacy')}
-                        isDark={isDark}
-                    />
-                    <SettingsRow
-                        icon={DocumentText} iconBg="#8E8E93"
-                        label="Terms of Service"
-                        onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/terms')}
-                        isLast={true}
-                        isDark={isDark}
-                    />
-                    </GroupedCard>
-
-                    {/* ── Section 4: Log Out ── */}
-                    <GroupedCard isDark={isDark}>
-                        <SettingsRow
-                            icon={RoundArrowUp} iconBg="#8E8E93"
-                            label="Log Out"
-                            onPress={handleSignOut}
-                            isLast={true}
-                            isDark={isDark}
-                        />
-                    </GroupedCard>
-
-                    {/* ── Section 5: Danger Zone ── */}
-                    <Text style={[s.sectionLabel, { color: C.destructive }]}>Danger Zone</Text>
-                    <GroupedCard isDark={isDark}>
-                        <SettingsRow
-                            icon={TrashBinTrash} iconBg="#FF3B30"
-                            label="Delete Account"
-                            onPress={() => setDeleteModalVisible(true)}
-                            isLast={true}
-                            isDark={isDark}
-                            destructive={true}
-                        />
-                    </GroupedCard>
+                    </TouchableOpacity>
                 </Animated.View>
             </ScrollView>
-
-            {/* Account Deletion Modal */}
-            <Modal
-                visible={deleteModalVisible}
-                animationType="fade"
-                transparent={true}
-                onRequestClose={() => setDeleteModalVisible(false)}
-            >
-                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
-                    <View style={{ backgroundColor: C.card, borderRadius: 16, padding: 24 }}>
-                        <Text style={{ fontSize: 20, fontWeight: '700', color: C.text, marginBottom: 8 }}>Verify Deletion</Text>
-                        <Text style={{ fontSize: 15, color: C.textSecondary, marginBottom: 16 }}>
-                            This action cannot be undone. To confirm you want to permanently delete your account, type <Text style={{ fontWeight: '800', color: C.text }}>{deleteConfirmationCode}</Text> below.
-                        </Text>
-                        
-                        <View style={{ backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7', borderRadius: 8, paddingHorizontal: 12, marginBottom: 24, paddingVertical: Platform.OS === 'ios' ? 12 : 4 }}>
-                            <TextInput
-                                placeholder={deleteConfirmationCode}
-                                placeholderTextColor={C.textTertiary}
-                                value={deleteInput}
-                                onChangeText={setDeleteInput}
-                                autoCapitalize="characters"
-                                style={{ color: C.text, fontSize: 16, fontWeight: '600' }}
-                            />
-                        </View>
-
-                        <View style={{ flexDirection: 'row', gap: 12 }}>
-                            <TouchableOpacity 
-                                style={{ flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA', alignItems: 'center' }}
-                                onPress={() => setDeleteModalVisible(false)}
-                            >
-                                <Text style={{ color: C.text, fontWeight: '600', fontSize: 16 }}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={{ flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: C.destructive, alignItems: 'center', opacity: (isDeleting || deleteInput !== deleteConfirmationCode) ? 0.5 : 1 }}
-                                onPress={handleDeleteAccount}
-                                disabled={isDeleting || deleteInput !== deleteConfirmationCode}
-                            >
-                                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>{isDeleting ? 'Deleting...' : 'Delete'}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
         </View>
     );
 }

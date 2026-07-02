@@ -6,18 +6,19 @@ import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { CheckCircle, TestTube, Settings, Book, Case, DocumentText, Heart, Widget } from '@solar-icons/react-native/Bold';
+import { CheckCircle } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 import { Colors } from '@/constants/theme';
 
 const FIELDS = [
-    { key: 'sciences', label: 'Sciences', icon: TestTube },
-    { key: 'engineering', label: 'Engineering', icon: Settings },
-    { key: 'humanities', label: 'Humanities', icon: Book },
-    { key: 'business', label: 'Business', icon: Case },
-    { key: 'law', label: 'Law', icon: DocumentText },
-    { key: 'medicine', label: 'Medicine', icon: Heart },
-    { key: 'other', label: 'Other', icon: Widget },
+    { key: 'sciences', label: 'Sciences', iconSource: require('@/assets/3dicons/3dicons-lab-front-color.png') },
+    { key: 'engineering', label: 'Engineering', iconSource: require('@/assets/3dicons/3dicons-setting-front-color.png') },
+    { key: 'humanities', label: 'Humanities', iconSource: require('@/assets/3dicons/3dicons-folder-front-color.png') },
+    { key: 'business', label: 'Business', iconSource: require('@/assets/3dicons/3dicons-wallet-front-color.png') },
+    { key: 'law', label: 'Law', iconSource: require('@/assets/3dicons/3dicons-bookmark-iso-color.png') },
+    { key: 'medicine', label: 'Medicine', iconSource: require('@/assets/3dicons/3dicons-plus-dynamic-color.png') },
+    { key: 'other', label: 'Other', iconSource: require('@/assets/3dicons/3dicons-pin-front-color.png') },
 ];
 
 export default function FieldScreen() {
@@ -86,7 +87,7 @@ export default function FieldScreen() {
                                         ]}
                                     >
                                         <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                                            <field.icon size={20} color={iconColor} />
+                                            <AnimatedIcon source={field.iconSource} size={24} animationType="pop" />
                                         </View>
                                         <Text style={[s.optionLabel, { color: textColor }]}>{field.label}</Text>
                                         {isSelected && (

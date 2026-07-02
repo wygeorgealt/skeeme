@@ -6,15 +6,16 @@ import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { CheckCircle, Diploma, Book, TestTube, CupStar } from '@solar-icons/react-native/Bold';
+import { CheckCircle } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 import { Colors } from '@/constants/theme';
 
 const LEVELS = [
-    { key: 'high_school', label: 'High School', icon: Diploma, desc: 'Secondary / A-Levels' },
-    { key: 'undergraduate', label: 'Undergraduate', icon: Book, desc: "Bachelor's degree" },
-    { key: 'masters_phd', label: 'Masters / PhD', icon: TestTube, desc: 'Postgraduate research' },
-    { key: 'professional', label: 'Professional Cert', icon: CupStar, desc: 'ICAN, ACCA, PMP, etc.' },
+    { key: 'high_school', label: 'High School', iconSource: require('@/assets/3dicons/3dicons-folder-front-color.png'), desc: 'Secondary / A-Levels' },
+    { key: 'undergraduate', label: 'Undergraduate', iconSource: require('@/assets/3dicons/3dicons-folder-front-color.png'), desc: "Bachelor's degree" },
+    { key: 'masters_phd', label: 'Masters / PhD', iconSource: require('@/assets/3dicons/3dicons-lab-front-color.png'), desc: 'Postgraduate research' },
+    { key: 'professional', label: 'Professional Cert', iconSource: require('@/assets/3dicons/3dicons-trophy-front-color.png'), desc: 'ICAN, ACCA, PMP, etc.' },
 ];
 
 export default function EducationScreen() {
@@ -83,7 +84,7 @@ export default function EducationScreen() {
                                         ]}
                                     >
                                         <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                                            <level.icon size={22} color={iconColor} />
+                                            <AnimatedIcon source={level.iconSource} size={28} animationType="pop" />
                                         </View>
                                         <View style={s.textStack}>
                                             <Text style={[s.optionLabel, { color: textColor }]}>{level.label}</Text>

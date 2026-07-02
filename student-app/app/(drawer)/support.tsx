@@ -13,6 +13,7 @@ import { AltArrowLeft, CloseCircle, Gallery, Letter } from '@solar-icons/react-n
 
 
 import { Text } from '@/components/ui/Text';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 export default function SupportScreen() {
     const router = useRouter();
@@ -84,7 +85,7 @@ export default function SupportScreen() {
             });
 
             Alert.alert('Message Sent', 'Our support team will get back to you shortly.', [
-                { text: 'Okay', onPress: () => router.navigate({ pathname: '/(drawer)/account' }) }
+                { text: 'Okay', onPress: () => router.back() }
             ]);
         } catch (error: any) {
             const msg = error.response?.data?.message || 'Something went wrong. Please try again.';
@@ -104,7 +105,7 @@ export default function SupportScreen() {
             {/* Header */}
             <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
                 <TouchableOpacity
-                    onPress={() => router.navigate({ pathname: '/(drawer)/account' })}
+                    onPress={() => router.back()}
                     activeOpacity={0.7}
                     style={[s.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}
                 >
@@ -182,7 +183,7 @@ export default function SupportScreen() {
                             <LoadingSpinner size={24} color="white" strokeWidth={3} />
                         ) : (
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Letter size={18} color="white" />
+                                <AnimatedIcon source={require('@/assets/3dicons/3dicons-mail-dynamic-color.png')} size={24} animationType="pop" />
 
                                 <View style={{ width: 10 }} />
                                 <Text style={s.submitBtnText}>Send Message</Text>

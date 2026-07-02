@@ -8,12 +8,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import { Colors } from '@/constants/theme';
-import { Book, MedalRibbonsStar, DocumentText } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 const GOALS = [
-  { key: 'conceptual', label: 'Deep Dive', desc: 'First-principles and core theory.', icon: Book },
-  { key: 'exam', label: 'Exam Prep', desc: 'High-yield tips, drills, traps.', icon: MedalRibbonsStar },
-  { key: 'cheat', label: 'Cheat Sheet', desc: 'Mnemonics, recall, summaries.', icon: DocumentText },
+  { key: 'conceptual', label: 'Deep Dive', desc: 'First-principles and core theory.', iconSource: require('@/assets/3dicons/3dicons-lab-front-color.png') },
+  { key: 'exam', label: 'Exam Prep', desc: 'High-yield tips, drills, traps.', iconSource: require('@/assets/3dicons/3dicons-medal-front-color.png') },
+  { key: 'cheat', label: 'Cheat Sheet', desc: 'Mnemonics, recall, summaries.', iconSource: require('@/assets/3dicons/3dicons-bookmark-iso-color.png') },
 ];
 
 export default function GoalScreen() {
@@ -79,7 +79,7 @@ export default function GoalScreen() {
                     ]}
                   >
                     <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                      <Icon size={20} color={iconColor} />
+                      <AnimatedIcon source={g.iconSource} size={24} animationType="pop" />
                     </View>
 
                     <View style={{ flex: 1 }}>

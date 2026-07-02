@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { Colors } from '@/constants/theme';
 import { CheckCircle, AltArrowLeft, AltArrowRight, Refresh, DangerTriangle, LightbulbBolt } from '@solar-icons/react-native/Bold';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { MathText } from '@/components/ui/MathText';
 import { useAuthStore } from '@/store/authStore';
 import { streamFlashcardGenerate } from '@/lib/aiStream';
@@ -480,7 +481,7 @@ export default function StudyDeckScreen() {
     if (error && !deck) return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.errorCenter}>
-                <DangerTriangle size={64} color="#ef4444" />
+                <AnimatedIcon source={require('@/assets/3dicons/warning-3d icon.png')} size={64} animationType="wobble" />
                 <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Deck not found</Text>
                 <Text style={s.errorSubtitle}>
                     We couldn&apos;t load this flashcard deck. It might have been deleted or there was a connection issue.
@@ -562,7 +563,7 @@ export default function StudyDeckScreen() {
                     <Animated.View entering={ZoomIn.duration(800)}>
                         <View style={s.successIconBox}>
                             <View style={[s.successIconGradient, { backgroundColor: '#34C759' }]}>
-                                <CheckCircle size={48} color="white" />
+                                <AnimatedIcon source={require('@/assets/3dicons/3dicons-thumb-up-front-color.png')} size={48} animationType="pop" />
                             </View>
                         </View>
                     </Animated.View>

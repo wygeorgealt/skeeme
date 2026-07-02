@@ -7,7 +7,8 @@ import { router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useState, useCallback, useEffect } from 'react';
-import { AltArrowLeft, Copy, Share as ShareIcon } from '@solar-icons/react-native/Bold';
+import { AltArrowLeft } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import Animated, {
@@ -110,7 +111,8 @@ export default function ReferralScreen() {
             >
                 {/* Hero Code Card */}
                 <Animated.View key={`hero-${animKey}`} entering={FadeInUp.duration(500)} style={[s.heroCard, { backgroundColor: C.primary }]}>
-                    <Text style={s.heroLabel}>Your Referral Code</Text>
+                    <AnimatedIcon source={require('@/assets/3dicons/3dicons-gift-dynamic-color.png')} size={64} animationType="pop" />
+                    <Text style={[s.heroLabel, { marginTop: 16 }]}>Your Referral Code</Text>
                     {loadingStats ? (
                         <LoadingSpinner size={20} color="rgba(255,255,255,0.7)" />
                     ) : (
@@ -131,7 +133,7 @@ export default function ReferralScreen() {
                                     { backgroundColor: copied ? 'rgba(52, 199, 89, 0.3)' : 'rgba(255,255,255,0.2)' },
                                 ]}
                             >
-                                <Copy size={20} color="white" />
+                                <AnimatedIcon source={require('@/assets/3dicons/3dicons-copy-front-color.png')} size={24} />
                                 <Text style={s.btnText}>{copied ? 'Copied!' : 'Copy'}</Text>
                             </TouchableOpacity>
                         </Animated.View>
@@ -141,7 +143,7 @@ export default function ReferralScreen() {
                             activeOpacity={0.8}
                             style={[s.actionBtn, s.shareActionBtn, { backgroundColor: 'rgba(255,255,255,0.95)' }]}
                         >
-                            <ShareIcon size={20} color={C.primary} />
+                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-link-front-color.png')} size={24} />
                             <Text style={[s.btnText, { color: C.primary, fontWeight: '800' }]}>Share</Text>
                         </TouchableOpacity>
                     </View>

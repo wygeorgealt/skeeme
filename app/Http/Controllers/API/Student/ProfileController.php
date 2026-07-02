@@ -108,6 +108,11 @@ class ProfileController extends Controller
         $user->ai_preferences = $aiPreferences;
         $user->save();
 
+        // Generate AI narrative summary of these preferences
+        app(\App\Services\UserPersonalizationService::class)->generateAndSaveSummary($user, $aiPreferences);
+
+        // Refresh user to get the newly appended summary
+        $user->refresh();
         if (isset($validated['next_exam_date'])) {
             $user->userExams()->create([
                 'title' => $validated['next_exam_title'] ?? 'Next Exam',

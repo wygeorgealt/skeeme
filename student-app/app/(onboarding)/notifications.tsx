@@ -8,6 +8,7 @@ import { Colors } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { Bell } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 export default function NotificationScreen() {
     const router = useRouter();
@@ -109,7 +110,11 @@ export default function NotificationScreen() {
                         activeOpacity={0.85}
                         style={s.primaryBtn}
                     >
-                        <Bell size={18} color="#FFFFFF" />
+                        <AnimatedIcon 
+                            source={require('@/assets/3dicons/3dicons-bell-front-color.png')} 
+                            size={24} 
+                            animationType="wobble"
+                        />
                         <Text style={s.primaryBtnText}>Enable Notifications</Text>
                     </TouchableOpacity>
 

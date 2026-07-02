@@ -291,7 +291,7 @@ export default function GenerateFlashcardScreen() {
             {/* Header */}
             <Animated.View entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}> 
                 <TouchableOpacity 
-                    onPress={() => router.replace('/')} 
+                    onPress={() => router.back()} 
                     activeOpacity={0.7} 
                     style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                 >

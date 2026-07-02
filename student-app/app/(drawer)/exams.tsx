@@ -10,7 +10,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { IosCard } from '@/components/ui/IosCard';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { AddCircle, Calendar, TrashBinTrash } from '@solar-icons/react-native/Bold';
+import { AltArrowLeft } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+import { useRouter } from 'expo-router';
 
 export default function ExamsScreen() {
     const { user, updateUser } = useAuthStore();
@@ -18,6 +20,7 @@ export default function ExamsScreen() {
     const insets = useSafeAreaInsets();
     const isDark = useColorScheme() === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
+    const router = useRouter();
     const [animKey, setAnimKey] = useState(0);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -92,22 +95,21 @@ export default function ExamsScreen() {
                 refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={C.primary} />}
             >
                 <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(500)} style={s.header}>
-                    <View>
+                    <View style={s.headerTopRow}>
+                        <TouchableOpacity onPress={() => router.back()} style={[s.backBtn, { backgroundColor: C.secondaryBackground }]}>
+                            <AltArrowLeft size={24} color={textColor} />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={{ marginTop: 16 }}>
                         <Text style={[s.title, { color: textColor }]}>Your Exams</Text>
                         <Text style={[s.subtitle, { color: C.textSecondary }]}>Track your upcoming tests and reminders</Text>
                     </View>
-                    <TouchableOpacity 
-                        onPress={() => setIsModalOpen(true)}
-                        style={[s.addBtn, { backgroundColor: C.primary }]}
-                    >
-                        <AddCircle size={20} color="#FFF" />
-                    </TouchableOpacity>
                 </Animated.View>
 
                 <Animated.View key={`exams-${animKey}`} entering={FadeInDown.delay(80).duration(400)}>
                     {exams.length === 0 ? (
                         <View style={s.emptyState}>
-                            <Calendar size={64} color={C.textTertiary} />
+                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-calendar-front-color.png')} size={64} animationType="wobble" />
                             <Text style={[s.emptyText, { color: C.textSecondary }]}>No upcoming exams set.</Text>
                         </View>
                     ) : (
@@ -117,7 +119,7 @@ export default function ExamsScreen() {
                                 <IosCard key={exam.id} style={s.examCard} padding="md">
                                     <View style={s.examRow}>
                                         <View style={[s.examIcon, { backgroundColor: C.primary + '15' }]}>
-                                            <Calendar size={20} color={C.primary} />
+                                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-calendar-front-color.png')} size={24} animationType="wobble" />
                                         </View>
                                         <View style={{ flex: 1 }}>
                                             <Text style={[s.examTitle, { color: textColor }]}>{exam.title}</Text>
@@ -130,7 +132,7 @@ export default function ExamsScreen() {
                                             <Text style={[s.daysLabel, { color: C.textSecondary }]}>days left</Text>
                                         </View>
                                         <TouchableOpacity onPress={() => handleDelete(exam.id)} style={s.deleteBtn}>
-                                            <TrashBinTrash size={20} color="#FF3B30" />
+                                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-trash-can-front-color.png')} size={24} animationType="wobble" />
                                         </TouchableOpacity>
                                     </View>
                                 </IosCard>
@@ -139,6 +141,13 @@ export default function ExamsScreen() {
                     )}
                 </Animated.View>
             </ScrollView>
+
+            <TouchableOpacity 
+                onPress={() => setIsModalOpen(true)}
+                style={[s.fab, { backgroundColor: C.primary }]}
+            >
+                <AnimatedIcon source={require('@/assets/3dicons/3dicons-plus-dynamic-color.png')} size={32} animationType="pop" />
+            </TouchableOpacity>
 
             <Modal visible={isModalOpen} animationType="slide" transparent>
                 <View style={s.modalOverlay}>
@@ -186,10 +195,12 @@ export default function ExamsScreen() {
 
 const s = StyleSheet.create({
     scroll: { paddingHorizontal: Spacing.md, paddingBottom: 40 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, marginTop: 12 },
+    header: { marginBottom: 24, marginTop: 12 },
+    headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     title: { fontSize: 28, fontWeight: '800' },
     subtitle: { fontSize: 14, marginTop: 4 },
-    addBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
+    fab: { position: 'absolute', bottom: 40, right: 24, width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 8 },
+    backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
     
     emptyState: { alignItems: 'center', justifyContent: 'center', marginTop: 100, gap: 16 },
     emptyText: { fontSize: 16, fontWeight: '500' },

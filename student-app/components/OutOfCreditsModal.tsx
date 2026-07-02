@@ -1,7 +1,8 @@
 import { Text } from '@/components/ui/Text';
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, useColorScheme, Share, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
-import { RoundArrowUp, Forward, WalletMoney, Alarm } from '@solar-icons/react-native/Bold';
+import { RoundArrowUp, Forward } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -131,7 +132,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                             styles.iconWrapper, 
                             { backgroundColor: isDark ? 'rgba(0, 122, 255, 0.15)' : 'rgba(0, 122, 255, 0.08)' }
                         ]}>
-                            <WalletMoney size={32} color="#007AFF" />
+                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-wallet-front-color.png')} size={48} animationType="wobble" />
                         </View>
 
                         <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
@@ -145,7 +146,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                         {/* Refill Timer UI */}
                         {user?.next_free_refill_at && (
                             <View style={[styles.timerBox, { backgroundColor: isDark ? 'rgba(52, 199, 89, 0.1)' : 'rgba(52, 199, 89, 0.05)' }]}>
-                                <Alarm size={18} color="#34C759" />
+                                <AnimatedIcon source={require('@/assets/3dicons/3dicons-clock-front-color.png')} size={20} animationType="spin" />
                                 <Text style={styles.timerLabel}>REFILL IN: </Text>
                                 <Text style={styles.timerValue}>{timeLeft || '--:--:--'}</Text>
                             </View>

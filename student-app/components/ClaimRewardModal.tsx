@@ -1,7 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, useColorScheme, StyleSheet, Dimensions, Modal, Platform } from 'react-native';
-import { CupStar, Fire } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { BlurView } from 'expo-blur';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -72,9 +72,9 @@ export default function ClaimRewardModal({ visible, total, onClaim }: ClaimRewar
                     style={[styles.modal, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}
                 >
                     <Animated.View style={[styles.iconWrapper, animatedStyle]}>
-                        <CupStar size={48} color="#FFD700" />
+                        <AnimatedIcon source={require('@/assets/3dicons/3dicons-trophy-front-color.png')} size={64} animationType="wobble" />
                         <View style={styles.fireBadge}>
-                            <Fire size={16} color="#FFFFFF" />
+                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-fire-iso-color.png')} size={18} animationType="pop" />
                         </View>
                     </Animated.View>
 

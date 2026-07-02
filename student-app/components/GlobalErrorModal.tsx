@@ -2,6 +2,7 @@ import { Text } from '@/components/ui/Text';
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, useColorScheme, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
 import { DangerTriangle } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { BlurView } from 'expo-blur';
 import Animated, { 
     useSharedValue, 
@@ -68,7 +69,7 @@ export default function GlobalErrorModal({ visible, error, onDismiss }: GlobalEr
                             styles.iconBox, 
                             { backgroundColor: isDark ? 'rgba(255, 59, 48, 0.15)' : 'rgba(255, 59, 48, 0.08)' }
                         ]}>
-                            <DangerTriangle size={32} color="#FF3B30" />
+                            <AnimatedIcon source={require('@/assets/3dicons/warning-3d icon.png')} size={48} animationType="wobble" />
                         </View>
 
                         <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>

@@ -686,7 +686,7 @@ export default function GenerateQuizScreen() {
                 {/* Header */}
                 <View style={[sf.header, { paddingTop: Math.max(insets.top, 16) }] }>
                     <TouchableOpacity 
-                        onPress={() => router.replace('/')} 
+                        onPress={() => router.back()} 
                         activeOpacity={0.7} 
                         style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                     >
@@ -1568,12 +1568,12 @@ const sf = StyleSheet.create({
     segBtnActiveLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
     segBtnActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
     segText: { fontSize: 15 },
-    chipRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'nowrap', marginHorizontal: 0, marginBottom: 0 },
-    chipBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 999, borderWidth: 1, marginHorizontal: 6, minHeight: 52, flex: 1, minWidth: 110, maxWidth: 160 },
-    chipSmall: { paddingHorizontal: 10, paddingVertical: 8, minHeight: 44, minWidth: 90, maxWidth: 130 },
-    chipEmojiSmall: { fontSize: 16, marginRight: 8 },
+    chipRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 8, marginHorizontal: 0, marginBottom: 0 },
+    chipBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 999, borderWidth: 1, flex: 1, minWidth: 110 },
+    chipSmall: { paddingHorizontal: 10, paddingVertical: 8, minHeight: 44, minWidth: 100 },
+    chipEmojiSmall: { fontSize: 16, marginRight: 6 },
     chipLabelSmall: { fontSize: 13, fontWeight: '700' },
-    chipEmoji: { fontSize: 18, marginRight: 10 },
+    chipEmoji: { fontSize: 18, marginRight: 8 },
     chipLabel: { fontSize: 14, fontWeight: '700' },
 
     inputCard: { paddingHorizontal: 16, paddingVertical: 4, marginBottom: 24 },

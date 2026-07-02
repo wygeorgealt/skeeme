@@ -382,6 +382,10 @@ class AuthController extends Controller
         $user->ai_preferences = array_merge($currentPrefs, array_filter($validated, fn($v) => !is_null($v)));
         $user->save();
 
+        // Generate AI narrative summary
+        app(\App\Services\UserPersonalizationService::class)->generateAndSaveSummary($user, $user->ai_preferences);
+        $user->refresh();
+
         // Clear personalization cache
         app(\App\Services\UserPersonalizationService::class)->clearCache($user);
 

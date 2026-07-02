@@ -5,7 +5,8 @@ import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { CheckCircle, Sun, Compass } from '@solar-icons/react-native/Bold';
+import { CheckCircle } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,13 +15,13 @@ const STYLES = [
         key: 'simple',
         label: 'Simple & Clear',
         desc: "Break it down like I'm new to this topic.",
-        icon: Sun,
+        iconSource: require('@/assets/3dicons/3dicons-sun-dynamic-color.png'),
     },
     {
         key: 'detailed',
         label: 'Detailed & Academic',
         desc: 'Give me the full exam-level answer.',
-        icon: Compass,
+        iconSource: require('@/assets/3dicons/3dicons-location-dynamic-color.png'),
     },
 ];
 
@@ -89,7 +90,7 @@ export default function StyleScreen() {
                                         ]}
                                     >
                                         <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                                            <style.icon size={24} color={iconColor} />
+                                            <AnimatedIcon source={style.iconSource} size={28} animationType="wobble" />
                                         </View>
                                         <View style={s.textStack}>
                                             <Text style={[s.optionLabel, { color: textColor }]}>{style.label}</Text>

@@ -9,6 +9,7 @@ import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 import { Swipeable } from 'react-native-gesture-handler';
 import { AltArrowRight, TrashBinTrash, DocumentText, Book, Copy } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 import { deleteSavedDeck, deleteSavedQuiz, getSavedDecks, getSavedQuizzes } from '@/lib/offlineSaved';
 
@@ -232,7 +233,7 @@ export default function SavedOfflineDashboard() {
             return (
               <View style={s.emptyContainer}>
                 <View style={[s.emptyIconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
-                  <DocumentText size={32} color={C.textTertiary} />
+                  <AnimatedIcon source={require('@/assets/3dicons/3dicons-bookmark-fav-front-color.png')} size={48} animationType="pop" />
                 </View>
                 <Text style={[s.emptyTitle, { color: C.text }] }>No saved items yet</Text>
                 <Text style={[s.emptySub, { color: C.textSecondary }]}>

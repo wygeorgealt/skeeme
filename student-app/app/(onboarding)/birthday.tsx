@@ -8,7 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
-import { Calendar, Checklist } from '@solar-icons/react-native/Bold';
+import { Checklist } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 export default function BirthdayScreen() {
     const router = useRouter();
@@ -69,7 +70,12 @@ export default function BirthdayScreen() {
                             activeOpacity={0.7}
                             style={[s.inputContainer, { backgroundColor: C.card, borderColor: C.separator, marginBottom: 12 }]}
                         >
-                            <Calendar size={20} color={C.primary} style={s.icon} />
+                            <AnimatedIcon 
+                                source={require('@/assets/3dicons/3dicons-calendar-front-color.png')} 
+                                size={24} 
+                                style={[s.icon, { marginRight: 16 }]} 
+                                animationType="wobble" 
+                            />
                             <Text style={[s.inputText, { color: C.text }]}>
                                 {date.toLocaleDateString(undefined, { dateStyle: 'long' })}
                             </Text>

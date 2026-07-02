@@ -10,7 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 import { Swipeable } from 'react-native-gesture-handler';
-import { AltArrowRight, Book, Copy, DocumentText, Notebook, TrashBinTrash } from '@solar-icons/react-native/Bold';
+import { AltArrowRight, Book, Copy, Notebook, TrashBinTrash, DocumentText } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/store/authStore';
@@ -307,7 +308,7 @@ export default function StudyHistoryDashboard() {
                         return (
                             <View style={s.emptyContainer}>
                                 <View style={[s.emptyIconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
-                                    <DocumentText size={32} color={C.textTertiary} />
+                                    <AnimatedIcon source={require('@/assets/3dicons/3dicons-folder-front-color.png')} size={48} animationType="pop" />
                                 </View>
                                 <Text style={[s.emptyTitle, { color: C.text }]}>No history yet</Text>
                                 <Text style={[s.emptySub, { color: C.textSecondary }]}>
@@ -342,8 +343,8 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
             style={[s.card, isDark ? s.cardDark : s.cardLight]}
         >
             <View style={s.cardBody}>
-                <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight]}>
-                    <Notebook size={20} color={C.primary} />
+                <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight, { backgroundColor: 'transparent' }]}>
+                    <AnimatedIcon source={require('@/assets/3dicons/3dicons-bookmark-iso-color.png')} size={24} animationType="wobble" />
                 </View>
                 <View style={s.cardContent}>
                     <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{session.topic}</Text>
@@ -382,8 +383,8 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
             style={[s.card, isDark ? s.cardDark : s.cardLight]}
         >
             <View style={s.cardBody}>
-                <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight]}>
-                    <DocumentText size={20} color={C.primary} />
+                <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight, { backgroundColor: 'transparent' }]}>
+                    <AnimatedIcon source={require('@/assets/3dicons/3dicons-copy-front-color.png')} size={24} animationType="wobble" />
                 </View>
                 <View style={s.cardContent}>
                     <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{deck.title}</Text>

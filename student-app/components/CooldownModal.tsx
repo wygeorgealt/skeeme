@@ -1,7 +1,8 @@
 import { Text } from '@/components/ui/Text';
 import React from 'react';
 import { View, TouchableOpacity, useColorScheme, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
-import { RoundArrowUp, Stopwatch } from '@solar-icons/react-native/Bold';
+import { RoundArrowUp } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { BlurView } from 'expo-blur';
@@ -73,7 +74,7 @@ export default function CooldownModal({ visible, onDismiss }: CooldownModalProps
                             styles.iconWrapper, 
                             { backgroundColor: isDark ? 'rgba(255, 149, 0, 0.15)' : 'rgba(255, 149, 0, 0.08)' }
                         ]}>
-                            <Stopwatch size={32} color="#FF9500" />
+                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-clock-front-color.png')} size={48} animationType="spin" />
                         </View>
 
                         <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>

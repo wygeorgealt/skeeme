@@ -1,571 +1,739 @@
-import { Text } from '@/components/ui/Text';
-import React, { useCallback, useState } from 'react';
-import { View, ScrollView, RefreshControl, useColorScheme, StyleSheet, TouchableOpacity } from 'react-native';
-import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
-import Svg, { Rect, Circle, Path, Line, G, Ellipse } from 'react-native-svg';
-import { useAuthStore } from '@/store/authStore';
-import { useStudent } from '@/hooks/useStudent';
-import { router, useFocusEffect } from 'expo-router';
-import { api } from '@/lib/api';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Dimensions, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { haptics } from '@/lib/haptics';
+import Animated, {
+    useSharedValue,
+    withRepeat,
+    withTiming,
+    Easing,
+    FadeIn,
+    interpolate,
+    useAnimatedStyle
+} from 'react-native-reanimated';
+import { QuestionCircle, AltArrowLeft, AltArrowRight, Bolt, CameraAdd, CheckCircle, Dislike, Gallery, Like, Refresh, Scanner, Share, List, MenuDotsCircle, DocumentText } from '@solar-icons/react-native/Bold';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Fire, RoundArrowUp, Calendar, ClockCircle, MedalRibbonsStar, AltArrowRight, Chart2, WalletMoney } from '@solar-icons/react-native/Bold';
-import { Colors } from '@/constants/theme';
-import { tryPromptForReview } from '@/lib/storeReview';
+import { api } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/authStore';
+import { Stack, useRouter } from 'expo-router';
+import { Colors, Spacing, Radius } from '@/constants/theme';
+import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import { MathText } from '@/components/ui/MathText';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import * as Clipboard from 'expo-clipboard';
 
-// ─── SVG Icons ────────────────────────────────────────────────────────────────
+import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
+import { generateScanHTML } from '@/lib/pdfGenerator';
+import { scannerService, ScanResult } from '@/lib/scanner';
+import { posthog } from '@/lib/posthog';
+import { markGenerationSuccess } from '@/lib/storeReview';
+import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/freeOffer';
 
-function QuizPracticeSvg() {
-    return (
-        <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
-            {/* Shadow layer */}
-            <Rect x="22" y="19" width="38" height="50" rx="8" fill="#007AFF" opacity={0.12} />
-            {/* Main clipboard body */}
-            <Rect x="18" y="14" width="38" height="50" rx="8" fill="white" />
-            <Rect x="18" y="14" width="38" height="50" rx="8" stroke="#007AFF" strokeWidth="1.5" opacity={0.3} />
-            {/* Clip top */}
-            <Rect x="27" y="9" width="20" height="12" rx="6" fill="#007AFF" />
-            <Circle cx="37" cy="15" r="2.5" fill="white" opacity={0.4} />
-            {/* Checked item */}
-            <Circle cx="27" cy="32" r="4.5" fill="#007AFF" />
-            <Path d="M25 32 L27 34.5 L31.5 29" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            <Rect x="34" y="30" width="16" height="3" rx="1.5" fill="#007AFF" opacity={0.65} />
-            {/* Unchecked items */}
-            <Circle cx="27" cy="43" r="4.5" stroke="#007AFF" strokeWidth="1.5" fill="white" />
-            <Rect x="34" y="41" width="13" height="3" rx="1.5" fill="#007AFF" opacity={0.3} />
-            <Circle cx="27" cy="54" r="4.5" stroke="#007AFF" strokeWidth="1.5" fill="white" />
-            <Rect x="34" y="52" width="16" height="3" rx="1.5" fill="#007AFF" opacity={0.25} />
-        </Svg>
-    );
-}
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import GlobalErrorModal from '@/components/GlobalErrorModal';
+import { FollowUpChatModal } from '@/components/ui/FollowUpChatModal';
+import { ProgressStages } from '@/components/ui/ProgressStages';
+import { ModelSwitcher, ProviderType } from '@/components/ui/ModelSwitcher';
+import { ShareModal } from '@/components/ui/ShareModal';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
-function FlashcardsSvg() {
-    return (
-        <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
-            {/* Back cards stacked */}
-            <G transform="rotate(-12 40 42)">
-                <Rect x="14" y="28" width="44" height="30" rx="8" fill="#34C759" opacity={0.15} />
-            </G>
-            <G transform="rotate(-5 40 42)">
-                <Rect x="14" y="28" width="44" height="30" rx="8" fill="#34C759" opacity={0.28} />
-            </G>
-            {/* Front card */}
-            <Rect x="14" y="30" width="44" height="30" rx="8" fill="white" />
-            <Rect x="14" y="30" width="44" height="30" rx="8" stroke="#34C759" strokeWidth="1.5" />
-            {/* Text lines on card */}
-            <Rect x="22" y="39" width="28" height="3.5" rx="1.75" fill="#34C759" opacity={0.9} />
-            <Rect x="22" y="46.5" width="20" height="3" rx="1.5" fill="#34C759" opacity={0.4} />
-            <Rect x="22" y="53" width="24" height="3" rx="1.5" fill="#34C759" opacity={0.25} />
-        </Svg>
-    );
-}
+const BASE_SCAN_COST = 50;
+const COST_PER_SOLUTION = 0;
+const { width } = Dimensions.get('window');
+const CROP_BOX_WIDTH = width * 0.85;
+const CROP_BOX_HEIGHT = 160;
 
-function HistorySvg() {
-    return (
-        <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
-            {/* Offset shadow circle */}
-            <Circle cx="44" cy="44" r="22" fill="#FF9500" opacity={0.15} />
-            {/* Main clock face */}
-            <Circle cx="41" cy="41" r="22" fill="white" />
-            <Circle cx="41" cy="41" r="22" stroke="#FF9500" strokeWidth="2" />
-            {/* Tick marks */}
-            <Rect x="40" y="21" width="2" height="5" rx="1" fill="#FF9500" opacity={0.45} />
-            <Rect x="40" y="57" width="2" height="5" rx="1" fill="#FF9500" opacity={0.45} />
-            <Rect x="57" y="40" width="5" height="2" rx="1" fill="#FF9500" opacity={0.45} />
-            <Rect x="21" y="40" width="5" height="2" rx="1" fill="#FF9500" opacity={0.45} />
-            {/* Hour hand */}
-            <Line x1="41" y1="41" x2="41" y2="26" stroke="#FF9500" strokeWidth="2.5" strokeLinecap="round" />
-            {/* Minute hand */}
-            <Line x1="41" y1="41" x2="53" y2="48" stroke="#FF9500" strokeWidth="2" strokeLinecap="round" />
-            {/* Center dot */}
-            <Circle cx="41" cy="41" r="3.5" fill="#FF9500" />
-            {/* Counter-clockwise arrow arc */}
-            <Path
-                d="M23 41 A18 18 0 0 1 38 23.5"
-                stroke="#FF9500" strokeWidth="2" strokeLinecap="round" fill="none"
-            />
-            <Path d="M22.5 41 L18 37" stroke="#FF9500" strokeWidth="2" strokeLinecap="round" />
-            <Path d="M22.5 41 L27 37.5" stroke="#FF9500" strokeWidth="2" strokeLinecap="round" />
-        </Svg>
-    );
-}
+export default function ScanScreen() {
+    const insets = useSafeAreaInsets();
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const router = useRouter();
+    const C = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
 
-function SavedSvg() {
-    return (
-        <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
-            {/* Shadow bookmark */}
-            <Path
-                d="M30 15 L54 15 L54 68 L42 58 L30 68 Z"
-                fill="#5856D6" opacity={0.12}
-                transform="translate(2.5 2.5)"
-            />
-            {/* Main bookmark */}
-            <Path d="M30 15 L54 15 L54 68 L42 58 L30 68 Z" fill="white" />
-            <Path d="M30 15 L54 15 L54 68 L42 58 L30 68 Z" stroke="#5856D6" strokeWidth="1.5" />
-            {/* Star inside */}
-            <Path
-                d="M42 27 L44.5 34.5 L52.5 34.5 L46 39.5 L48.5 47 L42 42 L35.5 47 L38 39.5 L31.5 34.5 L39.5 34.5 Z"
-                fill="#5856D6"
-            />
-            {/* Sparkle dots */}
-            <Circle cx="22" cy="22" r="2.5" fill="#5856D6" opacity={0.4} />
-            <Circle cx="16" cy="32" r="1.5" fill="#5856D6" opacity={0.25} />
-            <Circle cx="60" cy="20" r="2" fill="#5856D6" opacity={0.35} />
-        </Svg>
-    );
-}
+    const { user, updateUser } = useAuthStore();
+    const queryClient = useQueryClient();
+    const [permission, requestPermission] = useCameraPermissions();
+    const cameraRef = useRef<CameraView>(null);
 
-// ─── Streak Calendar ──────────────────────────────────────────────────────────
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [imageBase64, setImageBase64] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [loadingStage, setLoadingStage] = useState('');
+    const [results, setResults] = useState<ScanResult[]>([]);
+    const [scanError, setScanError] = useState<string | null>(null);
+    const [isNetworkError, setIsNetworkError] = useState(false);
+    const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'unhelpful'>>({});
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [globalErrorMessage, setGlobalErrorMessage] = useState('');
+    const [showChatModal, setShowChatModal] = useState(false);
+    const [selectedProvider, setSelectedProvider] = useState<ProviderType>('deepseek');
+    const [showShareModal, setShowShareModal] = useState(false);
 
-function StreakCalendar({ data, isDark, C }: { data: any[]; isDark: boolean; C: typeof Colors.light }) {
-    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-    const todayIndex = (new Date().getDay() + 6) % 7;
+    const [progressPercent, setProgressPercent] = useState(0);
 
-    const isActive = (idx: number) => {
-        const val = data?.[idx];
-        return typeof val === 'number' ? val > 0 : typeof val === 'object' ? (val?.value ?? 0) > 0 : false;
+    const esRef = useRef<(() => void) | null>(null);
+    const hapticFiredRef = useRef(false);
+
+    const pulseAnim = useSharedValue(0.4);
+
+    useEffect(() => {
+        if (loading) {
+            pulseAnim.value = withRepeat(
+                withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+                -1,
+                true
+            );
+        } else {
+            pulseAnim.value = 1;
+        }
+    }, [loading]);
+
+    useEffect(() => () => {
+        if (esRef.current) {
+            esRef.current();
+            esRef.current = null;
+        }
+    }, []);
+
+    const pulseStyle = useAnimatedStyle(() => ({
+        opacity: pulseAnim.value,
+    }));
+
+    const pickImage = async (useCamera: boolean) => {
+        const currentCredits = user?.credits ?? 0;
+        const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
+        if (!isUnlimited && currentCredits <= 0) {
+            await useAuthStore.getState().toggleCreditsModal(true, 'scan');
+            return;
+        }
+
+        setResults([]);
+
+        const permissionMethod = useCamera
+            ? ImagePicker.requestCameraPermissionsAsync
+            : ImagePicker.requestMediaLibraryPermissionsAsync;
+
+        const { status } = await permissionMethod();
+        if (status !== 'granted') {
+            Alert.alert('Permission Required', `Please allow ${useCamera ? 'camera' : 'gallery'} access to scan questions.`);
+            return;
+        }
+
+        const launchMethod = useCamera
+            ? ImagePicker.launchCameraAsync
+            : ImagePicker.launchImageLibraryAsync;
+
+        const result = await launchMethod({
+            mediaTypes: ['images'],
+            quality: 0.5,
+            base64: true,
+            allowsEditing: true,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            const base64Data = result.assets[0].base64 || null;
+            setImageUri(result.assets[0].uri);
+            setImageBase64(base64Data);
+
+            if (base64Data) {
+                setTimeout(() => {
+                    handleSolve(base64Data);
+                }, 50);
+            }
+        }
     };
 
-    return (
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
-            {days.map((day, i) => {
-                const active = isActive(i);
-                const isToday = i === todayIndex;
-                return (
-                    <View key={i} style={{ alignItems: 'center', gap: 8 }}>
-                        <Text style={{
-                            fontSize: 13,
-                            fontWeight: '700',
-                            color: isToday ? '#5856D6' : isDark ? 'rgba(255,255,255,0.35)' : 'rgba(88,86,214,0.4)',
-                        }}>
-                            {day}
+    const handleCapture = async () => {
+        const currentCredits = user?.credits ?? 0;
+        const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
+        if (!isUnlimited && currentCredits <= 0) {
+            await useAuthStore.getState().toggleCreditsModal(true, 'scan');
+            return;
+        }
+
+        if (!cameraRef.current) return;
+        try {
+            const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
+
+            if (photo) {
+                setLoading(true);
+                setLoadingStage('Analyzing image...');
+                setProgressPercent(0);
+
+                const manipulated = await manipulateAsync(
+                    photo.uri,
+                    [{ resize: { width: 1080 } }],
+                    { compress: 0.7, format: SaveFormat.JPEG, base64: true }
+                );
+
+                setImageUri(manipulated.uri);
+                setImageBase64(manipulated.base64 || null);
+
+                if (manipulated.base64) {
+                    await handleSolve(manipulated.base64);
+                } else {
+                    setLoading(false);
+                }
+            }
+        } catch (e) {
+            if (__DEV__) console.warn('Capture failed', e);
+            Alert.alert('Error', 'Could not take picture.');
+            setLoading(false);
+        }
+    };
+
+    const handleSolve = async (directBase64?: string) => {
+        const targetBase64 = directBase64 || imageBase64;
+        if (!targetBase64) return;
+
+        let currentCredits = user?.credits ?? 0;
+        let isUnlimited = (user?.plan_name ?? 'free') !== 'free';
+
+        const pricingConfig = useAuthStore.getState().pricingConfig;
+        const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
+        const scanCost = (pricingConfig?.rates?.scan_solve as any)?.[planTier] ?? (planTier === 'free' ? 50 : 30);
+
+        // Occasional upsell: for free users, show a non-blocking paywall offer (do not abort generation)
+        if (user?.plan_name === 'free') {
+            const shouldShow = await shouldShowFreePaywallOffer({ feature: 'scan' });
+            if (shouldShow) {
+                await markFreePaywallOfferShown({ feature: 'scan' });
+                await useAuthStore.getState().toggleCreditsModal(true, 'scan');
+                // continue with generation in background
+            }
+        }
+
+        if (!isUnlimited && currentCredits <= 0) {
+            try {
+                await queryClient.refetchQueries({ queryKey: ['student', 'me'] });
+                const refreshed = useAuthStore.getState().user;
+                if (refreshed) {
+                    currentCredits = refreshed.credits ?? currentCredits;
+                    isUnlimited = (refreshed.plan_name ?? 'free') !== 'free';
+                }
+            } catch (e) { }
+
+            if (!isUnlimited && currentCredits <= 0) {
+                await useAuthStore.getState().toggleCreditsModal(true, 'scan');
+                return;
+            }
+        }
+
+        setLoading(true);
+        setScanError(null);
+        setIsNetworkError(false);
+        setLoadingStage('Analyzing image...');
+        setProgressPercent(10);
+        hapticFiredRef.current = false;
+
+        if (esRef.current) {
+            esRef.current();
+            esRef.current = null;
+        }
+
+        try {
+            let streamErrored = false;
+            let finalResults: ScanResult[] = [];
+
+            const cleanup = scannerService.streamSolve(targetBase64, selectedProvider, {
+                onStatus: (message) => {
+                    setLoadingStage(message);
+                },
+                onDelta: (partialResults) => {
+                    if (!hapticFiredRef.current && partialResults.length > 0) {
+                        hapticFiredRef.current = true;
+                        haptics.impactAsync('medium' as any, true);
+                    }
+                    finalResults = partialResults;
+                    setResults(partialResults);
+                    setLoadingStage('Generating answer...');
+                },
+                onFullResult: (fullResults) => {
+                    finalResults = fullResults;
+                    setResults(fullResults);
+                },
+                onComplete: async (creditsRemaining, reward, streak) => {
+                    const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
+                    if (user) {
+                        updateUser({ ...user, credits: creditsRemaining } as any);
+                        if (creditsRemaining === 0 && !isUnlimited) {
+                            await useAuthStore.getState().toggleCreditsModal(true, 'scan');
+                        }
+                    }
+                },
+                onError: async (message, isInsufficientCredits) => {
+                    streamErrored = true;
+                    esRef.current = null;
+                    setLoading(false);
+
+                    if (isInsufficientCredits) {
+                        // Server rejected with 402 — not enough credits for the scan cost.
+                        // Show the credits modal (same flow as the local pre-check).
+                        await useAuthStore.getState().toggleCreditsModal(true, 'scan');
+                        return;
+                    }
+
+                    setScanError(message);
+                    setGlobalErrorMessage('Skeeme is down, Please try again later.');
+                    setShowErrorModal(true);
+
+                    // Detect if it was a network error for the UI
+                    if (message.toLowerCase().includes('network') || message.toLowerCase().includes('connection')) {
+                        setIsNetworkError(true);
+                    }
+                },
+                onDone: () => {
+                    esRef.current = null;
+                    setLoading(false);
+                    setProgressPercent(100);
+                    if (!streamErrored) {
+                        try {
+                            posthog.capture('scan_solved_stream', { questions_found: finalResults.length });
+                        } catch (e) { }
+                        if (finalResults.length > 0) {
+                            markGenerationSuccess('scan').catch(() => {});
+                        }
+                    }
+                }
+            });
+
+            esRef.current = cleanup;
+
+        } catch (err: any) {
+            setLoading(false);
+            setScanError('Connection failed. Please try again.');
+            setIsNetworkError(true);
+            setGlobalErrorMessage('Skeeme is down, Please try again later.');
+            setShowErrorModal(true);
+        }
+    };
+
+    const handleCopy = async (text: string) => {
+        await Clipboard.setStringAsync(text);
+    };
+
+    const handleExport = async () => {
+        if (results.length === 0) return;
+        setLoading(true);
+        setLoadingStage('Preparing PDF...');
+
+        try {
+            const html = generateScanHTML(results);
+            const { uri } = await Print.printToFileAsync({ html, base64: false });
+            await Sharing.shareAsync(uri);
+            try { posthog.capture('scan_exported'); } catch (e) { }
+        } catch (err) {
+            if (__DEV__) console.warn('PDF Export failed', err);
+            Alert.alert('Export Failed', 'Could not generate PDF report.');
+        } finally {
+            setLoading(false);
+            setLoadingStage('');
+        }
+    };
+
+    const resetScan = () => {
+        if (esRef.current) {
+            esRef.current();
+            esRef.current = null;
+        }
+        setLoading(false);
+        setLoadingStage('');
+        setProgressPercent(0);
+        setImageUri(null);
+        setImageBase64(null);
+        setResults([]);
+        setScanError(null);
+        setIsNetworkError(false);
+        hapticFiredRef.current = false;
+    };
+
+    const [enableTorch, setEnableTorch] = useState(false);
+    const showLiveScanner = !imageUri && results.length === 0;
+
+    if (showLiveScanner) {
+        return (
+            <View style={{ flex: 1, backgroundColor: 'black' }}>
+                <Stack.Screen options={{ headerShown: false }} />
+                {!permission ? (
+                    <View style={{ flex: 1 }} />
+                ) : !permission.granted ? (
+                    <View style={s.permissionContainer}>
+                        <Scanner size={64} color={C.primary} style={{ marginBottom: 24 }} />
+                        <Text style={[s.heroTitle, { color: C.text }]}>Camera Access Needed</Text>
+                        <Text style={[s.heroDesc, { paddingHorizontal: 40 }]}>
+                            Skeeme needs your camera to scan equations and past questions instantly.
                         </Text>
-                        <View style={{
-                            width: 34, height: 34, borderRadius: 17,
-                            alignItems: 'center', justifyContent: 'center',
-                            backgroundColor: active
-                                ? '#5856D6'
-                                : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(88,86,214,0.08)',
-                            borderWidth: !active && isToday ? 2 : 0,
-                            borderColor: '#5856D6',
-                        }}>
-                            {active
-                                ? <Fire size={16} color="#FFF" />
-                                : <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(88,86,214,0.25)' }} />
-                            }
+                        <TouchableOpacity onPress={requestPermission} style={[s.primaryBtnShadow, { width: 200, backgroundColor: C.primary }]}>
+                            <View style={s.primaryBtnGradient}>
+                                <Text style={s.primaryBtnText}>Grant Access</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View style={StyleSheet.absoluteFill}>
+                        <CameraView style={StyleSheet.absoluteFill} facing="back" ref={cameraRef} enableTorch={enableTorch} />
+
+                        <View style={[StyleSheet.absoluteFill, { justifyContent: 'space-between' }]}>
+                            <View style={[s.topChrome, { paddingTop: Math.max(insets.top, 16) }]}>
+                                <TouchableOpacity onPress={() => setEnableTorch(!enableTorch)} activeOpacity={0.7} style={s.overlayTopBtn}>
+                                    <AnimatedIcon source={require('@/assets/3dicons/3dicons-flash-front-color.png')} size={32} animationType="pop" />
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => router.push('/(drawer)/generate')} activeOpacity={0.7} style={{ justifyContent: 'center', alignItems: 'center', minHeight: 44 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8 }}>
+                                        <DocumentText size={18} color="white" style={{ textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }} />
+                                        <Text style={{ color: 'white', fontWeight: '800', marginLeft: 6, fontSize: 16, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }}>Quiz</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={s.centerViewfinder}>
+                                <Text style={s.instructionText}>Take a clear photo of your questions</Text>
+                            </View>
+
+                            <View style={[s.bottomChrome, { paddingBottom: Math.max(insets.bottom, 32) + 90 }]}>
+                                <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={s.galleryBtn}>
+                                    <Gallery size={28} color="white" />
+                                </TouchableOpacity>
+
+                                <TouchableOpacity onPress={handleCapture} activeOpacity={0.8} style={s.shutterOuter}>
+                                    <View style={s.shutterInner} />
+                                </TouchableOpacity>
+
+                                <View style={{ width: 44, height: 44 }} />
+                            </View>
                         </View>
                     </View>
-                );
-            })}
-        </View>
-    );
-}
-
-// ─── Dashboard ────────────────────────────────────────────────────────────────
-
-export default function DashboardScreen() {
-    const { user } = useAuthStore();
-    const [refreshing, setRefreshing] = useState(false);
-    const [animKey, setAnimKey] = useState(0);
-
-    const scheme = useColorScheme();
-    const isDark = scheme === 'dark';
-    const C = Colors[isDark ? 'dark' : 'light'];
-    const insets = useSafeAreaInsets();
-    const queryClient = useQueryClient();
-
-    useFocusEffect(
-        useCallback(() => {
-            setAnimKey(prev => prev + 1);
-            const timer = setTimeout(() => {
-                tryPromptForReview().catch(() => {});
-            }, 800);
-            return () => clearTimeout(timer);
-        }, [])
-    );
-
-    const studentQuery = useStudent();
-    const studentMe = studentQuery.data as any;
-    const nearestExamDate =
-        studentMe?.nearest_exam?.exam_date ??
-        user?.nearest_exam?.exam_date ??
-        studentMe?.next_exam_date ??
-        (user as any)?.next_exam_date ??
-        null;
-
-    const daysUntilExam = nearestExamDate
-        ? Math.ceil((new Date(nearestExamDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-        : null;
-
-    const { data: heatmapDates = [] } = useQuery({
-        queryKey: ['streak-heatmap'],
-        queryFn: async () => {
-            const res = await api.get('streaks/heatmap');
-            return res.data.data as string[];
-        },
-        enabled: !!user,
-        staleTime: 1000 * 60 * 60 * 4,
-    });
-
-    const onRefresh = useCallback(async () => {
-        setRefreshing(true);
-        try {
-            await Promise.all([
-                queryClient.refetchQueries({ queryKey: ['student', 'me'] }),
-                queryClient.refetchQueries({ queryKey: ['streak-heatmap'] }),
-            ]);
-        } finally {
-            setRefreshing(false);
-        }
-    }, [queryClient]);
-
-    if (!user) return null;
-
-    const weeklyCalendarData = Array.from({ length: 7 }).map((_, i) => {
-        const today = new Date();
-        const currentDay = (today.getDay() + 6) % 7;
-        const d = new Date(today);
-        d.setDate(today.getDate() - currentDay + i);
-        const tzoffset = d.getTimezoneOffset() * 60000;
-        const localISO = (new Date(d.getTime() - tzoffset)).toISOString().slice(0, 10);
-        return heatmapDates.includes(localISO) ? 1 : 0;
-    });
+                )}
+            </View>
+        );
+    }
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
-            <ScrollView
-                contentContainerStyle={{
-                    paddingTop: insets.top + 20,
-                    paddingBottom: 130,
-                    paddingHorizontal: 16,
-                    gap: 14,
-                }}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        tintColor={C.primary}
-                        colors={[C.primary]}
-                    />
-                }
-            >
-                {/* ── Hero ── */}
-                <Animated.View
-                    key={`hero-${animKey}`}
-                    entering={FadeInUp.duration(500)}
-                    style={s.heroSection}
-                >
+            <Stack.Screen options={{ headerShown: false }} />
+
+            <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
+                <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
+                    <AltArrowLeft size={20} color={C.text} />
+                </TouchableOpacity>
+                <Text style={[s.headerTitle, { color: C.text }]}>Question</Text>
+                {results.length > 0 ? (
+                    <TouchableOpacity onPress={() => setShowShareModal(true)} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
+                        <MenuDotsCircle size={20} color={C.text} />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 44 }} />
+                )}
+            </View>
+
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
+                {!!imageUri && (
+                    <View style={{ width: '100%', height: 160, marginBottom: 16, borderRadius: 16, overflow: 'hidden' }}>
+                        <ExpoImage source={{ uri: imageUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                    </View>
+                )}
+
+                {(loading || results.length > 0) && (
+                    <View style={{ marginBottom: 24 }}>
+                        <ModelSwitcher 
+                            selected={selectedProvider}
+                            onSelect={setSelectedProvider}
+                            isDark={isDark}
+                        />
+                    </View>
+                )}
+
+                {!!(results.length > 0 || loading || scanError) && (
                     <View>
-                        <Text style={[s.heroLabel, { color: C.textSecondary }]}>AVAILABLE BALANCE</Text>
-                        <Text style={[s.heroValue, { color: C.text }]}>
-                            {user.credits?.toLocaleString() ?? '0'}
-                        </Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                        {user.plan_name === 'free' && (
-                            <TouchableOpacity
-                                onPress={() => router.push('/paywall')}
-                                style={[s.iconCircle, { backgroundColor: C.primary }]}
-                            >
-                                <RoundArrowUp size={18} color="#FFF" />
-                            </TouchableOpacity>
-                        )}
-                        {(
-                            user.plan_name === 'free' ||
-                            ((user.plan_name === 'pro' || user.plan_name === 'max') && (user.credits ?? 0) < 1000)
-                        ) && (
-                            <TouchableOpacity
-                                onPress={() => router.push('/buy-credits')}
-                                style={[s.iconCircle, { backgroundColor: isDark ? '#0A84FF' : '#007AFF' }]}
-                            >
-                                <WalletMoney size={18} color="#FFF" />
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                </Animated.View>
+                        {scanError ? (
+                            <View style={[s.errorContainer, isDark ? s.cardDark : s.cardLight]}>
+                                <View style={s.errorIconCircle}>
+                                    <QuestionCircle size={32} color={isNetworkError ? '#f59e0b' : '#ef4444'} />
+                                </View>
+                                <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>
+                                    {isNetworkError ? 'Connection Issue' : 'Analysis Failed'}
+                                </Text>
+                                <Text style={[s.errorDesc, isDark ? s.textSlate400d : s.textSlate500l]}>
+                                    {scanError}
+                                </Text>
 
-                {/* ── Feature 2x2 Grid ── */}
-                <Animated.View
-                    key={`feature-grid-${animKey}`}
-                    entering={FadeInDown.delay(80).duration(400)}
-                    style={s.gridWrap}
-                >
-                    {(
-                        [
-                            { label: 'Quiz Practice',  route: '/generate',          color: '#007AFF', bg: '#EBF3FF', darkBg: '#007AFF28', Icon: QuizPracticeSvg },
-                            { label: 'Flashcards',     route: '/flashcards/create', color: '#34C759', bg: '#E6F9EE', darkBg: '#34C75928', Icon: FlashcardsSvg },
-                            { label: 'History',        route: '/history',           color: '#FF9500', bg: '#FFF4E6', darkBg: '#FF950028', Icon: HistorySvg },
-                            { label: 'Saved',          route: '/history/saved',     color: '#5856D6', bg: '#EEF0FF', darkBg: '#5856D628', Icon: SavedSvg },
-                        ] as const
-                    ).map(({ label, route, color, bg, darkBg, Icon }) => (
-                        <TouchableOpacity
-                            key={route}
-                            onPress={() => router.push(route as any)}
-                            activeOpacity={0.85}
-                            style={[s.gridItem, { backgroundColor: isDark ? darkBg : bg }]}
-                        >
-                            <Text style={[s.gridLabel, { color: isDark ? '#fff' : '#1A1A2E' }]}>{label}</Text>
-                            <View style={{ alignSelf: 'flex-end' }}>
-                                <Icon />
+                                <TouchableOpacity
+                                    onPress={() => handleSolve()}
+                                    activeOpacity={0.8}
+                                    style={s.retryBtn}
+                                >
+                                    <Refresh size={18} color="white" />
+                                    <Text style={s.retryBtnText}>Try Again</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={resetScan}
+                                    activeOpacity={0.7}
+                                    style={s.cancelBtn}
+                                >
+                                    <Text style={[s.cancelBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>Cancel</Text>
+                                </TouchableOpacity>
                             </View>
-                        </TouchableOpacity>
-                    ))}
-                </Animated.View>
+                        ) : (
+                            <>
+                                {loading && (
+                                    <View style={{ backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 16, overflow: 'hidden', marginBottom: 24 }}>
+                                        <ProgressStages progressPercent={progressPercent} isDark={isDark} />
+                                    </View>
+                                )}
 
-                {/* ── Stats Row ── */}
-                <Animated.View
-                    key={`stats-${animKey}`}
-                    entering={FadeInDown.delay(160).duration(400)}
-                    style={{ flexDirection: 'row', gap: 12 }}
-                >
-                    <TouchableOpacity
-                        style={{ flex: 1 }}
-                        onPress={() => router.push('/exams' as any)}
-                        activeOpacity={0.85}
-                    >
-                        <View style={[s.pasteCard, { backgroundColor: isDark ? '#5856D628' : '#EEF0FF' }]}>
-                            <View style={[s.statIconBox, { backgroundColor: 'rgba(255,255,255,0.65)' }]}>
-                                <Calendar size={18} color="#5856D6" />
-                            </View>
-                            <Text style={[s.statNum, { color: isDark ? '#fff' : '#1A1A2E' }]}>
-                                {daysUntilExam !== null ? (daysUntilExam < 0 ? 0 : daysUntilExam) : '—'}
-                            </Text>
-                            <Text style={[s.statDesc, { color: isDark ? 'rgba(255,255,255,0.55)' : '#5856D6' }]}>
-                                {nearestExamDate ? 'Days to Exam' : 'Add Exam'}
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
+                                {results.map((item, index) => (
+                                    <View key={index} style={s.resultContainer}>
+                                        {!!item.topic && (
+                                            <View style={s.sectionHeaderRow}>
+                                                <Text style={[s.topicTitleText, isDark ? s.textWhite : s.textSlate900]}>{item.topic}</Text>
+                                            </View>
+                                        )}
+                                        {!!(item.solution || item.summary) && (
+                                            <MathText
+                                                content={`**${item.solution || item.summary}**`}
+                                                color={isDark ? '#FFFFFF' : '#0f172a'}
+                                                fontSize={17}
+                                                containerStyle={{ marginBottom: 16, marginTop: 8 }}
+                                            />
+                                        )}
 
-                    <View style={[{ flex: 1 }, s.pasteCard, { backgroundColor: isDark ? '#007AFF28' : '#EBF3FF' }]}>
-                        <View style={[s.statIconBox, { backgroundColor: 'rgba(255,255,255,0.65)' }]}>
-                            <ClockCircle size={18} color="#007AFF" />
-                        </View>
-                        <Text style={[s.statNum, { color: isDark ? '#fff' : '#1A1A2E' }]}>
-                            {user.study_sessions_this_week ?? 0}
-                        </Text>
-                        <Text style={[s.statDesc, { color: isDark ? 'rgba(255,255,255,0.55)' : '#007AFF' }]}>
-                            Study Sessions
-                        </Text>
+                                        {item.steps && item.steps.length > 0 ? (
+                                            item.steps.map((step, stepIdx) => (
+                                                <View key={stepIdx} style={s.stepRow}>
+                                                    <View style={[s.stepBadge, isDark ? s.bgWhite10 : s.bgSlate100]}>
+                                                        <Text style={[s.stepNumber, isDark ? s.textWhite : s.textSlate900]}>{stepIdx + 1}</Text>
+                                                    </View>
+                                                    <View style={s.stepContent}>
+                                                        <MathText
+                                                            content={step}
+                                                            color={isDark ? '#cbd5e1' : '#334155'}
+                                                            fontSize={16}
+                                                        />
+                                                    </View>
+                                                </View>
+                                            ))
+                                        ) : (
+                                            <MathText
+                                                content={item.explanation || 'No detailed explanation available.'}
+                                                color={isDark ? '#cbd5e1' : '#334155'}
+                                                fontSize={16}
+                                                containerStyle={{ marginBottom: 20 }}
+                                            />
+                                        )}
+
+                                        {index === results.length - 1 && (
+                                            <View style={s.feedbackRow}>
+                                                {feedback[index] ? (
+                                                    <Animated.View entering={FadeIn.duration(300)} style={s.feedbackDone}>
+                                                        <CheckCircle size={16} color="#10b981" />
+                                                        <Text style={[s.feedbackDoneText, { color: '#10b981' }]}>
+                                                            Thanks for the feedback!
+                                                        </Text>
+                                                    </Animated.View>
+                                                ) : (
+                                                    <View style={s.feedbackContainerInner}>
+                                                        <Text style={[s.feedbackPrompt, isDark ? s.textSlate400d : s.textSlate500l]}>Happy with the answer?</Text>
+                                                        <View style={s.feedbackBtns}>
+                                                            <TouchableOpacity
+                                                                onPress={() => setFeedback(prev => ({ ...prev, [index]: 'helpful' }))}
+                                                                activeOpacity={0.7}
+                                                                style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
+                                                            >
+                                                                <Like size={16} color={isDark ? 'white' : '#0f172a'} />
+                                                                <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Helpful</Text>
+                                                            </TouchableOpacity>
+                                                            <TouchableOpacity
+                                                                onPress={() => setFeedback(prev => ({ ...prev, [index]: 'unhelpful' }))}
+                                                                activeOpacity={0.7}
+                                                                style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
+                                                            >
+                                                                <Dislike size={16} color={isDark ? 'white' : '#0f172a'} />
+                                                                <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Unhelpful</Text>
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        )}
+                                    </View>
+                                ))}
+                            </>
+                        )}
                     </View>
-                </Animated.View>
-
-                {/* ── Weekly Activity ── */}
-                <Animated.View
-                    key={`activity-${animKey}`}
-                    entering={FadeInDown.delay(240).duration(400)}
-                    style={[s.pasteCard, { backgroundColor: isDark ? '#5856D618' : '#F3F0FF', padding: 20 }]}
-                >
-                    <View style={s.activityHeader}>
-                        <View>
-                            <Text style={[s.activityTitle, { color: isDark ? '#fff' : '#1A1A2E' }]}>
-                                Weekly Activity
-                            </Text>
-                            <Text style={[s.activitySub, { color: isDark ? 'rgba(255,255,255,0.5)' : '#5856D6' }]}>
-                                Your study momentum
-                            </Text>
-                        </View>
-                        <View style={{ backgroundColor: 'rgba(255,255,255,0.65)', borderRadius: 10, padding: 8 }}>
-                            <Chart2 size={18} color="#5856D6" />
-                        </View>
-                    </View>
-                    <StreakCalendar data={weeklyCalendarData} isDark={isDark} C={C} />
-                </Animated.View>
-
-                {/* ── Streaks Header ── */}
-                <Animated.View key={`header-${animKey}`} entering={FadeInDown.delay(320).duration(400)}>
-                    <Text style={[s.sectionTitle, { color: C.text }]}>Streaks</Text>
-                </Animated.View>
-
-                {/* ── Streaks Card ── */}
-                <Animated.View
-                    key={`streaks-${animKey}`}
-                    entering={FadeInDown.delay(400).duration(400)}
-                    style={[s.pasteCard, { backgroundColor: isDark ? '#FF950018' : '#FFF6ED', padding: 0, overflow: 'hidden' }]}
-                >
-                    <TouchableOpacity
-                        onPress={() => router.push('/streak')}
-                        style={s.streakRow}
-                        activeOpacity={0.75}
-                    >
-                        <View style={[s.streakIcon, { backgroundColor: 'rgba(255,255,255,0.65)' }]}>
-                            <Fire size={18} color="#FF3B30" />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={[s.streakTitle, { color: isDark ? '#fff' : '#1A1A2E' }]}>Current Streak</Text>
-                            <Text style={[s.streakSub, { color: isDark ? 'rgba(255,255,255,0.5)' : '#FF9500' }]}>
-                                Keep the fire alive
-                            </Text>
-                        </View>
-                        <Text style={[s.streakCount, { color: isDark ? '#fff' : '#1A1A2E' }]}>
-                            {user.streak?.current_streak ?? 0}
-                        </Text>
-                        <AltArrowRight size={18} color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)'} />
-                    </TouchableOpacity>
-
-                    <View style={[s.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,149,0,0.15)' }]} />
-
-                    <TouchableOpacity
-                        onPress={() => router.push('/streak')}
-                        style={s.streakRow}
-                        activeOpacity={0.75}
-                    >
-                        <View style={[s.streakIcon, { backgroundColor: 'rgba(255,255,255,0.65)' }]}>
-                            <MedalRibbonsStar size={18} color="#FF9500" />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={[s.streakTitle, { color: isDark ? '#fff' : '#1A1A2E' }]}>Longest Streak</Text>
-                            <Text style={[s.streakSub, { color: isDark ? 'rgba(255,255,255,0.5)' : '#FF9500' }]}>
-                                Your personal best
-                            </Text>
-                        </View>
-                        <Text style={[s.streakCount, { color: isDark ? '#fff' : '#1A1A2E' }]}>
-                            {user.streak?.longest_streak ?? 0}
-                        </Text>
-                        <AltArrowRight size={18} color={isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)'} />
-                    </TouchableOpacity>
-                </Animated.View>
+                )}
+                <View style={{ height: 100 }} />
             </ScrollView>
+
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+                style={s.stickyFooterWrapper}
+                pointerEvents="box-none"
+            >
+                {!loading && results.length > 0 && (
+                    <View style={[s.followUpInputContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+                        <TouchableOpacity 
+                            onPress={() => setShowChatModal(true)}
+                            activeOpacity={0.8}
+                            style={[s.followUpInputWrapper, isDark ? s.bgDarkBase : s.bgWhite]}
+                        >
+                            <Text style={[s.followUpInput, { color: isDark ? '#64748b' : '#94a3b8' }]}>
+                                Ask a follow-up...
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </KeyboardAvoidingView>
+
+            <FollowUpChatModal 
+                visible={showChatModal}
+                onClose={() => setShowChatModal(false)}
+                scanContext={results}
+            />
+
+            <ShareModal
+                visible={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                onShare={() => {
+                    setShowShareModal(false);
+                    setTimeout(() => handleExport(), 500);
+                }}
+                isDark={isDark}
+            />
+
+            <GlobalErrorModal 
+                visible={showErrorModal}
+                error={globalErrorMessage}
+                onDismiss={() => setShowErrorModal(false)}
+            />
         </View>
     );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const s = StyleSheet.create({
-    // Hero
-    heroSection: {
+    permissionContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 16 },
+    headerBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { fontSize: 17, fontWeight: '800', letterSpacing: -0.5 },
+
+    heroTitle: { fontSize: 24, fontWeight: '900', marginBottom: 12, textAlign: 'center', letterSpacing: -1 },
+    heroDesc: { color: '#64748b', textAlign: 'center', fontWeight: '600', fontSize: 14, marginBottom: 30, lineHeight: 22 },
+
+    primaryBtnShadow: { height: 56, borderRadius: 16, overflow: 'hidden', elevation: 8, shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, alignItems: 'center', justifyContent: 'center' },
+    primaryBtnGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+    primaryBtnText: { color: 'white', fontWeight: '800', fontSize: 16, letterSpacing: -0.3 },
+
+    topChrome: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16, backgroundColor: 'transparent' },
+    overlayTopBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+
+    centerViewfinder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    instructionText: { color: 'white', fontSize: 13, fontWeight: '600', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
+
+    bottomChrome: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 32, paddingTop: 24, backgroundColor: 'transparent' },
+    shutterOuter: { width: 72, height: 72, borderRadius: 36, backgroundColor: 'transparent', borderWidth: 4, borderColor: 'white', alignItems: 'center', justifyContent: 'center' },
+    shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: '#007AFF' },
+    galleryBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+
+    previewContainer: { alignItems: 'center' },
+    previewCard: { width: '100%', borderRadius: 24, overflow: 'hidden', borderBottomWidth: 3, borderBottomColor: 'rgba(139, 92, 246, 0.3)' },
+    previewImage: { width: '100%', height: '100%' },
+
+    cardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+    cardLight: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: 'rgba(60,60,67,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
+
+    answerCard: { borderRadius: 24, padding: 24, marginBottom: 16 },
+
+    sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+    sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.4 },
+    answerIconRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+
+    topicPill: { backgroundColor: 'rgba(0,122,255,0.08)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+    topicPillText: { color: '#007AFF', fontWeight: '700', fontSize: 11, letterSpacing: 0.3 },
+
+    sectionDivider: { height: 1.5, marginTop: 4, marginBottom: 20, opacity: 0.1 },
+
+    answerHighlight: { borderRadius: 16, borderLeftWidth: 4, borderLeftColor: '#10b981', marginBottom: 20, padding: 25 },
+    answerHighlightLight: { backgroundColor: 'rgba(16,185,129,0.03)' },
+    answerHighlightDark: { backgroundColor: 'rgba(16,185,129,0.06)' },
+
+    resultContainer: { paddingVertical: 10 },
+    topicTitleText: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
+    stepRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
+    stepBadge: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 2, marginRight: 12 },
+    stepNumber: { fontSize: 13, fontWeight: '700' },
+    stepContent: { flex: 1 },
+    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
+    bgWhite: { backgroundColor: '#ffffff' },
+    bgSlate100: { backgroundColor: '#F1F5F9' },
+    bgDarkBase: { backgroundColor: '#1C1C1E' },
+    
+    feedbackContainerInner: { alignItems: 'center', width: '100%', marginVertical: 24 },
+    stickyFooterWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+    followUpInputContainer: { paddingHorizontal: 16, paddingTop: 16, backgroundColor: 'transparent' },
+    followUpInputWrapper: { borderRadius: 28, paddingHorizontal: 24, paddingVertical: 16, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 10, borderWidth: 1, borderColor: 'rgba(150,150,150,0.1)' },
+    followUpInput: { fontSize: 16, fontWeight: '500' },
+
+    feedbackRow: { alignItems: 'center', paddingTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(148,163,184,0.08)' },
+    feedbackBtns: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    feedbackPrompt: { fontSize: 13, fontWeight: '600', marginBottom: 16 },
+    feedbackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14 },
+    feedbackBtnDark: { backgroundColor: 'rgba(255,255,255,0.06)' },
+    feedbackBtnLight: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0' },
+    feedbackBtnText: { fontSize: 13, fontWeight: '700' },
+    feedbackDone: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: 'rgba(16,185,129,0.08)', borderRadius: 14 },
+    feedbackDoneText: { fontSize: 13, fontWeight: '700' },
+
+    errorContainer: { margin: 20, padding: 32, borderRadius: 32, alignItems: 'center' },
+    errorIconCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(239,68,68,0.08)', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    errorTitle: { fontSize: 20, fontWeight: '900', marginBottom: 12, letterSpacing: -0.5 },
+    errorDesc: { fontSize: 15, fontWeight: '600', textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+    retryBtn: { backgroundColor: '#007AFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 32, paddingVertical: 16, borderRadius: 16, width: '100%', marginBottom: 12 },
+    retryBtnText: { color: 'white', fontWeight: '800', fontSize: 16 },
+    cancelBtn: { paddingVertical: 12, width: '100%', alignItems: 'center' },
+    cancelBtnText: { fontSize: 15, fontWeight: '700' },
+
+    followUpBar: { borderRadius: 20, padding: 20, marginTop: 4 },
+    followUpInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    followUpText: { fontSize: 15, fontWeight: '600' },
+
+    slimFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingBottom: 100, borderTopWidth: 1 },
+    slimFooterDark: { backgroundColor: 'rgba(0,0,0,0.8)', borderTopColor: 'rgba(255,255,255,0.08)' },
+    slimFooterLight: { backgroundColor: 'rgba(255,255,255,0.9)', borderTopColor: 'rgba(60,60,67,0.08)' },
+    slimFooterBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 10 },
+    slimFooterBtnText: { fontSize: 15, fontWeight: '700' },
+    slimFooterDivider: { width: 1, height: 24 },
+
+    textSlate400d: { color: '#94a3b8' },
+    textSlate500l: { color: '#64748b' },
+    textWhite: { color: 'white' },
+    textSlate900: { color: '#0f172a' },
+    dividerDark: { backgroundColor: 'rgba(255,255,255,0.06)' },
+    dividerLight: { backgroundColor: '#f1f5f9' },
+    sectionTitleContainer: { flex: 1 },
+
+    userPromptRow: { width: '100%', alignItems: 'flex-end', marginTop: -18, marginBottom: 24, paddingHorizontal: 10 },
+    userPromptBubble: { borderRadius: 16, overflow: 'hidden', padding: 4, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+    userBubbleDark: { backgroundColor: '#27272a' },
+    userBubbleLight: { backgroundColor: '#f1f5f9' },
+    userPromptImage: { width: 190, height: 190, borderRadius: 10 },
+    aiResponseRow: { width: '100%', alignItems: 'flex-start', marginBottom: 24, paddingHorizontal: 10 },
+    aiAnalyzingText: { fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
+    thinkingBubble: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        alignItems: 'center',
+        gap: 12,
         paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    heroLabel: {
-        fontSize: 11,
-        fontWeight: '700',
-        letterSpacing: 1.2,
-        marginBottom: 6,
-        textTransform: 'uppercase',
-    },
-    heroValue: {
-        fontSize: 48,
-        fontWeight: '800',
-        letterSpacing: -2,
-        lineHeight: 54,
-    },
-    iconCircle: {
-        width: 40,
-        height: 40,
+        paddingVertical: 10,
         borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
+        marginBottom: 8
     },
+    thinkingBubbleLight: { backgroundColor: '#f1f5f9' },
+    thinkingBubbleDark: { backgroundColor: '#1C1C1E' },
 
-    // 2x2 Grid
-    gridWrap: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
-        marginBottom: 4,
-    },
-    gridItem: {
-        width: '47%',
-        aspectRatio: 1,
-        borderRadius: 24,
-        padding: 16,
-        justifyContent: 'space-between',
-        overflow: 'hidden',
-    },
-    gridLabel: {
-        fontSize: 15,
-        fontWeight: '800',
-        letterSpacing: -0.3,
-        lineHeight: 21,
-    },
-
-    // Shared pastel card
-    pasteCard: {
-        borderRadius: 24,
-        overflow: 'hidden',
-        padding: 18,
-    },
-
-    // Stats
-    statIconBox: {
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 14,
-    },
-    statNum: {
-        fontSize: 30,
-        fontWeight: '800',
-        marginBottom: 2,
-        letterSpacing: -0.5,
-    },
-    statDesc: {
-        fontSize: 13,
-        fontWeight: '500',
-    },
-
-    // Activity
-    activityHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 18,
-    },
-    activityTitle: {
-        fontSize: 17,
-        fontWeight: '700',
-        marginBottom: 2,
-    },
-    activitySub: {
-        fontSize: 13,
-        fontWeight: '500',
-    },
-
-    // Section title
-    sectionTitle: {
-        fontSize: 22,
-        fontWeight: '800',
-        letterSpacing: -0.5,
-        marginTop: 4,
-        marginBottom: -2,
-    },
-
-    // Streaks
-    streakRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        gap: 12,
-    },
-    streakIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    streakTitle: {
-        fontSize: 15,
-        fontWeight: '600',
-    },
-    streakSub: {
-        fontSize: 12,
-        marginTop: 2,
-    },
-    streakCount: {
-        fontSize: 20,
-        fontWeight: '800',
-        marginRight: 4,
-    },
-    divider: {
-        height: StyleSheet.hairlineWidth,
-        marginHorizontal: 16,
-    },
 });

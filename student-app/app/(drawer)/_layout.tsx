@@ -14,58 +14,20 @@ import { useState } from 'react';
 import { Home, User, CameraAdd } from '@solar-icons/react-native/Bold';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, SharedValue } from 'react-native-reanimated';
 
-// ─── Custom glass tab bar with center camera FAB ─────────────────────────────
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+
+// ─── Custom simple 2-tab bar ─────────────────────────────
 function TabBar({ state, descriptors, navigation }: any) {
     const insets = useSafeAreaInsets();
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
 
-    // Find scan route to get its onPress
-    const scanRouteIndex = state.routes.findIndex((r: any) => r.name === 'scan');
-    const scanOnPress = () => {
-        if (scanRouteIndex !== -1) {
-            const event = navigation.emit({
-                type: 'tabPress',
-                target: state.routes[scanRouteIndex].key,
-                canPreventDefault: true,
-            });
-            if (state.index !== scanRouteIndex && !event.defaultPrevented) {
-                navigation.navigate('scan');
-            }
-        }
-    };
-
-    // ── Camera FAB fold animation ──────────────────────────────────────────
-    const currentRouteName = state.routes[state.index]?.name;
-    const isMainTab = ['index', 'account'].includes(currentRouteName);
-
-    // Shared value: 0 = prominent (main tabs), 1 = folded (sub-pages)
-    const foldProgress = useSharedValue(isMainTab ? 0 : 1);
-
-    useEffect(() => {
-        foldProgress.value = withSpring(isMainTab ? 0 : 1, {
-            damping: 16,
-            stiffness: 140,
-            mass: 0.8,
-        });
-    }, [isMainTab]);
-
-    const fabAnimatedStyle = useAnimatedStyle(() => ({
-        transform: [
-            { translateY: foldProgress.value * 22 },
-            { scale: 1 - foldProgress.value * 0.22 },
-        ],
-        opacity: 1 - foldProgress.value * 0.15,
-    }));
-
     // Filter to only visible tabs (Home + Account)
     const visibleRoutes = state.routes
         .map((route: any, index: number) => ({ route, index }))
-        .filter(({ route }: any) => {
-            const { options } = descriptors[route.key];
-            return options.href !== null && route.name !== 'scan';
-        });
+        .filter(({ route }: any) => ['index', 'account'].includes(route.name));
+        
     // Check if any screen has requested to hide the tab bar
     const focusedRoute = state.routes[state.index];
     const focusedOptions = descriptors[focusedRoute.key].options;
@@ -75,92 +37,48 @@ function TabBar({ state, descriptors, navigation }: any) {
 
     return (
         <View style={bar.outerWrap} pointerEvents="box-none">
-            {/* The bar itself */}
             <BlurView
                 intensity={Platform.OS === 'ios' ? 80 : 100}
                 tint={isDark ? 'dark' : 'light'}
                 style={[
                     bar.blurBase,
                     {
-                        paddingBottom: Math.max(insets.bottom, 16),
+                        paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
                         backgroundColor: isDark
-                            ? (Platform.OS === 'android' ? 'rgba(0,0,0,0.92)' : 'rgba(0,0,0,0.6)')
-                            : (Platform.OS === 'android' ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)'),
-                        borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                            ? (Platform.OS === 'android' ? 'rgba(0,0,0,0.92)' : 'rgba(0,0,0,0.7)')
+                            : (Platform.OS === 'android' ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.8)'),
+                        borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
                     },
                 ]}
             >
-                {/* Left tab (Home) */}
-                {visibleRoutes[0] && (() => {
-                    const { route, index } = visibleRoutes[0];
+                {visibleRoutes.map(({ route, index }: any) => {
                     const { options } = descriptors[route.key];
                     const isFocused = state.index === index;
                     const iconColor = isFocused ? C.primary : (isDark ? '#6b7280' : '#9ca3af');
                     const label = options.title ?? route.name;
+                    
+                    const iconSource = route.name === 'index' 
+                        ? require('@/assets/3dicons/home-3d-icon.png') 
+                        : require('@/assets/3dicons/3dicons-boy-front-color.png');
+
                     return (
-                        <TouchableOpacity
-                            key={route.key}
-                            onPress={() => {
-                                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-                                if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
-                            }}
-                            activeOpacity={0.7}
-                            style={bar.sideTab}
-                            accessibilityRole="button"
-                            accessibilityLabel={String(label)}
-                            accessibilityState={isFocused ? { selected: true } : {}}
-                        >
-                            <Home color={iconColor} size={24} />
-                            <Text style={[bar.tabLabel, { color: iconColor }]}>{label}</Text>
-                        </TouchableOpacity>
-                    );
-                })()}
-
-                {/* Center spacer for the FAB */}
-                <View style={bar.centerSpacer} />
-
-                {/* Right tab (Profile/Me) */}
-                {visibleRoutes[1] && (() => {
-                    const { route, index } = visibleRoutes[1];
-                    const { options } = descriptors[route.key];
-                    const isFocused = state.index === index;
-                    const iconColor = isFocused ? C.primary : (isDark ? '#6b7280' : '#9ca3af');
-                    const label = options.title ?? route.name;
-                    return (
-                        <TouchableOpacity
-                            key={route.key}
-                            onPress={() => {
-                                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-                                if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
-                            }}
-                            activeOpacity={0.7}
-                            style={bar.sideTab}
-                            accessibilityRole="button"
-                            accessibilityLabel={String(label)}
-                            accessibilityState={isFocused ? { selected: true } : {}}
-                        >
-                            <User color={iconColor} size={24} />
-                            <Text style={[bar.tabLabel, { color: iconColor }]}>{label}</Text>
-                        </TouchableOpacity>
-                    );
-                })()}
-            </BlurView>
-
-            {/* Camera FAB — folds into bar on sub-pages, springs out on main tabs */}
-            <View style={[bar.fabOuter, { bottom: Math.max(insets.bottom, 16) + 16 }]} pointerEvents="box-none">
-                <Animated.View style={fabAnimatedStyle} pointerEvents="box-none">
-                    <TouchableOpacity
-                        onPress={scanOnPress}
-                        activeOpacity={0.85}
-                        accessibilityRole="button"
-                        accessibilityLabel="Scan"
-                    >
-                        <View style={[bar.fabCircle, { backgroundColor: C.primary }]}>
-                            <CameraAdd color="#FFFFFF" size={28} />
+                        <View key={route.key} style={bar.sideTab}>
+                            <AnimatedIcon
+                                source={iconSource}
+                                size={28}
+                                animationType={route.name === 'index' ? 'pop' : 'wobble'}
+                                onPress={() => {
+                                    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                                    if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
+                                }}
+                                style={[{ opacity: isFocused ? 1 : 0.4 }, bar.iconPressable]}
+                            >
+                                <Text style={[bar.tabLabel, { color: iconColor, marginTop: 4 }]}>{label}</Text>
+                            </AnimatedIcon>
                         </View>
-                    </TouchableOpacity>
-                </Animated.View>
-            </View>
+                    );
+                })}
+            </BlurView>
         </View>
     );
 }
@@ -175,48 +93,30 @@ const bar = StyleSheet.create({
     blurBase: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        paddingTop: 14,
-        paddingHorizontal: 32,
-        borderTopWidth: 1,
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
+        paddingTop: 6,
+        paddingHorizontal: 24,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopLeftRadius: 36,
+        borderTopRightRadius: 36,
         overflow: 'hidden',
     },
     sideTab: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 4,
         paddingVertical: 8,
     },
-    tabLabel: {
-        fontSize: 11,
-        fontWeight: '600',
-        letterSpacing: 0.1,
-    },
-    centerSpacer: {
-        width: 80, // space reserved for the FAB
-    },
-    // Camera FAB
-    fabOuter: {
-        position: 'absolute',
-        alignSelf: 'center',
-        left: '50%',
-        marginLeft: -34, // half of 68
-        zIndex: 10,
-    },
-    fabCircle: {
-        width: 68,
-        height: 68,
-        borderRadius: 34,
+    iconPressable: {
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#007AFF',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.4,
-        shadowRadius: 14,
-        elevation: 12,
+        width: '100%',
     },
+    tabLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        letterSpacing: 0.1,
+        textAlign: 'center',
+    }
 });
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
@@ -299,35 +199,24 @@ export default function TabLayout() {
                     name="index"
                     options={{
                         title: 'Home',
-                        tabBarIcon: ({ color, size }) =>
-                            <Home color={color} size={size} />,
-                    }}
-                />
-                <Tabs.Screen
-                    name="scan"
-                    options={{
-                        title: 'Scan',
-                        // Icon handled by ScanTabButton inside TabBar
-                        tabBarIcon: ({ color, size }) => <CameraAdd color={color} size={size} />,
                     }}
                 />
                 <Tabs.Screen
                     name="account"
                     options={{
                         title: 'Me',
-                        tabBarIcon: ({ color, size }) =>
-                            <User color={color} size={size} />,
                     }}
                 />
 
                 {/* Hidden screens — accessible via router.push() */}
-                <Tabs.Screen name="history" options={{ href: null }} />
-                <Tabs.Screen name="preferences" options={{ href: null }} />
-                <Tabs.Screen name="streak" options={{ href: null }} />
-                <Tabs.Screen name="support" options={{ href: null }} />
-                <Tabs.Screen name="referral" options={{ href: null }} />
-                <Tabs.Screen name="exams" options={{ href: null }} />
-                <Tabs.Screen name="generate" options={{ href: null }} />
+                <Tabs.Screen name="history" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+                <Tabs.Screen name="preferences" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+                <Tabs.Screen name="settings" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+                <Tabs.Screen name="support" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+                <Tabs.Screen name="referral" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+                <Tabs.Screen name="exams" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+                <Tabs.Screen name="generate" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+
             </Tabs>
 
             {/* Claim Reward Modal */}
