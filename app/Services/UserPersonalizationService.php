@@ -40,10 +40,11 @@ class UserPersonalizationService
     {
         $deepseek = app(DeepseekAIService::class);
         
-        $prompt = "Create a concise, 1-2 paragraph AI tutor persona profile for a student based on these settings:\n\n";
+        $firstName = explode(' ', trim($user->name))[0] ?: 'The student';
+        $prompt = "Create a concise, warm, and friendly 1-2 paragraph AI tutor persona profile for a student named {$firstName} based on these settings:\n\n";
         $prompt .= json_encode($prefs, JSON_PRETTY_PRINT);
         
-        $systemPrompt = "You are a prompt engineer writing a persona profile for an AI tutor. Write it in the third person about the student and how the tutor should behave. E.g., 'Solomon is a high school student who learns math slowly. The tutor should adopt a strict, exam-focused approach...'. Do not include markdown formatting or extra conversational text.";
+        $systemPrompt = "You are a prompt engineer writing a friendly persona profile. Write it in the third person. Make it warm and conversational. E.g., '{$firstName} is a high school student who prefers concise topics but learns math a bit slower. The tutor should adopt a supportive approach and use fun gaming analogies to explain concepts.' Keep it to 1-2 short paragraphs. Do not include markdown formatting or extra conversational text.";
         
         try {
             $summary = $deepseek->generateText($prompt, $systemPrompt);
