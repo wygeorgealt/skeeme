@@ -243,6 +243,13 @@ export default function GenerateFlashcardScreen() {
             }
 
             const deckId = res.data.data.id;
+
+            if (!deckId) {
+                clearInterval(stageInterval);
+                setIsLoading(false);
+                Alert.alert('Error', 'Something went wrong creating your deck. Please try again.');
+                return;
+            }
             
             const params = new URLSearchParams({
                 autoStart: 'true',

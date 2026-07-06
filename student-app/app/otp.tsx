@@ -146,8 +146,10 @@ export default function OtpScreen() {
         } catch (error: any) {
             if (error.response?.status === 429) {
                 setCountdown(error.response.data.cooldown || 60);
+            } else if (!error.response) {
+                setErrorMsg('No internet connection. Check your network and try again.');
             } else {
-                setErrorMsg('Failed to resend code.');
+                setErrorMsg('Couldn\'t resend the code. Please try again.');
             }
         } finally {
             setIsLoading(false);
@@ -238,7 +240,14 @@ export default function OtpScreen() {
 
                     <IosPillButton
                         label="Verify Code"
-                        onPress={() => verifyCode(code.join(''))}
+                        onPress={() => {
+                            const fullCode = code.join('');
+                            if (fullCode.length < 6) {
+                                setErrorMsg('Enter all 6 digits.');
+                                return;
+                            }
+                            verifyCode(fullCode);
+                        }}
                         loading={isLoading}
                         fullWidth
                         size="lg"

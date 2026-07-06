@@ -90,11 +90,24 @@ export default function SignupScreen() {
             const status = error.response?.status;
             const errors = error.response?.data?.errors || {};
             if (status === 422) {
-                if (errors.email) setEmailError(errors.email[0]?.includes('already') ? 'exists' : errors.email[0]);
+                if (errors.email) {
+                    const emailMsg: string = errors.email[0] || '';
+                    // Map raw Laravel validation messages to user-friendly copy
+                    if (emailMsg.toLowerCase().includes('already') || emailMsg.toLowerCase().includes('taken')) {
+                        setEmailError('exists'); // triggers the 'Log in →' link in the UI
+                    } else if (emailMsg.toLowerCase().includes('valid')) {
+                        setEmailError('Please enter a valid email address.');
+                    } else {
+                        setEmailError(emailMsg);
+                    }
+                }
                 if (errors.password) setPasswordError(errors.password[0]);
                 if (errors.name) setNameError(errors.name[0]);
+            } else if (!error.response) {
+                // Network error
+                setPasswordError('No internet connection. Check your network and try again.');
             } else {
-                setPasswordError('Something went wrong. Check your connection.');
+                setPasswordError('Something went wrong. Please try again.');
             }
         } finally {
             setIsLoading(false);

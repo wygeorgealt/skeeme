@@ -14,6 +14,11 @@ export function getModel(provider: 'anthropic' | 'deepseek' = 'anthropic') {
         return deepseek('deepseek-chat');
     }
 
+    if (provider !== 'anthropic') {
+        // m4: Unknown provider — log and fall back gracefully instead of passing invalid value
+        console.warn(`[aiProvider] Unknown provider "${provider}", falling back to anthropic.`);
+    }
+
     // Default to Anthropic Claude
     return anthropic('claude-sonnet-4-20250514');
 }

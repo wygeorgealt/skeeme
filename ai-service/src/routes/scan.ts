@@ -6,8 +6,17 @@ import { randomUUID } from 'crypto';
 
 const router = Router();
 
+/** Write a structured SSE error event when headers are already sent. */
+function sendSseError(res: any, code: string) {
+    try {
+        res.write(`event: error\ndata: ${JSON.stringify({ error: code })}\n\n`);
+        res.end();
+    } catch (_) { /* response already closed */ }
+}
+
 router.post('/solve', async (req, res) => {
     let authResult: any = null;
+    let headersSent = false;
     const idempotencyKey = req.headers['idempotency-key'] as string || randomUUID();
 
     try {
@@ -52,6 +61,8 @@ Break down your solution step by step. Use markdown formatting and valid LaTeX f
             }
         });
 
+        // Mark that we've started streaming so the catch block knows headers are sent
+        headersSent = true;
         await result.pipeTextStreamToResponse(res);
 
     } catch (error: any) {
@@ -60,7 +71,12 @@ Break down your solution step by step. Use markdown formatting and valid LaTeX f
         if (authResult?.success && authResult?.userId) {
             await refundCredits(authResult.userId, idempotencyKey);
         }
-        res.status(500).json({ error: 'Failed to process image' });
+        if (headersSent) {
+            // C7: Headers already sent — emit SSE error event instead of JSON
+            sendSseError(res, 'stream_interrupted');
+        } else {
+            res.status(500).json({ error: 'Failed to process image' });
+        }
     }
 });
 

@@ -18,8 +18,17 @@ const quizSchema = z.object({
     }))
 });
 
+/** Write a structured SSE error event when headers are already sent. */
+function sendSseError(res: any, code: string) {
+    try {
+        res.write(`event: error\ndata: ${JSON.stringify({ error: code })}\n\n`);
+        res.end();
+    } catch (_) { /* response already closed */ }
+}
+
 router.post('/generate', async (req, res) => {
     let authResult: any = null;
+    let headersSent = false;
     const idempotencyKey = req.headers['idempotency-key'] as string || randomUUID();
 
     try {
@@ -29,6 +38,11 @@ router.post('/generate', async (req, res) => {
 
         if (!token) {
             return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        // M5: Validate topic or document is present before hitting the AI
+        if (!topic?.trim() && !extraction_id) {
+            return res.status(400).json({ error: 'topic or document is required' });
         }
 
         const cost = question_count * 10;
@@ -52,6 +66,8 @@ router.post('/generate', async (req, res) => {
             prompt: `Topic: ${finalTopic}`
         });
 
+        // Mark that we've started streaming so the catch block knows headers are sent
+        headersSent = true;
         await result.pipeTextStreamToResponse(res);
 
     } catch (error: any) {
@@ -59,7 +75,12 @@ router.post('/generate', async (req, res) => {
         if (authResult?.success && authResult?.userId) {
             await refundCredits(authResult.userId, idempotencyKey);
         }
-        res.status(500).json({ error: 'Failed to generate quiz' });
+        if (headersSent) {
+            // C7: Headers already sent — can't send JSON; emit an SSE error event instead
+            sendSseError(res, 'stream_interrupted');
+        } else {
+            res.status(500).json({ error: 'Failed to generate quiz' });
+        }
     }
 });
 

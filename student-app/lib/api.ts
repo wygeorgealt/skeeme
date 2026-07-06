@@ -110,11 +110,12 @@ api.interceptors.response.use(
             });
         }
 
-        // Global fallback for 500 errors to ensure "Skeeme is down" is always shown (using the custom modal)
+        // Global fallback for 500 errors to ensure an error is always shown (using the custom modal)
         if (response?.status && response.status >= 500 && !(config as any)?.skipGlobalError) {
             useAuthStore.getState().setGlobalError('Skeeme is currently down. Please try again later.');
         } else if (isNetworkError && config.retryCount >= MAX_RETRIES) {
-            useAuthStore.getState().setGlobalError('Network connection lost. Please check your internet and try again.');
+            // Network-side failure — user's connection, not our server
+            useAuthStore.getState().setGlobalError('No internet connection. Check your network and try again.');
         }
 
         // Sanitize raw errors before they reach local Alert.alert() catches

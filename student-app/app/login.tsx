@@ -27,6 +27,7 @@ export default function LoginScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [emailError, setEmailError] = useState('');
     const [passwordError, setPasswordError] = useState('');
+    const [isNetworkError, setIsNetworkError] = useState(false);
     const [failedAttempts, setFailedAttempts] = useState(0);
     const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0);
 
@@ -55,7 +56,7 @@ export default function LoginScreen() {
     }, [lockoutTimeLeft]);
 
     const handleLogin = async () => {
-        setEmailError(''); setPasswordError('');
+        setEmailError(''); setPasswordError(''); setIsNetworkError(false);
         if (lockoutTimeLeft > 0) {
             return setPasswordError(`Too many failed attempts. Try again in ${lockoutTimeLeft} seconds.`);
         }
@@ -95,6 +96,8 @@ export default function LoginScreen() {
                 if (status === 401 || status === 404 || status === 422) {
                     setPasswordError('Incorrect email or password.');
                 } else {
+                    // Network error or 5xx — show retry affordance
+                    setIsNetworkError(true);
                     setPasswordError('Something went wrong. Check your connection.');
                 }
             }
@@ -163,6 +166,12 @@ export default function LoginScreen() {
                                 <Text style={[s.errorFooter, { color: C.destructive }]}>
                                     {emailError || passwordError}
                                 </Text>
+                            )}
+                            {/* M1: Show a retry button for network/server errors */}
+                            {isNetworkError && !isLoading && (
+                                <TouchableOpacity onPress={handleLogin} style={{ marginTop: 6 }}>
+                                    <Text style={[s.errorFooter, { color: C.primary, fontWeight: '700' }]}>Retry →</Text>
+                                </TouchableOpacity>
                             )}
                         </View>
                         <TouchableOpacity onPress={() => router.push('/forgot-password')} activeOpacity={0.7}>

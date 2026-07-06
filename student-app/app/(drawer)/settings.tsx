@@ -131,7 +131,11 @@ export default function SettingsScreen() {
         ]);
     };
     
-    if (!user) return null;
+    if (!user) return (
+        <View style={{ flex: 1, backgroundColor: C.background, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: C.textSecondary, fontSize: 15, fontWeight: '500' }}>Loading settings…</Text>
+        </View>
+    );
 
     const isPremium = user.plan_name === 'pro' || user.plan_name === 'standard' || user.plan_name === 'max' || user.plan_name === 'elite';
 

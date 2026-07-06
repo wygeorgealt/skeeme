@@ -36,10 +36,8 @@ export default function ForgotPasswordScreen() {
         setIsLoading(true);
         try {
             await api.post('otp/send', { email: email.trim().toLowerCase(), type: 'password_reset' });
-        } catch (e: any) {
-            // Silently proceed or handle generic error
-        } finally {
-            setIsLoading(false);
+            // API responded (200/201) — proceed to OTP regardless of whether the email
+            // exists (avoids email enumeration while still giving transport feedback).
             router.push({
                 pathname: '/otp',
                 params: {
@@ -47,6 +45,24 @@ export default function ForgotPasswordScreen() {
                     type: 'password_reset'
                 }
             });
+        } catch (e: any) {
+            const isNetworkOrServer = !e.response || (e.response?.status >= 500);
+            if (isNetworkOrServer) {
+                // Transport failure: server unreachable or crashed — safe to tell the user.
+                setError("We couldn't send that right now. Check your connection and try again.");
+            } else {
+                // 4xx (e.g. 422 validation) — still proceed to OTP screen; the server
+                // returned a structured response so the request itself succeeded.
+                router.push({
+                    pathname: '/otp',
+                    params: {
+                        email: email.trim().toLowerCase(),
+                        type: 'password_reset'
+                    }
+                });
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 

@@ -40,6 +40,7 @@ export default function ReferralScreen() {
 
     const [stats, setStats] = useState({ code: '', total_referred: 0, credits_earned: 0 });
     const [loadingStats, setLoadingStats] = useState(true);
+    const [statsError, setStatsError] = useState(false);
     const [copied, setCopied] = useState(false);
 
     const copyScale = useSharedValue(1);
@@ -47,20 +48,24 @@ export default function ReferralScreen() {
         transform: [{ scale: copyScale.value }],
     }));
 
-    useEffect(() => {
+    const loadStats = useCallback(() => {
+        setLoadingStats(true);
+        setStatsError(false);
         Promise.all([
             api.get('referral/my-code')
                 .then(res => setStats(prev => ({ ...prev, code: res.data.code })))
-                .catch(() => {}),
+                .catch(() => {}), // code missing is non-fatal — buttons disable themselves
             api.get('referral/stats')
                 .then(res => setStats(prev => ({
                     ...prev,
                     total_referred: res.data.total_referred ?? res.data.total_referrals ?? 0,
                     credits_earned: res.data.credits_earned || 0,
                 })))
-                .catch(() => {}),
+                .catch(() => { setStatsError(true); }),
         ]).finally(() => setLoadingStats(false));
     }, []);
+
+    useEffect(() => { loadStats(); }, [loadStats]);
 
     const handleShare = async () => {
         if (!stats.code) return;
@@ -151,14 +156,25 @@ export default function ReferralScreen() {
 
                 {/* Stats Summary */}
                 <Animated.View key={`stats-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={s.statsRow}>
-                    <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
-                        <Text style={[s.statNum, { color: C.primary }]}>{stats.total_referred}</Text>
-                        <Text style={[s.statLabel, { color: C.textSecondary }]}>Friends Joined</Text>
-                    </View>
-                    <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
-                        <Text style={[s.statNum, { color: '#34C759' }]}>{stats.credits_earned}</Text>
-                        <Text style={[s.statLabel, { color: C.textSecondary }]}>Credits Earned</Text>
-                    </View>
+                    {statsError ? (
+                        <View style={{ flex: 1, alignItems: 'center', gap: 12, paddingVertical: 20 }}>
+                            <Text style={{ color: C.textSecondary, fontSize: 14, fontWeight: '500' }}>Couldn't load your stats.</Text>
+                            <TouchableOpacity onPress={loadStats} style={{ paddingHorizontal: 20, paddingVertical: 10, backgroundColor: C.primary, borderRadius: 12 }}>
+                                <Text style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>Retry</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <>
+                            <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
+                                <Text style={[s.statNum, { color: C.primary }]}>{stats.total_referred}</Text>
+                                <Text style={[s.statLabel, { color: C.textSecondary }]}>Friends Joined</Text>
+                            </View>
+                            <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
+                                <Text style={[s.statNum, { color: '#34C759' }]}>{stats.credits_earned}</Text>
+                                <Text style={[s.statLabel, { color: C.textSecondary }]}>Credits Earned</Text>
+                            </View>
+                        </>
+                    )}
                 </Animated.View>
 
                 {/* How It Works - Improved Design */}

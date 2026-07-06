@@ -51,6 +51,9 @@ export default function ExamsScreen() {
             queryClient.invalidateQueries({ queryKey: ['me'] });
             setIsModalOpen(false);
             setNewTitle('');
+        },
+        onError: () => {
+            Alert.alert('Error', "Couldn't add your exam. Please try again.");
         }
     });
 
@@ -61,6 +64,9 @@ export default function ExamsScreen() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['user-exams'] });
             queryClient.invalidateQueries({ queryKey: ['me'] });
+        },
+        onError: () => {
+            Alert.alert('Error', "Couldn't delete this exam. Please try again.");
         }
     });
 

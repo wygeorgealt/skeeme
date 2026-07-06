@@ -526,6 +526,17 @@ export default function GenerateQuizScreen() {
             const cleanJson = fullJson.replace(/```(?:json)?|```/g, '').trim();
             const data = JSON.parse(cleanJson);
             const questionsArr = Array.isArray(data) ? data : (data.questions || []);
+
+            // C5: Empty questions — show actionable message, don't strand user on blank screen
+            if (questionsArr.length === 0) {
+                Alert.alert(
+                    'No Questions Generated',
+                    "We couldn't generate questions from that. Try a different topic or document.",
+                    [{ text: 'Try Again', style: 'cancel' }]
+                );
+                return;
+            }
+
             setQuestions(questionsArr);
             
             posthog.capture('quiz_generated_stream', { mode, difficulty, format });
@@ -1277,11 +1288,46 @@ export default function GenerateQuizScreen() {
                     </TouchableOpacity>
                 </View>
 
+                {/* C3: Non-blocking history-save failure banner */}
+                {saveError && (
+                    <View style={{
+                        marginBottom: 16,
+                        paddingHorizontal: 16,
+                        paddingVertical: 14,
+                        borderRadius: 16,
+                        backgroundColor: isDark ? 'rgba(245,158,11,0.12)' : '#FFF8E1',
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(245,158,11,0.3)' : 'rgba(245,158,11,0.4)',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 12,
+                    }}>
+                        <Danger size={18} color="#f59e0b" />
+                        <Text style={{ flex: 1, fontSize: 13, fontWeight: '500', color: isDark ? '#fcd34d' : '#92400e', lineHeight: 20 }}>
+                            Quiz completed, but we couldn’t save it to your history. Your results won’t appear in Study History.
+                        </Text>
+                        <TouchableOpacity
+                            onPress={saveHistory}
+                            disabled={isSavingHistory}
+                            style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#f59e0b', borderRadius: 10 }}
+                        >
+                            <Text style={{ color: 'white', fontWeight: '700', fontSize: 12 }}>
+                                {isSavingHistory ? '...' : 'Retry'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 <TouchableOpacity
                     disabled={isSavingOffline || isOfflineSaved || questions.length === 0}
                     onPress={async () => {
-                        if (isSavingOffline || isOfflineSaved || questions.length === 0) return;
+                        if (questions.length === 0) {
+                            Alert.alert("No Content", "There are no questions to save.");
+                            return;
+                        }
+                        if (isSavingOffline || isOfflineSaved) return;
                         try {
+                            setSaveError(false);
                             setIsSavingOffline(true);
                             const deckTopic = mode === 'topic' ? topic : (selectedFile?.name || 'File Upload');
 
@@ -1292,7 +1338,6 @@ export default function GenerateQuizScreen() {
                                 difficulty,
                                 percentage,
                                 questions: questions.map((q, qi) => ({
-                                    // Question ids are not guaranteed in the QuizQuestion type
                                     id: qi.toString(),
                                     type: q.question_type,
                                     question_type: q.question_type,
@@ -1302,7 +1347,6 @@ export default function GenerateQuizScreen() {
                                     explanation: q.explanation,
                                     explanation_right: q.explanation_right,
                                     explanation_wrong: q.explanation_wrong,
-                                    // runtime answers/explanation not strictly needed for offline view, but keep for consistency
                                     user_answer: q.question_type === 'essay' ? '(Theory Answer)' : selectedAnswers[qi],
                                 })),
                             });
@@ -1310,6 +1354,7 @@ export default function GenerateQuizScreen() {
                             setIsOfflineSaved(true);
                             haptics.notificationAsync('success' as any);
                         } catch {
+                            setSaveError(true);
                             Alert.alert('Save Failed', 'Could not save this quiz for offline use.');
                         } finally {
                             setIsSavingOffline(false);

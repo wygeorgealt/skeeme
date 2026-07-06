@@ -62,7 +62,13 @@ export default function NewPasswordScreen() {
             });
             router.replace('/login?reset_success=true');
         } catch (error: any) {
-            setErrorMsg(error.response?.data?.message || 'Something went wrong. Please try again.');
+            const msg: string = error.response?.data?.message || '';
+            const isExpired = msg.toLowerCase().includes('expired') || msg.toLowerCase().includes('invalid') || error.response?.status === 422;
+            if (isExpired) {
+                setErrorMsg('This reset link has expired. Please request a new one.');
+            } else {
+                setErrorMsg(msg || 'Something went wrong. Please try again.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -131,6 +137,14 @@ export default function NewPasswordScreen() {
                     {errorMsg ? (
                         <View style={[s.alert, { backgroundColor: C.destructive + '15', borderColor: C.destructive + '30' }]}>
                             <Text style={{ color: C.destructive, fontSize: 13, textAlign: 'center', fontWeight: '500' }}>{errorMsg}</Text>
+                            {errorMsg.includes('expired') && (
+                                <TouchableOpacity
+                                    onPress={() => router.replace('/forgot-password')}
+                                    style={{ marginTop: 12, alignItems: 'center' }}
+                                >
+                                    <Text style={{ color: C.primary, fontWeight: '700', fontSize: 14 }}>Request a new one →</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     ) : null}
 

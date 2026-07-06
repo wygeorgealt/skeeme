@@ -179,6 +179,7 @@ export default function ScanScreen() {
                     await handleSolve(manipulated.base64);
                 } else {
                     setLoading(false);
+                    Alert.alert('Error', 'Couldn\'t process that image. Please try again.');
                 }
             }
         } catch (e) {
@@ -279,9 +280,9 @@ export default function ScanScreen() {
                         return;
                     }
 
+                    // Only use the contextual inline card — the global modal is reserved
+                    // for truly unrecoverable app-wide failures (auth loss, cold 500s).
                     setScanError(message);
-                    setGlobalErrorMessage('Skeeme is down, Please try again later.');
-                    setShowErrorModal(true);
 
                     // Detect if it was a network error for the UI
                     if (message.toLowerCase().includes('network') || message.toLowerCase().includes('connection')) {
@@ -309,8 +310,6 @@ export default function ScanScreen() {
             setLoading(false);
             setScanError('Connection failed. Please try again.');
             setIsNetworkError(true);
-            setGlobalErrorMessage('Skeeme is down, Please try again later.');
-            setShowErrorModal(true);
         }
     };
 
@@ -386,7 +385,7 @@ export default function ScanScreen() {
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => router.push('/(drawer)/generate')} activeOpacity={0.7} style={{ justifyContent: 'center', alignItems: 'center', minHeight: 44 }}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8 }}>
-                                        <DocumentText size={18} color="white" style={{ textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }} />
+                                        <DocumentText size={18} color="white" />
                                         <Text style={{ color: 'white', fontWeight: '800', marginLeft: 6, fontSize: 16, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }}>Quiz</Text>
                                     </View>
                                 </TouchableOpacity>
