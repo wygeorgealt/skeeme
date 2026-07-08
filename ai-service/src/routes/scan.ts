@@ -46,7 +46,22 @@ router.post('/solve', async (req, res) => {
         const result = streamText({
             model,
             system: `You are an expert tutor. Solve the problem presented in the image. 
-Break down your solution step by step. Use markdown formatting and valid LaTeX for math inside $$ $$ or $ $ blocks.`,
+Break down your solution step by step. Use markdown formatting and valid LaTeX for math inside $$ $$ or $ $ blocks.
+
+You MUST respond with a valid JSON object in exactly this format:
+{
+  "results": [
+    {
+      "question": "The question text from the image",
+      "solution": "The final solution/answer",
+      "steps": ["Step 1 explanation", "Step 2 explanation"],
+      "type": "theory", 
+      "topic": "The main topic",
+      "explanation": "Detailed explanation of the concept"
+    }
+  ]
+}
+Do not include any other text outside the JSON block.`,
             messages: [
                 {
                     role: 'user',
