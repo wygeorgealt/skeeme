@@ -55,6 +55,8 @@ export function streamFromAI(
                 let errorMsg = 'Generation failed. Please try again.';
                 let isInsufficientCredits = false;
 
+                console.log(`[aiStream] Non-OK response: status=${response.status} body=${errorBody}`);
+
                 try {
                     const parsed = JSON.parse(errorBody);
                     errorMsg = parsed.error || errorMsg;

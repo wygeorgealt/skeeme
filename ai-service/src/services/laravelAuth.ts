@@ -8,6 +8,7 @@ export interface AuthResult {
     userId?: number;
     creditsRemaining?: number;
     error?: string;
+    status?: number;
     extractedText?: string;
 }
 
@@ -22,6 +23,7 @@ export async function authorizeAndDeduct(
     extractionId?: string
 ): Promise<AuthResult> {
     try {
+        console.log(`[auth] Calling Laravel authorize: action=${actionType} cost=${cost} url=${LARAVEL_API_URL}/internal/ai/authorize`);
         const response = await axios.post(`${LARAVEL_API_URL}/internal/ai/authorize`, {
             action_type: actionType,
             cost: cost,
@@ -34,6 +36,8 @@ export async function authorizeAndDeduct(
             }
         });
 
+        console.log(`[auth] Laravel response:`, JSON.stringify(response.data));
+
         if (response.data.success) {
             return {
                 success: true,
@@ -43,12 +47,14 @@ export async function authorizeAndDeduct(
             };
         }
         
+        console.log(`[auth] Authorization failed: ${response.data.message}`);
         return { success: false, error: response.data.message || 'Authorization failed' };
     } catch (error: any) {
-        if (error.response && error.response.status === 402) {
-            return { success: false, error: 'Insufficient credits' };
+        console.error(`[auth] Authorization error: status=${error.response?.status} data=${JSON.stringify(error.response?.data)} message=${error.message}`);
+        if (error.response) {
+            return { success: false, error: error.response.data?.message || 'Authorization failed', status: error.response.status };
         }
-        return { success: false, error: error.message };
+        return { success: false, error: error.message, status: 500 };
     }
 }
 

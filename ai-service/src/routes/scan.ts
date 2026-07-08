@@ -35,7 +35,7 @@ router.post('/solve', async (req, res) => {
         try {
             authResult = await authorizeAndDeduct(token, 'scan_solve', 25, idempotencyKey);
             if (!authResult.success) {
-                return res.status(402).json({ error: authResult.error });
+                return res.status(authResult.status || 402).json({ error: authResult.error });
             }
         } catch (e: any) {
             return res.status(500).json({ error: 'Authorization service unavailable' });
@@ -116,7 +116,7 @@ router.post('/chat', async (req, res) => {
             // Check authorization but we don't deduct credits yet (handled by frontend limits or separate pricing)
             authResult = await authorizeAndDeduct(token, 'scan_chat', 0, idempotencyKey);
             if (!authResult.success) {
-                return res.status(402).json({ error: authResult.error });
+                return res.status(authResult.status || 402).json({ error: authResult.error });
             }
         } catch (e: any) {
             return res.status(500).json({ error: 'Authorization service unavailable' });

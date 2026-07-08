@@ -50,7 +50,7 @@ router.post('/generate', async (req, res) => {
         try {
             authResult = await authorizeAndDeduct(token, 'quiz_generation', cost, idempotencyKey, extraction_id);
             if (!authResult.success) {
-                return res.status(402).json({ error: authResult.error });
+                return res.status(authResult.status || 402).json({ error: authResult.error });
             }
         } catch (e: any) {
             return res.status(500).json({ error: 'Authorization service unavailable' });

@@ -38,10 +38,15 @@ class AIInternalController extends Controller
         $requestId = $request->input('request_id');
         $actionType = $request->input('action_type');
 
+        Log::info("[AI Auth] User #{$user->id} attempting {$actionType}: cost={$cost}, current_credits={$user->credits}");
+
         $success = DB::transaction(function () use ($user, $cost, $actionType, $requestId) {
             $lockedUser = User::where('id', $user->id)->lockForUpdate()->first();
             
+            Log::info("[AI Auth] Locked user #{$lockedUser->id}: credits={$lockedUser->credits}, cost={$cost}");
+
             if ($lockedUser->credits < $cost) {
+                Log::warning("[AI Auth] Insufficient credits for user #{$lockedUser->id}: has {$lockedUser->credits}, needs {$cost}");
                 return false;
             }
 
@@ -56,6 +61,7 @@ class AIInternalController extends Controller
                 'request_id' => $requestId,
             ]);
 
+            Log::info("[AI Auth] Deducted {$cost} credits from user #{$lockedUser->id}, remaining: " . ($lockedUser->credits));
             return true;
         });
 

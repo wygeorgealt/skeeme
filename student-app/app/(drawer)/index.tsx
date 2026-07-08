@@ -196,31 +196,26 @@ export default function ScanScreen() {
         let currentCredits = user?.credits ?? 0;
         let isUnlimited = (user?.plan_name ?? 'free') !== 'free';
 
+        if (__DEV__) console.log(`[scan] Credit check: credits=${currentCredits} plan=${user?.plan_name} isUnlimited=${isUnlimited}`);
+
         const pricingConfig = useAuthStore.getState().pricingConfig;
         const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
         const scanCost = (pricingConfig?.rates?.scan_solve as any)?.[planTier] ?? (planTier === 'free' ? 50 : 30);
 
-        // Occasional upsell: for free users, show a non-blocking paywall offer (do not abort generation)
-        if (user?.plan_name === 'free') {
-            const shouldShow = await shouldShowFreePaywallOffer({ feature: 'scan' });
-            if (shouldShow) {
-                await markFreePaywallOfferShown({ feature: 'scan' });
-                await useAuthStore.getState().toggleCreditsModal(true, 'scan');
-                // continue with generation in background
-            }
-        }
-
         if (!isUnlimited && currentCredits <= 0) {
             try {
+                if (__DEV__) console.log(`[scan] Credits appear 0, refreshing from server...`);
                 await queryClient.refetchQueries({ queryKey: ['student', 'me'] });
                 const refreshed = useAuthStore.getState().user;
                 if (refreshed) {
                     currentCredits = refreshed.credits ?? currentCredits;
                     isUnlimited = (refreshed.plan_name ?? 'free') !== 'free';
+                    if (__DEV__) console.log(`[scan] After refresh: credits=${currentCredits} isUnlimited=${isUnlimited}`);
                 }
             } catch (e) { }
 
             if (!isUnlimited && currentCredits <= 0) {
+                if (__DEV__) console.log(`[scan] Still 0 credits after refresh, showing modal`);
                 await useAuthStore.getState().toggleCreditsModal(true, 'scan');
                 return;
             }
