@@ -427,13 +427,6 @@ class User extends Authenticatable implements FilamentUser
         return true; // Default allow for other panels if they exist and have their own middleware
     }
 
-    /**
-     * Get the user's credit transactions
-     */
-    public function transactions()
-    {
-        return $this->hasMany(\App\Models\Transaction::class);
-    }
 
     /**
      * Get the user's active individual subscription
