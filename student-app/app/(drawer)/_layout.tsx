@@ -124,7 +124,14 @@ export default function TabLayout() {
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
-    const { user, token, onboardingComplete, onboardingJustCompleted, clearOnboardingJustCompleted } = useAuthStore();
+    // P3: Use individual selectors — the old `const { user, token, ... } = useAuthStore()`
+    // subscribed to the entire store, so ANY store change (credits modal, global error,
+    // cooldown modal) would re-render the entire tab navigator + custom blur tab bar.
+    const user = useAuthStore(s => s.user);
+    const token = useAuthStore(s => s.token);
+    const onboardingComplete = useAuthStore(s => s.onboardingComplete);
+    const onboardingJustCompleted = useAuthStore(s => s.onboardingJustCompleted);
+    const clearOnboardingJustCompleted = useAuthStore(s => s.clearOnboardingJustCompleted);
     const pathname = usePathname();
     const [pendingReward, setPendingReward] = useState<{ total: number } | null>(null);
 

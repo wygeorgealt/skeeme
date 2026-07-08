@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ViewStyle, ImageStyle } from 'react-native';
+import { Pressable, ViewStyle, ImageStyle, StyleProp } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,8 +13,8 @@ interface AnimatedIconProps {
   source: any;
   size?: number;
   onPress?: () => void;
-  style?: ViewStyle;
-  imageStyle?: ImageStyle;
+  style?: StyleProp<ViewStyle>;
+  imageStyle?: StyleProp<ImageStyle>;
   animationType?: 'pop' | 'spin' | 'twist' | 'wobble';
   children?: React.ReactNode;
 }
@@ -62,10 +62,6 @@ export function AnimatedIcon({
         withSpring(0, { damping: 5, stiffness: 300 })
       );
     }
-
-    if (onPress) {
-      setTimeout(onPress, 50);
-    }
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -77,9 +73,10 @@ export function AnimatedIcon({
 
   return (
     <Pressable
+      onPress={onPress}
       onPressIn={onPress ? handlePressIn : undefined}
       onPressOut={onPress ? handlePressOut : undefined}
-      style={style}
+      style={[{ alignItems: 'center', justifyContent: 'center' }, style]}
     >
       <Animated.View style={[animatedStyle, { alignItems: 'center' }]}>
         <Image

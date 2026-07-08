@@ -46,6 +46,7 @@ class User extends Authenticatable implements FilamentUser
         'notifications_enabled',
         'referral_code',
         'last_credit_alert_at',
+        'credits',
     ];
 
     /**

@@ -12,7 +12,7 @@ import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { Colors } from '@/constants/theme';
 
 const LEVELS = [
-    { key: 'high_school', label: 'High School', iconSource: require('@/assets/3dicons/3dicons-folder-front-color.png'), desc: 'Secondary / A-Levels' },
+    { key: 'high_school', label: 'High School', iconSource: require('@/assets/3dicons/3dicons-bookmark-fav-front-color.png'), desc: 'Secondary / A-Levels' },
     { key: 'undergraduate', label: 'Undergraduate', iconSource: require('@/assets/3dicons/3dicons-folder-front-color.png'), desc: "Bachelor's degree" },
     { key: 'masters_phd', label: 'Masters / PhD', iconSource: require('@/assets/3dicons/3dicons-lab-front-color.png'), desc: 'Postgraduate research' },
     { key: 'professional', label: 'Professional Cert', iconSource: require('@/assets/3dicons/3dicons-trophy-front-color.png'), desc: 'ICAN, ACCA, PMP, etc.' },
@@ -67,7 +67,6 @@ export default function EducationScreen() {
                     <View style={s.optionsGap}>
                         {LEVELS.map((level, index) => {
                             const isSelected = selected === level.key;
-                            const iconName = level.icon;
 
                             return (
                                 <Animated.View 

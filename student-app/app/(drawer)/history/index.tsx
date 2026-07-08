@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 import { Swipeable } from 'react-native-gesture-handler';
-import { AltArrowRight, Book, Copy, Notebook, TrashBinTrash, DocumentText } from '@solar-icons/react-native/Bold';
+import { AltArrowLeft, AltArrowRight, Book, Copy, Notebook, TrashBinTrash, DocumentText } from '@solar-icons/react-native/Bold';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -197,6 +197,9 @@ export default function StudyHistoryDashboard() {
     return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <Animated.View entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
+                <TouchableOpacity onPress={() => router.back()} style={s.backBtn} activeOpacity={0.7}>
+                    <AltArrowLeft size={24} color={C.text} />
+                </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>History</Text>
             </Animated.View>
 
@@ -418,7 +421,8 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
 
 const s = StyleSheet.create({
     header: { paddingHorizontal: 24, paddingBottom: 24 },
-    headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1 },
+    headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1, marginTop: 16 },
+    backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
 
     // Segmented Pill Control
     tabContainer: { paddingHorizontal: 20, marginBottom: 24 },

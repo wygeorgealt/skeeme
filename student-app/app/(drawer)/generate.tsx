@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, Animated, StyleSheet, Modal, Platform } from 'react-native';
 import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { streamQuizGenerate } from '@/lib/aiStream';
@@ -214,11 +214,17 @@ export default function GenerateQuizScreen() {
     const [isSavingOffline, setIsSavingOffline] = useState(false);
     const [isOfflineSaved, setIsOfflineSaved] = useState(false);
 
-    // Score calculations
-
-    const correctCount = Object.entries(selectedAnswers).filter(([qi, ans]) => questions[+qi]?.correct_answer === ans).length
-        + Object.values(theoryResults).filter(Boolean).length;
-    const percentage = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+    // P5: Memoize score calculation — was running .filter() across all answers
+    // on every render of this 1649-line component.
+    const correctCount = useMemo(() =>
+        Object.entries(selectedAnswers).filter(([qi, ans]) => questions[+qi]?.correct_answer === ans).length
+        + Object.values(theoryResults).filter(Boolean).length,
+        [selectedAnswers, questions, theoryResults]
+    );
+    const percentage = useMemo(() =>
+        questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0,
+        [correctCount, questions.length]
+    );
 
     // Read topic from scan route param
     const params = useLocalSearchParams<{ topic?: string }>();

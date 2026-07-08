@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import * as FileSystem from 'expo-file-system/legacy';
 
 import { User, PricingConfig } from '@/types';
 import { posthog } from '@/lib/posthog';
@@ -56,11 +58,11 @@ interface AuthState {
     toggleEnjoyReviewModal: (show: boolean) => void;
 }
 
-// Secure storage for sensitive data (tokens)
+// P4: Static imports — the old code did `await import('expo-secure-store')` on
+// every call, creating microtask overhead that compounds during hydration (10+ calls).
 const secureStorage = {
     getItem: async (key: string): Promise<string | null> => {
         if (Platform.OS === 'web') return localStorage.getItem(key);
-        const SecureStore = await import('expo-secure-store');
         return SecureStore.getItemAsync(key);
     },
     setItem: async (key: string, value: string): Promise<void> => {
@@ -68,7 +70,6 @@ const secureStorage = {
             localStorage.setItem(key, value);
             return;
         }
-        const SecureStore = await import('expo-secure-store');
         await SecureStore.setItemAsync(key, value);
     },
     deleteItem: async (key: string): Promise<void> => {
@@ -76,21 +77,18 @@ const secureStorage = {
             localStorage.removeItem(key);
             return;
         }
-        const SecureStore = await import('expo-secure-store');
         await SecureStore.deleteItemAsync(key);
     },
 };
 
-// Standard storage for large non-sensitive data (user profile, theme)
 const standardStorage = {
     getItem: async (key: string): Promise<string | null> => {
         if (Platform.OS === 'web') return localStorage.getItem(key);
         try {
-            const { documentDirectory, getInfoAsync, readAsStringAsync } = (await import('expo-file-system/legacy')) as any;
-            const path = `${documentDirectory}${key}.json`;
-            const info = await getInfoAsync(path);
+            const path = `${FileSystem.documentDirectory}${key}.json`;
+            const info = await FileSystem.getInfoAsync(path);
             if (!info.exists) return null;
-            return await readAsStringAsync(path);
+            return await FileSystem.readAsStringAsync(path);
         } catch (e) { return null; }
     },
     setItem: async (key: string, value: string): Promise<void> => {
@@ -99,9 +97,8 @@ const standardStorage = {
             return;
         }
         try {
-            const { documentDirectory, writeAsStringAsync } = (await import('expo-file-system/legacy')) as any;
-            const path = `${documentDirectory}${key}.json`;
-            await writeAsStringAsync(path, value);
+            const path = `${FileSystem.documentDirectory}${key}.json`;
+            await FileSystem.writeAsStringAsync(path, value);
         } catch (e) { /* ignore */ }
     },
     deleteItem: async (key: string): Promise<void> => {
@@ -110,10 +107,9 @@ const standardStorage = {
             return;
         }
         try {
-            const { documentDirectory, getInfoAsync, deleteAsync } = (await import('expo-file-system/legacy')) as any;
-            const path = `${documentDirectory}${key}.json`;
-            const info = await getInfoAsync(path);
-            if (info.exists) await deleteAsync(path);
+            const path = `${FileSystem.documentDirectory}${key}.json`;
+            const info = await FileSystem.getInfoAsync(path);
+            if (info.exists) await FileSystem.deleteAsync(path);
         } catch (e) { /* ignore */ }
     },
 };
@@ -162,34 +158,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         } catch (e) {}
     },
 
-    toggleCreditsModal: async (show, feature, force) => {
-        // If asking to show, only show once per session unless force=true
+    toggleCreditsModal: (show, feature, force) => {
+        // P1: Show the modal immediately — never block the UI with a network call.
+        // The old version did `await apiStandard.get('me')` here which froze the UI
+        // for the entire server roundtrip before the modal appeared.
         const alreadyShown = get().creditsModalShownThisSession;
         if (show) {
             if (alreadyShown && !force) return;
-
-            // Defensive check: re-fetch latest user from server to avoid showing modal when credits were refreshed
-            try {
-                const { apiStandard } = await import('@/lib/api');
-                const latest = await apiStandard.get('me').catch(() => null) as any;
-                if (latest) {
-                    // Update local user with fresh data
-                    const currentUser = get().user || {};
-                    const merged = { ...currentUser, ...latest } as any;
-                    set({ user: merged });
-
-                    const currentCredits = merged.credits ?? 0;
-                    const isUnlimited = (merged.plan_name ?? 'free') !== 'free';
-                    if (!isUnlimited && currentCredits > 0 && !force) {
-                        // They have credits now — don't show modal
-                        return;
-                    }
-                }
-            } catch (e) {
-                // ignore — fallthrough to showing modal
-            }
-
             set({ showCreditsModal: true, creditsModalFeature: feature || null, creditsModalShownThisSession: true });
+
+            // Background refresh: silently check if credits were topped up.
+            // If they were, auto-dismiss the modal without blocking.
+            import('../lib/api').then(({ apiStandard }) => {
+                apiStandard.get('me').then((latest: any) => {
+                    if (latest) {
+                        const currentUser = get().user || {};
+                        const merged = { ...currentUser, ...latest } as any;
+                        set({ user: merged });
+
+                        const currentCredits = merged.credits ?? 0;
+                        const isUnlimited = (merged.plan_name ?? 'free') !== 'free';
+                        if (!isUnlimited && currentCredits > 0 && !force) {
+                            // They have credits now — auto-dismiss
+                            set({ showCreditsModal: false, creditsModalFeature: null });
+                        }
+                    }
+                }).catch(() => { /* ignore — modal stays visible */ });
+            }).catch(() => {});
             return;
         }
 

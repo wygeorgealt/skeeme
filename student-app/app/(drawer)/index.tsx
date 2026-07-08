@@ -259,14 +259,11 @@ export default function ScanScreen() {
                     finalResults = fullResults;
                     setResults(fullResults);
                 },
-                onComplete: async (creditsRemaining, reward, streak) => {
-                    const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
-                    if (user) {
-                        updateUser({ ...user, credits: creditsRemaining } as any);
-                        if (creditsRemaining === 0 && !isUnlimited) {
-                            await useAuthStore.getState().toggleCreditsModal(true, 'scan');
-                        }
-                    }
+                onComplete: async () => {
+                    // Refresh user profile to get accurate credits and streak
+                    try {
+                        await useAuthStore.getState().checkAuth();
+                    } catch (e) {}
                 },
                 onError: async (message, isInsufficientCredits) => {
                     streamErrored = true;

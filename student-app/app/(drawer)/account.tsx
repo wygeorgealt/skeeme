@@ -117,7 +117,7 @@ export default function AccountScreen() {
     const prefs = user.ai_preferences;
     const toneStr = prefs?.tone ? prefs.tone.charAt(0).toUpperCase() + prefs.tone.slice(1) : 'Supportive';
     const goalStr = prefs?.academic_goal === 'exam' ? 'Exam Prep' : (prefs?.academic_goal === 'cheat' ? 'Cheat Sheet' : 'Deep Dive');
-    const prefSummary = prefs?.summary ? prefs.summary : `${toneStr} • ${goalStr}`;
+    const prefSummary = `${toneStr} • ${goalStr}`;
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
@@ -144,28 +144,32 @@ export default function AccountScreen() {
                     </View>
 
                     <View style={s.headerRight}>
-                        <TouchableOpacity style={s.iconBtn} activeOpacity={0.7} onPress={() => router.push('/(drawer)/settings' as any)}>
-                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-setting-front-color.png')} size={28} animationType="spin" />
-                        </TouchableOpacity>
+                        <AnimatedIcon
+                            source={require('@/assets/3dicons/3dicons-setting-front-color.png')}
+                            size={28}
+                            animationType="spin"
+                            onPress={() => router.push('/(drawer)/settings' as any)}
+                            style={s.iconBtn}
+                        />
                     </View>
                 </Animated.View>
 
-                {/* ── Premium Banner ── */}
+                {/* ── Credit Balance Banner ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(200)}>
                     <TouchableOpacity 
                         activeOpacity={0.9} 
                         style={[s.premiumBanner, { backgroundColor: isPremium ? '#FF9500' : '#007AFF' }]}
-                        onPress={() => router.push('/paywall')}
+                        onPress={() => router.push(isPremium ? '/paywall' : '/buy-credits' as any)}
                     >
                         <Text style={s.premiumTitle}>
-                            {isPremium ? 'Skeeme Pro Active' : 'Skeeme Plus 3-Day Free Trial'}
+                            {isPremium ? 'Skeeme Pro Active' : `${user.credits ?? 0} Credits Available`}
                         </Text>
                         <Text style={s.premiumSubtitle}>
-                            {isPremium ? 'Enjoying unlimited access.' : 'Unlimited Top Models • Elevated Accuracy'}
+                            {isPremium ? 'Enjoying unlimited access.' : 'Tap to get more credits for scans and quizzes'}
                         </Text>
                         {!isPremium && (
                             <View style={s.premiumBtn}>
-                                <Text style={[s.premiumBtnText, { color: '#007AFF' }]}>Upgrade Now</Text>
+                                <Text style={[s.premiumBtnText, { color: '#007AFF' }]}>Top Up</Text>
                             </View>
                         )}
                     </TouchableOpacity>
@@ -193,6 +197,7 @@ export default function AccountScreen() {
                             size={56} 
                             animationType="wobble"
                             onPress={() => router.push('/(drawer)/flashcards' as any)}
+                            style={{ width: '100%', alignItems: 'center' }}
                         >
                             <Text style={[s.gridTitle, { color: C.text }]}>Flashcards</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary }]}>Decks</Text>
@@ -216,7 +221,7 @@ export default function AccountScreen() {
                             source={require('@/assets/3dicons/3dicons-bookmark-fav-front-color.png')} 
                             size={56} 
                             animationType="pop"
-                            onPress={() => router.push('/(drawer)/exams' as any)}
+                            onPress={() => router.push('/(drawer)/history/saved' as any)}
                         >
                             <Text style={[s.gridTitle, { color: C.text }]}>Saved</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary }]}>Bookmarks</Text>
@@ -241,6 +246,7 @@ export default function AccountScreen() {
                             size={56} 
                             animationType="spin"
                             onPress={() => router.push('/(drawer)/support' as any)}
+                            style={{ width: '100%', alignItems: 'center' }}
                         >
                             <Text style={[s.gridTitle, { color: C.text }]}>Support</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary }]}>Help & Feedback</Text>

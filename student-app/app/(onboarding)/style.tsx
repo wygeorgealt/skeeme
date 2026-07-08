@@ -73,7 +73,6 @@ export default function StyleScreen() {
                     <View style={s.optionsGap}>
                         {STYLES.map((style, index) => {
                             const isSelected = selected === style.key;
-                            const iconName = style.icon;
 
                             return (
                                 <Animated.View 

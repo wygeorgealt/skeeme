@@ -61,6 +61,24 @@ export const scannerService = {
         }
     ): (() => void) => {
         let accumulatedText = '';
+        let parseTimer: ReturnType<typeof setTimeout> | null = null;
+        let lastParsedLength = 0;
+
+        // P2: Throttle partial JSON parsing to at most once every 150ms.
+        // repairPartialJson is O(n) on the accumulated text and was being called
+        // on every token (50-100x/sec during fast streams), causing quadratic CPU cost.
+        const schedulePartialParse = () => {
+            if (parseTimer) return; // already scheduled
+            parseTimer = setTimeout(() => {
+                parseTimer = null;
+                if (accumulatedText.length === lastParsedLength) return; // nothing new
+                lastParsedLength = accumulatedText.length;
+                const partial = repairPartialJson(accumulatedText);
+                if (partial?.results?.length) {
+                    callbacks.onDelta?.(partial.results);
+                }
+            }, 150);
+        };
 
         const cleanup = streamScanSolve(base64, provider, {
             onStatus: (message) => {
@@ -68,13 +86,11 @@ export const scannerService = {
             },
             onToken: (token) => {
                 accumulatedText += token;
-                // Try to parse partial results as they stream in
-                const partial = repairPartialJson(accumulatedText);
-                if (partial?.results?.length) {
-                    callbacks.onDelta?.(partial.results);
-                }
+                schedulePartialParse();
             },
             onComplete: (fullText) => {
+                // Cancel any pending throttled parse
+                if (parseTimer) { clearTimeout(parseTimer); parseTimer = null; }
                 // Parse the complete response
                 const parsed = repairPartialJson(fullText);
                 if (parsed?.results) {
@@ -85,12 +101,16 @@ export const scannerService = {
                 callbacks.onDone?.();
             },
             onError: (error, isInsufficientCredits) => {
+                if (parseTimer) { clearTimeout(parseTimer); parseTimer = null; }
                 callbacks.onError?.(error, isInsufficientCredits);
                 callbacks.onDone?.();
             }
         });
 
-        return cleanup;
+        return () => {
+            if (parseTimer) { clearTimeout(parseTimer); parseTimer = null; }
+            cleanup();
+        };
     }
 };
 

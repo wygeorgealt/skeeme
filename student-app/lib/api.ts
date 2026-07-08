@@ -1,5 +1,5 @@
 import axios from 'axios';
-import NetInfo from '@react-native-community/netinfo';
+import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { useAuthStore } from '../store/authStore';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
@@ -18,18 +18,23 @@ export const api = axios.create({
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1s
 
+// P0: Cache network state with a listener instead of fetching per-request.
+// NetInfo.fetch() is a native bridge call (~100-300ms). Calling it on every API
+// request blocks the JS thread and compounds during streaming bursts.
+let cachedNetInfo: NetInfoState | null = null;
+NetInfo.addEventListener((state) => {
+    cachedNetInfo = state;
+});
+
 // Single request interceptor: attach auth token and network metadata
 api.interceptors.request.use(
-    async (config) => {
-        // Attach network quality headers for AI timeout optimization
-        try {
-            const netInfo = await NetInfo.fetch();
-            config.headers['X-Network-Type'] = netInfo.type;
-            if (netInfo.type === 'cellular') {
-                config.headers['X-Network-Generation'] = (netInfo.details as any)?.cellularGeneration || 'unknown';
+    (config) => {
+        // Attach network quality headers using cached state (zero bridge overhead)
+        if (cachedNetInfo) {
+            config.headers['X-Network-Type'] = cachedNetInfo.type;
+            if (cachedNetInfo.type === 'cellular') {
+                config.headers['X-Network-Generation'] = (cachedNetInfo.details as any)?.cellularGeneration || 'unknown';
             }
-        } catch (e) {
-            if (__DEV__) console.error('[API] Failed to fetch network info', e);
         }
 
         if (__DEV__ && config.method?.toUpperCase() !== 'GET') {

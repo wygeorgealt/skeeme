@@ -8,14 +8,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import { Colors } from '@/constants/theme';
-import { Diploma, Settings, Heart, Rocket, Compass, CheckCircle } from '@solar-icons/react-native/Bold';
+import { CheckCircle } from '@solar-icons/react-native/Bold';
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 const ANALOGIES = [
-  { key: 'general', label: 'Academic', Icon: Diploma },
-  { key: 'tech', label: 'Tech', Icon: Settings },
-  { key: 'sports', label: 'Sports', Icon: Heart },
-  { key: 'gaming', label: 'Gaming', Icon: Rocket },
-  { key: 'pop_culture', label: 'Pop Culture', Icon: Compass },
+  { key: 'general', label: 'Academic', iconSource: require('@/assets/3dicons/3dicons-folder-front-color.png') },
+  { key: 'tech', label: 'Tech', iconSource: require('@/assets/3dicons/3dicons-setting-front-color.png') },
+  { key: 'sports', label: 'Sports', iconSource: require('@/assets/3dicons/3dicons-trophy-front-color.png') },
+  { key: 'gaming', label: 'Gaming', iconSource: require('@/assets/3dicons/3dicons-flash-front-color.png') },
+  { key: 'pop_culture', label: 'Pop Culture', iconSource: require('@/assets/3dicons/3dicons-sun-dynamic-color.png') },
 ];
 
 export default function AnalogyScreen() {
@@ -66,7 +67,6 @@ export default function AnalogyScreen() {
           <View style={s.optionsGap}>
             {ANALOGIES.map((a, idx) => {
               const isSelected = selected === a.key;
-              const Icon = a.Icon;
               return (
                 <Animated.View key={a.key} entering={FadeInDown.duration(600).delay(120 + idx * 60)}>
                   <TouchableOpacity
@@ -79,7 +79,7 @@ export default function AnalogyScreen() {
                     ]}
                   >
                     <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
-                      <Icon size={20} color={iconColor} />
+                      <AnimatedIcon source={a.iconSource} size={24} animationType="wobble" />
                     </View>
 
                     <View style={s.textWrap}>

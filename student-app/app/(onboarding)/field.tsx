@@ -57,7 +57,7 @@ export default function FieldScreen() {
                 <View style={[s.headerSection, { paddingTop: Math.max(insets.top, 20) }]}>
                     <Animated.View entering={FadeInDown.duration(600).delay(100)}>
                         <View style={s.stepRow}>
-                            <Text style={[s.stepText, { color: iconColor }]}>Step 3 8</Text>
+                            <Text style={[s.stepText, { color: iconColor }]}>Step 3 of 8</Text>
                             <View style={s.progressBar}>
                                 <View style={[s.progressFill, { width: '42%', backgroundColor: iconColor }]} />
                             </View>
@@ -70,7 +70,6 @@ export default function FieldScreen() {
                     <View style={s.optionsGap}>
                         {FIELDS.map((field, index) => {
                             const isSelected = selected === field.key;
-                            const iconName = field.icon;
 
                             return (
                                 <Animated.View 
