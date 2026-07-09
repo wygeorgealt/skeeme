@@ -32,7 +32,8 @@ export async function authorizeAndDeduct(
         }, {
             headers: {
                 'Authorization': `Bearer ${token}`,
-                'X-Internal-Secret': INTERNAL_SECRET
+                'X-Internal-Secret': INTERNAL_SECRET,
+                'User-Agent': 'Skeeme-Internal-AI-Service/1.0'
             }
         });
 
