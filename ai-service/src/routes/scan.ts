@@ -3,7 +3,7 @@ import { streamText } from 'ai';
 import { getModel } from '../services/aiProvider';
 import { authorizeAndDeduct, refundCredits } from '../services/laravelAuth';
 import { randomUUID } from 'crypto';
-
+import axios from 'axios';
 const router = Router();
 
 /** Write a structured SSE error event when headers are already sent. */
@@ -43,6 +43,48 @@ router.post('/solve', async (req, res) => {
 
         const model = getModel(provider || 'anthropic');
 
+        let finalMessages: any[] = [
+            {
+                role: 'user',
+                content: [
+                    { type: 'text', text: 'Solve the problem in this image.' },
+                    { type: 'image', image: image }
+                ]
+            }
+        ];
+
+        // Deepseek is text-only, so we MUST extract text from the image first using Google Vision OCR
+        if (provider === 'deepseek') {
+            const googleVisionKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
+            if (!googleVisionKey) {
+                throw new Error('Google Cloud Vision API Key is missing for Deepseek fallback.');
+            }
+            
+            const base64Data = image.includes('base64,') ? image.split('base64,')[1] : image;
+            const visionRes = await axios.post(`https://vision.googleapis.com/v1/images:annotate?key=${googleVisionKey}`, {
+                requests: [
+                    {
+                        image: { content: base64Data },
+                        features: [{ type: 'DOCUMENT_TEXT_DETECTION' }]
+                    }
+                ]
+            });
+            
+            const extractedText = visionRes.data.responses?.[0]?.fullTextAnnotation?.text || '';
+            if (!extractedText.trim()) {
+                throw new Error('Could not read any text from the image. Please try a clearer photo.');
+            }
+            
+            finalMessages = [
+                {
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: 'Solve the problem from this extracted text:\n\n' + extractedText }
+                    ]
+                }
+            ];
+        }
+
         const result = streamText({
             model,
             system: `You are an expert tutor. Solve the problem presented in the image. 
@@ -62,15 +104,7 @@ You MUST respond with a valid JSON object in exactly this format:
   ]
 }
 Do not include any other text outside the JSON block.`,
-            messages: [
-                {
-                    role: 'user',
-                    content: [
-                        { type: 'text', text: 'Solve the problem in this image.' },
-                        { type: 'image', image: image }
-                    ]
-                }
-            ],
+            messages: finalMessages,
             async onFinish({ text }) {
                 console.log(`[scan] Finished streaming (${text.length} chars) for user ${authResult?.userId}`);
             }
