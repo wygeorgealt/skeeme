@@ -10,6 +10,7 @@
 
 import { useAuthStore } from '@/store/authStore';
 import { generateUUID } from '@/lib/utils';
+import EventSource from 'react-native-sse';
 
 // Point to the Node.js microservice
 // In production, this would be your deployed microservice URL
