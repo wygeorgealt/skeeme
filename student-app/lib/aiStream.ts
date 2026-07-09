@@ -31,84 +31,74 @@ export function streamFromAI(
     body: Record<string, any>,
     callbacks: StreamCallbacks
 ): () => void {
-    const abortController = new AbortController();
     const token = useAuthStore.getState().token;
     const idempotencyKey = generateUUID();
+    let isConnecting = true;
 
-    const run = async () => {
-        try {
-            callbacks.onStatus?.('Connecting to Skeeme AI...');
+    callbacks.onStatus?.('Connecting to Skeeme AI...');
 
-            const response = await fetch(`${AI_SERVICE_URL}${endpoint}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                    'Idempotency-Key': idempotencyKey,
-                },
-                body: JSON.stringify(body),
-                signal: abortController.signal,
-            });
+    const es = new EventSource(`${AI_SERVICE_URL}${endpoint}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Idempotency-Key': idempotencyKey,
+        },
+        method: 'POST',
+        body: JSON.stringify(body),
+        pollingInterval: 0,
+    } as any);
 
-            if (!response.ok) {
-                const errorBody = await response.text();
-                let errorMsg = 'Generation failed. Please try again.';
-                let isInsufficientCredits = false;
+    let fullText = '';
+    let isInsufficientCredits = false;
 
-                console.log(`[aiStream] Non-OK response: status=${response.status} body=${errorBody}`);
-
-                try {
-                    const parsed = JSON.parse(errorBody);
-                    errorMsg = parsed.error || errorMsg;
-                    if (response.status === 402) {
-                        isInsufficientCredits = true;
-                    }
-                } catch (_) {}
-
-                callbacks.onError?.(errorMsg, isInsufficientCredits);
-                return;
-            }
-
+    const listener = (event: any) => {
+        if (event.type === 'open') {
+            isConnecting = false;
             callbacks.onStatus?.('Generating...');
-
-            // Read the streaming response
-            const reader = response.body?.getReader();
-            if (!reader) {
-                callbacks.onError?.('Stream not available');
+        } else if (event.type === 'message') {
+            if (event.data === '[DONE]') {
+                es.close();
+                callbacks.onComplete?.(fullText);
                 return;
             }
 
-            const decoder = new TextDecoder();
-            let fullText = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value, { stream: true });
-                fullText += chunk;
-                callbacks.onToken?.(chunk);
+            try {
+                const parsed = JSON.parse(event.data || '{}');
+                if (parsed.text) {
+                    fullText += parsed.text;
+                    callbacks.onToken?.(parsed.text);
+                }
+            } catch (e) {
+                console.error('Failed to parse SSE data', e);
             }
-
-            callbacks.onComplete?.(fullText);
-
-        } catch (error: any) {
-            if (error.name === 'AbortError') {
-                // User cancelled, don't report error
-                return;
+        } else if (event.type === 'error') {
+            // Note: react-native-sse sometimes emits an error when the stream finishes normally without [DONE]
+            // If we've already received data, we might just be done.
+            if (event.message?.includes('402')) {
+                isInsufficientCredits = true;
             }
             
-            const errorMsg = error.message?.includes('Network') || error.message?.includes('fetch')
-                ? 'Network connection lost. Please check your internet and try again.'
-                : 'Generation failed. Please try again.';
-            callbacks.onError?.(errorMsg);
+            es.close();
+            
+            const errorMsg = event.message || 'Stream connection failed';
+            
+            // Only report error if we haven't received anything yet, or if it's a hard error like 402
+            if (fullText.length === 0 || isInsufficientCredits) {
+                callbacks.onError?.(errorMsg, isInsufficientCredits);
+            } else {
+                // If we have text and it errored, just complete it
+                callbacks.onComplete?.(fullText);
+            }
         }
     };
 
-    run();
+    es.addEventListener('open', listener);
+    es.addEventListener('message', listener);
+    es.addEventListener('error', listener);
 
     return () => {
-        abortController.abort();
+        (es as any).removeAllEventListeners?.();
+        es.close();
     };
 }
 

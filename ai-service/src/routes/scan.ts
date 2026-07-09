@@ -78,7 +78,20 @@ Do not include any other text outside the JSON block.`,
 
         // Mark that we've started streaming so the catch block knows headers are sent
         headersSent = true;
-        await result.pipeTextStreamToResponse(res);
+        
+        // React Native doesn't support raw streaming fetch, so we MUST send standard SSE format
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        for await (const chunk of result.textStream) {
+            // Write each text chunk as a data event
+            res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+        }
+        
+        // Signal completion
+        res.write('data: [DONE]\n\n');
+        res.end();
 
     } catch (error: any) {
         console.error('Scan solve error:', error);
