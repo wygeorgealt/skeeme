@@ -90,6 +90,8 @@ router.post('/solve', async (req, res) => {
             system: `You are an expert tutor. Solve the problem presented in the image. 
 Break down your solution step by step. Use markdown formatting and valid LaTeX for math inside $$ $$ or $ $ blocks.
 
+CRITICAL INSTRUCTION: Ensure your final "solution" exactly matches the logical conclusion of your "steps". Do not contradict yourself or hallucinate a different final answer.
+
 You MUST respond with a valid JSON object in exactly this format:
 {
   "results": [
@@ -181,7 +183,16 @@ Answer the user's follow-up questions clearly and concisely. Use markdown and va
             messages
         });
 
-        await result.pipeTextStreamToResponse(res);
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        for await (const chunk of result.textStream) {
+            res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+        }
+        
+        res.write('data: [DONE]\n\n');
+        res.end();
 
     } catch (error: any) {
         console.error('Scan chat error:', error);

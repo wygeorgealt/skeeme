@@ -34,6 +34,7 @@ import { scannerService, ScanResult } from '@/lib/scanner';
 import { posthog } from '@/lib/posthog';
 import { markGenerationSuccess } from '@/lib/storeReview';
 import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/freeOffer';
+import { streamScanFollowUpChat } from '@/lib/aiStream';
 
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
@@ -74,6 +75,7 @@ export default function ScanScreen() {
     const [showChatModal, setShowChatModal] = useState(false);
     const [selectedProvider, setSelectedProvider] = useState<ProviderType>('deepseek');
     const [showShareModal, setShowShareModal] = useState(false);
+    const [reexplainCount, setReexplainCount] = useState(0);
 
     const [progressPercent, setProgressPercent] = useState(0);
 
@@ -342,6 +344,67 @@ export default function ScanScreen() {
         setScanError(null);
         setIsNetworkError(false);
         hapticFiredRef.current = false;
+        setReexplainCount(0);
+    };
+
+    const handleReexplain = () => {
+        const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
+        const limit = isUnlimited ? 5 : 1;
+
+        if (reexplainCount >= limit) {
+            if (isUnlimited) {
+                Alert.alert('Limit Reached', 'You have reached the maximum number of re-explains for this scan.');
+            } else {
+                Alert.alert('Upgrade for More', 'Free users get 1 re-explain per scan. Upgrade to Skeeme Pro for up to 5!', [
+                    { text: 'Upgrade', onPress: () => router.push('/paywall') },
+                    { text: 'Cancel', style: 'cancel' }
+                ]);
+            }
+            return;
+        }
+
+        setReexplainCount(prev => prev + 1);
+
+        const newResult: ScanResult = {
+            question: '',
+            solution: '',
+            steps: [],
+            type: 'theory',
+            topic: 'Simpler Explanation',
+            explanation: ''
+        };
+        
+        setResults(prev => [...prev, newResult]);
+        
+        if (esRef.current) {
+            esRef.current();
+            esRef.current = null;
+        }
+        
+        try {
+            const cleanup = streamScanFollowUpChat({
+                messages: [{ role: 'user', content: 'Re-explain the previous answer in a much simpler form. Break it down so a beginner can understand it.' }],
+                context: JSON.stringify(results)
+            }, {
+                onToken: (text) => {
+                    setResults(prev => {
+                        const next = [...prev];
+                        const last = next[next.length - 1];
+                        last.explanation = (last.explanation || '') + text;
+                        return next;
+                    });
+                },
+                onError: (err, isInsufficientCredits) => {
+                    Alert.alert('Re-explain Failed', err);
+                    if (isInsufficientCredits) {
+                        useAuthStore.getState().toggleCreditsModal(true, 'scan');
+                    }
+                }
+            });
+            esRef.current = cleanup;
+        } catch (e: any) {
+            Alert.alert('Error', e.message);
+        }
     };
 
     const [enableTorch, setEnableTorch] = useState(false);
@@ -557,30 +620,35 @@ export default function ScanScreen() {
                                 ))}
                             </>
                         )}
+                        {!loading && results.length > 0 && (
+                            <View style={s.actionButtonsRow}>
+                                <TouchableOpacity 
+                                    onPress={handleReexplain}
+                                    activeOpacity={0.8}
+                                    style={[s.actionButton, isDark ? s.actionButtonDark : s.actionButtonLight]}
+                                >
+                                    <Refresh size={20} color={C.primary} />
+                                    <Text style={[s.actionButtonText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                                        Re-explain (Simpler)
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity 
+                                    onPress={() => setShowChatModal(true)}
+                                    activeOpacity={0.8}
+                                    style={[s.actionButton, isDark ? s.actionButtonDark : s.actionButtonLight]}
+                                >
+                                    <QuestionCircle size={20} color={C.primary} />
+                                    <Text style={[s.actionButtonText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
+                                        Ask Follow-up
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
                     </View>
                 )}
                 <View style={{ height: 100 }} />
             </ScrollView>
-
-            <KeyboardAvoidingView 
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
-                style={s.stickyFooterWrapper}
-                pointerEvents="box-none"
-            >
-                {!loading && results.length > 0 && (
-                    <View style={[s.followUpInputContainer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-                        <TouchableOpacity 
-                            onPress={() => setShowChatModal(true)}
-                            activeOpacity={0.8}
-                            style={[s.followUpInputWrapper, isDark ? s.bgDarkBase : s.bgWhite]}
-                        >
-                            <Text style={[s.followUpInput, { color: isDark ? '#64748b' : '#94a3b8' }]}>
-                                Ask a follow-up...
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-            </KeyboardAvoidingView>
 
             <FollowUpChatModal 
                 visible={showChatModal}
@@ -727,4 +795,9 @@ const s = StyleSheet.create({
     thinkingBubbleLight: { backgroundColor: '#f1f5f9' },
     thinkingBubbleDark: { backgroundColor: '#1C1C1E' },
 
+    actionButtonsRow: { flexDirection: 'row', gap: 12, marginTop: 24, marginBottom: 20 },
+    actionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 16, borderWidth: 1 },
+    actionButtonLight: { backgroundColor: '#ffffff', borderColor: 'rgba(150,150,150,0.2)' },
+    actionButtonDark: { backgroundColor: '#1C1C1E', borderColor: 'rgba(255,255,255,0.1)' },
+    actionButtonText: { fontSize: 14, fontWeight: '700' },
 });
