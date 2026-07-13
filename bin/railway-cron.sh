@@ -18,5 +18,5 @@ esac
 # Cache config for scheduler (needs DB connection info)
 php artisan config:cache
 
-echo "⏰ Starting Laravel Scheduler..."
-exec php artisan schedule:work
+echo "⏰ Cron is disabled (migrated to Go). Sleeping..."
+exec sleep infinity

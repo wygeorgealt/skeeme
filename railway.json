@@ -8,24 +8,6 @@
     "region": "us-west2",
     "numReplicas": 1,
     "sleepApplication": false,
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
-  },
-  "crons": [
-    {
-      "name": "hourly-backup",
-      "command": "bash bin/backup-cron.sh",
-      "schedule": "0 * * * *"
-    },
-    {
-      "name": "daily-backup-lock-health-check",
-      "command": "bash bin/backup-health-cron.sh",
-      "schedule": "15 4 * * *"
-    },
-    {
-      "name": "daily-backup-3am",
-      "command": "bash bin/backup-cron.sh",
-      "schedule": "0 3 * * *"
-    }
-  ]
+    "restartPolicyType": "ON_FAILURE"
+  }
 }

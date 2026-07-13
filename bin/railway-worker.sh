@@ -18,5 +18,5 @@ esac
 # Cache config for worker (needs DB connection info)
 php artisan config:cache
 
-echo "📋 Starting Queue Worker..."
-exec php artisan queue:work --queue=default --tries=3 --timeout=90
+echo "📋 Queue Worker is disabled (migrated to Go). Sleeping..."
+exec sleep infinity
