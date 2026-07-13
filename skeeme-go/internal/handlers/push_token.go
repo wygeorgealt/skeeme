@@ -13,7 +13,7 @@ type PushTokenHandler struct {
 }
 
 type PushTokenRequest struct {
-	Token string `json:"token"`
+	Token string `json:"expo_push_token"`
 }
 
 func (h *PushTokenHandler) UpdateToken(w http.ResponseWriter, r *http.Request) {
