@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /app/bin/api ./cmd/api
 FROM alpine:latest
 
 # Add ca-certificates for external API calls (e.g., Paystack, Resend)
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk --no-cache add ca-certificates tzdata postgresql-client
 
 WORKDIR /app
 COPY --from=builder /app/bin/api /app/api

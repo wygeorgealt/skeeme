@@ -112,22 +112,31 @@ func main() {
 			// Data & Session Endpoints
 			r.Get("/sync", syncHandler.Sync)
 			
-			r.Route("/quiz/history", func(r chi.Router) {
+			r.Route("/quizzes/history", func(r chi.Router) {
 				r.Get("/", quizHandler.History)
+				r.Post("/", quizHandler.StoreSession)
 				r.Get("/{id}", quizHandler.GetSession)
 				r.Delete("/{id}", quizHandler.DeleteSession)
 			})
 
-			r.Route("/flashcards/decks", func(r chi.Router) {
-				r.Get("/", flashcardHandler.ListDecks)
-				r.Get("/{id}", flashcardHandler.GetDeck)
-				r.Delete("/{id}", flashcardHandler.DeleteDeck)
+			r.Route("/flashcards", func(r chi.Router) {
+				r.Route("/decks", func(r chi.Router) {
+					r.Get("/", flashcardHandler.ListDecks)
+					r.Post("/", flashcardHandler.CreateDeck)
+					r.Get("/{id}", flashcardHandler.GetDeck)
+					r.Delete("/{id}", flashcardHandler.DeleteDeck)
+					r.Post("/{id}/cards", flashcardHandler.SaveCards)
+				})
+				r.Route("/history", func(r chi.Router) {
+					r.Get("/", flashcardHandler.History)
+					r.Post("/", flashcardHandler.StoreSession)
+				})
 			})
 			
 			r.Route("/streaks", func(r chi.Router) {
 				r.Get("/heatmap", streakHandler.Heatmap)
 				r.Get("/freezes", streakHandler.Freezes)
-				r.Post("/reward", streakHandler.ClaimReward)
+				r.Post("/claim-reward", streakHandler.ClaimReward)
 			})
 
 			// Notifications

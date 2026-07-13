@@ -32,6 +32,17 @@ func main() {
 		}
 	})
 
+	// Run every hour
+	c.AddFunc("0 * * * *", func() {
+		jobs.RunPostgresBackup()
+		jobs.PendingCleanup(database)
+	})
+
+	// Run every 3 hours
+	c.AddFunc("0 */3 * * *", func() {
+		jobs.AIHealthCheck()
+	})
+
 	log.Println("Starting scheduler service...")
 	c.Start()
 

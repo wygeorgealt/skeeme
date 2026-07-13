@@ -66,7 +66,7 @@ func (h *ProfileHandler) Preferences(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update ai_preferences in DB
-	_, err := h.DB.ExecContext(r.Context(), "UPDATE users SET ai_preferences = $1 WHERE id = $2", req.AIPreferences, user.ID)
+	_, err := h.DB.ExecContext(r.Context(), "UPDATE users SET ai_preferences = $1::jsonb WHERE id = $2", req.AIPreferences, user.ID)
 	if err != nil {
 		http.Error(w, "Failed to update preferences", http.StatusInternalServerError)
 		return

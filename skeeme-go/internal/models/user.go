@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"encoding/json"
 )
 
 type User struct {
@@ -14,7 +15,7 @@ type User struct {
 	Provider               sql.NullString `db:"provider" json:"provider"`
 	ProviderID             sql.NullString `db:"provider_id" json:"provider_id"`
 	Avatar                 sql.NullString `db:"avatar" json:"avatar"`
-	AIPreferences          []byte         `db:"ai_preferences" json:"ai_preferences"` // JSONB
+	AIPreferences          json.RawMessage `db:"ai_preferences" json:"ai_preferences"` // JSONB
 	TwoFactorSecret        sql.NullString `db:"two_factor_secret" json:"-"`
 	TwoFactorRecoveryCodes sql.NullString `db:"two_factor_recovery_codes" json:"-"`
 	TwoFactorConfirmedAt   sql.NullTime   `db:"two_factor_confirmed_at" json:"two_factor_confirmed_at"`

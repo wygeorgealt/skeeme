@@ -23,3 +23,13 @@ type Flashcard struct {
 	CreatedAt       sql.NullTime `db:"created_at" json:"created_at"`
 	UpdatedAt       sql.NullTime `db:"updated_at" json:"updated_at"`
 }
+
+type FlashcardSession struct {
+	ID              int64        `db:"id" json:"id"`
+	UserID          int64        `db:"user_id" json:"user_id"`
+	FlashcardDeckID int64        `db:"flashcard_deck_id" json:"flashcard_deck_id"`
+	CardsCount      int          `db:"cards_count" json:"cards_count"`
+	CompletedAt     sql.NullTime `db:"completed_at" json:"completed_at"`
+	CreatedAt       sql.NullTime `db:"created_at" json:"created_at"`
+	UpdatedAt       sql.NullTime `db:"updated_at" json:"updated_at"`
+}
