@@ -59,7 +59,7 @@ func main() {
 	otpHandler := &handlers.OtpHandler{DB: database, Redis: redisClient}
 	oauthHandler := &handlers.OAuthHandler{DB: database}
 	profileHandler := &handlers.ProfileHandler{DB: database}
-	internalAIHandler := &handlers.InternalAIHandler{DB: database}
+	internalAIHandler := &handlers.InternalAIHandler{DB: database, Redis: redisClient}
 	creditHandler := &handlers.CreditHandler{DB: database}
 	syncHandler := &handlers.SyncHandler{DB: database}
 	quizHandler := &handlers.QuizHandler{DB: database}
@@ -130,7 +130,7 @@ func main() {
 			})
 
 			// Notifications
-			r.Post("/notifications/token", pushTokenHandler.UpdateToken)
+			r.Post("/device-token", pushTokenHandler.UpdateToken)
 		})
 	})
 

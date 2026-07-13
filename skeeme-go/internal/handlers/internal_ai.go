@@ -5,11 +5,13 @@ import (
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 	"skeeme-go/internal/credits"
 )
 
 type InternalAIHandler struct {
-	DB *sqlx.DB
+	DB    *sqlx.DB
+	Redis *redis.Client
 }
 
 type AIAuthorizeRequest struct {
@@ -27,7 +29,7 @@ func (h *InternalAIHandler) Authorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := credits.Deduct(r.Context(), h.DB, req.UserID, req.Amount, req.RequestID, req.ActionType, req.ModelUsed)
+	err := credits.Deduct(r.Context(), h.DB, h.Redis, req.UserID, req.Amount, req.RequestID, req.ActionType, req.ModelUsed)
 	if err != nil {
 		if err == credits.ErrInsufficientCredits {
 			http.Error(w, "Insufficient credits", http.StatusPaymentRequired) // 402
@@ -61,7 +63,7 @@ func (h *InternalAIHandler) Refund(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := credits.Refund(r.Context(), h.DB, req.UserID, req.Amount, req.RequestID, req.ActionType)
+	err := credits.Refund(r.Context(), h.DB, h.Redis, req.UserID, req.Amount, req.RequestID, req.ActionType)
 	if err != nil {
 		if err == credits.ErrDuplicateRequest {
 			w.WriteHeader(http.StatusOK)
