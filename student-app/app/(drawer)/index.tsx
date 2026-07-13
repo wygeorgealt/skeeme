@@ -381,7 +381,8 @@ export default function ScanScreen() {
         try {
             const cleanup = streamScanFollowUpChat({
                 messages: [{ role: 'user', content: 'Re-explain the previous answer in a much simpler form. Break it down so a beginner can understand it.' }],
-                context: JSON.stringify(results)
+                context: JSON.stringify(results),
+                provider: selectedProvider
             }, {
                 onToken: (text) => {
                     setResults(prev => {
@@ -626,7 +627,7 @@ export default function ScanScreen() {
                                 >
                                     <Refresh size={20} color={C.primary} />
                                     <Text style={[s.actionButtonText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                                        Re-explain (Simpler)
+                                        Re-explain
                                     </Text>
                                 </TouchableOpacity>
 
@@ -651,6 +652,7 @@ export default function ScanScreen() {
                 visible={showChatModal}
                 onClose={() => setShowChatModal(false)}
                 scanContext={results}
+                provider={selectedProvider}
             />
 
             <ShareModal

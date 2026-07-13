@@ -155,6 +155,7 @@ export function streamScanFollowUpChat(
     params: {
         messages: { role: string; content: string }[];
         context: string;
+        provider?: 'deepseek' | 'anthropic';
     },
     callbacks: StreamCallbacks
 ): () => void {

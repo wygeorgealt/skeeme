@@ -20,5 +20,5 @@ export function getModel(provider: 'anthropic' | 'deepseek' = 'anthropic') {
     }
 
     // Default to Anthropic Claude
-    return anthropic('claude-sonnet-4-20250514');
+    return anthropic('claude-3-5-sonnet-20240620');
 }

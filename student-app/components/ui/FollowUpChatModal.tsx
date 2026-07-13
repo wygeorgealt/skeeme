@@ -16,9 +16,10 @@ interface FollowUpChatModalProps {
     visible: boolean;
     onClose: () => void;
     scanContext: ScanResult[];
+    provider?: 'deepseek' | 'anthropic';
 }
 
-export function FollowUpChatModal({ visible, onClose, scanContext }: FollowUpChatModalProps) {
+export function FollowUpChatModal({ visible, onClose, scanContext, provider }: FollowUpChatModalProps) {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
@@ -66,7 +67,7 @@ export function FollowUpChatModal({ visible, onClose, scanContext }: FollowUpCha
         setMessages(prev => [...prev, assistantMsg]);
 
         const abort = streamScanFollowUpChat(
-            { messages: currentHistory, context: contextStr },
+            { messages: currentHistory, context: contextStr, provider },
             {
                 onToken: (token) => {
                     assistantMsg.content += token;

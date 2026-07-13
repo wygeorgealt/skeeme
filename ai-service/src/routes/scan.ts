@@ -146,6 +146,7 @@ Do not include any other text outside the JSON block.`,
 
 router.post('/chat', async (req, res) => {
     let authResult: any = null;
+    let headersSent = false;
     const idempotencyKey = req.headers['idempotency-key'] as string || randomUUID();
 
     try {
@@ -162,7 +163,6 @@ router.post('/chat', async (req, res) => {
         }
 
         try {
-            // Check authorization but we don't deduct credits yet (handled by frontend limits or separate pricing)
             authResult = await authorizeAndDeduct(token, 'scan_chat', 0, idempotencyKey);
             if (!authResult.success) {
                 return res.status(authResult.status || 402).json({ error: authResult.error });
@@ -183,6 +183,7 @@ Answer the user's follow-up questions clearly and concisely. Use markdown and va
             messages
         });
 
+        headersSent = true;
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
@@ -196,7 +197,12 @@ Answer the user's follow-up questions clearly and concisely. Use markdown and va
 
     } catch (error: any) {
         console.error('Scan chat error:', error);
-        res.status(500).json({ error: 'Failed to process chat' });
+        
+        if (headersSent) {
+            sendSseError(res, 'stream_interrupted');
+        } else {
+            res.status(500).json({ error: 'Failed to process chat' });
+        }
     }
 });
 
