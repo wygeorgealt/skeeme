@@ -353,12 +353,9 @@ export default function ScanScreen() {
 
         if (reexplainCount >= limit) {
             if (isUnlimited) {
-                Alert.alert('Limit Reached', 'You have reached the maximum number of re-explains for this scan.');
+                Alert.alert('Limit Reached', 'You are out of re-explains for this session.');
             } else {
-                Alert.alert('Upgrade for More', 'Free users get 1 re-explain per scan. Upgrade to Skeeme Pro for up to 5!', [
-                    { text: 'Upgrade', onPress: () => router.push('/paywall') },
-                    { text: 'Cancel', style: 'cancel' }
-                ]);
+                router.push('/paywall');
             }
             return;
         }
