@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
@@ -68,6 +69,7 @@ func (h *ProfileHandler) Preferences(w http.ResponseWriter, r *http.Request) {
 	// Update ai_preferences in DB
 	_, err := h.DB.ExecContext(r.Context(), "UPDATE users SET ai_preferences = $1::jsonb WHERE id = $2", req.AIPreferences, user.ID)
 	if err != nil {
+		log.Printf("Failed to update preferences for user %s: %v", user.ID, err)
 		http.Error(w, "Failed to update preferences", http.StatusInternalServerError)
 		return
 	}
@@ -75,6 +77,7 @@ func (h *ProfileHandler) Preferences(w http.ResponseWriter, r *http.Request) {
 	// Refresh user from DB to return
 	err = h.DB.GetContext(r.Context(), user, "SELECT * FROM users WHERE id = $1", user.ID)
 	if err != nil {
+		log.Printf("Error fetching updated profile for user %s: %v", user.ID, err)
 		http.Error(w, "Error fetching updated profile", http.StatusInternalServerError)
 		return
 	}
