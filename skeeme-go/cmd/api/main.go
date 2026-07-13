@@ -102,6 +102,7 @@ func main() {
 			r.Post("/logout", authHandler.Logout)
 			r.Get("/me", authHandler.Me)
 			r.Patch("/profile", profileHandler.Update)
+			r.Post("/preferences", profileHandler.Preferences)
 
 			// Credit Endpoints
 			r.Get("/credits/summary", creditHandler.Summary)
