@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -21,6 +22,7 @@ func (h *FlashcardHandler) ListDecks(w http.ResponseWriter, r *http.Request) {
 	err := h.DB.SelectContext(r.Context(), &decks, 
 		"SELECT * FROM flashcard_decks WHERE user_id = $1 ORDER BY created_at DESC", user.ID)
 	if err != nil {
+		log.Printf("[flashcard] ListDecks DB error for user %d: %v", user.ID, err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
