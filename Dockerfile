@@ -3,8 +3,8 @@ FROM serversideup/php:8.3-fpm-nginx
 # Switch to root to install dependencies
 USER root
 
-# Install PHP extensions (pcntl needed for queue:work signal handling)
-RUN install-php-extensions intl gd bcmath pcntl
+# Install PHP extensions (pdo_pgsql needed for PostgreSQL)
+RUN install-php-extensions intl gd bcmath pcntl pdo_pgsql pgsql
 
 # Install Node.js, NPM and MySQL client (for mysqldump)
 RUN apt-get update && \
@@ -23,11 +23,11 @@ ENV PHP_POST_MAX_SIZE=20M
 ENV PHP_UPLOAD_MAX_FILESIZE=20M
 ENV NGINX_MAX_BODY_SIZE=20M
 
-# PHP-FPM Performance Tuning (ServerSideUp requires config files for FPM pool settings)
+# PHP-FPM Performance & Cost Optimization (ondemand mode frees memory when idle)
 RUN FPM_POOL_DIR=$(find /etc -type d -name "pool.d" | head -n 1) && \
     if [ -z "$FPM_POOL_DIR" ]; then FPM_POOL_DIR="/etc/php/8.3/fpm/pool.d"; fi && \
     mkdir -p "$FPM_POOL_DIR" && \
-    echo "[www]\npm.max_children = 50\npm.start_servers = 10\npm.min_spare_servers = 10\npm.max_spare_servers = 20\npm.max_requests = 1000\n" > "$FPM_POOL_DIR/zzz-tuning.conf"
+    echo "[www]\npm = ondemand\npm.max_children = 15\npm.process_idle_timeout = 10s\npm.max_requests = 500\n" > "$FPM_POOL_DIR/zzz-tuning.conf"
 
 # Set working directory
 WORKDIR /var/www/html

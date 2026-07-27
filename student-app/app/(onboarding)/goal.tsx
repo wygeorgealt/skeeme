@@ -1,10 +1,11 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, ScrollView } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView,  useSafeAreaInsets  } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import { Colors } from '@/constants/theme';
@@ -65,7 +66,7 @@ export default function GoalScreen() {
           <View style={s.optionsGap}>
             {GOALS.map((g, idx) => {
               const isSelected = selected === g.key;
-              const Icon = g.icon;
+              const Icon = g.iconSource;
 
               return (
                 <Animated.View key={g.key} entering={FadeInDown.duration(600).delay(120 + idx * 60)}>
@@ -98,16 +99,15 @@ export default function GoalScreen() {
         </ScrollView>
 
         <View style={[s.footer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-          <TouchableOpacity
+          <AnimatedButton
+            title="Continue"
             onPress={handleNext}
             disabled={!selected}
-            activeOpacity={0.8}
-            style={[s.primaryBtn, !selected && s.primaryBtnDisabled]}
-          >
-            <Text style={[s.primaryBtnText, !selected && { color: 'rgba(255,255,255,0.5)' }]}>
-              Continue
-            </Text>
-          </TouchableOpacity>
+            type="capsule"
+            backgroundColor="#007AFF"
+            shadowColor="#0066D6"
+            fullWidth
+          />
         </View>
       </SafeAreaView>
     </View>

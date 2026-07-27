@@ -52,9 +52,8 @@ class CheckSufficientCredits
             return $next($request);
         }
 
-        // 3. Check Balance (No caching to prevent Admin panel desync)
-        $user->refresh(); // Ensure we have latest from DB
-        $available = $user->credits;
+        // 3. Check Balance
+        $available = $user->credits ?? 0;
 
 
 

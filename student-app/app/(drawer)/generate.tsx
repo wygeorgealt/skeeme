@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, Animated, StyleSheet, Modal, Platform } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { streamQuizGenerate } from '@/lib/aiStream';
 
@@ -865,18 +866,16 @@ export default function GenerateQuizScreen() {
                         borderTopWidth: 0,
                     }]}
                 >
-                    <TouchableOpacity
+                    <AnimatedButton
+                        title="Generate Quiz"
                         onPress={handleGenerate}
                         disabled={!canGenerate || isLoading}
-                        activeOpacity={0.85}
-                        style={[sf.generateBtn, { backgroundColor: canGenerate ? '#007AFF' : (isDark ? '#1E3A5F' : '#A2C9F4') }]}
-                    >
-                        {isLoading ? (
-                            <LoadingSpinner size={24} color="white" />
-                        ) : (
-                            <Text style={sf.generateBtnText}>Generate Quiz</Text>
-                        )}
-                    </TouchableOpacity>
+                        loading={isLoading}
+                        type="capsule"
+                        backgroundColor="#007AFF"
+                        shadowColor="#0066D6"
+                        fullWidth
+                    />
                 </BlurView>
 
                 <OutOfCreditsModal

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { Text } from '@/components/ui/Text';
@@ -52,13 +53,16 @@ export default function ReferralScreen() {
             <Text style={[s.secondaryBtnText, { color: C.textSecondary }]}>Skip</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={handleContinue}
-            activeOpacity={0.9}
-            style={[s.primaryBtn, { backgroundColor: C.primary }]}
-          >
-            <Text style={s.primaryBtnText}>Continue</Text>
-          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <AnimatedButton
+              title="Continue"
+              onPress={handleContinue}
+              type="capsule"
+              backgroundColor="#007AFF"
+              shadowColor="#0066D6"
+              fullWidth
+            />
+          </View>
         </View>
       </View>
     </View>

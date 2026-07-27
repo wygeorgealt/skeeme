@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IosPillButton } from '@/components/ui/IosPillButton';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { CloseCircle } from '@solar-icons/react-native/Bold';
 
@@ -182,12 +183,14 @@ export default function LoginScreen() {
                     <View style={{ height: Spacing.xl }} />
 
                     <Animated.View key={`button-${animKey}`} entering={FadeInDown.delay(240).duration(400)}>
-                        <IosPillButton
-                            label="Sign In"
+                        <AnimatedButton
+                            title="Sign In"
                             onPress={handleLogin}
                             loading={isLoading}
+                            type="capsule"
+                            backgroundColor="#007AFF"
+                            shadowColor="#0066D6"
                             fullWidth
-                            size="lg"
                         />
                     </Animated.View>
 

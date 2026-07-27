@@ -1,6 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import React from 'react';
 import { View, TouchableOpacity, useColorScheme, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { RoundArrowUp } from '@solar-icons/react-native/Bold';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { router } from 'expo-router';
@@ -88,16 +89,14 @@ export default function CooldownModal({ visible, onDismiss }: CooldownModalProps
                         {/* Actions */}
                         <View style={styles.actions}>
                             {isFree && (
-                                <TouchableOpacity
+                                <AnimatedButton
+                                    title="Upgrade to Pro (15/min limit)"
                                     onPress={handleUpgrade}
-                                    activeOpacity={0.8}
-                                    style={styles.primaryBtn}
-                                >
-                                    <RoundArrowUp size={20} color="#FFFFFF" />
-                                    <Text style={styles.primaryBtnText}>
-                                        Upgrade to Pro (15/min limit)
-                                    </Text>
-                                </TouchableOpacity>
+                                    type="capsule"
+                                    backgroundColor="#007AFF"
+                                    shadowColor="#0066D6"
+                                    fullWidth
+                                />
                             )}
 
                             <TouchableOpacity

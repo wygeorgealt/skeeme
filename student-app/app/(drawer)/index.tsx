@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Dimensions, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { Image as ExpoImage } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -409,30 +410,33 @@ export default function ScanScreen() {
     const showLiveScanner = !imageUri && results.length === 0;
 
     if (showLiveScanner) {
+        const { width, height } = Dimensions.get('window');
         return (
-            <View style={{ flex: 1, backgroundColor: 'black' }}>
+            <View style={{ position: 'absolute', top: -insets.top, left: 0, width, height: height + insets.top + insets.bottom, backgroundColor: 'black' }}>
                 <Stack.Screen options={{ headerShown: false }} />
                 {!permission ? (
                     <View style={{ flex: 1 }} />
                 ) : !permission.granted ? (
-                    <View style={s.permissionContainer}>
+                    <View style={[s.permissionContainer, { marginTop: insets.top }]}>
                         <Scanner size={64} color={C.primary} style={{ marginBottom: 24 }} />
                         <Text style={[s.heroTitle, { color: C.text }]}>Camera Access Needed</Text>
                         <Text style={[s.heroDesc, { paddingHorizontal: 40 }]}>
                             Skeeme needs your camera to scan equations and past questions instantly.
                         </Text>
-                        <TouchableOpacity onPress={requestPermission} style={[s.primaryBtnShadow, { width: 200, backgroundColor: C.primary }]}>
-                            <View style={s.primaryBtnGradient}>
-                                <Text style={s.primaryBtnText}>Grant Access</Text>
-                            </View>
-                        </TouchableOpacity>
+                        <AnimatedButton
+                            title="Grant Access"
+                            onPress={requestPermission}
+                            type="capsule"
+                            backgroundColor="#007AFF"
+                            shadowColor="#0066D6"
+                        />
                     </View>
                 ) : (
                     <View style={StyleSheet.absoluteFill}>
                         <CameraView style={StyleSheet.absoluteFill} facing="back" ref={cameraRef} enableTorch={enableTorch} />
 
-                        <View style={[StyleSheet.absoluteFill, { justifyContent: 'space-between' }]}>
-                            <View style={[s.topChrome, { paddingTop: Math.max(insets.top, 16) }]}>
+                        <View style={[StyleSheet.absoluteFill, { justifyContent: 'space-between', marginTop: insets.top, paddingBottom: insets.bottom }]}>
+                            <View style={[s.topChrome, { paddingTop: 16 }]}>
                                 <TouchableOpacity onPress={() => setEnableTorch(!enableTorch)} activeOpacity={0.7} style={s.overlayTopBtn}>
                                     <AnimatedIcon source={require('@/assets/3dicons/3dicons-flash-front-color.png')} size={32} animationType="pop" />
                                 </TouchableOpacity>
@@ -620,27 +624,28 @@ export default function ScanScreen() {
                         )}
                         {!loading && results.length > 0 && (
                             <View style={s.actionButtonsRow}>
-                                <TouchableOpacity 
-                                    onPress={handleReexplain}
-                                    activeOpacity={0.8}
-                                    style={[s.actionButton, isDark ? s.actionButtonDark : s.actionButtonLight]}
-                                >
-                                    <Refresh size={20} color={C.primary} />
-                                    <Text style={[s.actionButtonText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                                        Re-explain
-                                    </Text>
-                                </TouchableOpacity>
+                                <View style={{ flex: 1 }}>
+                                    <AnimatedButton 
+                                        title="Re-explain"
+                                        onPress={handleReexplain}
+                                        type="capsule"
+                                        backgroundColor={isDark ? '#2C2C2E' : '#E5E5EA'}
+                                        shadowColor={isDark ? '#1C1C1E' : '#D1D1D6'}
+                                        textColor={isDark ? '#FFFFFF' : '#0F172A'}
+                                        fullWidth
+                                    />
+                                </View>
 
-                                <TouchableOpacity 
-                                    onPress={() => setShowChatModal(true)}
-                                    activeOpacity={0.8}
-                                    style={[s.actionButton, isDark ? s.actionButtonDark : s.actionButtonLight]}
-                                >
-                                    <QuestionCircle size={20} color={C.primary} />
-                                    <Text style={[s.actionButtonText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>
-                                        Ask Follow-up
-                                    </Text>
-                                </TouchableOpacity>
+                                <View style={{ flex: 1 }}>
+                                    <AnimatedButton 
+                                        title="Ask Follow-up"
+                                        onPress={() => setShowChatModal(true)}
+                                        type="capsule"
+                                        backgroundColor="#007AFF"
+                                        shadowColor="#0066D6"
+                                        fullWidth
+                                    />
+                                </View>
                             </View>
                         )}
                     </View>

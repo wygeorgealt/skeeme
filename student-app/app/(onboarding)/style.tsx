@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, ScrollView } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { CheckCircle } from '@solar-icons/react-native/Bold';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView,  useSafeAreaInsets  } from 'react-native-safe-area-context';
 
 const STYLES = [
     {
@@ -107,16 +108,15 @@ export default function StyleScreen() {
 
                 {/* Bottom Button */}
                 <View style={[s.footer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-                    <TouchableOpacity
+                    <AnimatedButton
+                        title="Continue"
                         onPress={handleNext}
                         disabled={!selected}
-                        activeOpacity={0.8}
-                        style={[s.primaryBtn, !selected && s.primaryBtnDisabled]}
-                    >
-                        <Text style={[s.primaryBtnText, !selected && { color: 'rgba(255,255,255,0.5)' }]}>
-                            Continue
-                        </Text>
-                    </TouchableOpacity>
+                        type="capsule"
+                        backgroundColor="#007AFF"
+                        shadowColor="#0066D6"
+                        fullWidth
+                    />
                 </View>
             </SafeAreaView>
         </View>

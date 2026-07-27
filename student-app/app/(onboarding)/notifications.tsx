@@ -1,11 +1,12 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect, useState } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView,  useSafeAreaInsets  } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { Bell } from '@solar-icons/react-native/Bold';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
@@ -105,18 +106,14 @@ export default function NotificationScreen() {
 
                 {/* Buttons */}
                 <Animated.View entering={FadeInDown.duration(600).delay(600)} style={[s.footer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-                    <TouchableOpacity
+                    <AnimatedButton
+                        title="Enable Notifications"
                         onPress={handleEnableNotifications}
-                        activeOpacity={0.85}
-                        style={s.primaryBtn}
-                    >
-                        <AnimatedIcon 
-                            source={require('@/assets/3dicons/3dicons-bell-front-color.png')} 
-                            size={24} 
-                            animationType="wobble"
-                        />
-                        <Text style={s.primaryBtnText}>Enable Notifications</Text>
-                    </TouchableOpacity>
+                        type="capsule"
+                        backgroundColor="#007AFF"
+                        shadowColor="#0066D6"
+                        fullWidth
+                    />
 
                     <TouchableOpacity onPress={handleSkip} activeOpacity={0.7} style={s.skipBtn}>
                         <Text style={[s.skipBtnText, { color: C.textSecondary }]}>Not now</Text>

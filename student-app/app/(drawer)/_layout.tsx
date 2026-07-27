@@ -198,6 +198,7 @@ export default function TabLayout() {
                 tabBar={(props) => <TabBar {...props} />}
                 screenOptions={{
                     headerShown: false,
+                    headerTransparent: true,
                     // Background under the tab bar should be solid to avoid bleed-through
                     sceneStyle: { backgroundColor: C.background },
                 }}

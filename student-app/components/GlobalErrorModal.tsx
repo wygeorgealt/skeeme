@@ -1,6 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import React, { useEffect } from 'react';
-import { View, TouchableOpacity, useColorScheme, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
+import { View, useColorScheme, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { DangerTriangle } from '@solar-icons/react-native/Bold';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { BlurView } from 'expo-blur';
@@ -80,13 +81,14 @@ export default function GlobalErrorModal({ visible, error, onDismiss }: GlobalEr
                             {error || 'Skeeme is having trouble connecting to the servers. Please try again.'}
                         </Text>
 
-                        <TouchableOpacity
+                        <AnimatedButton
+                            title="Got it"
                             onPress={onDismiss}
-                            activeOpacity={0.8}
-                            style={styles.btn}
-                        >
-                            <Text style={styles.btnText}>Got it</Text>
-                        </TouchableOpacity>
+                            type="capsule"
+                            backgroundColor="#007AFF"
+                            shadowColor="#0066D6"
+                            fullWidth
+                        />
                     </View>
                 </Animated.View>
             </View>

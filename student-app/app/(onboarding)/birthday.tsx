@@ -1,10 +1,11 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, SafeAreaView, ScrollView, Platform } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, ScrollView, Platform } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView,  useSafeAreaInsets  } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
@@ -104,10 +105,15 @@ export default function BirthdayScreen() {
                     </Animated.View>
                 </ScrollView>
 
-                <View style={[s.footer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-                    <TouchableOpacity onPress={handleNext} activeOpacity={0.9} style={[s.primaryBtn, { marginHorizontal: 24 }]}>
-                        <Text style={s.primaryBtnText}>Continue</Text>
-                    </TouchableOpacity>
+                <View style={[s.footer, { paddingBottom: Math.max(insets.bottom, 24), paddingHorizontal: 24 }]}>
+                    <AnimatedButton
+                        title="Continue"
+                        onPress={handleNext}
+                        type="capsule"
+                        backgroundColor="#007AFF"
+                        shadowColor="#0066D6"
+                        fullWidth
+                    />
                 </View>
             </SafeAreaView>
         </View>

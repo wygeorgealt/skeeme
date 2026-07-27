@@ -33,10 +33,6 @@ cssInterop(Animated.Text, { className: 'style' });
 cssInterop(Animated.ScrollView, { className: 'style' });
 
 
-if (__DEV__) {
-  LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
-}
-
 SplashScreen.preventAutoHideAsync();
 
 
@@ -152,10 +148,9 @@ export default function RootLayout() {
     setTailwindScheme(storeTheme || 'system');
   }, [storeTheme, setTailwindScheme]);
 
-  // Set the NATIVE iOS root view background to match the theme.
-  // This is the layer underneath React Native — the white/black strip
-  // behind the status bar is this native view showing through.
-  const rootBg = tailwindScheme === 'dark' ? '#000000' : '#F2F2F7';
+  // IMPORTANT: These must EXACTLY match Colors.light.background / Colors.dark.background
+  // in constants/theme.ts — any mismatch creates a visible color strip behind the status bar.
+  const rootBg = tailwindScheme === 'dark' ? '#0D0D0D' : '#F0F2F7';
 
   // Force-update check (only once auth is hydrated)
   useEffect(() => {
@@ -227,7 +222,7 @@ export default function RootLayout() {
 
               <NetworkStatus />
 
-              <Stack screenOptions={{ headerShown: false, headerTransparent: true, contentStyle: { backgroundColor: 'transparent' } }}>
+              <Stack screenOptions={{ headerShown: false, headerTransparent: true, statusBarTranslucent: true, contentStyle: { backgroundColor: 'transparent' } }}>
                 <Stack.Screen name="(onboarding)" options={{ headerShown: false, animation: 'fade' }} />
                 <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
                 <Stack.Screen name="signup" options={{ headerShown: false, animation: 'fade' }} />
@@ -331,7 +326,7 @@ export default function RootLayout() {
               <StreakRewardModalWrapper />
               <EnjoyReviewModalWrapper />
 
-              <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} />
+              <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} translucent backgroundColor="transparent" />
             </ThemeProvider>
           </QueryProvider>
         </PostHogProvider>

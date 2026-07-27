@@ -382,8 +382,13 @@ class AuthController extends Controller
         $user->ai_preferences = array_merge($currentPrefs, array_filter($validated, fn($v) => !is_null($v)));
         $user->save();
 
-        // Generate AI narrative summary
-        app(\App\Services\UserPersonalizationService::class)->generateAndSaveSummary($user, $user->ai_preferences);
+        // Generate AI narrative summary asynchronously / safely
+        try {
+            app(\App\Services\UserPersonalizationService::class)->generateAndSaveSummary($user, $user->ai_preferences);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to trigger preference summary: " . $e->getMessage());
+        }
+
         $user->refresh();
 
         // Clear personalization cache

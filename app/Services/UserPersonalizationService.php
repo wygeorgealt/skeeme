@@ -38,15 +38,16 @@ class UserPersonalizationService
      */
     public function generateAndSaveSummary(User $user, array $prefs): void
     {
-        $deepseek = app(DeepseekAIService::class);
-        
-        $firstName = explode(' ', trim($user->name))[0] ?: 'The student';
-        $prompt = "Create a concise, warm, and friendly 1-2 paragraph AI tutor persona profile for a student named {$firstName} based on these settings:\n\n";
-        $prompt .= json_encode($prefs, JSON_PRETTY_PRINT);
-        
-        $systemPrompt = "You are a prompt engineer writing a friendly persona profile. Write it in the third person. Make it warm and conversational. E.g., '{$firstName} is a high school student who prefers concise topics but learns math a bit slower. The tutor should adopt a supportive approach and use fun gaming analogies to explain concepts.' Keep it to 1-2 short paragraphs. Do not include markdown formatting or extra conversational text.";
-        
         try {
+            $deepseek = app(DeepseekAIService::class);
+            
+            $nameStr = $user->first_name ?: ($user->name ?: 'The student');
+            $firstName = explode(' ', trim($nameStr))[0] ?: 'The student';
+            $prompt = "Create a concise, warm, and friendly 1-2 paragraph AI tutor persona profile for a student named {$firstName} based on these settings:\n\n";
+            $prompt .= json_encode($prefs, JSON_PRETTY_PRINT);
+            
+            $systemPrompt = "You are a prompt engineer writing a friendly persona profile. Write it in the third person. Make it warm and conversational. E.g., '{$firstName} is a high school student who prefers concise topics but learns math a bit slower. The tutor should adopt a supportive approach and use fun gaming analogies to explain concepts.' Keep it to 1-2 short paragraphs. Do not include markdown formatting or extra conversational text.";
+            
             $summary = $deepseek->generateText($prompt, $systemPrompt);
             
             $prefs['summary'] = trim($summary);
@@ -54,7 +55,7 @@ class UserPersonalizationService
             $user->save();
             
             $this->clearCache($user);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error("Failed to generate AI preference summary: " . $e->getMessage());
         }
     }

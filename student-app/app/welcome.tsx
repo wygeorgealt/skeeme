@@ -1,6 +1,8 @@
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, ScrollView, Dimensions, StyleSheet, useColorScheme, SafeAreaView } from 'react-native';
+import { View, TouchableOpacity, ScrollView, Dimensions, StyleSheet, useColorScheme } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import LottieView from 'lottie-react-native';
@@ -12,20 +14,17 @@ const SLIDES = [
         id: 1,
         title: 'Snap a Photo',
         description: 'Get step-by-step solutions instantly. Skeeme breaks down complex questions to help you understand.',
-        animation: require('@/assets/lottie/scan.json'),
-    },
+        animation: require('@/assets/lottie/scan.json') },
     {
         id: 2,
         title: 'Quiz & Flashcards',
         description: 'Generate custom quizzes and flashcards instantly from your notes, slides, and textbooks.',
-        animation: require('@/assets/lottie/quiz.json'),
-    },
+        animation: require('@/assets/lottie/quiz.json') },
     {
         id: 3,
         title: 'Your Ecosystem',
         description: 'Your complete study workspace to track progress, revisit missed questions, and ace exams.',
-        animation: require('@/assets/lottie/ecosystem.json'),
-    }
+        animation: require('@/assets/lottie/ecosystem.json') }
 ];
 
 export default function WelcomeScreen() {
@@ -131,23 +130,23 @@ export default function WelcomeScreen() {
                                     styles.dot,
                                     {
                                         backgroundColor: i === currentIndex ? dotActiveColor : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'),
-                                        width: i === currentIndex ? 24 : 8,
-                                    }
+                                        width: i === currentIndex ? 24 : 8 }
                                 ]}
                             />
                         ))}
                     </View>
 
                     {/* Primary Action Button */}
-                    <TouchableOpacity
-                        onPress={goNext}
-                        style={styles.primaryBtn}
-                        activeOpacity={0.8}
-                    >
-                        <Text style={styles.primaryBtnText}>
-                            {currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Continue'}
-                        </Text>
-                    </TouchableOpacity>
+                    <View style={{ width: '100%' }}>
+                        <AnimatedButton
+                            title={currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Continue'}
+                            onPress={goNext}
+                            type="capsule"
+                            backgroundColor="#007AFF"
+                            shadowColor="#0066D6"
+                            fullWidth
+                        />
+                    </View>
                 </View>
             </SafeAreaView>
         </View>
@@ -160,15 +159,13 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 32,
-    },
+        paddingHorizontal: 32 },
     skipBtn: {
         position: 'absolute',
         right: 24,
         top: 10,
         zIndex: 10,
-        padding: 8,
-    },
+        padding: 8 },
     skipText: {
         fontSize: 17,
         fontWeight: '600',
@@ -180,12 +177,10 @@ const styles = StyleSheet.create({
         maxHeight: '45%',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 40,
-    },
+        marginBottom: 40 },
     lottie: {
         width: '100%',
-        height: '100%',
-    },
+        height: '100%' },
     textSection: {
         width: '100%',
         alignItems: 'center',
@@ -196,30 +191,25 @@ const styles = StyleSheet.create({
         fontWeight: '800',
         letterSpacing: -0.5,
         textAlign: 'center',
-        marginBottom: 16,
-    },
+        marginBottom: 16 },
     description: {
         fontSize: 17,
         fontWeight: '500',
         lineHeight: 24,
         textAlign: 'center',
-        opacity: 0.8,
-    },
+        opacity: 0.8 },
     footer: {
         width: '100%',
         paddingHorizontal: 24,
         paddingBottom: 24,
-        alignItems: 'center',
-    },
+        alignItems: 'center' },
     dotsContainer: {
         flexDirection: 'row',
         gap: 8,
-        marginBottom: 32,
-    },
+        marginBottom: 32 },
     dot: {
         height: 8,
-        borderRadius: 4,
-    },
+        borderRadius: 4 },
     primaryBtn: {
         backgroundColor: '#007AFF',
         width: '100%',
@@ -231,12 +221,9 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
-        elevation: 4,
-    },
+        elevation: 4 },
     primaryBtnText: {
         color: '#FFFFFF',
         fontSize: 17,
         fontWeight: '700',
-        letterSpacing: -0.41,
-    },
-});
+        letterSpacing: -0.41 } });

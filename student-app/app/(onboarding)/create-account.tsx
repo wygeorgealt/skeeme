@@ -1,11 +1,11 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, Platform, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, Platform, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView,  useSafeAreaInsets  } from 'react-native-safe-area-context';
 import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
 
 export default function CreateAccountScreen() {

@@ -1,6 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, useColorScheme, Share, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { RoundArrowUp, Forward } from '@solar-icons/react-native/Bold';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { router } from 'expo-router';
@@ -155,16 +156,14 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                         {/* Actions */}
                         <View style={styles.actions}>
                             {user?.plan_name !== 'pro' && user?.plan_name !== 'max' && (
-                                <TouchableOpacity
+                                <AnimatedButton
+                                    title="Upgrade to Pro"
                                     onPress={handleUpgrade}
-                                    activeOpacity={0.8}
-                                    style={styles.primaryBtn}
-                                >
-                                    <RoundArrowUp size={20} color="#FFFFFF" />
-                                    <Text style={styles.primaryBtnText}>
-                                        Upgrade to Pro
-                                    </Text>
-                                </TouchableOpacity>
+                                    type="capsule"
+                                    backgroundColor="#007AFF"
+                                    shadowColor="#0066D6"
+                                    fullWidth
+                                />
                             )}
 
                             <TouchableOpacity

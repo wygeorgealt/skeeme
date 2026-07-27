@@ -130,9 +130,14 @@ class User extends Authenticatable implements FilamentUser
      */
     public function clearPassedExams(): void
     {
-        $this->userExams()
-            ->where('exam_date', '<', now()->startOfDay())
-            ->delete();
+        // Cache for 1 hour per user to avoid issuing SQL DELETE queries on every single HTTP request
+        $cacheKey = "user_exams_cleared_{$this->id}";
+        if (!\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            $this->userExams()
+                ->where('exam_date', '<', now()->startOfDay())
+                ->delete();
+            \Illuminate\Support\Facades\Cache::put($cacheKey, true, 3600);
+        }
     }
 
     /**

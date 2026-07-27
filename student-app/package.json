@@ -29,7 +29,7 @@
     "ai": "^6.0.208",
     "axios": "^1.13.5",
     "dompurify": "^3.4.7",
-    "expo": "~54.0.35",
+    "expo": "~54.0.36",
     "expo-application": "~7.0.8",
     "expo-blur": "~15.0.8",
     "expo-build-properties": "~1.0.10",
@@ -59,7 +59,7 @@
     "expo-superwall": "^1.1.4",
     "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
-    "expo-updates": "~29.0.18",
+    "expo-updates": "~29.0.19",
     "expo-video": "~3.0.16",
     "expo-web-browser": "~15.0.11",
     "katex": "^0.17.0",
@@ -72,6 +72,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
+    "react-native-3d-animated-buttons": "^1.0.3",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-nitro-modules": "^0.35.9",
     "react-native-purchases": "^9.15.2",
@@ -95,5 +96,9 @@
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "allowScripts": {
+    "expo-superwall@1.1.4": true,
+    "unrs-resolver@1.11.1": true
+  }
 }
