@@ -8,7 +8,9 @@ import {
     Modal,
     Pressable,
 } from 'react-native';
-import { CupStar, Like, Dislike } from '@solar-icons/react-native/Bold';
+import CupStar from '@/assets/icons/pikaicons/award-medal.svg';
+import Like from '@/assets/icons/pikaicons/user-love-heart.svg';
+import Dislike from '@/assets/icons/pikaicons/minus-circle.svg';
 import { BlurView } from 'expo-blur';
 import Animated, { FadeIn, FadeOut, ZoomIn, ZoomOut } from 'react-native-reanimated';
 import {
@@ -60,7 +62,7 @@ export default function EnjoyReviewModal({ visible, onDismiss }: EnjoyReviewModa
                     style={[styles.modal, { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }]}
                 >
                     <View style={[styles.iconWrapper, { backgroundColor: isDark ? 'rgba(0, 122, 255, 0.18)' : 'rgba(0, 122, 255, 0.1)' }]}>
-                        <CupStar size={40} color="#007AFF" />
+                        <CupStar width={40} height={40} color="#007AFF" />
                     </View>
 
                     <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
@@ -71,7 +73,7 @@ export default function EnjoyReviewModal({ visible, onDismiss }: EnjoyReviewModa
                     </Text>
 
                     <TouchableOpacity onPress={onYes} activeOpacity={0.85} style={styles.primaryBtn}>
-                        <Like size={20} color="#FFFFFF" />
+                        <Like width={20} height={20} color="#FFFFFF" />
                         <Text style={styles.primaryBtnText}>Yes, love it!</Text>
                     </TouchableOpacity>
 
@@ -86,7 +88,7 @@ export default function EnjoyReviewModal({ visible, onDismiss }: EnjoyReviewModa
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={onNoThanks} activeOpacity={0.7} style={styles.tertiaryBtn}>
-                        <Dislike size={16} color="#8E8E93" />
+                        <Dislike width={16} height={16} color="#8E8E93" />
                         <Text style={styles.tertiaryBtnText}>No thanks</Text>
                     </TouchableOpacity>
                 </Animated.View>

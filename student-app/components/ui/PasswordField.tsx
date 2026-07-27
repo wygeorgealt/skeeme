@@ -2,7 +2,8 @@ import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, useColorScheme, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
 import { Colors } from '@/constants/theme';
-import { Eye, EyeClosed } from '@solar-icons/react-native/Bold';
+import Eye from '@/assets/icons/pikaicons/photo-image-default.svg';
+import EyeClosed from '@/assets/icons/pikaicons/lock-close.svg';
 
 interface PasswordFieldProps {
     value: string;
@@ -40,9 +41,9 @@ export function PasswordField({
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 {showPassword ? (
-                    <EyeClosed size={18} color={placeholderColor} />
+                    <EyeClosed width={18} height={18} color={placeholderColor} />
                 ) : (
-                    <Eye size={18} color={placeholderColor} />
+                    <Eye width={18} height={18} color={placeholderColor} />
                 )}
             </TouchableOpacity>
         </View>

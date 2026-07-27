@@ -11,7 +11,9 @@ import { AppState, AppStateStatus } from 'react-native';
 import ClaimRewardModal from '@/components/ClaimRewardModal';
 import { useState } from 'react';
 
-import { Home, User, CameraAdd } from '@solar-icons/react-native/Bold';
+import Home from '@/assets/icons/pikaicons/home-simple.svg';
+import User from '@/assets/icons/pikaicons/user-default.svg';
+import CameraAdd from '@/assets/icons/pikaicons/photo-image-plus.svg';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, SharedValue } from 'react-native-reanimated';
 
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
@@ -57,24 +59,20 @@ function TabBar({ state, descriptors, navigation }: any) {
                     const iconColor = isFocused ? C.primary : (isDark ? '#6b7280' : '#9ca3af');
                     const label = options.title ?? route.name;
                     
-                    const iconSource = route.name === 'index' 
-                        ? require('@/assets/3dicons/home-3d-icon.png') 
-                        : require('@/assets/3dicons/3dicons-boy-front-color.png');
+                    const IconComp = route.name === 'index' ? Home : User;
 
                     return (
                         <View key={route.key} style={bar.sideTab}>
-                            <AnimatedIcon
-                                source={iconSource}
-                                size={28}
-                                animationType={route.name === 'index' ? 'pop' : 'wobble'}
+                            <TouchableOpacity
                                 onPress={() => {
                                     const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
                                     if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
                                 }}
-                                style={[{ opacity: isFocused ? 1 : 0.4 }, bar.iconPressable]}
+                                style={[{ opacity: isFocused ? 1 : 0.4, alignItems: 'center' }, bar.iconPressable]}
                             >
+                                <IconComp width={28} height={28} color={iconColor} />
                                 <Text style={[bar.tabLabel, { color: iconColor, marginTop: 4 }]}>{label}</Text>
-                            </AnimatedIcon>
+                            </TouchableOpacity>
                         </View>
                     );
                 })}

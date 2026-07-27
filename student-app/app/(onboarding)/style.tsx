@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { CheckCircle } from '@solar-icons/react-native/Bold';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 import { SafeAreaView,  useSafeAreaInsets  } from 'react-native-safe-area-context';
@@ -97,7 +97,7 @@ export default function StyleScreen() {
                                             <Text style={[s.optionDesc, { color: subtextColor }]}>{style.desc}</Text>
                                         </View>
                                         {isSelected && (
-                                            <CheckCircle size={26} color="#007AFF" />
+                                            <CheckCircle width={26} height={26} color="#007AFF" />
                                         )}
                                     </TouchableOpacity>
                                 </Animated.View>

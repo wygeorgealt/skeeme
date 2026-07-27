@@ -8,8 +8,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 import { Swipeable } from 'react-native-gesture-handler';
-import { AltArrowRight, TrashBinTrash, DocumentText, Book, Copy } from '@solar-icons/react-native/Bold';
+import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
+import TrashBinTrash from '@/assets/icons/pikaicons/delete-dustbin-01.svg';
+import DocumentText from '@/assets/icons/pikaicons/file-default.svg';
+import Book from '@/assets/icons/pikaicons/file-02-default.svg';
+import Copy from '@/assets/icons/pikaicons/copy-default.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+import BookmarkDefault from '@/assets/icons/pikaicons/bookmark-default.svg';
 
 import { deleteSavedDeck, deleteSavedQuiz, getSavedDecks, getSavedQuizzes } from '@/lib/offlineSaved';
 
@@ -140,7 +145,7 @@ export default function SavedOfflineDashboard() {
                 ]}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Icon size={14} color={isActive ? (isDark ? '#FFF' : '#000') : C.textTertiary} />
+                  <Icon width={14} height={14} color={isActive ? (isDark ? '#FFF' : '#000') : C.textTertiary} />
                   <Text
                     style={[
                       s.segmentText,
@@ -191,7 +196,7 @@ export default function SavedOfflineDashboard() {
                   onPress={() => handleDelete(item.id, item.title, type === 'quiz' ? 'quiz' : 'flashcard')}
                 >
                   <View style={{ width: 90, height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                    <TrashBinTrash size={22} color="white" />
+                    <TrashBinTrash width={22} height={22} color="white" />
                   </View>
                 </TouchableOpacity>
               </View>
@@ -216,13 +221,13 @@ export default function SavedOfflineDashboard() {
                 >
                   <View style={s.cardBody}>
                     <View style={[s.iconWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>
-                      {type === 'quiz' ? <DocumentText size={20} color={C.primary} /> : <DocumentText size={20} color={C.primary} />}
+                      {type === 'quiz' ? <DocumentText width={20} height={20} color={C.primary} /> : <DocumentText width={20} height={20} color={C.primary} />}
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{item.title}</Text>
                       <Text style={[s.cardSub, { color: C.textSecondary }]} numberOfLines={1}>{item.subtitle}</Text>
                     </View>
-                    <AltArrowRight size={18} color={C.textTertiary} />
+                    <AltArrowRight width={18} height={18} color={C.textTertiary} />
                   </View>
                 </TouchableOpacity>
               </Swipeable>
@@ -233,7 +238,9 @@ export default function SavedOfflineDashboard() {
             return (
               <View style={s.emptyContainer}>
                 <View style={[s.emptyIconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
-                  <AnimatedIcon source={require('@/assets/3dicons/3dicons-bookmark-fav-front-color.png')} size={48} animationType="pop" />
+                  <AnimatedIcon size={48} animationType="pop">
+                      <BookmarkDefault width={40} height={40} color={C.textTertiary} />
+                  </AnimatedIcon>
                 </View>
                 <Text style={[s.emptyTitle, { color: C.text }] }>No saved items yet</Text>
                 <Text style={[s.emptySub, { color: C.textSecondary }]}>

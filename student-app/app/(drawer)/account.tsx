@@ -6,11 +6,19 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { Colors, Radius } from '@/constants/theme';
-import { AltArrowRight, Letter } from '@solar-icons/react-native/Bold';
+import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
+import Letter from '@/assets/icons/pikaicons/envelope-default.svg';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+import Settings01 from '@/assets/icons/pikaicons/settings-01.svg';
+import AwardMedal from '@/assets/icons/pikaicons/award-medal.svg';
+import FolderDefault from '@/assets/icons/pikaicons/folder-default.svg';
+import ClockDefault from '@/assets/icons/pikaicons/clock-default.svg';
+import BookmarkDefault from '@/assets/icons/pikaicons/bookmark-default.svg';
+import File02Default from '@/assets/icons/pikaicons/file-02-default.svg';
+import Troubleshoot from '@/assets/icons/pikaicons/troubleshoot.svg';
 
 // ─── Settings Row Component ─────────────────────────────────────────────────────────────
 function SettingsRow({
@@ -45,7 +53,7 @@ function SettingsRow({
                     thumbColor={Platform.OS === 'ios' ? undefined : '#f4f3f4'}
                 />
             ) : (
-                !!onPress && !destructive && <AltArrowRight size={18} color={C.textTertiary} />
+                !!onPress && !destructive && <AltArrowRight width={18} height={18} color={C.textTertiary} />
             )}
         </TouchableOpacity>
     );
@@ -145,12 +153,13 @@ export default function AccountScreen() {
 
                     <View style={s.headerRight}>
                         <AnimatedIcon
-                            source={require('@/assets/3dicons/3dicons-setting-front-color.png')}
                             size={28}
                             animationType="spin"
                             onPress={() => router.push('/(drawer)/settings' as any)}
-                            style={s.iconBtn}
-                        />
+                            style={[s.iconBtn, {alignItems: 'center', justifyContent: 'center'}]}
+                        >
+                            <Settings01 width={24} height={24} color={C.text} />
+                        </AnimatedIcon>
                     </View>
                 </Animated.View>
 
@@ -179,13 +188,13 @@ export default function AccountScreen() {
                 <Animated.View entering={FadeInDown.duration(400).delay(300)} style={s.gridContainer}>
                     <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#FFF0F0' }]}>
                         <AnimatedIcon 
-                            source={require('@/assets/3dicons/3dicons-fire-iso-color.png')} 
                             size={56} 
                             animationType="pop"
                             onPress={() => {
                                 // Provide empty onPress to enable animation
                             }}
                         >
+                            <AwardMedal width={40} height={40} color="#FF3B30" style={{marginBottom: 8}} />
                             <Text style={[s.gridTitle, { color: '#FF3B30' }]}>{user.streak?.current_streak || 0} Day</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary }]}>Streak</Text>
                         </AnimatedIcon>
@@ -193,12 +202,12 @@ export default function AccountScreen() {
 
                     <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
                         <AnimatedIcon 
-                            source={require('@/assets/3dicons/3dicons-folder-front-color.png')} 
                             size={56} 
                             animationType="wobble"
                             onPress={() => router.push('/(drawer)/flashcards' as any)}
                             style={{ width: '100%', alignItems: 'center' }}
                         >
+                            <FolderDefault width={40} height={40} color={C.primary} style={{marginBottom: 8}} />
                             <Text style={[s.gridTitle, { color: C.text }]}>Flashcards</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary }]}>Decks</Text>
                         </AnimatedIcon>
@@ -206,11 +215,11 @@ export default function AccountScreen() {
 
                     <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
                         <AnimatedIcon 
-                            source={require('@/assets/3dicons/3dicons-clock-front-color.png')} 
                             size={56} 
                             animationType="twist"
                             onPress={() => router.push('/(drawer)/history' as any)}
                         >
+                            <ClockDefault width={40} height={40} color={C.primary} style={{marginBottom: 8}} />
                             <Text style={[s.gridTitle, { color: C.text }]}>History</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary }]}>Past scans</Text>
                         </AnimatedIcon>
@@ -218,11 +227,11 @@ export default function AccountScreen() {
 
                     <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
                         <AnimatedIcon 
-                            source={require('@/assets/3dicons/3dicons-bookmark-fav-front-color.png')} 
                             size={56} 
                             animationType="pop"
                             onPress={() => router.push('/(drawer)/history/saved' as any)}
                         >
+                            <BookmarkDefault width={40} height={40} color="#34C759" style={{marginBottom: 8}} />
                             <Text style={[s.gridTitle, { color: C.text }]}>Saved</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary }]}>Bookmarks</Text>
                         </AnimatedIcon>
@@ -230,11 +239,11 @@ export default function AccountScreen() {
 
                     <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F0F5FF' }]}>
                         <AnimatedIcon 
-                            source={require('@/assets/3dicons/38135f41-3512-406e-9795-abe38150a9b7_removalai_preview.png')} 
                             size={56} 
                             animationType="twist"
                             onPress={() => router.push('/(drawer)/generate' as any)}
                         >
+                            <File02Default width={40} height={40} color="#007AFF" style={{marginBottom: 8}} />
                             <Text style={[s.gridTitle, { color: '#007AFF' }]}>Practice</Text>
                             <Text style={[s.gridSub, { color: '#007AFF' }]}>Quizzes</Text>
                         </AnimatedIcon>
@@ -242,12 +251,12 @@ export default function AccountScreen() {
                     
                     <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
                         <AnimatedIcon 
-                            source={require('@/assets/3dicons/3dicons-boy-front-color.png')} 
                             size={56} 
                             animationType="spin"
                             onPress={() => router.push('/(drawer)/support' as any)}
                             style={{ width: '100%', alignItems: 'center' }}
                         >
+                            <Troubleshoot width={40} height={40} color="#FF9500" style={{marginBottom: 8}} />
                             <Text style={[s.gridTitle, { color: C.text }]}>Support</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary }]}>Help & Feedback</Text>
                         </AnimatedIcon>
@@ -259,10 +268,11 @@ export default function AccountScreen() {
                         activeOpacity={0.8}
                     >
                         <AnimatedIcon 
-                            source={require('@/assets/3dicons/3dicons-setting-front-color.png')} 
                             size={56} 
                             animationType="spin"
-                        />
+                        >
+                            <Settings01 width={40} height={40} color={C.text} />
+                        </AnimatedIcon>
                         <View style={{ flex: 1, marginLeft: 16 }}>
                             <Text style={[s.gridTitle, { color: C.text, textAlign: 'left', marginTop: 0 }]}>Personalize</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary, textAlign: 'left', lineHeight: 18 }]} numberOfLines={3}>{prefSummary}</Text>

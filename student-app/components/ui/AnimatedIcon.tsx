@@ -10,7 +10,7 @@ import Animated, {
 import { Image } from 'expo-image';
 
 interface AnimatedIconProps {
-  source: any;
+  source?: any;
   size?: number;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;

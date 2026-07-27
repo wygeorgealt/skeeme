@@ -14,9 +14,18 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { Text } from '@/components/ui/Text';
-import { CupStar, Refresh, AltArrowRight, Fire } from '@solar-icons/react-native/Bold';
+import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
+import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
+import CupStar from '@/assets/icons/pikaicons/award-medal.svg';
+import MedalRibbonsStar from '@/assets/icons/pikaicons/award-medal.svg';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
+import InfoCircle from '@/assets/icons/pikaicons/troubleshoot.svg';
+import Danger from '@/assets/icons/pikaicons/troubleshoot.svg';
+import Fire from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
 import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import * as ExpoHaptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -104,7 +113,7 @@ export const QuizCelebration: React.FC<QuizCelebrationProps> = ({ score, onShowR
                 <View style={StyleSheet.absoluteFill}>
                     <View style={styles.content}>
                         <Animated.View entering={ZoomIn.delay(800)}>
-                            <meta.icon size={size * 0.25} color={meta.color} />
+                            <meta.icon width={size * 0.25} height={size * 0.25} color={meta.color} />
                         </Animated.View>
                         <View style={styles.scoreContainer}>
                             <Text style={[styles.scoreText, { color: isDark ? '#fff' : '#000' }]}>{score}%</Text>
@@ -118,24 +127,28 @@ export const QuizCelebration: React.FC<QuizCelebrationProps> = ({ score, onShowR
                 <Text style={styles.subtitle}>{meta.subtitle}</Text>
             </Animated.View>
 
-            <Animated.View entering={FadeInUp.delay(1500).springify()} style={styles.actions}>
-                <TouchableOpacity 
-                    onPress={onShowResults}
-                    activeOpacity={0.8}
-                    style={[styles.primaryBtn, { backgroundColor: '#007AFF' }]}
-                >
-                    <Text style={styles.primaryBtnText}>Show Results</Text>
-                    <AltArrowRight size={20} color="#fff" />
-                </TouchableOpacity>
+            <Animated.View entering={FadeInUp.delay(1500).springify()} style={[styles.actions, { gap: 12, paddingHorizontal: 20 }]}>
+                <View style={{ width: '100%' }}>
+                    <AnimatedButton
+                        title="Show Results"
+                        onPress={onShowResults}
+                        type="capsule"
+                        backgroundColor="#007AFF"
+                        shadowColor="#0066D6"
+                        fullWidth
+                    />
+                </View>
 
-                <TouchableOpacity 
-                    onPress={onRetake}
-                    activeOpacity={0.7}
-                    style={[styles.secondaryBtn, { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}
-                >
-                    <Refresh size={18} color={isDark ? '#fff' : '#000'} />
-                    <Text style={[styles.secondaryBtnText, { color: isDark ? '#fff' : '#000' }]}>Retake Quiz</Text>
-                </TouchableOpacity>
+                <View style={{ width: '100%' }}>
+                    <AnimatedButton
+                        title="Retake Quiz"
+                        onPress={onRetake}
+                        type="capsule"
+                        backgroundColor={isDark ? '#2C2C2E' : '#E5E5EA'}
+                        shadowColor={isDark ? '#1C1C1E' : '#D1D1D6'}
+                        fullWidth
+                    />
+                </View>
             </Animated.View>
         </View>
     );

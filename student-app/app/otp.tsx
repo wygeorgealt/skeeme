@@ -7,12 +7,13 @@ import { useAuthStore } from '@/store/authStore';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AltArrowLeft, Letter } from '@solar-icons/react-native/Bold';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import Letter from '@/assets/icons/pikaicons/envelope-default.svg';
 
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import RevenueCatUI from 'react-native-purchases-ui';
-import { IosPillButton } from '@/components/ui/IosPillButton';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 
 /* Animated re-trigger on focus */
 
@@ -164,7 +165,7 @@ export default function OtpScreen() {
                 <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity onPress={() => router.back()}>
                         <View style={[s.backBtn, { backgroundColor: C.card }]}>
-                            <AltArrowLeft size={24} color={C.text} />
+                            <AltArrowLeft width={24} height={24} color={C.text} />
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -176,7 +177,7 @@ export default function OtpScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <Animated.View key={`icon-${animKey}`} entering={FadeInUp.duration(500)} style={[s.iconCircle, { backgroundColor: C.primaryLight }]}>
-                        <Letter size={32} color={C.primary} />
+                        <Letter width={32} height={32} color={C.primary} />
                     </Animated.View>
 
                     <Animated.View key={`title-${animKey}`} entering={FadeInDown.delay(80).duration(400)}>
@@ -238,8 +239,8 @@ export default function OtpScreen() {
 
                     <View style={{ height: Spacing.xl }} />
 
-                    <IosPillButton
-                        label="Verify Code"
+                    <AnimatedButton
+                        title="Verify Code"
                         onPress={() => {
                             const fullCode = code.join('');
                             if (fullCode.length < 6) {
@@ -249,8 +250,10 @@ export default function OtpScreen() {
                             verifyCode(fullCode);
                         }}
                         loading={isLoading}
+                        type="capsule"
+                        backgroundColor="#007AFF"
+                        shadowColor="#0066D6"
                         fullWidth
-                        size="lg"
                     />
                 </ScrollView>
             </KeyboardAvoidingView>

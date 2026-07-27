@@ -9,7 +9,8 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Cloud, CloudCross } from '@solar-icons/react-native/Bold';
+import Cloud from '@/assets/icons/pikaicons/upload-up.svg';
+import CloudCross from '@/assets/icons/pikaicons/download-down.svg';
 
 
 export function NetworkStatus() {
@@ -61,9 +62,9 @@ export function NetworkStatus() {
         <Animated.View style={[styles.container, animatedStyle, { paddingHorizontal: 16 }]}>
             <View style={styles.content}>
                 {isConnected ? (
-                    <Cloud size={18} color="white" />
+                    <Cloud width={18} height={18} color="white" />
                 ) : (
-                    <CloudCross size={18} color="white" />
+                    <CloudCross width={18} height={18} color="white" />
                 )}
 
                 <Text style={styles.text}>

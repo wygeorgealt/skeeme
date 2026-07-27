@@ -9,7 +9,7 @@ import { SafeAreaView,  useSafeAreaInsets  } from 'react-native-safe-area-contex
 import { Colors } from '@/constants/theme';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
-import { Checklist } from '@solar-icons/react-native/Bold';
+import Checklist from '@/assets/icons/pikaicons/check-tick-square.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 export default function BirthdayScreen() {
@@ -97,7 +97,7 @@ export default function BirthdayScreen() {
                         )}
 
                         <View style={s.infoRow}>
-                            <Checklist size={20} color={C.textTertiary} />
+                            <Checklist width={20} height={20} color={C.textTertiary} />
                             <Text style={[s.infoText, { color: C.textSecondary }]}>
                                 We’ll send gentle nudges before the day.
                             </Text>

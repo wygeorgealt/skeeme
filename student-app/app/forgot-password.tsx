@@ -5,8 +5,8 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
-import { IosPillButton } from '@/components/ui/IosPillButton';
-import { AltArrowLeft } from '@solar-icons/react-native/Bold';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -81,7 +81,7 @@ export default function ForgotPasswordScreen() {
                         style={[s.backBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     >
-                        <AltArrowLeft size={24} color={C.text} />
+                        <AltArrowLeft width={24} height={24} color={C.text} />
                     </TouchableOpacity>
                 </Animated.View>
 
@@ -120,13 +120,15 @@ export default function ForgotPasswordScreen() {
                     <View style={{ height: Spacing.xl }} />
 
                     <Animated.View key={`cta-${animKey}`} entering={FadeInDown.delay(220).duration(400)}>
-                        <IosPillButton
-                            label="Send Reset Code"
-                        onPress={handleSend}
-                        loading={isLoading}
-                        fullWidth
-                        size="lg"
-                    />
+                        <AnimatedButton
+                            title="Send Reset Code"
+                            onPress={handleSend}
+                            loading={isLoading}
+                            type="capsule"
+                            backgroundColor="#007AFF"
+                            shadowColor="#0066D6"
+                            fullWidth
+                        />
                     </Animated.View>
                 </ScrollView>
             </KeyboardAvoidingView>

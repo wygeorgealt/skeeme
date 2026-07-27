@@ -12,7 +12,7 @@ import Animated, {
     useAnimatedStyle,
 } from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { Fire } from '@solar-icons/react-native/Bold';
+import Fire from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
 import { Text } from './ui/Text';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -134,7 +134,7 @@ export const StreakAnimation: React.FC<StreakAnimationProps> = ({
                 <View style={StyleSheet.absoluteFill}>
                     <View style={styles.content}>
                         <Animated.View style={fireIconStyle}>
-                            <Fire size={size * 0.35} color="#FF4500" />
+                            <Fire width={size * 0.35} height={size * 0.35} color="#FF4500" />
                         </Animated.View>
                         
                         <Animated.View style={[styles.countContainer, countStyle]}>

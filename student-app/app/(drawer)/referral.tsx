@@ -1,14 +1,18 @@
 import { Text } from '@/components/ui/Text';
 import { useFocusEffect } from 'expo-router';
 import { View, ScrollView, TouchableOpacity, useColorScheme, StyleSheet, Share } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Stack } from 'expo-router';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useState, useCallback, useEffect } from 'react';
-import { AltArrowLeft } from '@solar-icons/react-native/Bold';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+import Gift from '@/assets/icons/pikaicons/gift-default.svg';
+import CopyDefault from '@/assets/icons/pikaicons/copy-default.svg';
+import SendPlane from '@/assets/icons/pikaicons/send-plane-horizontal.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import Animated, {
@@ -100,7 +104,7 @@ export default function ReferralScreen() {
                     activeOpacity={0.7}
                     style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                 >
-                    <AltArrowLeft size={24} color={isDark ? 'white' : '#1e293b'} />
+                    <AltArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <View style={s.headerTextContainer}>
                     <Text style={[s.headerTitle, { color: C.text }]}>Earn Rewards</Text>
@@ -116,7 +120,9 @@ export default function ReferralScreen() {
             >
                 {/* Hero Code Card */}
                 <Animated.View key={`hero-${animKey}`} entering={FadeInUp.duration(500)} style={[s.heroCard, { backgroundColor: C.primary }]}>
-                    <AnimatedIcon source={require('@/assets/3dicons/3dicons-gift-dynamic-color.png')} size={64} animationType="pop" />
+                    <AnimatedIcon size={64} animationType="pop">
+                        <Gift width={56} height={56} color="#FF9500" />
+                    </AnimatedIcon>
                     <Text style={[s.heroLabel, { marginTop: 16 }]}>Your Referral Code</Text>
                     {loadingStats ? (
                         <LoadingSpinner size={20} color="rgba(255,255,255,0.7)" />
@@ -138,7 +144,9 @@ export default function ReferralScreen() {
                                     { backgroundColor: copied ? 'rgba(52, 199, 89, 0.3)' : 'rgba(255,255,255,0.2)' },
                                 ]}
                             >
-                                <AnimatedIcon source={require('@/assets/3dicons/3dicons-copy-front-color.png')} size={24} />
+                                <AnimatedIcon size={24}>
+                                    <CopyDefault width={24} height={24} color="#FFF" />
+                                </AnimatedIcon>
                                 <Text style={s.btnText}>{copied ? 'Copied!' : 'Copy'}</Text>
                             </TouchableOpacity>
                         </Animated.View>
@@ -148,7 +156,9 @@ export default function ReferralScreen() {
                             activeOpacity={0.8}
                             style={[s.actionBtn, s.shareActionBtn, { backgroundColor: 'rgba(255,255,255,0.95)' }]}
                         >
-                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-link-front-color.png')} size={24} />
+                            <AnimatedIcon size={24}>
+                                <SendPlane width={24} height={24} color={C.primary} />
+                            </AnimatedIcon>
                             <Text style={[s.btnText, { color: C.primary, fontWeight: '800' }]}>Share</Text>
                         </TouchableOpacity>
                     </View>
@@ -159,9 +169,16 @@ export default function ReferralScreen() {
                     {statsError ? (
                         <View style={{ flex: 1, alignItems: 'center', gap: 12, paddingVertical: 20 }}>
                             <Text style={{ color: C.textSecondary, fontSize: 14, fontWeight: '500' }}>Couldn't load your stats.</Text>
-                            <TouchableOpacity onPress={loadStats} style={{ paddingHorizontal: 20, paddingVertical: 10, backgroundColor: C.primary, borderRadius: 12 }}>
-                                <Text style={{ color: 'white', fontWeight: '700', fontSize: 14 }}>Retry</Text>
-                            </TouchableOpacity>
+                            <View style={{ width: 120 }}>
+                                <AnimatedButton
+                                    title="Retry"
+                                    onPress={loadStats}
+                                    type="capsule"
+                                    backgroundColor={C.primary}
+                                    shadowColor="#0066D6"
+                                    fullWidth
+                                />
+                            </View>
                         </View>
                     ) : (
                         <>

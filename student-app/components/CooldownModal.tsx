@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/Text';
 import React from 'react';
 import { View, TouchableOpacity, useColorScheme, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
-import { RoundArrowUp } from '@solar-icons/react-native/Bold';
+import RoundArrowUp from '@/assets/icons/pikaicons/arrow-up.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';

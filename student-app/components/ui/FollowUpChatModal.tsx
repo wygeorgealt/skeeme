@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, StyleSheet, KeyboardAvoidingView, Platform, useColorScheme, ActivityIndicator } from 'react-native';
-import { AltArrowLeft, AltArrowRight } from '@solar-icons/react-native/Bold';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
 import { useAuthStore } from '@/store/authStore';
 import { streamScanFollowUpChat } from '@/lib/aiStream';
 import { Colors } from '@/constants/theme';
@@ -110,7 +111,7 @@ export function FollowUpChatModal({ visible, onClose, scanContext, provider }: F
             <KeyboardAvoidingView style={[s.container, { backgroundColor: C.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                 <View style={[s.header, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
                     <TouchableOpacity onPress={handleClose} style={s.backBtn}>
-                        <AltArrowLeft size={24} color={C.text} />
+                        <AltArrowLeft width={24} height={24} color={C.text} />
                     </TouchableOpacity>
                     <Text style={[s.title, { color: C.text }]}>Ask a Follow-up</Text>
                     <View style={s.backBtn} />
@@ -180,7 +181,7 @@ export function FollowUpChatModal({ visible, onClose, scanContext, provider }: F
                                 disabled={!input.trim() || isLoading}
                                 style={[s.sendBtn, (!input.trim() || isLoading) && { opacity: 0.5 }]}
                             >
-                                <AltArrowRight size={24} color={C.primary} />
+                                <AltArrowRight width={24} height={24} color={C.primary} />
                             </TouchableOpacity>
                         </View>
                     )}

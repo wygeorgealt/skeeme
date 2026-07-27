@@ -4,8 +4,11 @@ import { View, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet
 import { api } from '@/lib/api';
 import { Question, TheoryResult } from './QuizTypes';
 import { MathText } from '../ui/MathText';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { Colors, Spacing, Radius } from '@/constants/theme';
-import { DangerTriangle, Star, Stars } from '@solar-icons/react-native/Bold';
+import DangerTriangle from '@/assets/icons/pikaicons/troubleshoot.svg';
+import Star from '@/assets/icons/pikaicons/award-medal.svg';
+import Stars from '@/assets/icons/pikaicons/award-medal.svg';
 
 export function TheoryCard({
     q, qi, onGraded,
@@ -73,21 +76,18 @@ export function TheoryCard({
                             editable={!grading}
                         />
 
-                        <TouchableOpacity
-                            onPress={handleSubmit}
-                            disabled={grading || answer.trim().length === 0}
-                            activeOpacity={0.8}
-                            style={[s.submitBtn, { backgroundColor: grading ? (isDark ? '#2C2C2E' : '#E5E5EA') : '#007AFF', borderRadius: 100, height: 64 }]}
-                        >
-                            {grading ? (
-                                <ActivityIndicator color={C.textTertiary} size="small" />
-                            ) : (
-                                <>
-                                    <Stars size={20} color="#fff" />
-                                    <Text style={[s.submitBtnText, { fontSize: 18, fontWeight: '800' }]}>Grade Answer</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
+                        <View style={{ width: '100%', marginTop: 8 }}>
+                            <AnimatedButton
+                                title="Grade Answer"
+                                onPress={handleSubmit}
+                                disabled={grading || answer.trim().length === 0}
+                                loading={grading}
+                                type="capsule"
+                                backgroundColor="#007AFF"
+                                shadowColor="#0066D6"
+                                fullWidth
+                            />
+                        </View>
                     </View>
                 )}
             </View>

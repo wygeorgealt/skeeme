@@ -17,18 +17,16 @@ import { MathText } from '@/components/ui/MathText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/authStore';
 
-import { 
-    CheckCircle, 
-    CloseCircle, 
-    MagicStick, 
-    Lightbulb, 
-    AltArrowLeft, 
-    DocumentText, 
-    Share,
-    Fire,
-    CupStar,
-    MedalRibbonStar
-} from '@solar-icons/react-native/Bold';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
+import CloseCircle from '@/assets/icons/pikaicons/multiple-cross-cancel-circle.svg';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import DocumentText from '@/assets/icons/pikaicons/file-default.svg';
+import Share from '@/assets/icons/pikaicons/send-plane-horizontal.svg';
+import Fire from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import CupStar from '@/assets/icons/pikaicons/award-medal.svg';
+import MedalRibbonStar from '@/assets/icons/pikaicons/award-medal.svg';
+import MagicStick from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import Lightbulb from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
 import { BlurView } from 'expo-blur';
 import Animated, { FadeInDown, FadeInUp, ZoomIn, useSharedValue, useAnimatedStyle, withSpring, withDelay } from 'react-native-reanimated';
 
@@ -90,9 +88,9 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
             <View style={s.qHeader}>
                 <View style={[s.qIcon, q.is_correct ? s.bgEmerald10 : s.bgRed10]}>
                     {q.is_correct ? (
-                        <CheckCircle size={18} color="#10b981" />
+                        <CheckCircle width={18} height={18} color="#10b981" />
                     ) : (
-                        <CloseCircle size={18} color="#ef4444" />
+                        <CloseCircle width={18} height={18} color="#ef4444" />
                     )}
                 </View>
                 <View style={s.flex1}>
@@ -123,7 +121,7 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                         {q.explanation && (
                             <View style={[s.feedbackBox, isDark ? s.bgEmeraldDark : s.bgEmeraldLight, { marginTop: 24 }]}>
                                 <View style={s.feedbackHeader}>
-                                    <MagicStick size={14} color="#10b981" />
+                                    <MagicStick width={14} height={14} color="#10b981" />
                                     <Text style={s.feedbackTitle}>AI Feedback</Text>
                                 </View>
                                 <MathText
@@ -158,8 +156,8 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                             return (
                                 <View key={i} style={[s.optionRow, bg, borderColor]}>
                                     <Text style={[s.optionText, text]}>{opt}</Text>
-                                    {icon === 'checkmark-circle' && <CheckCircle size={18} color="#10b981" />}
-                                    {icon === 'close-circle' && <CloseCircle size={18} color="#ef4444" />}
+                                    {icon === 'checkmark-circle' && <CheckCircle width={18} height={18} color="#10b981" />}
+                                    {icon === 'close-circle' && <CloseCircle width={18} height={18} color="#ef4444" />}
                                 </View>
                             );
                         })}
@@ -167,7 +165,7 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
                         {q.explanation && (
                             <View style={[s.feedbackBox, isDark ? s.bgEmeraldDark : s.bgEmeraldLight]}>
                                 <View style={s.feedbackHeader}>
-                                    <Lightbulb size={14} color="#10b981" />
+                                    <Lightbulb width={14} height={14} color="#10b981" />
                                     <Text style={s.feedbackTitle}>Explanation</Text>
                                 </View>
                                 <MathText
@@ -249,7 +247,7 @@ export default function QuizHistoryDetailScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <View style={[s.topControls, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity onPress={() => router.back()} style={s.backBtnSkeleton}>
-                    <AltArrowLeft size={24} color="white" />
+                    <AltArrowLeft width={24} height={24} color="white" />
                 </TouchableOpacity>
             </View>
             <View style={s.loadingHeader}>
@@ -305,7 +303,7 @@ export default function QuizHistoryDetailScreen() {
                         activeOpacity={0.7}
                         style={[s.menuBtn, isDark ? s.bgWhite10 : s.bgSlate100]}
                     >
-                        <AltArrowLeft size={24} color={isDark ? 'white' : 'black'} />
+                        <AltArrowLeft width={24} height={24} color={isDark ? 'white' : 'black'} />
                     </TouchableOpacity>
                     <Text style={[s.headerText, isDark ? s.textWhite : s.textSlate900]}>Quiz Results</Text>
                     <View style={s.size12} />
@@ -317,7 +315,7 @@ export default function QuizHistoryDetailScreen() {
                         entering={ZoomIn.duration(800).springify()}
                         style={[s.scoreIconBox, isDark ? s.bgWhite10 : s.bgSlate100]}
                     >
-                        <remark.icon size={36} color="#007AFF" />
+                        <remark.icon width={36} height={36} color="#007AFF" />
                     </Animated.View>
                     <Animated.Text entering={FadeInDown.delay(300)} style={s.scoreTag}>{remark.title}</Animated.Text>
                     <Animated.Text entering={FadeInDown.delay(500)} style={[s.scoreText, isDark ? s.textWhite : s.textSlate900]}>
@@ -384,7 +382,7 @@ export default function QuizHistoryDetailScreen() {
                 >
                     {isExporting ? <LoadingSpinner size={24} color={isDark ? 'black' : 'white'} /> : (
                         <View style={s.exportBtnContent}>
-                            <DocumentText size={20} color={isDark ? 'black' : 'white'} />
+                            <DocumentText width={20} height={20} color={isDark ? 'black' : 'white'} />
                             <Text style={[s.exportBtnText, isDark ? s.textBlack : s.textWhite]}>Save Report</Text>
                         </View>
                     )}
@@ -407,7 +405,7 @@ export default function QuizHistoryDetailScreen() {
                     style={s.shareBtn}
                 >
                     {isSharing ? <LoadingSpinner size={24} color="white" /> : (
-                        <Share size={20} color="white" />
+                        <Share width={20} height={20} color="white" />
                     )}
                 </TouchableOpacity>
             </BlurView>

@@ -8,7 +8,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
 import { SafeAreaView,  useSafeAreaInsets  } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
-import { Bell } from '@solar-icons/react-native/Bold';
+import Bell from '@/assets/icons/pikaicons/notification-bell-on.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 export default function NotificationScreen() {
@@ -82,7 +82,7 @@ export default function NotificationScreen() {
                     >
                         <View style={s.iosTopRow}>
                             <View style={[s.appDot, { backgroundColor: '#007AFF' }]}>
-                                <Bell size={12} color="#FFFFFF" />
+                                <Bell width={12} height={12} color="#FFFFFF" />
                             </View>
                             <Text style={[s.appName, { color: C.textSecondary }]}>Skeeme</Text>
                             <Text style={[s.timeText, { color: C.textSecondary }]}>now</Text>

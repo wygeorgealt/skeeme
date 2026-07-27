@@ -1,7 +1,9 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native';
+import { View, useColorScheme, StyleSheet } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { Stack, router } from 'expo-router';
-import { Compass, Home } from '@solar-icons/react-native/Bold';
+import Compass from '@/assets/icons/pikaicons/map.svg';
+import Home from '@/assets/icons/pikaicons/home-simple.svg';
 
 export default function NotFoundScreen() {
     return (
@@ -9,7 +11,7 @@ export default function NotFoundScreen() {
             <Stack.Screen options={{ title: 'Not Found', headerShown: false }} />
 
             <View style={s.iconBox}>
-                <Compass size={40} color="#6366f1" />
+                <Compass width={40} height={40} color="#6366f1" />
             </View>
 
             <Text style={s.title}>404</Text>
@@ -17,14 +19,13 @@ export default function NotFoundScreen() {
                 This page doesn&apos;t exist. You may have followed a broken link.
             </Text>
 
-            <TouchableOpacity
+            <AnimatedButton
+                title="Go Home"
                 onPress={() => router.replace('/(drawer)')}
-                style={s.button}
-                activeOpacity={0.8}
-            >
-                <Home size={18} color="white" />
-                <Text style={s.buttonText}>Go Home</Text>
-            </TouchableOpacity>
+                type="capsule"
+                backgroundColor="#4f46e5"
+                shadowColor="#4338ca"
+            />
         </View>
     );
 }

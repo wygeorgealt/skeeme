@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IosPillButton } from '@/components/ui/IosPillButton';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
-import { AltArrowLeft } from '@solar-icons/react-native/Bold';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 
 import { StatusBar } from 'expo-status-bar';
 import { posthog, isPostHogEnabled } from '@/lib/posthog';
@@ -127,7 +127,7 @@ export default function SignupScreen() {
                         style={[s.backBtn, { backgroundColor: C.card }]}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     >
-                        <AltArrowLeft size={24} color={C.text} />
+                        <AltArrowLeft width={24} height={24} color={C.text} />
                     </TouchableOpacity>
                 </View>
 

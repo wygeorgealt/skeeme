@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView,  useSafeAreaInsets  } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { CheckCircle } from '@solar-icons/react-native/Bold';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 import { Colors } from '@/constants/theme';
@@ -91,7 +91,7 @@ export default function FieldScreen() {
                                         </View>
                                         <Text style={[s.optionLabel, { color: textColor }]}>{field.label}</Text>
                                         {isSelected && (
-                                            <CheckCircle size={24} color="#007AFF" />
+                                            <CheckCircle width={24} height={24} color="#007AFF" />
                                         )}
                                     </TouchableOpacity>
                                 </Animated.View>

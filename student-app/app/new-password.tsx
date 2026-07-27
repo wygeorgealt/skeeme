@@ -7,9 +7,10 @@ import { StatusBar } from 'expo-status-bar';
 import { PasswordField } from '@/components/ui/PasswordField';
 import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CloseCircle, Key } from '@solar-icons/react-native/Bold';
+import CloseCircle from '@/assets/icons/pikaicons/multiple-cross-cancel-circle.svg';
+import Key from '@/assets/icons/pikaicons/key-left.svg';
 
-import { IosPillButton } from '@/components/ui/IosPillButton';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 
 export default function NewPasswordScreen() {
     const scheme = useColorScheme();
@@ -82,7 +83,7 @@ export default function NewPasswordScreen() {
                 <View style={[s.header, { paddingTop: insets.top + 8 }]}>
                     <TouchableOpacity onPress={() => router.replace('/login')}>
                         <View style={[s.backBtn, { backgroundColor: C.card }]}>
-                            <CloseCircle size={24} color={C.text} />
+                            <CloseCircle width={24} height={24} color={C.text} />
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -93,7 +94,7 @@ export default function NewPasswordScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={[s.iconCircle, { backgroundColor: C.primaryLight }]}>
-                        <Key size={32} color={C.primary} />
+                        <Key width={32} height={32} color={C.primary} />
                     </View>
 
                     <Text style={[s.title, { color: C.text }]}>Security</Text>
@@ -150,12 +151,14 @@ export default function NewPasswordScreen() {
 
                     <View style={{ height: Spacing.xl }} />
 
-                    <IosPillButton
-                        label="Reset Password"
+                    <AnimatedButton
+                        title="Reset Password"
                         onPress={handleReset}
                         loading={isLoading}
+                        type="capsule"
+                        backgroundColor="#007AFF"
+                        shadowColor="#0066D6"
                         fullWidth
-                        size="lg"
                     />
                 </ScrollView>
             </KeyboardAvoidingView>

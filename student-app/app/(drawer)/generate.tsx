@@ -32,26 +32,24 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QuizCelebration } from '@/components/quiz/QuizCelebration';
 
-import {
-    Leaf,
-    LightbulbBolt,
-    Fire,
-    List,
-    DocumentText,
-    UsersGroupRounded,
-    CheckCircle,
-    CloseCircle,
-    Lightbulb,
-    Stopwatch,
-    AltArrowRight,
-    AltArrowLeft,
-    Share,
-    InfoCircle,
-    Danger,
-    CloudUpload,
-    FolderOpen,
-    CupStar,
-} from '@solar-icons/react-native/Bold';
+import Leaf from '@/assets/icons/pikaicons/award-medal.svg';
+import LightbulbBolt from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import Fire from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import List from '@/assets/icons/pikaicons/sidebar-menu.svg';
+import DocumentText from '@/assets/icons/pikaicons/file-default.svg';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
+import CloseCircle from '@/assets/icons/pikaicons/multiple-cross-cancel-circle.svg';
+import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import Share from '@/assets/icons/pikaicons/send-plane-horizontal.svg';
+import InfoCircle from '@/assets/icons/pikaicons/troubleshoot.svg';
+import Danger from '@/assets/icons/pikaicons/troubleshoot.svg';
+import CloudUpload from '@/assets/icons/pikaicons/upload-up.svg';
+import CupStar from '@/assets/icons/pikaicons/award-medal.svg';
+import UsersGroupRounded from '@/assets/icons/pikaicons/user-circle.svg';
+import Lightbulb from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import Stopwatch from '@/assets/icons/pikaicons/clock-default.svg';
+import FolderOpen from '@/assets/icons/pikaicons/folder-default.svg';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
@@ -708,7 +706,7 @@ export default function GenerateQuizScreen() {
                         activeOpacity={0.7} 
                         style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                     >
-                        <AltArrowLeft size={24} color={isDark ? 'white' : '#0f172a'} />
+                        <AltArrowLeft width={24} height={24} color={isDark ? 'white' : '#0f172a'} />
                     </TouchableOpacity>
                     <Text style={[sf.headerTitle, { color: C.text }]}>
                         {isLoading ? (loadingStage || 'Skeeming...') : 'Build Quiz'}
@@ -767,7 +765,7 @@ export default function GenerateQuizScreen() {
                                     </View>
                                 ) : selectedFile ? (
                                     <>
-                                        <FolderOpen size={32} color={C.primary} />
+                                        <FolderOpen width={32} height={32} color={C.primary} />
                                         <Text style={[sf.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
                                         {isExtracting ? (
                                             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
@@ -780,7 +778,7 @@ export default function GenerateQuizScreen() {
                                     </>
                                 ) : (
                                     <>
-                                        <CloudUpload size={32} color={C.textTertiary} />
+                                        <CloudUpload width={32} height={32} color={C.textTertiary} />
                                         <Text style={[sf.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
                                         <Text style={[sf.uploadSub, { color: C.textTertiary }]}>Maximum 5MB</Text>
                                     </>
@@ -904,7 +902,7 @@ export default function GenerateQuizScreen() {
                             onPress={() => { setIsLoading(false); }}
                             style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}
                         >
-                            <CloseCircle size={24} color={C.text} />
+                            <CloseCircle width={24} height={24} color={C.text} />
                         </TouchableOpacity>
                         <View style={{ alignItems: 'center' }}>
                             <Text style={{ fontSize: 14, fontWeight: '800', color: C.primary, textTransform: 'uppercase', letterSpacing: 1 }}>{loadingStage || 'Skeeming...'}</Text>
@@ -994,7 +992,7 @@ export default function GenerateQuizScreen() {
                     
                     {timerEnabled && timeLeft > 0 && (
                         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? 'rgba(255,59,48,0.1)' : '#FFF5F5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 }}>
-                            <Stopwatch size={14} color={timeLeft < 60 ? '#FF3B30' : '#8E8E93'} />
+                            <Stopwatch width={14} height={14} color={timeLeft < 60 ? '#FF3B30' : '#8E8E93'} />
                             <Text style={[{ fontSize: 13, fontWeight: '700', marginLeft: 4 }, timeLeft < 60 ? { color: '#FF3B30' } : { color: '#8E8E93' }]}>
                                 {formatTime(timeLeft)}
                             </Text>
@@ -1032,13 +1030,13 @@ export default function GenerateQuizScreen() {
                                         textColor = '#34C759';
                                         letterBg = 'rgba(52,199,89,0.1)';
                                         letterColor = '#34C759';
-                                        icon = <CheckCircle size={20} color="#34C759" />;
+                                        icon = <CheckCircle width={20} height={20} color="#34C759" />;
                                     } else if (isSelected && !isCorrectOpt) {
                                         borderColor = '#FF3B30';
                                         textColor = '#FF3B30';
                                         letterBg = 'rgba(255,59,48,0.1)';
                                         letterColor = '#FF3B30';
-                                        icon = <CloseCircle size={20} color="#FF3B30" />;
+                                        icon = <CloseCircle width={20} height={20} color="#FF3B30" />;
                                     }
                                 } else if (isSelected) {
                                     borderColor = '#007AFF';
@@ -1116,7 +1114,7 @@ export default function GenerateQuizScreen() {
                             <View style={{ marginBottom: 20 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
                                     <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: isCorrect ? 'rgba(52,199,89,0.1)' : 'rgba(255,59,48,0.1)', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Lightbulb size={18} color={isCorrect ? '#34C759' : '#FF3B30'} />
+                                        <Lightbulb width={18} height={18} color={isCorrect ? '#34C759' : '#FF3B30'} />
                                     </View>
                                     <Text style={{ marginLeft: 10, fontSize: 18, fontWeight: '800', color: C.text }}>
                                         {isCorrect ? 'Spot on!' : 'Not quite!'}
@@ -1129,28 +1127,18 @@ export default function GenerateQuizScreen() {
                         );
                     })()}
 
-                    <TouchableOpacity
-                        disabled={!hasSelectedAction}
-                        onPress={handleNextPress}
-                        activeOpacity={0.8}
-                        style={{
-                            width: '100%', height: 64, borderRadius: 100, 
-                            backgroundColor: hasSelectedAction ? '#007AFF' : (isDark ? '#2C2C2E' : '#E5E5EA'),
-                            alignItems: 'center', justifyContent: 'center',
-                            shadowColor: '#007AFF',
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: hasSelectedAction ? 0.3 : 0,
-                            shadowRadius: 12,
-                        }}
-                    >
-                        {isSavingHistory ? (
-                            <LoadingSpinner size={24} color="white" />
-                        ) : (
-                            <Text style={{ color: hasSelectedAction ? 'white' : '#8E8E93', fontWeight: '800', fontSize: 18, letterSpacing: -0.2 }}>
-                                {isTheory ? (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question') : (!isRevealed ? 'Check Answer' : (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question'))}
-                            </Text>
-                        )}
-                    </TouchableOpacity>
+                    <View style={{ width: '100%' }}>
+                        <AnimatedButton
+                            title={isTheory ? (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question') : (!isRevealed ? 'Check Answer' : (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question'))}
+                            onPress={handleNextPress}
+                            disabled={!hasSelectedAction}
+                            loading={isSavingHistory}
+                            type="capsule"
+                            backgroundColor={hasSelectedAction ? '#007AFF' : (isDark ? '#2C2C2E' : '#E5E5EA')}
+                            shadowColor={hasSelectedAction ? '#0066D6' : (isDark ? '#1C1C1E' : '#D1D1D6')}
+                            fullWidth
+                        />
+                    </View>
                 </BlurView>
             </View>
         );
@@ -1171,7 +1159,7 @@ export default function GenerateQuizScreen() {
                 {/* Score Header Glass Card */}
                 <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.resultsHeader}>
                     <View style={s.resultsIconBox}>
-                        <remark.icon size={36} color={C.primary} />
+                        <remark.icon width={36} height={36} color={C.primary} />
                     </View>
                     <Text style={[s.resultsTitle, { color: C.primary }]}>{remark.title}</Text>
                     <Text style={[s.scoreValue, { color: C.text }]}>{percentage}%</Text>
@@ -1180,11 +1168,11 @@ export default function GenerateQuizScreen() {
                     {/* Meta Info */}
                     <View style={s.resultsMeta}>
                         <View style={s.metaCard}>
-                            <CheckCircle size={16} color="#4ADE80" />
+                            <CheckCircle width={16} height={16} color="#4ADE80" />
                             <Text style={[s.metaText, { color: C.textSecondary }]}>{correctCount} OK</Text>
                         </View>
                         <View style={s.metaCard}>
-                            <Stopwatch size={16} color={C.primary} />
+                            <Stopwatch width={16} height={16} color={C.primary} />
                             <Text style={[s.metaText, { color: C.textSecondary }]}>
                                 {timerEnabled ? formatTime(((parseInt(timerMinutes) || 10) * 60) - timeLeft) : 'No Timer'}
                             </Text>
@@ -1211,9 +1199,9 @@ export default function GenerateQuizScreen() {
                             >
                                 <View style={[s.reviewStatusBox, { backgroundColor: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }]}>
                                     {isCorrect ? (
-                                        <CheckCircle size={18} color="#10b981" />
+                                        <CheckCircle width={18} height={18} color="#10b981" />
                                     ) : (
-                                        <CloseCircle size={18} color="#ef4444" />
+                                        <CloseCircle width={18} height={18} color="#ef4444" />
                                     )}
                                 </View>
                                 <View style={{ flex: 1 }}>
@@ -1223,7 +1211,7 @@ export default function GenerateQuizScreen() {
                                     </Text>
                                 </View>
                                 {canExplain && (
-                                    <AltArrowRight size={16} color={C.textTertiary} />
+                                    <AltArrowRight width={16} height={16} color={C.textTertiary} />
                                 )}
                             </BlurView>
                         </TouchableOpacity>
@@ -1268,7 +1256,7 @@ export default function GenerateQuizScreen() {
                             <LoadingSpinner size={24} color={C.primary} strokeWidth={3} />
                         ) : (
                             <>
-                                <Share size={18} color={C.text} />
+                                <Share width={18} height={18} color={C.text} />
                                 <Text style={[s.actionBtnText, { color: C.text }]}>Share</Text>
                             </>
                         )}
@@ -1285,7 +1273,7 @@ export default function GenerateQuizScreen() {
                                 <LoadingSpinner size={24} color="white" strokeWidth={3} />
                             ) : (
                                 <>
-                                    <DocumentText size={18} color="white" />
+                                    <DocumentText width={18} height={18} color="white" />
                                     <Text style={s.exportBtnText}>Export</Text>
                                 </>
                             )}
@@ -1307,7 +1295,7 @@ export default function GenerateQuizScreen() {
                         alignItems: 'center',
                         gap: 12,
                     }}>
-                        <Danger size={18} color="#f59e0b" />
+                        <Danger width={18} height={18} color="#f59e0b" />
                         <Text style={{ flex: 1, fontSize: 13, fontWeight: '500', color: isDark ? '#fcd34d' : '#92400e', lineHeight: 20 }}>
                             Quiz completed, but we couldn’t save it to your history. Your results won’t appear in Study History.
                         </Text>
@@ -1323,81 +1311,68 @@ export default function GenerateQuizScreen() {
                     </View>
                 )}
 
-                <TouchableOpacity
-                    disabled={isSavingOffline || isOfflineSaved || questions.length === 0}
-                    onPress={async () => {
-                        if (questions.length === 0) {
-                            Alert.alert("No Content", "There are no questions to save.");
-                            return;
-                        }
-                        if (isSavingOffline || isOfflineSaved) return;
-                        try {
-                            setSaveError(false);
-                            setIsSavingOffline(true);
-                            const deckTopic = mode === 'topic' ? topic : (selectedFile?.name || 'File Upload');
+                <View style={{ width: '100%', marginTop: 4 }}>
+                    <AnimatedButton
+                        title={isSavingOffline ? 'Saving…' : isOfflineSaved ? 'Saved for offline' : 'Save for offline'}
+                        onPress={async () => {
+                            if (questions.length === 0) {
+                                Alert.alert("No Content", "There are no questions to save.");
+                                return;
+                            }
+                            if (isSavingOffline || isOfflineSaved) return;
+                            try {
+                                setSaveError(false);
+                                setIsSavingOffline(true);
+                                const deckTopic = mode === 'topic' ? topic : (selectedFile?.name || 'File Upload');
 
-                            await saveOfflineQuiz({
-                                id: `quiz_${Date.now().toString()}`,
-                                mode,
-                                topic: deckTopic,
-                                difficulty,
-                                percentage,
-                                questions: questions.map((q, qi) => ({
-                                    id: qi.toString(),
-                                    type: q.question_type,
-                                    question_type: q.question_type,
-                                    question_text: q.question_text,
-                                    options: q.options,
-                                    correct_answer: q.correct_answer,
-                                    explanation: q.explanation,
-                                    explanation_right: q.explanation_right,
-                                    explanation_wrong: q.explanation_wrong,
-                                    user_answer: q.question_type === 'essay' ? '(Theory Answer)' : selectedAnswers[qi],
-                                })),
-                            });
+                                await saveOfflineQuiz({
+                                    id: `quiz_${Date.now().toString()}`,
+                                    mode,
+                                    topic: deckTopic,
+                                    difficulty,
+                                    percentage,
+                                    questions: questions.map((q, qi) => ({
+                                        id: qi.toString(),
+                                        type: q.question_type,
+                                        question_type: q.question_type,
+                                        question_text: q.question_text,
+                                        options: q.options,
+                                        correct_answer: q.correct_answer,
+                                        explanation: q.explanation,
+                                        explanation_right: q.explanation_right,
+                                        explanation_wrong: q.explanation_wrong,
+                                        user_answer: q.question_type === 'essay' ? '(Theory Answer)' : selectedAnswers[qi],
+                                    })),
+                                });
 
-                            setIsOfflineSaved(true);
-                            haptics.notificationAsync('success' as any);
-                        } catch {
-                            setSaveError(true);
-                            Alert.alert('Save Failed', 'Could not save this quiz for offline use.');
-                        } finally {
-                            setIsSavingOffline(false);
-                        }
-                    }}
-                    activeOpacity={0.8}
-                    style={{
-                        width: '100%',
-                        height: 52,
-                        borderRadius: 26,
-                        backgroundColor: isDark ? 'rgba(52,199,89,0.15)' : '#E6F9EE',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginTop: 4,
-                        borderWidth: 1,
-                        borderColor: isDark ? 'rgba(52,199,89,0.35)' : 'rgba(52,199,89,0.35)',
-                    }}
-                >
-                    <Text style={{ color: isDark ? '#34C759' : '#34C759', fontWeight: '800', fontSize: 16 }}>
-                        {isSavingOffline ? 'Saving…' : isOfflineSaved ? 'Saved for offline' : 'Save for offline'}
-                    </Text>
-                </TouchableOpacity>
+                                setIsOfflineSaved(true);
+                                haptics.notificationAsync('success' as any);
+                            } catch {
+                                setSaveError(true);
+                                Alert.alert('Save Failed', 'Could not save this quiz for offline use.');
+                            } finally {
+                                setIsSavingOffline(false);
+                            }
+                        }}
+                        type="capsule"
+                        backgroundColor={isDark ? 'rgba(52,199,89,0.15)' : '#E6F9EE'}
+                        style={{ borderColor: isDark ? 'rgba(52,199,89,0.35)' : 'rgba(52,199,89,0.35)', borderWidth: 1 }}
+                        textColor={isDark ? '#34C759' : '#34C759'}
+                        loading={isSavingOffline}
+                        fullWidth
+                    />
+                </View>
 
-                <TouchableOpacity
-                    onPress={handleResetQuiz}
-                    activeOpacity={0.8}
-                    style={{
-                        width: '100%',
-                        height: 52,
-                        borderRadius: 26,
-                        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginTop: 10,
-                    }}
-                >
-                    <Text style={{ color: C.text, fontWeight: '700', fontSize: 16 }}>Done</Text>
-                </TouchableOpacity>
+                <View style={{ width: '100%', marginTop: 10 }}>
+                    <AnimatedButton
+                        title="Done"
+                        onPress={handleResetQuiz}
+                        type="capsule"
+                        backgroundColor={isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7'}
+                        textColor={C.text}
+                        fullWidth
+                    />
+                </View>
 
             </BlurView>
 
@@ -1426,9 +1401,9 @@ export default function GenerateQuizScreen() {
                                 { backgroundColor: explanationQ?.isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', marginRight: 0 }
                             ]}>
                                 {explanationQ?.isCorrect ? (
-                                    <CheckCircle size={18} color="#10b981" />
+                                    <CheckCircle width={18} height={18} color="#10b981" />
                                 ) : (
-                                    <CloseCircle size={18} color="#ef4444" />
+                                    <CloseCircle width={18} height={18} color="#ef4444" />
                                 )}
                             </View>
                             <Text style={[s.sheetTitle, { color: C.text }]} numberOfLines={2}>

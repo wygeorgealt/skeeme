@@ -14,7 +14,21 @@ import Animated, {
     interpolate,
     useAnimatedStyle
 } from 'react-native-reanimated';
-import { QuestionCircle, AltArrowLeft, AltArrowRight, Bolt, CameraAdd, CheckCircle, Dislike, Gallery, Like, Refresh, Scanner, Share, List, MenuDotsCircle, DocumentText } from '@solar-icons/react-native/Bold';
+import QuestionCircle from '@/assets/icons/pikaicons/troubleshoot.svg';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
+import Bolt from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import CameraAdd from '@/assets/icons/pikaicons/photo-image-plus.svg';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
+import Dislike from '@/assets/icons/pikaicons/minus-circle.svg';
+import Gallery from '@/assets/icons/pikaicons/photo-image-default.svg';
+import Like from '@/assets/icons/pikaicons/user-love-heart.svg';
+import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
+import Scanner from '@/assets/icons/pikaicons/search-big.svg';
+import Share from '@/assets/icons/pikaicons/send-plane-horizontal.svg';
+import List from '@/assets/icons/pikaicons/sidebar-menu.svg';
+import MenuDotsCircle from '@/assets/icons/pikaicons/sidebar-menu.svg';
+import DocumentText from '@/assets/icons/pikaicons/file-default.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
@@ -44,6 +58,7 @@ import { ProgressStages } from '@/components/ui/ProgressStages';
 import { ModelSwitcher, ProviderType } from '@/components/ui/ModelSwitcher';
 import { ShareModal } from '@/components/ui/ShareModal';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+import Sparkle from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
 
 const BASE_SCAN_COST = 50;
 const COST_PER_SOLUTION = 0;
@@ -418,7 +433,7 @@ export default function ScanScreen() {
                     <View style={{ flex: 1 }} />
                 ) : !permission.granted ? (
                     <View style={[s.permissionContainer, { marginTop: insets.top }]}>
-                        <Scanner size={64} color={C.primary} style={{ marginBottom: 24 }} />
+                        <Scanner width={64} height={64} color={C.primary} style={{ marginBottom: 24 }} />
                         <Text style={[s.heroTitle, { color: C.text }]}>Camera Access Needed</Text>
                         <Text style={[s.heroDesc, { paddingHorizontal: 40 }]}>
                             Skeeme needs your camera to scan equations and past questions instantly.
@@ -438,11 +453,13 @@ export default function ScanScreen() {
                         <View style={[StyleSheet.absoluteFill, { justifyContent: 'space-between', marginTop: insets.top, paddingBottom: insets.bottom }]}>
                             <View style={[s.topChrome, { paddingTop: 16 }]}>
                                 <TouchableOpacity onPress={() => setEnableTorch(!enableTorch)} activeOpacity={0.7} style={s.overlayTopBtn}>
-                                    <AnimatedIcon source={require('@/assets/3dicons/3dicons-flash-front-color.png')} size={32} animationType="pop" />
+                                    <AnimatedIcon size={32} animationType="pop">
+                                        <Sparkle width={24} height={24} color={enableTorch ? '#FF9500' : '#FFF'} />
+                                    </AnimatedIcon>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={() => router.push('/(drawer)/generate')} activeOpacity={0.7} style={{ justifyContent: 'center', alignItems: 'center', minHeight: 44 }}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8 }}>
-                                        <DocumentText size={18} color="white" />
+                                        <DocumentText width={18} height={18} color="white" />
                                         <Text style={{ color: 'white', fontWeight: '800', marginLeft: 6, fontSize: 16, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }}>Quiz</Text>
                                     </View>
                                 </TouchableOpacity>
@@ -454,7 +471,7 @@ export default function ScanScreen() {
 
                             <View style={[s.bottomChrome, { paddingBottom: Math.max(insets.bottom, 32) + 90 }]}>
                                 <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={s.galleryBtn}>
-                                    <Gallery size={28} color="white" />
+                                    <Gallery width={28} height={28} color="white" />
                                 </TouchableOpacity>
 
                                 <TouchableOpacity onPress={handleCapture} activeOpacity={0.8} style={s.shutterOuter}>
@@ -476,12 +493,12 @@ export default function ScanScreen() {
 
             <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
-                    <AltArrowLeft size={20} color={C.text} />
+                    <AltArrowLeft width={20} height={20} color={C.text} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Question</Text>
                 {results.length > 0 ? (
                     <TouchableOpacity onPress={() => setShowShareModal(true)} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
-                        <MenuDotsCircle size={20} color={C.text} />
+                        <MenuDotsCircle width={20} height={20} color={C.text} />
                     </TouchableOpacity>
                 ) : (
                     <View style={{ width: 44 }} />
@@ -510,7 +527,7 @@ export default function ScanScreen() {
                         {scanError ? (
                             <View style={[s.errorContainer, isDark ? s.cardDark : s.cardLight]}>
                                 <View style={s.errorIconCircle}>
-                                    <QuestionCircle size={32} color={isNetworkError ? '#f59e0b' : '#ef4444'} />
+                                    <QuestionCircle width={32} height={32} color={isNetworkError ? '#f59e0b' : '#ef4444'} />
                                 </View>
                                 <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>
                                     {isNetworkError ? 'Connection Issue' : 'Analysis Failed'}
@@ -518,23 +535,24 @@ export default function ScanScreen() {
                                 <Text style={[s.errorDesc, isDark ? s.textSlate400d : s.textSlate500l]}>
                                     {scanError}
                                 </Text>
-
-                                <TouchableOpacity
-                                    onPress={() => handleSolve()}
-                                    activeOpacity={0.8}
-                                    style={s.retryBtn}
-                                >
-                                    <Refresh size={18} color="white" />
-                                    <Text style={s.retryBtnText}>Try Again</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    onPress={resetScan}
-                                    activeOpacity={0.7}
-                                    style={s.cancelBtn}
-                                >
-                                    <Text style={[s.cancelBtnText, isDark ? s.textSlate400d : s.textSlate500l]}>Cancel</Text>
-                                </TouchableOpacity>
+                                <View style={{ width: '100%', gap: 12 }}>
+                                    <AnimatedButton
+                                        title="Try Again"
+                                        onPress={() => handleSolve()}
+                                        type="capsule"
+                                        backgroundColor="#007AFF"
+                                        shadowColor="#0066D6"
+                                        fullWidth
+                                    />
+                                    <AnimatedButton
+                                        title="Retake Photo"
+                                        onPress={resetScan}
+                                        type="capsule"
+                                        backgroundColor={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'}
+                                        textColor={C.textTertiary}
+                                        fullWidth
+                                    />
+                                </View>
                             </View>
                         ) : (
                             <>
@@ -588,7 +606,7 @@ export default function ScanScreen() {
                                             <View style={s.feedbackRow}>
                                                 {feedback[index] ? (
                                                     <Animated.View entering={FadeIn.duration(300)} style={s.feedbackDone}>
-                                                        <CheckCircle size={16} color="#10b981" />
+                                                        <CheckCircle width={16} height={16} color="#10b981" />
                                                         <Text style={[s.feedbackDoneText, { color: '#10b981' }]}>
                                                             Thanks for the feedback!
                                                         </Text>
@@ -602,7 +620,7 @@ export default function ScanScreen() {
                                                                 activeOpacity={0.7}
                                                                 style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
                                                             >
-                                                                <Like size={16} color={isDark ? 'white' : '#0f172a'} />
+                                                                <Like width={16} height={16} color={isDark ? 'white' : '#0f172a'} />
                                                                 <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Helpful</Text>
                                                             </TouchableOpacity>
                                                             <TouchableOpacity
@@ -610,7 +628,7 @@ export default function ScanScreen() {
                                                                 activeOpacity={0.7}
                                                                 style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
                                                             >
-                                                                <Dislike size={16} color={isDark ? 'white' : '#0f172a'} />
+                                                                <Dislike width={16} height={16} color={isDark ? 'white' : '#0f172a'} />
                                                                 <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Unhelpful</Text>
                                                             </TouchableOpacity>
                                                         </View>

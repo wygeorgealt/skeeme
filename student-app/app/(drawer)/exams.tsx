@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { View, ScrollView, RefreshControl, useColorScheme, StyleSheet, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -10,8 +11,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { IosCard } from '@/components/ui/IosCard';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { AltArrowLeft } from '@solar-icons/react-native/Bold';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+import CalendarDefault from '@/assets/icons/pikaicons/calendar-default.svg';
+import Trash from '@/assets/icons/pikaicons/delete-dustbin-01.svg';
+import PlusCircle from '@/assets/icons/pikaicons/plus-circle.svg';
 import { useRouter } from 'expo-router';
 
 export default function ExamsScreen() {
@@ -103,7 +107,7 @@ export default function ExamsScreen() {
                 <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(500)} style={s.header}>
                     <View style={s.headerTopRow}>
                         <TouchableOpacity onPress={() => router.back()} style={[s.backBtn, { backgroundColor: C.secondaryBackground }]}>
-                            <AltArrowLeft size={24} color={textColor} />
+                            <AltArrowLeft width={24} height={24} color={textColor} />
                         </TouchableOpacity>
                     </View>
                     <View style={{ marginTop: 16 }}>
@@ -115,7 +119,9 @@ export default function ExamsScreen() {
                 <Animated.View key={`exams-${animKey}`} entering={FadeInDown.delay(80).duration(400)}>
                     {exams.length === 0 ? (
                         <View style={s.emptyState}>
-                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-calendar-front-color.png')} size={64} animationType="wobble" />
+                            <AnimatedIcon size={64} animationType="wobble">
+                            <CalendarDefault width={56} height={56} color={C.textTertiary} />
+                        </AnimatedIcon>
                             <Text style={[s.emptyText, { color: C.textSecondary }]}>No upcoming exams set.</Text>
                         </View>
                     ) : (
@@ -124,8 +130,10 @@ export default function ExamsScreen() {
                             return (
                                 <IosCard key={exam.id} style={s.examCard} padding="md">
                                     <View style={s.examRow}>
-                                        <View style={[s.examIcon, { backgroundColor: C.primary + '15' }]}>
-                                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-calendar-front-color.png')} size={24} animationType="wobble" />
+                                        <View style={[s.examIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
+                                            <AnimatedIcon size={24} animationType="wobble">
+                                                <CalendarDefault width={20} height={20} color={C.primary} />
+                                            </AnimatedIcon>
                                         </View>
                                         <View style={{ flex: 1 }}>
                                             <Text style={[s.examTitle, { color: textColor }]}>{exam.title}</Text>
@@ -137,8 +145,10 @@ export default function ExamsScreen() {
                                             <Text style={[s.daysNum, { color: C.primary }]}>{daysLeft < 0 ? 0 : daysLeft}</Text>
                                             <Text style={[s.daysLabel, { color: C.textSecondary }]}>days left</Text>
                                         </View>
-                                        <TouchableOpacity onPress={() => handleDelete(exam.id)} style={s.deleteBtn}>
-                                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-trash-can-front-color.png')} size={24} animationType="wobble" />
+                                        <TouchableOpacity onPress={() => handleDelete(exam.id)} style={s.deleteBtn} activeOpacity={0.7}>
+                                            <AnimatedIcon size={24} animationType="wobble">
+                                                <Trash width={20} height={20} color={C.destructive} />
+                                            </AnimatedIcon>
                                         </TouchableOpacity>
                                     </View>
                                 </IosCard>
@@ -148,11 +158,10 @@ export default function ExamsScreen() {
                 </Animated.View>
             </ScrollView>
 
-            <TouchableOpacity 
-                onPress={() => setIsModalOpen(true)}
-                style={[s.fab, { backgroundColor: C.primary }]}
-            >
-                <AnimatedIcon source={require('@/assets/3dicons/3dicons-plus-dynamic-color.png')} size={32} animationType="pop" />
+            <TouchableOpacity style={s.fab} activeOpacity={0.8} onPress={() => setIsModalOpen(true)}>
+                <AnimatedIcon size={32} animationType="pop">
+                    <PlusCircle width={32} height={32} color="#FFF" />
+                </AnimatedIcon>
             </TouchableOpacity>
 
             <Modal visible={isModalOpen} animationType="slide" transparent>
@@ -181,16 +190,27 @@ export default function ExamsScreen() {
                         />
 
                         <View style={s.modalActions}>
-                            <TouchableOpacity onPress={() => setIsModalOpen(false)} style={s.cancelBtn}>
-                                <Text style={[s.cancelBtnText, { color: C.textSecondary }]}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                onPress={handleAdd} 
-                                style={[s.saveBtn, { backgroundColor: C.primary }]}
-                                disabled={addMutation.isPending}
-                            >
-                                <Text style={s.saveBtnText}>{addMutation.isPending ? 'Saving...' : 'Add Exam'}</Text>
-                            </TouchableOpacity>
+                            <View style={{ flex: 1 }}>
+                                <AnimatedButton
+                                    title="Cancel"
+                                    onPress={() => setIsModalOpen(false)}
+                                    type="capsule"
+                                    backgroundColor={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'}
+                                    textColor={C.textSecondary}
+                                    fullWidth
+                                />
+                            </View>
+                            <View style={{ flex: 1.5 }}>
+                                <AnimatedButton
+                                    title="Add Exam"
+                                    onPress={handleAdd}
+                                    type="capsule"
+                                    backgroundColor={C.primary}
+                                    shadowColor="#0066D6"
+                                    loading={addMutation.isPending}
+                                    fullWidth
+                                />
+                            </View>
                         </View>
                     </View>
                 </View>

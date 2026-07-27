@@ -10,8 +10,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 import { Swipeable } from 'react-native-gesture-handler';
-import { AltArrowLeft, AltArrowRight, Book, Copy, Notebook, TrashBinTrash, DocumentText } from '@solar-icons/react-native/Bold';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
+import Book from '@/assets/icons/pikaicons/file-02-default.svg';
+import Copy from '@/assets/icons/pikaicons/copy-default.svg';
+import Notebook from '@/assets/icons/pikaicons/file-02-default.svg';
+import TrashBinTrash from '@/assets/icons/pikaicons/delete-dustbin-01.svg';
+import DocumentText from '@/assets/icons/pikaicons/file-default.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+import FolderDefault from '@/assets/icons/pikaicons/folder-default.svg';
+import BookmarkDefault from '@/assets/icons/pikaicons/bookmark-default.svg';
+import CopyDefault from '@/assets/icons/pikaicons/copy-default.svg';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/store/authStore';
@@ -198,7 +207,7 @@ export default function StudyHistoryDashboard() {
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <Animated.View entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
                 <TouchableOpacity onPress={() => router.back()} style={s.backBtn} activeOpacity={0.7}>
-                    <AltArrowLeft size={24} color={C.text} />
+                    <AltArrowLeft width={24} height={24} color={C.text} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>History</Text>
             </Animated.View>
@@ -222,7 +231,7 @@ export default function StudyHistoryDashboard() {
                                 ]}
                             >
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                    <Icon size={14} color={isActive ? (isDark ? '#FFF' : '#000') : C.textTertiary} />
+                                    <Icon width={14} height={14} color={isActive ? (isDark ? '#FFF' : '#000') : C.textTertiary} />
                                     <Text style={[
                                         s.segmentText,
                                         isActive ? { color: C.text, fontWeight: '700' } : { color: C.textTertiary, fontWeight: '500' }
@@ -286,7 +295,7 @@ export default function StudyHistoryDashboard() {
                                     onPress={() => handleDelete(id, title, isQuiz ? 'quiz' : 'flashcard')}
                                 >
                                     <View style={{ width: 90, height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                                        <TrashBinTrash size={22} color="white" />
+                                        <TrashBinTrash width={22} height={22} color="white" />
                                     </View>
                                 </TouchableOpacity>
                             </View>
@@ -327,7 +336,9 @@ export default function StudyHistoryDashboard() {
                         return (
                             <View style={s.emptyContainer}>
                                 <View style={[s.emptyIconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
-                                    <AnimatedIcon source={require('@/assets/3dicons/3dicons-folder-front-color.png')} size={48} animationType="pop" />
+                                    <AnimatedIcon size={48} animationType="pop">
+                                        <FolderDefault width={40} height={40} color={C.textTertiary} />
+                                    </AnimatedIcon>
                                 </View>
                                 <Text style={[s.emptyTitle, { color: C.text }]}>No history yet</Text>
                                 <Text style={[s.emptySub, { color: C.textSecondary }]}>
@@ -363,7 +374,9 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
         >
             <View style={s.cardBody}>
                 <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight, { backgroundColor: 'transparent' }]}>
-                    <AnimatedIcon source={require('@/assets/3dicons/3dicons-bookmark-iso-color.png')} size={24} animationType="wobble" />
+                    <AnimatedIcon size={24} animationType="wobble">
+                        <BookmarkDefault width={20} height={20} color={C.text} />
+                    </AnimatedIcon>
                 </View>
                 <View style={s.cardContent}>
                     <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{session.topic}</Text>
@@ -385,7 +398,7 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                     <TouchableOpacity onPress={() => router.push(`/(drawer)/history/${session.id}` as any)} activeOpacity={0.8} style={s.actionPill}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                              <Text style={s.actionPillText}>View Details</Text>
-                             <AltArrowRight size={14} color="#FFFFFF" />
+                             <AltArrowRight width={14} height={14} color="#FFFFFF" />
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -403,7 +416,9 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
         >
             <View style={s.cardBody}>
                 <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight, { backgroundColor: 'transparent' }]}>
-                    <AnimatedIcon source={require('@/assets/3dicons/3dicons-copy-front-color.png')} size={24} animationType="wobble" />
+                    <AnimatedIcon size={24} animationType="wobble">
+                        <CopyDefault width={20} height={20} color={C.text} />
+                    </AnimatedIcon>
                 </View>
                 <View style={s.cardContent}>
                     <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{deck.title}</Text>

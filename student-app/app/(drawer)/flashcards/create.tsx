@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Platform } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +14,13 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useQueryClient } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { posthog } from '@/lib/posthog';
-import { CheckCircle, DocumentText, CloudUpload, Leaf, LightbulbBolt, Rocket, AltArrowLeft } from '@solar-icons/react-native/Bold';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
+import DocumentText from '@/assets/icons/pikaicons/file-default.svg';
+import CloudUpload from '@/assets/icons/pikaicons/upload-up.svg';
+import Leaf from '@/assets/icons/pikaicons/award-medal.svg';
+import LightbulbBolt from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import Rocket from '@/assets/icons/pikaicons/ufo.svg';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
 import { useNavigation } from '@react-navigation/native';
 
@@ -302,7 +309,7 @@ export default function GenerateFlashcardScreen() {
                     activeOpacity={0.7} 
                     style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
                 >
-                    <AltArrowLeft size={24} color={isDark ? 'white' : '#0f172a'} />
+                    <AltArrowLeft width={24} height={24} color={isDark ? 'white' : '#0f172a'} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Create Deck</Text>
                 <View style={{ width: 44 }} />
@@ -356,7 +363,7 @@ export default function GenerateFlashcardScreen() {
                         ) : selectedFile ? (
                             <>
                                 <View style={s.iconBoxRow}>
-                                    <DocumentText size={24} color="#007AFF" />
+                                    <DocumentText width={24} height={24} color="#007AFF" />
                                 </View>
                                 <Text style={[s.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
                                 {isExtracting ? (
@@ -371,7 +378,7 @@ export default function GenerateFlashcardScreen() {
                         ) : (
                             <>
                                 <View style={s.iconBoxRow}>
-                                    <CloudUpload size={24} color="#007AFF" />
+                                    <CloudUpload width={24} height={24} color="#007AFF" />
                                 </View>
                                 <Text style={[s.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
                                 <Text style={[s.uploadSub, { color: '#94a3b8' }]}>Maximum 5MB</Text>
@@ -437,20 +444,17 @@ export default function GenerateFlashcardScreen() {
                         : (Platform.OS === 'android' ? 'rgba(248,250,252,0.95)' : 'rgba(248,250,252,0.7)'),
                 }]}
             >
-                <TouchableOpacity
+                <AnimatedButton
+                    title="Generate Set"
                     onPress={handleGenerate}
-                    disabled={!canGenerate || isLoading}
-                    activeOpacity={0.8}
-                    style={[s.generatePillButton, { backgroundColor: canGenerate ? '#007AFF' : isDark ? '#1C1C1E' : '#E2E8F0' }]}
-                >
-                    {isLoading ? (
-                        <LoadingSpinner size={24} color="white" strokeWidth={3} />
-                    ) : (
-                        <Text style={[s.generatePillText, { color: canGenerate ? '#FFF' : '#94a3b8' }]}>
-                            Generate Set
-                        </Text>
-                    )}
-                </TouchableOpacity>
+                    disabled={!canGenerate}
+                    loading={isLoading}
+                    type="capsule"
+                    backgroundColor={canGenerate ? '#007AFF' : (isDark ? '#1C1C1E' : '#E2E8F0')}
+                    textColor={canGenerate ? '#FFF' : '#94a3b8'}
+                    shadowColor={canGenerate ? '#0066D6' : (isDark ? '#1C1C1E' : '#E2E8F0')}
+                    fullWidth
+                />
                 <OutOfCreditsModal 
                     visible={showOutOfCredits} 
                     onDismiss={() => setShowOutOfCredits(false)} 

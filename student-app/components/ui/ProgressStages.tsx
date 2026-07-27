@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { CheckCircle } from '@solar-icons/react-native/Bold';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
 import { Colors } from '@/constants/theme';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 
@@ -37,7 +37,7 @@ export function ProgressStages({ progressPercent, isDark }: ProgressStagesProps)
                     >
                         <View style={styles.iconContainer}>
                             {isCompleted ? (
-                                <CheckCircle size={20} color={C.primary} />
+                                <CheckCircle width={20} height={20} color={C.primary} />
                             ) : isActive ? (
                                 <ActivityIndicator size="small" color={C.primary} />
                             ) : (

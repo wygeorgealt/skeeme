@@ -6,9 +6,17 @@ import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Colors } from '@/constants/theme';
-import { CheckCircle, AltArrowLeft, AltArrowRight, Refresh, DangerTriangle, LightbulbBolt } from '@solar-icons/react-native/Bold';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
+import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
+import DangerTriangle from '@/assets/icons/pikaicons/troubleshoot.svg';
+import LightbulbBolt from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+import Troubleshoot from '@/assets/icons/pikaicons/troubleshoot.svg';
+import CheckTickCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { MathText } from '@/components/ui/MathText';
 import { useAuthStore } from '@/store/authStore';
 import { streamFlashcardGenerate } from '@/lib/aiStream';
@@ -113,7 +121,7 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
             <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderRadius: 24, padding: 32, justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 8, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent' }}>
                 <View style={{ position: 'absolute', top: 24, left: 24, right: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
                     <Text style={{ fontSize: 13, fontWeight: '700', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1 }}>{type}</Text>
-                    {type === 'QUESTION' ? <LightbulbBolt size={20} color="#007AFF" /> : <CheckCircle size={20} color="#34C759" />}
+                    {type === 'QUESTION' ? <LightbulbBolt width={20} height={20} color="#007AFF" /> : <CheckCircle width={20} height={20} color="#34C759" />}
                 </View>
 
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -481,16 +489,23 @@ export default function StudyDeckScreen() {
     if (error && !deck) return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.errorCenter}>
-                <AnimatedIcon source={require('@/assets/3dicons/warning-3d icon.png')} size={64} animationType="wobble" />
+                <AnimatedIcon size={64} animationType="wobble">
+                    <Troubleshoot width={56} height={56} color="#FF9500" />
+                </AnimatedIcon>
                 <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Deck not found</Text>
                 <Text style={s.errorSubtitle}>
                     We couldn&apos;t load this flashcard deck. It might have been deleted or there was a connection issue.
                 </Text>
-                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
-                    <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF' }]}>
-                        <Text style={s.btnTextLarge}>Go Back</Text>
-                    </View>
-                </TouchableOpacity>
+                <View style={s.mt4}>
+                    <AnimatedButton
+                        title="Go Back"
+                        onPress={() => router.back()}
+                        type="capsule"
+                        backgroundColor="#007AFF"
+                        shadowColor="#0066D6"
+                        fullWidth
+                    />
+                </View>
             </View>
         </View>
     );
@@ -513,9 +528,16 @@ export default function StudyDeckScreen() {
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.errorCenter}>
                 <Text style={s.noCardsText}>No cards found in this deck.</Text>
-                <TouchableOpacity onPress={() => router.back()} style={s.mt4}>
-                    <Text style={s.goBackTextPrimary}>Go Back</Text>
-                </TouchableOpacity>
+                <View style={s.mt4}>
+                    <AnimatedButton
+                        title="Go Back"
+                        onPress={() => router.back()}
+                        type="capsule"
+                        backgroundColor="transparent"
+                        textColor="#007AFF"
+                        fullWidth
+                    />
+                </View>
             </View>
         </View>
     );
@@ -545,11 +567,16 @@ export default function StudyDeckScreen() {
                                 You&apos;re on fire! Keep up the amazing work.
                             </Text>
 
-                            <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={{ width: '100%' }}>
-                                <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF', width: 240, borderRadius: 32 }]}>
-                                    <Text style={s.btnTextLarge}>Awesome!</Text>
-                                </View>
-                            </TouchableOpacity>
+                            <View style={{ width: '100%' }}>
+                                <AnimatedButton
+                                    title="Awesome!"
+                                    onPress={() => router.back()}
+                                    type="capsule"
+                                    backgroundColor="#007AFF"
+                                    shadowColor="#0066D6"
+                                    fullWidth
+                                />
+                            </View>
                         </Animated.View>
                     </View>
                 </View>
@@ -563,7 +590,9 @@ export default function StudyDeckScreen() {
                     <Animated.View entering={ZoomIn.duration(800)}>
                         <View style={s.successIconBox}>
                             <View style={[s.successIconGradient, { backgroundColor: '#34C759' }]}>
-                                <AnimatedIcon source={require('@/assets/3dicons/3dicons-thumb-up-front-color.png')} size={48} animationType="pop" />
+                                <AnimatedIcon size={48} animationType="pop">
+                                    <CheckTickCircle width={40} height={40} color="#34C759" />
+                                </AnimatedIcon>
                             </View>
                         </View>
                     </Animated.View>
@@ -574,51 +603,58 @@ export default function StudyDeckScreen() {
                     </Animated.View>
 
                     <Animated.View entering={FadeIn.delay(600).duration(600)} style={s.successActions}>
-                        <TouchableOpacity onPress={restartSession} activeOpacity={0.8} style={s.flex1}>
-                            <View style={[s.outlineBtn, isDark ? s.outlineBtnDark : s.outlineBtnLight]}>
-                                <Refresh size={20} color={isDark ? 'white' : '#0f172a'} />
-                                <Text style={[s.outlineBtnText, isDark ? s.textWhite : s.textSlate900]}>Retake</Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            disabled={isSavingOffline || isOfflineSaved || !cardsForOffline.length}
-                            activeOpacity={0.8}
-                            onPress={async () => {
-                                if (isSavingOffline || isOfflineSaved || !cardsForOffline.length) return;
-                                try {
+                        <View style={s.flex1}>
+                            <AnimatedButton
+                                title="Retake"
+                                onPress={restartSession}
+                                type="capsule"
+                                backgroundColor={isDark ? 'rgba(255,255,255,0.05)' : 'white'}
+                                style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', borderWidth: 2 }}
+                                textColor={isDark ? 'white' : '#0f172a'}
+                                fullWidth
+                            />
+                        </View>
+                        <View style={s.flex1}>
+                            <AnimatedButton
+                                title={isSavingOffline ? 'Saving…' : isOfflineSaved ? 'Saved for offline' : 'Save for offline'}
+                                onPress={async () => {
+                                    if (isSavingOffline || isOfflineSaved || !cardsForOffline.length) return;
                                     setIsSavingOffline(true);
-                                    const decoded = deck?.title
-                                        ? decodeURIComponent(Array.isArray(deck.title) ? deck.title[0] : deck.title)
-                                        : (Array.isArray(topic) ? topic[0] : topic) || 'Flashcards';
+                                    try {
+                                        const decoded = deck?.title
+                                            ? decodeURIComponent(Array.isArray(deck.title) ? deck.title[0] : deck.title)
+                                            : (Array.isArray(topic) ? topic[0] : topic) || 'Flashcards';
+                                        await saveOfflineDeck({
+                                            id: deck?.id?.toString?.() ?? id?.toString?.() ?? `deck_${Date.now().toString()}`,
+                                            title: decoded,
+                                            cards: cardsForOffline,
+                                        });
+                                        setIsOfflineSaved(true);
+                                        haptics.notificationAsync('success' as any);
+                                    } catch {
+                                        Alert.alert('Save Failed', 'Could not save this deck for offline use.');
+                                    } finally {
+                                        setIsSavingOffline(false);
+                                    }
+                                }}
+                                type="capsule"
+                                backgroundColor={isSavingOffline || isOfflineSaved ? (isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7') : '#007AFF'}
+                                shadowColor={isSavingOffline || isOfflineSaved ? 'transparent' : '#0066D6'}
+                                loading={isSavingOffline}
+                                fullWidth
+                            />
+                        </View>
 
-                                    await saveOfflineDeck({
-                                        id: deck?.id?.toString?.() ?? id?.toString?.() ?? `deck_${Date.now().toString()}`,
-                                        title: decoded,
-                                        cards: cardsForOffline,
-                                    });
-                                    setIsOfflineSaved(true);
-                                    haptics.notificationAsync('success' as any);
-                                } catch {
-                                    Alert.alert('Save Failed', 'Could not save this deck for offline use.');
-                                } finally {
-                                    setIsSavingOffline(false);
-                                }
-                            }}
-                            style={s.flex1}
-                        >
-                            <View style={[s.blueBtnGradient, { backgroundColor: isSavingOffline || isOfflineSaved ? (isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7') : '#007AFF' }]}> 
-                                <Text style={s.btnTextLarge}>
-                                    {isSavingOffline ? 'Saving…' : isOfflineSaved ? 'Saved for offline' : 'Save for offline'}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8} style={s.flex1}>
-                            <View style={[s.blueBtnGradient, { backgroundColor: '#007AFF' }]}> 
-                                <Text style={s.btnTextLarge}>Finish</Text>
-                            </View>
-                        </TouchableOpacity>
+                        <View style={s.flex1}>
+                            <AnimatedButton
+                                title="Finish"
+                                onPress={() => router.back()}
+                                type="capsule"
+                                backgroundColor="#007AFF"
+                                shadowColor="#0066D6"
+                                fullWidth
+                            />
+                        </View>
                     </Animated.View>
                 </View>
             </View>
@@ -635,7 +671,7 @@ export default function StudyDeckScreen() {
             {/* Header */}
             <View style={[s.headerRow, { paddingBottom: 16 }]}>
                 <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.backBtn, isDark ? s.bgWhite10 : s.bgWhite60]}>
-                    <AltArrowLeft size={24} color={isDark ? 'white' : '#1e293b'} />
+                    <AltArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
                 </TouchableOpacity>
                 <View style={s.headerTextContainer}>
                     <Text style={{ fontSize: 13, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -692,16 +728,16 @@ export default function StudyDeckScreen() {
             {/* Navigation Footer */}
             <View style={s.footer}>
                 {currentIndex === cards.length - 1 ? (
-                    <TouchableOpacity
-                        onPress={nextCard}
-                        activeOpacity={0.8}
-                        style={s.finishBtn}
-                    >
-                        <View style={[s.mainActionGradient, { backgroundColor: '#007AFF' }]}>
-                            <Text style={s.mainActionLabel}>Finish Deck</Text>
-                            <CheckCircle size={20} color="white" />
-                        </View>
-                    </TouchableOpacity>
+                    <View style={s.finishBtn}>
+                        <AnimatedButton
+                            title="Finish Deck"
+                            onPress={nextCard}
+                            type="capsule"
+                            backgroundColor="#007AFF"
+                            shadowColor="#0066D6"
+                            fullWidth
+                        />
+                    </View>
                 ) : (
                     <View style={[s.controlsRow, { justifyContent: 'center', gap: 24 }]}>
                         <TouchableOpacity
@@ -710,7 +746,7 @@ export default function StudyDeckScreen() {
                             activeOpacity={0.7}
                             style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite, currentIndex === 0 && { opacity: 0.3 }]}
                         >
-                            <AltArrowLeft size={24} color={isDark ? 'white' : '#1e293b'} />
+                            <AltArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -718,7 +754,7 @@ export default function StudyDeckScreen() {
                             activeOpacity={0.8}
                             style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite]}
                         >
-                            <AltArrowRight size={24} color={isDark ? 'white' : '#1e293b'} />
+                            <AltArrowRight width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
                         </TouchableOpacity>
                     </View>
                 )}

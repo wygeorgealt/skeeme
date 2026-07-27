@@ -3,7 +3,11 @@ import React, { useMemo } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Fire, MedalRibbonStar, Stars, CupStar, Star } from '@solar-icons/react-native/Bold';
+import Fire from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import MedalRibbonStar from '@/assets/icons/pikaicons/award-medal.svg';
+import Stars from '@/assets/icons/pikaicons/award-medal.svg';
+import CupStar from '@/assets/icons/pikaicons/award-medal.svg';
+import Star from '@/assets/icons/pikaicons/award-medal.svg';
 
 const GRADIENTS = [
     ['#8B5CF6', '#6366F1'], // Skeeme Default
@@ -39,19 +43,19 @@ export const ShareCard = ({ type, data, viewShotRef }: ShareCardProps) => {
                     style={styles.card}
                 >
                     <View style={styles.bgIcon1}>
-                        <Star size={120} color="rgba(255,255,255,0.08)" />
+                        <Star width={120} height={120} color="rgba(255,255,255,0.08)" />
                     </View>
                     <View style={styles.bgIcon2}>
-                        <Stars size={180} color="rgba(255,255,255,0.08)" />
+                        <Stars width={180} height={180} color="rgba(255,255,255,0.08)" />
                     </View>
 
                     {/* Content Glass Card */}
                     <View style={styles.glassCard}>
                         <View style={styles.iconContainer}>
                             {type === 'streak' ? (
-                                <Fire size={64} color="white" />
+                                <Fire width={64} height={64} color="white" />
                             ) : (
-                                <CupStar size={64} color="white" />
+                                <CupStar width={64} height={64} color="white" />
                             )}
                         </View>
 

@@ -12,18 +12,29 @@ import { api } from '@/lib/api';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 
 import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
 import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import {
-    Diploma, Notebook, MedalRibbonsStar, Case,
-    LightbulbBolt, DocumentText, CupStar, Stars, Stopwatch,
-    Settings, Heart, Rocket, Compass, Layers, AltArrowLeft,
-    Book
-} from '@solar-icons/react-native/Bold';
+import Notebook from '@/assets/icons/pikaicons/file-02-default.svg';
+import MedalRibbonsStar from '@/assets/icons/pikaicons/award-medal.svg';
+import LightbulbBolt from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import DocumentText from '@/assets/icons/pikaicons/file-default.svg';
+import CupStar from '@/assets/icons/pikaicons/award-medal.svg';
+import Stars from '@/assets/icons/pikaicons/award-medal.svg';
+import Rocket from '@/assets/icons/pikaicons/ufo.svg';
+import Compass from '@/assets/icons/pikaicons/map.svg';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import Book from '@/assets/icons/pikaicons/file-02-default.svg';
+import Diploma from '@/assets/icons/pikaicons/award-medal.svg';
+import Case from '@/assets/icons/pikaicons/briefcase-job.svg';
+import Stopwatch from '@/assets/icons/pikaicons/clock-default.svg';
+import Settings from '@/assets/icons/pikaicons/settings-01.svg';
+import Heart from '@/assets/icons/pikaicons/user-love-heart.svg';
+import Layers from '@/assets/icons/pikaicons/layer-two.svg';
 
 import { Colors } from '@/constants/theme';
 
@@ -194,7 +205,7 @@ export default function PreferencesScreen() {
                     activeOpacity={0.7}
                     style={[styles.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
                 >
-                    <AltArrowLeft size={22} color={C.text} />
+                    <AltArrowLeft width={22} height={22} color={C.text} />
                 </TouchableOpacity>
                 <Text style={[styles.heroTitle, { color: C.text }]}>Make your AI{'\n'}truly <Text style={{ color: '#007AFF' }}>yours</Text>.</Text>
                 <Text style={[styles.heroSub, { color: C.textSecondary }]}>
@@ -351,24 +362,17 @@ export default function PreferencesScreen() {
                 tint={isDark ? 'dark' : 'light'}
                 style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) + 75 }]}
             >
-                <TouchableOpacity
-                    onPress={handleSave}
-                    disabled={saving}
-                    activeOpacity={0.85}
-                    style={styles.saveBtn}
-                >
-                    <LinearGradient
-                        colors={['#0A84FF', '#007AFF']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.saveBtnGrad}
-                    >
-                        {saving
-                            ? <LoadingSpinner size={24} color="white" strokeWidth={3} />
-                            : <Text style={styles.saveBtnText}>Save Preferences</Text>
-                        }
-                    </LinearGradient>
-                </TouchableOpacity>
+                <View style={{ width: '100%', alignItems: 'center', marginTop: 10 }}>
+                    <AnimatedButton
+                        title="Save Preferences"
+                        onPress={handleSave}
+                        loading={saving}
+                        type="capsule"
+                        backgroundColor="#007AFF"
+                        shadowColor="#0066D6"
+                        fullWidth
+                    />
+                </View>
             </BlurView>
         </View>
     );

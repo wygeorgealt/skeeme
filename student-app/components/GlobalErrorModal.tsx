@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/Text';
 import React, { useEffect } from 'react';
 import { View, useColorScheme, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
-import { DangerTriangle } from '@solar-icons/react-native/Bold';
+import DangerTriangle from '@/assets/icons/pikaicons/troubleshoot.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { BlurView } from 'expo-blur';
 import Animated, { 

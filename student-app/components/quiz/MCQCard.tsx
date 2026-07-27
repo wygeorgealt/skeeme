@@ -5,7 +5,11 @@ import { QuizFlipCard } from './QuizFlipCard';
 import { Question } from './QuizTypes';
 import { MathText } from '../ui/MathText';
 import { Colors, Spacing, Radius } from '@/constants/theme';
-import { AltArrowLeft, CheckCircle, CloseCircle, Refresh } from '@solar-icons/react-native/Bold';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
+import CloseCircle from '@/assets/icons/pikaicons/multiple-cross-cancel-circle.svg';
+import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 
 export function MCQCard({
     q, qi, onAnswer, selectedAnswer, quizFinished,
@@ -96,8 +100,8 @@ export function MCQCard({
                             <View style={{ flex: 1, paddingRight: 8 }}>
                                 <MathText content={opt} color={styles.text.color} fontSize={15} />
                             </View>
-                            {styles.icon === 'checkmark-circle' && <CheckCircle size={18} color={styles.iconColor} />}
-                            {styles.icon === 'close-circle' && <CloseCircle size={18} color={styles.iconColor} />}
+                            {styles.icon === 'checkmark-circle' && <CheckCircle width={18} height={18} color={styles.iconColor} />}
+                            {styles.icon === 'close-circle' && <CloseCircle width={18} height={18} color={styles.iconColor} />}
                         </TouchableOpacity>
                     );
                 })}
@@ -108,23 +112,25 @@ export function MCQCard({
                 <View style={[s.footer, { borderTopColor: C.separator }]}>
                     <View style={[s.statusBadge, { borderColor: isCorrect ? C.success : C.destructive, backgroundColor: isCorrect ? (isDark ? 'rgba(48,209,88,0.1)' : 'rgba(52,199,89,0.1)') : (isDark ? 'rgba(255,69,58,0.1)' : 'rgba(255,59,48,0.1)') }]}>
                         {isCorrect ? (
-                            <CheckCircle size={14} color={C.success} />
+                            <CheckCircle width={14} height={14} color={C.success} />
                         ) : (
-                            <CloseCircle size={14} color={C.destructive} />
+                            <CloseCircle width={14} height={14} color={C.destructive} />
                         )}
                         <Text style={[s.statusText, { color: isCorrect ? C.success : C.destructive }]}>
                             {isCorrect ? 'Correct' : 'Incorrect'}
                         </Text>
                     </View>
                     
-                    <TouchableOpacity
-                        onPress={() => setFlipped(true)}
-                        activeOpacity={0.8}
-                        style={[s.explainBtn, { backgroundColor: isDark ? '#FFF' : '#000' }]}
-                    >
-                        <Refresh size={16} color={isDark ? '#000' : '#FFF'} style={{ marginRight: 8 }} />
-                        <Text style={[s.explainBtnText, { color: isDark ? '#000' : '#FFF' }]}>Flip for Explanation</Text>
-                    </TouchableOpacity>
+                    <View style={{ width: '100%' }}>
+                        <AnimatedButton
+                            title="Flip for Explanation"
+                            onPress={() => setFlipped(true)}
+                            type="capsule"
+                            backgroundColor={isDark ? '#FFF' : '#000'}
+                            shadowColor={isDark ? '#CCC' : '#333'}
+                            fullWidth
+                        />
+                    </View>
                 </View>
             )}
         </View>
@@ -133,7 +139,7 @@ export function MCQCard({
     const back = (
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
             <TouchableOpacity onPress={() => setFlipped(false)} style={s.backBtn}>
-                <AltArrowLeft size={18} color={C.text} />
+                <AltArrowLeft width={18} height={18} color={C.text} />
                 <Text style={[s.backText, { color: C.text }]}>Back</Text>
             </TouchableOpacity>
             

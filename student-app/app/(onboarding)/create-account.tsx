@@ -6,7 +6,8 @@ import { useEffect } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { SafeAreaView,  useSafeAreaInsets  } from 'react-native-safe-area-context';
-import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
+import { AppleIcon } from '@/components/ui/BrandIcons';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 
 export default function CreateAccountScreen() {
     const router = useRouter();
@@ -47,24 +48,31 @@ export default function CreateAccountScreen() {
                     <Animated.View entering={FadeInDown.duration(600).delay(300)} style={s.actionSection}>
                         
                         {Platform.OS === 'ios' && (
-                            <TouchableOpacity
-                                onPress={() => {}}
-                                activeOpacity={0.8}
-                                style={[s.socialBtn, { backgroundColor: btnAppleBg }]}
-                            >
-                                <AppleIcon width={20} height={20} color={btnAppleText} />
-                                <Text style={[s.socialBtnText, { color: btnAppleText }]}>Continue with Apple</Text>
-                            </TouchableOpacity>
+                            <View style={{ marginBottom: 12 }}>
+                                <AnimatedButton
+                                    title="Continue with Apple"
+                                    onPress={() => {}}
+                                    type="capsule"
+                                    backgroundColor={btnAppleBg}
+                                    textColor={btnAppleText}
+                                    icon="apple"
+                                    fullWidth
+                                />
+                            </View>
                         )}
 
-                        <TouchableOpacity
-                            onPress={() => {}}
-                            activeOpacity={0.8}
-                            style={[s.socialBtn, isDark ? s.googleDark : s.googleLight]}
-                        >
-                            <GoogleIcon width={20} height={20} />
-                            <Text style={[s.socialBtnText, { color: textColor }]}>Continue with Google</Text>
-                        </TouchableOpacity>
+                        <View style={{ marginBottom: 12 }}>
+                            <AnimatedButton
+                                title="Continue with Google"
+                                onPress={() => {}}
+                                type="capsule"
+                                backgroundColor={isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF'}
+                                textColor={textColor}
+                                style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', borderWidth: 1 }}
+                                icon="google"
+                                fullWidth
+                            />
+                        </View>
 
                         <View style={s.dividerRow}>
                             <View style={[s.dividerLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]} />
@@ -72,13 +80,16 @@ export default function CreateAccountScreen() {
                             <View style={[s.dividerLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]} />
                         </View>
 
-                        <TouchableOpacity
-                            onPress={() => router.push('/signup?from=onboarding')}
-                            activeOpacity={0.8}
-                            style={s.emailBtn}
-                        >
-                            <Text style={s.emailBtnText}>Sign Up with Email</Text>
-                        </TouchableOpacity>
+                        <View style={{ marginTop: 12 }}>
+                            <AnimatedButton
+                                title="Sign Up with Email"
+                                onPress={() => router.push('/signup?from=onboarding')}
+                                type="capsule"
+                                backgroundColor="#007AFF"
+                                shadowColor="#0066D6"
+                                fullWidth
+                            />
+                        </View>
 
                     </Animated.View>
 

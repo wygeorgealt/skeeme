@@ -6,10 +6,16 @@ import { Colors } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { haptics } from '@/lib/haptics';
-import { CheckCircle, AltArrowLeft } from '@solar-icons/react-native/Bold';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import MedalRibbonsStar from '@/assets/icons/pikaicons/award-medal.svg';
+import PlayCircle from '@/assets/icons/pikaicons/arrow-right.svg';
+import Gallery from '@/assets/icons/pikaicons/photo-image-default.svg';
+import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
 import { getSavedQuizzes } from '@/lib/offlineSaved';
 import { MCQCard } from '@/components/quiz/MCQCard';
 import { TheoryCard } from '@/components/quiz/TheoryCard';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 
 type SavedQuiz = Awaited<ReturnType<typeof getSavedQuizzes>>[number];
 
@@ -107,7 +113,7 @@ export default function SavedQuizOfflineScreen() {
     return (
       <View style={[styles.container, { backgroundColor: C.background, paddingTop: insets.top + 24 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <AltArrowLeft size={22} color={C.text} />
+          <AltArrowLeft width={22} height={22} color={C.text} />
         </TouchableOpacity>
         <Text style={{ color: C.text, fontWeight: '900', fontSize: 22, marginTop: 16 }}>Saved quiz not found</Text>
         <Text style={{ color: C.textSecondary, marginTop: 10, lineHeight: 20, paddingHorizontal: 16 }}>
@@ -122,7 +128,7 @@ export default function SavedQuizOfflineScreen() {
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: insets.top + 20, backgroundColor: C.background }}>
         <View style={[styles.resultCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff' }]}>
           <View style={[styles.resultIcon, { backgroundColor: 'rgba(52,199,89,0.15)' }]}>
-            <CheckCircle size={28} color="#34C759" />
+            <CheckCircle width={28} height={28} color="#34C759" />
           </View>
           <Text style={[styles.resultTitle, { color: C.text }]}>{Math.round(percentage)}% Saved Quiz</Text>
           <Text style={[styles.resultSub, { color: C.textSecondary }]}>
@@ -147,7 +153,7 @@ export default function SavedQuizOfflineScreen() {
     <ScrollView contentContainerStyle={{ padding: 16, paddingTop: insets.top + 12, backgroundColor: C.background }}>
       <View style={styles.topRow}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <AltArrowLeft size={22} color={C.text} />
+          <AltArrowLeft width={22} height={22} color={C.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ color: C.textTertiary, fontWeight: '800', fontSize: 12, textTransform: 'uppercase' }}>
@@ -188,19 +194,17 @@ export default function SavedQuizOfflineScreen() {
         )}
       </View>
 
-      <TouchableOpacity
-        disabled={!hasSelectedAction}
-        onPress={onNext}
-        activeOpacity={0.85}
-        style={[
-          styles.primaryBtn,
-          { backgroundColor: hasSelectedAction ? '#007AFF' : isDark ? '#2C2C2E' : '#E5E5EA' },
-        ]}
-      >
-        <Text style={styles.primaryBtnText}>
-          {isTheory ? (currentQIndex === questions.length - 1 ? 'Finish' : 'Next') : !isRevealed ? 'Check Answer' : currentQIndex === questions.length - 1 ? 'Finish' : 'Next'}
-        </Text>
-      </TouchableOpacity>
+      <View style={{ marginTop: 18, width: '100%' }}>
+        <AnimatedButton
+          title={isTheory ? (currentQIndex === questions.length - 1 ? 'Finish' : 'Next') : !isRevealed ? 'Check Answer' : currentQIndex === questions.length - 1 ? 'Finish' : 'Next'}
+          onPress={onNext}
+          disabled={!hasSelectedAction}
+          type="capsule"
+          backgroundColor={hasSelectedAction ? '#007AFF' : isDark ? '#2C2C2E' : '#E5E5EA'}
+          shadowColor={hasSelectedAction ? '#0066D6' : isDark ? '#1C1C1E' : '#D1D1D6'}
+          fullWidth
+        />
+      </View>
     </ScrollView>
   );
 }

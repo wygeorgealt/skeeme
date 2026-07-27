@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Colors } from '@/constants/theme';
-import { Share, Dislike } from '@solar-icons/react-native/Bold'; // Using Dislike/Like or just an icon for Feedback
+import Share from '@/assets/icons/pikaicons/send-plane-horizontal.svg';
+import Dislike from '@/assets/icons/pikaicons/minus-circle.svg'; // Using Dislike/Like or just an icon for Feedback
 
 import { useRouter } from 'expo-router';
 
@@ -46,12 +47,12 @@ export function ShareModal({ visible, onClose, onShare, isDark }: ShareModalProp
 
                         <View style={styles.optionsContainer}>
                             <TouchableOpacity style={styles.optionBtn} onPress={handleShare}>
-                                <Share size={24} color={isDark ? '#f8fafc' : '#0f172a'} />
+                                <Share width={24} height={24} color={isDark ? '#f8fafc' : '#0f172a'} />
                                 <Text style={[styles.optionText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Share</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.optionBtn} onPress={handleFeedback}>
-                                <Dislike size={24} color={isDark ? '#f8fafc' : '#0f172a'} />
+                                <Dislike width={24} height={24} color={isDark ? '#f8fafc' : '#0f172a'} />
                                 <Text style={[styles.optionText, { color: isDark ? '#f8fafc' : '#0f172a' }]}>Feedback</Text>
                             </TouchableOpacity>
                         </View>

@@ -9,7 +9,7 @@ import { SafeAreaView,  useSafeAreaInsets  } from 'react-native-safe-area-contex
 import * as Haptics from 'expo-haptics';
 
 import { Colors } from '@/constants/theme';
-import { CheckCircle } from '@solar-icons/react-native/Bold';
+import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
 const ANALOGIES = [
@@ -89,7 +89,7 @@ export default function AnalogyScreen() {
 
                     {isSelected ? (
                       <View style={s.checkWrap}>
-                        <CheckCircle size={20} color="#007AFF" />
+                        <CheckCircle width={20} height={20} color="#007AFF" />
                       </View>
                     ) : null}
                   </TouchableOpacity>

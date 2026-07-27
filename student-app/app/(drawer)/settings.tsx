@@ -1,23 +1,35 @@
 import { View, ScrollView, TouchableOpacity, useColorScheme, StyleSheet, Platform, Modal, TextInput, Alert, Switch } from 'react-native';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useAuthStore } from '@/store/authStore';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { Colors, Radius } from '@/constants/theme';
-import { AltArrowLeft, AltArrowRight } from '@solar-icons/react-native/Bold';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Image } from 'expo-image';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+import Wallet from '@/assets/icons/pikaicons/wallet-default.svg';
+import PlusCircle from '@/assets/icons/pikaicons/plus-circle.svg';
+import Gift from '@/assets/icons/pikaicons/gift-default.svg';
+import Bell from '@/assets/icons/pikaicons/notification-bell-on.svg';
+import Sparkle from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import Flag from '@/assets/icons/pikaicons/flag.svg';
+import Lock from '@/assets/icons/pikaicons/lock-close.svg';
+import Bookmark from '@/assets/icons/pikaicons/bookmark-default.svg';
+import LogOut from '@/assets/icons/pikaicons/log-out-right.svg';
+import Trash from '@/assets/icons/pikaicons/delete-dustbin-01.svg';
 
 // ─── Settings Row Component ─────────────────────────────────────────────────────────────
 function SettingsRow({
-    iconSource, iconBg, label, value, onPress, isLast = false, isDark, destructive = false,
+    IconComponent, iconBg, label, value, onPress, isLast = false, isDark, destructive = false,
     hasSwitch = false, switchValue = false, onSwitch = () => {}
 }: {
-    iconSource?: any; iconBg?: string; label: string; value?: string;
+    IconComponent?: any; iconBg?: string; label: string; value?: string;
     onPress?: () => void; isLast?: boolean; isDark: boolean; destructive?: boolean;
     hasSwitch?: boolean; switchValue?: boolean; onSwitch?: (val: boolean) => void;
 }) {
@@ -28,12 +40,12 @@ function SettingsRow({
             activeOpacity={hasSwitch ? 1 : 0.7}
             style={[s.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.separator }]}
         >
-            {iconSource && iconBg && (
+            {IconComponent && iconBg && (
                 <View style={[s.rowIcon, { backgroundColor: iconBg }]}>
-                    <Image source={iconSource} style={{ width: 22, height: 22 }} contentFit="contain" />
+                    <IconComponent width={20} height={20} color={destructive ? C.destructive : (isDark ? 'white' : '#1e293b')} />
                 </View>
             )}
-            <Text style={[s.rowLabel, { color: destructive ? C.destructive : C.text, marginLeft: iconSource ? 0 : 16, textAlign: (destructive && !iconSource) ? 'center' : 'left' }]} numberOfLines={1}>
+            <Text style={[s.rowLabel, { color: destructive ? C.destructive : C.text, marginLeft: IconComponent ? 0 : 16, textAlign: (destructive && !IconComponent) ? 'center' : 'left' }]} numberOfLines={1}>
                 {label}
             </Text>
             {value ? <Text style={[s.rowValue, { color: C.textSecondary }]}>{value}</Text> : null}
@@ -45,7 +57,7 @@ function SettingsRow({
                     thumbColor={Platform.OS === 'ios' ? undefined : '#f4f3f4'}
                 />
             ) : (
-                !!onPress && !destructive && <AltArrowRight size={18} color={C.textTertiary} />
+                !!onPress && !destructive && <AltArrowRight width={18} height={18} color={C.textTertiary} />
             )}
         </TouchableOpacity>
     );
@@ -149,7 +161,7 @@ export default function SettingsScreen() {
                 {/* ── Header ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(100)} style={s.headerWrap}>
                     <TouchableOpacity onPress={() => router.back()} style={[s.backBtn, { backgroundColor: C.secondaryBackground }]}>
-                        <AltArrowLeft size={24} color={C.text} />
+                        <AltArrowLeft width={24} height={24} color={C.text} />
                     </TouchableOpacity>
                     <Text style={[s.headerTitle, { color: C.text }]}>Settings</Text>
                 </Animated.View>
@@ -157,16 +169,16 @@ export default function SettingsScreen() {
                 <Animated.View entering={FadeInDown.duration(400).delay(200)}>
                     <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Account</Text>
                     <GroupedCard isDark={isDark}>
-                        <SettingsRow iconSource={require('@/assets/3dicons/3dicons-wallet-front-color.png')} iconBg="#007AFF20" label="Subscription" value={isPremium ? 'Skeeme Pro' : 'Skeeme Free'} isDark={isDark} />
-                        <SettingsRow iconSource={require('@/assets/3dicons/3dicons-plus-dynamic-color.png')} iconBg="#FF950020" label="Upgrade" onPress={() => router.push('/paywall')} isDark={isDark} />
-                        <SettingsRow iconSource={require('@/assets/3dicons/3dicons-wallet-front-color.png')} iconBg="#007AFF20" label="Buy Credits" onPress={() => router.push('/buy-credits' as any)} isDark={isDark} />
-                        <SettingsRow iconSource={require('@/assets/3dicons/3dicons-gift-dynamic-color.png')} iconBg="#34C75920" label="Refer a Friend" onPress={() => router.push('/(drawer)/referral' as any)} isLast={true} isDark={isDark} />
+                        <SettingsRow IconComponent={Wallet} iconBg="#007AFF20" label="Subscription" value={isPremium ? 'Skeeme Pro' : 'Skeeme Free'} isDark={isDark} />
+                        <SettingsRow IconComponent={PlusCircle} iconBg="#FF950020" label="Upgrade" onPress={() => router.push('/paywall')} isDark={isDark} />
+                        <SettingsRow IconComponent={Wallet} iconBg="#007AFF20" label="Buy Credits" onPress={() => router.push('/buy-credits' as any)} isDark={isDark} />
+                        <SettingsRow IconComponent={Gift} iconBg="#34C75920" label="Refer a Friend" onPress={() => router.push('/(drawer)/referral' as any)} isLast={true} isDark={isDark} />
                     </GroupedCard>
 
                     <Text style={[s.sectionLabel, { color: C.textSecondary }]}>App Preferences</Text>
                     <GroupedCard isDark={isDark}>
-                        <SettingsRow iconSource={require('@/assets/3dicons/3dicons-bell-front-color.png')} iconBg="#FF2D5520" label="Notifications" hasSwitch={true} switchValue={notificationsEnabled} onSwitch={setNotificationsEnabled} isDark={isDark} />
-                        <SettingsRow iconSource={require('@/assets/3dicons/3dicons-flash-front-color.png')} iconBg="#FF950020" label="Haptic Feedback" hasSwitch={true} switchValue={hapticsEnabled} onSwitch={(val) => useAuthStore.getState().setHapticsEnabled(val)} isDark={isDark} />
+                        <SettingsRow IconComponent={Bell} iconBg="#FF2D5520" label="Notifications" hasSwitch={true} switchValue={notificationsEnabled} onSwitch={setNotificationsEnabled} isDark={isDark} />
+                        <SettingsRow IconComponent={Sparkle} iconBg="#FF950020" label="Haptic Feedback" hasSwitch={true} switchValue={hapticsEnabled} onSwitch={(val) => useAuthStore.getState().setHapticsEnabled(val)} isDark={isDark} />
                         <View style={{ paddingVertical: 12, paddingRight: 16 }}>
                             <View style={{ flexDirection: 'row', gap: 8 }}>
                                 {(['light', 'dark', 'system'] as const).map((t) => (
@@ -184,18 +196,18 @@ export default function SettingsScreen() {
 
                     <Text style={[s.sectionLabel, { color: C.textSecondary }]}>Support</Text>
                     <GroupedCard isDark={isDark}>
-                        <SettingsRow iconSource={require('@/assets/3dicons/3dicons-flag-front-color.png')} iconBg="#8E8E9320" label="Report Issue" onPress={() => router.push('/(drawer)/support' as any)} isDark={isDark} />
-                        <SettingsRow iconSource={require('@/assets/3dicons/3dicons-lock-front-color.png')} iconBg="#8E8E9320" label="Privacy Policy" onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/privacy')} isDark={isDark} />
-                        <SettingsRow iconSource={require('@/assets/3dicons/3dicons-bookmark-iso-color.png')} iconBg="#8E8E9320" label="Terms of Service" onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/terms')} isLast={true} isDark={isDark} />
+                        <SettingsRow IconComponent={Flag} iconBg="#8E8E9320" label="Report Issue" onPress={() => router.push('/(drawer)/support' as any)} isDark={isDark} />
+                        <SettingsRow IconComponent={Lock} iconBg="#8E8E9320" label="Privacy Policy" onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/privacy')} isDark={isDark} />
+                        <SettingsRow IconComponent={Bookmark} iconBg="#8E8E9320" label="Terms of Service" onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/terms')} isLast={true} isDark={isDark} />
                     </GroupedCard>
 
                     <GroupedCard isDark={isDark}>
-                        <SettingsRow iconSource={require('@/assets/3dicons/3dicons-forward-front-color.png')} iconBg="#8E8E9320" label="Log Out" onPress={handleSignOut} isLast={true} isDark={isDark} />
+                        <SettingsRow IconComponent={LogOut} iconBg="#8E8E9320" label="Log Out" onPress={handleSignOut} isLast={true} isDark={isDark} />
                     </GroupedCard>
 
                     <Text style={[s.sectionLabel, { color: C.destructive }]}>Danger Zone</Text>
                     <GroupedCard isDark={isDark}>
-                        <SettingsRow iconSource={require('@/assets/3dicons/3dicons-trash-can-front-color.png')} iconBg="#FF3B3020" label="Delete Account" onPress={() => setDeleteModalVisible(true)} isLast={true} isDark={isDark} destructive={true} />
+                        <SettingsRow IconComponent={Trash} iconBg="#FF3B3020" label="Delete Account" onPress={() => setDeleteModalVisible(true)} isLast={true} isDark={isDark} destructive={true} />
                     </GroupedCard>
                 </Animated.View>
             </ScrollView>
@@ -221,19 +233,28 @@ export default function SettingsScreen() {
                         </View>
 
                         <View style={{ flexDirection: 'row', gap: 12 }}>
-                            <TouchableOpacity 
-                                style={{ flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA', alignItems: 'center' }}
-                                onPress={() => setDeleteModalVisible(false)}
-                            >
-                                <Text style={{ color: C.text, fontWeight: '600', fontSize: 16 }}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={{ flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: C.destructive, alignItems: 'center', opacity: (isDeleting || deleteInput !== deleteConfirmationCode) ? 0.5 : 1 }}
-                                onPress={handleDeleteAccount}
-                                disabled={isDeleting || deleteInput !== deleteConfirmationCode}
-                            >
-                                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>{isDeleting ? 'Deleting...' : 'Delete'}</Text>
-                            </TouchableOpacity>
+                            <View style={{ flex: 1 }}>
+                                <AnimatedButton
+                                    title="Cancel"
+                                    onPress={() => setDeleteModalVisible(false)}
+                                    type="capsule"
+                                    backgroundColor={isDark ? '#2C2C2E' : '#E5E5EA'}
+                                    textColor={C.text}
+                                    fullWidth
+                                />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <AnimatedButton
+                                    title="Delete"
+                                    onPress={handleDeleteAccount}
+                                    type="capsule"
+                                    backgroundColor={C.destructive}
+                                    shadowColor="#C51C1C"
+                                    loading={isDeleting}
+                                    disabled={deleteInput !== deleteConfirmationCode}
+                                    fullWidth
+                                />
+                            </View>
                         </View>
                     </View>
                 </View>

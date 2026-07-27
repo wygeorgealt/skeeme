@@ -11,7 +11,8 @@ import { Colors, Spacing, Radius } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'expo-status-bar';
-import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
+import { AppleIcon } from '@/components/ui/BrandIcons';
 import { FallingAssets } from '@/components/ui/FallingAssets';
 
 
@@ -106,48 +107,33 @@ export default function AuthSelectScreen() {
                 {/* Auth Buttons */}
                 <Animated.View entering={FadeInDown.duration(600).delay(600)} style={s.buttonsSection}>
 
-                    {/* Continue with Google */}
-                    <TouchableOpacity
-                        onPress={handleGoogleSignIn}
-                        activeOpacity={0.8}
-                        style={[
-                            s.authBtn, 
-                            { 
-                                borderWidth: 1, 
-                                borderColor: C.separatorOpaque,
-                                backgroundColor: isDark ? '#1E293B' : '#FFFFFF'
-                            }
-                        ]}
-                        disabled={isGoogleLoading}
-                    >
-                        {isGoogleLoading ? (
-                            <LoadingSpinner size={24} color={isDark ? '#FFFFFF' : '#000000'} />
-                        ) : (
-                            <>
-                                <View style={s.authBtnIcon}>
-                                    <GoogleIcon width={20} height={20} />
-                                </View>
-                                <Text style={[s.authBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
-                                    Continue with Google
-                                </Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
+                    <View style={{ marginBottom: 12 }}>
+                        <AnimatedButton
+                            title="Continue with Google"
+                            onPress={handleGoogleSignIn}
+                            loading={isGoogleLoading}
+                            type="capsule"
+                            backgroundColor={isDark ? '#1E293B' : '#FFFFFF'}
+                            textColor={isDark ? '#FFFFFF' : '#000000'}
+                            style={{ borderColor: C.separatorOpaque, borderWidth: 1 }}
+                            icon="google"
+                            fullWidth
+                        />
+                    </View>
 
                     {/* Continue with Apple (iOS only) */}
                     {Platform.OS === 'ios' && (
-                        <TouchableOpacity
-                            onPress={() => {
-                                router.push('/signup');
-                            }}
-                            activeOpacity={0.8}
-                            style={[s.authBtn, s.appleBtn, { backgroundColor: isDark ? '#FFFFFF' : '#000000' }]}
-                        >
-                            <View style={s.authBtnIcon}>
-                                <AppleIcon width={20} height={20} color={isDark ? '#000000' : '#FFFFFF'} />
-                            </View>
-                            <Text style={[s.authBtnText, { color: isDark ? '#000000' : '#FFFFFF' }]}>Continue with Apple</Text>
-                        </TouchableOpacity>
+                        <View style={{ marginBottom: 12 }}>
+                            <AnimatedButton
+                                title="Continue with Apple"
+                                onPress={() => router.push('/signup')}
+                                type="capsule"
+                                backgroundColor={isDark ? '#FFFFFF' : '#000000'}
+                                textColor={isDark ? '#000000' : '#FFFFFF'}
+                                icon="apple"
+                                fullWidth
+                            />
+                        </View>
                     )}
 
                     {/* Divider */}
@@ -157,14 +143,16 @@ export default function AuthSelectScreen() {
                         <View style={[s.dividerLine, { backgroundColor: C.separator }]} />
                     </View>
 
-                    {/* Continue with Email */}
-                    <TouchableOpacity
-                        onPress={() => router.push('/signup')}
-                        activeOpacity={0.8}
-                        style={[s.emailBtn, { backgroundColor: C.primary }]}
-                    >
-                        <Text style={s.emailBtnText}>Continue with Email</Text>
-                    </TouchableOpacity>
+                    <View style={{ marginTop: 16 }}>
+                        <AnimatedButton
+                            title="Continue with Email"
+                            onPress={() => router.push('/signup')}
+                            type="capsule"
+                            backgroundColor={C.primary}
+                            shadowColor="#0066D6"
+                            fullWidth
+                        />
+                    </View>
 
                     {/* (Preview onboarding removed) */}
 

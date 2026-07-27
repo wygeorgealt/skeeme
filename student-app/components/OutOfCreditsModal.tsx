@@ -2,7 +2,8 @@ import { Text } from '@/components/ui/Text';
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, useColorScheme, Share, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
-import { RoundArrowUp, Forward } from '@solar-icons/react-native/Bold';
+import RoundArrowUp from '@/assets/icons/pikaicons/arrow-up.svg';
+import Forward from '@/assets/icons/pikaicons/arrow-right.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
@@ -177,7 +178,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                                 activeOpacity={0.8}
                                 style={user?.plan_name === 'pro' || user?.plan_name === 'max' ? styles.primaryBtn : [styles.secondaryBtn, { borderColor: isDark ? '#3A3A3C' : '#E5E5EA' }]}
                             >
-                                <Forward size={20} color={user?.plan_name === 'pro' || user?.plan_name === 'max' ? '#FFFFFF' : (isDark ? '#FFFFFF' : '#000000')} />
+                                <Forward width={20} height={20} color={user?.plan_name === 'pro' || user?.plan_name === 'max' ? '#FFFFFF' : (isDark ? '#FFFFFF' : '#000000')} />
                                 <Text style={user?.plan_name === 'pro' || user?.plan_name === 'max' ? styles.primaryBtnText : [styles.secondaryBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
                                     Earn more credits
                                 </Text>

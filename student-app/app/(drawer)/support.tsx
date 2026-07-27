@@ -5,11 +5,15 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar'
 import * as ImagePicker from 'expo-image-picker';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius } from '@/constants/theme';
-import { AltArrowLeft, CloseCircle, Gallery, Letter } from '@solar-icons/react-native/Bold';
+import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
+import CloseCircle from '@/assets/icons/pikaicons/multiple-cross-cancel-circle.svg';
+import Gallery from '@/assets/icons/pikaicons/photo-image-default.svg';
+import Letter from '@/assets/icons/pikaicons/envelope-default.svg';
 
 
 import { Text } from '@/components/ui/Text';
@@ -109,7 +113,7 @@ export default function SupportScreen() {
                     activeOpacity={0.7}
                     style={[s.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}
                 >
-                    <AltArrowLeft size={24} color={C.text} />
+                    <AltArrowLeft width={24} height={24} color={C.text} />
                 </TouchableOpacity>
                 <Text style={[s.headerTitle, { color: C.text }]}>Support</Text>
                 <View style={{ width: 44 }} />
@@ -154,7 +158,7 @@ export default function SupportScreen() {
                                 activeOpacity={0.7}
                                 style={s.removeScreenshotBtn}
                             >
-                                <CloseCircle size={24} color="#ef4444" />
+                                <CloseCircle width={24} height={24} color="#ef4444" />
                             </TouchableOpacity>
                         </View>
                     ) : (
@@ -166,30 +170,24 @@ export default function SupportScreen() {
                                 { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F8FAFC', borderColor: C.separator }
                             ]}
                         >
-                            <Gallery size={22} color={isDark ? '#6b7280' : '#94a3b8'} />
+                            <Gallery width={22} height={22} color={isDark ? '#6b7280' : '#94a3b8'} />
                             <Text style={[s.attachBtnText, { color: isDark ? '#9ca3af' : '#64748b' }]}>
                                 Add a screenshot
                             </Text>
                         </TouchableOpacity>
                     )}
 
-                    <TouchableOpacity
-                        onPress={handleSubmit}
-                        disabled={isSubmitting}
-                        activeOpacity={0.8}
-                        style={[s.submitBtn, { backgroundColor: C.primary }, isSubmitting && { opacity: 0.7 }]}
-                    >
-                        {isSubmitting ? (
-                            <LoadingSpinner size={24} color="white" strokeWidth={3} />
-                        ) : (
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <AnimatedIcon source={require('@/assets/3dicons/3dicons-mail-dynamic-color.png')} size={24} animationType="pop" />
-
-                                <View style={{ width: 10 }} />
-                                <Text style={s.submitBtnText}>Send Message</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
+                    <View style={{ width: '100%', alignItems: 'center', marginTop: 10 }}>
+                        <AnimatedButton
+                            title="Send Message"
+                            onPress={handleSubmit}
+                            loading={isSubmitting}
+                            type="capsule"
+                            backgroundColor="#007AFF"
+                            shadowColor="#0066D6"
+                            fullWidth
+                        />
+                    </View>
                 </Animated.View>
             </ScrollView>
         </KeyboardAvoidingView>

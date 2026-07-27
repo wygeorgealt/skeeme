@@ -18,7 +18,8 @@ import { PostHogProvider } from 'posthog-react-native';
 import { posthog } from '@/lib/posthog';
 import { SuperwallProviderWrapper } from '@/lib/monetization';
 import * as SystemUI from 'expo-system-ui';
-import { DangerTriangle, Refresh } from '@solar-icons/react-native/Bold';
+import DangerTriangle from '@/assets/icons/pikaicons/troubleshoot.svg';
+import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
 import { initializeMonetization } from '@/lib/monetization';
 import * as Application from 'expo-application';
 import { apiStandard } from '@/lib/api';
@@ -436,7 +437,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: isDark ? '#0f0f11' : '#fafafa' }}>
-      <DangerTriangle size={48} color="#ef4444" />
+      <DangerTriangle width={48} height={48} color="#ef4444" />
       <Text style={{ fontSize: 20, fontWeight: '900', color: isDark ? 'white' : '#0f172a', marginTop: 20, marginBottom: 8, textAlign: 'center' }}>
         Something went wrong.
       </Text>
@@ -447,7 +448,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         onPress={retry}
         style={{ backgroundColor: isDark ? 'white' : '#0f172a', paddingHorizontal: 24, paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', width: '100%', justifyContent: 'center' }}
       >
-        <Refresh size={18} color={isDark ? '#0f172a' : 'white'} />
+        <Refresh width={18} height={18} color={isDark ? '#0f172a' : 'white'} />
         <Text style={{ color: isDark ? '#0f172a' : 'white', fontWeight: 'bold', marginLeft: 8 }}>Try Again</Text>
       </TouchableOpacity>
 

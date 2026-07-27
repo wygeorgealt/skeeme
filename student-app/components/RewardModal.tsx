@@ -4,7 +4,7 @@ import { Modal as ReanimatedModal } from 'react-native-reanimated-modal';
 import { View, TouchableOpacity, StyleSheet, Dimensions, useColorScheme } from 'react-native';
 
 import { BlurView } from 'expo-blur';
-import { CupStar } from '@solar-icons/react-native/Bold';
+import CupStar from '@/assets/icons/pikaicons/award-medal.svg';
 
 import Animated, { FadeInUp, ZoomIn, FadeOutDown } from 'react-native-reanimated';
 
@@ -44,7 +44,7 @@ export const RewardModal: React.FC<RewardModalProps> = ({ isVisible, onClose, re
                 >
                     <Animated.View entering={ZoomIn.delay(300).springify()} style={styles.iconContainer}>
                         <View style={styles.iconCircle}>
-                            <CupStar size={50} color="#FFD700" />
+                            <CupStar width={50} height={50} color="#FFD700" />
                         </View>
                     </Animated.View>
 
