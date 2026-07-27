@@ -23,12 +23,11 @@ ENV PHP_POST_MAX_SIZE=20M
 ENV PHP_UPLOAD_MAX_FILESIZE=20M
 ENV NGINX_MAX_BODY_SIZE=20M
 
-# PHP-FPM Performance & Cost Optimization (ondemand mode frees memory when idle)
-RUN FPM_POOL_DIR=$(find /etc -type d -name "pool.d" | head -n 1) && \
-    if [ -z "$FPM_POOL_DIR" ]; then FPM_POOL_DIR="/etc/php/8.3/fpm/pool.d"; fi && \
-    mkdir -p "$FPM_POOL_DIR" && \
-    echo "[www]\npm = ondemand\npm.max_children = 15\npm.process_idle_timeout = 10s\npm.max_requests = 500\n" > "$FPM_POOL_DIR/zzz-tuning.conf"
-
+# PHP-FPM Performance & Cost Optimization (Low Memory footprint)
+ENV PHP_FPM_PM="ondemand"
+ENV PHP_FPM_PM_MAX_CHILDREN="4"
+ENV PHP_FPM_PM_PROCESS_IDLE_TIMEOUT="10s"
+ENV PHP_FPM_PM_MAX_REQUESTS="500"
 # Set working directory
 WORKDIR /var/www/html
 
