@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const LARAVEL_API_URL = process.env.LARAVEL_API_URL || 'http://skeeme.test/api';
+const GO_API_URL = process.env.GO_API_URL || 'http://localhost:8080/api';
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET || 'skeeme-ai-secret-key-123';
 
 export interface AuthResult {
@@ -23,8 +23,8 @@ export async function authorizeAndDeduct(
     extractionId?: string
 ): Promise<AuthResult> {
     try {
-        console.log(`[auth] Calling Laravel authorize: action=${actionType} cost=${cost} url=${LARAVEL_API_URL}/internal/ai/authorize`);
-        const response = await axios.post(`${LARAVEL_API_URL}/internal/ai/authorize`, {
+        console.log(`[auth] Calling Go authorize: action=${actionType} cost=${cost} url=${GO_API_URL}/internal/ai/authorize`);
+        const response = await axios.post(`${GO_API_URL}/internal/ai/authorize`, {
             action_type: actionType,
             cost: cost,
             request_id: requestId,
@@ -37,7 +37,7 @@ export async function authorizeAndDeduct(
             }
         });
 
-        console.log(`[auth] Laravel response:`, JSON.stringify(response.data));
+        console.log(`[auth] Go response:`, JSON.stringify(response.data));
 
         if (response.data.success) {
             return {
@@ -67,7 +67,7 @@ export async function refundCredits(
     requestId: string
 ): Promise<void> {
     try {
-        await axios.post(`${LARAVEL_API_URL}/internal/ai/refund`, {
+        await axios.post(`${GO_API_URL}/internal/ai/refund`, {
             user_id: userId,
             request_id: requestId
         }, {

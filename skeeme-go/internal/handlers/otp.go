@@ -9,6 +9,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
+	"skeeme-go/internal/services"
 )
 
 type OtpHandler struct {
@@ -46,8 +47,14 @@ func (h *OtpHandler) Send(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Trigger email via Resend API
-	fmt.Printf("Mock Email Sent to %s: OTP is %s\n", req.Email, code)
+	emailService := services.NewEmailService()
+	// OTP Type might be provided in the request for password_reset, but let's default to verification
+	otpType := "verification" 
+	
+	err = emailService.SendOTP(req.Email, code, otpType)
+	if err != nil {
+		fmt.Printf("Error sending email: %v\n", err)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

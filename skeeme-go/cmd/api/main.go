@@ -57,7 +57,7 @@ func main() {
 	systemHandler := &handlers.SystemHandler{DB: database, Redis: redisClient}
 	authHandler := &handlers.AuthHandler{DB: database, Redis: redisClient}
 	otpHandler := &handlers.OtpHandler{DB: database, Redis: redisClient}
-	oauthHandler := &handlers.OAuthHandler{DB: database}
+	oauthHandler := &handlers.OAuthHandler{DB: database, Redis: redisClient}
 	profileHandler := &handlers.ProfileHandler{DB: database}
 	internalAIHandler := &handlers.InternalAIHandler{DB: database, Redis: redisClient}
 	creditHandler := &handlers.CreditHandler{DB: database}
@@ -66,6 +66,14 @@ func main() {
 	flashcardHandler := &handlers.FlashcardHandler{DB: database}
 	streakHandler := &handlers.StreakHandler{DB: database}
 	pushTokenHandler := &handlers.PushTokenHandler{DB: database}
+	onboardingHandler := &handlers.OnboardingHandler{DB: database}
+	fileExtractHandler := &handlers.FileExtractHandler{DB: database, Redis: redisClient}
+	userExamHandler := &handlers.UserExamHandler{DB: database}
+	billingHandler := &handlers.BillingHandler{DB: database}
+	webhookHandler := &handlers.WebhookHandler{DB: database}
+	referralHandler := &handlers.ReferralHandler{DB: database}
+	supportHandler := &handlers.SupportHandler{DB: database}
+	gradeHandler := &handlers.GradeHandler{}
 
 	// Middleware
 	requireAuth := middleware.AuthMiddleware(database)
@@ -73,6 +81,10 @@ func main() {
 
 	// Routes
 	r.Get("/api/health", healthHandler.Check)
+	
+	// Webhooks (public)
+	r.Post("/api/webhooks/paystack", webhookHandler.Paystack)
+	r.Post("/api/webhooks/revenuecat", webhookHandler.RevenueCat)
 	
 	// Internal AI Routes (Node.js AI service)
 	r.Route("/api/v1/internal/ai", func(r chi.Router) {
@@ -94,6 +106,8 @@ func main() {
 		r.Post("/otp/send", otpHandler.Send)
 		r.Post("/otp/verify", otpHandler.Verify)
 		r.Post("/otp/resend", otpHandler.Resend)
+		r.Post("/auth/verify-account", authHandler.VerifyAccount)
+		r.Post("/auth/reset-password", authHandler.ResetPassword)
 
 		// Protected Routes
 		r.Group(func(r chi.Router) {
@@ -103,6 +117,14 @@ func main() {
 			r.Get("/me", authHandler.Me)
 			r.Patch("/profile", profileHandler.Update)
 			r.Post("/preferences", profileHandler.Preferences)
+			r.Post("/me/onboarding", onboardingHandler.CompleteOnboarding)
+			r.Post("/files/extract", fileExtractHandler.Extract)
+			r.Post("/quizzes/grade-theory", gradeHandler.GradeTheory)
+			r.Delete("/profile", profileHandler.DeleteAccount)
+			r.Post("/profile/password", profileHandler.UpdatePassword)
+			
+			// Support
+			r.Post("/support/contact", supportHandler.Contact)
 
 			// Credit Endpoints
 			r.Get("/credits/summary", creditHandler.Summary)
@@ -141,6 +163,23 @@ func main() {
 
 			// Notifications
 			r.Post("/device-token", pushTokenHandler.UpdateToken)
+			
+			// Referrals
+			r.Get("/referral/my-code", referralHandler.MyCode)
+			r.Get("/referral/stats", referralHandler.Stats)
+			r.Post("/referral/claim-rewards", referralHandler.ClaimRewards)
+			r.Get("/referral/pending-rewards", referralHandler.PendingRewards)
+			r.Post("/referral/redeem", referralHandler.Redeem)
+
+			// Billing
+			r.Get("/billing/history", billingHandler.History)
+
+			// User Exams CRUD
+			r.Route("/user-exams", func(r chi.Router) {
+				r.Get("/", userExamHandler.List)
+				r.Post("/", userExamHandler.Create)
+				r.Delete("/{id}", userExamHandler.Delete)
+			})
 		})
 	})
 

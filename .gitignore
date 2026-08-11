@@ -1,26 +1,41 @@
-/.phpunit.cache
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
-/vendor
+# ===========================================================================
+# Skeeme .gitignore — Go Backend + Expo Mobile + AI Service
+# ===========================================================================
+
+# ── OS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ── Environment ────────────────────────────────────────────────────────────
 .env
-.env.backup
-.env.production
-.phpactor.json
-.phpunit.result.cache
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
-/auth.json
-/.fleet
-/.idea
-/.nova
-/.vscode
-/.zed
-create_tester.php
-delete_all_users.php
-clear_mock_users.php
+.env.local
+.env.*.local
+
+# ── Go Backend (skeeme-go/) ────────────────────────────────────────────────
+skeeme-go/tmp/
+skeeme-go/*.exe
+skeeme-go/*.out
+skeeme-go/*.test
+
+# ── Mobile App (student-app/) ──────────────────────────────────────────────
+student-app/node_modules/
+student-app/dist/
+student-app/.expo/
+
+# ── AI Service (ai-service/) ──────────────────────────────────────────────
+ai-service/node_modules/
+
+# ── Landing Page (when created) ───────────────────────────────────────────
+landing/node_modules/
+landing/dist/
+
+# ── Dump (legacy code preserved for audit) ─────────────────────────────────
+_dump/node_modules/
+_dump/vendor/
+
+# ── IDE ────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.code-workspace

@@ -15,7 +15,7 @@ func main() {
 		log.Println("No .env file found, using system variables")
 	}
 
-	database, err := db.InitPostgres()
+	database, err := db.NewStudentDB()
 	if err != nil {
 		log.Fatalf("Could not connect to postgres: %v", err)
 	}

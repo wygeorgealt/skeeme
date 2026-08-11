@@ -1,8 +1,13 @@
 package models
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type User struct {
@@ -33,11 +38,12 @@ type User struct {
 	Role                   sql.NullString `db:"role" json:"role"`
 	Status                 string         `db:"status" json:"status"`
 	Credits                int            `db:"credits" json:"credits"`
-	SubscriptionTier       string         `db:"subscription_tier" json:"subscription_tier"`
+	SubscriptionTier       string         `db:"subscription_tier" json:"plan_name"` // Maps to plan_name in frontend
 	DailyFreeScansUsed     int            `db:"daily_free_scans_used" json:"daily_free_scans_used"`
 	LastFreeScanAt         sql.NullTime   `db:"last_free_scan_at" json:"last_free_scan_at"`
 	LastCreditRefillAt     sql.NullTime   `db:"last_credit_refill_at" json:"last_credit_refill_at"`
 	CreditsEmptiedAt       sql.NullTime   `db:"credits_emptied_at" json:"credits_emptied_at"`
+	NextFreeRefillAt       *time.Time     `db:"-" json:"next_free_refill_at,omitempty"`
 	IsFlagged              bool           `db:"is_flagged" json:"is_flagged"`
 	FlagReason             sql.NullString `db:"flag_reason" json:"flag_reason"`
 	IsVip                  bool           `db:"is_vip" json:"is_vip"`
@@ -55,4 +61,17 @@ type User struct {
 	ClassID                sql.NullInt64  `db:"class_id" json:"class_id"`
 	Dob                    sql.NullTime   `db:"dob" json:"dob"`
 	Age                    sql.NullInt64  `db:"age" json:"age"`
+}
+
+func (u *User) PopulateTransientFields(ctx context.Context, rdb *redis.Client) {
+	if u.SubscriptionTier == "free" && rdb != nil {
+		emptiedKey := fmt.Sprintf("credits_emptied_at:%d", u.ID)
+		emptiedAtStr, err := rdb.Get(ctx, emptiedKey).Result()
+		if err == nil && emptiedAtStr != "" {
+			if emptiedAt, parseErr := time.Parse(time.RFC3339, emptiedAtStr); parseErr == nil {
+				refill := emptiedAt.AddDate(0, 0, 14)
+				u.NextFreeRefillAt = &refill
+			}
+		}
+	}
 }
