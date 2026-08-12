@@ -66,7 +66,7 @@ func (s *EmailService) send(to, subject, html string) error {
 	}
 
 	payload := ResendPayload{
-		From:    "Skeeme <hello@skeeme.com>", // Make sure to use verified domain
+		From:    "Skeeme <hello@contact.skeeme.com>", // Make sure to use verified domain
 		To:      to,
 		Subject: subject,
 		Html:    html,
