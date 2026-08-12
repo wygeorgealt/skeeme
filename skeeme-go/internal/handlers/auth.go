@@ -131,9 +131,22 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var count int
-	h.DB.GetContext(r.Context(), &count, "SELECT count(*) FROM users WHERE email = $1", req.Email)
-	if count > 0 {
+	var existingUser models.User
+	err := h.DB.GetContext(r.Context(), &existingUser, "SELECT * FROM users WHERE email = $1", req.Email)
+	if err == nil {
+		if existingUser.Status == "pending" {
+			// User exists but hasn't verified OTP yet. Resend OTP and allow frontend to proceed.
+			code := fmt.Sprintf("%06d", rand.Intn(1000000))
+			h.Redis.Set(r.Context(), fmt.Sprintf("otp_token_%s", req.Email), code, 10*time.Minute)
+			
+			emailService := services.NewEmailService()
+			emailService.SendOTP(req.Email, code, "verification")
+			
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "OTP resent for pending user"}`))
+			return
+		}
 		http.Error(w, "Email already exists", http.StatusConflict)
 		return
 	}
