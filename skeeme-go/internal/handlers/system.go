@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
@@ -17,8 +18,11 @@ func (h *SystemHandler) Pricing(w http.ResponseWriter, r *http.Request) {
 	var valueStr string
 	err := h.DB.GetContext(r.Context(), &valueStr, "SELECT value FROM system_settings WHERE key = $1", "pricing")
 	
-	if err != nil {
-		http.Error(w, "Pricing configuration not found", http.StatusInternalServerError)
+	if err == sql.ErrNoRows {
+		// Provide a default if database is not seeded
+		valueStr = `{"free": 10, "pro": 100}`
+	} else if err != nil {
+		http.Error(w, "Pricing configuration error", http.StatusInternalServerError)
 		return
 	}
 
@@ -32,8 +36,11 @@ func (h *SystemHandler) AppVersion(w http.ResponseWriter, r *http.Request) {
 	var valueStr string
 	err := h.DB.GetContext(r.Context(), &valueStr, "SELECT value FROM system_settings WHERE key = $1", "app_version")
 	
-	if err != nil {
-		http.Error(w, "App version configuration not found", http.StatusInternalServerError)
+	if err == sql.ErrNoRows {
+		// Provide a default if database is not seeded
+		valueStr = `{"min_version": "1.0.0", "latest_version": "1.0.0"}`
+	} else if err != nil {
+		http.Error(w, "App version configuration error", http.StatusInternalServerError)
 		return
 	}
 
