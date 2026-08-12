@@ -108,7 +108,7 @@ export default function RootLayout() {
     if (user) {
       if (!onboardingComplete) {
         if (currentSegment !== '(onboarding)') {
-          router.replace('/(onboarding)/education');
+          router.replace('/(onboarding)/name');
         }
       } else {
         // Allow all users (free or premium) to access the app after onboarding

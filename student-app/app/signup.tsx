@@ -31,11 +31,9 @@ export default function SignupScreen() {
     const insets = useSafeAreaInsets();
     const { login, onboardingData } = useAuthStore();
 
-    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [nameError, setNameError] = useState('');
     const [emailError, setEmailError] = useState('');
     const [passwordError, setPasswordError] = useState('');
 
@@ -54,9 +52,8 @@ export default function SignupScreen() {
     const strength = getPasswordStrength();
 
     const handleSignup = async () => {
-        setNameError(''); setEmailError(''); setPasswordError('');
+        setEmailError(''); setPasswordError('');
         let hasError = false;
-        if (!name.trim()) { setNameError('Please enter your full name.'); hasError = true; }
         if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setEmailError('Please enter a valid email.'); hasError = true; }
         
         const hasUpper = /[A-Z]/.test(password);
@@ -71,7 +68,6 @@ export default function SignupScreen() {
         setIsLoading(true);
         try {
             await api.post('register', {
-                name: name.trim(),
                 email: email.trim().toLowerCase(),
                 password,
                 password_confirmation: password,
@@ -103,7 +99,6 @@ export default function SignupScreen() {
                     }
                 }
                 if (errors.password) setPasswordError(errors.password[0]);
-                if (errors.name) setNameError(errors.name[0]);
             } else if (!error.response) {
                 // Network error
                 setPasswordError('No internet connection. Check your network and try again.');
@@ -143,18 +138,6 @@ export default function SignupScreen() {
 
                     <Animated.View key={`grouped-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={[s.groupedList, { backgroundColor: C.card }]}> 
                         <View style={s.groupedRow}>
-                            <Text style={[s.groupedLabel, { color: C.text }]}>Name</Text>
-                            <TextInput
-                                style={[s.groupedInput, { color: C.text }]}
-                                placeholder="Your full name"
-                                placeholderTextColor={C.textTertiary}
-                                autoCapitalize="words"
-                                value={name}
-                                onChangeText={t => { setName(t); setNameError(''); }}
-                            />
-                        </View>
-                        <View style={[s.separator, { backgroundColor: C.separator }]} />
-                        <View style={s.groupedRow}>
                             <Text style={[s.groupedLabel, { color: C.text }]}>Email</Text>
                             <TextInput
                                 style={[s.groupedInput, { color: C.text }]}
@@ -182,9 +165,8 @@ export default function SignupScreen() {
 
                     {/* Footer / Errors / Strength */}
                     <Animated.View key={`footer-${animKey}`} entering={FadeInDown.delay(160).duration(400)} style={s.listFooter}>
-                        {(!!nameError || !!emailError || !!passwordError) ? (
+                        {(!!emailError || !!passwordError) ? (
                             <View style={{ flex: 1 }}>
-                                {!!nameError && <Text style={[s.errorFooter, { color: C.destructive }]}>{nameError}</Text>}
                                 {emailError === 'exists' ? (
                                     <Text style={[s.errorFooter, { color: C.destructive }]}>
                                         Account already exists.{' '}

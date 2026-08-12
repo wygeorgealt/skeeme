@@ -77,18 +77,7 @@ export default function AuthSelectScreen() {
 
             {/* Mascot Area with Glow */}
             <View style={s.mascotContainer}>
-                <View style={s.mascotWrapper}>
-                    {/* Animated Glow Layer */}
-                    <Animated.View style={[s.glowCircle, { backgroundColor: C.primary }, animatedGlowStyle]} />
-                    
-                    <Animated.View entering={FadeIn.duration(1000)} style={s.mascotBox}>
-                        <Image 
-                            source={MASCOT_IMAGE} 
-                            style={[s.mascotImage, { tintColor: C.primary }]}
-                            resizeMode="contain"
-                        />
-                    </Animated.View>
-                </View>
+
             </View>
 
             {/* Content Section */}
@@ -96,9 +85,15 @@ export default function AuthSelectScreen() {
                 
                 <Animated.View entering={FadeInDown.duration(800).delay(300)} style={s.textSection}>
                     <Text style={[s.greeting, { color: C.primary }]}>Hi!</Text>
-                    <Text style={[s.title, { color: C.text }]}>
-                        I&apos;m Skeeme,
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, marginTop: 4 }}>
+                        <Text style={[s.title, { marginBottom: 0, color: C.text, marginRight: -10 }]}>I&apos;m </Text>
+                        <Image 
+                            source={MASCOT_IMAGE} 
+                            style={{ width: 55, height: 54, tintColor: C.primary, marginLeft: 2, marginRight: -13 }}
+                            resizeMode="contain"
+                        />
+                        <Text style={[s.title, { marginBottom: 0, color: C.text }]}>keeme,</Text>
+                    </View>
                     <Text style={[s.subtitle, { color: C.textSecondary }]}>
                         Your study friend for success. Let&apos;s ace those exams together!
                     </Text>
@@ -116,6 +111,7 @@ export default function AuthSelectScreen() {
                             backgroundColor={isDark ? '#1E293B' : '#FFFFFF'}
                             textColor={isDark ? '#FFFFFF' : '#000000'}
                             style={{ borderColor: C.separatorOpaque, borderWidth: 1 }}
+                            shadowColor="#0066D6"
                             icon="google"
                             fullWidth
                         />
@@ -130,6 +126,7 @@ export default function AuthSelectScreen() {
                                 type="capsule"
                                 backgroundColor={isDark ? '#FFFFFF' : '#000000'}
                                 textColor={isDark ? '#000000' : '#FFFFFF'}
+                                shadowColor="#0066D6"
                                 icon="apple"
                                 fullWidth
                             />
