@@ -3,26 +3,24 @@ package middleware
 import (
 	"net/http"
 	"os"
-	"strings"
 )
 
 // InternalAuthMiddleware protects internal routes (e.g., from Node.js)
 func InternalAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		secret := os.Getenv("INTERNAL_API_SECRET")
+		secret := os.Getenv("INTERNAL_SECRET")
 		if secret == "" {
 			http.Error(w, "Internal API secret not configured", http.StatusInternalServerError)
 			return
 		}
 
-		authHeader := r.Header.Get("Authorization")
+		authHeader := r.Header.Get("X-Internal-Secret")
 		if authHeader == "" {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		token := strings.TrimPrefix(authHeader, "Bearer ")
-		if token != secret {
+		if authHeader != secret {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
