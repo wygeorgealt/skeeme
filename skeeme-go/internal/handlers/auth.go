@@ -186,7 +186,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 			credits, referral_code, ai_preferences, created_at, updated_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()) RETURNING id
 	`
-	err := h.DB.QueryRowContext(r.Context(), query, 
+	err = h.DB.QueryRowContext(r.Context(), query, 
 		fullName, firstName, lastName, req.Email, string(hashedPassword), 
 		&role, "pending", 100, refCode, aiPrefsJSON,
 	).Scan(&userID)
