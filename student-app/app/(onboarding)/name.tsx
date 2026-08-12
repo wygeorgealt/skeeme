@@ -71,7 +71,7 @@ export default function NameScreen() {
                         style={[s.input, { 
                             backgroundColor: C.card,
                             color: C.text,
-                            borderColor: C.border
+                            borderColor: C.separator
                         }]}
                         placeholder="Your name"
                         placeholderTextColor={C.textTertiary}
@@ -112,7 +112,7 @@ const s = StyleSheet.create({
         marginBottom: 40,
     },
     title: {
-        fontSize: FontSize.h1,
+        fontSize: FontSize.title1,
         fontWeight: '800',
         marginBottom: 12,
         letterSpacing: -0.5,
