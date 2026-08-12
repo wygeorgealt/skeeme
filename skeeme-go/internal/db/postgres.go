@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -48,6 +49,9 @@ func NewStudentDB() (*sqlx.DB, error) {
 			"host=%s port=%s dbname=%s user=%s password=%s sslmode=require",
 			host, port, dbName, user, pass,
 		)
+		log.Printf("DB: Using individual vars (host=%s, port=%s, db=%s, user=%s)", host, port, dbName, user)
+	} else {
+		log.Println("DB: Using DATABASE_URL")
 	}
 
 	db, err := sqlx.Connect("postgres", dsn)
@@ -59,5 +63,6 @@ func NewStudentDB() (*sqlx.DB, error) {
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
+	log.Println("DB: Connected to Postgres successfully")
 	return db, nil
 }
