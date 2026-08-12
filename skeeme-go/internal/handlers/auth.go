@@ -151,18 +151,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	firstName := req.FirstName
-	lastName := req.LastName
 	fullName := req.Name
-	if fullName == "" {
-		fullName = strings.TrimSpace(firstName + " " + lastName)
-	} else if firstName == "" {
-		parts := strings.SplitN(fullName, " ", 2)
-		firstName = parts[0]
-		if len(parts) > 1 {
-			lastName = parts[1]
-		}
-	}
+	firstName := ""
+	lastName := ""
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	
