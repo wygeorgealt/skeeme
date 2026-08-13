@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -37,7 +38,8 @@ func (h *OtpHandler) Send(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Email == "" {
+	cleanEmail := strings.TrimSpace(strings.ToLower(req.Email))
+	if cleanEmail == "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]any{
@@ -50,8 +52,7 @@ func (h *OtpHandler) Send(w http.ResponseWriter, r *http.Request) {
 	rand.Seed(time.Now().UnixNano())
 	code := fmt.Sprintf("%06d", rand.Intn(1000000))
 	
-	// Ensure we match Laravel's cache key pattern if they share Redis during migration
-	key := fmt.Sprintf("otp_token_%s", req.Email)
+	key := fmt.Sprintf("otp_token_%s", cleanEmail)
 
 	// Store in Redis with 10 min expiry
 	err := h.Redis.Set(r.Context(), key, code, 10*time.Minute).Err()
@@ -67,7 +68,7 @@ func (h *OtpHandler) Send(w http.ResponseWriter, r *http.Request) {
 	emailService := services.NewEmailService()
 	otpType := "verification" 
 	
-	err = emailService.SendOTP(req.Email, code, otpType)
+	err = emailService.SendOTP(cleanEmail, code, otpType)
 	if err != nil {
 		fmt.Printf("Error sending email: %v\n", err)
 	}
@@ -90,10 +91,11 @@ func (h *OtpHandler) Verify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key := fmt.Sprintf("otp_token_%s", req.Email)
+	cleanEmail := strings.TrimSpace(strings.ToLower(req.Email))
+	key := fmt.Sprintf("otp_token_%s", cleanEmail)
 	val, err := h.Redis.Get(r.Context(), key).Result()
 	
-	if err == redis.Nil || val != req.Code {
+	if err == redis.Nil || val != strings.TrimSpace(req.Code) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]any{

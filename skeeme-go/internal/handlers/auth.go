@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -46,8 +47,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cleanEmail := strings.TrimSpace(strings.ToLower(req.Email))
+
 	var user models.User
-	err := h.DB.GetContext(r.Context(), &user, "SELECT * FROM users WHERE email = $1 LIMIT 1", req.Email)
+	err := h.DB.GetContext(r.Context(), &user, "SELECT * FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1", cleanEmail)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -154,7 +157,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Email == "" || req.Password == "" {
+	cleanEmail := strings.TrimSpace(strings.ToLower(req.Email))
+	if cleanEmail == "" || req.Password == "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(map[string]any{
@@ -186,9 +190,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 	aiPrefsJSON, _ := json.Marshal(aiPrefs)
 
-	// Check if user already exists
+	// Check if user already exists (case-insensitive)
 	var existingUser models.User
-	err = h.DB.GetContext(r.Context(), &existingUser, "SELECT * FROM users WHERE email = $1", req.Email)
+	err = h.DB.GetContext(r.Context(), &existingUser, "SELECT * FROM users WHERE LOWER(TRIM(email)) = $1", cleanEmail)
 	if err == nil {
 		// If the user already verified their email or is fully active, reject with clear reason
 		if existingUser.Status == "active" && existingUser.EmailVerifiedAt.Valid {
@@ -225,16 +229,16 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 		// Generate and send fresh OTP
 		code := fmt.Sprintf("%06d", rand.Intn(1000000))
-		h.Redis.Set(r.Context(), fmt.Sprintf("otp_token_%s", req.Email), code, 10*time.Minute)
+		h.Redis.Set(r.Context(), fmt.Sprintf("otp_token_%s", cleanEmail), code, 10*time.Minute)
 
 		emailService := services.NewEmailService()
-		emailService.SendOTP(req.Email, code, "verification")
+		emailService.SendOTP(cleanEmail, code, "verification")
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]any{
 			"message": "Registration successful. Please verify your email.",
-			"email":   req.Email,
+			"email":   cleanEmail,
 		})
 		return
 	}
@@ -255,7 +259,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()) RETURNING id
 	`
 	err = h.DB.QueryRowContext(r.Context(), query, 
-		fullName, firstName, lastName, req.Email, string(hashedPassword), 
+		fullName, firstName, lastName, cleanEmail, string(hashedPassword), 
 		&role, "pending", 100, refCode, aiPrefsJSON,
 	).Scan(&userID)
 
@@ -315,8 +319,10 @@ func (h *AuthHandler) VerifyAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cleanEmail := strings.TrimSpace(strings.ToLower(req.Email))
+
 	var user models.User
-	err := h.DB.GetContext(r.Context(), &user, "SELECT * FROM users WHERE email = $1 LIMIT 1", req.Email)
+	err := h.DB.GetContext(r.Context(), &user, "SELECT * FROM users WHERE LOWER(TRIM(email)) = $1 LIMIT 1", cleanEmail)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
@@ -381,9 +387,36 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	cleanEmail := strings.TrimSpace(strings.ToLower(req.Email))
+	if cleanEmail == "" || req.Password == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Email and new password are required",
+		})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Failed to process password",
+		})
+		return
+	}
 	
-	res, err := h.DB.ExecContext(r.Context(), "UPDATE users SET password = $1 WHERE email = $2", hashedPassword, req.Email)
+	// Update password, and if user was pending, mark as active & email verified
+	res, err := h.DB.ExecContext(r.Context(), `
+		UPDATE users 
+		SET password = $1, 
+		    status = 'active',
+		    email_verified_at = COALESCE(email_verified_at, NOW()),
+		    updated_at = NOW() 
+		WHERE LOWER(TRIM(email)) = $2
+	`, string(hashedPassword), cleanEmail)
+
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -397,7 +430,7 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]any{
-			"message": "User account not found.",
+			"message": "No account found with this email address.",
 		})
 		return
 	}
