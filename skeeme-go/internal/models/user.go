@@ -61,6 +61,7 @@ type User struct {
 	ClassID                sql.NullInt64  `db:"class_id" json:"class_id"`
 	Dob                    sql.NullTime   `db:"dob" json:"dob"`
 	Age                    sql.NullInt64  `db:"age" json:"age"`
+	NextExamDate           sql.NullTime   `db:"next_exam_date" json:"next_exam_date"`
 }
 
 func (u *User) PopulateTransientFields(ctx context.Context, rdb *redis.Client) {
