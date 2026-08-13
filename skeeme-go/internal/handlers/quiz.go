@@ -17,13 +17,21 @@ type QuizHandler struct {
 
 func (h *QuizHandler) History(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
+		return
+	}
 	
 	var sessions []models.QuizSession
 	err := h.DB.SelectContext(r.Context(), &sessions, 
 		"SELECT * FROM quiz_sessions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100", user.ID)
 	if err != nil {
 		log.Printf("[quiz] History DB error for user %d: %v", user.ID, err)
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to load quiz history"})
 		return
 	}
 
@@ -37,12 +45,20 @@ func (h *QuizHandler) History(w http.ResponseWriter, r *http.Request) {
 
 func (h *QuizHandler) GetSession(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
+		return
+	}
 	id := chi.URLParam(r, "id")
 
 	var session models.QuizSession
 	err := h.DB.GetContext(r.Context(), &session, "SELECT * FROM quiz_sessions WHERE id = $1 AND user_id = $2", id, user.ID)
 	if err != nil {
-		http.Error(w, "Not found", http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Quiz session not found"})
 		return
 	}
 
@@ -52,11 +68,27 @@ func (h *QuizHandler) GetSession(w http.ResponseWriter, r *http.Request) {
 
 func (h *QuizHandler) DeleteSession(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
+		return
+	}
 	id := chi.URLParam(r, "id")
 
-	_, err := h.DB.ExecContext(r.Context(), "DELETE FROM quiz_sessions WHERE id = $1 AND user_id = $2", id, user.ID)
+	result, err := h.DB.ExecContext(r.Context(), "DELETE FROM quiz_sessions WHERE id = $1 AND user_id = $2", id, user.ID)
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to delete quiz session"})
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Quiz session not found or already deleted"})
 		return
 	}
 
@@ -74,10 +106,18 @@ type QuizSessionStoreRequest struct {
 
 func (h *QuizHandler) StoreSession(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
+		return
+	}
 	
 	var req QuizSessionStoreRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Invalid quiz session data payload"})
 		return
 	}
 
@@ -90,14 +130,16 @@ func (h *QuizHandler) StoreSession(w http.ResponseWriter, r *http.Request) {
 	`, user.ID, req.Topic, req.Difficulty, req.TotalQuestions, req.CorrectAnswers, req.ScorePercentage, req.TimeSpentSeconds).Scan(&newID)
 
 	if err != nil {
-		http.Error(w, "Failed to save quiz session", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to save quiz session to database"})
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Quiz session saved",
+		"message": "Quiz session saved successfully",
 		"id":      newID,
 	})
 }

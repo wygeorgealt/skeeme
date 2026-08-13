@@ -19,14 +19,18 @@ type CreditSummary struct {
 func (h *CreditHandler) Summary(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
 	if user == nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
 		return
 	}
 
 	var credits int
 	err := h.DB.GetContext(r.Context(), &credits, "SELECT credits FROM users WHERE id = $1", user.ID)
 	if err != nil {
-		http.Error(w, "Error fetching credits", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to fetch user credits from database"})
 		return
 	}
 
@@ -42,18 +46,21 @@ type CheckoutRequest struct {
 func (h *CreditHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
 	if user == nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
 		return
 	}
 
 	var req CheckoutRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Invalid payment checkout request payload"})
 		return
 	}
 
 	// In a real app, call Paystack API here
-	// For now, we mock the response
 	authUrl := "https://checkout.paystack.com/mock_transaction"
 	reference := "mock_ref_" + string(rune(user.ID)) + "12345"
 
@@ -73,7 +80,9 @@ type OutOfCreditsRequest struct {
 func (h *CreditHandler) OutOfCredits(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
 	if user == nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
 		return
 	}
 
@@ -86,10 +95,13 @@ func (h *CreditHandler) OutOfCredits(w http.ResponseWriter, r *http.Request) {
 
 	_, err := h.DB.ExecContext(r.Context(), "INSERT INTO out_of_credit_events (user_id, source, created_at, updated_at) VALUES ($1, $2, NOW(), NOW())", user.ID, req.Source)
 	if err != nil {
-		http.Error(w, "Failed to log event", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to record out of credits event"})
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message": "Event logged"}`))
+	json.NewEncoder(w).Encode(map[string]any{"message": "Event recorded successfully"})
 }

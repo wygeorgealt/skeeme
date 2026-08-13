@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 
@@ -37,29 +38,49 @@ type AuthResponse struct {
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Invalid request payload",
+		})
 		return
 	}
 
 	var user models.User
 	err := h.DB.GetContext(r.Context(), &user, "SELECT * FROM users WHERE email = $1 LIMIT 1", req.Email)
 	if err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Invalid email or password",
+		})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Invalid email or password",
+		})
 		return
 	}
 
 	if user.Role.Valid && user.Role.String != "student" {
-		http.Error(w, "You do not have permission to access the student portal.", http.StatusForbidden)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "You do not have permission to access the student portal.",
+		})
 		return
 	}
 
 	if user.Status != "active" {
-		http.Error(w, "Your account is "+user.Status+". Please contact support.", http.StatusForbidden)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Your account is " + user.Status + ". Please verify your email or contact support.",
+		})
 		return
 	}
 
@@ -69,7 +90,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := auth.GenerateSanctumToken(h.DB, user.ID, req.Device)
 	if err != nil {
-		http.Error(w, "Could not generate token", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Could not generate authentication session",
+		})
 		return
 	}
 
@@ -121,43 +146,36 @@ type RegisterRequest struct {
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Invalid request payload",
+		})
 		return
 	}
 
 	if req.Email == "" || req.Password == "" {
-		http.Error(w, "Email and password are required", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Email and password are required",
+			"errors": map[string]any{
+				"email":    []string{"Email is required."},
+				"password": []string{"Password is required."},
+			},
+		})
 		return
 	}
 
-	var existingUser models.User
-	err := h.DB.GetContext(r.Context(), &existingUser, "SELECT * FROM users WHERE email = $1", req.Email)
-	if err == nil {
-		if existingUser.Status == "pending" {
-			// User exists but hasn't verified OTP yet. Resend OTP and allow frontend to proceed.
-			code := fmt.Sprintf("%06d", rand.Intn(1000000))
-			h.Redis.Set(r.Context(), fmt.Sprintf("otp_token_%s", req.Email), code, 10*time.Minute)
-			
-			emailService := services.NewEmailService()
-			emailService.SendOTP(req.Email, code, "verification")
-			
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"message": "OTP resent for pending user"}`))
-			return
-		}
-		http.Error(w, "Email already exists", http.StatusConflict)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Failed to process password",
+		})
 		return
 	}
-
-	fullName := req.Name
-	firstName := ""
-	lastName := ""
-
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	
-	rand.Seed(time.Now().UnixNano())
-	refCode := fmt.Sprintf("%06X", rand.Intn(0xFFFFFF))
 
 	aiPrefs := map[string]string{
 		"education_level": req.EducationLevel,
@@ -167,6 +185,66 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		"language":        "english",
 	}
 	aiPrefsJSON, _ := json.Marshal(aiPrefs)
+
+	// Check if user already exists
+	var existingUser models.User
+	err = h.DB.GetContext(r.Context(), &existingUser, "SELECT * FROM users WHERE email = $1", req.Email)
+	if err == nil {
+		// If the user already verified their email or is fully active, reject with clear reason
+		if existingUser.Status == "active" && existingUser.EmailVerifiedAt.Valid {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			json.NewEncoder(w).Encode(map[string]any{
+				"message": "An account with this email already exists.",
+				"errors": map[string]any{
+					"email": []string{"An account with this email already exists. Please log in."},
+				},
+			})
+			return
+		}
+
+		// If user was never verified or is still pending: update their credentials and send fresh OTP
+		_, updateErr := h.DB.ExecContext(r.Context(), `
+			UPDATE users 
+			SET password = $1, 
+			    name = COALESCE(NULLIF($2, ''), name),
+			    ai_preferences = $3,
+			    status = 'pending',
+			    updated_at = NOW()
+			WHERE id = $4
+		`, string(hashedPassword), req.Name, aiPrefsJSON, existingUser.ID)
+
+		if updateErr != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]any{
+				"message": fmt.Sprintf("Failed to update pending account: %v", updateErr),
+			})
+			return
+		}
+
+		// Generate and send fresh OTP
+		code := fmt.Sprintf("%06d", rand.Intn(1000000))
+		h.Redis.Set(r.Context(), fmt.Sprintf("otp_token_%s", req.Email), code, 10*time.Minute)
+
+		emailService := services.NewEmailService()
+		emailService.SendOTP(req.Email, code, "verification")
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Registration successful. Please verify your email.",
+			"email":   req.Email,
+		})
+		return
+	}
+
+	fullName := req.Name
+	firstName := ""
+	lastName := ""
+
+	rand.Seed(time.Now().UnixNano())
+	refCode := fmt.Sprintf("%06X", rand.Intn(0xFFFFFF))
 	role := "student"
 
 	var userID int64
@@ -182,7 +260,23 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	).Scan(&userID)
 
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to create user: %v", err), http.StatusInternalServerError)
+		// Catch race condition: another request inserted the same email between our SELECT and INSERT
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			json.NewEncoder(w).Encode(map[string]any{
+				"message": "An account with this email already exists.",
+				"errors": map[string]any{
+					"email": []string{"An account with this email already exists. Please log in."},
+				},
+			})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": fmt.Sprintf("Failed to create user account: %v", err),
+		})
 		return
 	}
 
@@ -213,26 +307,45 @@ type VerifyAccountRequest struct {
 func (h *AuthHandler) VerifyAccount(w http.ResponseWriter, r *http.Request) {
 	var req VerifyAccountRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Invalid request payload",
+		})
 		return
 	}
 
 	var user models.User
 	err := h.DB.GetContext(r.Context(), &user, "SELECT * FROM users WHERE email = $1 LIMIT 1", req.Email)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "User account not found.",
+		})
 		return
 	}
 
 	if user.Status == "active" {
+		token, _ := auth.GenerateSanctumToken(h.DB, user.ID, "mobile_app")
+		user.PopulateTransientFields(r.Context(), h.Redis)
+
+		res := AuthResponse{
+			User:  &user,
+			Token: token,
+		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"message": "Account already verified"}`))
+		json.NewEncoder(w).Encode(res)
 		return
 	}
 
 	_, err = h.DB.ExecContext(r.Context(), "UPDATE users SET status = 'active', email_verified_at = NOW(), approved_at = NOW() WHERE id = $1", user.ID)
 	if err != nil {
-		http.Error(w, "Failed to verify account", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Failed to activate account. Please try again.",
+		})
 		return
 	}
 
@@ -240,7 +353,7 @@ func (h *AuthHandler) VerifyAccount(w http.ResponseWriter, r *http.Request) {
 	emailService.SendWelcome(user.Email, user.Name)
 
 	token, _ := auth.GenerateSanctumToken(h.DB, user.ID, "mobile_app")
-
+	user.Status = "active"
 	user.PopulateTransientFields(r.Context(), h.Redis)
 
 	res := AuthResponse{
@@ -260,7 +373,11 @@ type ResetPasswordRequest struct {
 func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	var req ResetPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Invalid request payload",
+		})
 		return
 	}
 
@@ -268,18 +385,28 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	
 	res, err := h.DB.ExecContext(r.Context(), "UPDATE users SET password = $1 WHERE email = $2", hashedPassword, req.Email)
 	if err != nil {
-		http.Error(w, "Failed to reset password", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "Failed to reset password. Please try again.",
+		})
 		return
 	}
 	rows, _ := res.RowsAffected()
 	if rows == 0 {
-		http.Error(w, "User not found", http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]any{
+			"message": "User account not found.",
+		})
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message": "Password reset successfully"}`))
+	json.NewEncoder(w).Encode(map[string]any{
+		"message": "Password reset successfully",
+	})
 }
 
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {

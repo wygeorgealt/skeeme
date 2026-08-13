@@ -24,7 +24,9 @@ type Transaction struct {
 func (h *BillingHandler) History(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
 	if user == nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
 		return
 	}
 
@@ -38,7 +40,9 @@ func (h *BillingHandler) History(w http.ResponseWriter, r *http.Request) {
 	`
 	err := h.DB.SelectContext(r.Context(), &transactions, query, user.ID)
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to load billing history"})
 		return
 	}
 

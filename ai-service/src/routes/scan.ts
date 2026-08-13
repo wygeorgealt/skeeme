@@ -25,20 +25,22 @@ router.post('/solve', async (req, res) => {
         const { image, provider } = req.body;
 
         if (!token) {
-            return res.status(401).json({ error: 'Unauthorized' });
+            return res.status(401).json({ error: 'Authentication required. Please log in to solve problems.' });
         }
 
         if (!image) {
-            return res.status(400).json({ error: 'Image is required' });
+            return res.status(400).json({ error: 'Image is required. Please capture or upload a clear photo of the problem.' });
         }
 
         try {
             authResult = await authorizeAndDeduct(token, 'scan_solve', 25, idempotencyKey);
             if (!authResult.success) {
-                return res.status(authResult.status || 402).json({ error: authResult.error });
+                return res.status(authResult.status || 402).json({ 
+                    error: authResult.error || 'You do not have enough credits to solve this scan. Please refill or upgrade.' 
+                });
             }
         } catch (e: any) {
-            return res.status(500).json({ error: 'Authorization service unavailable' });
+            return res.status(500).json({ error: 'Credit authorization service is currently unavailable. Please try again shortly.' });
         }
 
         const model = getModel(provider || 'anthropic');
@@ -139,7 +141,7 @@ Do not include any other text outside the JSON block.`,
             // C7: Headers already sent — emit SSE error event instead of JSON
             sendSseError(res, 'stream_interrupted');
         } else {
-            res.status(500).json({ error: 'Failed to process image' });
+            res.status(500).json({ error: error.message || 'Failed to process and solve image. Please try taking a clearer picture.' });
         }
     }
 });

@@ -110,7 +110,7 @@ export default function AuthSelectScreen() {
                             type="capsule"
                             backgroundColor={isDark ? '#1E293B' : '#FFFFFF'}
                             textColor={isDark ? '#FFFFFF' : '#000000'}
-                            style={{ borderColor: C.separatorOpaque, borderWidth: 1 }}
+
                             shadowColor="#0066D6"
                             icon="google"
                             fullWidth

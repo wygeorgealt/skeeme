@@ -35,7 +35,11 @@ router.post('/generate', async (req, res) => {
         const card_count = Math.min(Number(req.body.card_count) || 10, 30);
 
         if (!token) {
-            return res.status(401).json({ error: 'Unauthorized' });
+            return res.status(401).json({ error: 'Authentication required. Please log in to generate flashcards.' });
+        }
+
+        if (!topic?.trim() && !extraction_id) {
+            return res.status(400).json({ error: 'Please provide a topic or upload a document to generate flashcards.' });
         }
 
         const cost = card_count * 5; // 5 credits per card
@@ -43,10 +47,12 @@ router.post('/generate', async (req, res) => {
         try {
             authResult = await authorizeAndDeduct(token, 'flashcard_generation', cost, idempotencyKey, extraction_id);
             if (!authResult.success) {
-                return res.status(authResult.status || 402).json({ error: authResult.error });
+                return res.status(authResult.status || 402).json({ 
+                    error: authResult.error || 'You do not have enough credits to generate these flashcards.' 
+                });
             }
         } catch (e: any) {
-            return res.status(500).json({ error: 'Authorization service unavailable' });
+            return res.status(500).json({ error: 'Credit authorization service is currently unavailable. Please try again shortly.' });
         }
 
         const model = getModel(provider || 'anthropic');
@@ -72,7 +78,7 @@ router.post('/generate', async (req, res) => {
             // C7: Headers already sent — emit an SSE error event instead of JSON
             sendSseError(res, 'stream_interrupted');
         } else {
-            res.status(500).json({ error: 'Failed to generate flashcards' });
+            res.status(500).json({ error: 'Failed to generate flashcards. Please try a different topic or prompt.' });
         }
     }
 });

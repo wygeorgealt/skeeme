@@ -25,28 +25,58 @@ type AIAuthorizeRequest struct {
 func (h *InternalAIHandler) Authorize(w http.ResponseWriter, r *http.Request) {
 	var req AIAuthorizeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "Invalid authorization payload",
+		})
 		return
 	}
 
 	err := credits.Deduct(r.Context(), h.DB, h.Redis, req.UserID, req.Amount, req.RequestID, req.ActionType, req.ModelUsed)
 	if err != nil {
 		if err == credits.ErrInsufficientCredits {
-			http.Error(w, "Insufficient credits", http.StatusPaymentRequired) // 402
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusPaymentRequired) // 402
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": false,
+				"message": "You do not have enough credits for this generation.",
+			})
 			return
 		}
 		if err == credits.ErrDuplicateRequest {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"status":"ok", "message":"already processed"}`))
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": true,
+				"status":  "ok",
+				"message": "Transaction already processed",
+			})
 			return
 		}
-		http.Error(w, "Internal error: "+err.Error(), http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "Internal credit deduction error: " + err.Error(),
+		})
 		return
 	}
 
+	// Fetch remaining balance to return
+	var remainingCredits int
+	_ = h.DB.GetContext(r.Context(), &remainingCredits, "SELECT credits FROM users WHERE id = $1", req.UserID)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"authorized"}`))
+	json.NewEncoder(w).Encode(map[string]any{
+		"success":           true,
+		"status":            "authorized",
+		"user_id":           req.UserID,
+		"credits_remaining": remainingCredits,
+		"message":           "Credits deducted successfully",
+	})
 }
 
 type AIRefundRequest struct {
@@ -59,22 +89,41 @@ type AIRefundRequest struct {
 func (h *InternalAIHandler) Refund(w http.ResponseWriter, r *http.Request) {
 	var req AIRefundRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "Invalid refund request payload",
+		})
 		return
 	}
 
 	err := credits.Refund(r.Context(), h.DB, h.Redis, req.UserID, req.Amount, req.RequestID, req.ActionType)
 	if err != nil {
 		if err == credits.ErrDuplicateRequest {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"status":"ok", "message":"already processed"}`))
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": true,
+				"status":  "ok",
+				"message": "Refund already processed",
+			})
 			return
 		}
-		http.Error(w, "Internal error: "+err.Error(), http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "Internal credit refund error: " + err.Error(),
+		})
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"refunded"}`))
+	json.NewEncoder(w).Encode(map[string]any{
+		"success": true,
+		"status":  "refunded",
+		"message": "Credits refunded successfully",
+	})
 }

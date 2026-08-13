@@ -17,13 +17,21 @@ type FlashcardHandler struct {
 
 func (h *FlashcardHandler) ListDecks(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
+		return
+	}
 	
 	var decks []models.FlashcardDeck
 	err := h.DB.SelectContext(r.Context(), &decks, 
 		"SELECT * FROM flashcard_decks WHERE user_id = $1 ORDER BY created_at DESC", user.ID)
 	if err != nil {
 		log.Printf("[flashcard] ListDecks DB error for user %d: %v", user.ID, err)
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to fetch flashcard decks from database"})
 		return
 	}
 	
@@ -37,12 +45,20 @@ func (h *FlashcardHandler) ListDecks(w http.ResponseWriter, r *http.Request) {
 
 func (h *FlashcardHandler) GetDeck(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
+		return
+	}
 	id := chi.URLParam(r, "id")
 
 	var deck models.FlashcardDeck
 	err := h.DB.GetContext(r.Context(), &deck, "SELECT * FROM flashcard_decks WHERE id = $1 AND user_id = $2", id, user.ID)
 	if err != nil {
-		http.Error(w, "Not found", http.StatusNotFound)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Flashcard deck not found"})
 		return
 	}
 
@@ -50,7 +66,9 @@ func (h *FlashcardHandler) GetDeck(w http.ResponseWriter, r *http.Request) {
 	var cards []models.Flashcard
 	err = h.DB.SelectContext(r.Context(), &cards, "SELECT * FROM flashcards WHERE flashcard_deck_id = $1 ORDER BY order_column ASC", deck.ID)
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to load cards for this deck"})
 		return
 	}
 	
@@ -69,11 +87,27 @@ func (h *FlashcardHandler) GetDeck(w http.ResponseWriter, r *http.Request) {
 
 func (h *FlashcardHandler) DeleteDeck(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
+		return
+	}
 	id := chi.URLParam(r, "id")
 
-	_, err := h.DB.ExecContext(r.Context(), "DELETE FROM flashcard_decks WHERE id = $1 AND user_id = $2", id, user.ID)
+	result, err := h.DB.ExecContext(r.Context(), "DELETE FROM flashcard_decks WHERE id = $1 AND user_id = $2", id, user.ID)
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to delete flashcard deck"})
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Flashcard deck not found or already deleted"})
 		return
 	}
 
@@ -87,6 +121,12 @@ type CreateDeckRequest struct {
 
 func (h *FlashcardHandler) CreateDeck(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
+		return
+	}
 	
 	var req CreateDeckRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -111,14 +151,16 @@ func (h *FlashcardHandler) CreateDeck(w http.ResponseWriter, r *http.Request) {
 	`, user.ID, title, sourceType).Scan(&newID)
 
 	if err != nil {
-		http.Error(w, "Failed to create deck", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to create flashcard deck in database"})
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Deck created",
+		"message": "Deck created successfully",
 		"id":      newID,
 	})
 }
@@ -132,11 +174,19 @@ type SaveCardsRequest struct {
 
 func (h *FlashcardHandler) SaveCards(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
+		return
+	}
 	deckID := chi.URLParam(r, "id")
 
 	var req SaveCardsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Invalid cards payload"})
 		return
 	}
 
@@ -144,13 +194,17 @@ func (h *FlashcardHandler) SaveCards(w http.ResponseWriter, r *http.Request) {
 	var count int
 	h.DB.Get(&count, "SELECT count(*) FROM flashcard_decks WHERE id = $1 AND user_id = $2", deckID, user.ID)
 	if count == 0 {
-		http.Error(w, "Unauthorized or deck not found", http.StatusForbidden)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Deck not found or you do not have permission to edit it"})
 		return
 	}
 
 	tx, err := h.DB.Beginx()
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Database transaction error"})
 		return
 	}
 
@@ -165,24 +219,35 @@ func (h *FlashcardHandler) SaveCards(w http.ResponseWriter, r *http.Request) {
 		`, deckID, card.Front, card.Back, i)
 		if err != nil {
 			tx.Rollback()
-			http.Error(w, "Failed to save cards", http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]any{"message": "Failed to save flashcards into deck"})
 			return
 		}
 	}
 
 	tx.Commit()
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"Cards saved"}`))
+	json.NewEncoder(w).Encode(map[string]any{"message": "Cards saved successfully"})
 }
 
 func (h *FlashcardHandler) History(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
+		return
+	}
 	
 	var sessions []models.FlashcardSession
 	err := h.DB.SelectContext(r.Context(), &sessions, 
 		"SELECT * FROM flashcard_sessions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100", user.ID)
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to load study history"})
 		return
 	}
 
@@ -201,10 +266,18 @@ type StoreSessionRequest struct {
 
 func (h *FlashcardHandler) StoreSession(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
+		return
+	}
 	
 	var req StoreSessionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Invalid session request payload"})
 		return
 	}
 
@@ -215,14 +288,16 @@ func (h *FlashcardHandler) StoreSession(w http.ResponseWriter, r *http.Request) 
 	`, user.ID, req.FlashcardDeckID, req.CardsCount).Scan(&newID)
 
 	if err != nil {
-		http.Error(w, "Failed to save session", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to record study session"})
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Session saved",
+		"message": "Study session recorded successfully",
 		"id":      newID,
 	})
 }

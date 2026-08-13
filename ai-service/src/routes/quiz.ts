@@ -37,12 +37,12 @@ router.post('/generate', async (req, res) => {
         const { topic, difficulty, question_count = 5, provider, extraction_id } = req.body;
 
         if (!token) {
-            return res.status(401).json({ error: 'Unauthorized' });
+            return res.status(401).json({ error: 'Authentication required. Please log in to generate quizzes.' });
         }
 
         // M5: Validate topic or document is present before hitting the AI
         if (!topic?.trim() && !extraction_id) {
-            return res.status(400).json({ error: 'topic or document is required' });
+            return res.status(400).json({ error: 'Please provide a topic or document to generate a quiz.' });
         }
 
         const cost = question_count * 10;
@@ -50,10 +50,12 @@ router.post('/generate', async (req, res) => {
         try {
             authResult = await authorizeAndDeduct(token, 'quiz_generation', cost, idempotencyKey, extraction_id);
             if (!authResult.success) {
-                return res.status(authResult.status || 402).json({ error: authResult.error });
+                return res.status(authResult.status || 402).json({ 
+                    error: authResult.error || 'You do not have enough credits to generate this quiz.' 
+                });
             }
         } catch (e: any) {
-            return res.status(500).json({ error: 'Authorization service unavailable' });
+            return res.status(500).json({ error: 'Credit authorization service is currently unavailable. Please try again shortly.' });
         }
 
         const model = getModel(provider || 'anthropic');
@@ -79,7 +81,7 @@ router.post('/generate', async (req, res) => {
             // C7: Headers already sent — can't send JSON; emit an SSE error event instead
             sendSseError(res, 'stream_interrupted');
         } else {
-            res.status(500).json({ error: 'Failed to generate quiz' });
+            res.status(500).json({ error: 'Failed to generate quiz questions. Please check the topic and try again.' });
         }
     }
 });
