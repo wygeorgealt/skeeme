@@ -88,9 +88,8 @@ func main() {
 	
 	// Internal AI Routes (Node.js AI service)
 	r.Route("/api/v2/internal/ai", func(r chi.Router) {
-		r.Use(requireInternalAuth)
-		r.Post("/authorize", internalAIHandler.Authorize)
-		r.Post("/refund", internalAIHandler.Refund)
+		r.With(requireAuth).Post("/authorize", internalAIHandler.Authorize)
+		r.With(requireInternalAuth).Post("/refund", internalAIHandler.Refund)
 	})
 	
 	r.Route("/api/v2/student", func(r chi.Router) {

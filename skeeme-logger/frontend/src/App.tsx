@@ -19,9 +19,9 @@ const serviceColors: Record<string, string> = {
   'ai-service': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
 };
 
-const serviceIcons: Record<string, React.ReactNode> = {
-  'skeeme-go': <Database className="w-4 h-4 mr-1" />,
-  'ai-service': <Bot className="w-4 h-4 mr-1" />,
+const serviceIcons: Record<string, React.ElementType> = {
+  'skeeme-go': Database,
+  'ai-service': Bot,
 };
 
 const levelColors: Record<string, string> = {
@@ -168,7 +168,10 @@ export default function App() {
                 
                 <div className="flex-shrink-0 w-32 mr-4">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs border ${serviceColors[log.service] || 'bg-zinc-800 text-zinc-300 border-zinc-700'}`}>
-                    {serviceIcons[log.service]}
+                    {serviceIcons[log.service] && (() => {
+                      const Icon = serviceIcons[log.service];
+                      return <Icon className="w-4 h-4 mr-1" />;
+                    })()}
                     {log.service}
                   </span>
                 </div>

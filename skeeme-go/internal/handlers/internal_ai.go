@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
 	"skeeme-go/internal/credits"
+	"skeeme-go/internal/middleware"
 )
 
 type InternalAIHandler struct {
@@ -34,7 +35,18 @@ func (h *InternalAIHandler) Authorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := credits.Deduct(r.Context(), h.DB, h.Redis, req.UserID, req.Amount, req.RequestID, req.ActionType, req.ModelUsed)
+	user := middleware.GetUser(r.Context())
+	if user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "Unauthorized",
+		})
+		return
+	}
+
+	err := credits.Deduct(r.Context(), h.DB, h.Redis, user.ID, req.Amount, req.RequestID, req.ActionType, req.ModelUsed)
 	if err != nil {
 		if err == credits.ErrInsufficientCredits {
 			w.Header().Set("Content-Type", "application/json")
@@ -66,14 +78,14 @@ func (h *InternalAIHandler) Authorize(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch remaining balance to return
 	var remainingCredits int
-	_ = h.DB.GetContext(r.Context(), &remainingCredits, "SELECT credits FROM users WHERE id = $1", req.UserID)
+	_ = h.DB.GetContext(r.Context(), &remainingCredits, "SELECT credits FROM users WHERE id = $1", user.ID)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
 		"success":           true,
 		"status":            "authorized",
-		"user_id":           req.UserID,
+		"user_id":           user.ID,
 		"credits_remaining": remainingCredits,
 		"message":           "Credits deducted successfully",
 	})
