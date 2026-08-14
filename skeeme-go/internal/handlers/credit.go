@@ -74,7 +74,7 @@ func (h *CreditHandler) Checkout(w http.ResponseWriter, r *http.Request) {
 }
 
 type OutOfCreditsRequest struct {
-	Source string `json:"source"`
+	FeatureAttempted string `json:"feature_attempted"`
 }
 
 func (h *CreditHandler) OutOfCredits(w http.ResponseWriter, r *http.Request) {
@@ -89,11 +89,16 @@ func (h *CreditHandler) OutOfCredits(w http.ResponseWriter, r *http.Request) {
 	var req OutOfCreditsRequest
 	json.NewDecoder(r.Body).Decode(&req)
 	
-	if req.Source == "" {
-		req.Source = "unknown"
+	if req.FeatureAttempted == "" {
+		req.FeatureAttempted = "unknown"
 	}
 
-	_, err := h.DB.ExecContext(r.Context(), "INSERT INTO out_of_credit_events (user_id, source, created_at, updated_at) VALUES ($1, $2, NOW(), NOW())", user.ID, req.Source)
+	plan := user.SubscriptionTier
+	if plan == "" {
+		plan = "free"
+	}
+
+	_, err := h.DB.ExecContext(r.Context(), "INSERT INTO out_of_credit_events (user_id, plan, feature_attempted, created_at, updated_at) VALUES ($1, $2, $3, NOW(), NOW())", user.ID, plan, req.FeatureAttempted)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
