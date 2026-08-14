@@ -4,6 +4,7 @@ import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { Image as ExpoImage } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { haptics } from '@/lib/haptics';
 import Animated, {
     useSharedValue,
@@ -454,14 +455,8 @@ export default function ScanScreen() {
                             <View style={[s.topChrome, { paddingTop: 16 }]}>
                                 <TouchableOpacity onPress={() => setEnableTorch(!enableTorch)} activeOpacity={0.7} style={s.overlayTopBtn}>
                                     <AnimatedIcon size={32} animationType="pop">
-                                        <Sparkle width={24} height={24} color={enableTorch ? '#FF9500' : '#FFF'} />
+                                        <Ionicons name={enableTorch ? 'flashlight' : 'flashlight-outline'} size={24} color={enableTorch ? '#FF9500' : '#FFF'} />
                                     </AnimatedIcon>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => router.push('/(drawer)/generate')} activeOpacity={0.7} style={{ justifyContent: 'center', alignItems: 'center', minHeight: 44 }}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8 }}>
-                                        <DocumentText width={18} height={18} color="white" />
-                                        <Text style={{ color: 'white', fontWeight: '800', marginLeft: 6, fontSize: 16, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 }}>Quiz</Text>
-                                    </View>
                                 </TouchableOpacity>
                             </View>
 
@@ -469,7 +464,7 @@ export default function ScanScreen() {
                                 <Text style={s.instructionText}>Take a clear photo of your questions</Text>
                             </View>
 
-                            <View style={[s.bottomChrome, { paddingBottom: Math.max(insets.bottom, 32) + 90 }]}>
+                            <View style={[s.bottomChrome, { paddingBottom: Math.max(insets.bottom, 32) + 120 }]}>
                                 <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={s.galleryBtn}>
                                     <Gallery width={28} height={28} color="white" />
                                 </TouchableOpacity>

@@ -30,14 +30,12 @@ import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/fre
 type QuizMode = 'topic' | 'file';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
-import Brain from '@/assets/icons/pikaicons/brain.svg';
+import Grid from '@/assets/icons/pikaicons/grid-dashboard-02.svg';
 import File from '@/assets/icons/pikaicons/file-default.svg';
-import Leaf from '@/assets/icons/pikaicons/award-medal.svg';
-import LightbulbBolt from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
 import Fire from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
 
 const MODE_OPTIONS = [
-    { key: 'topic', label: 'By Topic', Icon: Brain },
+    { key: 'topic', label: 'By Topic', Icon: Grid },
     { key: 'file', label: 'From File', Icon: File },
 ];
 

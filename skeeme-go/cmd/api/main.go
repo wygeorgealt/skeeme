@@ -87,13 +87,13 @@ func main() {
 	r.Post("/api/webhooks/revenuecat", webhookHandler.RevenueCat)
 	
 	// Internal AI Routes (Node.js AI service)
-	r.Route("/api/v1/internal/ai", func(r chi.Router) {
+	r.Route("/api/v2/internal/ai", func(r chi.Router) {
 		r.Use(requireInternalAuth)
 		r.Post("/authorize", internalAIHandler.Authorize)
 		r.Post("/refund", internalAIHandler.Refund)
 	})
 	
-	r.Route("/api/v1/student", func(r chi.Router) {
+	r.Route("/api/v2/student", func(r chi.Router) {
 		r.Route("/system", func(r chi.Router) {
 			r.Get("/pricing", systemHandler.Pricing)
 			r.Get("/app-version", systemHandler.AppVersion)

@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native';
-import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { Text } from '@/components/ui/Text';
 import { Colors, Radius } from '@/constants/theme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 
 export default function ReferralScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
-  const C = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const isDark = scheme === 'dark';
+  const C = Colors[isDark ? 'dark' : 'light'];
 
   const { onboardingData, setOnboardingData } = useAuthStore();
 
@@ -30,14 +30,25 @@ export default function ReferralScreen() {
     router.push('/(onboarding)/notifications');
   };
 
-  return (
-    <View style={[s.container, { backgroundColor: C.secondaryBackground }]}>
-      <View style={[s.card, { paddingTop: Math.max(insets.top + 8, 20) }]}>
-        <Text style={[s.title, { color: C.text }]}>Referral code (optional)</Text>
-        <Text style={[s.subtitle, { color: C.textSecondary }]}>
-          If you were given a code, enter it here. Otherwise you can skip.
-        </Text>
+  // Custom skip button rendered in the footerExtra slot
+  const SkipButton = (
+    <TouchableOpacity onPress={handleSkip} activeOpacity={0.7} style={s.skipBtn}>
+        <Text style={[s.skipBtnText, { color: C.textSecondary }]}>Skip for now</Text>
+    </TouchableOpacity>
+  );
 
+  return (
+    <OnboardingShell
+      step={9}
+      totalSteps={9} // We add one to total steps just for this optional screen so the progress bar looks right
+      stepLabel="Optional"
+      title="Have a referral code?"
+      subtitle="If you were given a code from a friend, enter it here. Otherwise you can skip."
+      onCta={handleContinue}
+      footerExtra={SkipButton}
+      hasKeyboard
+    >
+      <Animated.View entering={FadeInDown.duration(500).delay(150)} style={s.inputContainer}>
         <Text style={[s.label, { color: C.text }]}>Referral code</Text>
         <TextInput
           value={referralCode}
@@ -45,64 +56,44 @@ export default function ReferralScreen() {
           placeholder="Enter code"
           placeholderTextColor={C.textTertiary}
           autoCapitalize="characters"
-          style={[s.input, { backgroundColor: C.card, borderColor: C.separator }]}
+          autoCorrect={false}
+          style={[s.input, { 
+              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+              color: C.text 
+          }]}
         />
-
-        <View style={s.actions}>
-          <TouchableOpacity onPress={handleSkip} activeOpacity={0.9} style={[s.secondaryBtn, { borderColor: C.separator }]}>
-            <Text style={[s.secondaryBtnText, { color: C.textSecondary }]}>Skip</Text>
-          </TouchableOpacity>
-
-          <View style={{ flex: 1 }}>
-            <AnimatedButton
-              title="Continue"
-              onPress={handleContinue}
-              type="capsule"
-              backgroundColor="#007AFF"
-              shadowColor="#0066D6"
-              fullWidth
-            />
-          </View>
-        </View>
-      </View>
-    </View>
+      </Animated.View>
+    </OnboardingShell>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1 },
-  card: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
+  inputContainer: {
+      marginTop: 8,
   },
-  title: { fontSize: 32, fontWeight: '900', letterSpacing: -1, marginTop: 8, marginBottom: 8 },
-  subtitle: { fontSize: 16, fontWeight: '500', lineHeight: 22, marginBottom: 22 },
-  label: { fontSize: 15, fontWeight: '700', marginBottom: 10, marginLeft: 4 },
+  label: { 
+      fontSize: 15, 
+      fontWeight: '700', 
+      marginBottom: 10, 
+      marginLeft: 4 
+  },
   input: {
-    height: 56,
+    height: 58,
     borderRadius: Radius.lg,
-    borderWidth: 1,
+    borderWidth: 1.5,
     paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
   },
-  actions: { flexDirection: 'row', gap: 12, marginTop: 18 },
-  secondaryBtn: {
-    flex: 1,
-    height: 56,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  skipBtn: {
+      height: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
   },
-  secondaryBtnText: { fontWeight: '800', fontSize: 16 },
-  primaryBtn: {
-    flex: 1,
-    height: 56,
-    borderRadius: Radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+  skipBtnText: {
+      fontSize: 17,
+      fontWeight: '600',
   },
-  primaryBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
 });

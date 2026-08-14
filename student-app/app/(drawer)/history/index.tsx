@@ -166,10 +166,10 @@ export default function StudyHistoryDashboard() {
         else refetchDecks();
     }, [activeTab, refetchQuizzes, refetchDecks]);
 
-    // m3: Free users can see the screen but not the content — show an upgrade CTA
-    // instead of silently redirecting so they understand why access is restricted.
-    const isFree = user?.plan_name === 'free';
-
+    useEffect(() => {
+        if (user?.plan_name === 'free') router.replace('/paywall');
+    }, [user?.plan_name]);
+    
     const getSections = (items: any[]) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -244,23 +244,6 @@ export default function StudyHistoryDashboard() {
                     })}
                 </View>
             </Animated.View>
-
-            {/* m3: Free-tier upgrade CTA — replaces silent redirect to paywall */}
-            {isFree && (
-                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 16 }}>
-                    <Text style={{ fontSize: 40 }}>📚</Text>
-                    <Text style={{ fontSize: 20, fontWeight: '800', color: C.text, textAlign: 'center' }}>History is a Pro feature</Text>
-                    <Text style={{ fontSize: 14, color: C.textSecondary, textAlign: 'center', lineHeight: 21 }}>
-                        Upgrade to Skeeme Pro to track every quiz and flashcard session, review past answers, and monitor your progress over time.
-                    </Text>
-                    <TouchableOpacity
-                        onPress={() => router.push('/paywall')}
-                        style={{ marginTop: 8, paddingHorizontal: 32, paddingVertical: 16, backgroundColor: C.primary, borderRadius: 24 }}
-                    >
-                        <Text style={{ color: 'white', fontWeight: '800', fontSize: 16 }}>Upgrade to Pro</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
 
             <Animated.View entering={FadeInDown.delay(160).duration(400)} style={{ flex: 1, paddingHorizontal: 20 }}>
                 <SectionList
