@@ -8,6 +8,7 @@ import { Text } from '@/components/ui/Text';
 import { Colors, Radius } from '@/constants/theme';
 import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
 import Letter from '@/assets/icons/pikaicons/envelope-default.svg';
+import UserIcon from '@/assets/icons/pikaicons/user-default.svg';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
@@ -138,13 +139,7 @@ export default function AccountScreen() {
                 <Animated.View entering={FadeInDown.duration(400).delay(100)} style={s.headerWrap}>
                     <View style={s.headerLeft}>
                         <View style={[s.avatarOuter, { backgroundColor: C.primary + '20' }]}>
-                            {user.avatar || user.avatar_url ? (
-                                <Image source={{ uri: user.avatar || user.avatar_url }} style={s.avatarImg} />
-                            ) : (
-                                <Text style={{ color: C.primary, fontWeight: '800', fontSize: 24 }}>
-                                    {user.name?.charAt(0).toUpperCase()}
-                                </Text>
-                            )}
+                            <UserIcon width={28} height={28} color={C.primary} />
                         </View>
                         <View>
                             <Text style={[s.headerTitle, { color: C.text }]}>{user.name}</Text>

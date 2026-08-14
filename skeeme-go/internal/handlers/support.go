@@ -31,8 +31,15 @@ func (h *SupportHandler) Contact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	subject := "Support Request"
+	if len(message) > 50 {
+		subject = message[:47] + "..."
+	} else if len(message) > 0 {
+		subject = message
+	}
+
 	// Just log it for now
-	_, err = h.DB.ExecContext(r.Context(), "INSERT INTO support_tickets (user_id, message, status, created_at, updated_at) VALUES ($1, $2, 'open', NOW(), NOW())", user.ID, message)
+	_, err = h.DB.ExecContext(r.Context(), "INSERT INTO support_tickets (user_id, subject, message, status, created_at, updated_at) VALUES ($1, $2, $3, 'open', NOW(), NOW())", user.ID, subject, message)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
