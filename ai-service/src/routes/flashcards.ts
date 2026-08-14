@@ -67,7 +67,17 @@ router.post('/generate', async (req, res) => {
 
         // Mark that we've started streaming so the catch block knows headers are sent
         headersSent = true;
-        await result.pipeTextStreamToResponse(res);
+        
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+        });
+
+        for await (const partialObject of result.partialObjectStream) {
+            res.write(`data: ${JSON.stringify(partialObject)}\n\n`);
+        }
+        res.end();
 
     } catch (error: any) {
         console.error('Flashcard generate error:', error);

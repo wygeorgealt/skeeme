@@ -33,6 +33,9 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
     // Log the event to backend
     const logEvent = async () => {
+        // Only log if they are actually out of credits (ignore upsell popups)
+        if (user && (user.credits ?? 0) > 0) return;
+        
         try {
             await api.post('credits/out-of-credits', { feature_attempted: featureAttempted });
         } catch {

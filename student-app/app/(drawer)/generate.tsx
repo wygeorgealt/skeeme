@@ -403,15 +403,7 @@ export default function GenerateQuizScreen() {
         const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
         const flatCost = (pricingConfig?.rates?.quiz_generation as any)?.[planTier] ?? 30;
 
-        // Occasional upsell: for free users, show a non-blocking paywall offer (do not abort generation)
-        if (user?.plan_name === 'free') {
-            const shouldShow = await shouldShowFreePaywallOffer({ feature: 'quiz' });
-            if (shouldShow) {
-                await markFreePaywallOfferShown({ feature: 'quiz' });
-                await useAuthStore.getState().toggleCreditsModal(true, 'quiz');
-                // continue with generation in background
-            }
-        }
+
 
         // Pre-flight check
         let currentCredits = user?.credits ?? 0;

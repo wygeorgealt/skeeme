@@ -35,8 +35,7 @@ export function streamFromAI(
     const token = useAuthStore.getState().token;
     const idempotencyKey = generateUUID();
     let isConnecting = true;
-
-    callbacks.onStatus?.('Connecting to Skeeme AI...');
+    callbacks.onStatus?.('Connecting...');
 
     const es = new EventSource(`${AI_SERVICE_URL}${endpoint}`, {
         headers: {

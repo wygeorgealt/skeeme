@@ -189,15 +189,7 @@ export default function GenerateFlashcardScreen() {
         const flatCost = (pricingConfig?.rates?.flashcard_flat as any)?.[planTier] ?? (planTier === 'free' ? 30 : 25);
         const cardCountValue = clampedCardCount;
 
-        // Occasional upsell: for free users, show a non-blocking paywall offer (do not abort generation)
-        if (user?.plan_name === 'free') {
-            const shouldShow = await shouldShowFreePaywallOffer({ feature: 'flashcard' });
-            if (shouldShow) {
-                await markFreePaywallOfferShown({ feature: 'flashcard' });
-                await useAuthStore.getState().toggleCreditsModal(true, 'flashcard');
-                // continue with generation in background
-            }
-        }
+
         
         // Pre-flight check
         let currentCredits = user?.credits ?? 0;
