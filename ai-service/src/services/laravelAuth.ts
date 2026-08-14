@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 const GO_API_URL = process.env.GO_API_URL || 'http://localhost:8080/api';
-const INTERNAL_SECRET = process.env.INTERNAL_SECRET || 'skeeme-ai-secret-key-123';
 
 export interface AuthResult {
     success: boolean;
@@ -32,7 +31,6 @@ export async function authorizeAndDeduct(
         }, {
             headers: {
                 'Authorization': `Bearer ${token}`,
-                'X-Internal-Secret': INTERNAL_SECRET,
                 'User-Agent': 'Skeeme-Internal-AI-Service/1.0'
             }
         });
@@ -70,12 +68,9 @@ export async function refundCredits(
         await axios.post(`${GO_API_URL}/internal/ai/refund`, {
             user_id: userId,
             request_id: requestId
-        }, {
-            headers: {
-                'X-Internal-Secret': INTERNAL_SECRET
-            }
         });
     } catch (error) {
         console.error('Failed to refund credits:', error);
     }
 }
+

@@ -30,20 +30,26 @@ import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/fre
 type QuizMode = 'topic' | 'file';
 type Difficulty = 'easy' | 'medium' | 'hard';
 
+import Brain from '@/assets/icons/pikaicons/brain.svg';
+import File from '@/assets/icons/pikaicons/file-default.svg';
+import Leaf from '@/assets/icons/pikaicons/award-medal.svg';
+import LightbulbBolt from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import Fire from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+
 const MODE_OPTIONS = [
-    { key: 'topic', label: 'By Topic', emoji: '🧠' },
-    { key: 'file', label: 'From File', emoji: '📄' },
+    { key: 'topic', label: 'By Topic', Icon: Brain },
+    { key: 'file', label: 'From File', Icon: File },
 ];
 
 const DIFFICULTY_OPTIONS = [
-    { key: 'easy', label: 'Easy', emoji: '🌱', desc: 'Focus on fundamentals' },
-    { key: 'medium', label: 'Medium', emoji: '💡', desc: 'Balanced challenge' },
-    { key: 'hard', label: 'Hard', emoji: '🔥', desc: 'Deep analytical questions' },
+    { key: 'easy', label: 'Easy', Icon: Leaf, desc: 'Focus on fundamentals' },
+    { key: 'medium', label: 'Medium', Icon: LightbulbBolt, desc: 'Balanced challenge' },
+    { key: 'hard', label: 'Hard', Icon: Fire, desc: 'Deep analytical questions' },
 ];
 
 function ChipButton({
     label,
-    emoji,
+    Icon,
     isSelected,
     onPress,
     isDark,
@@ -51,7 +57,7 @@ function ChipButton({
     small,
 }: {
     label: string;
-    emoji: string;
+    Icon: React.ComponentType<any>;
     isSelected: boolean;
     onPress: () => void;
     isDark: boolean;
@@ -70,7 +76,7 @@ function ChipButton({
                     : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F2F4F8', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E0E4EF' },
             ]}
         >
-            <Text style={small ? s.chipEmojiSmall : s.chipEmoji}>{emoji}</Text>
+            <Icon width={small ? 16 : 20} height={small ? 16 : 20} style={{ marginRight: 6 }} />
             <Text style={[small ? s.chipLabelSmall : s.chipLabel, { color: isSelected ? '#fff' : C.text }]}>{label}</Text>
         </TouchableOpacity>
     );
@@ -326,7 +332,7 @@ export default function GenerateFlashcardScreen() {
                         <ChipButton
                             key={option.key}
                             label={option.label}
-                            emoji={option.emoji}
+                            Icon={option.Icon}
                             isSelected={mode === option.key}
                             onPress={() => { setMode(option.key as QuizMode); if (option.key === 'topic') setSelectedFile(null); }}
                             isDark={isDark}
@@ -420,7 +426,7 @@ export default function GenerateFlashcardScreen() {
                                 <ChipButton
                                     key={opt.key}
                                     label={opt.label}
-                                    emoji={opt.emoji}
+                                    Icon={opt.Icon}
                                     isSelected={difficulty === opt.key}
                                     onPress={() => setDifficulty(opt.key as Difficulty)}
                                     isDark={isDark}

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, Animated, StyleSheet, Modal, Platform } from 'react-native';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { streamQuizGenerate } from '@/lib/aiStream';
 
 import { useFocusEffect, useLocalSearchParams, useNavigation, router } from 'expo-router';
@@ -83,25 +84,25 @@ const SkeletonCard = ({ isDark }: { isDark: boolean }) => {
 // CONSTANTS & OPTIONS
 // ══════════════════════════════════════════════════════════════════════════════
 const MODE_OPTIONS = [
-    { key: 'topic', label: 'By Topic', emoji: '🧠' },
-    { key: 'file',  label: 'From File', emoji: '📄' },
+    { key: 'topic', label: 'By Topic', icon: 'bulb-outline' as const },
+    { key: 'file',  label: 'From File', icon: 'document-text-outline' as const },
 ];
 
 const DIFFICULTY_OPTIONS = [
-    { key: 'easy',   label: 'Easy',   emoji: '🌱', desc: 'Focus on fundamentals'    },
-    { key: 'medium', label: 'Medium', emoji: '💡', desc: 'Comprehensive coverage'   },
-    { key: 'hard',   label: 'Hard',   emoji: '🔥', desc: 'Deep analytical questions' },
+    { key: 'easy',   label: 'Easy',   icon: 'leaf-outline' as const, desc: 'Focus on fundamentals'    },
+    { key: 'medium', label: 'Medium', icon: 'flash-outline' as const, desc: 'Comprehensive coverage'   },
+    { key: 'hard',   label: 'Hard',   icon: 'flame-outline' as const, desc: 'Deep analytical questions' },
 ];
 
 const FORMAT_OPTIONS = [
-    { key: 'mcq',    label: 'MCQ',    emoji: '📋', desc: 'Multiple choice questions' },
-    { key: 'theory', label: 'Theory', emoji: '🧠', desc: 'Essay & analysis'           },
-    { key: 'both',   label: 'Mixed',  emoji: '🎯', desc: 'Combination of both'        },
+    { key: 'mcq',    label: 'MCQ',    icon: 'list-outline' as const, desc: 'Multiple choice questions' },
+    { key: 'theory', label: 'Theory', icon: 'create-outline' as const, desc: 'Essay & analysis'           },
+    { key: 'both',   label: 'Mixed',  icon: 'layers-outline' as const, desc: 'Combination of both'        },
 ];
 
 function ChipButton({
     label,
-    emoji,
+    icon,
     isSelected,
     onPress,
     isDark,
@@ -109,7 +110,7 @@ function ChipButton({
     small,
 }: {
     label: string;
-    emoji: string;
+    icon: keyof typeof Ionicons.glyphMap;
     isSelected: boolean;
     onPress: () => void;
     isDark: boolean;
@@ -128,7 +129,12 @@ function ChipButton({
                     : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F2F4F8', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E0E4EF' },
             ]}
         >
-            <Text style={small ? sf.chipEmojiSmall : sf.chipEmoji}>{emoji}</Text>
+            <Ionicons
+                name={icon}
+                size={small ? 16 : 18}
+                color={isSelected ? '#FFF' : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)')}
+                style={{ marginRight: 6 }}
+            />
             <Text style={[small ? sf.chipLabelSmall : sf.chipLabel, { color: isSelected ? '#FFF' : C.text }]}>{label}</Text>
         </TouchableOpacity>
     );
@@ -730,7 +736,7 @@ export default function GenerateQuizScreen() {
                             <ChipButton
                                 key={option.key}
                                 label={option.label}
-                                emoji={option.emoji}
+                                icon={option.icon}
                                 isSelected={mode === option.key}
                                 onPress={() => { setMode(option.key as QuizMode); if (option.key === 'topic') setSelectedFile(null); }}
                                 isDark={isDark}
@@ -819,7 +825,7 @@ export default function GenerateQuizScreen() {
                                     <ChipButton
                                         key={opt.key}
                                         label={opt.label}
-                                        emoji={opt.emoji}
+                                        icon={opt.icon}
                                         isSelected={difficulty === opt.key}
                                         onPress={() => setDifficulty(opt.key as Difficulty)}
                                         isDark={isDark}
@@ -840,7 +846,7 @@ export default function GenerateQuizScreen() {
                                     <ChipButton
                                         key={opt.key}
                                         label={opt.label}
-                                        emoji={opt.emoji}
+                                        icon={opt.icon}
                                         isSelected={format === opt.key}
                                         onPress={() => setFormat(opt.key as FormatType)}
                                         isDark={isDark}

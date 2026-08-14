@@ -598,7 +598,7 @@ export default function StudyDeckScreen() {
                     </Animated.View>
 
                     <Animated.View entering={FadeIn.delay(300).duration(600)}>
-                        <Text style={[s.successTitle, isDark ? s.textWhite : s.textSlate900]}>Good Job! 👍</Text>
+                        <Text style={[s.successTitle, isDark ? s.textWhite : s.textSlate900]}><CheckTickCircle width={24} height={24} color="#34C759" /> Good Job!</Text>
                         <Text style={s.successSubtitle}>{rewardMessage || "You&apos;ve mastered all " + deck.flashcards.length + " cards in this set. Great job!"}</Text>
                     </Animated.View>
 

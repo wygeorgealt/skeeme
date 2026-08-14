@@ -152,14 +152,13 @@ export default function AccountScreen() {
                     </View>
 
                     <View style={s.headerRight}>
-                        <AnimatedIcon
-                            size={28}
-                            animationType="spin"
+                        <TouchableOpacity
                             onPress={() => router.push('/(drawer)/settings' as any)}
                             style={[s.iconBtn, {alignItems: 'center', justifyContent: 'center'}]}
+                            activeOpacity={0.7}
                         >
                             <Settings01 width={24} height={24} color={C.text} />
-                        </AnimatedIcon>
+                        </TouchableOpacity>
                     </View>
                 </Animated.View>
 
@@ -186,93 +185,71 @@ export default function AccountScreen() {
 
                 {/* ── Grid Region ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(300)} style={s.gridContainer}>
-                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#FFF0F0' }]}>
-                        <AnimatedIcon 
-                            size={56} 
-                            animationType="pop"
-                            onPress={() => {
-                                // Provide empty onPress to enable animation
-                            }}
-                        >
-                            <AwardMedal width={40} height={40} color="#FF3B30" style={{marginBottom: 8}} />
-                            <Text style={[s.gridTitle, { color: '#FF3B30' }]}>{user.streak?.current_streak || 0} Day</Text>
-                            <Text style={[s.gridSub, { color: C.textTertiary }]}>Streak</Text>
-                        </AnimatedIcon>
-                    </View>
+                    <TouchableOpacity 
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#FFF0F0' }]}
+                        activeOpacity={0.7}
+                    >
+                        <AwardMedal width={40} height={40} color="#FF3B30" style={{marginBottom: 8}} />
+                        <Text style={[s.gridTitle, { color: '#FF3B30' }]}>{user.streak?.current_streak || 0} Day</Text>
+                        <Text style={[s.gridSub, { color: C.textTertiary }]}>Streak</Text>
+                    </TouchableOpacity>
 
-                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
-                        <AnimatedIcon 
-                            size={56} 
-                            animationType="wobble"
-                            onPress={() => router.push('/(drawer)/flashcards' as any)}
-                            style={{ width: '100%', alignItems: 'center' }}
-                        >
-                            <FolderDefault width={40} height={40} color={C.primary} style={{marginBottom: 8}} />
-                            <Text style={[s.gridTitle, { color: C.text }]}>Flashcards</Text>
-                            <Text style={[s.gridSub, { color: C.textTertiary }]}>Decks</Text>
-                        </AnimatedIcon>
-                    </View>
+                    <TouchableOpacity 
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}
+                        onPress={() => router.push('/(drawer)/flashcards' as any)}
+                        activeOpacity={0.7}
+                    >
+                        <FolderDefault width={40} height={40} color={C.primary} style={{marginBottom: 8}} />
+                        <Text style={[s.gridTitle, { color: C.text }]}>Flashcards</Text>
+                        <Text style={[s.gridSub, { color: C.textTertiary }]}>Decks</Text>
+                    </TouchableOpacity>
 
-                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
-                        <AnimatedIcon 
-                            size={56} 
-                            animationType="twist"
-                            onPress={() => router.push('/(drawer)/history' as any)}
-                        >
-                            <ClockDefault width={40} height={40} color={C.primary} style={{marginBottom: 8}} />
-                            <Text style={[s.gridTitle, { color: C.text }]}>History</Text>
-                            <Text style={[s.gridSub, { color: C.textTertiary }]}>Past scans</Text>
-                        </AnimatedIcon>
-                    </View>
+                    <TouchableOpacity 
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}
+                        onPress={() => router.push('/(drawer)/history' as any)}
+                        activeOpacity={0.7}
+                    >
+                        <ClockDefault width={40} height={40} color={C.primary} style={{marginBottom: 8}} />
+                        <Text style={[s.gridTitle, { color: C.text }]}>History</Text>
+                        <Text style={[s.gridSub, { color: C.textTertiary }]}>Past scans</Text>
+                    </TouchableOpacity>
 
-                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
-                        <AnimatedIcon 
-                            size={56} 
-                            animationType="pop"
-                            onPress={() => router.push('/(drawer)/history/saved' as any)}
-                        >
-                            <BookmarkDefault width={40} height={40} color="#34C759" style={{marginBottom: 8}} />
-                            <Text style={[s.gridTitle, { color: C.text }]}>Saved</Text>
-                            <Text style={[s.gridSub, { color: C.textTertiary }]}>Bookmarks</Text>
-                        </AnimatedIcon>
-                    </View>
+                    <TouchableOpacity 
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}
+                        onPress={() => router.push('/(drawer)/history/saved' as any)}
+                        activeOpacity={0.7}
+                    >
+                        <BookmarkDefault width={40} height={40} color="#34C759" style={{marginBottom: 8}} />
+                        <Text style={[s.gridTitle, { color: C.text }]}>Saved</Text>
+                        <Text style={[s.gridSub, { color: C.textTertiary }]}>Bookmarks</Text>
+                    </TouchableOpacity>
 
-                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F0F5FF' }]}>
-                        <AnimatedIcon 
-                            size={56} 
-                            animationType="twist"
-                            onPress={() => router.push('/(drawer)/generate' as any)}
-                        >
-                            <File02Default width={40} height={40} color="#007AFF" style={{marginBottom: 8}} />
-                            <Text style={[s.gridTitle, { color: '#007AFF' }]}>Practice</Text>
-                            <Text style={[s.gridSub, { color: '#007AFF' }]}>Quizzes</Text>
-                        </AnimatedIcon>
-                    </View>
+                    <TouchableOpacity 
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F0F5FF' }]}
+                        onPress={() => router.push('/(drawer)/generate' as any)}
+                        activeOpacity={0.7}
+                    >
+                        <File02Default width={40} height={40} color="#007AFF" style={{marginBottom: 8}} />
+                        <Text style={[s.gridTitle, { color: '#007AFF' }]}>Practice</Text>
+                        <Text style={[s.gridSub, { color: '#007AFF' }]}>Quizzes</Text>
+                    </TouchableOpacity>
                     
-                    <View style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}>
-                        <AnimatedIcon 
-                            size={56} 
-                            animationType="spin"
-                            onPress={() => router.push('/(drawer)/support' as any)}
-                            style={{ width: '100%', alignItems: 'center' }}
-                        >
-                            <Troubleshoot width={40} height={40} color="#FF9500" style={{marginBottom: 8}} />
-                            <Text style={[s.gridTitle, { color: C.text }]}>Support</Text>
-                            <Text style={[s.gridSub, { color: C.textTertiary }]}>Help & Feedback</Text>
-                        </AnimatedIcon>
-                    </View>
+                    <TouchableOpacity 
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}
+                        onPress={() => router.push('/(drawer)/support' as any)}
+                        activeOpacity={0.7}
+                    >
+                        <Troubleshoot width={40} height={40} color="#FF9500" style={{marginBottom: 8}} />
+                        <Text style={[s.gridTitle, { color: C.text }]}>Support</Text>
+                        <Text style={[s.gridSub, { color: C.textTertiary }]}>Help & Feedback</Text>
+                    </TouchableOpacity>
 
                     <TouchableOpacity 
                         style={[s.gridItemFull, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}
                         onPress={() => router.push('/(drawer)/preferences' as any)}
-                        activeOpacity={0.8}
+                        activeOpacity={0.7}
                     >
-                        <AnimatedIcon 
-                            size={56} 
-                            animationType="spin"
-                        >
-                            <Settings01 width={40} height={40} color={C.text} />
-                        </AnimatedIcon>
+                        <Settings01 width={40} height={40} color={C.text} />
                         <View style={{ flex: 1, marginLeft: 16 }}>
                             <Text style={[s.gridTitle, { color: C.text, textAlign: 'left', marginTop: 0 }]}>Personalize</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary, textAlign: 'left', lineHeight: 18 }]} numberOfLines={3}>{prefSummary}</Text>

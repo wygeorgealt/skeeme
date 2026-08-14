@@ -81,7 +81,7 @@ export default function ToneScreen() {
                     <View style={[s.iconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F2F2F7' }]}>
                       <AnimatedIcon source={t.iconSource} size={28} animationType="wobble" />
                     </View>
-                    <Text style={[s.optionLabel, { color: textColor }]}>{t.emoji} {t.label}</Text>
+                    <Text style={[s.optionLabel, { color: textColor }]}>{t.label}</Text>
                     {isSelected ? <Text style={s.check}>✓</Text> : null}
                   </TouchableOpacity>
                 </Animated.View>
