@@ -35,6 +35,7 @@ func (h *CreditHandler) Summary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := CreditSummary{Credits: credits}
+	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
 }

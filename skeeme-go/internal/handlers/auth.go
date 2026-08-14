@@ -451,6 +451,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	
 	user.PopulateTransientFields(r.Context(), h.Redis)
 
+	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }
