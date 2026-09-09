@@ -5,7 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Colors, Radius } from '@/constants/theme';
-import * as Notifications from 'expo-notifications';
+import { isRunningInExpoGo } from 'expo';
 import Bell from '@/assets/icons/pikaicons/notification-bell-on.svg';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 
@@ -29,8 +29,13 @@ export default function NotificationScreen() {
         if (isSubmitting) return;
 
         try {
-            const { status } = await Notifications.requestPermissionsAsync();
-            if (__DEV__) console.log('Notification permission:', status);
+            if (Platform.OS === 'android' && isRunningInExpoGo()) {
+                if (__DEV__) console.log('Expo Go on Android: skipping push notification permission request');
+            } else {
+                const Notifications = require('expo-notifications');
+                const { status } = await Notifications.requestPermissionsAsync();
+                if (__DEV__) console.log('Notification permission:', status);
+            }
         } catch (e) {
             if (__DEV__) console.warn('Notification permission failed', e);
         }

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skeeme | AI Study Companion for Students — Study Smarter, Score Higher</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Snap questions, solve with AI, generate quizzes, revise with spaced-repetition flashcards, and build study streaks. Everything students need to ace exams.">
+  <meta name="keywords" content="Skeeme, AI homework solver, student study app, quiz generator, smart flashcards, exam preparation, Nigeria, study streaks">
+  <meta name="author" content="Skeeme Inc.">
+  <link rel="canonical" href="https://skeeme.com/">
+
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://skeeme.com/">
+  <meta property="og:title" content="Skeeme | AI Study Companion for Students">
+  <meta property="og:description" content="Snap questions, get step-by-step AI solutions, generate practice quizzes, and build daily streaks to ace your exams.">
+  <meta property="og:image" content="https://skeeme.com/images/student_app_mockup.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Skeeme | Study Smarter, Score Higher">
+  <meta name="twitter:description" content="Snap any question for instant step-by-step solutions, custom quizzes, and smart flashcards.">
+  <meta name="twitter:image" content="https://skeeme.com/images/student_app_mockup.png">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+  <!-- Google Fonts: Manrope -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Floating Island Navigation Header -->
+  <div class="header-wrapper">
+    <header class="navbar" id="navbar">
+      <a href="/" class="nav-brand" id="navBrand" aria-label="Skeeme Home">
+        <img src="images/logo.png" alt="Skeeme Logo" class="nav-logo" id="mainLogo">
+      </a>
+
+      <nav class="nav-desktop" aria-label="Main Navigation">
+        <ul class="nav-links">
+          <li><a href="#features" id="navLinkFeatures">Features</a></li>
+          <li><a href="#interactive-demo" id="navLinkDemo">Interactive Demo</a></li>
+          <li><a href="#how-it-works" id="navLinkHowItWorks">How It Works</a></li>
+          <li><a href="#reviews" id="navLinkReviews">Reviews</a></li>
+          <li><a href="#faq" id="navLinkFaq">FAQ</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="https://play.google.com/store/apps/details?id=com.skeeme.app" target="_blank" rel="noopener noreferrer" class="btn btn-primary" id="navCtaBtn">
+          Download App
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle navigation menu" aria-expanded="false">
+          ☰
+        </button>
+      </div>
+
+      <!-- Mobile Dropdown Menu -->
+      <div class="mobile-menu" id="mobileMenu">
+        <a href="#features">Features</a>
+        <a href="#interactive-demo">Interactive Demo</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#faq">FAQ</a>
+        <a href="https://play.google.com/store/apps/details?id=com.skeeme.app" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; text-align: center;">
+          Get it on Google Play
+        </a>
+      </div>
+    </header>
+  </div>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section" id="hero">
+      <div class="hero-glow-1"></div>
+      <div class="hero-glow-2"></div>
+
+      <div class="container">
+        <div class="hero-grid">
+          <!-- Left Column: Copy & Actions -->
+          <div class="hero-content">
+            <div class="pill-badge" id="heroBadge">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l2.4 7.6H22l-6.2 4.5 2.4 7.6-6.2-4.5-6.2 4.5 2.4-7.6L2 9.6h7.6z"/>
+              </svg>
+              <span>AI Study Companion for Students</span>
+            </div>
+
+            <h1 class="hero-title">
+              Study smarter.<br>
+              <span class="gradient-text">Score higher.</span>
+            </h1>
+
+            <p class="hero-description">
+              Snap questions, solve with AI, generate quizzes, revise with flashcards, and build study streaks. 
+              <strong>Everything you need to ace your exams.</strong>
+            </p>
+
+            <div class="hero-ctas">
+              <!-- Google Play Direct Badge -->
+              <a href="https://play.google.com/store/apps/details?id=com.skeeme.app" target="_blank" rel="noopener noreferrer" class="btn-playstore" id="heroPlayStoreBtn">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M2.5 1.5L14.5 12L2.5 22.5V1.5Z" fill="#3BCAE6"/>
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M14.5 12L21.5 16L18 19L14.5 12Z" fill="#D5163D"/>
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M22 15.5L14.5 12L18 9L22 15.5Z" fill="#F4B400"/>
+                  <path d="M14.5 12L2.5 1.5L12.5 7L14.5 12Z" fill="#25A054"/>
+                </svg>
+                <div>
+                  <span class="playstore-sub">GET IT ON</span>
+                  <span class="playstore-title">Google Play</span>
+                </div>
+              </a>
+
+              <a href="#interactive-demo" class="btn btn-secondary" id="heroDemoBtn">
+                Try Interactive Demo
+              </a>
+            </div>
+
+            <!-- Interactive Quick Banner -->
+            <a href="#interactive-demo" class="interactive-solve-banner" id="heroSolveBanner">
+              <div class="solve-icon">⚡</div>
+              <div class="solve-text">
+                <h4>Try Scan & Solve</h4>
+                <p>See how our AI breaks down complex problems</p>
+              </div>
+              <span style="margin-left: auto; color: #94a3b8; font-weight: bold;">→</span>
+            </a>
+          </div>
+
+          <!-- Right Column: Student App Mockup -->
+          <div class="hero-visual">
+            <div class="mockup-container">
+              <img src="images/student_app_mockup.png" alt="Skeeme Student App Interface Preview" class="mockup-img" id="heroMockupImg">
+
+              <!-- Floating Micro Badges -->
+              <div class="floating-badge badge-streak" id="badgeStreak">
+                <div class="badge-icon">🔥</div>
+                <div>
+                  <div class="badge-text-title">14-Day Streak</div>
+                  <div class="badge-text-sub">Top 5% Student Habit</div>
+                </div>
+              </div>
+
+              <div class="floating-badge badge-quiz" id="badgeQuiz">
+                <div class="badge-icon">🎯</div>
+                <div>
+                  <div class="badge-text-title">100% Accuracy</div>
+                  <div class="badge-text-sub">Genetics Revision Quiz</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Social Proof & Trust Strip -->
+    <section class="stats-strip" id="stats">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-item" id="statRating">
+            <div class="stat-number">
+              <span style="color: #f59e0b;">★</span> 4.9
+            </div>
+            <div class="stat-label">Google Play Rating</div>
+          </div>
+
+          <div class="stat-item" id="statQuestions">
+            <div class="stat-number">120K+</div>
+            <div class="stat-label">Questions Solved</div>
+          </div>
+
+          <div class="stat-item" id="statQuizzes">
+            <div class="stat-number">35K+</div>
+            <div class="stat-label">Quizzes Generated</div>
+          </div>
+
+          <div class="stat-item" id="statSchools">
+            <div class="stat-number">40+</div>
+            <div class="stat-label">Campuses & Schools</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Core Features Grid -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Powerful AI Tools</span>
+          <h2 class="section-title">Engineered for Academic Mastery</h2>
+          <p class="section-subtitle">Turn hours of frustrating cramming into minutes of structured, high-yield learning.</p>
+        </div>
+
+        <div class="features-grid">
+          <!-- Card 1: Snap & Solve -->
+          <article class="feature-card card-snap" id="featureSnap">
+            <div>
+              <div class="feature-icon-wrapper">📷</div>
+              <h3>Snap & Solve</h3>
+              <p>Snap a photo of any handwritten or textbook problem. Get instant, verified step-by-step logic and clear formulas rather than just a flat answer.</p>
+            </div>
+            <ul class="feature-list">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                OCR recognizes handwriting, diagrams, & math formulas
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Step-by-step logic teaching you <em>why</em> the answer is correct
+              </li>
+            </ul>
+          </article>
+
+          <!-- Card 2: Smart Quiz Generator -->
+          <article class="feature-card card-quiz" id="featureQuiz">
+            <div>
+              <div class="feature-icon-wrapper">📝</div>
+              <h3>AI Quiz Generator</h3>
+              <p>Upload lecture slides, PDF chapters, or class notes. Skeeme immediately extracts core concepts and builds diagnostic practice tests.</p>
+            </div>
+            <ul class="feature-list">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Multiple choice, theory, and true/false question types
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Instant scoring with remediation breakdowns
+              </li>
+            </ul>
+          </article>
+
+          <!-- Card 3: Spaced Repetition Flashcards -->
+          <article class="feature-card card-flashcards" id="featureFlashcards">
+            <div>
+              <div class="feature-icon-wrapper">🗂️</div>
+              <h3>Spaced Repetition Flashcards</h3>
+              <p>Never forget key formulas or definitions before exams. Built-in active recall schedules cards right when memory decay starts to kick in.</p>
+            </div>
+            <ul class="feature-list">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                1-tap AI flashcard generation from your uploaded syllabus
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Leitner-based revision queues that maximize retention
+              </li>
+            </ul>
+          </article>
+
+          <!-- Card 4: Study Streaks & Momentum -->
+          <article class="feature-card card-streaks" id="featureStreaks">
+            <div>
+              <div class="feature-icon-wrapper">🔥</div>
+              <h3>Study Streaks & Gamification</h3>
+              <p>Studying is only effective when consistent. Earn reward badges, safeguard your daily streaks, and compete with peers on leaderboards.</p>
+            </div>
+            <ul class="feature-list">
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Daily streak tracker with freeze protection rewards
+              </li>
+              <li>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Campus study challenges that keep study groups motivated
+              </li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Solver Demo Simulator -->
+    <section class="section" id="interactive-demo">
+      <div class="container">
+        <div class="interactive-section">
+          <div class="section-header" style="margin-bottom: 2rem;">
+            <span class="section-tag">Interactive Simulation</span>
+            <h2 class="section-title">See Skeeme AI In Action</h2>
+            <p class="section-subtitle">Click below to experience how Skeeme deconstructs complex academic questions across subjects.</p>
+          </div>
+
+          <!-- Subject Tabs -->
+          <div class="demo-tabs" role="tablist">
+            <button class="demo-tab-btn active" data-subject="math" role="tab" id="tabMath">Math & Calculus</button>
+            <button class="demo-tab-btn" data-subject="bio" role="tab" id="tabBio">Biology & Genetics</button>
+            <button class="demo-tab-btn" data-subject="physics" role="tab" id="tabPhysics">Physics & Mechanics</button>
+          </div>
+
+          <!-- Dark Code/Solution Terminal Preview -->
+          <div class="demo-content-box" id="demoDisplay">
+            <!-- Left: Simulated Question -->
+            <div class="demo-question-pane">
+              <span class="demo-question-tag" id="demoTag">Calculus • Derivatives</span>
+              <p class="demo-question-title" id="demoQuestion">
+                Find the derivative of f(x) = x³ · ln(x) + 4x - 7 and determine critical points for x &gt; 0.
+              </p>
+              <div style="font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+                <span>📸 Solved via Camera OCR</span> • <span>0.42s latency</span>
+              </div>
+            </div>
+
+            <!-- Right: Step-by-Step AI Logic -->
+            <div class="demo-steps-pane" id="demoSteps">
+              <div class="step-box">
+                <div class="step-num">1</div>
+                <div class="step-desc">
+                  <strong>Apply Product Rule:</strong> For u(x) = x³ and v(x) = ln(x), f'(x) = (3x² · ln(x)) + (x³ · 1/x) + 4
+                </div>
+              </div>
+              <div class="step-box">
+                <div class="step-num">2</div>
+                <div class="step-desc">
+                  <strong>Simplify Algebraic Terms:</strong> f'(x) = 3x² · ln(x) + x² + 4 = x²(3 ln(x) + 1) + 4
+                </div>
+              </div>
+              <div class="step-box">
+                <div class="step-num">3</div>
+                <div class="step-desc">
+                  <strong>Identify Critical Points:</strong> Set f'(x) = 0. Since x² ≥ 0 and 4 &gt; 0, the function is strictly increasing for all positive real x.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="section" id="how-it-works">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Effortless Workflow</span>
+          <h2 class="section-title">Three Steps to Peak Performance</h2>
+          <p class="section-subtitle">Designed to fit right into your study routine without steep learning curves.</p>
+        </div>
+
+        <div class="how-it-works-grid">
+          <div class="step-card" id="step1">
+            <div class="step-badge-num">1</div>
+            <h3>Snap or Upload</h3>
+            <p>Take a quick photo of your handwritten assignment or upload your lecture PDF straight into Skeeme.</p>
+          </div>
+
+          <div class="step-card" id="step2">
+            <div class="step-badge-num">2</div>
+            <h3>Understand Step-by-Step</h3>
+            <p>Our fine-tuned academic models explain the core theorems and breakdown calculations logically.</p>
+          </div>
+
+          <div class="step-card" id="step3">
+            <div class="step-badge-num">3</div>
+            <h3>Test & Retain</h3>
+            <p>Convert your questions into custom quizzes and flashcards to build long-term recall and exam readiness.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Student Reviews / Testimonials -->
+    <section class="section" id="reviews">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Student Testimonials</span>
+          <h2 class="section-title">Loved by Thousands of Achievers</h2>
+          <p class="section-subtitle">Here is what students are saying about their exam transformation with Skeeme.</p>
+        </div>
+
+        <div class="testimonials-grid">
+          <div class="testimonial-card" id="review1">
+            <div>
+              <div class="stars">★★★★★</div>
+              <p class="testimonial-text">
+                "Skeeme genuinely saved my Engineering Mathematics grade. Instead of just giving an answer, it showed each step of integration so clearly that I finally understood the theorem."
+              </p>
+            </div>
+            <div class="author-info">
+              <div class="author-avatar">EO</div>
+              <div>
+                <div class="author-name">Emmanuel O.</div>
+                <div class="author-uni">Mechanical Engineering, UNILAG</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="testimonial-card" id="review2">
+            <div>
+              <div class="stars">★★★★★</div>
+              <p class="testimonial-text">
+                "The quiz generator from PDF is mind-blowing. I dropped a 40-page biochemistry slide pack and had a 20-question practice test in 15 seconds. Pure productivity."
+              </p>
+            </div>
+            <div class="author-info">
+              <div class="author-avatar" style="background: linear-gradient(135deg, #10b981, #0ea5e9);">FA</div>
+              <div>
+                <div class="author-name">Fatima A.</div>
+                <div class="author-uni">Biochemistry, ABU Zaria</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="testimonial-card" id="review3">
+            <div>
+              <div class="stars">★★★★★</div>
+              <p class="testimonial-text">
+                "The study streaks kept me disciplined throughout finals week. I used to procrastinate for hours, but the flashcard algorithm made daily revision quick and fun."
+              </p>
+            </div>
+            <div class="author-info">
+              <div class="author-avatar" style="background: linear-gradient(135deg, #f59e0b, #ec4899);">DB</div>
+              <div>
+                <div class="author-name">David B.</div>
+                <div class="author-uni">Computer Science, Covenant University</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Accordion -->
+    <section class="section" id="faq">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Frequently Asked Questions</span>
+          <h2 class="section-title">Got Questions? We’ve Got Answers.</h2>
+        </div>
+
+        <div class="faq-container">
+          <div class="faq-item active">
+            <button class="faq-question">
+              Is Skeeme free to get started?
+              <span class="faq-toggle-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Yes! All students can download Skeeme and receive complimentary credits every day to snap questions, build flashcards, and take diagnostic quizzes completely free.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              Can Skeeme read handwritten questions?
+              <span class="faq-toggle-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Yes. Skeeme features advanced optical character recognition (OCR) trained specifically on mathematical equations, scientific diagrams, and handwritten lecture notes.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              What subjects does Skeeme support?
+              <span class="faq-toggle-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Skeeme supports STEM subjects (Mathematics, Physics, Chemistry, Biology, Engineering, Computer Science) as well as Humanities, Law, Economics, and Social Sciences.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              How do I install Skeeme on Android?
+              <span class="faq-toggle-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Simply tap the "Google Play" button on this page or search for "Skeeme" in the Google Play Store to install the official app directly to your smartphone or tablet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom High-Conversion CTA Banner -->
+    <section class="section" style="padding-bottom: 2rem;">
+      <div class="container">
+        <div class="cta-banner" id="bottomCtaBanner">
+          <h2>Your best grades are one smart study away.</h2>
+          <p>Join thousands of ambitious students studying faster, understanding deeper, and acing their exams.</p>
+          <div class="cta-btn-group">
+            <a href="https://play.google.com/store/apps/details?id=com.skeeme.app" target="_blank" rel="noopener noreferrer" class="btn-playstore">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.5 1.5L14.5 12L2.5 22.5V1.5Z" fill="#3BCAE6"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M14.5 12L21.5 16L18 19L14.5 12Z" fill="#D5163D"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M22 15.5L14.5 12L18 9L22 15.5Z" fill="#F4B400"/>
+                <path d="M14.5 12L2.5 1.5L12.5 7L14.5 12Z" fill="#25A054"/>
+              </svg>
+              <div>
+                <span class="playstore-sub">GET IT ON</span>
+                <span class="playstore-title">Google Play</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" id="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="images/logo.png" alt="Skeeme Logo" class="nav-logo">
+          <p>Empowering students with AI-driven reasoning tools, intelligent spaced repetition, and real academic momentum.</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#features">Snap & Solve</a></li>
+            <li><a href="#features">Quiz Generator</a></li>
+            <li><a href="#features">Smart Flashcards</a></li>
+            <li><a href="#features">Study Streaks</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="https://play.google.com/store/apps/details?id=com.skeeme.app" target="_blank" rel="noopener noreferrer">Google Play App</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#interactive-demo">Demo Simulator</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="mailto:support@skeeme.com">Contact Support</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 Skeeme Inc. All rights reserved.</p>
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span>System Operational</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>

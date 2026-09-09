@@ -156,7 +156,7 @@ export const QuizCelebration: React.FC<QuizCelebrationProps> = ({ score, onShowR
 
 const styles = StyleSheet.create({
     container: {
-        ...StyleSheet.absoluteFillObject,
+        ...(StyleSheet.absoluteFill as object),
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'transparent',

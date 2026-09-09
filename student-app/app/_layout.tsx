@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { Stack, useRouter, useSegments, ErrorBoundaryProps, SplashScreen, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
@@ -7,8 +7,20 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { QueryProvider } from '@/components/QueryProvider';
 import { useStudent } from '@/hooks/useStudent';
-import { View, useColorScheme as useNativeColorScheme, LogBox, TouchableOpacity, TextStyle, Platform, AppState } from 'react-native';
+import { View, useColorScheme as useNativeColorScheme, LogBox, TouchableOpacity, TextStyle, Platform, AppState, Appearance } from 'react-native';
 import { cssInterop, useColorScheme as useTailwindColorScheme } from 'nativewind';
+
+// React Native 0.86 Appearance.setColorScheme Android compatibility fix:
+// On Android, the native AppearanceModule.setColorScheme method requires a non-null string.
+// Libraries (e.g. react-native-css-interop / nativewind) pass null for 'system', causing a
+// fatal IllegalArgumentException. Map null / 'system' to 'unspecified'.
+if (Platform.OS === 'android') {
+  const originalSetColorScheme = Appearance.setColorScheme;
+  Appearance.setColorScheme = (scheme: any) => {
+    const safeScheme = (!scheme || scheme === 'system') ? 'unspecified' : scheme;
+    return originalSetColorScheme(safeScheme);
+  };
+}
 import AnimatedSplash from '@/components/AnimatedSplash';
 import Animated, { FadeOut } from 'react-native-reanimated';
 import { NetworkStatus } from '@/components/NetworkStatus';
@@ -23,8 +35,6 @@ import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
 import { initializeMonetization } from '@/lib/monetization';
 import * as Application from 'expo-application';
 import { apiStandard } from '@/lib/api';
-
-
 
 
 
@@ -146,7 +156,11 @@ export default function RootLayout() {
   const storeTheme = useAuthStore((state) => state.theme);
 
   useEffect(() => {
-    setTailwindScheme(storeTheme || 'system');
+    try {
+      setTailwindScheme(storeTheme || 'system');
+    } catch (e) {
+      if (__DEV__) console.warn('[Theme] setTailwindScheme error:', e);
+    }
   }, [storeTheme, setTailwindScheme]);
 
   // IMPORTANT: These must EXACTLY match Colors.light.background / Colors.dark.background
@@ -327,7 +341,7 @@ export default function RootLayout() {
               <StreakRewardModalWrapper />
               <EnjoyReviewModalWrapper />
 
-              <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} translucent backgroundColor="transparent" />
+              <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} />
             </ThemeProvider>
           </QueryProvider>
         </PostHogProvider>

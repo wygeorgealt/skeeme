@@ -36,7 +36,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
 import { Stack, useRouter } from 'expo-router';
 import { Colors, Spacing, Radius } from '@/constants/theme';
-import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { MathText } from '@/components/ui/MathText';
 import { CameraView, useCameraPermissions } from 'expo-camera';

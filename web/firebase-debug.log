@@ -1,0 +1,49 @@
+[debug] [2026-09-09T14:42:38.658Z] ----------------------------------------------------------------------
+[debug] [2026-09-09T14:42:38.662Z] Command:       C:\nvm4w\nodejs\node.exe C:\Users\kritex\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only hosting
+[debug] [2026-09-09T14:42:38.663Z] CLI Version:   15.27.0
+[debug] [2026-09-09T14:42:38.663Z] Platform:      win32
+[debug] [2026-09-09T14:42:38.664Z] Node Version:  v22.15.0
+[debug] [2026-09-09T14:42:38.664Z] Detected Agent: antigravity
+[debug] [2026-09-09T14:42:38.664Z] Time:          Wed Sep 09 2026 15:42:38 GMT+0100 (West Africa Standard Time)
+[debug] [2026-09-09T14:42:38.665Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-09-09T14:42:43.892Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-09-09T14:42:43.893Z] > authorizing via signed-in user (otuturusolomom@gmail.com)
+[debug] [2026-09-09T14:42:43.893Z] [iam] checking project skeeme-1759220244534 for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-09-09T14:42:43.917Z] Checked if tokens are valid: true, expires at: 1788968352040
+[debug] [2026-09-09T14:42:43.917Z] Checked if tokens are valid: true, expires at: 1788968352040
+[debug] [2026-09-09T14:42:43.919Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/skeeme-1759220244534:testIamPermissions [none]
+[debug] [2026-09-09T14:42:43.919Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/skeeme-1759220244534:testIamPermissions  x-goog-user-project=skeeme-1759220244534
+[debug] [2026-09-09T14:42:43.919Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/skeeme-1759220244534:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-09-09T14:42:45.067Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/skeeme-1759220244534:testIamPermissions 200
+[debug] [2026-09-09T14:42:45.068Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/skeeme-1759220244534:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-09-09T14:42:45.070Z] Checked if tokens are valid: true, expires at: 1788968352040
+[debug] [2026-09-09T14:42:45.070Z] Checked if tokens are valid: true, expires at: 1788968352040
+[debug] [2026-09-09T14:42:45.070Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/skeeme-1759220244534 [none]
+[debug] [2026-09-09T14:42:46.309Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/skeeme-1759220244534 200
+[debug] [2026-09-09T14:42:46.310Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/skeeme-1759220244534 {"projectId":"skeeme-1759220244534","projectNumber":"677120499703","displayName":"Skeeme","name":"projects/skeeme-1759220244534","resources":{"hostingSite":"skeeme-1759220244534"},"state":"ACTIVE","labels":{"firebase":"enabled"},"etag":"1_260c2929-6dc6-4ac4-bd9c-aebb7b00981f"}
+[info] 
+[info] === Deploying to 'skeeme-1759220244534'...
+[info] 
+[info] i  deploying hosting 
+[debug] [2026-09-09T14:42:46.315Z] Checked if tokens are valid: true, expires at: 1788968352040
+[debug] [2026-09-09T14:42:46.315Z] Checked if tokens are valid: true, expires at: 1788968352040
+[debug] [2026-09-09T14:42:46.316Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/skeeme-1759220244534/sites/skeeme-1759220244534 [none]
+[debug] [2026-09-09T14:42:48.187Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/skeeme-1759220244534/sites/skeeme-1759220244534 200
+[debug] [2026-09-09T14:42:48.187Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/skeeme-1759220244534/sites/skeeme-1759220244534 {"name":"projects/skeeme-1759220244534/sites/skeeme-1759220244534","defaultUrl":"https://skeeme-1759220244534.web.app","type":"DEFAULT_SITE"}
+[debug] [2026-09-09T14:42:48.193Z] Checked if tokens are valid: true, expires at: 1788968352040
+[debug] [2026-09-09T14:42:48.193Z] Checked if tokens are valid: true, expires at: 1788968352040
+[debug] [2026-09-09T14:42:48.194Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/skeeme-1759220244534/versions [none]
+[debug] [2026-09-09T14:42:48.194Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/skeeme-1759220244534/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2026-09-09T14:42:51.411Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/skeeme-1759220244534/versions 200
+[debug] [2026-09-09T14:42:51.411Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/skeeme-1759220244534/versions {"name":"projects/677120499703/sites/skeeme-1759220244534/versions/b5a44de0c0a33ceb","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[info] i  hosting[skeeme-1759220244534]: beginning deploy... 
+[info] i  hosting[skeeme-1759220244534]: found 11 files in public 
+[debug] [2026-09-09T14:42:51.463Z] [hosting] uploading with 200 concurrency
+[debug] [2026-09-09T14:42:51.465Z] [hosting] hash cache [cHVibGlj] not populated
+[debug] [2026-09-09T14:42:51.726Z] Checked if tokens are valid: true, expires at: 1788968352040
+[debug] [2026-09-09T14:42:51.726Z] Checked if tokens are valid: true, expires at: 1788968352040
+[debug] [2026-09-09T14:42:51.728Z] [hosting] hash cache [cHVibGlj] stored for 11 files
+[debug] [2026-09-09T14:42:51.729Z] [hosting][hash queue][FINAL] {"max":251,"min":66,"avg":100,"active":0,"complete":11,"success":11,"errored":0,"retried":0,"total":11,"elapsed":263}
+[debug] [2026-09-09T14:42:51.729Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/677120499703/sites/skeeme-1759220244534/versions/b5a44de0c0a33ceb:populateFiles [none]
+[debug] [2026-09-09T14:42:51.729Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/677120499703/sites/skeeme-1759220244534/versions/b5a44de0c0a33ceb:populateFiles {"files":{"/styles.css":"96b5767e0d13d6ef34c246083419c8874af4775fef2fe66d3795e8ae2e88123d","/index.html":"76af936a9d2cfeb3e5864744524a48dc8a0f8345dc168b2c7e6d5a3d45d19ed2","/favicon.svg":"86ad3c967eb2284fb7e2fe08fbdd91803475e103a2f8d1f9dc678fb744b4c5f4","/favicon.ico":"43048bbe6a507ec924a6dec7ce77b96b482e189fd3db940af4031fd5a4b4add7","/apple-touch-icon.png":"e7f0539f684ce2f9e3596703c5017f8a877f39e3319db1f960b4bc2f8b2601a1","/app.js":"536b73d7940ec787a0fa7fa1c611b3c7b60adc5a102e5d0fff5a262c63e82430","/images/logo.png":"fe0980fad3c7642271a5435cb5afc2a8abb7588657d91811fb2d97a2461b8d5e","/images/skeemeword.png":"1e87b9db3421cf6ab1c4607884c47d721dea818d387bcfd9dd2d7cc2d2111ea4","/images/MAIIN.png":"237da998afcdb2821012226a665d0b8b6c385221bcab8fc5eb453b7f032dae7c","/images/hero.png":"704500a77439881a369cd3d0656d9e5eeee3fec3a8b069d682320ec42b5b8273","/images/student_app_mockup.png":"024b6c32a663d31aed2d878b75eba987e03e061f6801c2acbe13cb8cc96c6dea"}}

@@ -7,7 +7,7 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useNavigation } from 'expo-router';
 import { generateUUID } from '@/lib/utils';
 import { Colors } from '@/constants/theme';
 import * as DocumentPicker from 'expo-document-picker';
@@ -22,7 +22,6 @@ import LightbulbBolt from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
 import Rocket from '@/assets/icons/pikaicons/ufo.svg';
 import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 import GlobalErrorModal from '@/components/GlobalErrorModal';
-import { useNavigation } from '@react-navigation/native';
 
 import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/freeOffer';

@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import Purchases, { LOG_LEVEL, PurchasesEntitlementInfo } from 'react-native-purchases';
+import { isRunningInExpoGo } from 'expo';
 
 // Init guards to avoid duplicate configuration/races
 let _rcInitPromise: Promise<void> | null = null;
@@ -20,6 +21,13 @@ export const initializeRevenueCat = async (userId?: string) => {
   // Note: Actual purchases won't work across platforms, but the UI will load!
   if (!apiKey && __DEV__) {
       apiKey = APPLE_KEY || ANDROID_KEY;
+  }
+
+  if (isRunningInExpoGo() && apiKey && !apiKey.startsWith('test_')) {
+    if (__DEV__) {
+      console.log('[RevenueCat] Running in Expo Go with a production store key. Native billing is disabled in Expo Go. Use a development build (npx expo run:android) or a Test Store key to test purchases.');
+    }
+    return;
   }
 
   if (!apiKey) {
@@ -63,8 +71,14 @@ export const initializeRevenueCat = async (userId?: string) => {
       await Purchases.configure({ apiKey, appUserID: userId });
       if (__DEV__) { await Purchases.setLogLevel(LOG_LEVEL.VERBOSE); }
       _rcInitialized = true;
-    } catch (e) {
-      if (__DEV__) console.warn('[RevenueCat] initializeRevenueCat error', e);
+    } catch (e: any) {
+      if (__DEV__) {
+        if (e?.message?.includes('The native store is not available when running inside Expo Go')) {
+          console.warn('[RevenueCat] Native store is unavailable in Expo Go. Purchases will be simulated or disabled. Use a development build to test native purchases.');
+        } else {
+          console.warn('[RevenueCat] initializeRevenueCat error', e);
+        }
+      }
     }
   })();
 
@@ -79,10 +93,11 @@ export const initializeRevenueCat = async (userId?: string) => {
  * Identify user to RevenueCat upon login
  */
 export const identifyUser = async (userId: string) => {
+  if (!_rcInitialized) return;
   try {
     await Purchases.logIn(userId);
   } catch (e) {
-    if (__DEV__) console.error("RevenueCat Login Error:", e);
+    if (__DEV__) console.warn("RevenueCat Login Error:", e);
   }
 };
 
@@ -90,6 +105,7 @@ export const identifyUser = async (userId: string) => {
  * Check if user has active "pro" entitlement (covers both Pro and Max plans)
  */
 export const isUnlimitedMember = async (): Promise<boolean> => {
+  if (!_rcInitialized) return false;
   try {
     const customerInfo = await Purchases.getCustomerInfo();
     return typeof customerInfo.entitlements.active['pro'] !== 'undefined';
@@ -102,6 +118,7 @@ export const isUnlimitedMember = async (): Promise<boolean> => {
  * Restore previously purchased items
  */
 export const restorePurchases = async (): Promise<boolean> => {
+  if (!_rcInitialized) return false;
   try {
     const customerInfo = await Purchases.restorePurchases();
     return typeof customerInfo.entitlements.active['pro'] !== 'undefined';
@@ -114,7 +131,10 @@ export const restorePurchases = async (): Promise<boolean> => {
  * Logout from RevenueCat
  */
 export const logoutRevenueCat = async () => {
-  await Purchases.logOut();
+  if (!_rcInitialized) return;
+  try {
+    await Purchases.logOut();
+  } catch (e) {}
 };
 
 /**
