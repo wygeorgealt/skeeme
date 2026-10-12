@@ -10,10 +10,12 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
 
 	"skeeme-go/internal/cache"
 	"skeeme-go/internal/db"
 	"skeeme-go/internal/handlers"
+	"skeeme-go/internal/jobs"
 	"skeeme-go/internal/middleware"
 )
 
@@ -27,6 +29,37 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer database.Close()
+
+	// Initialize in-process Background Scheduler (backups & cleanups)
+	if os.Getenv("DISABLE_INTERNAL_CRON") != "true" {
+		c := cron.New()
+
+		// Run every hour: Postgres backup & pending cleanup
+		c.AddFunc("0 * * * *", func() {
+			log.Println("[Scheduler] Running hourly database backup to R2...")
+			jobs.RunPostgresBackup()
+
+			log.Println("[Scheduler] Running hourly pending student cleanup...")
+			jobs.PendingCleanup(database)
+		})
+
+		// Run every 3 hours: AI Health Check
+		c.AddFunc("0 */3 * * *", func() {
+			log.Println("[Scheduler] Running AI health check...")
+			jobs.AIHealthCheck()
+		})
+
+		// Midnight UTC: Reset streaks (safety fallback)
+		c.AddFunc("0 0 * * *", func() {
+			log.Println("[Scheduler] Running midnight ResetStreaks job...")
+			if err := jobs.ResetStreaks(database); err != nil {
+				log.Printf("[Scheduler] ResetStreaks failed: %v", err)
+			}
+		})
+
+		c.Start()
+		log.Println("[Scheduler] In-process background scheduler started (hourly backups & cleanups active)")
+	}
 
 	// Initialize Redis
 	redisClient, err := cache.NewRedisClient()

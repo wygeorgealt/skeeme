@@ -9,8 +9,9 @@ COPY . .
 RUN go mod tidy
 RUN go mod download
 
-# Build API binary
+# Build API and CLI binaries
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/bin/api ./cmd/api
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/bin/cli ./cmd/cli
 
 FROM alpine:latest
 
@@ -19,6 +20,7 @@ RUN apk --no-cache add ca-certificates tzdata postgresql-client
 
 WORKDIR /app
 COPY --from=builder /app/bin/api /app/api
+COPY --from=builder /app/bin/cli /app/cli
 
 EXPOSE 8080
 
