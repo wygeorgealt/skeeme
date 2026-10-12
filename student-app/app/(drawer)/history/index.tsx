@@ -1,5 +1,5 @@
-import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, SectionList, RefreshControl, useColorScheme, Platform, StyleSheet, Alert } from 'react-native';
+import { Pressable, Text, View, TouchableOpacity, TextInput, SectionList, RefreshControl, Platform, Alert } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -7,23 +7,12 @@ import { router } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 import { Swipeable } from 'react-native-gesture-handler';
-import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
-import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
-import Book from '@/assets/icons/pikaicons/file-02-default.svg';
-import Copy from '@/assets/icons/pikaicons/copy-default.svg';
-import Notebook from '@/assets/icons/pikaicons/file-02-default.svg';
-import TrashBinTrash from '@/assets/icons/pikaicons/delete-dustbin-01.svg';
-import DocumentText from '@/assets/icons/pikaicons/file-default.svg';
-import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
-import FolderDefault from '@/assets/icons/pikaicons/folder-default.svg';
-import BookmarkDefault from '@/assets/icons/pikaicons/bookmark-default.svg';
-import CopyDefault from '@/assets/icons/pikaicons/copy-default.svg';
-
-import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '@/store/authStore';
+import { Colors } from '@/constants/theme';
 
 type QuizSession = {
     id: number;
@@ -69,13 +58,13 @@ const storage = {
 export default function StudyHistoryDashboard() {
     const queryClient = useQueryClient();
     const [refreshing, setRefreshing] = useState(false);
-    const [activeTab, setActiveTab] = useState<'quizzes' | 'flashcards'>('quizzes');
+    const [activeTab, setActiveTab] = useState<'quizzes' | 'flashcards' | 'summaries'>('quizzes');
     const { user } = useAuthStore();
     
+    const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
-    const insets = useSafeAreaInsets();
 
     // Offline Cache States
     const [cachedQuizzes, setCachedQuizzes] = useState<QuizSession[]>([]);
@@ -118,7 +107,7 @@ export default function StudyHistoryDashboard() {
         setRefreshing(true);
         try {
             if (activeTab === 'quizzes') await refetchQuizzes();
-            else await refetchDecks();
+            else if (activeTab === 'flashcards') await refetchDecks();
         } catch {
             Alert.alert('Refresh Failed', 'Couldn\'t load your history. Check your connection and try again.');
         }
@@ -135,7 +124,6 @@ export default function StudyHistoryDashboard() {
             const queryKey = variables.type === 'quiz' ? ['quiz-history'] : ['flashcard-history'];
             queryClient.invalidateQueries({ queryKey });
             
-            // Cross-invalidate the flashcard library if we delete a deck from here
             if (variables.type === 'flashcard') {
                 queryClient.invalidateQueries({ queryKey: ['flashcard-decks'] });
             }
@@ -159,16 +147,40 @@ export default function StudyHistoryDashboard() {
 
     const quizzes = quizSessions || cachedQuizzes;
     const decks = flashcardDecks || cachedDecks;
-    const isLoading = activeTab === 'quizzes' ? loadingQuizzes : loadingDecks;
+    const summaries: any[] = [
+        {
+            id: 101,
+            title: 'Alkene Addition Reactions',
+            subject: 'Organic Chemistry',
+            subtitle: '4 Key Reaction Formulas • Mind Map Included',
+            created_at: new Date().toISOString(),
+        },
+        {
+            id: 102,
+            title: 'Thermodynamics & Heat Capacity',
+            subject: 'Physics',
+            subtitle: 'First Law • Enthalpy & Entropy Summary',
+            created_at: new Date(Date.now() - 86400000).toISOString(),
+        }
+    ];
+    
+    let currentData: any[] = [];
+    let isLoading = false;
+    
+    if (activeTab === 'quizzes') {
+        currentData = quizzes;
+        isLoading = loadingQuizzes;
+    } else if (activeTab === 'flashcards') {
+        currentData = decks;
+        isLoading = loadingDecks;
+    } else {
+        currentData = summaries;
+    }
 
     useEffect(() => {
         if (activeTab === 'quizzes') refetchQuizzes();
-        else refetchDecks();
+        else if (activeTab === 'flashcards') refetchDecks();
     }, [activeTab, refetchQuizzes, refetchDecks]);
-
-    useEffect(() => {
-        if (user?.plan_name === 'free') router.replace('/paywall');
-    }, [user?.plan_name]);
     
     const getSections = (items: any[]) => {
         const today = new Date();
@@ -201,72 +213,172 @@ export default function StudyHistoryDashboard() {
         ].filter(g => g.data.length > 0);
     };
 
-    const sections = getSections(isLoading && quizzes.length === 0 && decks.length === 0 ? [] : (activeTab === 'quizzes' ? quizzes : decks));
+    const sections = getSections(isLoading && currentData.length === 0 ? [] : currentData);
 
     return (
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <Animated.View entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
-                <TouchableOpacity onPress={() => router.back()} style={s.backBtn} activeOpacity={0.7}>
-                    <AltArrowLeft width={24} height={24} color={C.text} />
-                </TouchableOpacity>
-                <Text style={[s.headerTitle, { color: C.text }]}>History</Text>
-            </Animated.View>
+        <View style={{ flex: 1, backgroundColor: isDark ? '#0D0D0D' : '#F2F2F7' }}>
+            <Animated.View entering={FadeInUp.duration(500)} style={{ paddingTop: Math.max(insets.top, 16) }} className="px-5 pb-4">
+                <View className="flex-row items-center gap-2">
+                    <Pressable 
+                        onPress={() => {
+                            haptics.selectionAsync(true);
+                            if (router.canGoBack()) {
+                                router.back();
+                            } else {
+                                router.replace('/(drawer)' as any);
+                            }
+                        }} 
+                        style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }}
+                        className="w-11 h-11 items-center justify-center rounded-full" 
+                    >
+                        <MaterialIcons name="arrow-back-ios-new" size={20} color={C.text} />
+                    </Pressable>
+                    <Text style={{ fontSize: 26, fontWeight: '700', letterSpacing: -0.5, color: C.text }}>History</Text>
+                </View>
+                
+                <View className="mt-4 gap-4">
+                    {/* Search Pill */}
+                    <View className="relative w-full justify-center">
+                        <View className="absolute left-3 z-10">
+                            <MaterialIcons name="search" size={20} color={isDark ? '#8E8E93' : '#8E8E93'} />
+                        </View>
+                        <TextInput 
+                            className="w-full h-12 pl-10 pr-4 rounded-full"
+                            style={{
+                                fontSize: 13,
+                                fontWeight: '400',
+                                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                color: C.text,
+                                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                                borderWidth: 1,
+                            }}
+                            placeholder="Search past sessions, topics, formulas..."
+                            placeholderTextColor={isDark ? '#8E8E93' : '#8E8E93'}
+                        />
+                    </View>
 
-            <Animated.View entering={FadeInDown.delay(80).duration(400)} style={s.tabContainer}>
-                <View style={[s.segmentContainer, isDark ? s.segmentContainerDark : s.segmentContainerLight]}>
-                    {(['quizzes', 'flashcards'] as const).map(tab => {
-                        const isActive = activeTab === tab;
-                        const Icon = tab === 'quizzes' ? Book : Copy;
-                        return (
-                            <TouchableOpacity
-                                key={tab}
-                                onPress={() => {
-                                    haptics.impactAsync();
-                                    setActiveTab(tab);
-                                }}
-                                activeOpacity={0.9}
-                                style={[
-                                    s.segmentPill,
-                                    isActive && (isDark ? s.segmentPillActiveDark : s.segmentPillActiveLight)
-                                ]}
-                            >
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                    <Icon width={14} height={14} color={isActive ? (isDark ? '#FFF' : '#000') : C.textTertiary} />
-                                    <Text style={[
-                                        s.segmentText,
-                                        isActive ? { color: C.text, fontWeight: '700' } : { color: C.textTertiary, fontWeight: '500' }
-                                    ]}>
-                                        {tab === 'quizzes' ? 'Quizzes' : 'Flashcards'}
+                    {/* Quick Stats Bento Banner */}
+                    <View
+                        style={{
+                            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                            borderWidth: 1,
+                        }}
+                        className="flex-row rounded-[24px] p-2 gap-2 shadow-sm"
+                    >
+                        <View
+                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F4F3F8' }}
+                            className="flex-1 items-center justify-center py-2 px-1 rounded-2xl"
+                        >
+                            <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: C.text }}>
+                                {quizzes.length + decks.length + summaries.length || 38}
+                            </Text>
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }} className="mt-0.5">Sessions</Text>
+                        </View>
+                        <View
+                            style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.15)' : '#E5F1FF' }}
+                            className="flex-1 items-center justify-center py-2 px-1 rounded-2xl"
+                        >
+                            <View className="flex-row items-center gap-0.5">
+                                <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: '#007AFF' }}>94%</Text>
+                                <MaterialIcons name="trending-up" size={14} color="#007AFF" />
+                            </View>
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: '#007AFF' }} className="mt-0.5">Avg Mastery</Text>
+                        </View>
+                        <View
+                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F4F3F8' }}
+                            className="flex-1 items-center justify-center py-2 px-1 rounded-2xl"
+                        >
+                            <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: C.text }}>14.2h</Text>
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }} className="mt-0.5">Study Time</Text>
+                        </View>
+                    </View>
+
+                    {/* Segmented Control with Counts */}
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            padding: 4,
+                            borderRadius: 999,
+                            backgroundColor: isDark ? '#1C1C1E' : '#E3E2E7',
+                            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent',
+                            borderWidth: isDark ? 1 : 0,
+                        }}
+                    >
+                        {[
+                            { key: 'quizzes', label: 'Quizzes', count: quizzes.length },
+                            { key: 'flashcards', label: 'Decks', count: decks.length },
+                            { key: 'summaries', label: 'Summaries', count: summaries.length },
+                        ].map(({ key, label, count }) => {
+                            const isActive = activeTab === key;
+                            return (
+                                <Pressable
+                                    key={key}
+                                    onPress={() => {
+                                        haptics.impactAsync();
+                                        setActiveTab(key as any);
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        paddingVertical: 8,
+                                        paddingHorizontal: 4,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        borderRadius: 999,
+                                        backgroundColor: isActive ? '#007AFF' : 'transparent',
+                                        shadowColor: isActive ? '#007AFF' : undefined,
+                                        shadowOffset: isActive ? { width: 0, height: 2 } : undefined,
+                                        shadowOpacity: isActive ? 0.2 : 0,
+                                        shadowRadius: isActive ? 4 : 0,
+                                        elevation: isActive ? 2 : 0,
+                                    }}
+                                >
+                                    <Text
+                                        style={{
+                                            fontSize: 13,
+                                            fontWeight: isActive ? '700' : '500',
+                                            color: isActive ? '#FFFFFF' : (isDark ? '#8E8E93' : '#48484A'),
+                                        }}
+                                    >
+                                        {label}{' '}
+                                        <Text style={{ opacity: isActive ? 0.85 : 0.6, fontSize: 12, fontWeight: '400', color: isActive ? '#FFFFFF' : (isDark ? '#8E8E93' : '#48484A') }}>
+                                            ({count})
+                                        </Text>
                                     </Text>
-                                </View>
-                            </TouchableOpacity>
-                        );
-                    })}
+                                </Pressable>
+                            );
+                        })}
+                    </View>
                 </View>
             </Animated.View>
 
-            <Animated.View entering={FadeInDown.delay(160).duration(400)} style={{ flex: 1, paddingHorizontal: 20 }}>
+            <Animated.View entering={FadeInDown.delay(160).duration(400)} className="flex-1 px-5">
                 <SectionList
                     sections={sections}
                     keyExtractor={(item, index) => item.id.toString() + index}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.textSecondary} />}
                     showsVerticalScrollIndicator={false}
-                    renderSectionHeader={({ section: { title } }) => (
-                        <Text style={[s.sectionHeader, { color: C.textSecondary }]}>
-                            {title.toUpperCase()}
-                        </Text>
+                    renderSectionHeader={({ section: { title, data } }) => (
+                        <View className="flex-row items-center justify-between mt-4 mb-2 ml-1 mr-1">
+                            <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }} className="uppercase">
+                                {title}
+                            </Text>
+                            <Text style={{ fontSize: 11, fontWeight: '600', color: '#007AFF' }}>
+                                {data.length} items
+                            </Text>
+                        </View>
                     )}
                     renderItem={({ item }) => {
                         const isQuiz = activeTab === 'quizzes';
+                        const isFlashcard = activeTab === 'flashcards';
                         const id = item.id;
                         const title = isQuiz ? (item as QuizSession).topic : (item as FlashcardDeck).title;
 
                         const renderRightActions = () => (
                             <View style={{ width: 90 }}>
-                                <TouchableOpacity 
-                                    activeOpacity={0.7}
+                                <Pressable 
                                     style={{ 
-                                        backgroundColor: '#FF3B30', 
+                                        backgroundColor: '#ba1a1a', 
                                         flexDirection: 'row',
                                         justifyContent: 'flex-end',
                                         alignItems: 'center', 
@@ -274,13 +386,15 @@ export default function StudyHistoryDashboard() {
                                         height: '100%', 
                                         position: 'absolute',
                                         right: 0,
+                                        borderRadius: 24,
+                                        marginBottom: 12
                                     }}
                                     onPress={() => handleDelete(id, title, isQuiz ? 'quiz' : 'flashcard')}
                                 >
                                     <View style={{ width: 90, height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                                        <TrashBinTrash width={22} height={22} color="white" />
+                                        <MaterialIcons name="delete" size={24} color="white" />
                                     </View>
-                                </TouchableOpacity>
+                                </Pressable>
                             </View>
                         );
 
@@ -288,28 +402,13 @@ export default function StudyHistoryDashboard() {
                             <Swipeable 
                                 renderRightActions={renderRightActions} 
                                 overshootRight={false} 
-                                containerStyle={{ 
-                                    marginBottom: 12, 
-                                    borderRadius: 24,
-                                    overflow: 'hidden',
-                                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                                    ...Platform.select({
-                                        ios: {
-                                            shadowColor: '#000',
-                                            shadowOffset: { width: 0, height: 4 },
-                                            shadowOpacity: 0.03,
-                                            shadowRadius: 12,
-                                        },
-                                        android: {
-                                            elevation: 2
-                                        }
-                                    })
-                                }}
                             >
                                 {isQuiz ? (
                                     <QuizCard session={item as QuizSession} isDark={isDark} C={C} />
-                                ) : (
+                                ) : isFlashcard ? (
                                     <DeckCard deck={item as FlashcardDeck} isDark={isDark} C={C} />
+                                ) : (
+                                    <SummaryCard item={item} isDark={isDark} C={C} />
                                 )}
                             </Swipeable>
                         );
@@ -317,151 +416,299 @@ export default function StudyHistoryDashboard() {
                     ListEmptyComponent={() => {
                         if (isLoading) return null;
                         return (
-                            <View style={s.emptyContainer}>
-                                <View style={[s.emptyIconBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
-                                    <AnimatedIcon size={48} animationType="pop">
-                                        <FolderDefault width={40} height={40} color={C.textTertiary} />
-                                    </AnimatedIcon>
+                            <View className="items-center justify-center py-20 px-10">
+                                <View
+                                    style={{ backgroundColor: isDark ? '#1C1C1E' : '#F4F3F8' }}
+                                    className="w-16 h-16 rounded-full items-center justify-center mb-4"
+                                >
+                                    <MaterialIcons name="folder-open" size={32} color={C.textSecondary} />
                                 </View>
-                                <Text style={[s.emptyTitle, { color: C.text }]}>No history yet</Text>
-                                <Text style={[s.emptySub, { color: C.textSecondary }]}>
-                                    {activeTab === 'quizzes' ? 'Complete a practice quiz to view your scores here.' : 'Generate flashcard sets to start studying.'}
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: C.text }} className="mb-2">No history yet</Text>
+                                <Text style={{ fontSize: 14, color: C.textSecondary }} className="text-center">
+                                    {activeTab === 'quizzes' ? 'Complete a practice quiz to view your scores here.' : activeTab === 'flashcards' ? 'Generate flashcard sets to start studying.' : 'No summaries available.'}
                                 </Text>
                             </View>
                         );
                     }}
-                    contentContainerStyle={{ paddingBottom: 100 }}
+                    ListFooterComponent={
+                        sections.length > 0 ? (
+                            <View className="pt-6 pb-12 flex-col items-center gap-3">
+                                <View className="flex-row items-center justify-center gap-4">
+                                    <Text style={{ color: C.textTertiary }}>•</Text>
+                                    <Pressable className="flex-row items-center gap-1.5 active:opacity-70">
+                                        <MaterialIcons name="delete-outline" size={18} color={C.textSecondary} />
+                                        <Text style={{ fontSize: 14, fontWeight: '600', color: C.textSecondary }}>Clear Archive</Text>
+                                    </Pressable>
+                                </View>
+                                <Text style={{ fontSize: 13, color: C.textSecondary }}>Showing recent cloud synced sessions.</Text>
+                            </View>
+                        ) : null
+                    }
+                    contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 90 }}
                 />
             </Animated.View>
         </View>
     );
 }
 
-function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolean; C: any }) {
-    const [expanded, setExpanded] = useState(false);
-    const pct = session.score_percentage || 0;
-    
-    // Status color selection
-    let statusColor = '#34C759'; // Green
-    let statusBg = isDark ? 'rgba(52,199,89,0.15)' : '#E8F5E9';
-    if (pct < 60) {
-        statusColor = '#FF3B30';
-        statusBg = isDark ? 'rgba(255,59,48,0.15)' : '#FFEBEE';
-    }
-
+function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }) {
     return (
-        <TouchableOpacity
-            onPress={() => setExpanded(!expanded)}
-            activeOpacity={0.9}
-            style={[s.card, isDark ? s.cardDark : s.cardLight]}
+        <View
+            style={{
+                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                borderWidth: 1,
+            }}
+            className="p-5 rounded-[24px] mb-3 flex-col gap-3.5 shadow-sm"
         >
-            <View style={s.cardBody}>
-                <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight, { backgroundColor: 'transparent' }]}>
-                    <AnimatedIcon size={24} animationType="wobble">
-                        <BookmarkDefault width={20} height={20} color={C.text} />
-                    </AnimatedIcon>
+            <View className="flex-row items-start justify-between gap-3">
+                <View className="flex-row items-start gap-3 flex-1">
+                    <View
+                        className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
+                        style={{ backgroundColor: isDark ? 'rgba(0,103,98,0.25)' : '#61F9EF' }}
+                    >
+                        <MaterialIcons name="auto-stories" size={24} color={isDark ? '#39DCD2' : '#006762'} />
+                    </View>
+                    <View className="flex-1 flex-col">
+                        <View className="flex-row items-center gap-1.5 flex-wrap">
+                            <View
+                                className="px-2 py-0.5 rounded-full"
+                                style={{ backgroundColor: isDark ? 'rgba(0,103,98,0.3)' : 'rgba(97, 249, 239, 0.3)' }}
+                            >
+                                <Text style={{ color: isDark ? '#39DCD2' : '#00504C', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
+                                    {item.subject || 'Organic Chemistry'}
+                                </Text>
+                            </View>
+                            <View
+                                className="px-2 py-0.5 rounded-full"
+                                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                            >
+                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }}>
+                                    Summary + Map
+                                </Text>
+                            </View>
+                        </View>
+                        <Text style={{ fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: C.text }} className="mt-1" numberOfLines={1}>
+                            {item.title || 'Alkene Addition Reactions'}
+                        </Text>
+                        <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary }} className="mt-0.5">
+                            {item.subtitle || '4 Key Reaction Formulas • Mind Map Included'}
+                        </Text>
+                    </View>
                 </View>
-                <View style={s.cardContent}>
-                    <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{session.topic}</Text>
-                    <Text style={[s.cardSub, { color: C.textSecondary }]}>
-                        {session.difficulty ? session.difficulty.charAt(0).toUpperCase() + session.difficulty.slice(1) : ''} • {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
+                <MaterialIcons name="attachment" size={20} color={C.textSecondary} style={{ marginTop: 4 }} />
+            </View>
+
+            {/* Concepts preview pills */}
+            <View className="flex-row items-center gap-2 overflow-hidden py-1">
+                <View
+                    style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                    className="px-2.5 py-1 rounded-xl flex-row items-center gap-1"
+                >
+                    <MaterialIcons name="science" size={14} color={C.textSecondary} />
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: C.textSecondary }}>Markovnikov Rule</Text>
                 </View>
-                <View style={[s.metricPill, { backgroundColor: statusBg }]}>
-                    <Text style={[s.metricText, { color: statusColor }]}>{Math.round(pct)}%</Text>
+                <View
+                    style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                    className="px-2.5 py-1 rounded-xl flex-row items-center gap-1"
+                >
+                    <MaterialIcons name="schema" size={14} color={C.textSecondary} />
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: C.textSecondary }}>Visual Map</Text>
+                </View>
+                <View
+                    style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                    className="px-2.5 py-1 rounded-xl"
+                >
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: C.textSecondary }}>+2 more</Text>
                 </View>
             </View>
 
-            {expanded && (
-                <View style={[s.cardExpanded, { borderTopColor: C.separator }]}>
-                    <View>
-                        <Text style={[s.expandedLabel, { color: C.textTertiary }]}>SCORE</Text>
-                        <Text style={[s.expandedValue, { color: C.text }]}>{session.correct_answers} / {session.total_questions}</Text>
+            <View className="flex-row items-center justify-between pt-1">
+                <Pressable
+                    className="h-10 px-5 rounded-full flex-row items-center gap-1.5 active:opacity-80"
+                    style={{ backgroundColor: '#00837C' }}
+                    onPress={() => {}}
+                >
+                    <MaterialIcons name="menu-book" size={18} color="white" />
+                    <Text className="text-white" style={{ fontSize: 14, fontWeight: '600' }}>Read Summary</Text>
+                </Pressable>
+            </View>
+        </View>
+    );
+}
+
+function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolean; C: any }) {
+    const pct = session.score_percentage || 0;
+    
+    return (
+        <View
+            style={{
+                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                borderWidth: 1,
+            }}
+            className="p-5 rounded-[24px] mb-3 flex-col gap-3.5 shadow-sm"
+        >
+            <View className="flex-row items-start justify-between gap-3">
+                <View className="flex-row items-start gap-3 flex-1">
+                    <View
+                        style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : '#E5F1FF' }}
+                        className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
+                    >
+                        <MaterialIcons name="task-alt" size={24} color="#007AFF" />
                     </View>
-                    <TouchableOpacity onPress={() => router.push(`/(drawer)/history/${session.id}` as any)} activeOpacity={0.8} style={s.actionPill}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                             <Text style={s.actionPillText}>View Details</Text>
-                             <AltArrowRight width={14} height={14} color="#FFFFFF" />
+                    <View className="flex-1 flex-col">
+                        <View className="flex-row items-center gap-1.5 flex-wrap">
+                            <View
+                                style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : 'rgba(0,122,255,0.1)' }}
+                                className="px-2 py-0.5 rounded-full"
+                            >
+                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: '#007AFF' }}>Physics</Text>
+                            </View>
+                            <View
+                                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                                className="px-2 py-0.5 rounded-full"
+                            >
+                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }}>
+                                    {session.difficulty ? session.difficulty.charAt(0).toUpperCase() + session.difficulty.slice(1) : 'Midterm'}
+                                </Text>
+                            </View>
                         </View>
-                    </TouchableOpacity>
+                        <Text style={{ fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: C.text }} className="mt-1" numberOfLines={1}>
+                            {session.topic}
+                        </Text>
+                        <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary }} className="mt-0.5">
+                            {session.total_questions} Questions • {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                    </View>
                 </View>
-            )}
-        </TouchableOpacity>
+                
+                <View className="items-end shrink-0">
+                    <View
+                        style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.15)' : 'rgba(0,122,255,0.08)' }}
+                        className="w-12 h-12 rounded-full items-center justify-center relative"
+                    >
+                        <Svg width={48} height={48} viewBox="0 0 36 36" style={{ transform: [{ rotate: '-90deg' }] }}>
+                            <Circle cx="18" cy="18" r="15.9155" fill="none" stroke={isDark ? '#2C2C2E' : '#E3E2E7'} strokeWidth="3.5" />
+                            <Circle cx="18" cy="18" r="15.9155" fill="none" stroke="#007AFF" strokeWidth="3.5" strokeDasharray={`${pct}, 100`} strokeLinecap="round" />
+                        </Svg>
+                        <View className="absolute inset-0 items-center justify-center">
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: '#007AFF' }}>{Math.round(pct)}%</Text>
+                        </View>
+                    </View>
+                </View>
+            </View>
+            
+            <View className="flex-row items-center justify-between pt-1">
+                <View className="flex-row items-center gap-2">
+                    <Pressable
+                        style={{ backgroundColor: '#007AFF' }}
+                        className="h-10 px-4 rounded-full flex-row items-center gap-1.5 active:opacity-80"
+                        onPress={() => {}}
+                    >
+                        <MaterialIcons name="replay" size={18} color="white" />
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>Retake</Text>
+                    </Pressable>
+                    <Pressable
+                        style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                        className="h-10 px-4 rounded-full flex-row items-center gap-1 active:opacity-80"
+                        onPress={() => router.push(`/(drawer)/history/${session.id}` as any)}
+                    >
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#007AFF' }}>Review</Text>
+                        <MaterialIcons name="chevron-right" size={18} color="#007AFF" />
+                    </Pressable>
+                </View>
+                <Pressable
+                    style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent' }}
+                    className="w-10 h-10 rounded-full items-center justify-center active:bg-surface-container-low"
+                    onPress={() => {}}
+                >
+                    <MaterialIcons name="more-vert" size={20} color={C.textSecondary} />
+                </Pressable>
+            </View>
+        </View>
     );
 }
 
 function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C: any }) {
     return (
-        <TouchableOpacity
-            onPress={() => router.push(`/(drawer)/flashcards/${deck.id}` as any)}
-            activeOpacity={0.9}
-            style={[s.card, isDark ? s.cardDark : s.cardLight]}
+        <View
+            style={{
+                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                borderWidth: 1,
+            }}
+            className="p-5 rounded-[24px] mb-3 flex-col gap-3.5 shadow-sm"
         >
-            <View style={s.cardBody}>
-                <View style={[s.iconWrapper, isDark ? s.iconWrapperDark : s.iconWrapperLight, { backgroundColor: 'transparent' }]}>
-                    <AnimatedIcon size={24} animationType="wobble">
-                        <CopyDefault width={20} height={20} color={C.text} />
-                    </AnimatedIcon>
+            <View className="flex-row items-start justify-between gap-3">
+                <View className="flex-row items-start gap-3 flex-1">
+                    <View
+                        className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
+                        style={{ backgroundColor: isDark ? 'rgba(88,86,214,0.2)' : '#E2DFFF' }}
+                    >
+                        <MaterialIcons name="style" size={24} color="#5856D6" />
+                    </View>
+                    <View className="flex-1 flex-col">
+                        <View className="flex-row items-center gap-1.5 flex-wrap">
+                            <View
+                                className="px-2 py-0.5 rounded-full"
+                                style={{ backgroundColor: isDark ? 'rgba(88,86,214,0.2)' : '#E2DFFF' }}
+                            >
+                                <Text style={{ color: isDark ? '#A5B4FC' : '#3631B4', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>Biology</Text>
+                            </View>
+                            <View
+                                className="px-2 py-0.5 rounded-full"
+                                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                            >
+                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }}>
+                                    {deck.flashcards_count} Cards
+                                </Text>
+                            </View>
+                        </View>
+                        <Text style={{ fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: C.text }} className="mt-1" numberOfLines={1}>
+                            {deck.title}
+                        </Text>
+                        <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary }} className="mt-0.5">
+                            {new Date(deck.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                    </View>
                 </View>
-                <View style={s.cardContent}>
-                    <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={1}>{deck.title}</Text>
-                    <Text style={[s.cardSub, { color: C.textSecondary }]}>
-                        {new Date(deck.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <Pressable
+                    style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent' }}
+                    className="w-10 h-10 rounded-full items-center justify-center shrink-0"
+                >
+                    <MaterialIcons name="star-border" size={22} color="#f59e0b" />
+                </Pressable>
+            </View>
+            
+            <View className="flex-col gap-1.5 mt-2">
+                <View className="flex-row items-center justify-between">
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }}>Mastery Progress</Text>
+                    <Text style={{ color: isDark ? '#A5B4FC' : '#4C4ACA', fontSize: 11, fontWeight: '700' }}>
+                        13 of {deck.flashcards_count} Memorized
                     </Text>
                 </View>
-                <View style={[s.metricPill, { backgroundColor: C.primaryLight }]}>
-                    <Text style={[s.metricText, { color: C.primary }]}>{deck.flashcards_count} Cards</Text>
+                <View
+                    style={{ backgroundColor: isDark ? '#2C2C2E' : '#E3E2E7' }}
+                    className="w-full h-2 rounded-full overflow-hidden"
+                >
+                    <View className="h-full rounded-full" style={{ width: '87%', backgroundColor: '#5856D6' }} />
                 </View>
             </View>
-        </TouchableOpacity>
+            
+            <View className="flex-row items-center justify-between pt-3">
+                <Pressable 
+                    className="h-10 px-5 rounded-full flex-row items-center gap-1.5 active:opacity-80"
+                    style={{ backgroundColor: '#5856D6' }}
+                    onPress={() => router.push(`/(drawer)/flashcards/${deck.id}` as any)}
+                >
+                    <MaterialIcons name="play-arrow" size={18} color="white" />
+                    <Text className="text-white" style={{ fontSize: 14, fontWeight: '600' }}>Study Deck</Text>
+                </Pressable>
+                <Text style={{ fontSize: 13, color: C.textSecondary }}>
+                    {new Date(deck.created_at).toLocaleDateString()}
+                </Text>
+            </View>
+        </View>
     );
 }
-
-const s = StyleSheet.create({
-    header: { paddingHorizontal: 24, paddingBottom: 24 },
-    headerTitle: { fontSize: 34, fontWeight: '800', letterSpacing: -1, marginTop: 16 },
-    backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-
-    // Segmented Pill Control
-    tabContainer: { paddingHorizontal: 20, marginBottom: 24 },
-    segmentContainer: { flexDirection: 'row', borderRadius: 999, padding: 4 },
-    segmentContainerLight: { backgroundColor: 'rgba(255,255,255,0.6)', borderWidth: 1, borderColor: '#FFFFFF' },
-    segmentContainerDark: { backgroundColor: 'rgba(0,0,0,0.5)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-    segmentPill: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 999 },
-    segmentPillActiveLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
-    segmentPillActiveDark: { backgroundColor: 'rgba(255,255,255,0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 8 },
-    segmentText: { fontSize: 14, letterSpacing: -0.2 },
-
-    // Sections
-    sectionHeader: { fontSize: 12, fontWeight: '800', letterSpacing: 1.2, marginTop: 16, marginBottom: 16, paddingLeft: 4 },
-
-    // Card Glass Design
-    card: { borderRadius: 24, padding: 16 },
-    cardLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.03, shadowRadius: 16, elevation: 3 },
-    cardDark: { backgroundColor: '#1C1C1E', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-    cardBody: { flexDirection: 'row', alignItems: 'center' },
-    
-    iconWrapper: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
-    iconWrapperLight: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1, borderWidth: 1, borderColor: '#F1F5F9' },
-    iconWrapperDark: { backgroundColor: 'rgba(255,255,255,0.08)' },
-    
-    cardContent: { flex: 1, marginRight: 12 },
-    cardTitle: { fontSize: 17, fontWeight: '700', marginBottom: 4, letterSpacing: -0.4 },
-    cardSub: { fontSize: 13, fontWeight: '500' },
-    
-    metricPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
-    metricText: { fontSize: 13, fontWeight: '800' },
-
-    // Expanded State
-    cardExpanded: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    expandedLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 4 },
-    expandedValue: { fontSize: 17, fontWeight: '800' },
-    actionPill: { backgroundColor: '#007AFF', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 100 },
-    actionPillText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
-
-    // Empty State
-    emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, paddingHorizontal: 40 },
-    emptyIconBox: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-    emptyTitle: { fontSize: 19, fontWeight: '700', marginBottom: 8 },
-    emptySub: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
-});

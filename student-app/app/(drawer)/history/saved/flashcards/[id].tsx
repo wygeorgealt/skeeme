@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, ScrollView, useColorScheme, StyleSheet, Alert } from 'react-native';
+import { View, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Colors } from '@/constants/theme';

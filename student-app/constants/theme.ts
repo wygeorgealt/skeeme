@@ -5,10 +5,10 @@ import { Platform } from 'react-native';
 export const Colors = {
   light: {
     // Backgrounds
-    background: '#F0F2F7',
+    background: '#F2F2F7',
     secondaryBackground: '#FFFFFF',
     card: '#FFFFFF',
-    elevated: '#E5E5EA',
+    elevated: '#E9E9EB',
     
     // Text
     text: '#0A0F1E',
@@ -37,10 +37,10 @@ export const Colors = {
 
     // Card elevation (flat card system)
     cardShadowColor: '#000000',
-    cardShadowOpacity: 0.06,
-    cardShadowRadius: 12,
+    cardShadowOpacity: 0.035,
+    cardShadowRadius: 8,
     cardShadowOffset: { width: 0, height: 2 },
-    cardElevation: 3,
+    cardElevation: 1,
 
     // Backwards-compatible aliases
     cardSecondary: '#F2F2F7',
@@ -81,10 +81,10 @@ export const Colors = {
 
     // Card elevation (flat card system)
     cardShadowColor: '#000000',
-    cardShadowOpacity: 0.3,
-    cardShadowRadius: 16,
-    cardShadowOffset: { width: 0, height: 4 },
-    cardElevation: 6,
+    cardShadowOpacity: 0.22,
+    cardShadowRadius: 10,
+    cardShadowOffset: { width: 0, height: 3 },
+    cardElevation: 3,
 
     // Backwards-compatible aliases
     cardSecondary: '#2C2C2E',
@@ -107,9 +107,9 @@ export const Spacing = {
 export const Radius = {
   sm: 8,
   md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
+  lg: 14,
+  xl: 18,
+  xxl: 22,
   pill: 100,
 };
 
@@ -149,4 +149,3 @@ export const Fonts = Platform.select({
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
-

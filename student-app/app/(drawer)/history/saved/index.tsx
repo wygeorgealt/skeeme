@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, SectionList, RefreshControl, useColorScheme, Platform, StyleSheet, Alert } from 'react-native';
+import { View, TouchableOpacity, SectionList, RefreshControl, Platform, StyleSheet, Alert } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { router, useFocusEffect } from 'expo-router';
@@ -17,14 +18,14 @@ import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import BookmarkDefault from '@/assets/icons/pikaicons/bookmark-default.svg';
 
 import { deleteSavedDeck, deleteSavedQuiz, getSavedDecks, getSavedQuizzes } from '@/lib/offlineSaved';
-
 import { useAuthStore } from '@/store/authStore';
+
 
 type TabKey = 'quizzes' | 'flashcards';
 
 export default function SavedOfflineDashboard() {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
 
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('quizzes');
@@ -44,6 +45,12 @@ export default function SavedOfflineDashboard() {
     staleTime: 1000 * 30,
   });
 
+  // Local storage makes saved material available without a connection, but the
+  // Saved Materials library itself remains part of the paid plan.
+  useEffect(() => {
+    if (user?.plan_name === 'free') router.replace('/paywall');
+  }, [user?.plan_name]);
+
   const {
     data: savedDecks = [],
     refetch: refetchSavedDecks,
@@ -53,11 +60,6 @@ export default function SavedOfflineDashboard() {
     queryFn: getSavedDecks,
     staleTime: 1000 * 30,
   });
-
-  useEffect(() => {
-    // Redirect immediately on mount (same behavior as paid history)
-    if (user?.plan_name === 'free') router.replace('/paywall');
-  }, [user?.plan_name]);
 
   useFocusEffect(
     useCallback(() => {
@@ -70,8 +72,7 @@ export default function SavedOfflineDashboard() {
     haptics.impactAsync();
     setRefreshing(true);
     try {
-      if (activeTab === 'quizzes') await refetchSavedQuizzes();
-      else await refetchSavedDecks();
+      await Promise.all([refetchSavedQuizzes(), refetchSavedDecks()]);
     } finally {
       setRefreshing(false);
     }
@@ -271,9 +272,9 @@ const s = StyleSheet.create({
 
   sectionHeader: { fontSize: 12, fontWeight: '800', letterSpacing: 1.2, marginTop: 16, marginBottom: 16, paddingLeft: 4 },
 
-  card: { borderRadius: 24, padding: 16, borderWidth: 1 },
-  cardLight: { backgroundColor: '#FFFFFF', borderColor: 'rgba(0,0,0,0.06)' },
-  cardDark: { backgroundColor: '#1C1C1E', borderColor: 'rgba(255,255,255,0.08)' },
+  card: { borderRadius: 18, padding: 16, borderWidth: StyleSheet.hairlineWidth },
+  cardLight: { backgroundColor: '#FFFFFF', borderColor: '#E5E5EA' },
+  cardDark: { backgroundColor: '#1C1C1E', borderColor: 'rgba(255,255,255,0.1)' },
 
   cardBody: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   iconWrapper: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },

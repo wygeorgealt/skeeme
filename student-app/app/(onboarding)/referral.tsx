@@ -41,7 +41,6 @@ export default function ReferralScreen() {
     <OnboardingShell
       step={9}
       totalSteps={9} // We add one to total steps just for this optional screen so the progress bar looks right
-      stepLabel="Optional"
       title="Have a referral code?"
       subtitle="If you were given a code from a friend, enter it here. Otherwise you can skip."
       onCta={handleContinue}

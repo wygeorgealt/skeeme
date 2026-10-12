@@ -73,6 +73,7 @@ func main() {
 	webhookHandler := &handlers.WebhookHandler{DB: database}
 	referralHandler := &handlers.ReferralHandler{DB: database}
 	supportHandler := &handlers.SupportHandler{DB: database}
+		publicSupportHandler := &handlers.PublicSupportHandler{DB: database, Redis: redisClient}
 	gradeHandler := &handlers.GradeHandler{}
 
 	// Middleware
@@ -92,7 +93,7 @@ func main() {
 		r.With(requireInternalAuth).Post("/refund", internalAIHandler.Refund)
 	})
 	
-	r.Route("/api/v2/student", func(r chi.Router) {
+		r.Route("/api/v2/student", func(r chi.Router) {
 		r.Route("/system", func(r chi.Router) {
 			r.Get("/pricing", systemHandler.Pricing)
 			r.Get("/app-version", systemHandler.AppVersion)
@@ -107,6 +108,9 @@ func main() {
 		r.Post("/otp/resend", otpHandler.Resend)
 		r.Post("/auth/verify-account", authHandler.VerifyAccount)
 		r.Post("/auth/reset-password", authHandler.ResetPassword)
+
+		// Public website contact (no auth)
+		r.Post("/public/contact", publicSupportHandler.Contact)
 
 		// Protected Routes
 		r.Group(func(r chi.Router) {

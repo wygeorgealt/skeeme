@@ -4,8 +4,13 @@ import { Text as RNText, TextProps as RNTextProps, StyleSheet, Platform } from '
 export const Text = React.forwardRef<RNText, RNTextProps>((props, ref) => {
   const { style, ...rest } = props;
 
-  // Let React Native handle the system font natively for both platforms
-  return <RNText ref={ref} {...rest} style={style} />;
+  // Use the platform system face by default: SF Pro on iOS and Roboto on Android.
+  // Screen-level weights/sizes remain the source of hierarchy.
+  return <RNText ref={ref} {...rest} style={[styles.system, style]} />;
 });
 
 Text.displayName = 'Text';
+
+const styles = StyleSheet.create({
+  system: { includeFontPadding: false },
+});

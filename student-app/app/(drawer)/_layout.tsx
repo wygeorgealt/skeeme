@@ -1,5 +1,6 @@
 import { Tabs, router, usePathname } from 'expo-router';
-import { View, TouchableOpacity, Text, StyleSheet, useColorScheme, Platform, Alert } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, Platform, Alert } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
@@ -10,26 +11,34 @@ import { registerForPushNotificationsAsync } from '@/lib/notifications';
 import { AppState, AppStateStatus } from 'react-native';
 import ClaimRewardModal from '@/components/ClaimRewardModal';
 import { useState } from 'react';
+import { haptics } from '@/lib/haptics';
 
-import Home from '@/assets/icons/pikaicons/home-simple.svg';
-import User from '@/assets/icons/pikaicons/user-default.svg';
-import CameraAdd from '@/assets/icons/pikaicons/photo-image-plus.svg';
+import { MaterialIcons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, SharedValue } from 'react-native-reanimated';
 
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
-// ─── Custom simple 2-tab bar ─────────────────────────────
+// ─── Stitch-style Floating Pill Navbar ────────────────────
+type TabDef = {
+    name: string;
+    label: string;
+    icon: string;
+    activeIcon: string;
+};
+
+const TAB_DEFS: TabDef[] = [
+    { name: 'index', label: 'Home', icon: 'home', activeIcon: 'home' },
+    { name: 'scan', label: 'Scan', icon: 'document-scanner', activeIcon: 'document-scanner' },
+    { name: 'history', label: 'History', icon: 'history', activeIcon: 'history' },
+    { name: 'chat', label: 'Chat', icon: 'chat-bubble', activeIcon: 'chat-bubble' },
+];
+
 function TabBar({ state, descriptors, navigation }: any) {
     const insets = useSafeAreaInsets();
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
 
-    // Filter to only visible tabs (Home + Account)
-    const visibleRoutes = state.routes
-        .map((route: any, index: number) => ({ route, index }))
-        .filter(({ route }: any) => ['index', 'account'].includes(route.name));
-        
     // Check if any screen has requested to hide the tab bar
     const focusedRoute = state.routes[state.index];
     const focusedOptions = descriptors[focusedRoute.key].options;
@@ -37,43 +46,79 @@ function TabBar({ state, descriptors, navigation }: any) {
         return null;
     }
 
+    // Render tabs in the exact order specified by TAB_DEFS
+    const visibleTabs = TAB_DEFS.map((tabDef) => {
+        const routeIndex = state.routes.findIndex((r: any) => r.name === tabDef.name);
+        if (routeIndex === -1) return null;
+        return {
+            route: state.routes[routeIndex],
+            index: routeIndex,
+            tabDef,
+            isFocused: state.index === routeIndex,
+        };
+    }).filter(Boolean);
+
     return (
-        <View style={bar.outerWrap} pointerEvents="box-none">
+        <View style={[pill.outerWrap, { bottom: Math.max(insets.bottom, 12) + 6 }]} pointerEvents="box-none">
             <BlurView
                 intensity={Platform.OS === 'ios' ? 80 : 100}
                 tint={isDark ? 'dark' : 'light'}
                 style={[
-                    bar.blurBase,
+                    pill.blurPill,
                     {
-                        paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
                         backgroundColor: isDark
-                            ? (Platform.OS === 'android' ? 'rgba(0,0,0,0.92)' : 'rgba(0,0,0,0.7)')
-                            : (Platform.OS === 'android' ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.8)'),
-                        borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                            ? (Platform.OS === 'android' ? '#1C1C1E' : 'rgba(28,28,30,0.88)')
+                            : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.92)'),
+                        borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 12 },
+                        shadowOpacity: 0.12,
+                        shadowRadius: 32,
+                        elevation: 20,
                     },
                 ]}
             >
-                {visibleRoutes.map(({ route, index }: any) => {
-                    const { options } = descriptors[route.key];
-                    const isFocused = state.index === index;
-                    const iconColor = isFocused ? C.primary : (isDark ? '#6b7280' : '#9ca3af');
-                    const label = options.title ?? route.name;
-                    
-                    const IconComp = route.name === 'index' ? Home : User;
+                {visibleTabs.map((item: any) => {
+                    const { route, isFocused, tabDef } = item;
+                    const iconName = isFocused ? tabDef.activeIcon : tabDef.icon;
 
-                    return (
-                        <View key={route.key} style={bar.sideTab}>
+                    if (isFocused) {
+                        // Active tab — blue pill with icon + label
+                        return (
                             <TouchableOpacity
+                                key={route.key}
                                 onPress={() => {
+                                    haptics.selectionAsync(true);
                                     const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
                                     if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
                                 }}
-                                style={[{ opacity: isFocused ? 1 : 0.4, alignItems: 'center' }, bar.iconPressable]}
+                                activeOpacity={0.85}
+                                style={pill.activeTab}
                             >
-                                <IconComp width={28} height={28} color={iconColor} />
-                                <Text style={[bar.tabLabel, { color: iconColor, marginTop: 4 }]}>{label}</Text>
+                                <MaterialIcons name={iconName as any} size={22} color="#FFFFFF" />
+                                <Text style={pill.activeLabel}>{tabDef.label}</Text>
                             </TouchableOpacity>
-                        </View>
+                        );
+                    }
+
+                    // Inactive tab — circular icon only
+                    return (
+                        <TouchableOpacity
+                            key={route.key}
+                            onPress={() => {
+                                haptics.selectionAsync(true);
+                                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                                if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
+                            }}
+                            activeOpacity={0.7}
+                            style={pill.inactiveTab}
+                        >
+                            <MaterialIcons
+                                name={iconName as any}
+                                size={22}
+                                color={isDark ? '#9CA3AF' : '#8E8E93'}
+                            />
+                        </TouchableOpacity>
                     );
                 })}
             </BlurView>
@@ -81,40 +126,51 @@ function TabBar({ state, descriptors, navigation }: any) {
     );
 }
 
-const bar = StyleSheet.create({
+const pill = StyleSheet.create({
     outerWrap: {
         position: 'absolute',
         left: 0,
         right: 0,
-        bottom: 0,
+        bottom: 20,
+        alignItems: 'center',
     },
-    blurBase: {
+    blurPill: {
         flexDirection: 'row',
-        alignItems: 'flex-end',
-        paddingTop: 6,
-        paddingHorizontal: 24,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopLeftRadius: 36,
-        borderTopRightRadius: 36,
+        alignItems: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 6,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderRadius: 999,
         overflow: 'hidden',
+        gap: 4,
     },
-    sideTab: {
-        flex: 1,
+    activeTab: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: '#007AFF',
+        borderRadius: 999,
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        shadowColor: '#007AFF',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    activeLabel: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '700',
+        letterSpacing: -0.2,
+    },
+    inactiveTab: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 8,
     },
-    iconPressable: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-    },
-    tabLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-        letterSpacing: 0.1,
-        textAlign: 'center',
-    }
 });
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
@@ -167,8 +223,8 @@ export default function TabLayout() {
             (!user.ai_preferences || !user.ai_preferences.tone) &&
             !String(pathname || '').startsWith('/(onboarding)')
         ) {
-            if (pathname !== '/preferences') {
-                router.replace('/preferences');
+            if (pathname !== '/(drawer)/preferences') {
+                router.replace('/(drawer)/preferences');
             }
         }
     }, [token, user, pathname, onboardingComplete, onboardingJustCompleted]);
@@ -208,20 +264,35 @@ export default function TabLayout() {
                     }}
                 />
                 <Tabs.Screen
-                    name="account"
+                    name="scan"
                     options={{
-                        title: 'Me',
+                        title: 'Scan',
+                    }}
+                />
+                <Tabs.Screen
+                    name="history"
+                    options={{
+                        title: 'History',
+                    }}
+                />
+                <Tabs.Screen
+                    name="chat"
+                    options={{
+                        title: 'Chat',
+                        tabBarStyle: { display: 'none' },
                     }}
                 />
 
                 {/* Hidden screens — accessible via router.push() */}
-                <Tabs.Screen name="history" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+                <Tabs.Screen name="account" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="preferences" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="settings" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="support" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="referral" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="exams" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="generate" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+                <Tabs.Screen name="daily_study_goal" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+                <Tabs.Screen name="flashcards" options={{ href: null, tabBarStyle: { display: 'none' } }} />
 
             </Tabs>
 

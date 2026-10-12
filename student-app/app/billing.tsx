@@ -15,6 +15,8 @@ import RoundArrowUp from '@/assets/icons/pikaicons/arrow-up.svg';
 
 import RevenueCatUI from 'react-native-purchases-ui';
 import * as Sharing from 'expo-sharing';
+import { Colors } from '@/constants/theme';
+import { IosPillButton } from '@/components/ui/IosPillButton';
 
 
 interface Invoice {
@@ -46,6 +48,7 @@ export default function BillingHistoryScreen() {
     const { user } = useAuthStore();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const bgColor = isDark ? '#121212' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#121212';
 
@@ -94,14 +97,14 @@ export default function BillingHistoryScreen() {
     };
 
     return (
-        <View>
+        <View style={[s.root, { backgroundColor: C.background }]}> 
             <Stack.Screen
                 options={{
                     title: 'Billing History',
                     headerShown: true,
                     headerShadowVisible: false,
-                    headerStyle: { backgroundColor: isDark ? '#0f0f11' : '#fafafa' },
-                    headerTintColor: isDark ? '#ffffff' : '#0f172a',
+                    headerStyle: { backgroundColor: C.background },
+                    headerTintColor: C.primary,
                 }}
             />
 
@@ -120,13 +123,7 @@ export default function BillingHistoryScreen() {
                     <Text style={s.errorSubtitle}>
                         We couldn&apos;t retrieve your billing history. Please check your connection.
                     </Text>
-                    <TouchableOpacity 
-                        onPress={() => refetch()}
-                        style={s.retryBtn}
-                    >
-                        <Refresh width={18} height={18} color="white" />
-                        <Text style={s.retryBtnText}>Try Again</Text>
-                    </TouchableOpacity>
+                    <IosPillButton label="Try Again" onPress={() => refetch()} fullWidth style={s.retryBtn} />
                 </View>
             ) : (
                 <ScrollView
@@ -147,8 +144,8 @@ export default function BillingHistoryScreen() {
                     <Text style={s.sectionLabel}>Subscription Status</Text>
                     <View style={[s.planCard, isDark ? s.bgDarkCard : s.bgWhiteCard]}>
                         <View style={s.planHeaderRow}>
-                            <View style={[s.planIconBox, user?.plan_name !== 'free' ? s.bgBrandSoft : (isDark ? s.bgSlate800 : s.bgSlate100)]}>
-                                <RoundArrowUp width={18} height={18} color={user?.plan_name !== 'free' ? "#8B5CF6" : "#94a3b8"} />
+                            <View style={[s.planIconBox, user?.plan_name !== 'free' ? { backgroundColor: C.primaryLight } : (isDark ? s.bgSlate800 : s.bgSlate100)]}>
+                                <RoundArrowUp width={18} height={18} color={user?.plan_name !== 'free' ? C.primary : C.icon} />
 
                             </View>
                             <TouchableOpacity
@@ -157,9 +154,9 @@ export default function BillingHistoryScreen() {
                                         router.push('/paywall');
                                     } catch (e) {}
                                 }}
-                                style={[s.planBadge, isDark ? s.bgWhite : s.bgSlate950]}
+                                style={[s.planBadge, { backgroundColor: C.primaryLight }]}
                             >
-                                <Text style={[s.planBadgeText, isDark ? s.textSlate900 : s.textWhite]}>Plans</Text>
+                                <Text style={[s.planBadgeText, { color: C.primary }]}>Plans</Text>
                             </TouchableOpacity>
 
                         </View>
@@ -172,9 +169,9 @@ export default function BillingHistoryScreen() {
                             </Text>
                             <TouchableOpacity
                                 onPress={() => router.push('/buy-credits')}
-                                style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.2)' }}
+                                style={[s.topUpButton, { backgroundColor: C.primaryLight }]}
                             >
-                                <Text style={{ color: '#3b82f6', fontWeight: '700', fontSize: 12 }}>Top Up</Text>
+                                <Text style={{ color: C.primary, fontWeight: '600', fontSize: 14 }}>Top Up</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -230,6 +227,7 @@ export default function BillingHistoryScreen() {
 }
 
 const s = StyleSheet.create({
+    root: { flex: 1 },
     flex1: { flex: 1 },
     loadingContainer: { flex: 1, paddingHorizontal: 24, paddingTop: 32 },
     loadingLabel: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: '700', color: '#94a3b8', marginBottom: 24, marginLeft: 4 },
@@ -257,30 +255,31 @@ const s = StyleSheet.create({
     errorIconBox: { width: 96, height: 96, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 24, borderWidth: 1 },
     errorTitle: { fontWeight: '700', marginBottom: 12, fontSize: 20, letterSpacing: -0.5 },
     errorSubtitle: { color: '#64748b', textAlign: 'center', marginBottom: 32, fontWeight: '500', fontSize: 14, lineHeight: 22 },
-    retryBtn: { height: 52, width: '100%', maxWidth: 240, borderRadius: 20, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
+    retryBtn: { maxWidth: 240 },
     retryBtnText: { color: 'white', fontWeight: '700', fontSize: 15, marginLeft: 8 },
     
-    scrollContent: { paddingHorizontal: 24, paddingBottom: 60, paddingTop: 24 },
-    pageHeader: { marginBottom: 32, marginTop: 8, paddingHorizontal: 8 },
-    pageTitle: { fontSize: 36, fontWeight: '700', letterSpacing: -1, marginBottom: 8 },
-    pageSubtitle: { color: '#64748b', fontWeight: '500', fontSize: 15 },
+    scrollContent: { paddingHorizontal: 20, paddingBottom: 60, paddingTop: 16 },
+    pageHeader: { marginBottom: 28, marginTop: 4, paddingHorizontal: 0 },
+    pageTitle: { fontSize: 34, fontWeight: '700', letterSpacing: -0.8, marginBottom: 6 },
+    pageSubtitle: { color: '#6D6D72', fontWeight: '400', fontSize: 15 },
     
-    sectionLabel: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: '700', color: '#94a3b8', marginBottom: 20, marginLeft: 4 },
+    sectionLabel: { fontSize: 13, fontWeight: '600', color: '#6D6D72', marginBottom: 8, marginLeft: 16 },
     
-    planCard: { borderRadius: 24, padding: 24, borderWidth: 1, marginBottom: 40 },
-    planHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
-    planIconBox: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    planBadge: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, borderWidth: 1 },
-    planBadgeText: { fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5 },
-    planTitle: { fontWeight: '700', fontSize: 22, letterSpacing: -0.5, marginBottom: 4 },
-    planSubtitle: { color: '#64748b', fontWeight: '700', fontSize: 13 },
+    planCard: { borderRadius: 16, padding: 20, borderWidth: StyleSheet.hairlineWidth, marginBottom: 28 },
+    planHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+    planIconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    planBadge: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 },
+    planBadgeText: { fontWeight: '600', fontSize: 15 },
+    planTitle: { fontWeight: '700', fontSize: 20, letterSpacing: -0.4, marginBottom: 4 },
+    planSubtitle: { color: '#6D6D72', fontWeight: '400', fontSize: 15 },
+    topUpButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 },
     
     emptyContainer: { alignItems: 'center', paddingVertical: 80, borderRadius: 24, borderWidth: 2, borderStyle: 'dashed' },
     emptyIconBox: { width: 64, height: 64, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
     emptyTitle: { fontWeight: '700', fontSize: 18, letterSpacing: -0.5, marginBottom: 8 },
     emptySubtitle: { color: '#64748b', fontWeight: '500', fontSize: 13, textAlign: 'center', paddingHorizontal: 48, lineHeight: 20 },
     
-    invoiceCard: { padding: 24, borderRadius: 24, borderWidth: 1, marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    invoiceCard: { padding: 18, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth, marginBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     invoiceTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
     invoiceAmount: { fontWeight: '700', fontSize: 16, letterSpacing: -0.5, marginRight: 12 },
     statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, borderWidth: 1 },
@@ -292,7 +291,7 @@ const s = StyleSheet.create({
     invoiceDate: { color: '#64748b', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
     invoiceNumber: { fontSize: 10, fontWeight: '700', color: 'rgba(148, 163, 184, 0.6)', textTransform: 'uppercase', letterSpacing: 1.5 },
     
-    downloadBtn: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+    downloadBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
     borderSlate100: { borderColor: '#f1f5f9' },
     borderSlate200: { borderColor: '#e2e8f0' },
     itemsEnd: { alignItems: 'flex-end' },

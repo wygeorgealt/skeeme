@@ -22,13 +22,18 @@ interface GlobalErrorModalProps {
     visible: boolean;
     error: string | null;
     onDismiss: () => void;
+    onRetry?: () => void;
+    retrying?: boolean;
 }
 
-export default function GlobalErrorModal({ visible, error, onDismiss }: GlobalErrorModalProps) {
+export default function GlobalErrorModal({ visible, error, onDismiss, onRetry, retrying = false }: GlobalErrorModalProps) {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
     if (!visible) return null;
+
+    const isOffline = error?.toLowerCase().includes('offline');
+    const title = isOffline ? 'You’re offline' : 'Skeeme is unavailable';
 
     return (
         <Modal
@@ -74,7 +79,7 @@ export default function GlobalErrorModal({ visible, error, onDismiss }: GlobalEr
                         </View>
 
                         <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
-                            Connection Error
+                            {title}
                         </Text>
                         
                         <Text style={styles.message}>
@@ -82,13 +87,15 @@ export default function GlobalErrorModal({ visible, error, onDismiss }: GlobalEr
                         </Text>
 
                         <AnimatedButton
-                            title="Got it"
-                            onPress={onDismiss}
+                            title={onRetry ? (retrying ? 'Checking…' : 'Try again') : 'Got it'}
+                            onPress={onRetry || onDismiss}
+                            loading={retrying}
                             type="capsule"
                             backgroundColor="#007AFF"
                             shadowColor="#0066D6"
                             fullWidth
                         />
+                        {onRetry ? <Pressable onPress={onDismiss} style={{ marginTop: 16 }}><Text style={{ color: '#007AFF', fontWeight: '700' }}>Not now</Text></Pressable> : null}
                     </View>
                 </Animated.View>
             </View>

@@ -21,7 +21,8 @@ export async function syncPushTokenIfNeeded(token?: string | null, authToken?: s
         if (__DEV__) console.log('Successfully synced push token to backend (guarded):', token);
         return true;
     } catch (e) {
-        if (__DEV__) console.error('Push Token sync failed (guarded):', e);
+        // Push registration is optional; API outage handling is owned by lib/api.
+        if (__DEV__) console.warn('Push token will sync when Skeeme reconnects.');
         return false;
     }
 }

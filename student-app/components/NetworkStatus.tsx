@@ -14,17 +14,17 @@ import CloudCross from '@/assets/icons/pikaicons/download-down.svg';
 
 
 export function NetworkStatus() {
-    const [isConnected, setIsConnected] = useState<boolean | null>(true);
-    const isConnectedRef = React.useRef<boolean | null>(true);
+    const [isConnected, setIsConnected] = useState<boolean | null>(null);
+    const isConnectedRef = React.useRef<boolean | null>(null);
     const insets = useSafeAreaInsets();
     const translateY = useSharedValue(-60); // Start hidden off-screen
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
     useEffect(() => {
-        const unsubscribe = NetInfo.addEventListener((state) => {
-            // NetInfo returns null initially, so we check explicitly for false
-            if (state.isConnected === false) {
+        const applyNetworkState = (state: { isConnected: boolean | null; isInternetReachable: boolean | null }) => {
+            const offline = state.isConnected === false || state.isInternetReachable === false;
+            if (offline) {
                 if (isConnectedRef.current !== false) {
                     setIsConnected(false);
                     isConnectedRef.current = false;
@@ -33,7 +33,7 @@ export function NetworkStatus() {
                         stiffness: 150,
                     });
                 }
-            } else if (state.isConnected === true && isConnectedRef.current === false) {
+            } else if (state.isConnected === true && state.isInternetReachable !== false && isConnectedRef.current === false) {
                 // Only show positive feedback if we are transitioning back from an offline state
                 setIsConnected(true);
                 isConnectedRef.current = true;
@@ -41,8 +41,14 @@ export function NetworkStatus() {
                 setTimeout(() => {
                     translateY.value = withTiming(-100, { duration: 400 });
                 }, 2000);
+            } else if (state.isConnected === true && state.isInternetReachable !== false) {
+                setIsConnected(true);
+                isConnectedRef.current = true;
             }
-        });
+        };
+
+        NetInfo.fetch().then(applyNetworkState).catch(() => undefined);
+        const unsubscribe = NetInfo.addEventListener(applyNetworkState);
 
         return () => {
             unsubscribe();

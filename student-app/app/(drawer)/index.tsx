@@ -1,819 +1,895 @@
-import { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, useColorScheme, StyleSheet, Dimensions, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
-import { AnimatedButton } from 'react-native-3d-animated-buttons';
-import { Image as ExpoImage } from 'expo-image';
-import { BlurView } from 'expo-blur';
+import React, { useEffect, useState } from 'react';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    ScrollView,
+    StyleSheet,
+    Dimensions,
+    Platform,
+    Modal,
+} from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { haptics } from '@/lib/haptics';
 import Animated, {
     useSharedValue,
-    withRepeat,
+    useAnimatedStyle,
     withTiming,
+    withDelay,
     Easing,
-    FadeIn,
-    interpolate,
-    useAnimatedStyle
 } from 'react-native-reanimated';
-import QuestionCircle from '@/assets/icons/pikaicons/troubleshoot.svg';
-import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
-import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
-import Bolt from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
-import CameraAdd from '@/assets/icons/pikaicons/photo-image-plus.svg';
-import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
-import Dislike from '@/assets/icons/pikaicons/minus-circle.svg';
-import Gallery from '@/assets/icons/pikaicons/photo-image-default.svg';
-import Like from '@/assets/icons/pikaicons/user-love-heart.svg';
-import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
-import Scanner from '@/assets/icons/pikaicons/search-big.svg';
-import Share from '@/assets/icons/pikaicons/send-plane-horizontal.svg';
-import List from '@/assets/icons/pikaicons/sidebar-menu.svg';
-import MenuDotsCircle from '@/assets/icons/pikaicons/sidebar-menu.svg';
-import DocumentText from '@/assets/icons/pikaicons/file-default.svg';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { api } from '@/lib/api';
-import { useQueryClient } from '@tanstack/react-query';
+import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
-import { Stack, useRouter } from 'expo-router';
-import { Colors, Spacing, Radius } from '@/constants/theme';
-import * as ImagePicker from 'expo-image-picker';
-import { MathText } from '@/components/ui/MathText';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import * as Clipboard from 'expo-clipboard';
+import { haptics } from '@/lib/haptics';
 
-import * as Sharing from 'expo-sharing';
-import * as Print from 'expo-print';
-import { generateScanHTML } from '@/lib/pdfGenerator';
-import { scannerService, ScanResult } from '@/lib/scanner';
-import { posthog } from '@/lib/posthog';
-import { markGenerationSuccess } from '@/lib/storeReview';
-import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/freeOffer';
-import { streamScanFollowUpChat } from '@/lib/aiStream';
-
-import { LoadingSpinner } from '@/components/LoadingSpinner';
-import GlobalErrorModal from '@/components/GlobalErrorModal';
-import { FollowUpChatModal } from '@/components/ui/FollowUpChatModal';
-import { ProgressStages } from '@/components/ui/ProgressStages';
-import { ModelSwitcher, ProviderType } from '@/components/ui/ModelSwitcher';
-import { ShareModal } from '@/components/ui/ShareModal';
-import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
-import Sparkle from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
-
-const BASE_SCAN_COST = 50;
-const COST_PER_SOLUTION = 0;
 const { width } = Dimensions.get('window');
-const CROP_BOX_WIDTH = width * 0.85;
-const CROP_BOX_HEIGHT = 160;
 
-export default function ScanScreen() {
+export default function HomeDashboard() {
     const insets = useSafeAreaInsets();
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const router = useRouter();
-    const C = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
 
-    const { user, updateUser } = useAuthStore();
-    const queryClient = useQueryClient();
-    const [permission, requestPermission] = useCameraPermissions();
-    const cameraRef = useRef<CameraView>(null);
+    const user = useAuthStore((s) => s.user);
+    const toggleCreditsModal = useAuthStore((s) => s.toggleCreditsModal);
 
-    const [imageUri, setImageUri] = useState<string | null>(null);
-    const [imageBase64, setImageBase64] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [loadingStage, setLoadingStage] = useState('');
-    const [results, setResults] = useState<ScanResult[]>([]);
-    const [scanError, setScanError] = useState<string | null>(null);
-    const [isNetworkError, setIsNetworkError] = useState(false);
-    const [feedback, setFeedback] = useState<Record<number, 'helpful' | 'unhelpful'>>({});
-    const [showErrorModal, setShowErrorModal] = useState(false);
-    const [globalErrorMessage, setGlobalErrorMessage] = useState('');
-    const [showChatModal, setShowChatModal] = useState(false);
-    const [selectedProvider, setSelectedProvider] = useState<ProviderType>('deepseek');
-    const [showShareModal, setShowShareModal] = useState(false);
-    const [reexplainCount, setReexplainCount] = useState(0);
+    const [profileMenuVisible, setProfileMenuVisible] = useState(false);
 
-    const [progressPercent, setProgressPercent] = useState(0);
-
-    const esRef = useRef<(() => void) | null>(null);
-    const hapticFiredRef = useRef(false);
-
-    const pulseAnim = useSharedValue(0.4);
+    // Animations
+    const headerOpacity = useSharedValue(0);
+    const headerY = useSharedValue(14);
+    const contentOpacity = useSharedValue(0);
+    const progressWidth = useSharedValue(0);
 
     useEffect(() => {
-        if (loading) {
-            pulseAnim.value = withRepeat(
-                withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-                -1,
-                true
-            );
-        } else {
-            pulseAnim.value = 1;
-        }
-    }, [loading]);
-
-    useEffect(() => () => {
-        if (esRef.current) {
-            esRef.current();
-            esRef.current = null;
-        }
+        headerOpacity.value = withTiming(1, { duration: 400 });
+        headerY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
+        contentOpacity.value = withDelay(150, withTiming(1, { duration: 500 }));
+        progressWidth.value = withDelay(300, withTiming(75, { duration: 800, easing: Easing.out(Easing.cubic) }));
     }, []);
 
-    const pulseStyle = useAnimatedStyle(() => ({
-        opacity: pulseAnim.value,
+    const headerAnimatedStyle = useAnimatedStyle(() => ({
+        opacity: headerOpacity.value,
+        transform: [{ translateY: headerY.value }],
     }));
 
-    const pickImage = async (useCamera: boolean) => {
-        const currentCredits = user?.credits ?? 0;
-        const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
-        if (!isUnlimited && currentCredits <= 0) {
-            await useAuthStore.getState().toggleCreditsModal(true, 'scan');
-            return;
-        }
+    const contentAnimatedStyle = useAnimatedStyle(() => ({
+        opacity: contentOpacity.value,
+    }));
 
-        setResults([]);
+    const progressAnimatedStyle = useAnimatedStyle(() => ({
+        width: `${progressWidth.value}%`,
+    }));
 
-        const permissionMethod = useCamera
-            ? ImagePicker.requestCameraPermissionsAsync
-            : ImagePicker.requestMediaLibraryPermissionsAsync;
-
-        const { status } = await permissionMethod();
-        if (status !== 'granted') {
-            Alert.alert('Permission Required', `Please allow ${useCamera ? 'camera' : 'gallery'} access to scan questions.`);
-            return;
-        }
-
-        const launchMethod = useCamera
-            ? ImagePicker.launchCameraAsync
-            : ImagePicker.launchImageLibraryAsync;
-
-        const result = await launchMethod({
-            mediaTypes: ['images'],
-            quality: 0.5,
-            base64: true,
-            allowsEditing: true,
-        });
-
-        if (!result.canceled && result.assets[0]) {
-            const base64Data = result.assets[0].base64 || null;
-            setImageUri(result.assets[0].uri);
-            setImageBase64(base64Data);
-
-            if (base64Data) {
-                setTimeout(() => {
-                    handleSolve(base64Data);
-                }, 50);
-            }
-        }
-    };
-
-    const handleCapture = async () => {
-        const currentCredits = user?.credits ?? 0;
-        const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
-        if (!isUnlimited && currentCredits <= 0) {
-            await useAuthStore.getState().toggleCreditsModal(true, 'scan');
-            return;
-        }
-
-        if (!cameraRef.current) return;
-        try {
-            const photo = await cameraRef.current.takePictureAsync({ quality: 0.7 });
-
-            if (photo) {
-                setLoading(true);
-                setLoadingStage('Analyzing image...');
-                setProgressPercent(0);
-
-                const manipulated = await manipulateAsync(
-                    photo.uri,
-                    [{ resize: { width: 1080 } }],
-                    { compress: 0.7, format: SaveFormat.JPEG, base64: true }
-                );
-
-                setImageUri(manipulated.uri);
-                setImageBase64(manipulated.base64 || null);
-
-                if (manipulated.base64) {
-                    await handleSolve(manipulated.base64);
-                } else {
-                    setLoading(false);
-                    Alert.alert('Error', 'Couldn\'t process that image. Please try again.');
-                }
-            }
-        } catch (e) {
-            if (__DEV__) console.warn('Capture failed', e);
-            Alert.alert('Error', 'Could not take picture.');
-            setLoading(false);
-        }
-    };
-
-    const handleSolve = async (directBase64?: string) => {
-        const targetBase64 = directBase64 || imageBase64;
-        if (!targetBase64) return;
-
-        let currentCredits = user?.credits ?? 0;
-        let isUnlimited = (user?.plan_name ?? 'free') !== 'free';
-
-        if (__DEV__) console.log(`[scan] Credit check: credits=${currentCredits} plan=${user?.plan_name} isUnlimited=${isUnlimited}`);
-
-        const pricingConfig = useAuthStore.getState().pricingConfig;
-        const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
-        const scanCost = (pricingConfig?.rates?.scan_solve as any)?.[planTier] ?? (planTier === 'free' ? 50 : 30);
-
-        if (!isUnlimited && currentCredits <= 0) {
-            try {
-                if (__DEV__) console.log(`[scan] Credits appear 0, refreshing from server...`);
-                await queryClient.refetchQueries({ queryKey: ['student', 'me'] });
-                const refreshed = useAuthStore.getState().user;
-                if (refreshed) {
-                    currentCredits = refreshed.credits ?? currentCredits;
-                    isUnlimited = (refreshed.plan_name ?? 'free') !== 'free';
-                    if (__DEV__) console.log(`[scan] After refresh: credits=${currentCredits} isUnlimited=${isUnlimited}`);
-                }
-            } catch (e) { }
-
-            if (!isUnlimited && currentCredits <= 0) {
-                if (__DEV__) console.log(`[scan] Still 0 credits after refresh, showing modal`);
-                await useAuthStore.getState().toggleCreditsModal(true, 'scan');
-                return;
-            }
-        }
-
-        setLoading(true);
-        setScanError(null);
-        setIsNetworkError(false);
-        setLoadingStage('Analyzing image...');
-        setProgressPercent(10);
-        hapticFiredRef.current = false;
-
-        if (esRef.current) {
-            esRef.current();
-            esRef.current = null;
-        }
-
-        try {
-            let streamErrored = false;
-            let finalResults: ScanResult[] = [];
-
-            const cleanup = scannerService.streamSolve(targetBase64, selectedProvider, {
-                onStatus: (message) => {
-                    setLoadingStage(message);
-                },
-                onDelta: (partialResults) => {
-                    if (!hapticFiredRef.current && partialResults.length > 0) {
-                        hapticFiredRef.current = true;
-                        haptics.impactAsync('medium' as any, true);
-                    }
-                    finalResults = partialResults;
-                    setResults(partialResults);
-                    setLoadingStage('Generating answer...');
-                },
-                onFullResult: (fullResults) => {
-                    finalResults = fullResults;
-                    setResults(fullResults);
-                },
-                onComplete: async () => {
-                    // Refresh user profile to get accurate credits and streak
-                    try {
-                        await useAuthStore.getState().checkAuth();
-                    } catch (e) {}
-                },
-                onError: async (message, isInsufficientCredits) => {
-                    streamErrored = true;
-                    esRef.current = null;
-                    setLoading(false);
-
-                    if (isInsufficientCredits) {
-                        // Server rejected with 402 — not enough credits for the scan cost.
-                        // Show the credits modal (same flow as the local pre-check).
-                        await useAuthStore.getState().toggleCreditsModal(true, 'scan');
-                        return;
-                    }
-
-                    // Only use the contextual inline card — the global modal is reserved
-                    // for truly unrecoverable app-wide failures (auth loss, cold 500s).
-                    setScanError(message);
-
-                    // Detect if it was a network error for the UI
-                    if (message.toLowerCase().includes('network') || message.toLowerCase().includes('connection')) {
-                        setIsNetworkError(true);
-                    }
-                },
-                onDone: () => {
-                    esRef.current = null;
-                    setLoading(false);
-                    setProgressPercent(100);
-                    if (!streamErrored) {
-                        try {
-                            posthog.capture('scan_solved_stream', { questions_found: finalResults.length });
-                        } catch (e) { }
-                        if (finalResults.length > 0) {
-                            markGenerationSuccess('scan').catch(() => {});
-                        }
-                    }
-                }
-            });
-
-            esRef.current = cleanup;
-
-        } catch (err: any) {
-            setLoading(false);
-            setScanError('Connection failed. Please try again.');
-            setIsNetworkError(true);
-        }
-    };
-
-    const handleCopy = async (text: string) => {
-        await Clipboard.setStringAsync(text);
-    };
-
-    const handleExport = async () => {
-        if (results.length === 0) return;
-        setLoading(true);
-        setLoadingStage('Preparing PDF...');
-
-        try {
-            const html = generateScanHTML(results);
-            const { uri } = await Print.printToFileAsync({ html, base64: false });
-            await Sharing.shareAsync(uri);
-            try { posthog.capture('scan_exported'); } catch (e) { }
-        } catch (err) {
-            if (__DEV__) console.warn('PDF Export failed', err);
-            Alert.alert('Export Failed', 'Could not generate PDF report.');
-        } finally {
-            setLoading(false);
-            setLoadingStage('');
-        }
-    };
-
-    const resetScan = () => {
-        if (esRef.current) {
-            esRef.current();
-            esRef.current = null;
-        }
-        setLoading(false);
-        setLoadingStage('');
-        setProgressPercent(0);
-        setImageUri(null);
-        setImageBase64(null);
-        setResults([]);
-        setScanError(null);
-        setIsNetworkError(false);
-        hapticFiredRef.current = false;
-        setReexplainCount(0);
-    };
-
-    const handleReexplain = () => {
-        const isUnlimited = (user?.plan_name ?? 'free') !== 'free';
-        const limit = isUnlimited ? 5 : 1;
-
-        if (reexplainCount >= limit) {
-            if (isUnlimited) {
-                Alert.alert('Limit Reached', 'You are out of re-explains for this session.');
-            } else {
-                router.push('/paywall');
-            }
-            return;
-        }
-
-        setReexplainCount(prev => prev + 1);
-
-        const newResult: ScanResult = {
-            question: '',
-            solution: '',
-            steps: [],
-            type: 'theory',
-            topic: 'Simpler Explanation',
-            explanation: ''
-        };
-        
-        setResults(prev => [...prev, newResult]);
-        
-        if (esRef.current) {
-            esRef.current();
-            esRef.current = null;
-        }
-        
-        try {
-            const cleanup = streamScanFollowUpChat({
-                messages: [{ role: 'user', content: 'Re-explain the previous answer in a much simpler form. Break it down so a beginner can understand it.' }],
-                context: JSON.stringify(results),
-                provider: selectedProvider
-            }, {
-                onToken: (text) => {
-                    setResults(prev => {
-                        const next = [...prev];
-                        const last = next[next.length - 1];
-                        last.explanation = (last.explanation || '') + text;
-                        return next;
-                    });
-                },
-                onError: (err, isInsufficientCredits) => {
-                    Alert.alert('Re-explain Failed', err);
-                    if (isInsufficientCredits) {
-                        useAuthStore.getState().toggleCreditsModal(true, 'scan');
-                    }
-                }
-            });
-            esRef.current = cleanup;
-        } catch (e: any) {
-            Alert.alert('Error', e.message);
-        }
-    };
-
-    const [enableTorch, setEnableTorch] = useState(false);
-    const showLiveScanner = !imageUri && results.length === 0;
-
-    if (showLiveScanner) {
-        const { width, height } = Dimensions.get('window');
-        return (
-            <View style={{ position: 'absolute', top: -insets.top, left: 0, width, height: height + insets.top + insets.bottom, backgroundColor: 'black' }}>
-                <Stack.Screen options={{ headerShown: false }} />
-                {!permission ? (
-                    <View style={{ flex: 1 }} />
-                ) : !permission.granted ? (
-                    <View style={[s.permissionContainer, { marginTop: insets.top }]}>
-                        <Scanner width={64} height={64} color={C.primary} style={{ marginBottom: 24 }} />
-                        <Text style={[s.heroTitle, { color: C.text }]}>Camera Access Needed</Text>
-                        <Text style={[s.heroDesc, { paddingHorizontal: 40 }]}>
-                            Skeeme needs your camera to scan equations and past questions instantly.
-                        </Text>
-                        <AnimatedButton
-                            title="Grant Access"
-                            onPress={requestPermission}
-                            type="capsule"
-                            backgroundColor="#007AFF"
-                            shadowColor="#0066D6"
-                        />
-                    </View>
-                ) : (
-                    <View style={StyleSheet.absoluteFill}>
-                        <CameraView style={StyleSheet.absoluteFill} facing="back" ref={cameraRef} enableTorch={enableTorch} />
-
-                        <View style={[StyleSheet.absoluteFill, { justifyContent: 'space-between', marginTop: insets.top, paddingBottom: insets.bottom }]}>
-                            <View style={[s.topChrome, { paddingTop: 16 }]}>
-                                <TouchableOpacity onPress={() => setEnableTorch(!enableTorch)} activeOpacity={0.7} style={s.overlayTopBtn}>
-                                    <AnimatedIcon size={32} animationType="pop">
-                                        <Ionicons name={enableTorch ? 'flashlight' : 'flashlight-outline'} size={24} color={enableTorch ? '#FF9500' : '#FFF'} />
-                                    </AnimatedIcon>
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={s.centerViewfinder}>
-                                <Text style={s.instructionText}>Take a clear photo of your questions</Text>
-                            </View>
-
-                            <View style={[s.bottomChrome, { paddingBottom: Math.max(insets.bottom, 32) + 120 }]}>
-                                <TouchableOpacity onPress={() => pickImage(false)} activeOpacity={0.8} style={s.galleryBtn}>
-                                    <Gallery width={28} height={28} color="white" />
-                                </TouchableOpacity>
-
-                                <TouchableOpacity onPress={handleCapture} activeOpacity={0.8} style={s.shutterOuter}>
-                                    <View style={s.shutterInner} />
-                                </TouchableOpacity>
-
-                                <View style={{ width: 44, height: 44 }} />
-                            </View>
-                        </View>
-                    </View>
-                )}
-            </View>
-        );
-    }
+    const firstName = user?.name ? user.name.split(' ')[0] : 'there';
+    const credits = user?.credits ?? 0;
+    const streak = user?.streak?.current_streak ?? 0;
 
     return (
-        <View style={{ flex: 1, backgroundColor: C.background }}>
-            <Stack.Screen options={{ headerShown: false }} />
-
-            <View style={[s.header, { paddingTop: Math.max(insets.top, 16) }]}>
-                <TouchableOpacity onPress={resetScan} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
-                    <AltArrowLeft width={20} height={20} color={C.text} />
+        <View style={[styles.root, { backgroundColor: isDark ? '#0F1115' : '#F2F2F7' }]}>
+            {/* Top Navigation Bar */}
+            <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
+                {/* Profile Pill with Dropdown Trigger */}
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={styles.profileBtn}
+                    onPress={() => {
+                        haptics.selectionAsync();
+                        setProfileMenuVisible(!profileMenuVisible);
+                    }}
+                >
+                    <View style={styles.avatarCircle}>
+                        <Ionicons name="person" size={18} color="#007AFF" />
+                    </View>
+                    <Text style={[styles.profileGreeting, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
+                        Hello, <Text style={styles.profileNameBold}>{firstName}!</Text>
+                    </Text>
+                    <MaterialIcons
+                        name={profileMenuVisible ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                        size={20}
+                        color="#007AFF"
+                    />
                 </TouchableOpacity>
-                <Text style={[s.headerTitle, { color: C.text }]}>Question</Text>
-                {results.length > 0 ? (
-                    <TouchableOpacity onPress={() => setShowShareModal(true)} activeOpacity={0.7} style={[s.headerBtn, { backgroundColor: isDark ? C.card : C.cardSecondary }]}>
-                        <MenuDotsCircle width={20} height={20} color={C.text} />
+
+                {/* Right Badges: Streak & Credits */}
+                <View style={styles.badgeRow}>
+                    {/* Streak Badge */}
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => {
+                            haptics.selectionAsync();
+                            router.push('/(drawer)/daily_study_goal' as any);
+                        }}
+                        style={[
+                            styles.badgePill,
+                            {
+                                backgroundColor: isDark ? 'rgba(255, 149, 0, 0.15)' : '#FFF7ED',
+                                borderColor: isDark ? 'rgba(255, 149, 0, 0.3)' : '#FDBA74',
+                            },
+                        ]}
+                    >
+                        <MaterialIcons name="local-fire-department" size={17} color="#EA580C" />
+                        <Text style={[styles.badgeText, { color: '#EA580C' }]}>{streak}</Text>
                     </TouchableOpacity>
-                ) : (
-                    <View style={{ width: 44 }} />
-                )}
+
+                    {/* Credits Badge */}
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => {
+                            haptics.selectionAsync();
+                            toggleCreditsModal(true, 'scan');
+                        }}
+                        style={[
+                            styles.badgePill,
+                            {
+                                backgroundColor: isDark ? 'rgba(0, 122, 255, 0.15)' : '#EFF6FF',
+                                borderColor: isDark ? 'rgba(0, 122, 255, 0.3)' : '#93C5FD',
+                            },
+                        ]}
+                    >
+                        <MaterialIcons name="bolt" size={17} color="#007AFF" />
+                        <Text style={[styles.badgeText, { color: '#007AFF' }]}>{credits}</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 40 }} showsVerticalScrollIndicator={false}>
-                {!!imageUri && (
-                    <View style={{ width: '100%', height: 160, marginBottom: 16, borderRadius: 16, overflow: 'hidden' }}>
-                        <ExpoImage source={{ uri: imageUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                    </View>
-                )}
+            {/* Profile Menu Dropdown Modal */}
+            {profileMenuVisible && (
+                <Modal transparent animationType="fade" visible={profileMenuVisible}>
+                    <TouchableOpacity
+                        style={styles.modalOverlay}
+                        activeOpacity={1}
+                        onPress={() => setProfileMenuVisible(false)}
+                    >
+                        <View
+                            style={[
+                                styles.dropdownMenu,
+                                {
+                                    top: Math.max(insets.top, 12) + 52,
+                                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                },
+                            ]}
+                        >
+                            <View style={styles.dropdownHeader}>
+                                <Text style={styles.planBadgeText}>
+                                    {user?.plan_name === 'pro' || user?.plan_name === 'max' ? 'Pro Member' : 'Free Plan'}
+                                </Text>
+                            </View>
 
-                {(loading || results.length > 0) && (
-                    <View style={{ marginBottom: 24 }}>
-                        <ModelSwitcher 
-                            selected={selectedProvider}
-                            onSelect={setSelectedProvider}
-                            isDark={isDark}
-                        />
-                    </View>
-                )}
-
-                {!!(results.length > 0 || loading || scanError) && (
-                    <View>
-                        {scanError ? (
-                            <View style={[s.errorContainer, isDark ? s.cardDark : s.cardLight]}>
-                                <View style={s.errorIconCircle}>
-                                    <QuestionCircle width={32} height={32} color={isNetworkError ? '#f59e0b' : '#ef4444'} />
+                            <TouchableOpacity
+                                style={styles.menuItem}
+                                activeOpacity={0.7}
+                                onPress={() => {
+                                    setProfileMenuVisible(false);
+                                    router.push('/(drawer)/preferences' as any);
+                                }}
+                            >
+                                <View style={[styles.menuIconWrap, { backgroundColor: '#EEF2FF' }]}>
+                                    <Ionicons name="sparkles" size={18} color="#4F46E5" />
                                 </View>
-                                <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>
-                                    {isNetworkError ? 'Connection Issue' : 'Analysis Failed'}
-                                </Text>
-                                <Text style={[s.errorDesc, isDark ? s.textSlate400d : s.textSlate500l]}>
-                                    {scanError}
-                                </Text>
-                                <View style={{ width: '100%', gap: 12 }}>
-                                    <AnimatedButton
-                                        title="Try Again"
-                                        onPress={() => handleSolve()}
-                                        type="capsule"
-                                        backgroundColor="#007AFF"
-                                        shadowColor="#0066D6"
-                                        fullWidth
-                                    />
-                                    <AnimatedButton
-                                        title="Retake Photo"
-                                        onPress={resetScan}
-                                        type="capsule"
-                                        backgroundColor={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'}
-                                        textColor={C.textTertiary}
-                                        fullWidth
-                                    />
+                                <View style={styles.menuTextWrap}>
+                                    <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
+                                        Personalization
+                                    </Text>
+                                    <Text style={styles.menuSubtitle}>AI style & study goals</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.menuItem}
+                                activeOpacity={0.7}
+                                onPress={() => {
+                                    setProfileMenuVisible(false);
+                                    router.push('/(drawer)/settings' as any);
+                                }}
+                            >
+                                <View style={[styles.menuIconWrap, { backgroundColor: '#F0FDFA' }]}>
+                                    <Ionicons name="settings-sharp" size={18} color="#0D9488" />
+                                </View>
+                                <View style={styles.menuTextWrap}>
+                                    <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
+                                        Settings
+                                    </Text>
+                                    <Text style={styles.menuSubtitle}>Account & notifications</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.menuItem, styles.buyCreditsItem]}
+                                activeOpacity={0.7}
+                                onPress={() => {
+                                    setProfileMenuVisible(false);
+                                    toggleCreditsModal(true, 'scan');
+                                }}
+                            >
+                                <View style={[styles.menuIconWrap, { backgroundColor: '#007AFF' }]}>
+                                    <MaterialIcons name="bolt" size={18} color="#FFFFFF" />
+                                </View>
+                                <View style={styles.menuTextWrap}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                        <Text style={[styles.menuTitle, { color: '#007AFF', fontWeight: '700' }]}>
+                                            Buy Credits
+                                        </Text>
+                                        <View style={styles.instantTag}>
+                                            <Text style={styles.instantTagText}>+100 AI</Text>
+                                        </View>
+                                    </View>
+                                    <Text style={[styles.menuSubtitle, { color: 'rgba(0, 122, 255, 0.8)' }]}>
+                                        Instant AI tutor top-up
+                                    </Text>
+                                </View>
+                                <Ionicons name="add-circle" size={18} color="#007AFF" />
+                            </TouchableOpacity>
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
+            )}
+
+            {/* Main Scrollable Content */}
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    { paddingBottom: Math.max(insets.bottom, 20) + 90 },
+                ]}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Hero Greeting */}
+                <Animated.View style={[styles.heroSection, headerAnimatedStyle]}>
+                    <Text style={[styles.heroHeading, { color: isDark ? '#FFFFFF' : '#1B1B1D' }]}>
+                        Need help{'\n'}
+                        <Text style={styles.heroHeadingLight}>studying</Text> today?
+                    </Text>
+                </Animated.View>
+
+                <Animated.View style={[contentAnimatedStyle, { marginTop: 20 }]}>
+                    {/* Daily Goal Card */}
+                    <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={() => router.push('/(drawer)/daily_study_goal' as any)}
+                        style={[
+                            styles.dailyGoalCard,
+                            {
+                                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                            },
+                        ]}
+                    >
+                        <View style={styles.dailyGoalHeader}>
+                            <View style={styles.dailyGoalLeft}>
+                                <View style={styles.targetIconWrap}>
+                                    <Ionicons name="disc" size={20} color="#007AFF" />
+                                </View>
+                                <View>
+                                    <Text style={[styles.dailyGoalTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
+                                        Daily Goal
+                                    </Text>
+                                    <Text style={styles.dailyGoalSub}>
+                                        4 more cards to keep your streak
+                                    </Text>
                                 </View>
                             </View>
-                        ) : (
-                            <>
-                                {loading && (
-                                    <View style={{ backgroundColor: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 16, overflow: 'hidden', marginBottom: 24 }}>
-                                        <ProgressStages progressPercent={progressPercent} isDark={isDark} />
-                                    </View>
-                                )}
-
-                                {results.map((item, index) => (
-                                    <View key={index} style={s.resultContainer}>
-                                        {!!item.topic && (
-                                            <View style={s.sectionHeaderRow}>
-                                                <Text style={[s.topicTitleText, isDark ? s.textWhite : s.textSlate900]}>{item.topic}</Text>
-                                            </View>
-                                        )}
-                                        {!!(item.solution || item.summary) && (
-                                            <MathText
-                                                content={`**${item.solution || item.summary}**`}
-                                                color={isDark ? '#FFFFFF' : '#0f172a'}
-                                                fontSize={17}
-                                                containerStyle={{ marginBottom: 16, marginTop: 8 }}
-                                            />
-                                        )}
-
-                                        {item.steps && item.steps.length > 0 ? (
-                                            item.steps.map((step, stepIdx) => (
-                                                <View key={stepIdx} style={s.stepRow}>
-                                                    <View style={[s.stepBadge, isDark ? s.bgWhite10 : s.bgSlate100]}>
-                                                        <Text style={[s.stepNumber, isDark ? s.textWhite : s.textSlate900]}>{stepIdx + 1}</Text>
-                                                    </View>
-                                                    <View style={s.stepContent}>
-                                                        <MathText
-                                                            content={step}
-                                                            color={isDark ? '#cbd5e1' : '#334155'}
-                                                            fontSize={16}
-                                                        />
-                                                    </View>
-                                                </View>
-                                            ))
-                                        ) : (
-                                            <MathText
-                                                content={item.explanation || 'No detailed explanation available.'}
-                                                color={isDark ? '#cbd5e1' : '#334155'}
-                                                fontSize={16}
-                                                containerStyle={{ marginBottom: 20 }}
-                                            />
-                                        )}
-
-                                        {index === results.length - 1 && (
-                                            <View style={s.feedbackRow}>
-                                                {feedback[index] ? (
-                                                    <Animated.View entering={FadeIn.duration(300)} style={s.feedbackDone}>
-                                                        <CheckCircle width={16} height={16} color="#10b981" />
-                                                        <Text style={[s.feedbackDoneText, { color: '#10b981' }]}>
-                                                            Thanks for the feedback!
-                                                        </Text>
-                                                    </Animated.View>
-                                                ) : (
-                                                    <View style={s.feedbackContainerInner}>
-                                                        <Text style={[s.feedbackPrompt, isDark ? s.textSlate400d : s.textSlate500l]}>Happy with the answer?</Text>
-                                                        <View style={s.feedbackBtns}>
-                                                            <TouchableOpacity
-                                                                onPress={() => setFeedback(prev => ({ ...prev, [index]: 'helpful' }))}
-                                                                activeOpacity={0.7}
-                                                                style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
-                                                            >
-                                                                <Like width={16} height={16} color={isDark ? 'white' : '#0f172a'} />
-                                                                <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Helpful</Text>
-                                                            </TouchableOpacity>
-                                                            <TouchableOpacity
-                                                                onPress={() => setFeedback(prev => ({ ...prev, [index]: 'unhelpful' }))}
-                                                                activeOpacity={0.7}
-                                                                style={[s.feedbackBtn, isDark ? s.feedbackBtnDark : s.feedbackBtnLight]}
-                                                            >
-                                                                <Dislike width={16} height={16} color={isDark ? 'white' : '#0f172a'} />
-                                                                <Text style={[s.feedbackBtnText, isDark ? s.textWhite : s.textSlate900]}>Unhelpful</Text>
-                                                            </TouchableOpacity>
-                                                        </View>
-                                                    </View>
-                                                )}
-                                            </View>
-                                        )}
-                                    </View>
-                                ))}
-                            </>
-                        )}
-                        {!loading && results.length > 0 && (
-                            <View style={s.actionButtonsRow}>
-                                <View style={{ flex: 1 }}>
-                                    <AnimatedButton 
-                                        title="Re-explain"
-                                        onPress={handleReexplain}
-                                        type="capsule"
-                                        backgroundColor={isDark ? '#2C2C2E' : '#E5E5EA'}
-                                        shadowColor={isDark ? '#1C1C1E' : '#D1D1D6'}
-                                        textColor={isDark ? '#FFFFFF' : '#0F172A'}
-                                        fullWidth
-                                    />
-                                </View>
-
-                                <View style={{ flex: 1 }}>
-                                    <AnimatedButton 
-                                        title="Ask Follow-up"
-                                        onPress={() => setShowChatModal(true)}
-                                        type="capsule"
-                                        backgroundColor="#007AFF"
-                                        shadowColor="#0066D6"
-                                        fullWidth
-                                    />
-                                </View>
+                            <View style={styles.dailyGoalCountPill}>
+                                <Text style={styles.dailyGoalCountCurrent}>16</Text>
+                                <Text style={styles.dailyGoalCountTotal}>/ 20</Text>
                             </View>
-                        )}
+                        </View>
+
+                        {/* Progress Bar */}
+                        <View style={[styles.progressBarTrack, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
+                            <Animated.View style={[styles.progressBarFill, progressAnimatedStyle]} />
+                        </View>
+                    </TouchableOpacity>
+
+                    {/* Pro Banner */}
+                    <LinearGradient
+                        colors={['#007AFF', '#38BDF8']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.proBanner}
+                    >
+                        <View style={styles.proBannerContent}>
+                            <View style={styles.crownCircle}>
+                                <MaterialIcons name="workspace-premium" size={26} color="#FFFFFF" />
+                            </View>
+                            <View style={styles.proBannerTextWrap}>
+                                <Text style={styles.proBannerTitle}>Unlock Skeeme Pro</Text>
+                                <Text style={styles.proBannerSubtitle}>
+                                    Upgrade your learning with unlimited access to premium perks & instant AI tutor.
+                                </Text>
+                            </View>
+                        </View>
+
+                        <TouchableOpacity
+                            activeOpacity={0.88}
+                            style={styles.proUpgradeBtn}
+                            onPress={() => {
+                                haptics.selectionAsync();
+                                router.push('/(drawer)/account');
+                            }}
+                        >
+                            <Text style={styles.proUpgradeBtnText}>+ Upgrade to Pro</Text>
+                        </TouchableOpacity>
+                    </LinearGradient>
+
+                    {/* Quick Actions 3-Column Grid */}
+                    <View style={styles.actionsGrid}>
+                        {/* Quiz */}
+                        <TouchableOpacity
+                            activeOpacity={0.85}
+                            style={[
+                                styles.actionTile,
+                                {
+                                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                },
+                            ]}
+                            onPress={() => {
+                                haptics.impactAsync();
+                                router.push('/(drawer)/generate');
+                            }}
+                        >
+                            <View style={[styles.tileIconCircle, { backgroundColor: '#EFF6FF' }]}>
+                                <MaterialIcons name="quiz" size={24} color="#007AFF" />
+                            </View>
+                            <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>Quiz</Text>
+                            <Text style={styles.tileSubtitle}>Timed drills</Text>
+                        </TouchableOpacity>
+
+                        {/* Flashcards */}
+                        <TouchableOpacity
+                            activeOpacity={0.85}
+                            style={[
+                                styles.actionTile,
+                                {
+                                    backgroundColor: isDark ? '#152136' : '#EFF6FF',
+                                    borderColor: isDark ? 'rgba(0, 122, 255, 0.4)' : '#BFDBFE',
+                                },
+                            ]}
+                            onPress={() => {
+                                haptics.impactAsync();
+                                router.push('/(drawer)/history' as any);
+                            }}
+                        >
+                            <View
+                                style={[
+                                    styles.tileIconCircle,
+                                    { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', elevation: 2 },
+                                ]}
+                            >
+                                <MaterialIcons name="style" size={24} color="#007AFF" />
+                            </View>
+                            <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
+                                Flashcards
+                            </Text>
+                            <Text style={[styles.tileSubtitle, { color: '#007AFF', fontWeight: '700' }]}>
+                                48 Due
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* History */}
+                        <TouchableOpacity
+                            activeOpacity={0.85}
+                            style={[
+                                styles.actionTile,
+                                {
+                                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                },
+                            ]}
+                            onPress={() => {
+                                haptics.impactAsync();
+                                router.push('/(drawer)/history');
+                            }}
+                        >
+                            <View style={[styles.tileIconCircle, { backgroundColor: '#EEF2FF' }]}>
+                                <MaterialIcons name="history" size={24} color="#4F46E5" />
+                            </View>
+                            <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>History</Text>
+                            <Text style={styles.tileSubtitle}>Past sessions</Text>
+                        </TouchableOpacity>
                     </View>
-                )}
-                <View style={{ height: 100 }} />
+
+                    {/* Today's Tasks Section */}
+                    <View style={styles.tasksSection}>
+                        <View style={styles.tasksSectionHeader}>
+                            <Text style={[styles.sectionHeading, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
+                                Today's Tasks
+                            </Text>
+                            <TouchableOpacity onPress={() => router.push('/(drawer)/history')}>
+                                <Text style={styles.viewAllText}>View All</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.tasksList}>
+                            {/* Task 1 */}
+                            <TouchableOpacity
+                                activeOpacity={0.85}
+                                style={[
+                                    styles.taskCard,
+                                    {
+                                        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                    },
+                                ]}
+                                onPress={() => router.push('/(drawer)/history' as any)}
+                            >
+                                <View style={styles.taskCardLeft}>
+                                    <View style={[styles.taskIconCircle, { backgroundColor: '#EFF6FF' }]}>
+                                        <Ionicons name="play" size={20} color="#007AFF" />
+                                    </View>
+                                    <View style={styles.taskTextWrap}>
+                                        <Text
+                                            style={[styles.taskTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}
+                                        >
+                                            Revisit Your Last Flashcard
+                                        </Text>
+                                        <Text style={styles.taskDesc}>Learn with expert-guided tutorials</Text>
+                                    </View>
+                                </View>
+                                <View style={[styles.arrowPill, { borderColor: isDark ? '#333' : '#E5E5EA' }]}>
+                                    <MaterialIcons name="north-east" size={16} color="#8E8E93" />
+                                </View>
+                            </TouchableOpacity>
+
+                            {/* Task 2 */}
+                            <TouchableOpacity
+                                activeOpacity={0.85}
+                                style={[
+                                    styles.taskCard,
+                                    {
+                                        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                    },
+                                ]}
+                                onPress={() => router.push('/(drawer)/generate')}
+                            >
+                                <View style={styles.taskCardLeft}>
+                                    <View style={[styles.taskIconCircle, { backgroundColor: '#F0FDFA' }]}>
+                                        <MaterialIcons name="auto-awesome" size={20} color="#0D9488" />
+                                    </View>
+                                    <View style={styles.taskTextWrap}>
+                                        <Text
+                                            style={[styles.taskTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}
+                                        >
+                                            Take a Quick Test For Next Quiz
+                                        </Text>
+                                        <Text style={styles.taskDesc}>Formula cheatsheets & key shortcuts</Text>
+                                    </View>
+                                </View>
+                                <View style={[styles.arrowPill, { borderColor: isDark ? '#333' : '#E5E5EA' }]}>
+                                    <MaterialIcons name="north-east" size={16} color="#8E8E93" />
+                                </View>
+                            </TouchableOpacity>
+
+                            {/* Task 3: Camera Scanner */}
+                            <TouchableOpacity
+                                activeOpacity={0.85}
+                                style={[
+                                    styles.taskCard,
+                                    {
+                                        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                    },
+                                ]}
+                                onPress={() => router.push('/(drawer)/scan' as any)}
+                            >
+                                <View style={styles.taskCardLeft}>
+                                    <View style={[styles.taskIconCircle, { backgroundColor: '#FEF3C7' }]}>
+                                        <MaterialIcons name="document-scanner" size={20} color="#D97706" />
+                                    </View>
+                                    <View style={styles.taskTextWrap}>
+                                        <Text
+                                            style={[styles.taskTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}
+                                        >
+                                            Snap an Unsolved Question
+                                        </Text>
+                                        <Text style={styles.taskDesc}>Instant step-by-step AI answers</Text>
+                                    </View>
+                                </View>
+                                <View style={[styles.arrowPill, { borderColor: isDark ? '#333' : '#E5E5EA' }]}>
+                                    <MaterialIcons name="north-east" size={16} color="#8E8E93" />
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Animated.View>
             </ScrollView>
-
-            <FollowUpChatModal 
-                visible={showChatModal}
-                onClose={() => setShowChatModal(false)}
-                scanContext={results}
-                provider={selectedProvider}
-            />
-
-            <ShareModal
-                visible={showShareModal}
-                onClose={() => setShowShareModal(false)}
-                onShare={() => {
-                    setShowShareModal(false);
-                    setTimeout(() => handleExport(), 500);
-                }}
-                isDark={isDark}
-            />
-
-            <GlobalErrorModal 
-                visible={showErrorModal}
-                error={globalErrorMessage}
-                onDismiss={() => setShowErrorModal(false)}
-            />
         </View>
     );
 }
 
-const s = StyleSheet.create({
-    permissionContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 16 },
-    headerBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { fontSize: 17, fontWeight: '800', letterSpacing: -0.5 },
-
-    heroTitle: { fontSize: 24, fontWeight: '900', marginBottom: 12, textAlign: 'center', letterSpacing: -1 },
-    heroDesc: { color: '#64748b', textAlign: 'center', fontWeight: '600', fontSize: 14, marginBottom: 30, lineHeight: 22 },
-
-    primaryBtnShadow: { height: 56, borderRadius: 16, overflow: 'hidden', elevation: 8, shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, alignItems: 'center', justifyContent: 'center' },
-    primaryBtnGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-    primaryBtnText: { color: 'white', fontWeight: '800', fontSize: 16, letterSpacing: -0.3 },
-
-    topChrome: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 16, backgroundColor: 'transparent' },
-    overlayTopBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-
-    centerViewfinder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    instructionText: { color: 'white', fontSize: 13, fontWeight: '600', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
-
-    bottomChrome: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 32, paddingTop: 24, backgroundColor: 'transparent' },
-    shutterOuter: { width: 72, height: 72, borderRadius: 36, backgroundColor: 'transparent', borderWidth: 4, borderColor: 'white', alignItems: 'center', justifyContent: 'center' },
-    shutterInner: { width: 54, height: 54, borderRadius: 27, backgroundColor: '#007AFF' },
-    galleryBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-
-    previewContainer: { alignItems: 'center' },
-    previewCard: { width: '100%', borderRadius: 24, overflow: 'hidden', borderBottomWidth: 3, borderBottomColor: 'rgba(139, 92, 246, 0.3)' },
-    previewImage: { width: '100%', height: '100%' },
-
-    cardDark: { backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-    cardLight: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: 'rgba(60,60,67,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
-
-    answerCard: { borderRadius: 24, padding: 24, marginBottom: 16 },
-
-    sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-    sectionTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.4 },
-    answerIconRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-
-    topicPill: { backgroundColor: 'rgba(0,122,255,0.08)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-    topicPillText: { color: '#007AFF', fontWeight: '700', fontSize: 11, letterSpacing: 0.3 },
-
-    sectionDivider: { height: 1.5, marginTop: 4, marginBottom: 20, opacity: 0.1 },
-
-    answerHighlight: { borderRadius: 16, borderLeftWidth: 4, borderLeftColor: '#10b981', marginBottom: 20, padding: 25 },
-    answerHighlightLight: { backgroundColor: 'rgba(16,185,129,0.03)' },
-    answerHighlightDark: { backgroundColor: 'rgba(16,185,129,0.06)' },
-
-    resultContainer: { paddingVertical: 10 },
-    topicTitleText: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
-    stepRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
-    stepBadge: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginTop: 2, marginRight: 12 },
-    stepNumber: { fontSize: 13, fontWeight: '700' },
-    stepContent: { flex: 1 },
-    bgWhite10: { backgroundColor: 'rgba(255,255,255,0.1)' },
-    bgWhite: { backgroundColor: '#ffffff' },
-    bgSlate100: { backgroundColor: '#F1F5F9' },
-    bgDarkBase: { backgroundColor: '#1C1C1E' },
-    
-    feedbackContainerInner: { alignItems: 'center', width: '100%', marginVertical: 24 },
-    stickyFooterWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0 },
-    followUpInputContainer: { paddingHorizontal: 16, paddingTop: 16, backgroundColor: 'transparent' },
-    followUpInputWrapper: { borderRadius: 28, paddingHorizontal: 24, paddingVertical: 16, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 10, borderWidth: 1, borderColor: 'rgba(150,150,150,0.1)' },
-    followUpInput: { fontSize: 16, fontWeight: '500' },
-
-    feedbackRow: { alignItems: 'center', paddingTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(148,163,184,0.08)' },
-    feedbackBtns: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    feedbackPrompt: { fontSize: 13, fontWeight: '600', marginBottom: 16 },
-    feedbackBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14 },
-    feedbackBtnDark: { backgroundColor: 'rgba(255,255,255,0.06)' },
-    feedbackBtnLight: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0' },
-    feedbackBtnText: { fontSize: 13, fontWeight: '700' },
-    feedbackDone: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: 'rgba(16,185,129,0.08)', borderRadius: 14 },
-    feedbackDoneText: { fontSize: 13, fontWeight: '700' },
-
-    errorContainer: { margin: 20, padding: 32, borderRadius: 32, alignItems: 'center' },
-    errorIconCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(239,68,68,0.08)', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-    errorTitle: { fontSize: 20, fontWeight: '900', marginBottom: 12, letterSpacing: -0.5 },
-    errorDesc: { fontSize: 15, fontWeight: '600', textAlign: 'center', lineHeight: 22, marginBottom: 32 },
-    retryBtn: { backgroundColor: '#007AFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 32, paddingVertical: 16, borderRadius: 16, width: '100%', marginBottom: 12 },
-    retryBtnText: { color: 'white', fontWeight: '800', fontSize: 16 },
-    cancelBtn: { paddingVertical: 12, width: '100%', alignItems: 'center' },
-    cancelBtnText: { fontSize: 15, fontWeight: '700' },
-
-    followUpBar: { borderRadius: 20, padding: 20, marginTop: 4 },
-    followUpInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    followUpText: { fontSize: 15, fontWeight: '600' },
-
-    slimFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 16, paddingBottom: 100, borderTopWidth: 1 },
-    slimFooterDark: { backgroundColor: 'rgba(0,0,0,0.8)', borderTopColor: 'rgba(255,255,255,0.08)' },
-    slimFooterLight: { backgroundColor: 'rgba(255,255,255,0.9)', borderTopColor: 'rgba(60,60,67,0.08)' },
-    slimFooterBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 24, paddingVertical: 10 },
-    slimFooterBtnText: { fontSize: 15, fontWeight: '700' },
-    slimFooterDivider: { width: 1, height: 24 },
-
-    textSlate400d: { color: '#94a3b8' },
-    textSlate500l: { color: '#64748b' },
-    textWhite: { color: 'white' },
-    textSlate900: { color: '#0f172a' },
-    dividerDark: { backgroundColor: 'rgba(255,255,255,0.06)' },
-    dividerLight: { backgroundColor: '#f1f5f9' },
-    sectionTitleContainer: { flex: 1 },
-
-    userPromptRow: { width: '100%', alignItems: 'flex-end', marginTop: -18, marginBottom: 24, paddingHorizontal: 10 },
-    userPromptBubble: { borderRadius: 16, overflow: 'hidden', padding: 4, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-    userBubbleDark: { backgroundColor: '#27272a' },
-    userBubbleLight: { backgroundColor: '#f1f5f9' },
-    userPromptImage: { width: 190, height: 190, borderRadius: 10 },
-    aiResponseRow: { width: '100%', alignItems: 'flex-start', marginBottom: 24, paddingHorizontal: 10 },
-    aiAnalyzingText: { fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
-    thinkingBubble: {
+const styles = StyleSheet.create({
+    root: {
+        flex: 1,
+    },
+    topBar: {
+        paddingHorizontal: 18,
+        paddingBottom: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        zIndex: 50,
+    },
+    profileBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    avatarCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#EFF6FF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+        borderColor: 'rgba(0, 122, 255, 0.25)',
+    },
+    profileGreeting: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    profileNameBold: {
+        fontWeight: '700',
+    },
+    badgeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    badgePill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        borderWidth: 1,
+        gap: 4,
+    },
+    badgeText: {
+        fontSize: 13,
+        fontWeight: '700',
+        letterSpacing: -0.2,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+    },
+    dropdownMenu: {
+        position: 'absolute',
+        left: 18,
+        width: 270,
+        borderRadius: 20,
+        borderWidth: 1,
+        padding: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.15,
+        shadowRadius: 28,
+        elevation: 16,
+    },
+    dropdownHeader: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(0,0,0,0.08)',
+        marginBottom: 4,
+    },
+    planBadgeText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#007AFF',
+        backgroundColor: '#EFF6FF',
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 999,
+        overflow: 'hidden',
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        borderRadius: 14,
+        gap: 10,
+    },
+    buyCreditsItem: {
+        backgroundColor: 'rgba(0, 122, 255, 0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(0, 122, 255, 0.2)',
+        marginTop: 4,
+    },
+    menuIconWrap: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    menuTextWrap: {
+        flex: 1,
+    },
+    menuTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    menuSubtitle: {
+        fontSize: 11,
+        color: '#8E8E93',
+        marginTop: 2,
+    },
+    instantTag: {
+        backgroundColor: '#FFF7ED',
+        borderWidth: 1,
+        borderColor: '#FDBA74',
+        borderRadius: 999,
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+    },
+    instantTagText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#EA580C',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingHorizontal: 18,
+    },
+    heroSection: {
+        paddingTop: 16,
+        paddingBottom: 28,
+    },
+    heroHeading: {
+        fontSize: 32,
+        fontWeight: '800',
+        letterSpacing: -0.6,
+        lineHeight: 38,
+    },
+    heroHeadingLight: {
+        fontWeight: '400',
+        color: '#8E8E93',
+    },
+    dailyGoalCard: {
+        borderRadius: 22,
+        padding: 16,
+        borderWidth: 1,
+        marginTop: 20,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 12,
+        elevation: 2,
+    },
+    dailyGoalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    dailyGoalLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    targetIconWrap: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        backgroundColor: '#EFF6FF',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    dailyGoalTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    dailyGoalSub: {
+        fontSize: 12,
+        color: '#8E8E93',
+        marginTop: 2,
+    },
+    dailyGoalCountPill: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        backgroundColor: '#EFF6FF',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(0, 122, 255, 0.25)',
+        gap: 2,
+    },
+    dailyGoalCountCurrent: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#007AFF',
+    },
+    dailyGoalCountTotal: {
+        fontSize: 11,
+        fontWeight: '500',
+        color: 'rgba(0, 122, 255, 0.7)',
+    },
+    progressBarTrack: {
+        width: '100%',
+        height: 8,
+        borderRadius: 999,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: '#007AFF',
+        borderRadius: 999,
+    },
+    proBanner: {
+        borderRadius: 24,
+        padding: 18,
+        marginBottom: 16,
+        shadowColor: '#007AFF',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 18,
+        elevation: 5,
+    },
+    proBannerContent: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    crownCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.22)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    proBannerTextWrap: {
+        flex: 1,
+    },
+    proBannerTitle: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
+    proBannerSubtitle: {
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.92)',
+        marginTop: 4,
+        lineHeight: 17,
+    },
+    proUpgradeBtn: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 999,
+        paddingVertical: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 14,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+        elevation: 2,
+    },
+    proUpgradeBtnText: {
+        color: '#007AFF',
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    actionsGrid: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 20,
+    },
+    actionTile: {
+        flex: 1,
+        borderRadius: 20,
+        borderWidth: 1,
+        paddingVertical: 14,
+        paddingHorizontal: 8,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.03,
+        shadowRadius: 8,
+        elevation: 1,
+    },
+    tileIconCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+    },
+    tileTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    tileSubtitle: {
+        fontSize: 11,
+        color: '#8E8E93',
+        marginTop: 2,
+    },
+    tasksSection: {
+        marginTop: 4,
+    },
+    tasksSectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+        paddingHorizontal: 2,
+    },
+    sectionHeading: {
+        fontSize: 18,
+        fontWeight: '700',
+        letterSpacing: -0.3,
+    },
+    viewAllText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#8E8E93',
+    },
+    tasksList: {
+        gap: 10,
+    },
+    taskCard: {
+        borderRadius: 20,
+        borderWidth: 1,
+        padding: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.03,
+        shadowRadius: 8,
+        elevation: 1,
+    },
+    taskCardLeft: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-        marginBottom: 8
+        flex: 1,
     },
-    thinkingBubbleLight: { backgroundColor: '#f1f5f9' },
-    thinkingBubbleDark: { backgroundColor: '#1C1C1E' },
-
-    actionButtonsRow: { flexDirection: 'row', gap: 12, marginTop: 24, marginBottom: 20 },
-    actionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 16, borderWidth: 1 },
-    actionButtonLight: { backgroundColor: '#ffffff', borderColor: 'rgba(150,150,150,0.2)' },
-    actionButtonDark: { backgroundColor: '#1C1C1E', borderColor: 'rgba(255,255,255,0.1)' },
-    actionButtonText: { fontSize: 14, fontWeight: '700' },
+    taskIconCircle: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    taskTextWrap: {
+        flex: 1,
+    },
+    taskTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        lineHeight: 18,
+    },
+    taskDesc: {
+        fontSize: 12,
+        color: '#8E8E93',
+        marginTop: 2,
+    },
+    arrowPill: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 8,
+    },
 });

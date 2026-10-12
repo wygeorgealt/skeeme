@@ -1,53 +1,144 @@
-import { View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
-import { useState, useEffect } from 'react';
+import * as Haptics from 'expo-haptics';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import { SelectionCard } from '@/components/onboarding/SelectionCard';
+import { MaterialIcons } from '@expo/vector-icons';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
-const TONES = [
-    { key: 'supportive', label: 'Supportive', iconSource: require('@/assets/3dicons/3dicons-trophy-front-color.png') },
-    { key: 'strict', label: 'Strict', iconSource: require('@/assets/3dicons/3dicons-medal-front-color.png') },
-    { key: 'concise', label: 'Concise', iconSource: require('@/assets/3dicons/3dicons-clock-front-color.png') },
-    { key: 'fun', label: 'Fun & Witty', iconSource: require('@/assets/3dicons/3dicons-bookmark-fav-front-color.png') },
+const STYLES = [
+    { 
+        key: 'simple', 
+        label: 'Simple & Clear', 
+        desc: 'Easy language, real-world examples, and intuitive analogies that make abstract theories immediately relatable.', 
+        tagText: 'Recommended for STEM & Math',
+        tagIcon: 'school',
+        icon: 'auto-awesome' 
+    },
+    { 
+        key: 'detailed', 
+        label: 'Detailed & In-Depth', 
+        desc: 'Thorough academic explanations, formal derivations, and deeper underlying theory for true foundational mastery.', 
+        tagText: 'Deep Dive',
+        tagIcon: 'biotech',
+        icon: 'troubleshoot' 
+    },
+    { 
+        key: 'balanced', 
+        label: 'A Bit of Both', 
+        desc: 'Keep it simple and visual when possible, but seamlessly dive into rigorous technical mechanics when challenged.', 
+        tagText: 'Adaptive Balance',
+        tagIcon: 'tune',
+        icon: 'balance' 
+    },
 ];
 
 export default function ToneScreen() {
     const router = useRouter();
-    const { setOnboardingStep, setOnboardingData, onboardingData } = useAuthStore();
-    const [selected, setSelected] = useState<string>(onboardingData?.tone || onboardingData?.ai_tone || '');
+    const { setOnboardingStep, setOnboardingData } = useAuthStore();
+    
+    const [selectedStyle, setSelectedStyle] = useState<string>('simple');
 
     useEffect(() => {
         setOnboardingStep(5);
     }, []);
 
     const handleSelect = (key: string) => {
-        setSelected(key);
-        setOnboardingData({ tone: key });
+        Haptics.selectionAsync();
+        setSelectedStyle(key);
     };
 
     const handleNext = () => {
-        if (selected) router.push('/(onboarding)/analogy');
+        if (!selectedStyle) return;
+        
+        setOnboardingData({ 
+            tone: selectedStyle 
+        });
+        
+        router.push('/(onboarding)/analogy');
     };
 
     return (
         <OnboardingShell
             step={5}
-            title="How should your tutor feel?"
-            ctaDisabled={!selected}
+            totalSteps={9}
+            title="How should I explain things?"
+            subtitle="Choose the teaching approach that best fits how your mind absorbs complex concepts."
+            ctaDisabled={!selectedStyle}
             onCta={handleNext}
         >
-            <View style={{ gap: 2 }}>
-                {TONES.map((t, index) => (
-                    <SelectionCard
-                        key={t.key}
-                        iconSource={t.iconSource}
-                        label={t.label}
-                        isSelected={selected === t.key}
-                        onPress={() => handleSelect(t.key)}
-                        index={index}
-                    />
-                ))}
+            <View className="flex-col gap-4 pb-4">
+                
+                <View className="flex-col gap-4">
+                    {STYLES.map((style, index) => {
+                        const isSelected = selectedStyle === style.key;
+                        return (
+                            <Animated.View key={style.key} entering={FadeInUp.delay(index * 40).duration(300)}>
+                                <Pressable
+                                    onPress={() => handleSelect(style.key)}
+                                    className={`w-full p-4 rounded-2xl transition-all active:scale-[0.99] ${
+                                        isSelected 
+                                            ? 'bg-surface-container-lowest shadow-md' 
+                                            : 'bg-surface-container-low shadow-sm'
+                                    }`}
+                                >
+                                    <View className="flex-row items-start gap-4">
+                                        <View className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                                            isSelected ? 'bg-primary-container' : 'bg-surface-container'
+                                        }`}>
+                                            <MaterialIcons 
+                                                name={style.icon as any} 
+                                                size={24} 
+                                                color={isSelected ? '#007aff' : '#48484a'} 
+                                            />
+                                        </View>
+                                        <View className="flex-1 min-w-0">
+                                            <View className="flex-row items-center justify-between gap-2 mb-1">
+                                                <Text className="font-semibold text-[16px] text-on-surface">{style.label}</Text>
+                                                <View className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                                                    isSelected ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container'
+                                                }`}>
+                                                    <MaterialIcons 
+                                                        name="check" 
+                                                        size={16} 
+                                                        color={isSelected ? '#ffffff' : 'transparent'} 
+                                                        style={{ fontWeight: 'bold' as any }}
+                                                    />
+                                                </View>
+                                            </View>
+                                            <Text className="font-normal text-[15px] text-on-surface-variant leading-relaxed mb-3">
+                                                {style.desc}
+                                            </Text>
+                                            
+                                            <View className={`self-start flex-row items-center gap-1 px-2.5 py-1 rounded-full ${
+                                                isSelected ? 'bg-primary-container' : 'bg-surface-container'
+                                            }`}>
+                                                <MaterialIcons 
+                                                    name={style.tagIcon as any} 
+                                                    size={14} 
+                                                    color={isSelected ? '#007aff' : '#48484a'} 
+                                                />
+                                                <Text className={`font-semibold text-[11px] tracking-wide ${
+                                                    isSelected ? 'text-accent-electric-blue' : 'text-on-surface-variant'
+                                                }`}>{style.tagText}</Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                </Pressable>
+                            </Animated.View>
+                        );
+                    })}
+                </View>
+
+                {/* Info Tooltip */}
+                <View className="w-full p-4 rounded-xl bg-surface-container-low flex-row items-center gap-3 mt-2">
+                    <MaterialIcons name="info" size={20} color="#007aff" className="shrink-0" />
+                    <Text className="font-normal text-[13px] text-on-surface-variant flex-1">
+                        You can change explanation difficulty or ask for an alternative analogy at any point in any lesson.
+                    </Text>
+                </View>
+                
             </View>
         </OnboardingShell>
     );

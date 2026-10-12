@@ -5,6 +5,7 @@ import { isRunningInExpoGo } from 'expo';
 // Init guards to avoid duplicate configuration/races
 let _rcInitPromise: Promise<void> | null = null;
 let _rcInitialized = false;
+let _rcLoggedInUserId: string | null = null;
 
 // Read keys directly from environment; do NOT provide a silent placeholder fallback.
 const APPLE_KEY = process.env.EXPO_PUBLIC_REVENUECAT_APPLE_KEY;
@@ -43,7 +44,7 @@ export const initializeRevenueCat = async (userId?: string) => {
   // If we've already finished initialization in this session, just log in userId if provided
   if (_rcInitialized) {
     if (userId) {
-      try { await Purchases.logIn(userId); } catch (e) { if (__DEV__) console.warn('[RevenueCat] logIn after init failed', e); }
+      if (_rcLoggedInUserId !== userId) { try { await Purchases.logIn(userId); _rcLoggedInUserId = userId; } catch { /* a concurrent identify is safe to ignore */ } }
     }
     return;
   }
@@ -52,7 +53,7 @@ export const initializeRevenueCat = async (userId?: string) => {
   if (_rcInitPromise) {
     await _rcInitPromise;
     if (userId) {
-      try { await Purchases.logIn(userId); } catch (e) { if (__DEV__) console.warn('[RevenueCat] logIn after concurrent init failed', e); }
+      if (_rcLoggedInUserId !== userId) { try { await Purchases.logIn(userId); _rcLoggedInUserId = userId; } catch { /* a concurrent identify is safe to ignore */ } }
     }
     return;
   }
@@ -62,7 +63,7 @@ export const initializeRevenueCat = async (userId?: string) => {
       const already = await Purchases.isConfigured();
       if (already) {
         if (userId) {
-          try { await Purchases.logIn(userId); } catch (e) { if (__DEV__) console.warn('[RevenueCat] Failed to logIn existing instance', e); }
+          if (_rcLoggedInUserId !== userId) { try { await Purchases.logIn(userId); _rcLoggedInUserId = userId; } catch { /* a concurrent identify is safe to ignore */ } }
         }
         _rcInitialized = true;
         return;
@@ -93,11 +94,12 @@ export const initializeRevenueCat = async (userId?: string) => {
  * Identify user to RevenueCat upon login
  */
 export const identifyUser = async (userId: string) => {
-  if (!_rcInitialized) return;
+  if (!_rcInitialized || _rcLoggedInUserId === userId) return;
   try {
     await Purchases.logIn(userId);
+    _rcLoggedInUserId = userId;
   } catch (e) {
-    if (__DEV__) console.warn("RevenueCat Login Error:", e);
+    // RevenueCat can reject duplicate identify calls during hydration.
   }
 };
 

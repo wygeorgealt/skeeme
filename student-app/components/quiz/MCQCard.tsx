@@ -5,10 +5,7 @@ import { QuizFlipCard } from './QuizFlipCard';
 import { Question } from './QuizTypes';
 import { MathText } from '../ui/MathText';
 import { Colors, Spacing, Radius } from '@/constants/theme';
-import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
-import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
-import CloseCircle from '@/assets/icons/pikaicons/multiple-cross-cancel-circle.svg';
-import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
+import { Ionicons } from '@expo/vector-icons';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 
 export function MCQCard({
@@ -90,6 +87,9 @@ export function MCQCard({
             <View style={s.optionsGrid}>
                 {(q.options || []).map((opt, oi) => {
                     const styles = getOptionStyles(opt);
+                    const isSelected = selectedAnswer === opt;
+                    const isCorrectOpt = opt === q.correct_answer;
+                    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
                     return (
                         <TouchableOpacity
                             key={oi}
@@ -97,11 +97,33 @@ export function MCQCard({
                             onPress={() => { if (!answered && !quizFinished) onAnswer(qi, opt); }}
                             style={[s.optionBtn, styles.container]}
                         >
+                            <View
+                                style={[
+                                    s.letterBadge,
+                                    {
+                                        backgroundColor: answered && isSelected
+                                            ? (isCorrectOpt ? '#ECFDF5' : '#FEF2F2')
+                                            : (isDark ? 'rgba(255,255,255,0.08)' : '#F0EDEF'),
+                                    },
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        s.letterText,
+                                        {
+                                            color: answered && isSelected
+                                                ? (isCorrectOpt ? '#047857' : '#B91C1C')
+                                                : (isDark ? '#FFFFFF' : '#1C1C1E'),
+                                        },
+                                    ]}
+                                >
+                                    {letters[oi] || String(oi + 1)}
+                                </Text>
+                            </View>
                             <View style={{ flex: 1, paddingRight: 8 }}>
                                 <MathText content={opt} color={styles.text.color} fontSize={15} />
                             </View>
-                            {styles.icon === 'checkmark-circle' && <CheckCircle width={18} height={18} color={styles.iconColor} />}
-                            {styles.icon === 'close-circle' && <CloseCircle width={18} height={18} color={styles.iconColor} />}
+                            {styles.icon ? <Ionicons name={styles.icon as keyof typeof Ionicons.glyphMap} size={19} color={styles.iconColor} /> : null}
                         </TouchableOpacity>
                     );
                 })}
@@ -112,9 +134,9 @@ export function MCQCard({
                 <View style={[s.footer, { borderTopColor: C.separator }]}>
                     <View style={[s.statusBadge, { borderColor: isCorrect ? C.success : C.destructive, backgroundColor: isCorrect ? (isDark ? 'rgba(48,209,88,0.1)' : 'rgba(52,199,89,0.1)') : (isDark ? 'rgba(255,69,58,0.1)' : 'rgba(255,59,48,0.1)') }]}>
                         {isCorrect ? (
-                            <CheckCircle width={14} height={14} color={C.success} />
+                            <Ionicons name="checkmark-circle" size={16} color={C.success} />
                         ) : (
-                            <CloseCircle width={14} height={14} color={C.destructive} />
+                            <Ionicons name="close-circle" size={16} color={C.destructive} />
                         )}
                         <Text style={[s.statusText, { color: isCorrect ? C.success : C.destructive }]}>
                             {isCorrect ? 'Correct' : 'Incorrect'}
@@ -139,7 +161,7 @@ export function MCQCard({
     const back = (
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
             <TouchableOpacity onPress={() => setFlipped(false)} style={s.backBtn}>
-                <AltArrowLeft width={18} height={18} color={C.text} />
+                <Ionicons name="chevron-back" size={20} color={C.primary} />
                 <Text style={[s.backText, { color: C.text }]}>Back</Text>
             </TouchableOpacity>
             
@@ -180,14 +202,16 @@ export function MCQCard({
 
 const s = StyleSheet.create({
     cardOuter: { marginBottom: Spacing.lg },
-    card: { borderRadius: Radius.lg, padding: 20, borderWidth: StyleSheet.hairlineWidth, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+    card: { borderRadius: Radius.lg, padding: 20, borderWidth: StyleSheet.hairlineWidth },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth },
-    qNum: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5 },
+    qNum: { fontSize: 13, fontWeight: '600' },
     diffBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: StyleSheet.hairlineWidth },
-    diffText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+    diffText: { fontSize: 12, fontWeight: '600', textTransform: 'capitalize' },
 
     optionsGrid: { marginTop: 24, gap: 12 },
-    optionBtn: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 2 },
+    optionBtn: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 18, borderWidth: 1.5 },
+    letterBadge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+    letterText: { fontSize: 13, fontWeight: '700' },
     optionText: { flex: 1, fontWeight: '600', fontSize: 15 },
 
     footer: { marginTop: 24, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'column', gap: 12, paddingTop: 20 },
@@ -198,9 +222,9 @@ const s = StyleSheet.create({
     explainBtnText: { fontWeight: '700', fontSize: 14 },
 
     backBtn: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-    backText: { fontWeight: '700', marginLeft: 8, textTransform: 'uppercase', fontSize: 13, letterSpacing: 1 },
+    backText: { fontWeight: '600', marginLeft: 3, color: '#007AFF', fontSize: 16 },
     
-    sectionTitle: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, marginLeft: 4 },
+    sectionTitle: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
     feedbackBox: { padding: 16, borderRadius: 16, borderWidth: StyleSheet.hairlineWidth },
     
     correctSection: { marginTop: 20, paddingTop: 20, borderTopWidth: StyleSheet.hairlineWidth },

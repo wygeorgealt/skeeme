@@ -1,0 +1,3 @@
+import { StyleSheet, Text, View } from 'react-native'; import { ControlsSection } from './ControlsSection'; import { DateTimeSection } from './DateTimeSection'; import { GlassSurface } from './GlassSurface';
+export function SettingsSection() { return <GlassSurface style={styles.card}><Text style={styles.title}>Study preferences</Text><ControlsSection /><View style={styles.divider} /><DateTimeSection /></GlassSurface>; }
+const styles = StyleSheet.create({ card: { marginBottom: 24 }, title: { color: '#102748', fontWeight: '800', fontSize: 17, marginBottom: 16 }, divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#D7E6F5', marginVertical: 16 } });

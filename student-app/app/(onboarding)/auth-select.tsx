@@ -1,58 +1,162 @@
-import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform, Dimensions, Image } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+    Platform,
+    Dimensions,
+    Image,
+    ScrollView,
+    ActivityIndicator,
+    NativeSyntheticEvent,
+    NativeScrollEvent,
+} from 'react-native';
 import { openLegalLink, PRIVACY_URL, TERMS_URL } from '@/lib/legalLinks';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
-import { useEffect, useState } from 'react';
 import { signInWithGoogle } from '@/lib/socialAuth';
-import Animated, { FadeInDown, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
-import { Colors, Spacing, Radius } from '@/constants/theme';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withRepeat,
+    withTiming,
+    Easing,
+    FadeIn,
+    FadeInDown,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'expo-status-bar';
-import { AnimatedButton } from 'react-native-3d-animated-buttons';
-import { AppleIcon } from '@/components/ui/BrandIcons';
-import { FallingAssets } from '@/components/ui/FallingAssets';
+import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
+import { MaterialIcons } from '@expo/vector-icons';
+import { haptics } from '@/lib/haptics';
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const MASCOT_IMAGE = require('../../assets/images/splash-icon.png');
+// Responsive card sizing
+const CARD_WIDTH = Math.min(SCREEN_WIDTH - 64, 310);
+const CARD_HEIGHT = Math.min(SCREEN_HEIGHT * 0.38, 335);
+
+const SLIDES = [
+    {
+        id: 0,
+        image: require('../../assets/images/welcome/slide_0.jpg'),
+        bgTop: '#BDF2FC',
+        bgBottom: '#00CAE9',
+        badge1: {
+            text: 'personalized',
+            position: 'topLeft' as const,
+            bgColor: '#FDE047',
+            textColor: '#1C1917',
+            borderColor: '#FCD34D',
+        },
+        badge2: {
+            text: 'Interactive',
+            position: 'bottomRight' as const,
+            bgColor: '#10B981',
+            textColor: '#FFFFFF',
+            borderColor: '#34D399',
+        },
+        title: 'Classes made\nfor you only',
+        subtitle: 'Interactive and personalized sessions make you learn faster, even when you feel stuck.',
+    },
+    {
+        id: 1,
+        image: require('../../assets/images/welcome/slide_1.jpg'),
+        bgTop: '#FAE4FD',
+        bgBottom: '#CAA0F8',
+        badge1: {
+            text: 'set goals',
+            position: 'topRight' as const,
+            bgColor: '#FED7AA',
+            textColor: '#451A03',
+            borderColor: '#FDBA74',
+        },
+        badge2: {
+            text: 'Trivia',
+            position: 'bottomLeft' as const,
+            bgColor: '#059669',
+            textColor: '#FFFFFF',
+            borderColor: '#34D399',
+        },
+        title: 'Start Learning\nAny Topic',
+        subtitle: 'Turn lectures, notes, and worksheets into instant practice quizzes & visual summaries.',
+    },
+    {
+        id: 2,
+        image: require('../../assets/images/welcome/slide_2.jpg'),
+        bgTop: '#D1FAE5',
+        bgBottom: '#34D399',
+        badge1: {
+            text: 'Active Recall',
+            position: 'topLeft' as const,
+            bgColor: '#A7F3D0',
+            textColor: '#064E3B',
+            borderColor: '#6EE7B7',
+        },
+        badge2: {
+            text: 'Step-by-step',
+            position: 'bottomRight' as const,
+            bgColor: '#7C3AED',
+            textColor: '#FFFFFF',
+            borderColor: '#A78BFA',
+        },
+        title: 'Ace Every Exam\nWith Confidence',
+        subtitle: 'Smart spaced repetition flashcards that guarantee effortless long-term retention.',
+    },
+];
 
 export default function AuthSelectScreen() {
     const router = useRouter();
-    const scheme = useColorScheme();
-    const isDark = scheme === 'dark';
-    const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
     const { setOnboardingStep, login } = useAuthStore();
+    const [currentSlide, setCurrentSlide] = useState(0);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const scrollRef = useRef<ScrollView>(null);
 
-    // Pulse animation for the glow
-    const glowScale = useSharedValue(1);
-    const glowOpacity = useSharedValue(0.2);
+    // Floating animation values for badges
+    const floatAnim1 = useSharedValue(0);
+    const floatAnim2 = useSharedValue(0);
 
     useEffect(() => {
         setOnboardingStep(1);
-        
-        // Start the pulsing glow animation
-        glowScale.value = withRepeat(
-            withTiming(1.2, { duration: 2000 }),
+
+        floatAnim1.value = withRepeat(
+            withTiming(-5, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
             -1,
             true
         );
-        glowOpacity.value = withRepeat(
-            withTiming(0.4, { duration: 2000 }),
+        floatAnim2.value = withRepeat(
+            withTiming(-5, { duration: 2100, easing: Easing.inOut(Easing.quad) }),
             -1,
             true
         );
     }, []);
 
-    const animatedGlowStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: glowScale.value }],
-        opacity: glowOpacity.value,
+    const animatedBadge1Style = useAnimatedStyle(() => ({
+        transform: [{ translateY: floatAnim1.value }],
     }));
 
+    const animatedBadge2Style = useAnimatedStyle(() => ({
+        transform: [{ translateY: floatAnim2.value }],
+    }));
+
+    const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const offsetX = event.nativeEvent.contentOffset.x;
+        const index = Math.round(offsetX / SCREEN_WIDTH);
+        if (index !== currentSlide && index >= 0 && index < SLIDES.length) {
+            setCurrentSlide(index);
+        }
+    };
+
+    const goToSlide = (index: number) => {
+        haptics.selectionAsync();
+        setCurrentSlide(index);
+        scrollRef.current?.scrollTo({ x: index * SCREEN_WIDTH, animated: true });
+    };
+
     const handleGoogleSignIn = async () => {
+        haptics.impactAsync();
         setIsGoogleLoading(true);
         try {
             const result = await signInWithGoogle();
@@ -65,251 +169,410 @@ export default function AuthSelectScreen() {
         }
     };
 
-    // Match status bar and system UI
-    useEffect(() => {
-        SystemUI.setBackgroundColorAsync(C.background);
-    }, [C.background]);
+    const handleEmailSignIn = () => {
+        haptics.selectionAsync();
+        router.push('/signup');
+    };
+
+    const activeSlide = SLIDES[currentSlide];
 
     return (
-        <View style={[s.container, { backgroundColor: C.background }]}>
-            <StatusBar style={isDark ? "light" : "dark"} />
-            <FallingAssets />
+        <View style={styles.container}>
+            <StatusBar style="dark" />
 
-            {/* Mascot Area with Glow */}
-            <View style={s.mascotContainer}>
+            {/* ── Dual-Tone Split Background Layers ── */}
+            <View style={[styles.bgTop, { backgroundColor: activeSlide.bgTop }]} />
+            <View style={[styles.bgBottom, { backgroundColor: activeSlide.bgBottom }]} />
 
-            </View>
-
-            {/* Content Section */}
-            <View style={[s.contentArea, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
+            {/* ── Main Viewport Content ── */}
+            <View style={[styles.contentWrapper, { paddingTop: Math.max(insets.top, 16), paddingBottom: Math.max(insets.bottom, 12) }]}>
                 
-                <Animated.View entering={FadeInDown.duration(800).delay(300)} style={s.textSection}>
-                    <Text style={[s.greeting, { color: C.primary }]}>Hi!</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, marginTop: 4 }}>
-                        <Text style={[s.title, { marginBottom: 0, color: C.text, marginRight: -10 }]}>I&apos;m </Text>
-                        <Image 
-                            source={MASCOT_IMAGE} 
-                            style={{ width: 55, height: 54, tintColor: C.primary, marginLeft: 2, marginRight: -13 }}
-                            resizeMode="contain"
-                        />
-                        <Text style={[s.title, { marginBottom: 0, color: C.text }]}>keeme,</Text>
+                {/* ── Top Visual Showcase Area (Card Carousel) ── */}
+                <View style={styles.showcaseSection}>
+                    <ScrollView
+                        ref={scrollRef}
+                        horizontal
+                        pagingEnabled
+                        showsHorizontalScrollIndicator={false}
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16}
+                        bounces={false}
+                        style={styles.carouselScrollView}
+                        contentContainerStyle={styles.carouselContainer}
+                    >
+                        {SLIDES.map((slide) => {
+                            const isBadge1TopLeft = slide.badge1.position === 'topLeft';
+                            const isBadge2BottomLeft = slide.badge2.position === 'bottomLeft';
+
+                            return (
+                                <View key={slide.id} style={styles.cardSlideWrapper}>
+                                    <View style={[styles.imageCard, { width: CARD_WIDTH, height: CARD_HEIGHT }]}>
+                                        <Image
+                                            source={slide.image}
+                                            style={styles.cardImage}
+                                            resizeMode="cover"
+                                        />
+
+                                        {/* Floating Badge 1 */}
+                                        <Animated.View
+                                            style={[
+                                                styles.badgePill,
+                                                isBadge1TopLeft ? styles.badgeTopLeft : styles.badgeTopRight,
+                                                {
+                                                    backgroundColor: slide.badge1.bgColor,
+                                                    borderColor: slide.badge1.borderColor,
+                                                },
+                                                animatedBadge1Style,
+                                            ]}
+                                        >
+                                            <Text style={[styles.badgeText, { color: slide.badge1.textColor }]}>
+                                                {slide.badge1.text}
+                                            </Text>
+                                        </Animated.View>
+
+                                        {/* Floating Badge 2 */}
+                                        <Animated.View
+                                            style={[
+                                                styles.badgePill,
+                                                isBadge2BottomLeft ? styles.badgeBottomLeft : styles.badgeBottomRight,
+                                                {
+                                                    backgroundColor: slide.badge2.bgColor,
+                                                    borderColor: slide.badge2.borderColor,
+                                                },
+                                                animatedBadge2Style,
+                                            ]}
+                                        >
+                                            <Text style={[styles.badgeText, { color: slide.badge2.textColor }]}>
+                                                {slide.badge2.text}
+                                            </Text>
+                                        </Animated.View>
+                                    </View>
+                                </View>
+                            );
+                        })}
+                    </ScrollView>
+
+                    {/* ── Pagination Indicator Dots ── */}
+                    <View style={styles.paginationRow}>
+                        {SLIDES.map((slide, idx) => {
+                            const isActive = idx === currentSlide;
+                            return (
+                                <TouchableOpacity
+                                    key={slide.id}
+                                    onPress={() => goToSlide(idx)}
+                                    activeOpacity={0.8}
+                                    style={[
+                                        styles.dotButton,
+                                        isActive ? styles.dotActive : styles.dotInactive,
+                                    ]}
+                                />
+                            );
+                        })}
                     </View>
-                    <Text style={[s.subtitle, { color: C.textSecondary }]}>
-                        Your study friend for success. Let&apos;s ace those exams together!
+                </View>
+
+                {/* ── Bolder & Bigger Typography & Copy Section ── */}
+                <View style={styles.textSection}>
+                    <Text style={styles.headlineText}>
+                        {activeSlide.title}
                     </Text>
-                </Animated.View>
+                    <Text style={styles.subtitleText}>
+                        {activeSlide.subtitle}
+                    </Text>
+                </View>
 
-                {/* Auth Buttons */}
-                <Animated.View entering={FadeInDown.duration(600).delay(600)} style={s.buttonsSection}>
+                {/* ── Bottom Action Buttons & Legal ── */}
+                <View style={styles.bottomSection}>
+                    {/* Continue with Google Button */}
+                    <TouchableOpacity
+                        onPress={handleGoogleSignIn}
+                        disabled={isGoogleLoading}
+                        activeOpacity={0.88}
+                        style={styles.googleButton}
+                    >
+                        {isGoogleLoading ? (
+                            <ActivityIndicator size="small" color="#0F172A" />
+                        ) : (
+                            <>
+                                <GoogleIcon width={22} height={22} />
+                                <Text style={styles.googleButtonText}>Continue with Google</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
 
-                    <View style={{ marginBottom: 12 }}>
-                        <AnimatedButton
-                            title="Continue with Google"
-                            onPress={handleGoogleSignIn}
-                            loading={isGoogleLoading}
-                            type="capsule"
-                            backgroundColor={isDark ? '#1E293B' : '#FFFFFF'}
-                            textColor={isDark ? '#FFFFFF' : '#000000'}
-
-                            shadowColor="#0066D6"
-                            icon="google"
-                            fullWidth
-                        />
-                    </View>
+                    {/* Continue with Email Button */}
+                    <TouchableOpacity
+                        onPress={handleEmailSignIn}
+                        activeOpacity={0.88}
+                        style={styles.emailButton}
+                    >
+                        <MaterialIcons name="mail-outline" size={22} color="#FFFFFF" />
+                        <Text style={styles.emailButtonText}>Continue with Email</Text>
+                    </TouchableOpacity>
 
                     {/* Continue with Apple (iOS only) */}
                     {Platform.OS === 'ios' && (
-                        <View style={{ marginBottom: 12 }}>
-                            <AnimatedButton
-                                title="Continue with Apple"
-                                onPress={() => router.push('/signup')}
-                                type="capsule"
-                                backgroundColor={isDark ? '#FFFFFF' : '#000000'}
-                                textColor={isDark ? '#000000' : '#FFFFFF'}
-                                shadowColor="#0066D6"
-                                icon="apple"
-                                fullWidth
-                            />
-                        </View>
+                        <TouchableOpacity
+                            onPress={() => router.push('/signup')}
+                            activeOpacity={0.88}
+                            style={styles.appleButton}
+                        >
+                            <AppleIcon width={22} height={22} color="#FFFFFF" />
+                            <Text style={styles.appleButtonText}>Continue with Apple</Text>
+                        </TouchableOpacity>
                     )}
 
-                    {/* Divider */}
-                    <View style={s.dividerRow}>
-                        <View style={[s.dividerLine, { backgroundColor: C.separator }]} />
-                        <Text style={[s.dividerText, { color: C.textTertiary }]}>or</Text>
-                        <View style={[s.dividerLine, { backgroundColor: C.separator }]} />
-                    </View>
-
-                    <View style={{ marginTop: 16 }}>
-                        <AnimatedButton
-                            title="Continue with Email"
-                            onPress={() => router.push('/signup')}
-                            type="capsule"
-                            backgroundColor={C.primary}
-                            shadowColor="#0066D6"
-                            fullWidth
-                        />
-                    </View>
-
-                    {/* (Preview onboarding removed) */}
-
-                    {/* Terms of Service */}
-                    <View style={s.termsContainer}>
-                        <Text style={[s.termsText, { color: C.textTertiary }]}>
+                    {/* Legal Terms Footer */}
+                    <View style={styles.termsRow}>
+                        <Text style={styles.termsText}>
                             By continuing, you agree to our{' '}
-                            <Text style={[s.linkText, { color: C.primary }]} onPress={() => openLegalLink(TERMS_URL)}>
-                                Terms of Service
+                            <Text
+                                style={styles.termsLink}
+                                onPress={() => openLegalLink(TERMS_URL)}
+                            >
+                                Terms
                             </Text>
-                            , and confirm you have read our{' '}
-                            <Text style={[s.linkText, { color: C.primary }]} onPress={() => openLegalLink(PRIVACY_URL)}>
+                            {' '}&{' '}
+                            <Text
+                                style={styles.termsLink}
+                                onPress={() => openLegalLink(PRIVACY_URL)}
+                            >
                                 Privacy Policy
                             </Text>
                             .
                         </Text>
                     </View>
+                </View>
 
-                </Animated.View>
             </View>
         </View>
     );
 }
 
-const s = StyleSheet.create({
-    container: { flex: 1 },
-
-    // Mascot
-    mascotContainer: {
+const styles = StyleSheet.create({
+    container: {
         flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingTop: 20,
+        backgroundColor: '#00CAE9',
     },
-    mascotWrapper: {
-        width: 200,
-        height: 200,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    glowCircle: {
+
+    // Dual-tone split background
+    bgTop: {
         position: 'absolute',
-        width: 160,
-        height: 160,
-        borderRadius: 80,
-        filter: Platform.OS === 'web' ? 'blur(40px)' : undefined, // Native blur is tricky, we use opacity + scale
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '38%',
     },
-    mascotBox: {
-        width: 200,
-        height: 200,
+    bgBottom: {
+        position: 'absolute',
+        top: '38%',
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+
+    contentWrapper: {
+        flex: 1,
+        justifyContent: 'space-between',
+        paddingHorizontal: 24,
+    },
+
+    // Showcase Carousel
+    showcaseSection: {
+        alignItems: 'center',
+        paddingTop: 10,
+    },
+    carouselScrollView: {
+        width: SCREEN_WIDTH,
+    },
+    carouselContainer: {
+        alignItems: 'center',
+    },
+    cardSlideWrapper: {
+        width: SCREEN_WIDTH,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    mascotImage: {
+    imageCard: {
+        borderRadius: 28,
+        overflow: 'hidden',
+        backgroundColor: '#E2E8F0',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 16 },
+        shadowOpacity: 0.18,
+        shadowRadius: 28,
+        elevation: 12,
+        position: 'relative',
+    },
+    cardImage: {
         width: '100%',
         height: '100%',
     },
 
-    // Content
-    contentArea: {
-        paddingHorizontal: Spacing.xl,
-        paddingBottom: 16,
+    // Floating Badges
+    badgePill: {
+        position: 'absolute',
+        paddingHorizontal: 16,
+        paddingVertical: 9,
+        borderRadius: 18,
+        borderWidth: 1.5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        elevation: 6,
     },
-
-    textSection: {
-        marginBottom: 20,
+    badgeTopLeft: {
+        top: 18,
+        left: 14,
     },
-    greeting: {
-        fontSize: 48,
-        fontWeight: '900',
-        marginBottom: -5,
+    badgeTopRight: {
+        top: 18,
+        right: 14,
     },
-    title: {
-        fontSize: 34,
+    badgeBottomLeft: {
+        bottom: 18,
+        left: 14,
+    },
+    badgeBottomRight: {
+        bottom: 18,
+        right: 14,
+    },
+    badgeText: {
+        fontSize: 13.5,
         fontWeight: '800',
-        letterSpacing: -0.5,
-        marginBottom: 8,
-    },
-    subtitle: {
-        fontSize: 17,
-        fontWeight: '400',
-        lineHeight: 24,
+        letterSpacing: -0.2,
     },
 
-    // Buttons
-    buttonsSection: {
-        width: '100%',
-        gap: 12,
-    },
-    authBtn: {
-        width: '100%',
-        height: 56,
-        borderRadius: Radius.xl,
+    // Pagination
+    paginationRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: 14,
+        gap: 6,
+    },
+    dotButton: {
+        height: 6,
+        borderRadius: 3,
+    },
+    dotActive: {
+        width: 26,
+        backgroundColor: '#FFFFFF',
+    },
+    dotInactive: {
+        width: 6,
+        backgroundColor: 'rgba(255, 255, 255, 0.45)',
+    },
+
+    // Typography (Bolder & Bigger)
+    textSection: {
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        marginVertical: 4,
+    },
+    headlineText: {
+        fontSize: 34,
+        fontWeight: '900',
+        color: '#0F172A',
+        textAlign: 'center',
+        letterSpacing: -0.8,
+        lineHeight: 40,
+        marginBottom: 10,
+    },
+    subtitleText: {
+        fontSize: 15.5,
+        fontWeight: '600',
+        color: 'rgba(15, 23, 42, 0.85)',
+        textAlign: 'center',
+        lineHeight: 22,
+        maxWidth: 320,
+    },
+
+    // Bottom Action Buttons
+    bottomSection: {
+        width: '100%',
+        gap: 11,
+    },
+    googleButton: {
+        width: '100%',
+        height: 54,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.1,
+        shadowRadius: 14,
+        elevation: 4,
         gap: 10,
     },
-    googleBtn: {
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
+    googleButtonText: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: '#0F172A',
+        letterSpacing: -0.3,
     },
-    appleBtn: {
-        // Dynamic based on theme
-    },
-    authBtnIcon: {
-        width: 24,
-        height: 24,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    authBtnText: {
-        fontSize: 17,
-        fontWeight: '600',
-        letterSpacing: -0.41,
-    },
-
-    // Divider
-    dividerRow: {
+    emailButton: {
+        width: '100%',
+        height: 54,
+        backgroundColor: '#090E1A',
+        borderRadius: 18,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
-        marginVertical: 8,
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.22,
+        shadowRadius: 18,
+        elevation: 6,
+        gap: 10,
     },
-    dividerLine: {
-        flex: 1,
-        height: StyleSheet.hairlineWidth,
+    emailButtonText: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: '#FFFFFF',
+        letterSpacing: -0.3,
     },
-    dividerText: {
-        fontSize: 15,
-        fontWeight: '500',
-    },
-
-    // Email button
-    emailBtn: {
+    appleButton: {
         width: '100%',
-        height: 56,
-        borderRadius: Radius.xl,
+        height: 50,
+        backgroundColor: '#000000',
+        borderRadius: 18,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 4,
+        gap: 10,
     },
-    emailBtnText: {
-        fontWeight: '600',
-        fontSize: 17,
-        color: 'white',
-        letterSpacing: -0.41,
+    appleButtonText: {
+        fontSize: 15.5,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        letterSpacing: -0.3,
     },
-    
-    // Terms
-    termsContainer: {
-        marginTop: 20,
+
+    // Legal Terms Footer
+    termsRow: {
         alignItems: 'center',
-        paddingHorizontal: 8,
+        paddingTop: 2,
     },
     termsText: {
-        fontSize: 13,
-        lineHeight: 18,
+        fontSize: 11.5,
+        color: 'rgba(15, 23, 42, 0.75)',
         textAlign: 'center',
+        fontWeight: '500',
+        lineHeight: 16,
     },
-    linkText: {
-        fontWeight: '600',
+    termsLink: {
+        color: '#0F172A',
+        fontWeight: '800',
+        textDecorationLine: 'underline',
     },
 });

@@ -60,7 +60,6 @@ export default function NotificationScreen() {
         <OnboardingShell
             step={10}
             totalSteps={10}
-            stepLabel="Finally"
             title="Stay on track—on autopilot."
             subtitle="Get timely reminders before your exams to keep your streak alive."
             ctaTitle="Enable Notifications"
@@ -122,7 +121,6 @@ const s = StyleSheet.create({
         opacity: 0.15,
         transform: [{ scale: 1.3 }],
     },
-
     iosCard: {
         width: '100%',
         maxWidth: 360,
@@ -130,14 +128,12 @@ const s = StyleSheet.create({
         padding: 16,
         borderWidth: 1,
         overflow: 'hidden',
-
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.12,
         shadowRadius: 24,
         elevation: 10,
     },
-
     iosTopRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -153,10 +149,8 @@ const s = StyleSheet.create({
     },
     appName: { fontSize: 13, fontWeight: '700', flex: 1 },
     timeText: { fontSize: 12, fontWeight: '500' },
-
     title: { fontSize: 16, fontWeight: '800', marginBottom: 6 },
     body: { fontSize: 14, lineHeight: 20 },
-
     banner: {
         marginTop: 12,
         borderRadius: 14,
@@ -166,7 +160,25 @@ const s = StyleSheet.create({
         justifyContent: 'center',
     },
     bannerText: { fontSize: 12, fontWeight: '800' },
-
+    // New toggle preview styles
+    toggleSection: {
+        marginTop: 20,
+        padding: 12,
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        borderRadius: 14,
+    },
+    toggleRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    toggleLabel: { fontSize: 14, fontWeight: '600' },
+    switchWrapper: { width: 48, height: 28 },
+    switch: { flex: 1, backgroundColor: '#e0e0e0', borderRadius: 14 },
+    previewRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+    previewTime: { fontSize: 14, fontWeight: '600' },
+    previewDesc: { fontSize: 13, marginLeft: 4 },
     skipBtn: {
         height: 48,
         alignItems: 'center',

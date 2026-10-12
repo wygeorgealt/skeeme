@@ -8,11 +8,11 @@ function getFilePath(key: string) {
   return `${FileSystem.documentDirectory}${key}.json`;
 }
 
-async function readJson(key: string) {
+async function readJson<T>(key: string): Promise<T | null> {
   try {
     if (Platform.OS === 'web') {
       const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : null;
+      return raw ? JSON.parse(raw) as T : null;
     }
 
     const path = getFilePath(key);
@@ -21,13 +21,13 @@ async function readJson(key: string) {
       return null;
     }
     const raw = await FileSystem.readAsStringAsync(path);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? JSON.parse(raw) as T : null;
   } catch {
     return null;
   }
 }
 
-async function writeJson(key: string, value: any) {
+async function writeJson<T>(key: string, value: T): Promise<void> {
   const raw = JSON.stringify(value);
   try {
     if (Platform.OS === 'web') {
@@ -41,6 +41,13 @@ async function writeJson(key: string, value: any) {
   }
 }
 
+export type OfflineSavedQuestion = {
+  question_text: string;
+  question_type: string;
+  correct_answer: string;
+  options?: string[];
+};
+
 export type OfflineSavedQuiz = {
   id: string;
   saved_at: string;
@@ -48,7 +55,7 @@ export type OfflineSavedQuiz = {
   topic: string;
   difficulty: string;
   percentage: number;
-  questions: any[];
+  questions: OfflineSavedQuestion[];
 };
 
 export type OfflineSavedDeck = {
@@ -59,11 +66,11 @@ export type OfflineSavedDeck = {
 };
 
 export async function getSavedQuizzes(): Promise<OfflineSavedQuiz[]> {
-  return (await readJson(QUIZ_KEY)) ?? [];
+  return (await readJson<OfflineSavedQuiz[]>(QUIZ_KEY)) ?? [];
 }
 
 export async function getSavedDecks(): Promise<OfflineSavedDeck[]> {
-  return (await readJson(DECK_KEY)) ?? [];
+  return (await readJson<OfflineSavedDeck[]>(DECK_KEY)) ?? [];
 }
 
 export async function saveOfflineQuiz(quiz: Omit<OfflineSavedQuiz, 'saved_at'>): Promise<void> {

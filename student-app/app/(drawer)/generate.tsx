@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, useColorScheme, Animated, StyleSheet, Modal, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView, Alert, Animated, StyleSheet, Modal, Platform } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { streamQuizGenerate } from '@/lib/aiStream';
 
 import { useFocusEffect, useLocalSearchParams, useNavigation, router } from 'expo-router';
@@ -57,6 +58,7 @@ import Stopwatch from '@/assets/icons/pikaicons/clock-default.svg';
 import FolderOpen from '@/assets/icons/pikaicons/folder-default.svg';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { GlassSurface } from '@/components/liquid-glass/GlassSurface';
 
 // ── SKELETON COMPONENTS ──────────────────────────────────────────────────────
 const SkeletonCard = ({ isDark }: { isDark: boolean }) => {
@@ -122,9 +124,9 @@ function ChipButton({
     small?: boolean;
 }) {
     return (
-        <TouchableOpacity
+        <Pressable
             onPress={onPress}
-            activeOpacity={0.75}
+            
             style={[
                 sf.chipBtn,
                 small ? sf.chipSmall : null,
@@ -135,7 +137,7 @@ function ChipButton({
         >
             <Icon width={small ? 16 : 20} height={small ? 16 : 20} color={isSelected ? '#FFF' : C.text} style={{ marginRight: 6 }} />
             <Text style={[small ? sf.chipLabelSmall : sf.chipLabel, { color: isSelected ? '#FFF' : C.text }]}>{label}</Text>
-        </TouchableOpacity>
+        </Pressable>
     );
 }
 
@@ -692,185 +694,354 @@ export default function GenerateQuizScreen() {
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
     if (questions.length === 0) {
         const canGenerate = mode === 'topic' ? topic.trim().length > 0 : (selectedFile !== null && !isExtracting);
-        const iconBg = isDark ? 'rgba(0,122,255,0.15)' : '#EBF3FF';
 
         return (
-            <View style={{ flex: 1, backgroundColor: C.background }}>
+            <View className="flex-1 bg-surface pt-safe">
                 {/* Header */}
-                <View style={[sf.header, { paddingTop: Math.max(insets.top, 16) }] }>
-                    <TouchableOpacity 
-                        onPress={() => router.back()} 
-                        activeOpacity={0.7} 
-                        style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
+                <View className="h-16 px-4 flex-row items-center justify-between z-50 bg-surface-container-lowest/80" style={{ paddingTop: Math.max(insets.top, 16) }}>
+                    <Pressable
+                        onPress={() => router.back()}
+                        
+                        className="w-11 h-11 -ml-2 rounded-full items-center justify-center bg-transparent"
                     >
-                        <AltArrowLeft width={24} height={24} color={isDark ? 'white' : '#0f172a'} />
-                    </TouchableOpacity>
-                    <Text style={[sf.headerTitle, { color: C.text }]}>
-                        {isLoading ? (loadingStage || 'Skeeming...') : 'Build Quiz'}
+                        <MaterialIcons name="arrow-back" size={24} color={C.text} className="text-on-surface" />
+                    </Pressable>
+                    <Text className="text-[20px] font-[600] tracking-[-0.2px] text-on-surface flex-1 text-center" numberOfLines={1}>
+                        {isLoading ? (loadingStage || 'Skeeming...') : 'Create Quiz'}
                     </Text>
-                    <View style={{ width: 44 }} />
+                    <View className="w-11 h-11" />
                 </View>
 
                 {isLoading ? (
-                    <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 20 }}>
+                    <View className="flex-1 px-4 pt-5">
                         <SkeletonCard isDark={isDark} />
                     </View>
                 ) : (
                 <ScrollView
-                    style={{ flex: 1 }}
-                    contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 220, paddingTop: 10 }}
+                    className="flex-1 w-full"
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 220, paddingTop: 16 }}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Segmented Control */}
-                    <ReanimatedAnimated.View entering={FadeInDown.delay(80).duration(400)} style={[sf.chipRow, { marginBottom: 24 }]}> 
-                        {MODE_OPTIONS.map(option => (
-                            <ChipButton
-                                key={option.key}
-                                label={option.label}
-                                Icon={option.Icon}
-                                isSelected={mode === option.key}
-                                onPress={() => { setMode(option.key as QuizMode); if (option.key === 'topic') setSelectedFile(null); }}
-                                isDark={isDark}
-                                C={C}
-                            />
-                        ))}
-                    </ReanimatedAnimated.View>
-
-                    {/* Input */}
-                    <ReanimatedAnimated.View entering={FadeInDown.delay(160).duration(400)}>
-                        {mode === 'topic' ? (
-                            <View style={[cardShadow(C), sf.inputCard]}>
-                                <TextInput
-                                    style={[sf.textInput, { color: C.text }]}
-                                    placeholder="E.g. Cell Biology, World War II..."
-                                    placeholderTextColor={C.textTertiary}
-                                    value={topic}
-                                    onChangeText={setTopic}
-                                />
+                    <View className="flex-col gap-6 w-full max-w-xl mx-auto">
+                        
+                        {/* Section 1: Source Material Selector */}
+                        <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-4">
+                            <View className="flex-row items-center justify-between">
+                                <View className="flex-row items-center gap-2">
+                                    <MaterialIcons name="dataset" size={20} color="#007AFF" />
+                                    <Text className="text-[16px] font-[600] text-on-surface">Quiz Source Material</Text>
+                                </View>
                             </View>
-                        ) : (
-                            <TouchableOpacity
-                                onPress={handleFileSelect}
-                                disabled={isProcessingFile}
-                                activeOpacity={0.75}
-                                style={[cardShadow(C), sf.uploadBox]}
-                            >
-                                {isProcessingFile ? (
-                                    <View style={sf.centered}>
-                                        <LoadingSpinner size={32} />
-                                        <Text style={[sf.uploadSub, { color: C.primary, marginTop: 10 }]}>Analyzing document...</Text>
+
+                            {/* Segmented iOS-Style Switcher */}
+                            <View className="p-1 bg-surface-container-low rounded-2xl flex-row items-center gap-1">
+                                <Pressable 
+                                    className={`flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-2 ${mode === 'topic' ? 'bg-surface-container-lowest shadow-sm' : 'bg-transparent'}`}
+                                    onPress={() => { setMode('topic'); setSelectedFile(null); }}
+                                    
+                                >
+                                    <MaterialIcons name="edit-note" size={18} color={mode === 'topic' ? '#007AFF' : C.textSecondary} />
+                                    <Text className={`text-[14px] font-[600] ${mode === 'topic' ? 'text-accent-electric-blue' : 'text-on-surface-variant'}`}>Input Topic</Text>
+                                </Pressable>
+                                <Pressable 
+                                    className={`flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-2 ${mode === 'file' ? 'bg-surface-container-lowest shadow-sm' : 'bg-transparent'}`}
+                                    onPress={() => { setMode('file'); }}
+                                    
+                                >
+                                    <MaterialIcons name="cloud-upload" size={18} color={mode === 'file' ? '#007AFF' : C.textSecondary} />
+                                    <Text className={`text-[14px] font-[600] ${mode === 'file' ? 'text-accent-electric-blue' : 'text-on-surface-variant'}`}>Upload Notes</Text>
+                                </Pressable>
+                            </View>
+
+                            {/* Tab View: Topic Input */}
+                            {mode === 'topic' ? (
+                                <View className="flex-col gap-3">
+                                    <View className="bg-surface-container-low rounded-2xl p-3">
+                                        <TextInput
+                                            className="w-full bg-transparent text-[15px] font-[400]"
+                                            placeholder="e.g. AP Calculus Derivatives, or paste your syllabus chapter..."
+                                            placeholderTextColor={C.textTertiary}
+                                            value={topic}
+                                            onChangeText={setTopic}
+                                            multiline
+                                            numberOfLines={4}
+                                            textAlignVertical="top"
+                                            style={{ minHeight: 80, color: C.text }}
+                                        />
+                                        <View className="flex-row items-center justify-between pt-2">
+                                            <Pressable onPress={() => setTopic('')} className="p-1">
+                                                <MaterialIcons name="backspace" size={18} color={C.textTertiary} />
+                                            </Pressable>
+                                        </View>
                                     </View>
-                                ) : selectedFile ? (
-                                    <>
-                                        <FolderOpen width={32} height={32} color={C.primary} />
-                                        <Text style={[sf.uploadTitle, { color: C.text }]}>{selectedFile.name}</Text>
-                                        {isExtracting ? (
-                                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                                                <LoadingSpinner size={14} color={C.primary} />
-                                                <Text style={[sf.uploadSub, { color: C.primary, marginLeft: 6 }]}>Extracting text...</Text>
+
+                                    {/* Quick Topic Suggestion Chips */}
+                                    <View className="flex-col gap-1.5">
+                                        <Text className="text-[11px] font-[700] tracking-[0.5px] text-on-surface-variant">Popular Suggestions</Text>
+                                        <View className="flex-row flex-wrap gap-2">
+                                            {['AP Calculus', 'Cell Biology', 'World History', 'Python Basics'].map(s => (
+                                                <Pressable key={s} onPress={() => setTopic(s)} className="px-3 py-1.5 rounded-full bg-surface-container-low active:bg-primary-container">
+                                                    <Text className="text-[11px] font-[700] tracking-[0.5px] text-on-surface">{s}</Text>
+                                                </Pressable>
+                                            ))}
+                                        </View>
+                                    </View>
+                                </View>
+                            ) : (
+                                /* Tab View: Upload Notes */
+                                <View className="flex-col gap-3">
+                                    <Pressable 
+                                        onPress={handleFileSelect}
+                                        disabled={isProcessingFile}
+                                        
+                                        className="bg-surface-container-low rounded-2xl p-6 flex-col items-center justify-center text-center gap-3"
+                                    >
+                                        {isProcessingFile ? (
+                                            <View className="items-center">
+                                                <LoadingSpinner size={32} />
+                                                <Text className="text-[13px] font-[400] text-primary mt-2">Analyzing document...</Text>
                                             </View>
+                                        ) : selectedFile ? (
+                                            <>
+                                                <View className="w-14 h-14 rounded-2xl bg-surface-container-lowest items-center justify-center shadow-sm">
+                                                    <MaterialIcons name="description" size={32} color="#007AFF" />
+                                                </View>
+                                                <View className="items-center">
+                                                    <Text className="text-[16px] font-[600] text-on-surface">{selectedFile.name}</Text>
+                                                    {isExtracting ? (
+                                                        <View className="flex-row items-center mt-1">
+                                                            <LoadingSpinner size={14} color={C.primary} />
+                                                            <Text className="text-[13px] font-[400] text-primary ml-1.5">Extracting text...</Text>
+                                                        </View>
+                                                    ) : (
+                                                        <Text className="text-[13px] font-[400] text-on-surface-variant mt-0.5">Ready to generate</Text>
+                                                    )}
+                                                </View>
+                                            </>
                                         ) : (
-                                            <Text style={[sf.uploadSub, { color: '#34C759' }]}>Ready to generate</Text>
+                                            <>
+                                                <View className="w-14 h-14 rounded-2xl bg-surface-container-lowest items-center justify-center shadow-sm">
+                                                    <MaterialIcons name="upload-file" size={32} color="#007AFF" />
+                                                </View>
+                                                <View className="items-center">
+                                                    <Text className="text-[16px] font-[600] text-on-surface">Drop lecture slides, syllabus, or notes</Text>
+                                                    <Text className="text-[13px] font-[400] text-on-surface-variant mt-0.5">Supports PDF, DOCX, TXT (Max 5MB)</Text>
+                                                </View>
+                                                <View className="mt-1 px-4 py-2 bg-primary-container rounded-xl flex-row items-center gap-1.5 shadow-sm">
+                                                    <MaterialIcons name="add-circle" size={18} color="#007AFF" />
+                                                    <Text className="text-[14px] font-[600] text-accent-electric-blue">Add Document</Text>
+                                                </View>
+                                            </>
                                         )}
-                                    </>
-                                ) : (
-                                    <>
-                                        <CloudUpload width={32} height={32} color={C.textTertiary} />
-                                        <Text style={[sf.uploadTitle, { color: C.text }]}>Tap to upload PDF or DOCX</Text>
-                                        <Text style={[sf.uploadSub, { color: C.textTertiary }]}>Maximum 5MB</Text>
-                                    </>
-                                )}
-                            </TouchableOpacity>
-                        )}
-                    </ReanimatedAnimated.View>
-
-                    {/* Number of Questions */}
-                    <ReanimatedAnimated.View entering={FadeInDown.delay(240).duration(400)}>
-                        <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>NUMBER OF QUESTIONS</Text>
-                        <View style={[cardShadow(C), sf.stepperCard]}>
-                            <Text style={[sf.stepperLabel, { color: C.text }]}>Questions</Text>
-                            <View style={sf.stepperRow}>
-                            <TouchableOpacity
-                                style={[sf.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F0F2F7' }]}
-                                onPress={() => setQuestionCount(prev => String(Math.max(10, parseInt(prev) - 5)))}
-                            >
-                                <Text style={[sf.stepperBtnText, { color: C.primary }]}>-</Text>
-                            </TouchableOpacity>
-                            <Text style={[sf.stepperValue, { color: C.text }]}>{questionCount}</Text>
-                            <TouchableOpacity
-                                style={[sf.stepperBtn, { backgroundColor: isDark ? '#2C2C2E' : '#F0F2F7' }]}
-                                onPress={() => setQuestionCount(prev => String(Math.min(30, parseInt(prev) + 5)))}
-                            >
-                                <Text style={[sf.stepperBtnText, { color: C.primary }]}>+</Text>
-                            </TouchableOpacity>
+                                    </Pressable>
+                                </View>
+                            )}
                         </View>
+
+                        {/* Section 2: Number of Questions */}
+                        <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-4">
+                            <View className="flex-row items-center justify-between">
+                                <View className="flex-row items-center gap-2">
+                                    <MaterialIcons name="format-list-numbered" size={20} color="#007AFF" />
+                                    <Text className="text-[16px] font-[600] text-on-surface">Question Count</Text>
+                                </View>
+                            </View>
+
+                            <View className="bg-surface-container-low rounded-2xl p-4 flex-row items-center justify-between">
+                                <Pressable 
+                                    className="w-11 h-11 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
+                                    onPress={() => setQuestionCount(prev => String(Math.max(5, parseInt(prev) - 5)))}
+                                >
+                                    <MaterialIcons name="remove" size={22} color={C.text} />
+                                </Pressable>
+                                <View className="flex-col items-center">
+                                    <View className="flex-row items-baseline gap-1">
+                                        <Text className="text-[40px] font-[800] tracking-[-1.2px] text-accent-electric-blue">{questionCount}</Text>
+                                        <Text className="text-[16px] font-[600] text-on-surface-variant">Questions</Text>
+                                    </View>
+                                </View>
+                                <Pressable 
+                                    className="w-11 h-11 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
+                                    onPress={() => setQuestionCount(prev => String(Math.min(30, parseInt(prev) + 5)))}
+                                >
+                                    <MaterialIcons name="add" size={22} color={C.text} />
+                                </Pressable>
+                            </View>
+
+                            <View className="flex-row flex-wrap gap-2 w-full justify-between">
+                                {[5, 10, 15, 20, 30].map(val => (
+                                    <Pressable 
+                                        key={val}
+                                        onPress={() => setQuestionCount(String(val))}
+                                        className={`py-2 flex-1 rounded-xl items-center justify-center ${parseInt(questionCount) === val ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container-low'}`}
+                                    >
+                                        <Text className={`text-[14px] font-[600] ${parseInt(questionCount) === val ? 'text-on-primary' : 'text-on-surface'}`}>{val}</Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+                        </View>
+
+                        {/* Section 3: Difficulty Level */}
+                        <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-4">
+                            <View className="flex-row items-center justify-between">
+                                <View className="flex-row items-center gap-2">
+                                    <MaterialIcons name="psychology" size={20} color="#007AFF" />
+                                    <Text className="text-[16px] font-[600] text-on-surface">Difficulty Depth</Text>
+                                </View>
+                                <View className="bg-primary-container px-2.5 py-0.5 rounded-full">
+                                    <Text className="text-[11px] font-[700] tracking-[0.5px] text-accent-electric-blue">
+                                        {difficulty === 'easy' ? 'Foundational' : difficulty === 'medium' ? 'Standard' : 'Mastery / Trap'}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            <View className="flex-row gap-2.5 w-full">
+                                {[
+                                    { key: 'easy', icon: 'spa', label: 'Easy', desc: 'Foundations & recall' },
+                                    { key: 'medium', icon: 'school', label: 'Medium', desc: 'Exam standard' },
+                                    { key: 'hard', icon: 'local-fire-department', label: 'Hard', desc: 'Deep mastery & traps' },
+                                ].map(opt => {
+                                    const isActive = difficulty === opt.key;
+                                    return (
+                                        <Pressable 
+                                            key={opt.key}
+                                            onPress={() => setDifficulty(opt.key as Difficulty)}
+                                            className={`flex-1 p-3.5 rounded-2xl flex-col justify-between h-[144px] ${isActive ? 'bg-primary-container shadow-sm' : 'bg-surface-container-low'}`}
+                                        >
+                                            <View className="flex-row items-center justify-between w-full">
+                                                <View className="w-9 h-9 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm">
+                                                    <MaterialIcons name={opt.icon as any} size={20} color={isActive ? "#007AFF" : C.textSecondary} />
+                                                </View>
+                                                {isActive && <MaterialIcons name="check-circle" size={20} color="#007AFF" />}
+                                            </View>
+                                            <View>
+                                                <Text className={`text-[16px] font-[600] ${isActive ? 'text-accent-electric-blue' : 'text-on-surface'}`}>{opt.label}</Text>
+                                                <Text className="text-[13px] font-[400] text-on-surface-variant mt-0.5 leading-[18px]" numberOfLines={2}>{opt.desc}</Text>
+                                            </View>
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
+                        </View>
+
+                        {/* Section 4: Timer */}
+                        <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-4">
+                            <View className="flex-row items-center justify-between">
+                                <View className="flex-row items-center gap-3">
+                                    <View className="w-10 h-10 rounded-xl bg-surface-container-low items-center justify-center">
+                                        <MaterialIcons name="timer" size={22} color="#007AFF" />
+                                    </View>
+                                    <Text className="text-[16px] font-[600] text-on-surface">Quiz Timer</Text>
+                                </View>
+                                <Pressable 
+                                    onPress={() => setTimerEnabled(!timerEnabled)}
+                                    
+                                    className={`w-14 h-8 rounded-full p-1 justify-center ${timerEnabled ? 'bg-accent-electric-blue' : 'bg-surface-container-highest'}`}
+                                >
+                                    <Animated.View style={{ transform: [{ translateX: timerEnabled ? 24 : 0 }] }}>
+                                        <View className="w-6 h-6 rounded-full bg-surface-container-lowest shadow-md" />
+                                    </Animated.View>
+                                </Pressable>
+                            </View>
+
+                            {timerEnabled && (
+                                <View className="flex-col gap-3 pt-2">
+                                    <View className="bg-surface-container-low rounded-2xl p-4 flex-row items-center justify-between">
+                                        <Pressable 
+                                            className="w-10 h-10 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
+                                            onPress={() => setTimerMinutes(prev => String(Math.max(5, parseInt(prev || '10') - 5)))}
+                                        >
+                                            <MaterialIcons name="remove" size={20} color={C.text} />
+                                        </Pressable>
+                                        <View className="flex-col items-center">
+                                            <View className="flex-row items-baseline gap-1">
+                                                <Text className="text-[40px] font-[800] tracking-[-1.2px] text-on-surface">{timerMinutes}</Text>
+                                                <Text className="text-[16px] font-[600] text-on-surface-variant">min</Text>
+                                            </View>
+                                        </View>
+                                        <Pressable 
+                                            className="w-10 h-10 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
+                                            onPress={() => setTimerMinutes(prev => String(Math.min(60, parseInt(prev || '10') + 5)))}
+                                        >
+                                            <MaterialIcons name="add" size={20} color={C.text} />
+                                        </Pressable>
+                                    </View>
+
+                                    <View className="flex-row flex-wrap gap-2 w-full justify-between">
+                                        {[5, 15, 25, 45, 60].map(val => (
+                                            <Pressable 
+                                                key={val}
+                                                onPress={() => setTimerMinutes(String(val))}
+                                                className={`py-2 flex-1 rounded-xl items-center justify-center ${parseInt(timerMinutes) === val ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container-low'}`}
+                                            >
+                                                <Text className={`text-[14px] font-[600] ${parseInt(timerMinutes) === val ? 'text-on-primary' : 'text-on-surface'}`}>{val}m</Text>
+                                            </Pressable>
+                                        ))}
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Section 5: Question Format Options */}
+                        <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-3">
+                            <View className="flex-row items-center justify-between">
+                                <View className="flex-row items-center gap-2">
+                                    <MaterialIcons name="tune" size={20} color="#007AFF" />
+                                    <Text className="text-[16px] font-[600] text-on-surface">Question Formats</Text>
+                                </View>
+                            </View>
+                            <View className="flex-row flex-wrap gap-2.5">
+                                {[
+                                    { key: 'mcq', icon: 'radio-button-checked', label: 'Multiple Choice' },
+                                    { key: 'theory', icon: 'rule', label: 'True / False / Essay' },
+                                    { key: 'both', icon: 'short-text', label: 'Mixed' }
+                                ].map(opt => {
+                                    const isActive = format === opt.key;
+                                    return (
+                                        <Pressable 
+                                            key={opt.key}
+                                            onPress={() => setFormat(opt.key as FormatType)}
+                                            className={`px-4 py-2.5 rounded-2xl flex-row items-center gap-2 ${isActive ? 'bg-primary-container' : 'bg-surface-container-low'}`}
+                                        >
+                                            <MaterialIcons name={opt.icon as any} size={18} color={isActive ? "#007AFF" : C.textSecondary} />
+                                            <Text className={`text-[14px] font-[600] ${isActive ? 'text-accent-electric-blue' : 'text-on-surface-variant'}`}>{opt.label}</Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                        
                     </View>
-                    </ReanimatedAnimated.View>
-
-                    {/* Difficulty */}
-                    <ReanimatedAnimated.View entering={FadeInDown.delay(320).duration(400)}>
-                        <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>DIFFICULTY</Text>
-                        <View style={[cardShadow(C), { marginBottom: 20, padding: 16 }]}> 
-                            <View style={sf.chipRow}>
-                                {DIFFICULTY_OPTIONS.map(opt => (
-                                    <ChipButton
-                                        key={opt.key}
-                                        label={opt.label}
-                                        Icon={opt.Icon}
-                                        isSelected={difficulty === opt.key}
-                                        onPress={() => setDifficulty(opt.key as Difficulty)}
-                                        isDark={isDark}
-                                        C={C}
-                                        small
-                                    />
-                                ))}
-                            </View>
-                        </View>
-                    </ReanimatedAnimated.View>
-
-                    {/* Question Format */}
-                    <ReanimatedAnimated.View entering={FadeInDown.delay(400).duration(400)}>
-                        <Text style={[sf.sectionLabel, { color: C.textTertiary }]}>QUESTION FORMAT</Text>
-                        <View style={[cardShadow(C), { marginBottom: 20, padding: 16 }]}> 
-                            <View style={sf.chipRow}>
-                                {FORMAT_OPTIONS.map(opt => (
-                                    <ChipButton
-                                        key={opt.key}
-                                        label={opt.label}
-                                        Icon={opt.Icon}
-                                        isSelected={format === opt.key}
-                                        onPress={() => setFormat(opt.key as FormatType)}
-                                        isDark={isDark}
-                                        C={C}
-                                        small
-                                    />
-                                ))}
-                            </View>
-                        </View>
-                    </ReanimatedAnimated.View>
                 </ScrollView>
                 )}
 
-                {/* Sticky Footer */}
+                {/* Bottom Sticky Action Bar */}
                 <BlurView
-                    intensity={50}
+                    intensity={80}
                     tint={isDark ? 'dark' : 'light'}
-                    style={[sf.footer, {
-                        paddingBottom: Math.max(insets.bottom, 16) + 75,
-                        backgroundColor: 'transparent',
-                        borderTopWidth: 0,
-                    }]}
+                    className="absolute bottom-0 left-0 right-0 p-4 z-40 bg-surface-container-lowest/80"
+                    style={{ paddingBottom: Math.max(insets.bottom, 16) }}
                 >
-                    <AnimatedButton
-                        title="Generate Quiz"
-                        onPress={handleGenerate}
-                        disabled={!canGenerate || isLoading}
-                        loading={isLoading}
-                        type="capsule"
-                        backgroundColor="#007AFF"
-                        shadowColor="#0066D6"
-                        fullWidth
-                    />
+                    <View className="max-w-xl mx-auto w-full flex-col gap-2">
+                        <Pressable
+                            onPress={handleGenerate}
+                            disabled={!canGenerate || isLoading}
+                            className={`w-full h-14 rounded-2xl flex-row items-center justify-center gap-2 ${(!canGenerate || isLoading) ? 'opacity-50 bg-outline' : 'bg-accent-electric-blue'}`}
+                            style={canGenerate ? { shadowColor: '#007AFF', shadowOffset: {width:0, height:8}, shadowOpacity: 0.35, shadowRadius: 24 } : {}}
+                        >
+                            {isLoading ? (
+                                <LoadingSpinner size={22} color="white" />
+                            ) : (
+                                <MaterialIcons name="bolt" size={22} color="white" />
+                            )}
+                            <Text className="text-[16px] font-[600] text-on-primary">{isLoading ? 'Generating...' : 'Generate Quiz'}</Text>
+                            {!isLoading && <Text className="text-[13px] font-[400] text-on-primary/80">✨</Text>}
+                        </Pressable>
+                        <View className="flex-row items-center justify-center gap-2">
+                            <View className="w-1.5 h-1.5 rounded-full bg-accent-electric-blue" />
+                            <Text className="text-[11px] font-[700] tracking-[0.5px] text-on-surface-variant">Costs {user?.plan_name !== 'free' ? '0' : '30'} Credits • Instant AI Generation</Text>
+                        </View>
+                    </View>
                 </BlurView>
 
                 <OutOfCreditsModal
@@ -892,33 +1063,23 @@ export default function GenerateQuizScreen() {
     if (isLoading || (questions.length > 0 && currentQIndex < questions.length)) {
         if (questions.length === 0) {
             return (
-                <View style={{ flex: 1, backgroundColor: C.background }}>
-                    {/* Header with back button to cancel */}
-                    <View style={{ paddingTop: insets.top + 20, paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                        <TouchableOpacity 
+                <View className="flex-1 bg-surface pt-safe">
+                    <View className="px-5 h-16 flex-row items-center justify-between" style={{ paddingTop: insets.top }}>
+                        <Pressable 
                             onPress={() => { setIsLoading(false); }}
-                            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', alignItems: 'center', justifyContent: 'center' }}
+                            className="w-10 h-10 items-center justify-center rounded-full bg-surface-container shadow-xs"
                         >
-                            <CloseCircle width={24} height={24} color={C.text} />
-                        </TouchableOpacity>
-                        <View style={{ alignItems: 'center' }}>
-                            <Text style={{ fontSize: 14, fontWeight: '800', color: C.primary, textTransform: 'uppercase', letterSpacing: 1 }}>{loadingStage || 'Skeeming...'}</Text>
+                            <MaterialIcons name="close" size={20} color={C.text} />
+                        </Pressable>
+                        <View className="flex-col items-center flex-1 px-2">
+                            <Text className="text-[14px] font-[800] text-primary uppercase tracking-[1px]">{loadingStage || 'Skeeming...'}</Text>
                         </View>
-                        <View style={{ width: 40 }} />
+                        <View className="w-10 h-10" />
                     </View>
 
-                    <View style={{ flex: 1, paddingHorizontal: 24 }}>
+                    <View className="flex-1 px-5 pt-4">
                         <SkeletonCard isDark={isDark} />
                     </View>
-
-                    <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, paddingBottom: Math.max(insets.bottom, 20), borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
-                        <View style={{ padding: 16 }}>
-                            <View style={{ height: 56, borderRadius: 16, backgroundColor: isDark ? '#1E1E1E' : '#F2F2F7', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10 }}>
-                                <LoadingSpinner size={20} color={C.textSecondary} />
-                                <Text style={{ fontSize: 16, fontWeight: '700', color: '#8E8E93' }}>Generating Quiz...</Text>
-                            </View>
-                        </View>
-                    </BlurView>
                 </View>
             );
         }
@@ -973,188 +1134,192 @@ export default function GenerateQuizScreen() {
         }
 
         return (
-            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-                {/* Thin Progress line at safe area boundary */}
-                <View style={{ paddingTop: insets.top, backgroundColor: 'transparent' }}>
-                    <View style={{ width: '100%', height: 4, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
-                        <Animated.View style={{ width: `${rawProgressPct}%`, height: '100%', backgroundColor: '#007AFF' }} />
-                    </View>
-                </View>
-
-                {/* Progress Text overlay */}
-                <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#8E8E93', letterSpacing: -0.2 }}>
-                        Q {currentQIndex + 1}/{questions.length}
-                    </Text>
-                    
-                    {timerEnabled && timeLeft > 0 && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? 'rgba(255,59,48,0.1)' : '#FFF5F5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 }}>
-                            <Stopwatch width={14} height={14} color={timeLeft < 60 ? '#FF3B30' : '#8E8E93'} />
-                            <Text style={[{ fontSize: 13, fontWeight: '700', marginLeft: 4 }, timeLeft < 60 ? { color: '#FF3B30' } : { color: '#8E8E93' }]}>
-                                {formatTime(timeLeft)}
-                            </Text>
-                        </View>
+            <View className="flex-1 bg-surface pt-safe">
+                {/* Header */}
+                <View className="h-16 px-5 flex-row items-center justify-between shadow-sm z-50 bg-surface/80" style={{ paddingTop: insets.top }}>
+                    <Pressable 
+                        onPress={() => router.back()}
+                        className="w-10 h-10 items-center justify-center rounded-full bg-surface-container-lowest shadow-sm"
+                    >
+                        <MaterialIcons name="chevron-left" size={24} color={C.text} />
+                    </Pressable>
+                    <View className="flex-1" />
+                    {timerEnabled && (
+                        <Pressable className="w-10 h-10 items-center justify-center rounded-full bg-surface-container-lowest shadow-sm">
+                            <MaterialIcons name="timer" size={20} color={C.textTertiary} />
+                        </Pressable>
                     )}
                 </View>
 
-                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 220 }} showsVerticalScrollIndicator={false}>
-                    {/* Large Question Typography */}
-                    <View style={{ marginBottom: 40, marginTop: 10 }}>
-                        <Text style={{ fontSize: 32, fontWeight: '800', color: C.text, lineHeight: 42, letterSpacing: -0.5 }}>
-                            {q.question_text}
-                        </Text>
+                <ScrollView className="flex-1 w-full" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 220 }} showsVerticalScrollIndicator={false}>
+                    
+                    {/* Progress area */}
+                    <View className="flex-col space-y-2.5 mb-6">
+                        <Text className="font-[700] text-[15px] text-on-surface">Question {currentQIndex + 1}: {topic || (selectedFile?.name || 'Quiz')}</Text>
+                        
+                        {/* Segmented pill progress */}
+                        <View className="flex-row items-center gap-1.5 w-full">
+                            {questions.map((_, i) => (
+                                <View 
+                                    key={i} 
+                                    className={`h-1.5 flex-1 rounded-full ${i <= currentQIndex ? 'bg-accent-electric-blue' : 'bg-surface-container-high'}`} 
+                                />
+                            ))}
+                        </View>
+                        
+                        <View className="flex-row items-center gap-4 text-[12px] text-on-surface-variant pt-0.5">
+                            <View className="flex-row items-center gap-1">
+                                <MaterialIcons name="schedule" size={14} color={C.textTertiary} />
+                                <Text className="text-on-surface-variant text-[12px]">Question {currentQIndex + 1}/{questions.length}</Text>
+                            </View>
+                            {timerEnabled && (
+                                <View className="flex-row items-center gap-1">
+                                    <MaterialIcons name="timer" size={14} color={timeLeft < 60 ? '#FF3B30' : C.textTertiary} />
+                                    <Text className={`text-[12px] ${timeLeft < 60 ? 'text-[#FF3B30] font-[700]' : 'text-on-surface-variant'}`}>{formatTime(timeLeft)}</Text>
+                                </View>
+                            )}
+                        </View>
                     </View>
 
-                    {/* Stacked Options */}
+                    {/* Question Typography */}
+                    <View className="flex-col items-center text-center pt-2 mb-6">
+                        <View className="w-24 h-24 rounded-full bg-primary-container shadow-sm items-center justify-center mb-4">
+                            <MaterialIcons name="quiz" size={40} color="#007AFF" />
+                        </View>
+                        <Text className="font-[700] text-[18px] text-on-surface leading-[26px] text-center">{q.question_text}</Text>
+                    </View>
+
+                    {/* Options */}
                     {!isTheory ? (
-                        <View style={{ gap: 12 }}>
+                        <View className="flex-col gap-3 pt-1">
                             {q.options?.map((opt, oi) => {
                                 const isSelected = selectedAnswers[currentQIndex] === opt;
                                 const isCorrectOpt = opt === q.correct_answer;
                                 const letters = ['A', 'B', 'C', 'D', 'E'];
                                 const letter = letters[oi] || `${oi + 1}`;
-                                
-                                let bgColor = isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF';
-                                let borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
-                                let textColor = C.text;
-                                let letterBg = isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9';
-                                let letterColor = C.textSecondary;
+
+                                let btnClass = "p-3.5 rounded-2xl bg-surface-container-lowest shadow-sm border-2 border-transparent flex-row items-center justify-between";
+                                let badgeClass = "w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center";
+                                let badgeTextClass = "font-[700] text-[13px] text-on-surface";
+                                let textClass = "font-[500] text-[13px] text-on-surface";
                                 let icon = null;
 
                                 if (isRevealed) {
                                     if (isCorrectOpt) {
-                                        borderColor = '#34C759';
-                                        textColor = '#34C759';
-                                        letterBg = 'rgba(52,199,89,0.1)';
-                                        letterColor = '#34C759';
-                                        icon = <CheckCircle width={20} height={20} color="#34C759" />;
+                                        btnClass = "p-3.5 rounded-2xl bg-[#ecfdf5] shadow-sm border-2 border-[#10b981] flex-row items-center justify-between";
+                                        badgeClass = "w-8 h-8 rounded-full bg-[#ffffff] shadow-sm flex items-center justify-center";
+                                        badgeTextClass = "font-[700] text-[13px] text-[#047857]";
+                                        textClass = "font-[600] text-[13px] text-on-surface";
+                                        icon = <MaterialIcons name="check-circle" size={18} color="#10b981" />;
                                     } else if (isSelected && !isCorrectOpt) {
-                                        borderColor = '#FF3B30';
-                                        textColor = '#FF3B30';
-                                        letterBg = 'rgba(255,59,48,0.1)';
-                                        letterColor = '#FF3B30';
-                                        icon = <CloseCircle width={20} height={20} color="#FF3B30" />;
+                                        btnClass = "p-3.5 rounded-2xl bg-[#fef2f2] shadow-sm border-2 border-[#ef4444] flex-row items-center justify-between";
+                                        badgeClass = "w-8 h-8 rounded-full bg-[#ffffff] shadow-sm flex items-center justify-center";
+                                        badgeTextClass = "font-[700] text-[13px] text-[#b91c1c]";
+                                        textClass = "font-[600] text-[13px] text-on-surface";
+                                        icon = <MaterialIcons name="cancel" size={18} color="#ef4444" />;
                                     }
                                 } else if (isSelected) {
-                                    borderColor = '#007AFF';
-                                    textColor = '#007AFF';
-                                    letterBg = '#007AFF';
-                                    letterColor = '#FFFFFF';
+                                    btnClass = "p-3.5 rounded-2xl bg-primary-container shadow-sm border-2 border-[#007AFF] flex-row items-center justify-between";
+                                    badgeClass = "w-8 h-8 rounded-full bg-[#ffffff] shadow-sm flex items-center justify-center";
+                                    badgeTextClass = "font-[700] text-[13px] text-[#007AFF]";
+                                    textClass = "font-[600] text-[13px] text-on-surface";
                                 }
 
                                 return (
-                                    <TouchableOpacity
+                                    <Pressable
                                         key={oi}
-                                        activeOpacity={isRevealed ? 1 : 0.8}
+                                        
                                         onPress={() => {
                                             if (!isRevealed) {
                                                 haptics.selectionAsync();
                                                 setSelectedAnswers(p => ({ ...p, [currentQIndex]: opt }));
                                             }
                                         }}
-                                        style={{
-                                            flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 100,
-                                            backgroundColor: bgColor, borderWidth: 1, borderColor: borderColor,
-                                            minHeight: 64, marginBottom: 4
-                                        }}
+                                        className={btnClass}
                                     >
-                                        <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: letterBg, alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
-                                            <Text style={{ fontSize: 15, fontWeight: '800', color: letterColor }}>{letter}</Text>
+                                        <View className="flex-row items-center gap-2.5 flex-1 pr-2">
+                                            <View className={badgeClass}>
+                                                <Text className={badgeTextClass}>{letter}</Text>
+                                            </View>
+                                            <Text className={`${textClass} flex-1`}>{opt}</Text>
                                         </View>
-                                        <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: textColor }}>{opt}</Text>
-                                        <View style={{ marginRight: 8 }}>{icon}</View>
-                                    </TouchableOpacity>
+                                        {icon && <View className="ml-2">{icon}</View>}
+                                    </Pressable>
                                 );
                             })}
-
                         </View>
                     ) : (
                         <TheoryCard key={currentQIndex} q={q} qi={currentQIndex} onGraded={(qi, correct) => {
                             setTheoryResults(p => ({ ...p, [qi]: correct }));
                         }} />
                     )}
+
+                    {/* Explanation */}
+                    {isRevealed && (
+                        <View className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm flex-col space-y-3 mt-6">
+                            <Text className="font-[700] text-[15px] text-on-surface">AI Explanation</Text>
+                            <Text className="text-[13px] text-on-surface-variant leading-[20px]">
+                                {(() => {
+                                    const isCorrect = selectedAnswers[currentQIndex] === q.correct_answer;
+                                    let rawExpl = isCorrect ? (q.explanation_right || q.explanation) : (q.explanation_wrong || q.explanation);
+                                    let cleanExpl = rawExpl || `The correct answer is: ${q.correct_answer}.`;
+                                    if (!q.explanation_right && !q.explanation_wrong) {
+                                        cleanExpl = cleanExpl.replace(/^(correct|perfect|yes|exactly|that is correct|right|spot on|exactly right|that's right|that's correct|you're right|exactly correct|spot on|correct answer|the correct answer is)[,!\.]?\s*/i, '');
+                                        cleanExpl = cleanExpl.charAt(0).toUpperCase() + cleanExpl.slice(1);
+                                    }
+                                    return cleanExpl;
+                                })()}
+                            </Text>
+                        </View>
+                    )}
+
                 </ScrollView>
 
-                {/* Redesigned Feedback Card & Next Button */}
-                <BlurView 
-                    intensity={80} 
-                    tint={isDark ? 'dark' : 'light'} 
-                    style={{ 
-                        position: 'absolute', 
-                        bottom: 0, 
-                        left: 0, 
-                        right: 0, 
-                        paddingHorizontal: 20, 
-                        paddingTop: 20, 
-                        paddingBottom: Math.max(insets.bottom, 20),
-                        borderTopLeftRadius: 32,
-                        borderTopRightRadius: 32,
-                        backgroundColor: isDark ? 'rgba(30,30,30,0.8)' : 'rgba(255,255,255,0.9)',
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: -10 },
-                        shadowOpacity: 0.05,
-                        shadowRadius: 20,
-                        elevation: 20
-                    }}
-                >
-                    {isRevealed && (() => {
-                        const isCorrect = selectedAnswers[currentQIndex] === q.correct_answer;
-                        let rawExpl = isCorrect ? (q.explanation_right || q.explanation) : (q.explanation_wrong || q.explanation);
-                        let cleanExpl = rawExpl || `The correct answer is: ${q.correct_answer}.`;
+                {/* Navigation Footer */}
+                <View className="absolute bottom-0 left-0 right-0 p-5 bg-surface/90 pt-4 z-40 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]" style={{ paddingBottom: Math.max(insets.bottom, 20) }}>
+                    <View className="flex-row gap-3">
+                        <Pressable 
+                            disabled={currentQIndex === 0}
+                            onPress={() => {
+                                haptics.selectionAsync();
+                                setCurrentQIndex(p => p - 1);
+                                setIsRevealed(true); 
+                            }}
+                            className={`h-12 flex-1 rounded-full flex-row items-center justify-center bg-surface-container-low shadow-sm ${currentQIndex === 0 ? 'opacity-50' : ''}`}
+                        >
+                            <MaterialIcons name="arrow-back" size={18} color={C.text} style={{ marginRight: 4 }} />
+                            <Text className="font-[600] text-[14px] text-on-surface">Previous</Text>
+                        </Pressable>
                         
-                        if (!q.explanation_right && !q.explanation_wrong) {
-                            cleanExpl = cleanExpl.replace(/^(correct|perfect|yes|exactly|that is correct|right|spot on|exactly right|that's right|that's correct|you're right|exactly correct|spot on|correct answer|the correct answer is)[,!\.]?\s*/i, '');
-                            cleanExpl = cleanExpl.charAt(0).toUpperCase() + cleanExpl.slice(1);
-                        }
-
-                        return (
-                            <View style={{ marginBottom: 20 }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-                                    <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: isCorrect ? 'rgba(52,199,89,0.1)' : 'rgba(255,59,48,0.1)', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Lightbulb width={18} height={18} color={isCorrect ? '#34C759' : '#FF3B30'} />
-                                    </View>
-                                    <Text style={{ marginLeft: 10, fontSize: 18, fontWeight: '800', color: C.text }}>
-                                        {isCorrect ? 'Spot on!' : 'Not quite!'}
-                                    </Text>
-                                </View>
-                                <Text style={{ fontSize: 15, color: C.textSecondary, lineHeight: 22, fontWeight: '500' }}>
-                                    {cleanExpl}
-                                </Text>
-                            </View>
-                        );
-                    })()}
-
-                    <View style={{ width: '100%' }}>
-                        <AnimatedButton
-                            title={isTheory ? (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question') : (!isRevealed ? 'Check Answer' : (currentQIndex === questions.length - 1 ? 'Finish Quiz' : 'Next Question'))}
+                        <Pressable 
                             onPress={handleNextPress}
-                            disabled={!hasSelectedAction}
-                            loading={isSavingHistory}
-                            type="capsule"
-                            backgroundColor={hasSelectedAction ? '#007AFF' : (isDark ? '#2C2C2E' : '#E5E5EA')}
-                            shadowColor={hasSelectedAction ? '#0066D6' : (isDark ? '#1C1C1E' : '#D1D1D6')}
-                            fullWidth
-                        />
+                            disabled={!hasSelectedAction && !isRevealed}
+                            className={`h-12 flex-1 rounded-full flex-row items-center justify-center shadow-sm ${hasSelectedAction || isRevealed ? 'bg-[#007AFF]' : 'bg-surface-container-high'}`}
+                        >
+                            <Text className={`font-[600] text-[14px] mr-1 ${hasSelectedAction || isRevealed ? 'text-white' : 'text-on-surface-variant'}`}>
+                                {isTheory ? (currentQIndex === questions.length - 1 ? 'Finish' : 'Next') : (!isRevealed ? 'Check' : (currentQIndex === questions.length - 1 ? 'Finish' : 'Next'))}
+                            </Text>
+                            {(hasSelectedAction || isRevealed) && <MaterialIcons name="arrow-forward" size={18} color="white" />}
+                        </Pressable>
                     </View>
-                </BlurView>
+                </View>
             </View>
         );
     }
 
     // ── RESULTS VIEW ────────────────────────────────────────────────────────────
     const getRemark = (pct: number) => {
-        if (pct >= 90) return { title: "GENIUS!", subtitle: "You've completely mastered this topic!", icon: CupStar };
-        if (pct >= 75) return { title: "WELL DONE!", subtitle: "Excellent performance, keep it up!", icon: CheckCircle };
-        if (pct >= 50) return { title: "SOLID EFFORT!", subtitle: "Good job, but there's room to grow.", icon: InfoCircle };
-        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: Danger };
+        if (pct >= 90) return { title: "Excellent work", subtitle: "You have a strong grasp of this topic.", icon: CupStar };
+        if (pct >= 75) return { title: "Well done", subtitle: "A few more reviews will make this stick.", icon: CheckCircle };
+        if (pct >= 50) return { title: "Keep practicing", subtitle: "Review the missed questions, then try again.", icon: InfoCircle };
+        return { title: "Ready for another pass", subtitle: "Review the explanations and take your time.", icon: Danger };
     };
     const remark = getRemark(percentage);
 
     return (
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 280, paddingTop: insets.top + 20 }} showsVerticalScrollIndicator={false}>
-                {/* Score Header Glass Card */}
-                <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={s.resultsHeader}>
+                <View style={[s.resultsHeader, { backgroundColor: C.card, borderColor: C.separator }]}>
                     <View style={s.resultsIconBox}>
                         <remark.icon width={36} height={36} color={C.primary} />
                     </View>
@@ -1175,7 +1340,7 @@ export default function GenerateQuizScreen() {
                             </Text>
                         </View>
                     </View>
-                </BlurView>
+                </View>
 
                 {/* Review List */}
                 <Text style={s.sectionHeader}>Review Questions</Text>
@@ -1184,16 +1349,12 @@ export default function GenerateQuizScreen() {
                     const isCorrect = isTheory ? !!theoryResults[qi] : selectedAnswers[qi] === q.correct_answer;
                     const canExplain = !isTheory;
                     return (
-                        <TouchableOpacity
+                        <Pressable
                             key={qi}
-                            activeOpacity={canExplain ? 0.7 : 1}
+                            
                             onPress={() => canExplain && setExplanationQ({ q, qi, isCorrect })}
                         >
-                            <BlurView 
-                                intensity={10} 
-                                tint={isDark ? "dark" : "light"} 
-                                style={[s.reviewCard, isDark ? s.reviewCardDark : s.reviewCardLight]}
-                            >
+                            <View style={[s.reviewCard, { backgroundColor: C.card, borderColor: C.separator }]}>
                                 <View style={[s.reviewStatusBox, { backgroundColor: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }]}>
                                     {isCorrect ? (
                                         <CheckCircle width={18} height={18} color="#10b981" />
@@ -1210,8 +1371,8 @@ export default function GenerateQuizScreen() {
                                 {canExplain && (
                                     <AltArrowRight width={16} height={16} color={C.textTertiary} />
                                 )}
-                            </BlurView>
-                        </TouchableOpacity>
+                            </View>
+                        </Pressable>
                     );
                 })}
             </ScrollView>
@@ -1243,10 +1404,10 @@ export default function GenerateQuizScreen() {
             >
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
 
-                    <TouchableOpacity
+                    <Pressable
                         onPress={handleShare}
                         disabled={isSharing}
-                        activeOpacity={0.8}
+                        
                         style={[s.shareBtn, isDark ? s.shareBtnDark : s.shareBtnLight]}
                     >
                         {isSharing ? (
@@ -1257,12 +1418,12 @@ export default function GenerateQuizScreen() {
                                 <Text style={[s.actionBtnText, { color: C.text }]}>Share</Text>
                             </>
                         )}
-                    </TouchableOpacity>
+                    </Pressable>
 
-                    <TouchableOpacity
+                    <Pressable
                         onPress={handleExportPDF}
                         disabled={isExporting}
-                        activeOpacity={0.8}
+                        
                         style={[s.exportBtn, { backgroundColor: C.primary }]}
                     >
                         <View style={s.exportBtnContent}>
@@ -1275,7 +1436,7 @@ export default function GenerateQuizScreen() {
                                 </>
                             )}
                         </View>
-                    </TouchableOpacity>
+                    </Pressable>
                 </View>
 
                 {/* C3: Non-blocking history-save failure banner */}
@@ -1296,7 +1457,7 @@ export default function GenerateQuizScreen() {
                         <Text style={{ flex: 1, fontSize: 13, fontWeight: '500', color: isDark ? '#fcd34d' : '#92400e', lineHeight: 20 }}>
                             Quiz completed, but we couldn’t save it to your history. Your results won’t appear in Study History.
                         </Text>
-                        <TouchableOpacity
+                        <Pressable
                             onPress={saveHistory}
                             disabled={isSavingHistory}
                             style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#f59e0b', borderRadius: 10 }}
@@ -1304,7 +1465,7 @@ export default function GenerateQuizScreen() {
                             <Text style={{ color: 'white', fontWeight: '700', fontSize: 12 }}>
                                 {isSavingHistory ? '...' : 'Retry'}
                             </Text>
-                        </TouchableOpacity>
+                        </Pressable>
                     </View>
                 )}
 
@@ -1462,13 +1623,13 @@ export default function GenerateQuizScreen() {
                         </ScrollView>
 
                         {/* Close */}
-                        <TouchableOpacity
+                        <Pressable
                             onPress={() => setExplanationQ(null)}
-                            activeOpacity={0.8}
+                            
                             style={[s.sheetCloseBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7' }]}
                         >
                             <Text style={[s.sheetCloseBtnText, { color: C.text }]}>Close</Text>
-                        </TouchableOpacity>
+                        </Pressable>
                     </View>
                 </View>
             </Modal>
@@ -1542,15 +1703,15 @@ const s = StyleSheet.create({
     quizNumText: { fontWeight: '600', fontSize: 13 },
     quizProgressLabel: { color: '#94a3b8', fontWeight: '700', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 },
     // Results View
-    resultsHeader: { borderRadius: 32, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(60,60,67,0.12)', padding: 32, alignItems: 'center', marginBottom: 32 },
+    resultsHeader: { borderRadius: 20, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, padding: 24, alignItems: 'center', marginBottom: 28 },
     resultsIconBox: { width: 80, height: 80, backgroundColor: 'rgba(0,122,255,0.12)', borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 1, borderColor: 'rgba(0,122,255,0.15)' },
-    resultsTitle: { fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 },
-    scoreValue: { fontSize: 48, fontWeight: '900', letterSpacing: -2 },
-    resultsSubtitle: { color: '#64748b', fontWeight: '500', fontSize: 14, marginTop: 8, textAlign: 'center', paddingHorizontal: 16, lineHeight: 20 },
+    resultsTitle: { fontWeight: '600', fontSize: 15, marginBottom: 6 },
+    scoreValue: { fontSize: 46, fontWeight: '700', letterSpacing: -1.5 },
+    resultsSubtitle: { color: '#6D6D72', fontWeight: '400', fontSize: 15, marginTop: 8, textAlign: 'center', paddingHorizontal: 16, lineHeight: 20 },
     resultsMeta: { flexDirection: 'row', marginTop: 32, gap: 12, width: '100%' },
     metaCard: { flex: 1, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
     metaText: { fontWeight: '700', fontSize: 12, marginLeft: 8 },
-    reviewCard: { padding: 16, borderRadius: 20, borderWidth: 1, marginBottom: 12, overflow: 'hidden', flexDirection: 'row', alignItems: 'center' },
+    reviewCard: { padding: 16, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, marginBottom: 10, overflow: 'hidden', flexDirection: 'row', alignItems: 'center' },
     reviewCardDark: { borderColor: 'rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.05)' },
     reviewCardLight: { backgroundColor: '#fff', borderColor: '#F1F5F9' },
     reviewStatusBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 16 },

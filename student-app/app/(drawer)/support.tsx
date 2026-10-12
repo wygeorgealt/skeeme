@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, useColorScheme, StyleSheet, ScrollView, Alert, Image } from 'react-native';
+import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, ScrollView, Alert, Image } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -18,6 +19,7 @@ import Letter from '@/assets/icons/pikaicons/envelope-default.svg';
 
 import { Text } from '@/components/ui/Text';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+import { GlassSurface } from '@/components/liquid-glass/GlassSurface';
 
 export default function SupportScreen() {
     const router = useRouter();
@@ -134,7 +136,8 @@ export default function SupportScreen() {
                     </Text>
                 </Animated.View>
 
-                <Animated.View key={`card-${animKey}`} entering={FadeInDown.delay(160).duration(400)} style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
+                <Animated.View key={`card-${animKey}`} entering={FadeInDown.delay(160).duration(400)}>
+                    <GlassSurface padding={20} intensity={30} style={s.card}>
                     <TextInput
                         style={[
                             s.textArea,
@@ -188,6 +191,7 @@ export default function SupportScreen() {
                             fullWidth
                         />
                     </View>
+                    </GlassSurface>
                 </Animated.View>
             </ScrollView>
         </KeyboardAvoidingView>

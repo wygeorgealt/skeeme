@@ -9,6 +9,7 @@ import { QueryProvider } from '@/components/QueryProvider';
 import { useStudent } from '@/hooks/useStudent';
 import { View, useColorScheme as useNativeColorScheme, LogBox, TouchableOpacity, TextStyle, Platform, AppState, Appearance } from 'react-native';
 import { cssInterop, useColorScheme as useTailwindColorScheme } from 'nativewind';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 // React Native 0.86 Appearance.setColorScheme Android compatibility fix:
 // On Android, the native AppearanceModule.setColorScheme method requires a non-null string.
@@ -34,7 +35,7 @@ import DangerTriangle from '@/assets/icons/pikaicons/troubleshoot.svg';
 import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
 import { initializeMonetization } from '@/lib/monetization';
 import * as Application from 'expo-application';
-import { apiStandard } from '@/lib/api';
+import { api, apiStandard } from '@/lib/api';
 
 
 
@@ -153,11 +154,13 @@ export default function RootLayout() {
     }
   }, [segments]);
 
-  const storeTheme = useAuthStore((state) => state.theme);
+  const storeTheme = useAuthStore((s) => s.theme);
+  const effectiveScheme = useColorScheme();
+  const isDark = effectiveScheme === 'dark';
 
   useEffect(() => {
     try {
-      setTailwindScheme(storeTheme || 'system');
+      setTailwindScheme(storeTheme);
     } catch (e) {
       if (__DEV__) console.warn('[Theme] setTailwindScheme error:', e);
     }
@@ -165,7 +168,7 @@ export default function RootLayout() {
 
   // IMPORTANT: These must EXACTLY match Colors.light.background / Colors.dark.background
   // in constants/theme.ts — any mismatch creates a visible color strip behind the status bar.
-  const rootBg = tailwindScheme === 'dark' ? '#0D0D0D' : '#F0F2F7';
+  const rootBg = isDark ? '#0D0D0D' : '#F2F2F7';
 
   // Force-update check (only once auth is hydrated)
   useEffect(() => {
@@ -219,10 +222,11 @@ export default function RootLayout() {
           <PostHogProvider client={posthog}>
             <QueryProvider>
             <PollingSync user={user} />
+            <ServiceHealthMonitor userId={user?.id ?? null} />
             <ThemeProvider value={{
-              ...(tailwindScheme === 'dark' ? DarkTheme : DefaultTheme),
+              ...(isDark ? DarkTheme : DefaultTheme),
               colors: {
-                ...(tailwindScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+                ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
                 background: 'transparent',
                 card: 'transparent',
               }
@@ -237,7 +241,7 @@ export default function RootLayout() {
 
               <NetworkStatus />
 
-              <Stack screenOptions={{ headerShown: false, headerTransparent: true, statusBarTranslucent: true, contentStyle: { backgroundColor: 'transparent' } }}>
+              <Stack screenOptions={{ headerShown: false, headerTransparent: true, statusBarTranslucent: true, contentStyle: { backgroundColor: rootBg } }}>
                 <Stack.Screen name="(onboarding)" options={{ headerShown: false, animation: 'fade' }} />
                 <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
                 <Stack.Screen name="signup" options={{ headerShown: false, animation: 'fade' }} />
@@ -341,7 +345,7 @@ export default function RootLayout() {
               <StreakRewardModalWrapper />
               <EnjoyReviewModalWrapper />
 
-              <StatusBar style={tailwindScheme === 'dark' ? 'light' : 'dark'} />
+              <StatusBar style={isDark ? 'light' : 'dark'} />
             </ThemeProvider>
           </QueryProvider>
         </PostHogProvider>
@@ -352,8 +356,8 @@ export default function RootLayout() {
 }
 
 // Polling component that syncs user data and runs inside QueryProvider context
-function PollingSync({ user }: { user: any }) {
-  const studentQuery = useStudent();
+function PollingSync({ user }: { user: { id: number } | null }) {
+  const { refetch } = useStudent();
 
   useEffect(() => {
     if (!user) return;
@@ -361,24 +365,46 @@ function PollingSync({ user }: { user: any }) {
     // 1. Listen for AppState changes (Sync instantly when app returns to foreground)
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
-        studentQuery.refetch();
+        refetch();
       }
     });
 
     // 2. Poll every 30 seconds to keep limits/credits synced dynamically
     const interval = setInterval(() => {
-      studentQuery.refetch();
+      refetch();
     }, 30000);
 
     // Initial check on mount
-    studentQuery.refetch();
+    refetch();
 
     return () => {
       subscription.remove();
       clearInterval(interval);
     };
-  }, [user?.id, studentQuery]);
+  }, [user?.id, refetch]);
 
+  return null;
+}
+
+function ServiceHealthMonitor({ userId }: { userId: number | null }) {
+  const connectionState = useAuthStore((state) => state.connectionState);
+  const setConnectionState = useAuthStore((state) => state.setConnectionState);
+
+  useEffect(() => {
+    if (!userId || connectionState === 'offline') return;
+    let cancelled = false;
+    const probe = async () => {
+      try {
+        await api.get('system/app-version', { timeout: 5000, skipGlobalError: true } as any);
+        if (!cancelled) setConnectionState('online');
+      } catch {
+        // The API interceptor distinguishes an offline device from an unavailable server.
+      }
+    };
+    probe();
+    const subscription = AppState.addEventListener('change', (state) => { if (state === 'active') probe(); });
+    return () => { cancelled = true; subscription.remove(); };
+  }, [userId, connectionState, setConnectionState]);
   return null;
 }
 
@@ -409,13 +435,29 @@ function CooldownModalWrapper() {
 
 function GlobalErrorModalWrapper() {
   const { globalError, setGlobalError } = useAuthStore();
+  const [retrying, setRetrying] = useState(false);
   const GlobalErrorModal = require('@/components/GlobalErrorModal').default;
+
+  const retry = async () => {
+    setRetrying(true);
+    try {
+      await api.get('system/app-version', { timeout: 5000, skipGlobalError: true } as any);
+      useAuthStore.getState().setConnectionState('online');
+      setGlobalError(null);
+    } catch {
+      // The modal stays open with the current friendly message.
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   return (
     <GlobalErrorModal
       visible={globalError !== null}
       error={globalError}
       onDismiss={() => setGlobalError(null)}
+      onRetry={retry}
+      retrying={retrying}
     />
   );
 }

@@ -2,6 +2,7 @@ import { Text } from '@/components/ui/Text';
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, useColorScheme } from 'react-native';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 interface CreditSummary {
     current_credits: number;
@@ -28,17 +29,22 @@ export default function CreditStatusBar({ activeAction, onSummaryLoaded, refresh
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const [summary, setSummary] = useState<CreditSummary | null>(null);
-    const { pricingConfig } = require('@/store/authStore').useAuthStore();
+    const pricingConfig = useAuthStore((state) => state.pricingConfig);
+    const updateUser = useAuthStore((state) => state.updateUser);
 
     const fetchSummary = useCallback(async () => {
         try {
             const res = await api.get('credits/summary');
-            setSummary(res.data);
-            onSummaryLoaded?.(res.data);
+            const nextSummary = (res.data?.data ?? res.data) as CreditSummary;
+            setSummary(nextSummary);
+            // Keep every credit display in sync immediately, rather than waiting
+            // for the next background account refresh.
+            updateUser({ credits: nextSummary.current_credits, plan_name: nextSummary.plan });
+            onSummaryLoaded?.(nextSummary);
         } catch {
             // Silently fail — don't block the user
         }
-    }, [onSummaryLoaded]);
+    }, [onSummaryLoaded, updateUser]);
 
     useEffect(() => {
         fetchSummary();
@@ -93,7 +99,7 @@ export default function CreditStatusBar({ activeAction, onSummaryLoaded, refresh
     const planTier = summary.plan === 'free' ? 'free' : 'paid';
     
     const getRate = (rateKey: string, defaultVal: number): number => {
-        const val = rates[rateKey];
+        const val = (rates as Record<string, any>)[rateKey];
         if (typeof val === 'object' && val !== null) {
             return (val as any)[planTier] ?? defaultVal;
         }

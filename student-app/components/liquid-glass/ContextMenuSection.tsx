@@ -1,0 +1,2 @@
+import { Alert } from 'react-native'; import { GlassButton } from './GlassButton';
+export function ContextMenuSection({ onSave }: { onSave: () => void }) { return <GlassButton label="Save" icon="bookmark-outline" variant="text" onPress={() => Alert.alert('Study content', 'Save this content, add it to revision, or create flashcards?', [{ text: 'Save', onPress: onSave }, { text: 'Create flashcards', onPress: onSave }, { text: 'Cancel', style: 'cancel' }])} compact />; }

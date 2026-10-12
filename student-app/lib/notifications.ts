@@ -91,7 +91,9 @@ export async function registerForPushNotificationsAsync(authToken?: string | nul
                 }
             }
         } catch (e) {
-            if (__DEV__) console.error('Push Token Error:', e);
+            // Expo Go does not support remote notifications in current SDKs.
+            // Ignore registration failures; a development/production build syncs it.
+            if (__DEV__) console.warn('Push notifications are unavailable in this build.');
         }
     } else {
         if (__DEV__) console.log('Must use physical device for Push Notifications');

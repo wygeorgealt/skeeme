@@ -1,4 +1,5 @@
-import { View, ScrollView, TouchableOpacity, useColorScheme, StyleSheet, Platform, Modal, TextInput, Alert, Switch } from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, Platform, Modal, TextInput, Alert, Switch } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Image } from 'expo-image';
 import { useAuthStore } from '@/store/authStore';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -21,7 +22,7 @@ import BookmarkDefault from '@/assets/icons/pikaicons/bookmark-default.svg';
 import File02Default from '@/assets/icons/pikaicons/file-02-default.svg';
 import Troubleshoot from '@/assets/icons/pikaicons/troubleshoot.svg';
 
-// ─── Settings Row Component ─────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Settings Row Component ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function SettingsRow({
     iconSource, iconBg, label, value, onPress, isLast = false, isDark, destructive = false,
     hasSwitch = false, switchValue = false, onSwitch = () => {}
@@ -60,7 +61,7 @@ function SettingsRow({
     );
 }
 
-// ─── GroupedCard Component ───────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ GroupedCard Component ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function GroupedCard({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
     const C = Colors[isDark ? 'dark' : 'light'];
     return (
@@ -72,7 +73,7 @@ function GroupedCard({ children, isDark }: { children: React.ReactNode; isDark: 
     );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Styles ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const s = StyleSheet.create({
     scroll: { paddingHorizontal: 20 },
     
@@ -126,7 +127,7 @@ export default function AccountScreen() {
     const prefs = user.ai_preferences;
     const toneStr = prefs?.tone ? prefs.tone.charAt(0).toUpperCase() + prefs.tone.slice(1) : 'Supportive';
     const goalStr = prefs?.academic_goal === 'exam' ? 'Exam Prep' : (prefs?.academic_goal === 'cheat' ? 'Cheat Sheet' : 'Deep Dive');
-    const prefSummary = `${toneStr} • ${goalStr}`;
+    const prefSummary = `${toneStr} ΓÇó ${goalStr}`;
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
@@ -135,7 +136,7 @@ export default function AccountScreen() {
             </Animated.View>
 
             <ScrollView contentContainerStyle={[s.scroll, { paddingTop: 10, paddingBottom: 150 }]} showsVerticalScrollIndicator={false}>
-                {/* ── Header ── */}
+                {/* ΓöÇΓöÇ Header ΓöÇΓöÇ */}
                 <Animated.View entering={FadeInDown.duration(400).delay(100)} style={s.headerWrap}>
                     <View style={s.headerLeft}>
                         <View style={[s.avatarOuter, { backgroundColor: C.primary + '20' }]}>
@@ -146,18 +147,9 @@ export default function AccountScreen() {
                         </View>
                     </View>
 
-                    <View style={s.headerRight}>
-                        <TouchableOpacity
-                            onPress={() => router.push('/(drawer)/settings' as any)}
-                            style={[s.iconBtn, {alignItems: 'center', justifyContent: 'center'}]}
-                            activeOpacity={0.7}
-                        >
-                            <Settings01 width={24} height={24} color={C.text} />
-                        </TouchableOpacity>
-                    </View>
                 </Animated.View>
 
-                {/* ── Credit Balance Banner ── */}
+                {/* ΓöÇΓöÇ Credit Balance Banner ΓöÇΓöÇ */}
                 <Animated.View entering={FadeInDown.duration(400).delay(200)}>
                     <TouchableOpacity 
                         activeOpacity={0.9} 
@@ -178,7 +170,7 @@ export default function AccountScreen() {
                     </TouchableOpacity>
                 </Animated.View>
 
-                {/* ── Grid Region ── */}
+                {/* ΓöÇΓöÇ Grid Region ΓöÇΓöÇ */}
                 <Animated.View entering={FadeInDown.duration(400).delay(300)} style={s.gridContainer}>
                     <TouchableOpacity 
                         style={[s.gridItem, { backgroundColor: isDark ? C.card : '#FFF0F0' }]}

@@ -1,4 +1,8 @@
 {
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
+  },
   "hosting": {
     "public": "public",
     "ignore": [
@@ -18,6 +22,10 @@
       }
     ],
     "rewrites": [
+      {
+        "source": "/send-contact",
+        "function": "sendContact"
+      },
       {
         "source": "**",
         "destination": "/index.html"

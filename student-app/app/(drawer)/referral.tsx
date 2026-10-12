@@ -1,6 +1,7 @@
 import { Text } from '@/components/ui/Text';
 import { useFocusEffect } from 'expo-router';
-import { View, ScrollView, TouchableOpacity, useColorScheme, StyleSheet, Share } from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, Share } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Stack } from 'expo-router';

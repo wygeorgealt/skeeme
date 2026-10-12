@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Platform } from 'react-native';
+import { Platform, Appearance } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as FileSystem from 'expo-file-system/legacy';
 
@@ -49,6 +49,8 @@ interface AuthState {
     // Global Error
     globalError: string | null;
     setGlobalError: (error: string | null) => void;
+    connectionState: 'online' | 'offline' | 'serverDown';
+    setConnectionState: (state: 'online' | 'offline' | 'serverDown') => void;
     notificationsEnabled: boolean;
     setNotificationsEnabled: (enabled: boolean) => Promise<void>;
     // App Reviews
@@ -133,11 +135,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     streakRewardData: null,
     hapticsEnabled: true,
     globalError: null,
+    connectionState: 'online',
     notificationsEnabled: true,
     shouldAskForReview: false,
     showEnjoyReviewModal: false,
 
-    setGlobalError: (error) => set({ globalError: error }),
+    // A backend outage can fail several requests at once. Keep the first modal in
+    // place until the learner dismisses it instead of repeatedly replacing it.
+    setGlobalError: (error) => set((state) => state.globalError && error ? state : { globalError: error }),
+    setConnectionState: (connectionState) => set({ connectionState }),
     setShouldAskForReview: (ask) => set({ shouldAskForReview: ask }),
     toggleEnjoyReviewModal: (show) => set({ showEnjoyReviewModal: show }),
 
@@ -320,6 +326,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                      await secureStorage.deleteItem('app_theme');
                  }
             }
+            try {
+                                const themeToApply = themeStr || 'system';
+                if (themeToApply === 'system') {
+                    Appearance.setColorScheme((Platform.OS === 'android' ? 'unspecified' : null) as any);
+                } else {
+                    Appearance.setColorScheme(themeToApply);
+                }
+            } catch (e) { /* ignore */ }
 
             if (token && userStr) {
                 const haptics = await standardStorage.getItem('haptics_enabled');
@@ -422,6 +436,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ theme });
         try {
             await standardStorage.setItem('app_theme', theme);
+                        if (theme === 'system') {
+                Appearance.setColorScheme((Platform.OS === 'android' ? 'unspecified' : null) as any);
+            } else {
+                Appearance.setColorScheme(theme);
+            }
         } catch (e) {
             if (__DEV__) console.error('Failed to save theme state', e);
         }

@@ -1,5 +1,6 @@
 import { Text } from '@/components/ui/Text';
-import { View, ScrollView, TouchableOpacity, useColorScheme, Platform, Alert, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Platform, Alert, StyleSheet } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -194,13 +195,6 @@ export default function QuizHistoryDetailScreen() {
     const [cachedSession, setCachedSession] = useState<QuizSessionDetail | null>(null);
     const viewShotRef = useRef<View>(null);
     const insets = useSafeAreaInsets();
-
-    useEffect(() => {
-        // History detail is a paid feature. Free users should be redirected to the paywall.
-        if (user?.plan_name === 'free') {
-            router.replace('/paywall');
-        }
-    }, [user?.plan_name]);
 
     // Hydrate cache on mount
     useEffect(() => {

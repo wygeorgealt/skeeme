@@ -1,17 +1,17 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect, memo, useMemo, useCallback } from 'react';
-import { View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, useColorScheme, StyleSheet, Platform, LayoutAnimation, Alert, ActivityIndicator } from 'react-native';
+import { Pressable, View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, StyleSheet, Platform, LayoutAnimation, Alert, ActivityIndicator } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { StatusBar } from 'expo-status-bar';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Colors } from '@/constants/theme';
-import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
 import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
 import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
 import DangerTriangle from '@/assets/icons/pikaicons/troubleshoot.svg';
-import LightbulbBolt from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import { Ionicons } from '@expo/vector-icons';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import Troubleshoot from '@/assets/icons/pikaicons/troubleshoot.svg';
@@ -30,10 +30,16 @@ import Animated, {
     Easing,
     withRepeat,
     FadeIn,
-    ZoomIn
+    ZoomIn,
+    withSequence
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
+
+import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FlashcardDeckSummary } from '@/components/flashcards/FlashcardDeckSummary';
+
 import { Flashcard as Card, FlashcardDeck } from '@/types';
 import { StreakAnimation } from '@/components/StreakAnimation';
 import { markGenerationSuccess } from '@/lib/storeReview';
@@ -78,6 +84,21 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
     const flipAnim = useSharedValue(0);
     const scaleAnim = useSharedValue(1);
     const [flipped, setFlipped] = useState(false);
+    
+    const bounceAnim = useSharedValue(0);
+    useEffect(() => {
+        bounceAnim.value = withRepeat(
+            withSequence(
+                withTiming(-4, { duration: 500, easing: Easing.out(Easing.ease) }),
+                withTiming(0, { duration: 500, easing: Easing.in(Easing.ease) })
+            ),
+            -1,
+            true
+        );
+    }, []);
+    const bounceStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: bounceAnim.value }]
+    }));
 
     useEffect(() => {
         flipAnim.value = 0;
@@ -115,54 +136,91 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
         };
     });
 
-    const CardSide = ({ type, text, footer, rotateY }: any) => {
-        const showLoading = isGenerating && !text;
-        return (
-            <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderRadius: 24, padding: 32, justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 8, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent' }}>
-                <View style={{ position: 'absolute', top: 24, left: 24, right: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 1 }}>{type}</Text>
-                    {type === 'QUESTION' ? <LightbulbBolt width={20} height={20} color="#007AFF" /> : <CheckCircle width={20} height={20} color="#34C759" />}
-                </View>
-
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    {showLoading ? (
-                        <View style={{ alignItems: 'center' }}>
-                            <ActivityIndicator size="large" color="#007AFF" />
-                            <Text style={{ marginTop: 14, fontSize: 16, color: isDark ? '#FFFFFF' : '#1E293B', textAlign: 'center', maxWidth: 260 }}>Generating card...</Text>
-                        </View>
-                    ) : (
-                        <MathText
-                            content={text}
-                            color={isDark ? '#FFF' : '#000'}
-                            fontSize={type === 'QUESTION' ? 22 : 18}
-                            containerStyle={{ width: '100%' }}
-                        />
-                    )}
-                </View>
-
-                <View style={{ position: 'absolute', bottom: 24, left: 0, right: 0, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#C7C7CC', textTransform: 'uppercase', letterSpacing: 1.5 }}>{footer}</Text>
-                </View>
-            </View>
-        );
-    };
+    const showLoading = isGenerating && !card.front;
 
     return (
-        <View style={s.cardContainer}>
-            <TouchableOpacity activeOpacity={1} onPress={handleFlip} style={s.flex1}>
-                <Animated.View style={frontAnimatedStyle}>
-                    <CardSide type="QUESTION" text={card.front} footer="Tap to reveal answer" />
+        <View style={{ height: 400, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Layers behind active card */}
+            <View style={{ position: 'absolute', width: '86%', height: 350, backgroundColor: isDark ? '#2A2A2D' : '#e9e7ed', borderRadius: 28, transform: [{ translateY: 28 }, { scale: 0.90 }], opacity: 0.5 }} />
+            <View style={{ position: 'absolute', width: '93%', height: 368, backgroundColor: isDark ? '#3A3A3E' : '#eeedf3', borderRadius: 30, transform: [{ translateY: 14 }, { scale: 0.95 }], opacity: 0.8 }} />
+
+            <Pressable  onPress={handleFlip} style={{ flex: 1, width: '100%' }}>
+                {/* FRONT FACE */}
+                <Animated.View style={[frontAnimatedStyle, { flex: 1 }]}>
+                    <View className="flex-1 rounded-[32px] p-6 justify-between shadow-xl" style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderWidth: StyleSheet.hairlineWidth, borderColor: isDark ? 'rgba(84,84,88,0.5)' : 'rgba(60,60,67,0.12)' }}>
+                        {/* Top Metadata */}
+                        <View className="flex-row items-center justify-between">
+                            <View className="px-2 py-1 rounded-full bg-surface-container">
+                                <Text className="text-on-surface-variant font-label-sm" style={{ fontSize: 11, fontWeight: '700' }}>Medium</Text>
+                            </View>
+                        </View>
+
+                        {/* Center Content */}
+                        <View className="flex-1 justify-center items-center">
+                            {showLoading ? (
+                                <View className="items-center">
+                                    <ActivityIndicator size="large" color="#007AFF" />
+                                    <Text className="mt-4 text-center" style={{ fontSize: 16, color: isDark ? '#FFFFFF' : '#1E293B' }}>Generating card...</Text>
+                                </View>
+                            ) : (
+                                <MathText
+                                    content={card.front}
+                                    color={isDark ? '#FFF' : '#000'}
+                                    fontSize={22}
+                                    containerStyle={{ width: '100%', textAlign: 'center' }}
+                                />
+                            )}
+                        </View>
+
+                        {/* Bottom Prompt */}
+                        <View className="flex-col gap-2 items-center pb-2">
+                            <Animated.View style={bounceStyle} className="flex-row items-center py-1.5 px-3 rounded-full bg-surface-container-low gap-1.5">
+                                <MaterialIcons name="touch-app" size={18} color="#007AFF" />
+                                <Text className="font-label-sm" style={{ fontSize: 11, fontWeight: '600', color: isDark ? '#EBEBF5' : '#48484A' }}>Tap anywhere to flip card</Text>
+                            </Animated.View>
+                        </View>
+                    </View>
                 </Animated.View>
 
-                <Animated.View style={backAnimatedStyle}>
-                    <CardSide type="ANSWER" text={card.back} footer="Tap to view question" />
+                {/* BACK FACE */}
+                <Animated.View style={[backAnimatedStyle, { flex: 1 }]}>
+                    <View className="flex-1 rounded-[32px] p-6 justify-between shadow-xl" style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderWidth: StyleSheet.hairlineWidth, borderColor: isDark ? 'rgba(84,84,88,0.5)' : 'rgba(60,60,67,0.12)' }}>
+                        {/* Top Back Tag */}
+                        <View className="flex-row items-center justify-between">
+                            <View className="px-2.5 py-1 rounded-full bg-tertiary flex-row items-center gap-1">
+                                <MaterialIcons name="check-circle" size={14} color="#FFF" />
+                                <Text className="text-on-tertiary font-label-sm" style={{ fontSize: 11, fontWeight: '700', color: '#FFF' }}>Verified Solution</Text>
+                            </View>
+                            <View className="h-8 px-3 rounded-full bg-surface-container flex-row items-center gap-1 justify-center">
+                                <MaterialIcons name="undo" size={15} color={isDark ? '#EBEBF5' : '#48484A'} />
+                                <Text className="text-on-surface-variant font-label-sm" style={{ fontSize: 11, fontWeight: '600' }}>Question</Text>
+                            </View>
+                        </View>
+
+                        {/* Center Content */}
+                        <View className="flex-1 justify-center items-center">
+                            {showLoading ? (
+                                <View className="items-center">
+                                    <ActivityIndicator size="large" color="#34C759" />
+                                </View>
+                            ) : (
+                                <MathText
+                                    content={card.back}
+                                    color={isDark ? '#FFF' : '#000'}
+                                    fontSize={18}
+                                    containerStyle={{ width: '100%', textAlign: 'center' }}
+                                />
+                            )}
+                        </View>
+                    </View>
                 </Animated.View>
-            </TouchableOpacity>
+            </Pressable>
         </View>
     );
 });
 
 FlashcardItem.displayName = 'FlashcardItem';
+
 
 export default function StudyDeckScreen() {
     const { id, autoStart, topic, card_count, difficulty } = useLocalSearchParams();
@@ -184,8 +242,34 @@ export default function StudyDeckScreen() {
     const [rewardMessage, setRewardMessage] = useState('');
     const [showMilestone, setShowMilestone] = useState(false);
 
+    
     const [isSavingOffline, setIsSavingOffline] = useState(false);
     const [isOfflineSaved, setIsOfflineSaved] = useState(false);
+    
+    // NEW STATES
+    const insets = useSafeAreaInsets();
+    const [ratings, setRatings] = useState({ easy: 0, good: 0, hard: 0, again: 0 });
+    const [sessionStartTime] = useState(Date.now());
+    const [isFlagged, setIsFlagged] = useState(false);
+    
+    const pulseAnim = useSharedValue(1);
+    useEffect(() => {
+        pulseAnim.value = withRepeat(
+            withSequence(
+                withTiming(0.5, { duration: 800 }),
+                withTiming(1, { duration: 800 })
+            ),
+            -1,
+            true
+        );
+    }, []);
+    const pulseStyle = useAnimatedStyle(() => ({ opacity: pulseAnim.value }));
+    
+    const handleRating = (ratingType: 'again' | 'hard' | 'good' | 'easy') => {
+        setRatings(prev => ({ ...prev, [ratingType]: prev[ratingType] + 1 }));
+        nextCard();
+    };
+
 
 
     const { data: remoteDeck, isLoading, error, refetch } = useQuery({
@@ -209,14 +293,6 @@ export default function StudyDeckScreen() {
     }, [deck?.flashcards, streamingCards]);
 
     const totalCards = parseInt(card_count as string) || 0;
-    const maxVisibleDots = 15;
-    const visibleDotCount = Math.min(cards.length, maxVisibleDots);
-    const dotWindowStart = cards.length > visibleDotCount
-        ? Math.min(Math.max(0, currentIndex - Math.floor(visibleDotCount / 2)), cards.length - visibleDotCount)
-        : 0;
-    const visibleDotIndexes = Array.from({ length: visibleDotCount }, (_, idx) => dotWindowStart + idx);
-    const activeDotIndex = currentIndex - dotWindowStart;
-    
     // Decode title if it's URL-encoded
     const decodedTitle = deck?.title 
         ? decodeURIComponent(deck.title).replace(/\.pdf$|\.docx?$|\.txt$|\.md$/i, '')
@@ -583,82 +659,26 @@ export default function StudyDeckScreen() {
             );
         }
 
+        
+        const totalTimeSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const minutes = Math.floor(totalTimeSeconds / 60);
+        const seconds = totalTimeSeconds % 60;
+        const timeSpent = `${minutes}m ${seconds}s`;
+
         return (
-
-            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-                <View style={s.successCenter}>
-                    <Animated.View entering={ZoomIn.duration(800)}>
-                        <View style={s.successIconBox}>
-                            <View style={[s.successIconGradient, { backgroundColor: '#34C759' }]}>
-                                <AnimatedIcon size={48} animationType="pop">
-                                    <CheckTickCircle width={40} height={40} color="#34C759" />
-                                </AnimatedIcon>
-                            </View>
-                        </View>
-                    </Animated.View>
-
-                    <Animated.View entering={FadeIn.delay(300).duration(600)}>
-                        <Text style={[s.successTitle, isDark ? s.textWhite : s.textSlate900]}><CheckTickCircle width={24} height={24} color="#34C759" /> Good Job!</Text>
-                        <Text style={s.successSubtitle}>{rewardMessage || "You&apos;ve mastered all " + deck.flashcards.length + " cards in this set. Great job!"}</Text>
-                    </Animated.View>
-
-                    <Animated.View entering={FadeIn.delay(600).duration(600)} style={s.successActions}>
-                        <View style={s.flex1}>
-                            <AnimatedButton
-                                title="Retake"
-                                onPress={restartSession}
-                                type="capsule"
-                                backgroundColor={isDark ? 'rgba(255,255,255,0.05)' : 'white'}
-                                style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', borderWidth: 2 }}
-                                textColor={isDark ? 'white' : '#0f172a'}
-                                fullWidth
-                            />
-                        </View>
-                        <View style={s.flex1}>
-                            <AnimatedButton
-                                title={isSavingOffline ? 'Saving…' : isOfflineSaved ? 'Saved for offline' : 'Save for offline'}
-                                onPress={async () => {
-                                    if (isSavingOffline || isOfflineSaved || !cardsForOffline.length) return;
-                                    setIsSavingOffline(true);
-                                    try {
-                                        const decoded = deck?.title
-                                            ? decodeURIComponent(Array.isArray(deck.title) ? deck.title[0] : deck.title)
-                                            : (Array.isArray(topic) ? topic[0] : topic) || 'Flashcards';
-                                        await saveOfflineDeck({
-                                            id: deck?.id?.toString?.() ?? id?.toString?.() ?? `deck_${Date.now().toString()}`,
-                                            title: decoded,
-                                            cards: cardsForOffline,
-                                        });
-                                        setIsOfflineSaved(true);
-                                        haptics.notificationAsync('success' as any);
-                                    } catch {
-                                        Alert.alert('Save Failed', 'Could not save this deck for offline use.');
-                                    } finally {
-                                        setIsSavingOffline(false);
-                                    }
-                                }}
-                                type="capsule"
-                                backgroundColor={isSavingOffline || isOfflineSaved ? (isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7') : '#007AFF'}
-                                shadowColor={isSavingOffline || isOfflineSaved ? 'transparent' : '#0066D6'}
-                                loading={isSavingOffline}
-                                fullWidth
-                            />
-                        </View>
-
-                        <View style={s.flex1}>
-                            <AnimatedButton
-                                title="Finish"
-                                onPress={() => router.back()}
-                                type="capsule"
-                                backgroundColor="#007AFF"
-                                shadowColor="#0066D6"
-                                fullWidth
-                            />
-                        </View>
-                    </Animated.View>
-                </View>
-            </View>
+            <FlashcardDeckSummary
+                deckTitle={decodedTitle || 'Study Deck'}
+                subject="General"
+                totalCards={deck.flashcards.length}
+                ratings={ratings}
+                sessionDurationMs={totalTimeSeconds * 1000}
+                streakCount={useAuthStore.getState().user?.streak?.current_streak || 0}
+                onFinish={() => router.back()}
+                onRetake={restartSession}
+                onPracticeQuiz={() => router.push('/(drawer)/generate')}
+            />
         );
+    
 
     }
 
@@ -669,22 +689,38 @@ export default function StudyDeckScreen() {
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
             {/* Header */}
-            <View style={[s.headerRow, { paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={[s.backBtn, isDark ? s.bgWhite10 : s.bgWhite60]}>
-                    <AltArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
-                </TouchableOpacity>
-                <View style={s.headerTextContainer}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                        {cardCounterDisplay}
-                    </Text>
-                    <Text style={[s.headerTitle, isDark ? s.textWhite : s.textSlate900, { maxWidth: SCREEN_WIDTH * 0.65, marginTop: 4 }]} numberOfLines={1}>
-                        {headerTitle}
-                    </Text>
-                    {isGenerating && (
-                        <Text style={{ fontSize: 10, color: '#007AFF', fontWeight: '700', marginTop: 4 }}>{genStage}</Text>
-                    )}
+            <View style={{ paddingTop: insets.top }} className="w-full bg-surface/80">
+                <View className="h-16 px-4 flex-row items-center justify-between">
+                    <Pressable onPress={() => router.back()} className="w-11 h-11 items-center justify-center rounded-full">
+                        <MaterialIcons name="arrow-back-ios-new" size={24} color="#007AFF" />
+                    </Pressable>
+                    <View className="flex-col items-center justify-center flex-1 px-2" />
+                    <Pressable className="w-11 h-11 items-center justify-center rounded-full">
+                        <MaterialIcons name="bookmark" size={24} color={isDark ? '#EBEBF5' : '#48484A'} />
+                    </Pressable>
                 </View>
-                <View style={s.size10} />
+            </View>
+
+            {/* Progress Section */}
+            <View className="flex-col w-full px-4 mb-4 mt-2">
+                <View className="flex-row items-center justify-between mb-2">
+                    <View className="flex-row items-center gap-1.5">
+                        <Animated.View style={pulseStyle} className="w-2 h-2 rounded-full bg-accent-electric-blue" />
+                        <Text className="font-label-sm text-on-surface-variant uppercase tracking-wider" style={{ fontSize: 11, fontWeight: '700' }}>
+                            {headerTitle}
+                        </Text>
+                    </View>
+                </View>
+                <View className="flex-col gap-1.5">
+                    <View className="flex-row justify-between items-center">
+                        <Text className="font-label-sm text-on-surface" style={{ fontSize: 11, fontWeight: '600' }}>
+                            Card {currentIndex + 1} of {cards.length > 0 ? cards.length : totalCards}
+                        </Text>
+                    </View>
+                    <View className="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                        <Animated.View className="h-full bg-accent-electric-blue rounded-full" style={{ width: progressWidth as any }} />
+                    </View>
+                </View>
             </View>
 
             {/* Main Pager */}
@@ -713,22 +749,10 @@ export default function StudyDeckScreen() {
                 )}
             </ScrollView>
 
-            {/* Bottom Progress Dots */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginVertical: 4 }}>
-                {visibleDotIndexes.map((idx: number, dotIdx: number) => (
-                    <View key={idx} style={{
-                        width: activeDotIndex === dotIdx ? 8 : 6,
-                        height: activeDotIndex === dotIdx ? 8 : 6,
-                        borderRadius: 4,
-                        backgroundColor: activeDotIndex === dotIdx ? '#007AFF' : (isDark ? '#3A3A3C' : '#D1D1D6')
-                    }} />
-                ))}
-            </View>
-
             {/* Navigation Footer */}
-            <View style={s.footer}>
-                {currentIndex === cards.length - 1 ? (
-                    <View style={s.finishBtn}>
+            <View className="px-4 pb-12 pt-5">
+                {currentIndex === cards.length - 1 && !isGenerating ? (
+                    <View className="w-full h-16 rounded-full overflow-hidden">
                         <AnimatedButton
                             title="Finish Deck"
                             onPress={nextCard}
@@ -739,23 +763,49 @@ export default function StudyDeckScreen() {
                         />
                     </View>
                 ) : (
-                    <View style={[s.controlsRow, { justifyContent: 'center', gap: 24 }]}>
-                        <TouchableOpacity
-                            onPress={prevCard}
-                            disabled={currentIndex === 0}
-                            activeOpacity={0.7}
-                            style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite, currentIndex === 0 && { opacity: 0.3 }]}
-                        >
-                            <AltArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
-                        </TouchableOpacity>
+                    <View>
+                        {/* Spaced Repetition Rating Bar */}
+                        <View className="flex-col gap-2">
+                            <View className="flex-row justify-between items-center px-1">
+                                <Text className="text-on-surface-variant font-label-sm" style={{ fontSize: 11, fontWeight: '600' }}>How well did you know this?</Text>
+                            </View>
+                            <View className="flex-row gap-2 justify-between">
+                                <Pressable onPress={() => handleRating('again')} className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-surface-container-lowest shadow-sm">
+                                    <View className="w-2 h-2 rounded-full bg-error mb-1" />
+                                    <Text className="font-label-sm font-bold text-on-surface" style={{ fontSize: 11 }}>Again</Text>
+                                    <Text className="font-label-sm text-on-surface-variant" style={{ fontSize: 10 }}>&lt; 1m</Text>
+                                </Pressable>
+                                
+                                <Pressable onPress={() => handleRating('hard')} className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-surface-container-lowest shadow-sm">
+                                    <View className="w-2 h-2 rounded-full bg-accent-indigo mb-1" />
+                                    <Text className="font-label-sm font-bold text-on-surface" style={{ fontSize: 11 }}>Hard</Text>
+                                    <Text className="font-label-sm text-on-surface-variant" style={{ fontSize: 10 }}>10m</Text>
+                                </Pressable>
+                                
+                                <Pressable onPress={() => handleRating('good')} className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-primary-container shadow-md">
+                                    <View className="w-2 h-2 rounded-full bg-accent-electric-blue mb-1" />
+                                    <Text className="font-label-sm font-bold text-accent-electric-blue" style={{ fontSize: 11 }}>Good</Text>
+                                    <Text className="font-label-sm text-accent-electric-blue font-medium" style={{ fontSize: 10 }}>1d</Text>
+                                </Pressable>
+                                
+                                <Pressable onPress={() => handleRating('easy')} className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-surface-container-lowest shadow-sm">
+                                    <View className="w-2 h-2 rounded-full bg-tertiary mb-1" />
+                                    <Text className="font-label-sm font-bold text-on-surface" style={{ fontSize: 11 }}>Easy</Text>
+                                    <Text className="font-label-sm text-on-surface-variant" style={{ fontSize: 10 }}>4d</Text>
+                                </Pressable>
+                            </View>
+                        </View>
 
-                        <TouchableOpacity
-                            onPress={nextCard}
-                            activeOpacity={0.8}
-                            style={[s.navIconBtn, isDark ? s.bgWhite10 : s.bgWhite]}
-                        >
-                            <AltArrowRight width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
-                        </TouchableOpacity>
+                        {/* Bottom Utility Dock */}
+                        <View className="flex-row items-center justify-between mt-6">
+                            <Pressable onPress={prevCard} disabled={currentIndex === 0} className="w-12 h-12 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center">
+                                <MaterialIcons name="history" size={24} color={isDark ? '#EBEBF5' : '#48484A'} style={{ opacity: currentIndex === 0 ? 0.3 : 1 }} />
+                            </Pressable>
+
+                            <Pressable onPress={() => setIsFlagged(!isFlagged)} className="w-12 h-12 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center">
+                                <MaterialIcons name={isFlagged ? "star" : "star-border"} size={24} color={isFlagged ? "#007AFF" : (isDark ? '#EBEBF5' : '#48484A')} />
+                            </Pressable>
+                        </View>
                     </View>
                 )}
             </View>

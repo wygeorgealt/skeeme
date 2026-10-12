@@ -6,7 +6,9 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL as string;
 
 export const api = axios.create({
     baseURL: API_URL,
-    timeout: 60000, 
+    // A stopped backend should move the app into its graceful offline state soon,
+    // rather than leaving a spinner on screen for a full minute.
+    timeout: 12000,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -18,16 +20,30 @@ export const api = axios.create({
 });
 
 // Retry configuration
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 1;
 const RETRY_DELAY = 1000; // 1s
 
 // P0: Cache network state with a listener instead of fetching per-request.
 // NetInfo.fetch() is a native bridge call (~100-300ms). Calling it on every API
 // request blocks the JS thread and compounds during streaming bursts.
 let cachedNetInfo: NetInfoState | null = null;
+let serviceFailureNotified = false;
 NetInfo.addEventListener((state) => {
     cachedNetInfo = state;
+    if (state.isConnected === false || state.isInternetReachable === false) {
+        useAuthStore.getState().setConnectionState('offline');
+    } else if (state.isConnected === true && useAuthStore.getState().connectionState === 'offline') {
+        // Network transport returned; wait for the health probe before enabling
+        // generation actions again.
+        useAuthStore.getState().setConnectionState('serverDown');
+    }
 });
+
+function notifyServiceFailure(message: string) {
+    if (serviceFailureNotified) return;
+    serviceFailureNotified = true;
+    useAuthStore.getState().setGlobalError(message);
+}
 
 // Single request interceptor: attach auth token and network metadata
 api.interceptors.request.use(
@@ -56,6 +72,10 @@ api.interceptors.request.use(
 // Response interceptor: handle 401 and Retries
 api.interceptors.response.use(
     (response) => {
+        // A successful response marks the current outage as recovered, allowing a
+        // later, genuinely new outage to be surfaced once.
+        serviceFailureNotified = false;
+        useAuthStore.getState().setConnectionState('online');
         if (__DEV__ && response.config.method?.toUpperCase() !== 'GET') {
             console.log(`[API] ✅ ${response.status} from ${response.config.url}`);
         }
@@ -96,7 +116,7 @@ api.interceptors.response.use(
         const isNetworkError = !response;
         const isIdempotent = config.method === 'get'; // Safest to retry GETs
         
-        if (isNetworkError && isIdempotent && config.retryCount < MAX_RETRIES) {
+        if (isNetworkError && isIdempotent && config.retryCount < MAX_RETRIES && cachedNetInfo?.isConnected !== false) {
             config.retryCount += 1;
             if (__DEV__) console.warn(`[API] Network error on ${url}. Retrying (${config.retryCount}/${MAX_RETRIES})...`);
             
@@ -105,7 +125,9 @@ api.interceptors.response.use(
             return api(config);
         }
 
-        if (__DEV__) {
+        // Expected service outages are already represented by the single global
+        // offline/unavailable UI. Do not turn them into red development errors.
+        if (__DEV__ && response?.status && response.status < 500 && response.status !== 404) {
             const errorMsg = response?.data?.message || error.message;
             const errorCode = error.code;
             console.error(`[API] ❌ ${errorMsg} (Code: ${errorCode}) on ${url}`, {
@@ -118,12 +140,17 @@ api.interceptors.response.use(
             });
         }
 
-        // Global fallback for 500 errors to ensure an error is always shown (using the custom modal)
+        // Centralise service failures so individual screens never need to render a
+        // raw Axios error or compete to show their own alert/modal.
         if (response?.status && response.status >= 500 && !(config as any)?.skipGlobalError) {
-            useAuthStore.getState().setGlobalError('Skeeme is currently down. Please try again later.');
-        } else if (isNetworkError && config.retryCount >= MAX_RETRIES) {
-            // Network-side failure — user's connection, not our server
-            useAuthStore.getState().setGlobalError('No internet connection. Check your network and try again.');
+            useAuthStore.getState().setConnectionState('serverDown');
+            notifyServiceFailure('Skeeme is temporarily unavailable. Your saved content is still available offline; please try again later.');
+        } else if (isNetworkError) {
+            const offline = cachedNetInfo?.isConnected === false || cachedNetInfo?.isInternetReachable === false;
+            useAuthStore.getState().setConnectionState(offline ? 'offline' : 'serverDown');
+            notifyServiceFailure(offline
+                ? 'You’re offline. You can continue with content already saved on this device.'
+                : 'Skeeme can’t reach the server right now. Please try again later.');
         }
 
         // Sanitize raw errors before they reach local Alert.alert() catches
@@ -136,6 +163,8 @@ api.interceptors.response.use(
             
             if (status >= 500) {
                 error.response.data.message = 'Skeeme is currently down for maintenance. Please try again later.';
+            } else if (status === 404) {
+                error.response.data.message = 'That content is unavailable right now. Please refresh and try again.';
             } else if (status === 403) {
                 error.response.data.message = 'You do not have permission to perform this action.';
             } else if (status === 421) {

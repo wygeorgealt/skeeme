@@ -39,3 +39,6 @@ _dump/vendor/
 .vscode/
 .idea/
 *.code-workspace
+
+# ── UI/Ux ──────────────────────────────────────────────────────────────────
+stitch_skeeme
