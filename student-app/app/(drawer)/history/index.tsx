@@ -69,13 +69,16 @@ export default function StudyHistoryDashboard() {
     // Offline Cache States
     const [cachedQuizzes, setCachedQuizzes] = useState<QuizSession[]>([]);
     const [cachedDecks, setCachedDecks] = useState<FlashcardDeck[]>([]);
+    const [cachedSummaries, setCachedSummaries] = useState<any[]>([]);
 
     useEffect(() => {
         const hydrate = async () => {
             const q = await storage.getItem('cache_quiz_history');
             const d = await storage.getItem('cache_flashcard_decks');
+            const s = await storage.getItem('cache_saved_summaries');
             if (q) setCachedQuizzes(JSON.parse(q));
             if (d) setCachedDecks(JSON.parse(d));
+            if (s) setCachedSummaries(JSON.parse(s));
         };
         hydrate();
     }, []);
@@ -147,22 +150,14 @@ export default function StudyHistoryDashboard() {
 
     const quizzes = quizSessions || cachedQuizzes;
     const decks = flashcardDecks || cachedDecks;
-    const summaries: any[] = [
-        {
-            id: 101,
-            title: 'Alkene Addition Reactions',
-            subject: 'Organic Chemistry',
-            subtitle: '4 Key Reaction Formulas • Mind Map Included',
-            created_at: new Date().toISOString(),
-        },
-        {
-            id: 102,
-            title: 'Thermodynamics & Heat Capacity',
-            subject: 'Physics',
-            subtitle: 'First Law • Enthalpy & Entropy Summary',
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-        }
-    ];
+    const summaries = cachedSummaries;
+
+    const totalSessions = quizzes.length + decks.length + summaries.length;
+    const totalScore = quizzes.length > 0 ? quizzes.reduce((acc, q) => acc + (Number(q.score_percentage) || 0), 0) : 0;
+    const avgMastery = quizzes.length > 0 ? Math.round(totalScore / quizzes.length) : 0;
+    const totalSeconds = quizzes.reduce((acc, q) => acc + (Number(q.time_spent_seconds) || 0), 0);
+    const totalMinutes = Math.round(totalSeconds / 60) + (decks.length * 5);
+    const studyTimeText = totalMinutes >= 60 ? `${(totalMinutes / 60).toFixed(1)}h` : `${totalMinutes}m`;
     
     let currentData: any[] = [];
     let isLoading = false;
@@ -271,7 +266,7 @@ export default function StudyHistoryDashboard() {
                             className="flex-1 items-center justify-center py-2 px-1 rounded-2xl"
                         >
                             <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: C.text }}>
-                                {quizzes.length + decks.length + summaries.length || 38}
+                                {totalSessions}
                             </Text>
                             <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }} className="mt-0.5">Sessions</Text>
                         </View>
@@ -280,7 +275,9 @@ export default function StudyHistoryDashboard() {
                             className="flex-1 items-center justify-center py-2 px-1 rounded-2xl"
                         >
                             <View className="flex-row items-center gap-0.5">
-                                <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: '#007AFF' }}>94%</Text>
+                                <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: '#007AFF' }}>
+                                    {avgMastery}%
+                                </Text>
                                 <MaterialIcons name="trending-up" size={14} color="#007AFF" />
                             </View>
                             <Text style={{ fontSize: 11, fontWeight: '700', color: '#007AFF' }} className="mt-0.5">Avg Mastery</Text>
@@ -289,7 +286,9 @@ export default function StudyHistoryDashboard() {
                             style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F4F3F8' }}
                             className="flex-1 items-center justify-center py-2 px-1 rounded-2xl"
                         >
-                            <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: C.text }}>14.2h</Text>
+                            <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: C.text }}>
+                                {studyTimeText}
+                            </Text>
                             <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }} className="mt-0.5">Study Time</Text>
                         </View>
                     </View>
@@ -539,6 +538,8 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
 
 function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolean; C: any }) {
     const pct = session.score_percentage || 0;
+    const subjectTag = session.topic ? (session.topic.split(' ')[0] || 'Quiz') : 'Quiz';
+    const difficultyTag = session.difficulty ? (session.difficulty.charAt(0).toUpperCase() + session.difficulty.slice(1)) : 'Practice';
     
     return (
         <View
@@ -563,14 +564,14 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                                 style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : 'rgba(0,122,255,0.1)' }}
                                 className="px-2 py-0.5 rounded-full"
                             >
-                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: '#007AFF' }}>Physics</Text>
+                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: '#007AFF' }}>{subjectTag}</Text>
                             </View>
                             <View
                                 style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
                                 className="px-2 py-0.5 rounded-full"
                             >
                                 <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }}>
-                                    {session.difficulty ? session.difficulty.charAt(0).toUpperCase() + session.difficulty.slice(1) : 'Midterm'}
+                                    {difficultyTag}
                                 </Text>
                             </View>
                         </View>
@@ -604,7 +605,7 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                     <Pressable
                         style={{ backgroundColor: '#007AFF' }}
                         className="h-10 px-4 rounded-full flex-row items-center gap-1.5 active:opacity-80"
-                        onPress={() => {}}
+                        onPress={() => router.push({ pathname: '/(drawer)/generate', params: { topic: session.topic } } as any)}
                     >
                         <MaterialIcons name="replay" size={18} color="white" />
                         <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>Retake</Text>
@@ -631,6 +632,8 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
 }
 
 function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C: any }) {
+    const subjectTag = deck.title ? (deck.title.split(' ')[0] || 'Deck') : 'Deck';
+    
     return (
         <View
             style={{
@@ -654,7 +657,7 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                                 className="px-2 py-0.5 rounded-full"
                                 style={{ backgroundColor: isDark ? 'rgba(88,86,214,0.2)' : '#E2DFFF' }}
                             >
-                                <Text style={{ color: isDark ? '#A5B4FC' : '#3631B4', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>Biology</Text>
+                                <Text style={{ color: isDark ? '#A5B4FC' : '#3631B4', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{subjectTag}</Text>
                             </View>
                             <View
                                 className="px-2 py-0.5 rounded-full"
@@ -679,21 +682,6 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                 >
                     <MaterialIcons name="star-border" size={22} color="#f59e0b" />
                 </Pressable>
-            </View>
-            
-            <View className="flex-col gap-1.5 mt-2">
-                <View className="flex-row items-center justify-between">
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }}>Mastery Progress</Text>
-                    <Text style={{ color: isDark ? '#A5B4FC' : '#4C4ACA', fontSize: 11, fontWeight: '700' }}>
-                        13 of {deck.flashcards_count} Memorized
-                    </Text>
-                </View>
-                <View
-                    style={{ backgroundColor: isDark ? '#2C2C2E' : '#E3E2E7' }}
-                    className="w-full h-2 rounded-full overflow-hidden"
-                >
-                    <View className="h-full rounded-full" style={{ width: '87%', backgroundColor: '#5856D6' }} />
-                </View>
             </View>
             
             <View className="flex-row items-center justify-between pt-3">

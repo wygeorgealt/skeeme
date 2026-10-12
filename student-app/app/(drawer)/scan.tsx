@@ -29,14 +29,17 @@ import { useAuthStore } from '@/store/authStore';
 import { scannerService, ScanResult } from '@/lib/scanner';
 import { haptics } from '@/lib/haptics';
 import { MathText } from '@/components/ui/MathText';
+import { appStorage } from '@/lib/storage';
 
 const { width } = Dimensions.get('window');
 
-const MOCK_RECENT_SCANS = [
-    { id: '1', title: 'Quadratic #4', subtitle: 'Solved • 98%', color: '#007AFF' },
-    { id: '2', title: 'Physics Doc', subtitle: 'Formulas', color: '#007AFF' },
-    { id: '3', title: 'Calculus Test', subtitle: 'Answered', color: '#34D399' },
-];
+type RecentScanItem = {
+    id: string;
+    title: string;
+    subtitle: string;
+    color: string;
+    result: ScanResult;
+};
 
 export default function ScanScreen() {
     const insets = useSafeAreaInsets();
@@ -53,9 +56,20 @@ export default function ScanScreen() {
     const [scanMode, setScanMode] = useState<'single' | 'worksheet' | 'diagram'>('single');
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState<ScanResult[]>([]);
+    const [recentScans, setRecentScans] = useState<RecentScanItem[]>([]);
     const [activeModel, setActiveModel] = useState<'cloud' | 'skeemy'>('skeemy');
     const [followUpText, setFollowUpText] = useState('');
     const [facing, setFacing] = useState<'back' | 'front'>('back');
+
+    useEffect(() => {
+        appStorage.getItem('skeeme_recent_scans').then((val: string | null) => {
+            if (val) {
+                try {
+                    setRecentScans(JSON.parse(val));
+                } catch {}
+            }
+        }).catch(() => {});
+    }, []);
 
     // Laser scanning animation
     const laserY = useSharedValue(0.08);
@@ -138,6 +152,20 @@ export default function ScanScreen() {
             if (resp.results && resp.results.length > 0) {
                 setResults(resp.results);
                 await haptics.notificationAsync();
+
+                const topResult = resp.results[0];
+                const newScanItem: RecentScanItem = {
+                    id: `scan-${Date.now()}`,
+                    title: topResult.topic || (topResult.question ? topResult.question.slice(0, 24) + '...' : 'Problem Solved'),
+                    subtitle: topResult.type === 'theory' ? 'Theory' : 'Step-by-step',
+                    color: '#007AFF',
+                    result: topResult,
+                };
+                setRecentScans((prev) => {
+                    const next = [newScanItem, ...prev.slice(0, 9)];
+                    appStorage.setItem('skeeme_recent_scans', JSON.stringify(next)).catch(() => {});
+                    return next;
+                });
             } else {
                 Alert.alert('No Questions Found', 'Could not detect any clear questions in the photo. Please try again.');
             }
@@ -466,29 +494,34 @@ export default function ScanScreen() {
             <View className="w-full flex-col gap-3 px-5 pb-5 z-20" style={{ paddingBottom: Math.max(insets.bottom, 20) + 40 }}>
                 
                 {/* Recent Scans Tray */}
-                <View className="w-full">
-                    <View className="flex-row items-center gap-1.5 px-1 mb-2">
-                        <MaterialIcons name="history" size={16} color="#007AFF" />
-                        <Text className="text-[12px] text-white/75 uppercase tracking-wider" style={{ fontWeight: '600' }}>Recent Scans</Text>
+                {recentScans.length > 0 && (
+                    <View className="w-full">
+                        <View className="flex-row items-center gap-1.5 px-1 mb-2">
+                            <MaterialIcons name="history" size={16} color="#007AFF" />
+                            <Text className="text-[12px] text-white/75 uppercase tracking-wider" style={{ fontWeight: '600' }}>Recent Scans</Text>
+                        </View>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 2 }}>
+                            {recentScans.map(scan => (
+                                <Pressable
+                                    key={scan.id}
+                                    onPress={() => {
+                                        haptics.impactAsync();
+                                        setResults([scan.result]);
+                                    }}
+                                    className="flex-row items-center gap-2.5 px-3 py-2 rounded-2xl bg-white/10 border border-white/15"
+                                >
+                                    <View className="w-8 h-8 rounded-xl bg-black/40 border border-white/20 items-center justify-center">
+                                        <MaterialIcons name="image" size={16} color="#FFFFFF" />
+                                    </View>
+                                    <View>
+                                        <Text className="text-[13px] text-white leading-tight" style={{ fontWeight: '700' }} numberOfLines={1}>{scan.title}</Text>
+                                        <Text className="text-[10px] tracking-wide" style={{ fontWeight: '600', color: scan.color }}>{scan.subtitle}</Text>
+                                    </View>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
                     </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 2 }}>
-                        {MOCK_RECENT_SCANS.map(scan => (
-                            <Pressable
-                                key={scan.id}
-                                className="flex-row items-center gap-2.5 px-3 py-2 rounded-2xl bg-white/10 border border-white/15"
-                                
-                            >
-                                <View className="w-8 h-8 rounded-xl bg-black/40 border border-white/20 items-center justify-center">
-                                    <MaterialIcons name="image" size={16} color="#FFFFFF" />
-                                </View>
-                                <View>
-                                    <Text className="text-[13px] text-white leading-tight" style={{ fontWeight: '700' }}>{scan.title}</Text>
-                                    <Text className="text-[10px] tracking-wide" style={{ fontWeight: '600', color: scan.color }}>{scan.subtitle}</Text>
-                                </View>
-                            </Pressable>
-                        ))}
-                    </ScrollView>
-                </View>
+                )}
 
                 {/* Action Bar */}
                 <View className="w-full flex-row items-center justify-between py-1">

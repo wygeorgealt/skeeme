@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Pressable, View, ScrollView, Switch } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { haptics } from '@/lib/haptics';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { useAuthStore } from '@/store/authStore';
+import { appStorage } from '@/lib/storage';
 
 export default function DailyStudyGoalScreen() {
     const insets = useSafeAreaInsets();
@@ -14,11 +16,25 @@ export default function DailyStudyGoalScreen() {
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     
+    const user = useAuthStore((s) => s.user);
+    const streak = user?.streak?.current_streak ?? 0;
+
     // State
     const [quizzesEnabled, setQuizzesEnabled] = useState(true);
     const [quizQuestions, setQuizQuestions] = useState(15);
     const [decksEnabled, setDecksEnabled] = useState(true);
     const [deckSessions, setDeckSessions] = useState(3);
+
+    useEffect(() => {
+        appStorage.getItem('skeeme_daily_goal').then((val: string | null) => {
+            if (val) {
+                const parsed = parseInt(val, 10);
+                if (!isNaN(parsed) && parsed > 0) {
+                    setQuizQuestions(parsed);
+                }
+            }
+        }).catch(() => {});
+    }, []);
 
     const quizPresets = [10, 15, 20, 30];
     const deckPresets = [1, 2, 3, 5];
@@ -57,7 +73,7 @@ export default function DailyStudyGoalScreen() {
                 {/* Motivation Banner */}
                 <View style={{ backgroundColor: cardBg, borderColor: cardBorder, borderWidth: 1 }} className="mx-6 rounded-3xl p-5 shadow-sm mb-6">
                     <View style={{ backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FFFBEB', borderColor: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FEF3C7' }} className="self-start px-3 py-1.5 rounded-full flex-row items-center gap-1.5 mb-3 border">
-                        <Text style={{ color: '#F59E0B' }} className="font-bold text-xs">🔥 5 Day Streak Active</Text>
+                        <Text style={{ color: '#F59E0B' }} className="font-bold text-xs">🔥 {streak} Day Streak Active</Text>
                     </View>
                     <Text style={{ color: C.textSecondary }} className="text-sm leading-5">
                         Set your daily pace. Consistent micro-practice preserves knowledge retention and fuels your streak multiplier.
@@ -232,7 +248,9 @@ export default function DailyStudyGoalScreen() {
                 className="absolute bottom-0 left-0 right-0 pt-4 px-6 border-t"
             >
                 <Pressable 
-                    onPress={() => {
+                    onPress={async () => {
+                        const targetVal = (quizzesEnabled ? quizQuestions : 0) + (decksEnabled ? deckSessions * 5 : 0) || 20;
+                        await appStorage.setItem('skeeme_daily_goal', targetVal.toString()).catch(() => {});
                         haptics.notificationAsync('success' as any);
                         router.back();
                     }}

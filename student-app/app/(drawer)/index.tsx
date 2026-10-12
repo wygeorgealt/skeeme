@@ -24,6 +24,9 @@ import Animated, {
 import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
 import { haptics } from '@/lib/haptics';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { appStorage } from '@/lib/storage';
 
 const { width } = Dimensions.get('window');
 
@@ -38,6 +41,55 @@ export default function HomeDashboard() {
     const toggleCreditsModal = useAuthStore((s) => s.toggleCreditsModal);
 
     const [profileMenuVisible, setProfileMenuVisible] = useState(false);
+    const [dailyGoalTarget, setDailyGoalTarget] = useState(20);
+
+    // Queries for live data from Brimble API
+    const { data: quizSessions = [] } = useQuery({
+        queryKey: ['quiz-history'],
+        queryFn: async () => {
+            try {
+                const res = await api.get('quizzes/history');
+                return (res.data?.data || []) as any[];
+            } catch {
+                return [];
+            }
+        },
+        staleTime: 60 * 1000,
+    });
+
+    const { data: flashcardDecks = [] } = useQuery({
+        queryKey: ['flashcard-history'],
+        queryFn: async () => {
+            try {
+                const res = await api.get('flashcards/decks');
+                return (res.data?.data || []) as any[];
+            } catch {
+                return [];
+            }
+        },
+        staleTime: 60 * 1000,
+    });
+
+    // Load saved daily goal target
+    useEffect(() => {
+        appStorage.getItem('skeeme_daily_goal').then((val: string | null) => {
+            if (val) {
+                const parsed = parseInt(val, 10);
+                if (!isNaN(parsed) && parsed > 0) setDailyGoalTarget(parsed);
+            }
+        }).catch(() => {});
+    }, []);
+
+    // Daily progress calculations
+    const todayStr = new Date().toDateString();
+    const completedToday = quizSessions
+        .filter((q: any) => new Date(q.created_at).toDateString() === todayStr)
+        .reduce((acc: number, q: any) => acc + (q.total_questions || 0), 0);
+    const target = dailyGoalTarget || 20;
+    const progressPct = Math.min(100, Math.round((completedToday / target) * 100));
+
+    const totalCardsCount = flashcardDecks.reduce((acc: number, d: any) => acc + (d.flashcards_count || 0), 0);
+    const recentDeck = flashcardDecks.length > 0 ? flashcardDecks[0] : null;
 
     // Animations
     const headerOpacity = useSharedValue(0);
@@ -49,8 +101,11 @@ export default function HomeDashboard() {
         headerOpacity.value = withTiming(1, { duration: 400 });
         headerY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
         contentOpacity.value = withDelay(150, withTiming(1, { duration: 500 }));
-        progressWidth.value = withDelay(300, withTiming(75, { duration: 800, easing: Easing.out(Easing.cubic) }));
-    }, []);
+        progressWidth.value = withDelay(
+            300,
+            withTiming(Math.max(5, progressPct), { duration: 800, easing: Easing.out(Easing.cubic) })
+        );
+    }, [progressPct]);
 
     const headerAnimatedStyle = useAnimatedStyle(() => ({
         opacity: headerOpacity.value,
@@ -272,13 +327,15 @@ export default function HomeDashboard() {
                                         Daily Goal
                                     </Text>
                                     <Text style={styles.dailyGoalSub}>
-                                        4 more cards to keep your streak
+                                        {completedToday >= target
+                                            ? 'Goal reached! Streak active 🔥'
+                                            : `${target - completedToday} more to reach daily goal`}
                                     </Text>
                                 </View>
                             </View>
                             <View style={styles.dailyGoalCountPill}>
-                                <Text style={styles.dailyGoalCountCurrent}>16</Text>
-                                <Text style={styles.dailyGoalCountTotal}>/ 20</Text>
+                                <Text style={styles.dailyGoalCountCurrent}>{completedToday}</Text>
+                                <Text style={styles.dailyGoalCountTotal}>/ {target}</Text>
                             </View>
                         </View>
 
@@ -370,7 +427,7 @@ export default function HomeDashboard() {
                                 Flashcards
                             </Text>
                             <Text style={[styles.tileSubtitle, { color: '#007AFF', fontWeight: '700' }]}>
-                                48 Due
+                                {flashcardDecks.length > 0 ? `${totalCardsCount} Cards` : 'New Deck'}
                             </Text>
                         </TouchableOpacity>
 
@@ -419,7 +476,13 @@ export default function HomeDashboard() {
                                         borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
                                     },
                                 ]}
-                                onPress={() => router.push('/(drawer)/history' as any)}
+                                onPress={() => {
+                                    if (recentDeck) {
+                                        router.push(`/(drawer)/flashcards/${recentDeck.id}` as any);
+                                    } else {
+                                        router.push('/(drawer)/flashcards/create' as any);
+                                    }
+                                }}
                             >
                                 <View style={styles.taskCardLeft}>
                                     <View style={[styles.taskIconCircle, { backgroundColor: '#EFF6FF' }]}>
@@ -428,10 +491,13 @@ export default function HomeDashboard() {
                                     <View style={styles.taskTextWrap}>
                                         <Text
                                             style={[styles.taskTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}
+                                            numberOfLines={1}
                                         >
-                                            Revisit Your Last Flashcard
+                                            {recentDeck ? `Study "${recentDeck.title}"` : 'Create Your First Flashcard Deck'}
                                         </Text>
-                                        <Text style={styles.taskDesc}>Learn with expert-guided tutorials</Text>
+                                        <Text style={styles.taskDesc}>
+                                            {recentDeck ? `${recentDeck.flashcards_count} cards ready for review` : 'Master key terms with AI spaced repetition'}
+                                        </Text>
                                     </View>
                                 </View>
                                 <View style={[styles.arrowPill, { borderColor: isDark ? '#333' : '#E5E5EA' }]}>
