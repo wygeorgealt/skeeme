@@ -42,12 +42,14 @@ func (h *HealthHandler) Check(w http.ResponseWriter, r *http.Request) {
 		"time":   time.Now().UTC().Format(time.RFC3339),
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	if status != "ok" {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if r.Method != http.MethodHead {
+		_ = json.NewEncoder(w).Encode(response)
+	}
 }

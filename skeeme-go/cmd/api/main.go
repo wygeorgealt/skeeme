@@ -113,8 +113,21 @@ func main() {
 	requireAuth := middleware.AuthMiddleware(database)
 	requireInternalAuth := middleware.InternalAuthMiddleware
 
-	// Routes
+	// Root & Health Checks (handles GET & HEAD for Brimble and cloud health-checks)
+	rootHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if r.Method != http.MethodHead {
+			_, _ = w.Write([]byte(`{"status":"ok","service":"skeeme-api"}`))
+		}
+	}
+
+	r.Get("/", rootHandler)
+	r.Head("/", rootHandler)
+	r.Get("/health", healthHandler.Check)
+	r.Head("/health", healthHandler.Check)
 	r.Get("/api/health", healthHandler.Check)
+	r.Head("/api/health", healthHandler.Check)
 	
 	// Webhooks (public)
 	r.Post("/api/webhooks/paystack", webhookHandler.Paystack)
