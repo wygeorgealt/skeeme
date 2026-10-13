@@ -34,9 +34,6 @@ func main() {
 
 	// Run every hour
 	c.AddFunc("0 * * * *", func() {
-		if err := jobs.RunPostgresBackup(); err != nil {
-			log.Printf("RunPostgresBackup failed: %v", err)
-		}
 		jobs.PendingCleanup(database)
 	})
 

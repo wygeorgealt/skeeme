@@ -34,13 +34,8 @@ func main() {
 	if os.Getenv("DISABLE_INTERNAL_CRON") != "true" {
 		c := cron.New()
 
-		// Run every hour: Postgres backup & pending cleanup
+		// Run every hour: pending student cleanup
 		c.AddFunc("0 * * * *", func() {
-			log.Println("[Scheduler] Running hourly database backup to R2...")
-			if err := jobs.RunPostgresBackup(); err != nil {
-				log.Printf("[Scheduler] Database backup failed: %v", err)
-			}
-
 			log.Println("[Scheduler] Running hourly pending student cleanup...")
 			jobs.PendingCleanup(database)
 		})
@@ -51,7 +46,7 @@ func main() {
 			jobs.AIHealthCheck()
 		})
 
-		// Midnight UTC: Reset streaks (safety fallback)
+		// Midnight UTC: Reset streaks
 		c.AddFunc("0 0 * * *", func() {
 			log.Println("[Scheduler] Running midnight ResetStreaks job...")
 			if err := jobs.ResetStreaks(database); err != nil {
@@ -60,7 +55,7 @@ func main() {
 		})
 
 		c.Start()
-		log.Println("[Scheduler] In-process background scheduler started (hourly backups & cleanups active)")
+		log.Println("[Scheduler] In-process background scheduler started (streaks, cleanups & health checks active; backup delegated to Brimble cron)")
 	}
 
 	// Initialize Redis
