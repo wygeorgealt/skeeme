@@ -320,7 +320,7 @@ export default function HomeDashboard() {
                         <View style={styles.dailyGoalHeader}>
                             <View style={styles.dailyGoalLeft}>
                                 <View style={styles.targetIconWrap}>
-                                    <Icon name="Target" size={20} color="primary" animated="pulse" />
+                                    <Icon name="BowArrow" size={20} color="primary" animated="pulse" />
                                 </View>
                                 <View>
                                     <Text style={[styles.dailyGoalTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
@@ -405,8 +405,8 @@ export default function HomeDashboard() {
                             style={[
                                 styles.actionTile,
                                 {
-                                    backgroundColor: isDark ? '#152136' : '#EFF6FF',
-                                    borderColor: isDark ? 'rgba(0, 122, 255, 0.4)' : '#BFDBFE',
+                                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
                                 },
                             ]}
                             onPress={() => {
@@ -450,9 +450,6 @@ export default function HomeDashboard() {
                             <Text style={[styles.sectionHeading, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
                                 Today's Tasks
                             </Text>
-                            <TouchableOpacity onPress={() => router.push('/(drawer)/history')}>
-                                <Text style={styles.viewAllText}>View All</Text>
-                            </TouchableOpacity>
                         </View>
 
                         <View style={styles.tasksList}>
@@ -477,10 +474,9 @@ export default function HomeDashboard() {
                                     <View style={styles.taskCardLeft}>
                                         <View style={styles.taskIconCircle}>
                                             <Icon
-                                                name={task.icon as any}
-                                                size={22}
+                                                name={task.completed ? 'CheckCircle2' : 'CircleDot'}
+                                                size={20}
                                                 color={task.completed ? 'success' : 'primary'}
-                                                animated={!task.completed ? 'pulse' : false}
                                             />
                                         </View>
                                         <View style={styles.taskTextWrap}>
@@ -817,12 +813,13 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
     },
     tasksList: {
-        gap: 10,
+        gap: 12,
     },
     taskCard: {
         borderRadius: 20,
         borderWidth: 1,
-        padding: 14,
+        paddingVertical: 18,
+        paddingHorizontal: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
