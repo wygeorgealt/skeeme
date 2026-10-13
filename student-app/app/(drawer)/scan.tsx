@@ -15,7 +15,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import { useRouter, useNavigation } from 'expo-router';
 import Animated, {
     useSharedValue,
@@ -92,14 +92,10 @@ export default function ScanScreen() {
         opacity: flashOpacity.value,
     }));
 
-    // Hide tab bar when showing results
+    // Always hide tab bar on scan screen so bottom camera shutter controls are never obscured
     useEffect(() => {
-        if (results.length > 0) {
-            navigation.setOptions({ tabBarStyle: { display: 'none' } });
-        } else {
-            navigation.setOptions({ tabBarStyle: { display: 'flex' } });
-        }
-    }, [results]);
+        navigation.setOptions({ tabBarStyle: { display: 'none' } });
+    }, [navigation]);
 
     const handleCapture = async () => {
         if (!cameraRef.current) return;
@@ -195,7 +191,7 @@ export default function ScanScreen() {
                         onPress={() => setResults([])}
                         className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-surface-container active:scale-95 transition-all"
                     >
-                        <MaterialIcons name="arrow-back" size={20} color="#1c1c1e" />
+                        <Icon name="ArrowLeft" size={20} color="#1c1c1e" />
                     </Pressable>
                     <View className="flex-1 items-center px-2">
                         <Text className="text-[18px] font-bold text-on-surface tracking-tight" style={{ fontWeight: '700' }}>Question</Text>
@@ -208,7 +204,7 @@ export default function ScanScreen() {
                         }}
                         className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-surface-container active:scale-95 transition-all"
                     >
-                        <MaterialIcons name="ios-share" size={20} color="#1c1c1e" />
+                        <Icon name="Share2" size={20} color="#1c1c1e" />
                     </Pressable>
                 </View>
 
@@ -237,7 +233,7 @@ export default function ScanScreen() {
                                     onPress={() => { haptics.selectionAsync(); setActiveModel('cloud'); }}
                                     className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${activeModel === 'cloud' ? 'bg-accent-electric-blue shadow-sm' : ''}`}
                                 >
-                                    <MaterialIcons name="cloud" size={16} color={activeModel === 'cloud' ? '#FFFFFF' : '#48484a'} />
+                                    <Icon name="Cloud" size={16} color={activeModel === 'cloud' ? '#FFFFFF' : '#48484a'} />
                                     <Text className={`text-[14px] ${activeModel === 'cloud' ? 'text-on-primary' : 'text-on-surface-variant'}`} style={{ fontWeight: '600' }}>Cloud AI</Text>
                                 </Pressable>
                                 <Pressable
@@ -245,7 +241,7 @@ export default function ScanScreen() {
                                     onPress={() => { haptics.selectionAsync(); setActiveModel('skeemy'); }}
                                     className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${activeModel === 'skeemy' ? 'bg-accent-electric-blue shadow-sm' : ''}`}
                                 >
-                                    <MaterialIcons name="auto-awesome" size={16} color={activeModel === 'skeemy' ? '#FFFFFF' : '#48484a'} />
+                                    <Icon name="Sparkles" size={16} color={activeModel === 'skeemy' ? '#FFFFFF' : '#48484a'} />
                                     <Text className={`text-[14px] ${activeModel === 'skeemy' ? 'text-on-primary' : 'text-on-surface-variant'}`} style={{ fontWeight: '600' }}>Skeemy</Text>
                                 </Pressable>
                             </View>
@@ -254,7 +250,7 @@ export default function ScanScreen() {
                                 onPress={() => toggleCreditsModal(true, 'scan')}
                                 className="flex-row items-center gap-1 px-3 py-1.5 bg-white rounded-full border border-surface-container"
                             >
-                                <MaterialIcons name="bolt" size={15} color="#007AFF" />
+                                <Icon name="Zap" size={15} color="primary" />
                                 <Text className="text-[12px] font-bold text-on-surface">{credits}</Text>
                                 <Text className="text-[11px] text-on-surface-variant">left</Text>
                             </Pressable>
@@ -264,7 +260,7 @@ export default function ScanScreen() {
                         <View className="bg-[#f4f8ff] border border-[#dbe8fd] rounded-2xl p-3.5 flex-row items-center justify-between mt-4">
                             <View className="flex-row items-center gap-3">
                                 <View className="w-8 h-8 rounded-full bg-accent-electric-blue items-center justify-center shadow-sm">
-                                    <MaterialIcons name="check" size={18} color="#FFFFFF" />
+                                    <Icon name="Check" size={18} color="white" />
                                 </View>
                                 <View>
                                     <Text className="text-[10px] text-accent-electric-blue uppercase tracking-wider font-bold">Solution</Text>
@@ -280,19 +276,19 @@ export default function ScanScreen() {
                         {currentResult.steps && currentResult.steps.length > 0 && (
                             <View className="pt-2 mt-2">
                                 <View className="flex-row items-center gap-1.5 mb-3">
-                                    <MaterialIcons name="filter-list" size={18} color="#007AFF" />
+                                    <Icon name="ListOrdered" size={18} color="primary" />
                                     <Text className="text-on-surface text-[15px]" style={{ fontWeight: '700' }}>Step-by-step Explanation</Text>
                                 </View>
                                 <View className="pl-1 flex-col gap-4">
                                     {currentResult.steps.map((step, idx) => (
-                                        <View key={idx} className="flex-row items-start gap-3">
-                                            <View className="w-6 h-6 rounded-full bg-primary-fixed items-center justify-center shadow-sm mt-0.5">
-                                                <Text className="text-[#004493] text-[12px]" style={{ fontWeight: '700' }}>{idx + 1}</Text>
-                                            </View>
-                                            <View className="flex-1 flex-col pl-0.5 bg-surface-container-low p-2.5 rounded-xl">
-                                                <MathText content={step} />
-                                            </View>
-                                        </View>
+                                         <View key={idx} className="flex-row items-start gap-3">
+                                             <View className="w-6 h-6 rounded-full bg-primary-fixed items-center justify-center shadow-sm mt-0.5">
+                                                 <Text className="text-[#004493] text-[12px]" style={{ fontWeight: '700' }}>{idx + 1}</Text>
+                                             </View>
+                                             <View className="flex-1 flex-col pl-0.5 bg-surface-container-low p-2.5 rounded-xl">
+                                                 <MathText content={step} />
+                                             </View>
+                                         </View>
                                     ))}
                                 </View>
                             </View>
@@ -301,7 +297,7 @@ export default function ScanScreen() {
                         {/* Explanation Summary / Pro Tip */}
                         {currentResult.explanation && (
                             <View className="p-3 bg-[#f0edff] border border-[#e2dfff] rounded-2xl flex-row items-start gap-2.5 mt-4">
-                                <MaterialIcons name="tips-and-updates" size={20} color="#4c4aca" style={{ marginTop: 2 }} />
+                                <Icon name="Lightbulb" size={20} color="#4c4aca" style={{ marginTop: 2 }} />
                                 <View className="flex-col flex-1">
                                     <Text className="text-[13px] text-[#0c006a]" style={{ fontWeight: '700' }}>Quiz Hack</Text>
                                     <Text className="text-[12px] text-[#0c006a] opacity-80 mt-0.5 leading-5">{currentResult.explanation}</Text>
@@ -315,7 +311,7 @@ export default function ScanScreen() {
                             onPress={() => { haptics.impactAsync(); router.push('/(drawer)/generate'); }}
                             className="w-full h-12 rounded-2xl bg-accent-electric-blue items-center justify-center flex-row gap-2 shadow-sm active:scale-95 mt-4"
                         >
-                            <MaterialIcons name="auto-awesome" size={19} color="#FFFFFF" />
+                            <Icon name="Sparkles" size={19} color="white" />
                             <Text className="text-on-primary text-[15px]" style={{ fontWeight: '700' }}>Make 3 Similar Practice Questions</Text>
                         </Pressable>
                     </View>
@@ -325,7 +321,7 @@ export default function ScanScreen() {
                 <View className="absolute bottom-0 left-0 right-0 z-40 bg-surface/90 pb-4 shadow-lg border-t border-surface-container/50">
                     <View className="max-w-md mx-auto px-4 py-2.5">
                         <View className="flex-row items-center bg-white rounded-full pl-4 pr-1.5 py-1.5 shadow-sm border border-surface-container">
-                            <MaterialIcons name="chat" size={20} color="#8e8e93" className="mr-2" />
+                            <Icon name="MessageSquare" size={20} color="#8e8e93" style={{ marginRight: 8 }} />
                             <TextInput
                                 className="flex-1 text-[15px] text-on-surface py-2"
                                 placeholder="Ask a question"
@@ -343,7 +339,7 @@ export default function ScanScreen() {
                                 }}
                                 className="w-10 h-10 rounded-full bg-accent-electric-blue items-center justify-center ml-2"
                             >
-                                <MaterialIcons name="arrow-upward" size={20} color="#FFFFFF" />
+                                <Icon name="ArrowUp" size={20} color="white" />
                             </Pressable>
                         </View>
                     </View>
@@ -359,7 +355,7 @@ export default function ScanScreen() {
     if (!permission.granted) {
         return (
             <View className="flex-1 bg-[#090d16] items-center justify-center px-8" style={{ paddingTop: insets.top }}>
-                <MaterialIcons name="camera-alt" size={56} color="#007AFF" style={{ marginBottom: 16 }} />
+                <Icon name="Camera" size={56} color="primary" style={{ marginBottom: 16 }} />
                 <Text className="text-[22px] text-white mb-2" style={{ fontWeight: '700' }}>Camera Access Needed</Text>
                 <Text className="text-[14px] text-[#8E8E93] text-center leading-5 mb-6">
                     Skeeme needs camera access to scan your homework problems, math formulas, and past questions.
@@ -393,11 +389,17 @@ export default function ScanScreen() {
             {/* Top Bar Controls */}
             <View className="w-full flex-row items-center justify-between px-5 pt-4 z-20" style={{ marginTop: Math.max(insets.top, 14) }}>
                 <Pressable
-                    
-                    onPress={() => router.back()}
+                    onPress={() => {
+                        haptics.selectionAsync(true);
+                        if (router.canGoBack()) {
+                            router.back();
+                        } else {
+                            router.replace('/(drawer)' as any);
+                        }
+                    }}
                     className="w-11 h-11 rounded-full bg-black/40 border border-white/15 items-center justify-center"
                 >
-                    <MaterialIcons name="close" size={22} color="#FFFFFF" />
+                    <Icon name="X" size={22} color="white" />
                 </Pressable>
 
                 {/* Credits Pill */}
@@ -406,7 +408,7 @@ export default function ScanScreen() {
                     onPress={() => toggleCreditsModal(true, 'scan')}
                     className="flex-row items-center gap-1.5 px-4 py-2 rounded-full bg-black/50 border border-white/15"
                 >
-                    <MaterialIcons name="bolt" size={19} color="#007AFF" />
+                    <Icon name="Zap" size={19} color="primary" />
                     <Text className="text-[14px] text-white" style={{ fontWeight: '700' }}>{credits}</Text>
                     <Text className="text-[13px] text-white/70" style={{ fontWeight: '500' }}>Credits</Text>
                 </Pressable>
@@ -417,10 +419,10 @@ export default function ScanScreen() {
                     onPress={() => { haptics.selectionAsync(); setEnableTorch(!enableTorch); }}
                     className={`w-11 h-11 rounded-full border items-center justify-center transition-all ${enableTorch ? 'bg-[#007AFF] border-[#007AFF]' : 'bg-black/40 border-white/15'}`}
                 >
-                    <MaterialIcons
-                        name={enableTorch ? 'flash-on' : 'flash-off'}
+                    <Icon
+                        name={enableTorch ? 'Flashlight' : 'FlashlightOff'}
                         size={21}
-                        color="#FFFFFF"
+                        color="white"
                     />
                 </Pressable>
             </View>
@@ -463,7 +465,7 @@ export default function ScanScreen() {
 
                 {/* Instruction Pill */}
                 <View className="mt-4 px-4 py-2 rounded-full bg-black/60 border border-white/10 flex-row items-center gap-2">
-                    <MaterialIcons name="crop-free" size={18} color="#007AFF" />
+                    <Icon name="Scan" size={18} color="primary" />
                     <Text className="text-[13px] text-white" style={{ fontWeight: '600' }}>{getInstructionText()}</Text>
                 </View>
 
@@ -497,7 +499,7 @@ export default function ScanScreen() {
                 {recentScans.length > 0 && (
                     <View className="w-full">
                         <View className="flex-row items-center gap-1.5 px-1 mb-2">
-                            <MaterialIcons name="history" size={16} color="#007AFF" />
+                            <Icon name="Clock" size={16} color="primary" />
                             <Text className="text-[12px] text-white/75 uppercase tracking-wider" style={{ fontWeight: '600' }}>Recent Scans</Text>
                         </View>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 2 }}>
@@ -511,7 +513,7 @@ export default function ScanScreen() {
                                     className="flex-row items-center gap-2.5 px-3 py-2 rounded-2xl bg-white/10 border border-white/15"
                                 >
                                     <View className="w-8 h-8 rounded-xl bg-black/40 border border-white/20 items-center justify-center">
-                                        <MaterialIcons name="image" size={16} color="#FFFFFF" />
+                                        <Icon name="Image" size={16} color="white" />
                                     </View>
                                     <View>
                                         <Text className="text-[13px] text-white leading-tight" style={{ fontWeight: '700' }} numberOfLines={1}>{scan.title}</Text>
@@ -533,7 +535,7 @@ export default function ScanScreen() {
                             className="items-center gap-1"
                         >
                             <View className="w-13 h-13 p-3 rounded-2xl bg-black/45 border border-white/15 items-center justify-center">
-                                <MaterialIcons name="photo-library" size={24} color="#FFFFFF" />
+                                <Icon name="Image" size={24} color="white" />
                             </View>
                             <Text className="text-[11px] text-white/80 mt-1" style={{ fontWeight: '600' }}>Library</Text>
                         </Pressable>
@@ -571,7 +573,7 @@ export default function ScanScreen() {
                             className="items-center gap-1"
                         >
                             <View className="w-13 h-13 p-3 rounded-2xl bg-black/45 border border-white/15 items-center justify-center">
-                                <MaterialIcons name="flip-camera-ios" size={24} color="#FFFFFF" />
+                                <Icon name="RefreshCw" size={24} color="white" />
                             </View>
                             <Text className="text-[11px] text-white/80 mt-1" style={{ fontWeight: '600' }}>Flip</Text>
                         </Pressable>

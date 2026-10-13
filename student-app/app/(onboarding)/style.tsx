@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import * as Haptics from 'expo-haptics';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 const SENTIMENTS = [
@@ -120,7 +120,7 @@ export default function StyleScreen() {
                                             isSelected ? 'bg-accent-electric-blue' : 'bg-surface-container'
                                         }`}>
                                             {isSelected ? (
-                                                <MaterialIcons name="check" size={16} color="#ffffff" style={{ fontWeight: 'bold' as any }} />
+                                                <Icon name="Check" size={16} color="white" strokeWidth={3} />
                                             ) : (
                                                 <View className="w-2.5 h-2.5 rounded-full bg-surface-container-lowest opacity-0" />
                                             )}
@@ -154,10 +154,10 @@ export default function StyleScreen() {
                                             : 'bg-surface-container-lowest shadow-sm border border-transparent'
                                     }`}
                                 >
-                                    <MaterialIcons 
-                                        name={isSelected ? (f.isNone ? 'sentiment-very-satisfied' : 'check') : (f.isNone ? 'sentiment-very-satisfied' : 'add')} 
+                                    <Icon 
+                                        name={isSelected ? (f.isNone ? 'Smile' : 'Check') : (f.isNone ? 'Smile' : 'Plus')} 
                                         size={18} 
-                                        color={isSelected ? '#ffffff' : '#8e8e93'} 
+                                        color={isSelected ? 'white' : 'muted'} 
                                     />
                                     <Text className={`font-semibold text-[14px] ${
                                         isSelected ? 'text-on-primary' : 'text-on-surface'

@@ -37,7 +37,9 @@ func main() {
 		// Run every hour: Postgres backup & pending cleanup
 		c.AddFunc("0 * * * *", func() {
 			log.Println("[Scheduler] Running hourly database backup to R2...")
-			jobs.RunPostgresBackup()
+			if err := jobs.RunPostgresBackup(); err != nil {
+				log.Printf("[Scheduler] Database backup failed: %v", err)
+			}
 
 			log.Println("[Scheduler] Running hourly pending student cleanup...")
 			jobs.PendingCleanup(database)
@@ -132,6 +134,61 @@ func main() {
 	// Webhooks (public)
 	r.Post("/api/webhooks/paystack", webhookHandler.Paystack)
 	r.Post("/api/webhooks/revenuecat", webhookHandler.RevenueCat)
+
+	// Cron endpoints (for Brimble HTTP cron schedules or external webhooks)
+	r.Route("/api/cron", func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				secret := os.Getenv("CRON_SECRET")
+				if secret != "" {
+					authHeader := r.Header.Get("Authorization")
+					cronHeader := r.Header.Get("X-Cron-Secret")
+					querySecret := r.URL.Query().Get("secret")
+					if cronHeader != secret && querySecret != secret && authHeader != "Bearer "+secret {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusUnauthorized)
+						_, _ = w.Write([]byte(`{"error":"unauthorized"}`))
+						return
+					}
+				}
+				next.ServeHTTP(w, r)
+			})
+		})
+
+		handleBackup := func(w http.ResponseWriter, r *http.Request) {
+			if err := jobs.RunPostgresBackup(); err != nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(fmt.Sprintf(`{"error":"%s"}`, err.Error())))
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"status":"ok","message":"backup completed successfully"}`))
+		}
+		r.Get("/backup", handleBackup)
+		r.Post("/backup", handleBackup)
+
+		handleStreaks := func(w http.ResponseWriter, r *http.Request) {
+			if err := jobs.ResetStreaks(database); err != nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(fmt.Sprintf(`{"error":"%s"}`, err.Error())))
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"status":"ok","message":"streaks reset successfully"}`))
+		}
+		r.Get("/streaks", handleStreaks)
+		r.Post("/streaks", handleStreaks)
+
+		handleCleanup := func(w http.ResponseWriter, r *http.Request) {
+			jobs.PendingCleanup(database)
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"status":"ok","message":"cleanup completed successfully"}`))
+		}
+		r.Get("/cleanup", handleCleanup)
+		r.Post("/cleanup", handleCleanup)
+	})
 	
 	// Internal AI Routes (Node.js AI service)
 	r.Route("/api/v2/internal/ai", func(r chi.Router) {

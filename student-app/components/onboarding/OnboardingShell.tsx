@@ -3,7 +3,7 @@ import { View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Tex
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import { BlurView } from 'expo-blur';
 import { cssInterop } from 'nativewind';
 
@@ -66,7 +66,7 @@ export function OnboardingShell({
                                 className="w-11 h-11 rounded-full items-center justify-center bg-transparent active:bg-surface-container-high"
                                 accessibilityLabel="Go back"
                             >
-                                <MaterialIcons name="arrow-back" size={24} className="text-on-surface" color="#1c1c1e" />
+                                <Icon name="ArrowLeft" size={24} color="text" />
                             </TouchableOpacity>
                         ) : (
                             <View className="w-11 h-11" />
@@ -144,7 +144,7 @@ export function OnboardingShell({
                                 {ctaLoading ? 'Loading...' : ctaTitle}
                             </Text>
                             {!ctaLoading && !ctaDisabled && (
-                                <MaterialIcons name="arrow-forward" size={20} color="#ffffff" />
+                                <Icon name="ArrowRight" size={20} color="white" />
                             )}
                         </TouchableOpacity>
                     </View>

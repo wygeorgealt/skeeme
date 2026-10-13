@@ -11,12 +11,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { IosCard } from '@/components/ui/IosCard';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
-import CalendarDefault from '@/assets/icons/pikaicons/calendar-default.svg';
-import Trash from '@/assets/icons/pikaicons/delete-dustbin-01.svg';
-import PlusCircle from '@/assets/icons/pikaicons/plus-circle.svg';
+import { Icon } from '@/components/ui/Icon';
 import { useRouter } from 'expo-router';
 
 export default function ExamsScreen() {
@@ -101,28 +99,18 @@ export default function ExamsScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
+            <ScreenHeader title="Your Exams" subtitle="Track your upcoming tests and reminders" />
             <ScrollView 
-                contentContainerStyle={[s.scroll, { paddingTop: insets.top + Spacing.sm, paddingBottom: 120 }]}
+                contentContainerStyle={[s.scroll, { paddingTop: Spacing.sm, paddingBottom: 120 }]}
                 refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={C.primary} />}
             >
-                <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(500)} style={s.header}>
-                    <View style={s.headerTopRow}>
-                        <TouchableOpacity onPress={() => router.back()} style={[s.backBtn, { backgroundColor: C.secondaryBackground }]}>
-                            <AltArrowLeft width={24} height={24} color={textColor} />
-                        </TouchableOpacity>
-                    </View>
-                    <View style={{ marginTop: 16 }}>
-                        <Text style={[s.title, { color: textColor }]}>Your Exams</Text>
-                        <Text style={[s.subtitle, { color: C.textSecondary }]}>Track your upcoming tests and reminders</Text>
-                    </View>
-                </Animated.View>
 
                 <Animated.View key={`exams-${animKey}`} entering={FadeInDown.delay(80).duration(400)}>
                     {exams.length === 0 ? (
                         <View style={s.emptyState}>
                             <AnimatedIcon size={64} animationType="wobble">
-                            <CalendarDefault width={56} height={56} color={C.textTertiary} />
-                        </AnimatedIcon>
+                                <Icon name="Calendar" size={56} color="textTertiary" />
+                            </AnimatedIcon>
                             <Text style={[s.emptyText, { color: C.textSecondary }]}>No upcoming exams set.</Text>
                         </View>
                     ) : (
@@ -133,7 +121,7 @@ export default function ExamsScreen() {
                                     <View style={s.examRow}>
                                         <View style={[s.examIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
                                             <AnimatedIcon size={24} animationType="wobble">
-                                                <CalendarDefault width={20} height={20} color={C.primary} />
+                                                <Icon name="Calendar" size={20} color="primary" />
                                             </AnimatedIcon>
                                         </View>
                                         <View style={{ flex: 1 }}>
@@ -148,7 +136,7 @@ export default function ExamsScreen() {
                                         </View>
                                         <TouchableOpacity onPress={() => handleDelete(exam.id)} style={s.deleteBtn} activeOpacity={0.7}>
                                             <AnimatedIcon size={24} animationType="wobble">
-                                                <Trash width={20} height={20} color={C.destructive} />
+                                                <Icon name="Trash2" size={20} color="destructive" />
                                             </AnimatedIcon>
                                         </TouchableOpacity>
                                     </View>
@@ -159,9 +147,9 @@ export default function ExamsScreen() {
                 </Animated.View>
             </ScrollView>
 
-            <TouchableOpacity style={s.fab} activeOpacity={0.8} onPress={() => setIsModalOpen(true)}>
+            <TouchableOpacity style={[s.fab, { backgroundColor: C.primary }]} activeOpacity={0.8} onPress={() => setIsModalOpen(true)}>
                 <AnimatedIcon size={32} animationType="pop">
-                    <PlusCircle width={32} height={32} color="#FFF" />
+                    <Icon name="Plus" size={32} color="white" />
                 </AnimatedIcon>
             </TouchableOpacity>
 

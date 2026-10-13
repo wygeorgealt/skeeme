@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -16,14 +17,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-// RunPostgresBackup executes pg_dump, zips it, and uploads to R2
-func RunPostgresBackup() {
+// RunPostgresBackup executes pg_dump, zips it, and uploads to R2 organized by month and day folders
+func RunPostgresBackup() error {
 	log.Println("[Backup Job] Starting Postgres backup to R2...")
 
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Println("[Backup Job] Error: DATABASE_URL not set")
-		return
+		err := fmt.Errorf("DATABASE_URL not set")
+		log.Printf("[Backup Job] Error: %v\n", err)
+		return err
 	}
 
 	bucket := os.Getenv("AWS_BUCKET")
@@ -33,15 +35,17 @@ func RunPostgresBackup() {
 	region := os.Getenv("AWS_DEFAULT_REGION")
 
 	if bucket == "" || endpoint == "" || accessKey == "" || secretKey == "" {
-		log.Println("[Backup Job] Error: Missing AWS credentials or bucket info")
-		return
+		err := fmt.Errorf("missing AWS credentials or bucket info")
+		log.Printf("[Backup Job] Error: %v\n", err)
+		return err
 	}
 	if region == "" {
 		region = "auto"
 	}
 
-	// Generate filename
-	timestamp := time.Now().UTC().Format("2006-01-02-15-04-05")
+	// Generate filename and folder hierarchy (Month/Day)
+	now := time.Now().UTC()
+	timestamp := now.Format("2006-01-02-15-04-05")
 	filename := fmt.Sprintf("postgres_backup_%s.sql.gz", timestamp)
 	localPath := filepath.Join("/tmp", filename)
 
@@ -52,8 +56,9 @@ func RunPostgresBackup() {
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		log.Printf("[Backup Job] pg_dump failed: %v, stderr: %s\n", err, stderr.String())
-		return
+		err = fmt.Errorf("pg_dump failed: %w, stderr: %s", err, stderr.String())
+		log.Printf("[Backup Job] %v\n", err)
+		return err
 	}
 	log.Printf("[Backup Job] Successfully created local dump: %s\n", localPath)
 
@@ -74,8 +79,9 @@ func RunPostgresBackup() {
 		config.WithRegion(region),
 	)
 	if err != nil {
-		log.Printf("[Backup Job] Failed to load AWS config: %v\n", err)
-		return
+		err = fmt.Errorf("failed to load AWS config: %w", err)
+		log.Printf("[Backup Job] %v\n", err)
+		return err
 	}
 
 	client := s3.NewFromConfig(cfg)
@@ -83,12 +89,22 @@ func RunPostgresBackup() {
 	// Upload to S3
 	file, err := os.Open(localPath)
 	if err != nil {
-		log.Printf("[Backup Job] Failed to open local backup file: %v\n", err)
-		return
+		err = fmt.Errorf("failed to open local backup file: %w", err)
+		log.Printf("[Backup Job] %v\n", err)
+		return err
 	}
 	defer file.Close()
 
-	s3Key := fmt.Sprintf("Skeeme-Postgres/%s", filename)
+	prefix := os.Getenv("BACKUP_R2_PREFIX")
+	if prefix == "" {
+		prefix = "Skeeme-Postgres"
+	}
+	prefix = strings.Trim(prefix, "/")
+
+	// Organize backups by month and day folders (e.g. Skeeme-Postgres/2026-10/13/postgres_backup_....sql.gz)
+	monthFolder := now.Format("2006-01")
+	dayFolder := now.Format("02")
+	s3Key := fmt.Sprintf("%s/%s/%s/%s", prefix, monthFolder, dayFolder, filename)
 	
 	log.Printf("[Backup Job] Uploading to R2: %s/%s...\n", bucket, s3Key)
 	_, err = client.PutObject(context.TODO(), &s3.PutObjectInput{
@@ -98,9 +114,11 @@ func RunPostgresBackup() {
 	})
 
 	if err != nil {
-		log.Printf("[Backup Job] Failed to upload to R2: %v\n", err)
-		return
+		err = fmt.Errorf("failed to upload to R2: %w", err)
+		log.Printf("[Backup Job] %v\n", err)
+		return err
 	}
 
 	log.Println("[Backup Job] Successfully uploaded Postgres backup to Cloudflare R2!")
+	return nil
 }

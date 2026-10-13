@@ -5,7 +5,7 @@ import { QuizFlipCard } from './QuizFlipCard';
 import { Question } from './QuizTypes';
 import { MathText } from '../ui/MathText';
 import { Colors, Spacing, Radius } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 
 export function MCQCard({
@@ -42,7 +42,7 @@ export function MCQCard({
             return {
                 container: { borderColor: C.success, backgroundColor: isDark ? 'rgba(48,209,88,0.1)' : 'rgba(52,199,89,0.1)' },
                 text: { color: C.success },
-                icon: 'checkmark-circle' as const,
+                icon: 'CheckCircle2' as const,
                 iconColor: C.success
             };
         }
@@ -51,7 +51,7 @@ export function MCQCard({
             return {
                 container: { borderColor: C.destructive, backgroundColor: isDark ? 'rgba(255,69,58,0.1)' : 'rgba(255,59,48,0.1)' },
                 text: { color: C.destructive },
-                icon: 'close-circle' as const,
+                icon: 'XCircle' as const,
                 iconColor: C.destructive
             };
         }
@@ -123,7 +123,7 @@ export function MCQCard({
                             <View style={{ flex: 1, paddingRight: 8 }}>
                                 <MathText content={opt} color={styles.text.color} fontSize={15} />
                             </View>
-                            {styles.icon ? <Ionicons name={styles.icon as keyof typeof Ionicons.glyphMap} size={19} color={styles.iconColor} /> : null}
+                            {styles.icon ? <Icon name={styles.icon as any} size={19} color={styles.iconColor} /> : null}
                         </TouchableOpacity>
                     );
                 })}
@@ -134,9 +134,9 @@ export function MCQCard({
                 <View style={[s.footer, { borderTopColor: C.separator }]}>
                     <View style={[s.statusBadge, { borderColor: isCorrect ? C.success : C.destructive, backgroundColor: isCorrect ? (isDark ? 'rgba(48,209,88,0.1)' : 'rgba(52,199,89,0.1)') : (isDark ? 'rgba(255,69,58,0.1)' : 'rgba(255,59,48,0.1)') }]}>
                         {isCorrect ? (
-                            <Ionicons name="checkmark-circle" size={16} color={C.success} />
+                            <Icon name="CheckCircle2" size={16} color={C.success} />
                         ) : (
-                            <Ionicons name="close-circle" size={16} color={C.destructive} />
+                            <Icon name="XCircle" size={16} color={C.destructive} />
                         )}
                         <Text style={[s.statusText, { color: isCorrect ? C.success : C.destructive }]}>
                             {isCorrect ? 'Correct' : 'Incorrect'}
@@ -161,7 +161,7 @@ export function MCQCard({
     const back = (
         <View style={[s.card, { backgroundColor: C.card, borderColor: C.separator }]}>
             <TouchableOpacity onPress={() => setFlipped(false)} style={s.backBtn}>
-                <Ionicons name="chevron-back" size={20} color={C.primary} />
+                <Icon name="ChevronLeft" size={20} color={C.primary} />
                 <Text style={[s.backText, { color: C.text }]}>Back</Text>
             </TouchableOpacity>
             

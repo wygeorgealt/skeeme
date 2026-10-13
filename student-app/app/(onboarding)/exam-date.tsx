@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import * as Haptics from 'expo-haptics';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import Animated, { FadeInUp, FadeInDown, Layout } from 'react-native-reanimated';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -91,7 +91,9 @@ export default function ExamDateScreen() {
                                     <View className={`absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                                         isSelected ? 'bg-accent-electric-blue' : 'bg-surface-container-high'
                                     }`}>
-                                        <MaterialIcons name="check" size={16} color={isSelected ? '#ffffff' : 'transparent'} style={{ fontWeight: 'bold' as any }} />
+                                        {isSelected && (
+                                            <Icon name="Check" size={16} color="white" strokeWidth={3} />
+                                        )}
                                     </View>
                                 </Pressable>
                             </Animated.View>
@@ -130,7 +132,7 @@ export default function ExamDateScreen() {
                             <View className="flex-col gap-1">
                                 <Text className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Target Exam / Course</Text>
                                 <View className="flex-row items-center rounded-xl bg-surface-container-low px-3 py-2.5 border border-transparent focus-within:border-accent-electric-blue/30">
-                                    <MaterialIcons name="school" size={20} color="#8e8e93" className="mr-2" />
+                                    <Icon name="GraduationCap" size={20} color="#8e8e93" style={{ marginRight: 8 }} />
                                     <TextInput 
                                         className="flex-1 text-[15px] text-on-surface p-0 ml-2"
                                         placeholder="e.g. MCAT, USMLE, Midterms"
@@ -147,7 +149,7 @@ export default function ExamDateScreen() {
                                     onPress={() => setShowPicker(true)}
                                     className="flex-row items-center rounded-xl bg-surface-container-low px-3 py-3 border border-transparent"
                                 >
-                                    <MaterialIcons name="calendar-month" size={20} color="#007aff" className="mr-2" />
+                                    <Icon name="Calendar" size={20} color="primary" style={{ marginRight: 8 }} />
                                     <Text className="flex-1 font-semibold text-[15px] text-on-surface ml-2">
                                         {date.toLocaleDateString(undefined, { dateStyle: 'long' })}
                                     </Text>
@@ -177,7 +179,7 @@ export default function ExamDateScreen() {
                     <Animated.View entering={FadeInDown.delay(150).duration(300)} className="p-4 rounded-xl flex-row items-center justify-between mt-2" style={{ backgroundColor: '#e5f1ff' }}>
                         <View className="flex-row items-center gap-3">
                             <View className="w-9 h-9 rounded-full bg-accent-electric-blue/15 flex items-center justify-center">
-                                <MaterialIcons name="insights" size={20} color="#007aff" />
+                                <Icon name="TrendingUp" size={20} color="primary" />
                             </View>
                             <View className="flex-col">
                                 <Text className="font-semibold text-[14px] text-on-surface">Predicted Mastery Retention</Text>
@@ -186,7 +188,7 @@ export default function ExamDateScreen() {
                         </View>
                         <View className="flex-row items-center gap-1">
                             <Text className="font-bold text-[16px] text-accent-electric-blue">94%</Text>
-                            <MaterialIcons name="trending-up" size={16} color="#007aff" />
+                            <Icon name="TrendingUp" size={16} color="primary" />
                         </View>
                     </Animated.View>
                 )}

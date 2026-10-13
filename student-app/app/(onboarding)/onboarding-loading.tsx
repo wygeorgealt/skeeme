@@ -15,7 +15,7 @@ import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useStudent } from '@/hooks/useStudent';
 import { api } from '@/lib/api';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const BIG = 120;
@@ -199,7 +199,7 @@ export default function OnboardingLoadingScreen() {
                 <View style={[s.ring, { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]} />
                 {/* Icon orb */}
                 <View style={[s.orb, { backgroundColor: isDark ? '#1c1c1e' : '#ffffff', shadowColor: C.primary }]}>
-                    <MaterialIcons name="school" size={44} color={C.primary} />
+                    <Icon name="GraduationCap" size={44} color="primary" />
                 </View>
                 {/* Check badge — shown when done */}
                 {done && (
@@ -207,7 +207,7 @@ export default function OnboardingLoadingScreen() {
                         entering={FadeInDown.springify()}
                         style={[s.checkBadge, { backgroundColor: C.primary }]}
                     >
-                        <MaterialIcons name="check" size={16} color="#fff" />
+                        <Icon name="Check" size={16} color="white" />
                     </Animated.View>
                 )}
             </Animated.View>
@@ -251,14 +251,14 @@ export default function OnboardingLoadingScreen() {
                     <Text style={[s.cardHeading, { color: C.text }]}>Your Personalized Blueprint</Text>
 
                     {[
-                        { icon: 'school', label: 'Education', value: onboardingData?.education_level || 'Not set' },
-                        { icon: 'track-changes', label: 'Primary Goal', value: onboardingData?.academic_goal || 'Not set' },
-                        { icon: 'lightbulb', label: 'Learning Style', value: onboardingData?.learning_style || 'Not set' },
-                        { icon: 'forum', label: 'Tutor Voice', value: onboardingData?.tone || 'Not set' },
+                        { icon: 'GraduationCap', label: 'Education', value: onboardingData?.education_level || 'Not set' },
+                        { icon: 'Target', label: 'Primary Goal', value: onboardingData?.academic_goal || 'Not set' },
+                        { icon: 'Lightbulb', label: 'Learning Style', value: onboardingData?.learning_style || 'Not set' },
+                        { icon: 'MessageSquare', label: 'Tutor Voice', value: onboardingData?.tone || 'Not set' },
                     ].map((row) => (
                         <View key={row.label} style={[s.row, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f4f3f8' }]}>
                             <View style={[s.rowIcon, { backgroundColor: isDark ? '#2c2c2e' : '#fff' }]}>
-                                <MaterialIcons name={row.icon as any} size={20} color={C.primary} />
+                                <Icon name={row.icon as any} size={20} color="primary" />
                             </View>
                             <View style={{ flex: 1, minWidth: 0 }}>
                                 <Text style={[s.rowLabel, { color: C.textSecondary }]}>{row.label.toUpperCase()}</Text>
@@ -284,7 +284,7 @@ export default function OnboardingLoadingScreen() {
                         ]}
                     >
                         <Text style={s.ctaText}>Start Learning</Text>
-                        <MaterialIcons name="arrow-forward" size={20} color="#fff" />
+                        <Icon name="ArrowRight" size={20} color="white" />
                     </Pressable>
                 </Animated.View>
             )}

@@ -10,9 +10,10 @@ import { useFocusEffect } from 'expo-router';
 import { haptics } from '@/lib/haptics';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -81,7 +82,7 @@ export default function PreferencesScreen() {
             updateUser({ ai_preferences: res.data.ai_preferences });
             haptics.notificationAsync(ExpoHaptics.NotificationFeedbackType.Success, true);
             Alert.alert('Saved!', 'Your AI will now adapt to your preferences.', [
-                { text: 'Got it', onPress: () => router.back() },
+                { text: 'Got it', onPress: () => (router.canGoBack() ? router.back() : router.replace('/(drawer)' as any)) },
             ]);
         } catch {
             haptics.notificationAsync(ExpoHaptics.NotificationFeedbackType.Error, true);
@@ -91,25 +92,13 @@ export default function PreferencesScreen() {
         }
     };
 
-    const cardBg = isDark ? '#1C1C1E' : '#FFFFFF';
-    const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-    const innerBg = isDark ? 'rgba(255,255,255,0.05)' : '#F4F3F8';
+    const cardBg = C.card;
+    const cardBorder = C.border;
+    const innerBg = C.surfaceLow;
 
     return (
-        <View style={{ flex: 1, backgroundColor: isDark ? '#0D0D0D' : '#F2F2F7' }}>
-            <Animated.View key={`hero-${animKey}`} entering={FadeInUp.duration(500)} style={{ paddingTop: Math.max(insets.top, 16) }} className="px-6 pb-6">
-                <Pressable
-                    onPress={() => router.back()}
-                    style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderColor: cardBorder, borderWidth: 1 }}
-                    className="w-11 h-11 rounded-full items-center justify-center shadow-sm mb-4"
-                >
-                    <MaterialIcons name="arrow-back-ios-new" size={20} color="#007AFF" />
-                </Pressable>
-                <Text style={{ color: C.text }} className="text-3xl font-bold tracking-tight mb-2">AI Personalization</Text>
-                <Text style={{ color: C.textSecondary }} className="text-base leading-6">
-                    Shape how your tutor explains, challenges, and supports you.
-                </Text>
-            </Animated.View>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
+            <ScreenHeader title="AI Personalization" subtitle="Shape how your tutor explains, challenges, and supports you" />
 
             <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
                 {/* 1. Field of Study */}
@@ -165,7 +154,7 @@ export default function PreferencesScreen() {
                                 >
                                     <View className="flex-row items-center justify-between mb-2">
                                         <Text style={{ color: isSelected ? '#007AFF' : C.text }} className="font-bold">{item.label}</Text>
-                                        {isSelected && <MaterialIcons name="check-circle" size={16} color="#007AFF" />}
+                                        {isSelected && <Icon name="CheckCircle2" size={16} color="primary" />}
                                     </View>
                                     <Text style={{ color: isSelected ? '#007AFF' : C.textSecondary }} className="text-xs">{item.desc}</Text>
                                 </Pressable>
@@ -238,7 +227,7 @@ export default function PreferencesScreen() {
                                         <Text style={{ color: isSelected ? '#007AFF' : C.text }} className="font-bold text-base mb-0.5">{item.label}</Text>
                                         <Text style={{ color: isSelected ? '#007AFF' : C.textSecondary }} className="text-xs">{item.desc}</Text>
                                     </View>
-                                    {isSelected && <MaterialIcons name="check-circle" size={24} color="#007AFF" />}
+                                    {isSelected && <Icon name="CheckCircle2" size={24} color="primary" />}
                                 </Pressable>
                             );
                         })}

@@ -28,7 +28,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import { haptics } from '@/lib/haptics';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -306,7 +306,7 @@ export default function AuthSelectScreen() {
                         activeOpacity={0.88}
                         style={styles.emailButton}
                     >
-                        <MaterialIcons name="mail-outline" size={22} color="#FFFFFF" />
+                        <Icon name="Mail" size={22} color="white" />
                         <Text style={styles.emailButtonText}>Continue with Email</Text>
                     </TouchableOpacity>
 

@@ -13,7 +13,8 @@ import ClaimRewardModal from '@/components/ClaimRewardModal';
 import { useState } from 'react';
 import { haptics } from '@/lib/haptics';
 
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
+import { Home, Camera, History as HistoryIcon, MessageSquare } from 'lucide-react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, SharedValue } from 'react-native-reanimated';
 
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
@@ -22,15 +23,14 @@ import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 type TabDef = {
     name: string;
     label: string;
-    icon: string;
-    activeIcon: string;
+    icon: any;
 };
 
 const TAB_DEFS: TabDef[] = [
-    { name: 'index', label: 'Home', icon: 'home', activeIcon: 'home' },
-    { name: 'scan', label: 'Scan', icon: 'document-scanner', activeIcon: 'document-scanner' },
-    { name: 'history', label: 'History', icon: 'history', activeIcon: 'history' },
-    { name: 'chat', label: 'Chat', icon: 'chat-bubble', activeIcon: 'chat-bubble' },
+    { name: 'index', label: 'Home', icon: Home },
+    { name: 'scan', label: 'Scan', icon: Camera },
+    { name: 'history', label: 'History', icon: HistoryIcon },
+    { name: 'chat', label: 'Chat', icon: MessageSquare },
 ];
 
 function TabBar({ state, descriptors, navigation }: any) {
@@ -67,7 +67,7 @@ function TabBar({ state, descriptors, navigation }: any) {
                     pill.blurPill,
                     {
                         backgroundColor: isDark
-                            ? (Platform.OS === 'android' ? '#1C1C1E' : 'rgba(28,28,30,0.88)')
+                            ? (Platform.OS === 'android' ? '#16181D' : 'rgba(22,24,29,0.88)')
                             : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.92)'),
                         borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
                         shadowColor: '#000',
@@ -80,7 +80,6 @@ function TabBar({ state, descriptors, navigation }: any) {
             >
                 {visibleTabs.map((item: any) => {
                     const { route, isFocused, tabDef } = item;
-                    const iconName = isFocused ? tabDef.activeIcon : tabDef.icon;
 
                     if (isFocused) {
                         // Active tab — blue pill with icon + label
@@ -95,7 +94,7 @@ function TabBar({ state, descriptors, navigation }: any) {
                                 activeOpacity={0.85}
                                 style={pill.activeTab}
                             >
-                                <MaterialIcons name={iconName as any} size={22} color="#FFFFFF" />
+                                <Icon icon={tabDef.icon} size={18} color="#FFFFFF" strokeWidth={2.4} />
                                 <Text style={pill.activeLabel}>{tabDef.label}</Text>
                             </TouchableOpacity>
                         );
@@ -113,10 +112,11 @@ function TabBar({ state, descriptors, navigation }: any) {
                             activeOpacity={0.7}
                             style={pill.inactiveTab}
                         >
-                            <MaterialIcons
-                                name={iconName as any}
-                                size={22}
+                            <Icon
+                                icon={tabDef.icon}
+                                size={19}
                                 color={isDark ? '#9CA3AF' : '#8E8E93'}
+                                strokeWidth={2}
                             />
                         </TouchableOpacity>
                     );
@@ -267,6 +267,7 @@ export default function TabLayout() {
                     name="scan"
                     options={{
                         title: 'Scan',
+                        tabBarStyle: { display: 'none' },
                     }}
                 />
                 <Tabs.Screen

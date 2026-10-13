@@ -7,15 +7,9 @@ import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Colors } from '@/constants/theme';
-import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
-import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
-import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
-import DangerTriangle from '@/assets/icons/pikaicons/troubleshoot.svg';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
-import Troubleshoot from '@/assets/icons/pikaicons/troubleshoot.svg';
-import CheckTickCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { MathText } from '@/components/ui/MathText';
 import { useAuthStore } from '@/store/authStore';
@@ -36,7 +30,6 @@ import Animated, {
 import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
 
-import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashcardDeckSummary } from '@/components/flashcards/FlashcardDeckSummary';
 
@@ -175,7 +168,7 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
                         {/* Bottom Prompt */}
                         <View className="flex-col gap-2 items-center pb-2">
                             <Animated.View style={bounceStyle} className="flex-row items-center py-1.5 px-3 rounded-full bg-surface-container-low gap-1.5">
-                                <MaterialIcons name="touch-app" size={18} color="#007AFF" />
+                                <Icon name="Hand" size={16} color="primary" />
                                 <Text className="font-label-sm" style={{ fontSize: 11, fontWeight: '600', color: isDark ? '#EBEBF5' : '#48484A' }}>Tap anywhere to flip card</Text>
                             </Animated.View>
                         </View>
@@ -188,11 +181,11 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
                         {/* Top Back Tag */}
                         <View className="flex-row items-center justify-between">
                             <View className="px-2.5 py-1 rounded-full bg-tertiary flex-row items-center gap-1">
-                                <MaterialIcons name="check-circle" size={14} color="#FFF" />
+                                <Icon name="CheckCircle2" size={14} color="white" />
                                 <Text className="text-on-tertiary font-label-sm" style={{ fontSize: 11, fontWeight: '700', color: '#FFF' }}>Verified Solution</Text>
                             </View>
                             <View className="h-8 px-3 rounded-full bg-surface-container flex-row items-center gap-1 justify-center">
-                                <MaterialIcons name="undo" size={15} color={isDark ? '#EBEBF5' : '#48484A'} />
+                                <Icon name="RotateCcw" size={14} color={isDark ? '#EBEBF5' : '#48484A'} />
                                 <Text className="text-on-surface-variant font-label-sm" style={{ fontSize: 11, fontWeight: '600' }}>Question</Text>
                             </View>
                         </View>
@@ -566,7 +559,7 @@ export default function StudyDeckScreen() {
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <View style={s.errorCenter}>
                 <AnimatedIcon size={64} animationType="wobble">
-                    <Troubleshoot width={56} height={56} color="#FF9500" />
+                    <Icon name="AlertTriangle" size={48} color="#FF9500" />
                 </AnimatedIcon>
                 <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Deck not found</Text>
                 <Text style={s.errorSubtitle}>
@@ -692,11 +685,11 @@ export default function StudyDeckScreen() {
             <View style={{ paddingTop: insets.top }} className="w-full bg-surface/80">
                 <View className="h-16 px-4 flex-row items-center justify-between">
                     <Pressable onPress={() => router.back()} className="w-11 h-11 items-center justify-center rounded-full">
-                        <MaterialIcons name="arrow-back-ios-new" size={24} color="#007AFF" />
+                        <Icon name="ArrowLeft" size={22} color="primary" />
                     </Pressable>
                     <View className="flex-col items-center justify-center flex-1 px-2" />
                     <Pressable className="w-11 h-11 items-center justify-center rounded-full">
-                        <MaterialIcons name="bookmark" size={24} color={isDark ? '#EBEBF5' : '#48484A'} />
+                        <Icon name="Bookmark" size={22} color="textSecondary" />
                     </Pressable>
                 </View>
             </View>
@@ -799,11 +792,11 @@ export default function StudyDeckScreen() {
                         {/* Bottom Utility Dock */}
                         <View className="flex-row items-center justify-between mt-6">
                             <Pressable onPress={prevCard} disabled={currentIndex === 0} className="w-12 h-12 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center">
-                                <MaterialIcons name="history" size={24} color={isDark ? '#EBEBF5' : '#48484A'} style={{ opacity: currentIndex === 0 ? 0.3 : 1 }} />
+                                <Icon name="RotateCcw" size={20} color={isDark ? '#EBEBF5' : '#48484A'} style={{ opacity: currentIndex === 0 ? 0.3 : 1 }} />
                             </Pressable>
 
                             <Pressable onPress={() => setIsFlagged(!isFlagged)} className="w-12 h-12 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center">
-                                <MaterialIcons name={isFlagged ? "star" : "star-border"} size={24} color={isFlagged ? "#007AFF" : (isDark ? '#EBEBF5' : '#48484A')} />
+                                <Icon name={isFlagged ? "BookmarkCheck" : "Bookmark"} size={20} color={isFlagged ? "primary" : (isDark ? '#EBEBF5' : '#48484A')} />
                             </Pressable>
                         </View>
                     </View>

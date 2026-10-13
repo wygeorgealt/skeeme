@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView, Alert, 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import { streamQuizGenerate } from '@/lib/aiStream';
 
 import { useFocusEffect, useLocalSearchParams, useNavigation, router } from 'expo-router';
@@ -33,29 +33,6 @@ import { TheoryCard } from '@/components/quiz/TheoryCard';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QuizCelebration } from '@/components/quiz/QuizCelebration';
-
-import Grid from '@/assets/icons/pikaicons/grid-dashboard-02.svg';
-import File from '@/assets/icons/pikaicons/file-default.svg';
-import Leaf from '@/assets/icons/pikaicons/award-medal.svg';
-import LightbulbBolt from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
-import Fire from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
-import List from '@/assets/icons/pikaicons/sidebar-menu.svg';
-import PencilEdit from '@/assets/icons/pikaicons/pencil-edit.svg';
-import LayerThree from '@/assets/icons/pikaicons/layer-three.svg';
-import DocumentText from '@/assets/icons/pikaicons/file-default.svg';
-import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
-import CloseCircle from '@/assets/icons/pikaicons/multiple-cross-cancel-circle.svg';
-import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
-import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
-import Share from '@/assets/icons/pikaicons/send-plane-horizontal.svg';
-import InfoCircle from '@/assets/icons/pikaicons/troubleshoot.svg';
-import Danger from '@/assets/icons/pikaicons/troubleshoot.svg';
-import CloudUpload from '@/assets/icons/pikaicons/upload-up.svg';
-import CupStar from '@/assets/icons/pikaicons/award-medal.svg';
-import UsersGroupRounded from '@/assets/icons/pikaicons/user-circle.svg';
-import Lightbulb from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
-import Stopwatch from '@/assets/icons/pikaicons/clock-default.svg';
-import FolderOpen from '@/assets/icons/pikaicons/folder-default.svg';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { GlassSurface } from '@/components/liquid-glass/GlassSurface';
@@ -85,62 +62,6 @@ const SkeletonCard = ({ isDark }: { isDark: boolean }) => {
         </View>
     );
 };
-
-// ══════════════════════════════════════════════════════════════════════════════
-// CONSTANTS & OPTIONS
-// ══════════════════════════════════════════════════════════════════════════════
-const MODE_OPTIONS = [
-    { key: 'topic', label: 'By Topic', Icon: Grid },
-    { key: 'file',  label: 'From File', Icon: File },
-];
-
-const DIFFICULTY_OPTIONS = [
-    { key: 'easy',   label: 'Easy',   Icon: Leaf, desc: 'Focus on fundamentals'    },
-    { key: 'medium', label: 'Medium', Icon: LightbulbBolt, desc: 'Comprehensive coverage'   },
-    { key: 'hard',   label: 'Hard',   Icon: Fire, desc: 'Deep analytical questions' },
-];
-
-const FORMAT_OPTIONS = [
-    { key: 'mcq',    label: 'MCQ',    Icon: List, desc: 'Multiple choice questions' },
-    { key: 'theory', label: 'Theory', Icon: PencilEdit, desc: 'Essay & analysis'           },
-    { key: 'both',   label: 'Mixed',  Icon: LayerThree, desc: 'Combination of both'        },
-];
-
-function ChipButton({
-    label,
-    Icon,
-    isSelected,
-    onPress,
-    isDark,
-    C,
-    small,
-}: {
-    label: string;
-    Icon: React.ComponentType<any>;
-    isSelected: boolean;
-    onPress: () => void;
-    isDark: boolean;
-    C: typeof Colors.light;
-    small?: boolean;
-}) {
-    return (
-        <Pressable
-            onPress={onPress}
-            
-            style={[
-                sf.chipBtn,
-                small ? sf.chipSmall : null,
-                isSelected
-                    ? { backgroundColor: '#007AFF', borderColor: '#007AFF' }
-                    : { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F2F4F8', borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E0E4EF' },
-            ]}
-        >
-            <Icon width={small ? 16 : 20} height={small ? 16 : 20} color={isSelected ? '#FFF' : C.text} style={{ marginRight: 6 }} />
-            <Text style={[small ? sf.chipLabelSmall : sf.chipLabel, { color: isSelected ? '#FFF' : C.text }]}>{label}</Text>
-        </Pressable>
-    );
-}
-
 // Card shadow helper
 const cardShadow = (C: typeof Colors.light) => ({
     backgroundColor: C.card,
@@ -700,11 +621,15 @@ export default function GenerateQuizScreen() {
                 {/* Header */}
                 <View className="h-16 px-4 flex-row items-center justify-between z-50 bg-surface-container-lowest/80" style={{ paddingTop: Math.max(insets.top, 16) }}>
                     <Pressable
-                        onPress={() => router.back()}
+                        onPress={() => {
+                            haptics.selectionAsync(true);
+                            if (router.canGoBack()) router.back();
+                            else router.replace('/(drawer)' as any);
+                        }}
                         
                         className="w-11 h-11 -ml-2 rounded-full items-center justify-center bg-transparent"
                     >
-                        <MaterialIcons name="arrow-back" size={24} color={C.text} className="text-on-surface" />
+                        <Icon name="ArrowLeft" size={24} color="text" />
                     </Pressable>
                     <Text className="text-[20px] font-[600] tracking-[-0.2px] text-on-surface flex-1 text-center" numberOfLines={1}>
                         {isLoading ? (loadingStage || 'Skeeming...') : 'Create Quiz'}
@@ -728,7 +653,7 @@ export default function GenerateQuizScreen() {
                         <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-4">
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
-                                    <MaterialIcons name="dataset" size={20} color="#007AFF" />
+                                    <Icon name="Database" size={20} color="primary" />
                                     <Text className="text-[16px] font-[600] text-on-surface">Quiz Source Material</Text>
                                 </View>
                             </View>
@@ -740,7 +665,7 @@ export default function GenerateQuizScreen() {
                                     onPress={() => { setMode('topic'); setSelectedFile(null); }}
                                     
                                 >
-                                    <MaterialIcons name="edit-note" size={18} color={mode === 'topic' ? '#007AFF' : C.textSecondary} />
+                                    <Icon name="PenTool" size={18} color={mode === 'topic' ? 'primary' : 'textSecondary'} />
                                     <Text className={`text-[14px] font-[600] ${mode === 'topic' ? 'text-accent-electric-blue' : 'text-on-surface-variant'}`}>Input Topic</Text>
                                 </Pressable>
                                 <Pressable 
@@ -748,7 +673,7 @@ export default function GenerateQuizScreen() {
                                     onPress={() => { setMode('file'); }}
                                     
                                 >
-                                    <MaterialIcons name="cloud-upload" size={18} color={mode === 'file' ? '#007AFF' : C.textSecondary} />
+                                    <Icon name="UploadCloud" size={18} color={mode === 'file' ? 'primary' : 'textSecondary'} />
                                     <Text className={`text-[14px] font-[600] ${mode === 'file' ? 'text-accent-electric-blue' : 'text-on-surface-variant'}`}>Upload Notes</Text>
                                 </Pressable>
                             </View>
@@ -770,7 +695,7 @@ export default function GenerateQuizScreen() {
                                         />
                                         <View className="flex-row items-center justify-between pt-2">
                                             <Pressable onPress={() => setTopic('')} className="p-1">
-                                                <MaterialIcons name="backspace" size={18} color={C.textTertiary} />
+                                                <Icon name="X" size={18} color="textTertiary" />
                                             </Pressable>
                                         </View>
                                     </View>
@@ -804,7 +729,7 @@ export default function GenerateQuizScreen() {
                                         ) : selectedFile ? (
                                             <>
                                                 <View className="w-14 h-14 rounded-2xl bg-surface-container-lowest items-center justify-center shadow-sm">
-                                                    <MaterialIcons name="description" size={32} color="#007AFF" />
+                                                    <Icon name="FileText" size={32} color="primary" />
                                                 </View>
                                                 <View className="items-center">
                                                     <Text className="text-[16px] font-[600] text-on-surface">{selectedFile.name}</Text>
@@ -821,14 +746,14 @@ export default function GenerateQuizScreen() {
                                         ) : (
                                             <>
                                                 <View className="w-14 h-14 rounded-2xl bg-surface-container-lowest items-center justify-center shadow-sm">
-                                                    <MaterialIcons name="upload-file" size={32} color="#007AFF" />
+                                                    <Icon name="Upload" size={32} color="primary" />
                                                 </View>
                                                 <View className="items-center">
                                                     <Text className="text-[16px] font-[600] text-on-surface">Drop lecture slides, syllabus, or notes</Text>
                                                     <Text className="text-[13px] font-[400] text-on-surface-variant mt-0.5">Supports PDF, DOCX, TXT (Max 5MB)</Text>
                                                 </View>
                                                 <View className="mt-1 px-4 py-2 bg-primary-container rounded-xl flex-row items-center gap-1.5 shadow-sm">
-                                                    <MaterialIcons name="add-circle" size={18} color="#007AFF" />
+                                                    <Icon name="PlusCircle" size={18} color="primary" />
                                                     <Text className="text-[14px] font-[600] text-accent-electric-blue">Add Document</Text>
                                                 </View>
                                             </>
@@ -842,7 +767,7 @@ export default function GenerateQuizScreen() {
                         <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-4">
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
-                                    <MaterialIcons name="format-list-numbered" size={20} color="#007AFF" />
+                                    <Icon name="ListOrdered" size={20} color="primary" />
                                     <Text className="text-[16px] font-[600] text-on-surface">Question Count</Text>
                                 </View>
                             </View>
@@ -852,7 +777,7 @@ export default function GenerateQuizScreen() {
                                     className="w-11 h-11 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
                                     onPress={() => setQuestionCount(prev => String(Math.max(5, parseInt(prev) - 5)))}
                                 >
-                                    <MaterialIcons name="remove" size={22} color={C.text} />
+                                    <Icon name="Minus" size={22} color="text" />
                                 </Pressable>
                                 <View className="flex-col items-center">
                                     <View className="flex-row items-baseline gap-1">
@@ -864,7 +789,7 @@ export default function GenerateQuizScreen() {
                                     className="w-11 h-11 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
                                     onPress={() => setQuestionCount(prev => String(Math.min(30, parseInt(prev) + 5)))}
                                 >
-                                    <MaterialIcons name="add" size={22} color={C.text} />
+                                    <Icon name="Plus" size={22} color="text" />
                                 </Pressable>
                             </View>
 
@@ -885,7 +810,7 @@ export default function GenerateQuizScreen() {
                         <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-4">
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
-                                    <MaterialIcons name="psychology" size={20} color="#007AFF" />
+                                    <Icon name="Brain" size={20} color="primary" />
                                     <Text className="text-[16px] font-[600] text-on-surface">Difficulty Depth</Text>
                                 </View>
                                 <View className="bg-primary-container px-2.5 py-0.5 rounded-full">
@@ -897,9 +822,9 @@ export default function GenerateQuizScreen() {
 
                             <View className="flex-row gap-2.5 w-full">
                                 {[
-                                    { key: 'easy', icon: 'spa', label: 'Easy', desc: 'Foundations & recall' },
-                                    { key: 'medium', icon: 'school', label: 'Medium', desc: 'Exam standard' },
-                                    { key: 'hard', icon: 'local-fire-department', label: 'Hard', desc: 'Deep mastery & traps' },
+                                    { key: 'easy', icon: 'Sparkles', label: 'Easy', desc: 'Foundations & recall' },
+                                    { key: 'medium', icon: 'GraduationCap', label: 'Medium', desc: 'Exam standard' },
+                                    { key: 'hard', icon: 'Flame', label: 'Hard', desc: 'Deep mastery & traps' },
                                 ].map(opt => {
                                     const isActive = difficulty === opt.key;
                                     return (
@@ -910,9 +835,9 @@ export default function GenerateQuizScreen() {
                                         >
                                             <View className="flex-row items-center justify-between w-full">
                                                 <View className="w-9 h-9 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm">
-                                                    <MaterialIcons name={opt.icon as any} size={20} color={isActive ? "#007AFF" : C.textSecondary} />
+                                                    <Icon name={opt.icon as any} size={20} color={isActive ? "primary" : "textSecondary"} />
                                                 </View>
-                                                {isActive && <MaterialIcons name="check-circle" size={20} color="#007AFF" />}
+                                                {isActive && <Icon name="CheckCircle2" size={20} color="primary" />}
                                             </View>
                                             <View>
                                                 <Text className={`text-[16px] font-[600] ${isActive ? 'text-accent-electric-blue' : 'text-on-surface'}`}>{opt.label}</Text>
@@ -929,7 +854,7 @@ export default function GenerateQuizScreen() {
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-3">
                                     <View className="w-10 h-10 rounded-xl bg-surface-container-low items-center justify-center">
-                                        <MaterialIcons name="timer" size={22} color="#007AFF" />
+                                        <Icon name="Timer" size={22} color="primary" />
                                     </View>
                                     <Text className="text-[16px] font-[600] text-on-surface">Quiz Timer</Text>
                                 </View>
@@ -951,7 +876,7 @@ export default function GenerateQuizScreen() {
                                             className="w-10 h-10 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
                                             onPress={() => setTimerMinutes(prev => String(Math.max(5, parseInt(prev || '10') - 5)))}
                                         >
-                                            <MaterialIcons name="remove" size={20} color={C.text} />
+                                            <Icon name="Minus" size={20} color="text" />
                                         </Pressable>
                                         <View className="flex-col items-center">
                                             <View className="flex-row items-baseline gap-1">
@@ -963,7 +888,7 @@ export default function GenerateQuizScreen() {
                                             className="w-10 h-10 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
                                             onPress={() => setTimerMinutes(prev => String(Math.min(60, parseInt(prev || '10') + 5)))}
                                         >
-                                            <MaterialIcons name="add" size={20} color={C.text} />
+                                            <Icon name="Plus" size={20} color="text" />
                                         </Pressable>
                                     </View>
 
@@ -986,15 +911,15 @@ export default function GenerateQuizScreen() {
                         <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-3">
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
-                                    <MaterialIcons name="tune" size={20} color="#007AFF" />
+                                    <Icon name="Sliders" size={20} color="primary" />
                                     <Text className="text-[16px] font-[600] text-on-surface">Question Formats</Text>
                                 </View>
                             </View>
                             <View className="flex-row flex-wrap gap-2.5">
                                 {[
-                                    { key: 'mcq', icon: 'radio-button-checked', label: 'Multiple Choice' },
-                                    { key: 'theory', icon: 'rule', label: 'True / False / Essay' },
-                                    { key: 'both', icon: 'short-text', label: 'Mixed' }
+                                    { key: 'mcq', icon: 'CheckCircle2', label: 'Multiple Choice' },
+                                    { key: 'theory', icon: 'FileText', label: 'True / False / Essay' },
+                                    { key: 'both', icon: 'Layers', label: 'Mixed' }
                                 ].map(opt => {
                                     const isActive = format === opt.key;
                                     return (
@@ -1003,7 +928,7 @@ export default function GenerateQuizScreen() {
                                             onPress={() => setFormat(opt.key as FormatType)}
                                             className={`px-4 py-2.5 rounded-2xl flex-row items-center gap-2 ${isActive ? 'bg-primary-container' : 'bg-surface-container-low'}`}
                                         >
-                                            <MaterialIcons name={opt.icon as any} size={18} color={isActive ? "#007AFF" : C.textSecondary} />
+                                            <Icon name={opt.icon as any} size={18} color={isActive ? "primary" : "textSecondary"} />
                                             <Text className={`text-[14px] font-[600] ${isActive ? 'text-accent-electric-blue' : 'text-on-surface-variant'}`}>{opt.label}</Text>
                                         </Pressable>
                                     );
@@ -1032,7 +957,7 @@ export default function GenerateQuizScreen() {
                             {isLoading ? (
                                 <LoadingSpinner size={22} color="white" />
                             ) : (
-                                <MaterialIcons name="bolt" size={22} color="white" />
+                                <Icon name="Zap" size={22} color="white" />
                             )}
                             <Text className="text-[16px] font-[600] text-on-primary">{isLoading ? 'Generating...' : 'Generate Quiz'}</Text>
                             {!isLoading && <Text className="text-[13px] font-[400] text-on-primary/80">✨</Text>}
@@ -1069,7 +994,7 @@ export default function GenerateQuizScreen() {
                             onPress={() => { setIsLoading(false); }}
                             className="w-10 h-10 items-center justify-center rounded-full bg-surface-container shadow-xs"
                         >
-                            <MaterialIcons name="close" size={20} color={C.text} />
+                            <Icon name="X" size={20} color="text" />
                         </Pressable>
                         <View className="flex-col items-center flex-1 px-2">
                             <Text className="text-[14px] font-[800] text-primary uppercase tracking-[1px]">{loadingStage || 'Skeeming...'}</Text>
@@ -1138,15 +1063,19 @@ export default function GenerateQuizScreen() {
                 {/* Header */}
                 <View className="h-16 px-5 flex-row items-center justify-between shadow-sm z-50 bg-surface/80" style={{ paddingTop: insets.top }}>
                     <Pressable 
-                        onPress={() => router.back()}
+                        onPress={() => {
+                            haptics.selectionAsync(true);
+                            if (router.canGoBack()) router.back();
+                            else router.replace('/(drawer)' as any);
+                        }}
                         className="w-10 h-10 items-center justify-center rounded-full bg-surface-container-lowest shadow-sm"
                     >
-                        <MaterialIcons name="chevron-left" size={24} color={C.text} />
+                        <Icon name="ChevronLeft" size={24} color="text" />
                     </Pressable>
                     <View className="flex-1" />
                     {timerEnabled && (
                         <Pressable className="w-10 h-10 items-center justify-center rounded-full bg-surface-container-lowest shadow-sm">
-                            <MaterialIcons name="timer" size={20} color={C.textTertiary} />
+                            <Icon name="Timer" size={20} color="textTertiary" />
                         </Pressable>
                     )}
                 </View>
@@ -1169,12 +1098,12 @@ export default function GenerateQuizScreen() {
                         
                         <View className="flex-row items-center gap-4 text-[12px] text-on-surface-variant pt-0.5">
                             <View className="flex-row items-center gap-1">
-                                <MaterialIcons name="schedule" size={14} color={C.textTertiary} />
+                                <Icon name="Clock" size={14} color="textTertiary" />
                                 <Text className="text-on-surface-variant text-[12px]">Question {currentQIndex + 1}/{questions.length}</Text>
                             </View>
                             {timerEnabled && (
                                 <View className="flex-row items-center gap-1">
-                                    <MaterialIcons name="timer" size={14} color={timeLeft < 60 ? '#FF3B30' : C.textTertiary} />
+                                    <Icon name="Timer" size={14} color={timeLeft < 60 ? '#FF3B30' : C.textTertiary} />
                                     <Text className={`text-[12px] ${timeLeft < 60 ? 'text-[#FF3B30] font-[700]' : 'text-on-surface-variant'}`}>{formatTime(timeLeft)}</Text>
                                 </View>
                             )}
@@ -1184,7 +1113,7 @@ export default function GenerateQuizScreen() {
                     {/* Question Typography */}
                     <View className="flex-col items-center text-center pt-2 mb-6">
                         <View className="w-24 h-24 rounded-full bg-primary-container shadow-sm items-center justify-center mb-4">
-                            <MaterialIcons name="quiz" size={40} color="#007AFF" />
+                            <Icon name="HelpCircle" size={40} color="primary" />
                         </View>
                         <Text className="font-[700] text-[18px] text-on-surface leading-[26px] text-center">{q.question_text}</Text>
                     </View>
@@ -1210,13 +1139,13 @@ export default function GenerateQuizScreen() {
                                         badgeClass = "w-8 h-8 rounded-full bg-[#ffffff] shadow-sm flex items-center justify-center";
                                         badgeTextClass = "font-[700] text-[13px] text-[#047857]";
                                         textClass = "font-[600] text-[13px] text-on-surface";
-                                        icon = <MaterialIcons name="check-circle" size={18} color="#10b981" />;
+                                        icon = <Icon name="CheckCircle2" size={18} color="success" />;
                                     } else if (isSelected && !isCorrectOpt) {
                                         btnClass = "p-3.5 rounded-2xl bg-[#fef2f2] shadow-sm border-2 border-[#ef4444] flex-row items-center justify-between";
                                         badgeClass = "w-8 h-8 rounded-full bg-[#ffffff] shadow-sm flex items-center justify-center";
                                         badgeTextClass = "font-[700] text-[13px] text-[#b91c1c]";
                                         textClass = "font-[600] text-[13px] text-on-surface";
-                                        icon = <MaterialIcons name="cancel" size={18} color="#ef4444" />;
+                                        icon = <Icon name="XCircle" size={18} color="destructive" />;
                                     }
                                 } else if (isSelected) {
                                     btnClass = "p-3.5 rounded-2xl bg-primary-container shadow-sm border-2 border-[#007AFF] flex-row items-center justify-between";
@@ -1268,7 +1197,7 @@ export default function GenerateQuizScreen() {
                                         cleanExpl = cleanExpl.charAt(0).toUpperCase() + cleanExpl.slice(1);
                                     }
                                     return cleanExpl;
-                                })()}
+                                    })()}
                             </Text>
                         </View>
                     )}
@@ -1287,7 +1216,7 @@ export default function GenerateQuizScreen() {
                             }}
                             className={`h-12 flex-1 rounded-full flex-row items-center justify-center bg-surface-container-low shadow-sm ${currentQIndex === 0 ? 'opacity-50' : ''}`}
                         >
-                            <MaterialIcons name="arrow-back" size={18} color={C.text} style={{ marginRight: 4 }} />
+                            <Icon name="ArrowLeft" size={18} color="text" style={{ marginRight: 4 }} />
                             <Text className="font-[600] text-[14px] text-on-surface">Previous</Text>
                         </Pressable>
                         
@@ -1299,7 +1228,7 @@ export default function GenerateQuizScreen() {
                             <Text className={`font-[600] text-[14px] mr-1 ${hasSelectedAction || isRevealed ? 'text-white' : 'text-on-surface-variant'}`}>
                                 {isTheory ? (currentQIndex === questions.length - 1 ? 'Finish' : 'Next') : (!isRevealed ? 'Check' : (currentQIndex === questions.length - 1 ? 'Finish' : 'Next'))}
                             </Text>
-                            {(hasSelectedAction || isRevealed) && <MaterialIcons name="arrow-forward" size={18} color="white" />}
+                            {(hasSelectedAction || isRevealed) && <Icon name="ArrowRight" size={18} color="white" />}
                         </Pressable>
                     </View>
                 </View>
@@ -1309,10 +1238,10 @@ export default function GenerateQuizScreen() {
 
     // ── RESULTS VIEW ────────────────────────────────────────────────────────────
     const getRemark = (pct: number) => {
-        if (pct >= 90) return { title: "Excellent work", subtitle: "You have a strong grasp of this topic.", icon: CupStar };
-        if (pct >= 75) return { title: "Well done", subtitle: "A few more reviews will make this stick.", icon: CheckCircle };
-        if (pct >= 50) return { title: "Keep practicing", subtitle: "Review the missed questions, then try again.", icon: InfoCircle };
-        return { title: "Ready for another pass", subtitle: "Review the explanations and take your time.", icon: Danger };
+        if (pct >= 90) return { title: "Excellent work", subtitle: "You have a strong grasp of this topic.", icon: 'Award' as const };
+        if (pct >= 75) return { title: "Well done", subtitle: "A few more reviews will make this stick.", icon: 'CheckCircle2' as const };
+        if (pct >= 50) return { title: "Keep practicing", subtitle: "Review the missed questions, then try again.", icon: 'HelpCircle' as const };
+        return { title: "Ready for another pass", subtitle: "Review the explanations and take your time.", icon: 'AlertTriangle' as const };
     };
     const remark = getRemark(percentage);
 
@@ -1321,7 +1250,7 @@ export default function GenerateQuizScreen() {
             <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 280, paddingTop: insets.top + 20 }} showsVerticalScrollIndicator={false}>
                 <View style={[s.resultsHeader, { backgroundColor: C.card, borderColor: C.separator }]}>
                     <View style={s.resultsIconBox}>
-                        <remark.icon width={36} height={36} color={C.primary} />
+                        <Icon name={remark.icon} size={36} color="primary" />
                     </View>
                     <Text style={[s.resultsTitle, { color: C.primary }]}>{remark.title}</Text>
                     <Text style={[s.scoreValue, { color: C.text }]}>{percentage}%</Text>
@@ -1330,11 +1259,11 @@ export default function GenerateQuizScreen() {
                     {/* Meta Info */}
                     <View style={s.resultsMeta}>
                         <View style={s.metaCard}>
-                            <CheckCircle width={16} height={16} color="#4ADE80" />
+                            <Icon name="CheckCircle2" size={16} color="success" />
                             <Text style={[s.metaText, { color: C.textSecondary }]}>{correctCount} OK</Text>
                         </View>
                         <View style={s.metaCard}>
-                            <Stopwatch width={16} height={16} color={C.primary} />
+                            <Icon name="Timer" size={16} color="primary" />
                             <Text style={[s.metaText, { color: C.textSecondary }]}>
                                 {timerEnabled ? formatTime(((parseInt(timerMinutes) || 10) * 60) - timeLeft) : 'No Timer'}
                             </Text>
@@ -1357,9 +1286,9 @@ export default function GenerateQuizScreen() {
                             <View style={[s.reviewCard, { backgroundColor: C.card, borderColor: C.separator }]}>
                                 <View style={[s.reviewStatusBox, { backgroundColor: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }]}>
                                     {isCorrect ? (
-                                        <CheckCircle width={18} height={18} color="#10b981" />
+                                        <Icon name="CheckCircle2" size={18} color="success" />
                                     ) : (
-                                        <CloseCircle width={18} height={18} color="#ef4444" />
+                                        <Icon name="XCircle" size={18} color="destructive" />
                                     )}
                                 </View>
                                 <View style={{ flex: 1 }}>
@@ -1369,7 +1298,7 @@ export default function GenerateQuizScreen() {
                                     </Text>
                                 </View>
                                 {canExplain && (
-                                    <AltArrowRight width={16} height={16} color={C.textTertiary} />
+                                    <Icon name="ChevronRight" size={16} color="textTertiary" />
                                 )}
                             </View>
                         </Pressable>
@@ -1414,7 +1343,7 @@ export default function GenerateQuizScreen() {
                             <LoadingSpinner size={24} color={C.primary} strokeWidth={3} />
                         ) : (
                             <>
-                                <Share width={18} height={18} color={C.text} />
+                                <Icon name="Share2" size={18} color="text" />
                                 <Text style={[s.actionBtnText, { color: C.text }]}>Share</Text>
                             </>
                         )}
@@ -1431,7 +1360,7 @@ export default function GenerateQuizScreen() {
                                 <LoadingSpinner size={24} color="white" strokeWidth={3} />
                             ) : (
                                 <>
-                                    <DocumentText width={18} height={18} color="white" />
+                                    <Icon name="FileText" size={18} color="white" />
                                     <Text style={s.exportBtnText}>Export</Text>
                                 </>
                             )}
@@ -1453,7 +1382,7 @@ export default function GenerateQuizScreen() {
                         alignItems: 'center',
                         gap: 12,
                     }}>
-                        <Danger width={18} height={18} color="#f59e0b" />
+                        <Icon name="AlertTriangle" size={18} color="warning" />
                         <Text style={{ flex: 1, fontSize: 13, fontWeight: '500', color: isDark ? '#fcd34d' : '#92400e', lineHeight: 20 }}>
                             Quiz completed, but we couldn’t save it to your history. Your results won’t appear in Study History.
                         </Text>
@@ -1559,9 +1488,9 @@ export default function GenerateQuizScreen() {
                                 { backgroundColor: explanationQ?.isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', marginRight: 0 }
                             ]}>
                                 {explanationQ?.isCorrect ? (
-                                    <CheckCircle width={18} height={18} color="#10b981" />
+                                    <Icon name="CheckCircle2" size={18} color="success" />
                                 ) : (
-                                    <CloseCircle width={18} height={18} color="#ef4444" />
+                                    <Icon name="XCircle" size={18} color="destructive" />
                                 )}
                             </View>
                             <Text style={[s.sheetTitle, { color: C.text }]} numberOfLines={2}>

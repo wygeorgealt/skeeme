@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import * as Haptics from 'expo-haptics';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const SUGGESTIONS = ['Computer Science', 'Engineering', 'Medicine', 'Business', 'Law'];
@@ -70,10 +70,10 @@ export default function FieldScreen() {
                     <View className="min-h-[48px] px-3 py-1.5 rounded-2xl bg-surface-container-low flex-row flex-wrap items-center gap-2">
                         {major && (
                             <View className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent-electric-blue shadow-sm">
-                                <MaterialIcons name="school" size={18} color="#ffffff" />
+                                <Icon name="GraduationCap" size={18} color="white" />
                                 <Text className="font-semibold text-[14px] text-on-primary">{major}</Text>
                                 <Pressable onPress={removeMajor} className="w-5 h-5 items-center justify-center rounded-full opacity-80 active:opacity-50">
-                                    <MaterialIcons name="close" size={16} color="#ffffff" />
+                                    <Icon name="X" size={16} color="white" />
                                 </Pressable>
                             </View>
                         )}
@@ -148,11 +148,13 @@ export default function FieldScreen() {
                                         isActive ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container-low'
                                     }`}
                                 >
-                                    <MaterialIcons 
-                                        name="check" 
-                                        size={18} 
-                                        color={isActive ? '#ffffff' : 'transparent'} 
-                                    />
+                                    {isActive && (
+                                        <Icon 
+                                            name="Check" 
+                                            size={18} 
+                                            color="white" 
+                                        />
+                                    )}
                                     <Text className={`font-semibold text-[14px] ${isActive ? 'text-on-primary' : 'text-on-surface-variant'}`}>
                                         {sub}
                                     </Text>
@@ -170,7 +172,7 @@ export default function FieldScreen() {
                                 }
                             }}
                         >
-                            <MaterialIcons name="add" size={18} color="#007aff" />
+                            <Icon name="Plus" size={18} color="primary" />
                             <Text className="font-semibold text-[14px] text-accent-electric-blue">Add Subject</Text>
                         </Pressable>
                     </View>

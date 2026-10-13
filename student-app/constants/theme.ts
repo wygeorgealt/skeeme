@@ -1,95 +1,143 @@
 import { Platform } from 'react-native';
 
-// ─── iOS HIG Design System ────────────────────────────────────────────────────
+// ─── Standardized Skeeme Blue & Black Design System ─────────────────────────
+
+export const Palette = {
+  blue: {
+    primary: '#007AFF',
+    accent: '#0A84FF',
+    lightContainer: '#E5F1FF',
+    darkContainer: 'rgba(0, 122, 255, 0.18)',
+    border: '#007AFF',
+  },
+  dark: {
+    background: '#0B0C0E',
+    surface: '#16181D',
+    surfaceLow: '#20232B',
+    surfaceElevated: '#282C37',
+    border: 'rgba(255, 255, 255, 0.08)',
+    borderStrong: 'rgba(255, 255, 255, 0.16)',
+    textPrimary: '#FFFFFF',
+    textSecondary: '#94A3B8',
+    textTertiary: '#64748B',
+  },
+  light: {
+    background: '#F8F9FA',
+    surface: '#FFFFFF',
+    surfaceLow: '#F1F3F5',
+    surfaceElevated: '#E9ECEF',
+    border: 'rgba(0, 0, 0, 0.08)',
+    borderStrong: 'rgba(0, 0, 0, 0.16)',
+    textPrimary: '#0F172A',
+    textSecondary: '#64748B',
+    textTertiary: '#94A3B8',
+  },
+  semantic: {
+    success: '#10B981',
+    successLight: 'rgba(16, 185, 129, 0.15)',
+    destructive: '#EF4444',
+    destructiveLight: 'rgba(239, 68, 68, 0.15)',
+    warning: '#F59E0B',
+    warningLight: 'rgba(245, 158, 11, 0.15)',
+  },
+};
 
 export const Colors = {
   light: {
     // Backgrounds
-    background: '#F2F2F7',
-    secondaryBackground: '#FFFFFF',
-    card: '#FFFFFF',
-    elevated: '#E9E9EB',
+    background: Palette.light.background,
+    secondaryBackground: Palette.light.surface,
+    card: Palette.light.surface,
+    elevated: Palette.light.surfaceElevated,
+    surfaceLow: Palette.light.surfaceLow,
     
     // Text
-    text: '#0A0F1E',
-    textSecondary: '#6D6D72',
-    textTertiary: '#8E8E93',
+    text: Palette.light.textPrimary,
+    textSecondary: Palette.light.textSecondary,
+    textTertiary: Palette.light.textTertiary,
     
     // Brand / Primary Action
-    primary: '#007AFF',
-    primaryLight: 'rgba(0, 122, 255, 0.1)',
+    primary: Palette.blue.primary,
+    primaryAccent: Palette.blue.accent,
+    primaryLight: Palette.blue.lightContainer,
     
     // Semantic
-    destructive: '#FF3B30',
-    success: '#34C759',
-    successLight: 'rgba(52, 199, 89, 0.15)',
-    warning: '#FF9500',
+    destructive: Palette.semantic.destructive,
+    success: Palette.semantic.success,
+    successLight: Palette.semantic.successLight,
+    warning: Palette.semantic.warning,
     
-    // Separators
-    separator: 'rgba(60, 60, 67, 0.12)',
-    separatorOpaque: '#E5E5EA',
+    // Separators & Borders
+    separator: Palette.light.border,
+    separatorOpaque: '#E2E8F0',
+    border: Palette.light.border,
+    borderStrong: Palette.light.borderStrong,
     
     // Icons
-    icon: '#6D6D72',
-    iconActive: '#007AFF',
-    tabIconDefault: '#9CA3AF',
-    tabIconSelected: '#007AFF',
+    icon: Palette.light.textSecondary,
+    iconActive: Palette.blue.primary,
+    tabIconDefault: Palette.light.textTertiary,
+    tabIconSelected: Palette.blue.primary,
 
-    // Card elevation (flat card system)
+    // Card elevation
     cardShadowColor: '#000000',
-    cardShadowOpacity: 0.035,
+    cardShadowOpacity: 0.04,
     cardShadowRadius: 8,
     cardShadowOffset: { width: 0, height: 2 },
     cardElevation: 1,
 
-    // Backwards-compatible aliases
-    cardSecondary: '#F2F2F7',
-    glassBorder: 'rgba(0,0,0,0.04)',
-    glassBackground: 'rgba(255,255,255,0.85)',
+    // Aliases
+    cardSecondary: Palette.light.surfaceLow,
+    glassBorder: Palette.light.border,
+    glassBackground: 'rgba(255, 255, 255, 0.88)',
   },
   dark: {
     // Backgrounds
-    background: '#0D0D0D',
-    secondaryBackground: '#1A1A1A',
-    card: '#1C1C1E',
-    elevated: '#2C2C2E',
+    background: Palette.dark.background,
+    secondaryBackground: Palette.dark.surface,
+    card: Palette.dark.surface,
+    elevated: Palette.dark.surfaceElevated,
+    surfaceLow: Palette.dark.surfaceLow,
     
     // Text
-    text: '#FFFFFF',
-    textSecondary: '#A1A1A6',
-    textTertiary: '#6B6B70',
+    text: Palette.dark.textPrimary,
+    textSecondary: Palette.dark.textSecondary,
+    textTertiary: Palette.dark.textTertiary,
     
     // Brand / Primary Action
-    primary: '#007AFF',
-    primaryLight: 'rgba(0, 122, 255, 0.18)',
+    primary: Palette.blue.primary,
+    primaryAccent: Palette.blue.accent,
+    primaryLight: Palette.blue.darkContainer,
     
     // Semantic
-    destructive: '#FF453A',
-    success: '#30D158',
-    successLight: 'rgba(48, 209, 88, 0.15)',
-    warning: '#FFD60A',
+    destructive: Palette.semantic.destructive,
+    success: Palette.semantic.success,
+    successLight: Palette.semantic.successLight,
+    warning: Palette.semantic.warning,
     
-    // Separators
-    separator: 'rgba(84, 84, 88, 0.4)',
-    separatorOpaque: '#38383A',
+    // Separators & Borders
+    separator: Palette.dark.border,
+    separatorOpaque: '#282C37',
+    border: Palette.dark.border,
+    borderStrong: Palette.dark.borderStrong,
     
     // Icons
-    icon: '#A1A1A6',
-    iconActive: '#007AFF',
-    tabIconDefault: '#6B7280',
-    tabIconSelected: '#007AFF',
+    icon: Palette.dark.textSecondary,
+    iconActive: Palette.blue.primary,
+    tabIconDefault: Palette.dark.textTertiary,
+    tabIconSelected: Palette.blue.primary,
 
-    // Card elevation (flat card system)
+    // Card elevation
     cardShadowColor: '#000000',
-    cardShadowOpacity: 0.22,
+    cardShadowOpacity: 0.35,
     cardShadowRadius: 10,
     cardShadowOffset: { width: 0, height: 3 },
     cardElevation: 3,
 
-    // Backwards-compatible aliases
-    cardSecondary: '#2C2C2E',
-    glassBorder: 'rgba(255,255,255,0.06)',
-    glassBackground: 'rgba(28, 28, 30, 0.75)',
+    // Aliases
+    cardSecondary: Palette.dark.surfaceLow,
+    glassBorder: Palette.dark.border,
+    glassBackground: 'rgba(22, 24, 29, 0.88)',
   },
 };
 
@@ -107,10 +155,10 @@ export const Spacing = {
 export const Radius = {
   sm: 8,
   md: 12,
-  lg: 14,
-  xl: 18,
-  xxl: 22,
-  pill: 100,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  pill: 9999,
 };
 
 // ─── Typography Scale ───────────────────────────────────────────────────────

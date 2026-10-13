@@ -38,8 +38,10 @@ func main() {
 
 	case "backup":
 		log.Println("[CLI] Running Postgres backup to R2...")
-		jobs.RunPostgresBackup()
-		log.Println("[CLI] Backup command finished.")
+		if err := jobs.RunPostgresBackup(); err != nil {
+			log.Fatalf("[CLI] Backup failed: %v", err)
+		}
+		log.Println("[CLI] Backup command finished successfully.")
 
 	case "cleanup":
 		log.Println("[CLI] Connecting to database for pending cleanup...")
@@ -69,7 +71,9 @@ func main() {
 			log.Printf("[CLI] ResetStreaks warning: %v", err)
 		}
 		jobs.PendingCleanup(database)
-		jobs.RunPostgresBackup()
+		if err := jobs.RunPostgresBackup(); err != nil {
+			log.Printf("[CLI] Backup warning: %v", err)
+		}
 		jobs.AIHealthCheck()
 		log.Println("[CLI] All maintenance tasks completed.")
 

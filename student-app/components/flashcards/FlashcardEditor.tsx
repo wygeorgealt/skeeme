@@ -8,7 +8,7 @@ import { Pressable,
     ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import { haptics } from '@/lib/haptics';
 
 interface Props {
@@ -24,10 +24,10 @@ const SUGGESTIONS = [
 ];
 
 const FOCUS_OPTIONS = [
-    { id: 'concepts', title: 'Key Concepts & Definitions', icon: 'auto-stories', desc: 'Term on front, clear definitions and core contextual clues on back.' },
-    { id: 'formulas', title: 'Formulas & Problem Solving', icon: 'functions', desc: 'Equations, variable breakdowns, and step-by-step numerical applications.' },
-    { id: 'traps', title: 'High-Yield Exam Traps', icon: 'bolt', desc: 'Common misconceptions, tricky edge cases, and test designer pitfalls.' },
-    { id: 'qa', title: 'Q&A Scenario Practice', icon: 'psychology', desc: 'Real-world scenario cases and prompt questions designed for vocal review.' },
+    { id: 'concepts', title: 'Key Concepts & Definitions', icon: 'BookOpen' as const, desc: 'Term on front, clear definitions and core contextual clues on back.' },
+    { id: 'formulas', title: 'Formulas & Problem Solving', icon: 'Sigma' as const, desc: 'Equations, variable breakdowns, and step-by-step numerical applications.' },
+    { id: 'traps', title: 'High-Yield Exam Traps', icon: 'Zap' as const, desc: 'Common misconceptions, tricky edge cases, and test designer pitfalls.' },
+    { id: 'qa', title: 'Q&A Scenario Practice', icon: 'Brain' as const, desc: 'Real-world scenario cases and prompt questions designed for vocal review.' },
 ] as const;
 
 export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
@@ -85,8 +85,8 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
                     }}
                     className={`flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-1.5 ${mode === 'topic' ? 'bg-surface-container-lowest shadow-sm' : ''}`}
                 >
-                    <MaterialIcons
-                        name="edit-note"
+                    <Icon
+                        name="PenTool"
                         size={18}
                         color={mode === 'topic' ? '#007AFF' : '#8E8E93'}
                     />
@@ -106,8 +106,8 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
                     }}
                     className={`flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-1.5 ${mode === 'file' ? 'bg-surface-container-lowest shadow-sm' : ''}`}
                 >
-                    <MaterialIcons
-                        name="upload-file"
+                    <Icon
+                        name="UploadCloud"
                         size={18}
                         color={mode === 'file' ? '#007AFF' : '#8E8E93'}
                     />
@@ -160,7 +160,7 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
                     <View className="bg-surface-container-low rounded-2xl p-4 flex-row items-center justify-between gap-3">
                         <View className="flex-row items-center gap-3 flex-1">
                             <View className="w-10 h-10 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm">
-                                <MaterialIcons name="cloud-upload" size={22} color="#007AFF" />
+                                <Icon name="UploadCloud" size={20} color="primary" />
                             </View>
                             <View className="flex-1">
                                 <Text style={{ fontSize: 14, fontWeight: '600' }} className="text-on-surface" numberOfLines={1}>
@@ -204,7 +204,7 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
                         }}
                         className="w-12 h-12 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
                     >
-                        <MaterialIcons name="remove" size={20} color="#1C1C1E" className="text-on-surface" />
+                        <Icon name="Minus" size={18} color="text" />
                     </Pressable>
 
                     <View className="items-center justify-center">
@@ -224,7 +224,7 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
                         }}
                         className="w-12 h-12 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
                     >
-                        <MaterialIcons name="add" size={20} color="#1C1C1E" className="text-on-surface" />
+                        <Icon name="Plus" size={18} color="text" />
                     </Pressable>
                 </View>
 
@@ -268,13 +268,13 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
                             className="bg-surface-container-lowest p-4 rounded-3xl shadow-sm flex-row items-start gap-3.5"
                         >
                             <View className={`w-11 h-11 rounded-2xl items-center justify-center mt-0.5 ${isActive ? 'bg-primary-container' : 'bg-surface-container-low'}`}>
-                                <MaterialIcons name={opt.icon as any} size={24} color={isActive ? '#0058BC' : '#8E8E93'} className={isActive ? 'text-primary' : 'text-on-surface-variant'} />
+                                <Icon name={opt.icon} size={22} color={isActive ? 'primary' : 'muted'} />
                             </View>
                             <View className="flex-1">
                                 <View className="flex-row items-center justify-between mb-0.5">
                                     <Text style={{ fontSize: 16, fontWeight: '600' }} className="text-on-surface">{opt.title}</Text>
                                     <View className={`w-6 h-6 rounded-full items-center justify-center ${isActive ? 'bg-accent-electric-blue' : 'bg-surface-container-low'}`}>
-                                        {isActive && <MaterialIcons name="check" size={16} color="#FFFFFF" />}
+                                        {isActive && <Icon name="Check" size={14} color="white" />}
                                     </View>
                                 </View>
                                 <Text style={{ fontSize: 13, fontWeight: '400' }} className="text-on-surface-variant">{opt.desc}</Text>
@@ -303,7 +303,7 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
                 ) : (
                     <>
                         <Text style={{ fontSize: 16, fontWeight: '700' }} className="text-on-primary">Generate Flashcards</Text>
-                        <MaterialIcons name="auto-awesome" size={20} color="#FFFFFF" />
+                        <Icon name="Sparkles" size={18} color="white" />
                     </>
                 )}
             </Pressable>

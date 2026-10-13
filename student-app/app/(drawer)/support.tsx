@@ -20,6 +20,7 @@ import Letter from '@/assets/icons/pikaicons/envelope-default.svg';
 import { Text } from '@/components/ui/Text';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { GlassSurface } from '@/components/liquid-glass/GlassSurface';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
 export default function SupportScreen() {
     const router = useRouter();
@@ -91,7 +92,7 @@ export default function SupportScreen() {
             });
 
             Alert.alert('Message Sent', 'Our support team will get back to you shortly.', [
-                { text: 'Okay', onPress: () => router.back() }
+                { text: 'Okay', onPress: () => (router.canGoBack() ? router.back() : router.replace('/(drawer)' as any)) }
             ]);
         } catch (error: any) {
             const msg = error.response?.data?.message || 'Something went wrong. Please try again.';
@@ -108,18 +109,7 @@ export default function SupportScreen() {
         >
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            {/* Header */}
-            <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 8) }]}>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    activeOpacity={0.7}
-                    style={[s.backBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }]}
-                >
-                    <AltArrowLeft width={24} height={24} color={C.text} />
-                </TouchableOpacity>
-                <Text style={[s.headerTitle, { color: C.text }]}>Support</Text>
-                <View style={{ width: 44 }} />
-            </Animated.View>
+            <ScreenHeader title="Support" />
 
             <ScrollView
                 style={{ flex: 1 }}

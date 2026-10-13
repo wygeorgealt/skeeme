@@ -7,22 +7,24 @@ import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { Colors, Radius } from '@/constants/theme';
-import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
-import Letter from '@/assets/icons/pikaicons/envelope-default.svg';
-import UserIcon from '@/assets/icons/pikaicons/user-default.svg';
+import { Icon } from '@/components/ui/Icon';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { 
+    User as UserIcon, 
+    Award, 
+    Folder, 
+    Clock, 
+    Bookmark, 
+    HelpCircle, 
+    Settings, 
+    ChevronRight, 
+    FileText 
+} from 'lucide-react-native';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
-import Settings01 from '@/assets/icons/pikaicons/settings-01.svg';
-import AwardMedal from '@/assets/icons/pikaicons/award-medal.svg';
-import FolderDefault from '@/assets/icons/pikaicons/folder-default.svg';
-import ClockDefault from '@/assets/icons/pikaicons/clock-default.svg';
-import BookmarkDefault from '@/assets/icons/pikaicons/bookmark-default.svg';
-import File02Default from '@/assets/icons/pikaicons/file-02-default.svg';
-import Troubleshoot from '@/assets/icons/pikaicons/troubleshoot.svg';
 
-// ΓöÇΓöÇΓöÇ Settings Row Component ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── Settings Row Component ───────────────────────────────────────────────────
 function SettingsRow({
     iconSource, iconBg, label, value, onPress, isLast = false, isDark, destructive = false,
     hasSwitch = false, switchValue = false, onSwitch = () => {}
@@ -48,48 +50,33 @@ function SettingsRow({
             </Text>
             {value ? <Text style={[s.rowValue, { color: C.textSecondary }]}>{value}</Text> : null}
             {hasSwitch ? (
-                <Switch 
-                    value={switchValue} 
+                <Switch
+                    value={switchValue}
                     onValueChange={onSwitch}
-                    trackColor={{ false: '#767577', true: '#34C759' }}
-                    thumbColor={Platform.OS === 'ios' ? undefined : '#f4f3f4'}
+                    trackColor={{ false: '#767577', true: C.primary }}
+                    thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : switchValue ? C.primary : '#f4f3f4'}
                 />
             ) : (
-                !!onPress && !destructive && <AltArrowRight width={18} height={18} color={C.textTertiary} />
+                <Icon icon={ChevronRight} size={20} color={C.textTertiary} />
             )}
         </TouchableOpacity>
     );
 }
 
-// ΓöÇΓöÇΓöÇ GroupedCard Component ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-function GroupedCard({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
-    const C = Colors[isDark ? 'dark' : 'light'];
-    return (
-        <View style={[{ backgroundColor: C.card, borderRadius: Radius.lg, overflow: 'hidden', marginBottom: 24, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
-            <View style={{ paddingLeft: 16 }}>
-                {children}
-            </View>
-        </View>
-    );
-}
-
-// ΓöÇΓöÇΓöÇ Styles ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const s = StyleSheet.create({
-    scroll: { paddingHorizontal: 20 },
-    
+    container: { flex: 1 },
+    content: { paddingHorizontal: 20 },
+
     // Header
     headerWrap: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     avatarOuter: { width: 52, height: 52, borderRadius: 26, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-    avatarImg: { width: '100%', height: '100%' },
     headerTitle: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-    iconBtn: { padding: 6 },
 
     // Premium Banner
     premiumBanner: { borderRadius: 20, padding: 20, marginBottom: 24, overflow: 'hidden' },
     premiumTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', marginBottom: 4 },
-    premiumSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 16 },
+    premiumSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 16 },
     premiumBtn: { backgroundColor: '#FFFFFF', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 20, alignSelf: 'flex-start' },
     premiumBtnText: { fontWeight: '800', fontSize: 14 },
 
@@ -97,7 +84,6 @@ const s = StyleSheet.create({
     gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 16, marginBottom: 32 },
     gridItem: { width: '48%', aspectRatio: 1.1, borderRadius: 24, padding: 16, alignItems: 'center', justifyContent: 'center' },
     gridItemFull: { width: '100%', borderRadius: 24, padding: 20, alignItems: 'center', flexDirection: 'row', justifyContent: 'flex-start' },
-    gridIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
     gridTitle: { fontSize: 15, fontWeight: '800', marginBottom: 4, textAlign: 'center', marginTop: 12 },
     gridSub: { fontSize: 12, textAlign: 'center', fontWeight: '500' },
 
@@ -106,7 +92,6 @@ const s = StyleSheet.create({
     rowIcon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
     rowLabel: { flex: 1, fontSize: 16, fontWeight: '400' },
     rowValue: { fontSize: 16, marginRight: 8 },
-    sectionLabel: { fontSize: 13, fontWeight: '700', marginBottom: 10, marginLeft: 16, textTransform: 'uppercase' },
 });
 
 export default function AccountScreen() {
@@ -115,45 +100,64 @@ export default function AccountScreen() {
     const C = Colors[isDark ? 'dark' : 'light'];
     const insets = useSafeAreaInsets();
     
-    const { user, login, logout, theme, setTheme, hapticsEnabled } = useAuthStore();
-    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const { user } = useAuthStore();
     
-    // Settings and Log Out have been moved to settings.tsx
-    
+    const [prefSummary, setPrefSummary] = useState('Loading...');
+
+    const loadPrefs = async () => {
+        try {
+            const res = await api.get('user/profile');
+            const p = res.data?.data?.user?.ai_preferences || res.data?.user?.ai_preferences;
+            if (p) {
+                const parts: string[] = [];
+                if (p.field_of_study) parts.push(p.field_of_study);
+                if (p.tone) parts.push(p.tone.charAt(0).toUpperCase() + p.tone.slice(1));
+                if (p.style) parts.push(p.style.charAt(0).toUpperCase() + p.style.slice(1));
+                setPrefSummary(parts.length > 0 ? parts.join(' • ') : 'Standard Skeeme Profile');
+            } else {
+                setPrefSummary('Default settings');
+            }
+        } catch {
+            setPrefSummary('Default settings');
+        }
+    };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            loadPrefs();
+        }, [])
+    );
+
     if (!user) return null;
 
-    const isPremium = user.plan_name === 'pro' || user.plan_name === 'standard' || user.plan_name === 'max' || user.plan_name === 'elite';
-    
-    const prefs = user.ai_preferences;
-    const toneStr = prefs?.tone ? prefs.tone.charAt(0).toUpperCase() + prefs.tone.slice(1) : 'Supportive';
-    const goalStr = prefs?.academic_goal === 'exam' ? 'Exam Prep' : (prefs?.academic_goal === 'cheat' ? 'Cheat Sheet' : 'Deep Dive');
-    const prefSummary = `${toneStr} ΓÇó ${goalStr}`;
+    const isPremium = user.plan_name === 'pro' || user.plan_name === 'max' || Boolean(user.is_premium);
 
     return (
-        <View style={{ flex: 1, backgroundColor: C.background }}>
-            <Animated.View entering={FadeInUp.duration(500)}>
-                <View style={{ paddingTop: Math.max(insets.top, 16) }} />
-            </Animated.View>
+        <View style={[s.container, { backgroundColor: C.background }]}>
+            <ScreenHeader title="Account" />
 
-            <ScrollView contentContainerStyle={[s.scroll, { paddingTop: 10, paddingBottom: 150 }]} showsVerticalScrollIndicator={false}>
-                {/* ΓöÇΓöÇ Header ΓöÇΓöÇ */}
+            <ScrollView 
+                contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 100 }]}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* ── User Card ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(100)} style={s.headerWrap}>
                     <View style={s.headerLeft}>
-                        <View style={[s.avatarOuter, { backgroundColor: C.primary + '20' }]}>
-                            <UserIcon width={28} height={28} color={C.primary} />
+                        <View style={[s.avatarOuter, { backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : '#E5F1FF' }]}>
+                            <Icon icon={UserIcon} size={26} color="primary" />
                         </View>
                         <View>
                             <Text style={[s.headerTitle, { color: C.text }]}>{user.name}</Text>
+                            <Text style={{ fontSize: 13, color: C.textSecondary }}>{user.email}</Text>
                         </View>
                     </View>
-
                 </Animated.View>
 
-                {/* ΓöÇΓöÇ Credit Balance Banner ΓöÇΓöÇ */}
+                {/* ── Credit Balance Banner ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(200)}>
                     <TouchableOpacity 
                         activeOpacity={0.9} 
-                        style={[s.premiumBanner, { backgroundColor: isPremium ? '#FF9500' : '#007AFF' }]}
+                        style={[s.premiumBanner, { backgroundColor: isPremium ? '#F59E0B' : '#007AFF' }]}
                         onPress={() => router.push(isPremium ? '/paywall' : '/buy-credits' as any)}
                     >
                         <Text style={s.premiumTitle}>
@@ -170,73 +174,73 @@ export default function AccountScreen() {
                     </TouchableOpacity>
                 </Animated.View>
 
-                {/* ΓöÇΓöÇ Grid Region ΓöÇΓöÇ */}
+                {/* ── Grid Region ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(300)} style={s.gridContainer}>
                     <TouchableOpacity 
                         style={[s.gridItem, { backgroundColor: isDark ? C.card : '#FFF0F0' }]}
                         activeOpacity={0.7}
                     >
-                        <AwardMedal width={40} height={40} color="#FF3B30" style={{marginBottom: 8}} />
-                        <Text style={[s.gridTitle, { color: '#FF3B30' }]}>{user.streak?.current_streak || 0} Day</Text>
+                        <Icon icon={Award} size={36} color="#EF4444" style={{ marginBottom: 4 }} />
+                        <Text style={[s.gridTitle, { color: '#EF4444' }]}>{user.streak?.current_streak || 0} Day</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Streak</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
-                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : C.surfaceLow }]}
                         onPress={() => router.push('/(drawer)/flashcards' as any)}
                         activeOpacity={0.7}
                     >
-                        <FolderDefault width={40} height={40} color={C.primary} style={{marginBottom: 8}} />
+                        <Icon icon={Folder} size={36} color="primary" style={{ marginBottom: 4 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>Flashcards</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Decks</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
-                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : C.surfaceLow }]}
                         onPress={() => router.push('/(drawer)/history' as any)}
                         activeOpacity={0.7}
                     >
-                        <ClockDefault width={40} height={40} color={C.primary} style={{marginBottom: 8}} />
+                        <Icon icon={Clock} size={36} color="primary" style={{ marginBottom: 4 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>History</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Past scans</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
-                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : C.surfaceLow }]}
                         onPress={() => router.push('/(drawer)/history/saved' as any)}
                         activeOpacity={0.7}
                     >
-                        <BookmarkDefault width={40} height={40} color="#34C759" style={{marginBottom: 8}} />
+                        <Icon icon={Bookmark} size={36} color="#10B981" style={{ marginBottom: 4 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>Saved</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Bookmarks</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
-                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F0F5FF' }]}
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#E5F1FF' }]}
                         onPress={() => router.push('/(drawer)/generate' as any)}
                         activeOpacity={0.7}
                     >
-                        <File02Default width={40} height={40} color="#007AFF" style={{marginBottom: 8}} />
+                        <Icon icon={FileText} size={36} color="primary" style={{ marginBottom: 4 }} />
                         <Text style={[s.gridTitle, { color: '#007AFF' }]}>Practice</Text>
                         <Text style={[s.gridSub, { color: '#007AFF' }]}>Quizzes</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity 
-                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : C.surfaceLow }]}
                         onPress={() => router.push('/(drawer)/support' as any)}
                         activeOpacity={0.7}
                     >
-                        <Troubleshoot width={40} height={40} color="#FF9500" style={{marginBottom: 8}} />
+                        <Icon icon={HelpCircle} size={36} color="#F59E0B" style={{ marginBottom: 4 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>Support</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Help & Feedback</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
-                        style={[s.gridItemFull, { backgroundColor: isDark ? C.card : '#F8F9FA' }]}
+                        style={[s.gridItemFull, { backgroundColor: isDark ? C.card : C.surfaceLow }]}
                         onPress={() => router.push('/(drawer)/preferences' as any)}
                         activeOpacity={0.7}
                     >
-                        <Settings01 width={40} height={40} color={C.text} />
+                        <Icon icon={Settings} size={36} color={C.text} />
                         <View style={{ flex: 1, marginLeft: 16 }}>
                             <Text style={[s.gridTitle, { color: C.text, textAlign: 'left', marginTop: 0 }]}>Personalize</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary, textAlign: 'left', lineHeight: 18 }]} numberOfLines={3}>{prefSummary}</Text>

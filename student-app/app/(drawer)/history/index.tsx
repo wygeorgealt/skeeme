@@ -9,7 +9,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptics } from '@/lib/haptics';
 import { Swipeable } from 'react-native-gesture-handler';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/theme';
@@ -211,7 +211,7 @@ export default function StudyHistoryDashboard() {
     const sections = getSections(isLoading && currentData.length === 0 ? [] : currentData);
 
     return (
-        <View style={{ flex: 1, backgroundColor: isDark ? '#0D0D0D' : '#F2F2F7' }}>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             <Animated.View entering={FadeInUp.duration(500)} style={{ paddingTop: Math.max(insets.top, 16) }} className="px-5 pb-4">
                 <View className="flex-row items-center gap-2">
                     <Pressable 
@@ -226,7 +226,7 @@ export default function StudyHistoryDashboard() {
                         style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }}
                         className="w-11 h-11 items-center justify-center rounded-full" 
                     >
-                        <MaterialIcons name="arrow-back-ios-new" size={20} color={C.text} />
+                        <Icon name="ArrowLeft" size={20} color="text" />
                     </Pressable>
                     <Text style={{ fontSize: 26, fontWeight: '700', letterSpacing: -0.5, color: C.text }}>History</Text>
                 </View>
@@ -235,28 +235,28 @@ export default function StudyHistoryDashboard() {
                     {/* Search Pill */}
                     <View className="relative w-full justify-center">
                         <View className="absolute left-3 z-10">
-                            <MaterialIcons name="search" size={20} color={isDark ? '#8E8E93' : '#8E8E93'} />
+                            <Icon name="Search" size={18} color="textSecondary" />
                         </View>
                         <TextInput 
                             className="w-full h-12 pl-10 pr-4 rounded-full"
                             style={{
                                 fontSize: 13,
                                 fontWeight: '400',
-                                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                backgroundColor: C.card,
                                 color: C.text,
-                                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                                borderColor: C.border,
                                 borderWidth: 1,
                             }}
                             placeholder="Search past sessions, topics, formulas..."
-                            placeholderTextColor={isDark ? '#8E8E93' : '#8E8E93'}
+                            placeholderTextColor={C.textSecondary}
                         />
                     </View>
 
                     {/* Quick Stats Bento Banner */}
                     <View
                         style={{
-                            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                            backgroundColor: C.card,
+                            borderColor: C.border,
                             borderWidth: 1,
                         }}
                         className="flex-row rounded-[24px] p-2 gap-2 shadow-sm"
@@ -274,13 +274,13 @@ export default function StudyHistoryDashboard() {
                             style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.15)' : '#E5F1FF' }}
                             className="flex-1 items-center justify-center py-2 px-1 rounded-2xl"
                         >
-                            <View className="flex-row items-center gap-0.5">
-                                <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: '#007AFF' }}>
+                            <View className="flex-row items-center gap-1">
+                                <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: C.primary }}>
                                     {avgMastery}%
                                 </Text>
-                                <MaterialIcons name="trending-up" size={14} color="#007AFF" />
+                                <Icon name="TrendingUp" size={14} color="primary" />
                             </View>
-                            <Text style={{ fontSize: 11, fontWeight: '700', color: '#007AFF' }} className="mt-0.5">Avg Mastery</Text>
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: C.primary }} className="mt-0.5">Avg Mastery</Text>
                         </View>
                         <View
                             style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F4F3F8' }}
@@ -299,9 +299,9 @@ export default function StudyHistoryDashboard() {
                             flexDirection: 'row',
                             padding: 4,
                             borderRadius: 999,
-                            backgroundColor: isDark ? '#1C1C1E' : '#E3E2E7',
-                            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent',
-                            borderWidth: isDark ? 1 : 0,
+                            backgroundColor: C.card,
+                            borderColor: C.border,
+                            borderWidth: 1,
                         }}
                     >
                         {[
@@ -324,8 +324,8 @@ export default function StudyHistoryDashboard() {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         borderRadius: 999,
-                                        backgroundColor: isActive ? '#007AFF' : 'transparent',
-                                        shadowColor: isActive ? '#007AFF' : undefined,
+                                        backgroundColor: isActive ? C.primary : 'transparent',
+                                        shadowColor: isActive ? C.primary : undefined,
                                         shadowOffset: isActive ? { width: 0, height: 2 } : undefined,
                                         shadowOpacity: isActive ? 0.2 : 0,
                                         shadowRadius: isActive ? 4 : 0,
@@ -336,11 +336,11 @@ export default function StudyHistoryDashboard() {
                                         style={{
                                             fontSize: 13,
                                             fontWeight: isActive ? '700' : '500',
-                                            color: isActive ? '#FFFFFF' : (isDark ? '#8E8E93' : '#48484A'),
+                                            color: isActive ? '#FFFFFF' : C.textSecondary,
                                         }}
                                     >
                                         {label}{' '}
-                                        <Text style={{ opacity: isActive ? 0.85 : 0.6, fontSize: 12, fontWeight: '400', color: isActive ? '#FFFFFF' : (isDark ? '#8E8E93' : '#48484A') }}>
+                                        <Text style={{ opacity: isActive ? 0.85 : 0.6, fontSize: 12, fontWeight: '400', color: isActive ? '#FFFFFF' : C.textSecondary }}>
                                             ({count})
                                         </Text>
                                     </Text>
@@ -362,7 +362,7 @@ export default function StudyHistoryDashboard() {
                             <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }} className="uppercase">
                                 {title}
                             </Text>
-                            <Text style={{ fontSize: 11, fontWeight: '600', color: '#007AFF' }}>
+                            <Text style={{ fontSize: 11, fontWeight: '600', color: C.primary }}>
                                 {data.length} items
                             </Text>
                         </View>
@@ -377,7 +377,7 @@ export default function StudyHistoryDashboard() {
                             <View style={{ width: 90 }}>
                                 <Pressable 
                                     style={{ 
-                                        backgroundColor: '#ba1a1a', 
+                                        backgroundColor: C.destructive, 
                                         flexDirection: 'row',
                                         justifyContent: 'flex-end',
                                         alignItems: 'center', 
@@ -391,7 +391,7 @@ export default function StudyHistoryDashboard() {
                                     onPress={() => handleDelete(id, title, isQuiz ? 'quiz' : 'flashcard')}
                                 >
                                     <View style={{ width: 90, height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                                        <MaterialIcons name="delete" size={24} color="white" />
+                                        <Icon name="Trash2" size={24} color="white" />
                                     </View>
                                 </Pressable>
                             </View>
@@ -417,10 +417,10 @@ export default function StudyHistoryDashboard() {
                         return (
                             <View className="items-center justify-center py-20 px-10">
                                 <View
-                                    style={{ backgroundColor: isDark ? '#1C1C1E' : '#F4F3F8' }}
+                                    style={{ backgroundColor: isDark ? C.card : '#F4F3F8' }}
                                     className="w-16 h-16 rounded-full items-center justify-center mb-4"
                                 >
-                                    <MaterialIcons name="folder-open" size={32} color={C.textSecondary} />
+                                    <Icon name="FolderOpen" size={32} color="textSecondary" />
                                 </View>
                                 <Text style={{ fontSize: 16, fontWeight: '600', color: C.text }} className="mb-2">No history yet</Text>
                                 <Text style={{ fontSize: 14, color: C.textSecondary }} className="text-center">
@@ -435,7 +435,7 @@ export default function StudyHistoryDashboard() {
                                 <View className="flex-row items-center justify-center gap-4">
                                     <Text style={{ color: C.textTertiary }}>•</Text>
                                     <Pressable className="flex-row items-center gap-1.5 active:opacity-70">
-                                        <MaterialIcons name="delete-outline" size={18} color={C.textSecondary} />
+                                        <Icon name="Trash2" size={16} color="textSecondary" />
                                         <Text style={{ fontSize: 14, fontWeight: '600', color: C.textSecondary }}>Clear Archive</Text>
                                     </Pressable>
                                 </View>
@@ -454,8 +454,8 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
     return (
         <View
             style={{
-                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                backgroundColor: C.card,
+                borderColor: C.border,
                 borderWidth: 1,
             }}
             className="p-5 rounded-[24px] mb-3 flex-col gap-3.5 shadow-sm"
@@ -466,7 +466,7 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
                         className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
                         style={{ backgroundColor: isDark ? 'rgba(0,103,98,0.25)' : '#61F9EF' }}
                     >
-                        <MaterialIcons name="auto-stories" size={24} color={isDark ? '#39DCD2' : '#006762'} />
+                        <Icon name="BookOpen" size={22} color={isDark ? '#39DCD2' : '#006762'} />
                     </View>
                     <View className="flex-1 flex-col">
                         <View className="flex-row items-center gap-1.5 flex-wrap">
@@ -495,23 +495,23 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
                         </Text>
                     </View>
                 </View>
-                <MaterialIcons name="attachment" size={20} color={C.textSecondary} style={{ marginTop: 4 }} />
+                <Icon name="Paperclip" size={18} color="textSecondary" style={{ marginTop: 4 }} />
             </View>
 
             {/* Concepts preview pills */}
             <View className="flex-row items-center gap-2 overflow-hidden py-1">
                 <View
                     style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
-                    className="px-2.5 py-1 rounded-xl flex-row items-center gap-1"
+                    className="px-2.5 py-1 rounded-xl flex-row items-center gap-1.5"
                 >
-                    <MaterialIcons name="science" size={14} color={C.textSecondary} />
+                    <Icon name="FlaskConical" size={13} color="textSecondary" />
                     <Text style={{ fontSize: 11, fontWeight: '600', color: C.textSecondary }}>Markovnikov Rule</Text>
                 </View>
                 <View
                     style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
-                    className="px-2.5 py-1 rounded-xl flex-row items-center gap-1"
+                    className="px-2.5 py-1 rounded-xl flex-row items-center gap-1.5"
                 >
-                    <MaterialIcons name="schema" size={14} color={C.textSecondary} />
+                    <Icon name="Network" size={13} color="textSecondary" />
                     <Text style={{ fontSize: 11, fontWeight: '600', color: C.textSecondary }}>Visual Map</Text>
                 </View>
                 <View
@@ -528,7 +528,7 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
                     style={{ backgroundColor: '#00837C' }}
                     onPress={() => {}}
                 >
-                    <MaterialIcons name="menu-book" size={18} color="white" />
+                    <Icon name="BookOpen" size={16} color="white" />
                     <Text className="text-white" style={{ fontSize: 14, fontWeight: '600' }}>Read Summary</Text>
                 </Pressable>
             </View>
@@ -544,8 +544,8 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
     return (
         <View
             style={{
-                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                backgroundColor: C.card,
+                borderColor: C.border,
                 borderWidth: 1,
             }}
             className="p-5 rounded-[24px] mb-3 flex-col gap-3.5 shadow-sm"
@@ -556,7 +556,7 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                         style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : '#E5F1FF' }}
                         className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
                     >
-                        <MaterialIcons name="task-alt" size={24} color="#007AFF" />
+                        <Icon name="CheckCircle2" size={22} color="primary" />
                     </View>
                     <View className="flex-1 flex-col">
                         <View className="flex-row items-center gap-1.5 flex-wrap">
@@ -564,7 +564,7 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                                 style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : 'rgba(0,122,255,0.1)' }}
                                 className="px-2 py-0.5 rounded-full"
                             >
-                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: '#007AFF' }}>{subjectTag}</Text>
+                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.primary }}>{subjectTag}</Text>
                             </View>
                             <View
                                 style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
@@ -591,10 +591,10 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                     >
                         <Svg width={48} height={48} viewBox="0 0 36 36" style={{ transform: [{ rotate: '-90deg' }] }}>
                             <Circle cx="18" cy="18" r="15.9155" fill="none" stroke={isDark ? '#2C2C2E' : '#E3E2E7'} strokeWidth="3.5" />
-                            <Circle cx="18" cy="18" r="15.9155" fill="none" stroke="#007AFF" strokeWidth="3.5" strokeDasharray={`${pct}, 100`} strokeLinecap="round" />
+                            <Circle cx="18" cy="18" r="15.9155" fill="none" stroke={C.primary} strokeWidth="3.5" strokeDasharray={`${pct}, 100`} strokeLinecap="round" />
                         </Svg>
                         <View className="absolute inset-0 items-center justify-center">
-                            <Text style={{ fontSize: 11, fontWeight: '700', color: '#007AFF' }}>{Math.round(pct)}%</Text>
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: C.primary }}>{Math.round(pct)}%</Text>
                         </View>
                     </View>
                 </View>
@@ -603,11 +603,11 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
             <View className="flex-row items-center justify-between pt-1">
                 <View className="flex-row items-center gap-2">
                     <Pressable
-                        style={{ backgroundColor: '#007AFF' }}
+                        style={{ backgroundColor: C.primary }}
                         className="h-10 px-4 rounded-full flex-row items-center gap-1.5 active:opacity-80"
                         onPress={() => router.push({ pathname: '/(drawer)/generate', params: { topic: session.topic } } as any)}
                     >
-                        <MaterialIcons name="replay" size={18} color="white" />
+                        <Icon name="RotateCcw" size={16} color="white" />
                         <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>Retake</Text>
                     </Pressable>
                     <Pressable
@@ -615,8 +615,8 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                         className="h-10 px-4 rounded-full flex-row items-center gap-1 active:opacity-80"
                         onPress={() => router.push(`/(drawer)/history/${session.id}` as any)}
                     >
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#007AFF' }}>Review</Text>
-                        <MaterialIcons name="chevron-right" size={18} color="#007AFF" />
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: C.primary }}>Review</Text>
+                        <Icon name="ChevronRight" size={16} color="primary" />
                     </Pressable>
                 </View>
                 <Pressable
@@ -624,7 +624,7 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                     className="w-10 h-10 rounded-full items-center justify-center active:bg-surface-container-low"
                     onPress={() => {}}
                 >
-                    <MaterialIcons name="more-vert" size={20} color={C.textSecondary} />
+                    <Icon name="MoreVertical" size={18} color="textSecondary" />
                 </Pressable>
             </View>
         </View>
@@ -637,8 +637,8 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
     return (
         <View
             style={{
-                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                backgroundColor: C.card,
+                borderColor: C.border,
                 borderWidth: 1,
             }}
             className="p-5 rounded-[24px] mb-3 flex-col gap-3.5 shadow-sm"
@@ -649,7 +649,7 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                         className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
                         style={{ backgroundColor: isDark ? 'rgba(88,86,214,0.2)' : '#E2DFFF' }}
                     >
-                        <MaterialIcons name="style" size={24} color="#5856D6" />
+                        <Icon name="Layers" size={22} color="#5856D6" />
                     </View>
                     <View className="flex-1 flex-col">
                         <View className="flex-row items-center gap-1.5 flex-wrap">
@@ -680,7 +680,7 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                     style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent' }}
                     className="w-10 h-10 rounded-full items-center justify-center shrink-0"
                 >
-                    <MaterialIcons name="star-border" size={22} color="#f59e0b" />
+                    <Icon name="Bookmark" size={20} color="#f59e0b" />
                 </Pressable>
             </View>
             
@@ -690,7 +690,7 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                     style={{ backgroundColor: '#5856D6' }}
                     onPress={() => router.push(`/(drawer)/flashcards/${deck.id}` as any)}
                 >
-                    <MaterialIcons name="play-arrow" size={18} color="white" />
+                    <Icon name="Play" size={16} color="white" />
                     <Text className="text-white" style={{ fontSize: 14, fontWeight: '600' }}>Study Deck</Text>
                 </Pressable>
                 <Text style={{ fontSize: 13, color: C.textSecondary }}>

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Pressable,  View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import Svg, { Circle } from 'react-native-svg';
 import Animated, {
   useSharedValue,
@@ -93,13 +93,10 @@ export function FlashcardDeckSummary({
             style={animatedGlowStyle}
           />
           <View className="relative w-20 h-20 rounded-full bg-primary flex-col items-center justify-center shadow-xl">
-            <MaterialIcons name="workspace-premium" size={42} color="#ffffff" />
-            <MaterialIcons 
-              name="auto-awesome" 
-              size={22} 
-              color="#61f9ef" 
-              style={{ position: 'absolute', top: -4, right: -4 }}
-            />
+            <Icon name="Award" size={40} color="white" />
+            <View style={{ position: 'absolute', top: -4, right: -4 }}>
+              <Icon name="Sparkles" size={20} color="#61f9ef" />
+            </View>
           </View>
         </View>
 
@@ -161,7 +158,7 @@ export function FlashcardDeckSummary({
 
         <View className="mt-4 pt-4 border-t border-surface-container flex-row items-center justify-between">
           <View className="flex-row items-center gap-1.5">
-            <MaterialIcons name="trending-up" size={18} color="#006762" />
+            <Icon name="TrendingUp" size={16} color="#006762" />
             <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }} className="text-on-surface">
               +14% vs. last week
             </Text>
@@ -226,7 +223,7 @@ export function FlashcardDeckSummary({
       <View className="w-full bg-surface-container-lowest rounded-xl p-4 shadow-sm mt-2">
         <View className="flex-row items-center justify-between pb-2 mb-2 border-b border-surface-container">
           <View className="flex-row items-center gap-2">
-            <MaterialIcons name="event-repeat" size={20} color="#007AFF" />
+            <Icon name="Calendar" size={20} color="primary" />
             <Text style={{ fontSize: 16, fontWeight: '600' }} className="text-on-surface">Upcoming Review</Text>
           </View>
           <View className="px-2 py-0.5 rounded-full bg-primary-container">
@@ -238,7 +235,7 @@ export function FlashcardDeckSummary({
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">
               <View className="w-8 h-8 rounded-full bg-error-container items-center justify-center">
-                <MaterialIcons name="replay" size={18} color="#93000A" />
+                <Icon name="RotateCcw" size={16} color="#93000A" />
               </View>
               <View>
                 <Text style={{ fontSize: 14, fontWeight: '600' }} className="text-on-surface">Tomorrow</Text>
@@ -251,7 +248,7 @@ export function FlashcardDeckSummary({
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">
               <View className="w-8 h-8 rounded-full bg-primary-container items-center justify-center">
-                <MaterialIcons name="calendar-today" size={18} color="#007AFF" />
+                <Icon name="Calendar" size={16} color="primary" />
               </View>
               <View>
                 <Text style={{ fontSize: 14, fontWeight: '600' }} className="text-on-surface">In 3 Days</Text>
@@ -264,7 +261,7 @@ export function FlashcardDeckSummary({
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">
               <View className="w-8 h-8 rounded-full bg-tertiary-container/30 items-center justify-center">
-                <MaterialIcons name="date-range" size={18} color="#006762" />
+                <Icon name="Calendar" size={16} color="#006762" />
               </View>
               <View>
                 <Text style={{ fontSize: 14, fontWeight: '600' }} className="text-on-surface">Next Week</Text>
@@ -277,7 +274,7 @@ export function FlashcardDeckSummary({
 
         <View className="mt-4 bg-surface-container-low rounded-lg p-2.5 flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
-            <MaterialIcons name="notifications-active" size={18} color="#007AFF" />
+            <Icon name="Bell" size={18} color="primary" />
             <Text style={{ fontSize: 13, fontWeight: '500' }} className="text-on-surface">
               Smart Reminder set for <Text style={{ fontWeight: '700' }}>7:30 PM</Text>
             </Text>
@@ -293,11 +290,11 @@ export function FlashcardDeckSummary({
           className="w-full h-[52px] rounded-xl bg-accent-electric-blue flex-row items-center justify-center gap-2"
           style={{ shadowColor: '#007AFF', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 24, elevation: 12 }}
         >
-          <MaterialIcons name="quiz" size={20} color="#ffffff" />
+          <Icon name="HelpCircle" size={18} color="white" />
           <Text style={{ fontSize: 16, fontWeight: '600' }} className="text-on-primary">
             Practice Related Quiz (10 Qs)
           </Text>
-          <MaterialIcons name="arrow-forward" size={18} color="#ffffff" />
+          <Icon name="ArrowRight" size={18} color="white" />
         </Pressable>
       </View>
     </ScrollView>

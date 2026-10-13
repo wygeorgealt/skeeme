@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable,  View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import { haptics } from '@/lib/haptics';
 
 interface AiSummaryViewProps {
@@ -35,7 +35,7 @@ export function AiSummaryView(props: AiSummaryViewProps) {
           }}
           className="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center shadow-sm border border-outline-variant active:scale-95 transition-transform shrink-0"
         >
-          <MaterialIcons name="arrow-back-ios-new" size={20} className="text-on-surface" />
+          <Icon name="ChevronLeft" size={20} color="text" />
         </Pressable>
         <View className="flex-col items-center justify-center text-center px-2 flex-1">
           <Text className="text-[17px] font-bold text-on-surface tracking-tight leading-snug">{props.title || 'Summary'}</Text>
@@ -44,7 +44,7 @@ export function AiSummaryView(props: AiSummaryViewProps) {
         <Pressable
           className="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center shadow-sm border border-outline-variant active:scale-95 transition-transform shrink-0"
         >
-          <MaterialIcons name="more-horiz" size={20} className="text-on-surface" />
+          <Icon name="MoreHorizontal" size={20} color="text" />
         </Pressable>
       </View>
 
@@ -111,10 +111,11 @@ export function AiSummaryView(props: AiSummaryViewProps) {
                     <View key={i} className="items-center flex-1">
                       <Text className="text-[11px] text-on-surface-variant font-medium">{v.label}</Text>
                       {v.direction && (
-                        <MaterialIcons 
-                          name={v.direction === 'up' ? 'arrow-upward' : 'arrow-downward'} 
+                        <Icon 
+                          name={v.direction === 'up' ? 'ArrowUp' : 'ArrowDown'} 
                           size={10} 
-                          className="text-on-surface-variant mt-0.5" 
+                          color="textSecondary"
+                          style={{ marginTop: 2 }}
                         />
                       )}
                     </View>
@@ -153,7 +154,7 @@ export function AiSummaryView(props: AiSummaryViewProps) {
                 >
                   <View className="flex-row items-center mb-3">
                     <View className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center mr-2">
-                      <MaterialIcons name={f.icon as any} size={18} className="text-on-primary-container" />
+                      <Icon name="Sparkles" size={18} color="primary" />
                     </View>
                     <Text className="text-[13px] font-bold text-on-surface flex-1">{f.title}</Text>
                   </View>

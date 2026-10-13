@@ -8,6 +8,7 @@ export interface User {
     email: string;
     credits: number;
     plan_name?: string; // 'free', 'pro', 'max'
+    is_premium?: boolean;
     next_free_refill_at?: string | null;
     streak?: {
         current_streak: number;

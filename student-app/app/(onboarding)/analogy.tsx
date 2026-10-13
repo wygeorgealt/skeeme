@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import * as Haptics from 'expo-haptics';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 
 const EXAMPLES = [
@@ -93,12 +93,13 @@ export default function AnalogyScreen() {
                                                 : 'bg-surface-container hover:bg-surface-container-high'
                                         }`}
                                     >
-                                        <MaterialIcons 
-                                            name="check" 
-                                            size={18} 
-                                            color={isSelected ? '#ffffff' : 'transparent'} 
-                                            style={{ display: isSelected ? 'flex' : 'none' }}
-                                        />
+                                        {isSelected && (
+                                            <Icon 
+                                                name="Check" 
+                                                size={18} 
+                                                color="white" 
+                                            />
+                                        )}
                                         <Text className="text-[16px]">{ex.emoji}</Text>
                                         <Text className={`font-semibold text-[14px] ${
                                             isSelected ? 'text-on-primary' : 'text-on-surface'
@@ -139,7 +140,7 @@ export default function AnalogyScreen() {
                                             <View className={`w-5 h-5 rounded-full flex items-center justify-center transition-opacity ${
                                                 isSelected ? 'bg-accent-electric-blue opacity-100 shadow-sm' : 'opacity-0'
                                             }`}>
-                                                <MaterialIcons name="check" size={14} color="#ffffff" style={{ fontWeight: 'bold' as any }} />
+                                                <Icon name="Check" size={14} color="white" strokeWidth={3} />
                                             </View>
                                         </View>
                                         <View className="mt-2 flex-col gap-0.5">
@@ -173,7 +174,7 @@ export default function AnalogyScreen() {
                         />
                         <View className="flex-row items-center justify-between pt-2">
                             <View className="flex-row items-center gap-1.5">
-                                <MaterialIcons name="tips-and-updates" size={16} color="#007aff" />
+                                <Icon name="Lightbulb" size={16} color="primary" />
                                 <Text className="text-[11px] font-bold text-accent-electric-blue">Skeemy adapts after each lesson</Text>
                             </View>
                             <Text className="text-[11px] font-bold text-outline">{customNote.length}/180</Text>

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import * as Haptics from 'expo-haptics';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 const GOALS = [
@@ -97,12 +97,14 @@ export default function GoalScreen() {
                                             ? 'bg-accent-electric-blue shadow-sm scale-100' 
                                             : 'bg-surface-container-high scale-95'
                                     }`}>
-                                        <MaterialIcons 
-                                            name="check" 
-                                            size={18} 
-                                            color={isSelected ? '#ffffff' : 'transparent'} 
-                                            style={{ fontWeight: 'bold' as any }}
-                                        />
+                                        {isSelected && (
+                                            <Icon 
+                                                name="Check" 
+                                                size={18} 
+                                                color="white" 
+                                                strokeWidth={3}
+                                            />
+                                        )}
                                     </View>
                                 </Pressable>
                             </Animated.View>

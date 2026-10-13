@@ -1,13 +1,13 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 
 export const BackButton = () => {
   const router = useRouter();
   return (
     <TouchableOpacity style={styles.button} onPress={() => router.back()} accessibilityLabel="Go back">
-      <Ionicons name="arrow-back" size={24} color="#007AFF" />
+      <Icon name="ArrowLeft" size={24} color="primary" />
     </TouchableOpacity>
   );
 };

@@ -6,13 +6,12 @@ import {
     ScrollView,
     StyleSheet,
     Dimensions,
-    Platform,
     Modal,
 } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Icon } from '@/components/ui/Icon';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
     useSharedValue,
@@ -138,15 +137,15 @@ export default function HomeDashboard() {
                     }}
                 >
                     <View style={styles.avatarCircle}>
-                        <Ionicons name="person" size={18} color="#007AFF" />
+                        <Icon name="User" size={18} color="primary" />
                     </View>
                     <Text style={[styles.profileGreeting, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
                         Hello, <Text style={styles.profileNameBold}>{firstName}!</Text>
                     </Text>
-                    <MaterialIcons
-                        name={profileMenuVisible ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                    <Icon
+                        name={profileMenuVisible ? 'ChevronUp' : 'ChevronDown'}
                         size={20}
-                        color="#007AFF"
+                        color="primary"
                     />
                 </TouchableOpacity>
 
@@ -167,7 +166,7 @@ export default function HomeDashboard() {
                             },
                         ]}
                     >
-                        <MaterialIcons name="local-fire-department" size={17} color="#EA580C" />
+                        <Icon name="Flame" size={17} color="#EA580C" />
                         <Text style={[styles.badgeText, { color: '#EA580C' }]}>{streak}</Text>
                     </TouchableOpacity>
 
@@ -186,7 +185,7 @@ export default function HomeDashboard() {
                             },
                         ]}
                     >
-                        <MaterialIcons name="bolt" size={17} color="#007AFF" />
+                        <Icon name="Zap" size={17} color="primary" />
                         <Text style={[styles.badgeText, { color: '#007AFF' }]}>{credits}</Text>
                     </TouchableOpacity>
                 </View>
@@ -225,7 +224,7 @@ export default function HomeDashboard() {
                                 }}
                             >
                                 <View style={[styles.menuIconWrap, { backgroundColor: '#EEF2FF' }]}>
-                                    <Ionicons name="sparkles" size={18} color="#4F46E5" />
+                                    <Icon name="Sparkles" size={18} color="#4F46E5" />
                                 </View>
                                 <View style={styles.menuTextWrap}>
                                     <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
@@ -233,7 +232,7 @@ export default function HomeDashboard() {
                                     </Text>
                                     <Text style={styles.menuSubtitle}>AI style & study goals</Text>
                                 </View>
-                                <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+                                <Icon name="ChevronRight" size={16} color="#8E8E93" />
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -245,7 +244,7 @@ export default function HomeDashboard() {
                                 }}
                             >
                                 <View style={[styles.menuIconWrap, { backgroundColor: '#F0FDFA' }]}>
-                                    <Ionicons name="settings-sharp" size={18} color="#0D9488" />
+                                    <Icon name="Settings" size={18} color="#0D9488" />
                                 </View>
                                 <View style={styles.menuTextWrap}>
                                     <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
@@ -253,7 +252,7 @@ export default function HomeDashboard() {
                                     </Text>
                                     <Text style={styles.menuSubtitle}>Account & notifications</Text>
                                 </View>
-                                <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+                                <Icon name="ChevronRight" size={16} color="#8E8E93" />
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -265,7 +264,7 @@ export default function HomeDashboard() {
                                 }}
                             >
                                 <View style={[styles.menuIconWrap, { backgroundColor: '#007AFF' }]}>
-                                    <MaterialIcons name="bolt" size={18} color="#FFFFFF" />
+                                    <Icon name="Zap" size={18} color="white" />
                                 </View>
                                 <View style={styles.menuTextWrap}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -280,7 +279,7 @@ export default function HomeDashboard() {
                                         Instant AI tutor top-up
                                     </Text>
                                 </View>
-                                <Ionicons name="add-circle" size={18} color="#007AFF" />
+                                <Icon name="PlusCircle" size={18} color="primary" />
                             </TouchableOpacity>
                         </View>
                     </TouchableOpacity>
@@ -320,7 +319,7 @@ export default function HomeDashboard() {
                         <View style={styles.dailyGoalHeader}>
                             <View style={styles.dailyGoalLeft}>
                                 <View style={styles.targetIconWrap}>
-                                    <Ionicons name="disc" size={20} color="#007AFF" />
+                                    <Icon name="Target" size={20} color="primary" />
                                 </View>
                                 <View>
                                     <Text style={[styles.dailyGoalTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
@@ -354,7 +353,7 @@ export default function HomeDashboard() {
                     >
                         <View style={styles.proBannerContent}>
                             <View style={styles.crownCircle}>
-                                <MaterialIcons name="workspace-premium" size={26} color="#FFFFFF" />
+                                <Icon name="Award" size={26} color="white" />
                             </View>
                             <View style={styles.proBannerTextWrap}>
                                 <Text style={styles.proBannerTitle}>Unlock Skeeme Pro</Text>
@@ -394,7 +393,7 @@ export default function HomeDashboard() {
                             }}
                         >
                             <View style={[styles.tileIconCircle, { backgroundColor: '#EFF6FF' }]}>
-                                <MaterialIcons name="quiz" size={24} color="#007AFF" />
+                                <Icon name="HelpCircle" size={24} color="primary" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>Quiz</Text>
                             <Text style={styles.tileSubtitle}>Timed drills</Text>
@@ -421,7 +420,7 @@ export default function HomeDashboard() {
                                     { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', elevation: 2 },
                                 ]}
                             >
-                                <MaterialIcons name="style" size={24} color="#007AFF" />
+                                <Icon name="Layers" size={24} color="primary" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
                                 Flashcards
@@ -447,7 +446,7 @@ export default function HomeDashboard() {
                             }}
                         >
                             <View style={[styles.tileIconCircle, { backgroundColor: '#EEF2FF' }]}>
-                                <MaterialIcons name="history" size={24} color="#4F46E5" />
+                                <Icon name="Clock" size={24} color="#4F46E5" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>History</Text>
                             <Text style={styles.tileSubtitle}>Past sessions</Text>
@@ -486,7 +485,7 @@ export default function HomeDashboard() {
                             >
                                 <View style={styles.taskCardLeft}>
                                     <View style={[styles.taskIconCircle, { backgroundColor: '#EFF6FF' }]}>
-                                        <Ionicons name="play" size={20} color="#007AFF" />
+                                        <Icon name="Play" size={20} color="primary" />
                                     </View>
                                     <View style={styles.taskTextWrap}>
                                         <Text
@@ -501,7 +500,7 @@ export default function HomeDashboard() {
                                     </View>
                                 </View>
                                 <View style={[styles.arrowPill, { borderColor: isDark ? '#333' : '#E5E5EA' }]}>
-                                    <MaterialIcons name="north-east" size={16} color="#8E8E93" />
+                                    <Icon name="ArrowUpRight" size={16} color="#8E8E93" />
                                 </View>
                             </TouchableOpacity>
 
@@ -519,7 +518,7 @@ export default function HomeDashboard() {
                             >
                                 <View style={styles.taskCardLeft}>
                                     <View style={[styles.taskIconCircle, { backgroundColor: '#F0FDFA' }]}>
-                                        <MaterialIcons name="auto-awesome" size={20} color="#0D9488" />
+                                        <Icon name="Sparkles" size={20} color="#0D9488" />
                                     </View>
                                     <View style={styles.taskTextWrap}>
                                         <Text
@@ -531,7 +530,7 @@ export default function HomeDashboard() {
                                     </View>
                                 </View>
                                 <View style={[styles.arrowPill, { borderColor: isDark ? '#333' : '#E5E5EA' }]}>
-                                    <MaterialIcons name="north-east" size={16} color="#8E8E93" />
+                                    <Icon name="ArrowUpRight" size={16} color="#8E8E93" />
                                 </View>
                             </TouchableOpacity>
 
@@ -549,7 +548,7 @@ export default function HomeDashboard() {
                             >
                                 <View style={styles.taskCardLeft}>
                                     <View style={[styles.taskIconCircle, { backgroundColor: '#FEF3C7' }]}>
-                                        <MaterialIcons name="document-scanner" size={20} color="#D97706" />
+                                        <Icon name="Scan" size={20} color="#D97706" />
                                     </View>
                                     <View style={styles.taskTextWrap}>
                                         <Text
@@ -561,7 +560,7 @@ export default function HomeDashboard() {
                                     </View>
                                 </View>
                                 <View style={[styles.arrowPill, { borderColor: isDark ? '#333' : '#E5E5EA' }]}>
-                                    <MaterialIcons name="north-east" size={16} color="#8E8E93" />
+                                    <Icon name="ArrowUpRight" size={16} color="#8E8E93" />
                                 </View>
                             </TouchableOpacity>
                         </View>

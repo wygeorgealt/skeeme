@@ -7,6 +7,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import { api } from '@/lib/api';
 import { router } from 'expo-router';
 
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+
 export default function GenerateFlashcardScreen() {
     const insets = useSafeAreaInsets();
     const [loading, setLoading] = useState(false);
@@ -50,7 +52,8 @@ export default function GenerateFlashcardScreen() {
     }, []);
 
     return (
-        <View className="flex-1 bg-surface" style={{ paddingTop: Math.max(insets.top, 12) }}> 
+        <View className="flex-1 bg-surface"> 
+            <ScreenHeader title="New Flashcards" />
             <FlashcardEditor onGenerate={onGenerate} onPickFile={onPickFile} />
         </View>
     );

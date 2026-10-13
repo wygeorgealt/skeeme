@@ -5,14 +5,14 @@ import { useAuthStore } from '@/store/authStore';
 import * as Haptics from 'expo-haptics';
 import { api } from '@/lib/api';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 
 const LEVELS = [
-    { key: 'high_school', label: 'High School', desc: 'Grades 9 – 12 prep', icon: 'backpack' },
-    { key: 'undergraduate', label: 'University', desc: 'Undergraduate', icon: 'menu-book' },
-    { key: 'graduate', label: 'Grad School', desc: 'Masters & PhD focus', icon: 'school' },
-    { key: 'professional', label: 'Professional', desc: 'Certifications & career', icon: 'work' },
+    { key: 'high_school', label: 'High School', desc: 'Grades 9 – 12 prep', icon: 'BookOpen' },
+    { key: 'undergraduate', label: 'University', desc: 'Undergraduate', icon: 'Book' },
+    { key: 'graduate', label: 'Grad School', desc: 'Masters & PhD focus', icon: 'GraduationCap' },
+    { key: 'professional', label: 'Professional', desc: 'Certifications & career', icon: 'Briefcase' },
 ];
 
 export default function NameScreen() {
@@ -82,7 +82,7 @@ export default function NameScreen() {
                     
                     <View className="relative w-full rounded-2xl bg-surface-container-low transition-colors focus-within:bg-surface-container-lowest focus-within:shadow-sm flex-row items-center h-14 border border-transparent focus-within:border-accent-electric-blue/20">
                         <View className="absolute left-4 z-10">
-                            <MaterialIcons name="badge" size={22} color="#8e8e93" />
+                            <Icon name="User" size={22} color="muted" />
                         </View>
                         <TextInput
                             className="flex-1 h-full pl-12 pr-11 text-[17px] text-on-surface font-semibold"
@@ -98,7 +98,7 @@ export default function NameScreen() {
                                 onPress={() => setName('')}
                                 className="absolute right-3 w-8 h-8 rounded-full items-center justify-center active:bg-surface-container"
                             >
-                                <Ionicons name="close-circle" size={20} color="#8e8e93" />
+                                <Icon name="XCircle" size={20} color="muted" />
                             </Pressable>
                         )}
                     </View>
@@ -129,16 +129,16 @@ export default function NameScreen() {
                                         <View className={`w-10 h-10 rounded-xl items-center justify-center ${
                                             isSelected ? 'bg-primary-container' : 'bg-surface-container'
                                         }`}>
-                                            <MaterialIcons 
+                                            <Icon 
                                                 name={level.icon as any} 
                                                 size={22} 
-                                                color={isSelected ? '#007aff' : '#48484a'} 
+                                                color={isSelected ? 'primary' : 'muted'} 
                                             />
                                         </View>
                                         <View className={`w-6 h-6 rounded-full items-center justify-center ${
                                             isSelected ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container'
                                         }`}>
-                                            {isSelected && <MaterialIcons name="check" size={16} color="#ffffff" />}
+                                            {isSelected && <Icon name="Check" size={16} color="white" strokeWidth={3} />}
                                         </View>
                                     </View>
                                     <View className="flex-col gap-0.5">

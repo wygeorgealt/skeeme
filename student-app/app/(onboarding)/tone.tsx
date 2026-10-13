@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import * as Haptics from 'expo-haptics';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Icon } from '@/components/ui/Icon';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 const STYLES = [
@@ -13,24 +13,24 @@ const STYLES = [
         label: 'Simple & Clear', 
         desc: 'Easy language, real-world examples, and intuitive analogies that make abstract theories immediately relatable.', 
         tagText: 'Recommended for STEM & Math',
-        tagIcon: 'school',
-        icon: 'auto-awesome' 
+        tagIcon: 'GraduationCap',
+        icon: 'Sparkles' 
     },
     { 
         key: 'detailed', 
         label: 'Detailed & In-Depth', 
         desc: 'Thorough academic explanations, formal derivations, and deeper underlying theory for true foundational mastery.', 
         tagText: 'Deep Dive',
-        tagIcon: 'biotech',
-        icon: 'troubleshoot' 
+        tagIcon: 'FlaskConical',
+        icon: 'FileSearch' 
     },
     { 
         key: 'balanced', 
         label: 'A Bit of Both', 
         desc: 'Keep it simple and visual when possible, but seamlessly dive into rigorous technical mechanics when challenged.', 
         tagText: 'Adaptive Balance',
-        tagIcon: 'tune',
-        icon: 'balance' 
+        tagIcon: 'Sliders',
+        icon: 'Scale' 
     },
 ];
 
@@ -87,10 +87,10 @@ export default function ToneScreen() {
                                         <View className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                                             isSelected ? 'bg-primary-container' : 'bg-surface-container'
                                         }`}>
-                                            <MaterialIcons 
+                                            <Icon 
                                                 name={style.icon as any} 
                                                 size={24} 
-                                                color={isSelected ? '#007aff' : '#48484a'} 
+                                                color={isSelected ? 'primary' : 'muted'} 
                                             />
                                         </View>
                                         <View className="flex-1 min-w-0">
@@ -99,12 +99,14 @@ export default function ToneScreen() {
                                                 <View className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                                                     isSelected ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container'
                                                 }`}>
-                                                    <MaterialIcons 
-                                                        name="check" 
-                                                        size={16} 
-                                                        color={isSelected ? '#ffffff' : 'transparent'} 
-                                                        style={{ fontWeight: 'bold' as any }}
-                                                    />
+                                                    {isSelected && (
+                                                        <Icon 
+                                                            name="Check" 
+                                                            size={16} 
+                                                            color="white" 
+                                                            strokeWidth={3}
+                                                        />
+                                                    )}
                                                 </View>
                                             </View>
                                             <Text className="font-normal text-[15px] text-on-surface-variant leading-relaxed mb-3">
@@ -114,10 +116,10 @@ export default function ToneScreen() {
                                             <View className={`self-start flex-row items-center gap-1 px-2.5 py-1 rounded-full ${
                                                 isSelected ? 'bg-primary-container' : 'bg-surface-container'
                                             }`}>
-                                                <MaterialIcons 
+                                                <Icon 
                                                     name={style.tagIcon as any} 
                                                     size={14} 
-                                                    color={isSelected ? '#007aff' : '#48484a'} 
+                                                    color={isSelected ? 'primary' : 'muted'} 
                                                 />
                                                 <Text className={`font-semibold text-[11px] tracking-wide ${
                                                     isSelected ? 'text-accent-electric-blue' : 'text-on-surface-variant'
@@ -133,7 +135,7 @@ export default function ToneScreen() {
 
                 {/* Info Tooltip */}
                 <View className="w-full p-4 rounded-xl bg-surface-container-low flex-row items-center gap-3 mt-2">
-                    <MaterialIcons name="info" size={20} color="#007aff" className="shrink-0" />
+                    <Icon name="Info" size={20} color="primary" style={{ flexShrink: 0 }} />
                     <Text className="font-normal text-[13px] text-on-surface-variant flex-1">
                         You can change explanation difficulty or ask for an alternative analogy at any point in any lesson.
                     </Text>
