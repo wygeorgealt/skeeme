@@ -15,6 +15,8 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import { Icon } from '@/components/ui/Icon';
 import { useRouter, useNavigation } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -189,11 +191,13 @@ export default function ScanScreen() {
         const currentResult = results[0];
         return (
             <View style={{ flex: 1, backgroundColor: C.background }}>
+                <StatusBar style={isDark ? 'light' : 'dark'} />
                 {/* Result Header */}
                 <View 
-                    className="flex-row items-center justify-between px-4 h-16" 
+                    className="flex-row items-center justify-between px-4" 
                     style={{ 
-                        paddingTop: insets.top,
+                        paddingTop: Math.max(insets.top, 14),
+                        paddingBottom: 12,
                         backgroundColor: C.background,
                         borderBottomColor: C.border,
                         borderBottomWidth: StyleSheet.hairlineWidth
@@ -410,6 +414,8 @@ export default function ScanScreen() {
 
     return (
         <View className="flex-1 bg-[#090d16]">
+            <StatusBar style="light" />
+
             <CameraView
                 style={StyleSheet.absoluteFill}
                 facing={facing}
@@ -423,46 +429,59 @@ export default function ScanScreen() {
                 style={[StyleSheet.absoluteFill, { backgroundColor: 'white', zIndex: 50 }, flashAnimatedStyle]}
             />
 
-            {/* Top Bar Controls */}
-            <View className="w-full flex-row items-center justify-between px-5 pt-4 z-20" style={{ marginTop: Math.max(insets.top, 14) }}>
-                <Pressable
-                    onPress={() => {
-                        haptics.selectionAsync(true);
-                        if (router.canGoBack()) {
-                            router.back();
-                        } else {
-                            router.replace('/(drawer)' as any);
-                        }
-                    }}
-                    className="w-11 h-11 rounded-full bg-black/40 border border-white/15 items-center justify-center"
-                >
-                    <Icon name="X" size={22} color="white" />
-                </Pressable>
+            {/* Top Bar Controls with Blended Gradient Header */}
+            <LinearGradient
+                colors={['rgba(9,13,22,0.92)', 'rgba(9,13,22,0.45)', 'transparent']}
+                locations={[0, 0.65, 1]}
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    paddingTop: Math.max(insets.top, 16),
+                    paddingBottom: 28,
+                    paddingHorizontal: 20,
+                    zIndex: 30,
+                }}
+            >
+                <View className="w-full flex-row items-center justify-between">
+                    <Pressable
+                        onPress={() => {
+                            haptics.selectionAsync(true);
+                            if (router.canGoBack()) {
+                                router.back();
+                            } else {
+                                router.replace('/(drawer)' as any);
+                            }
+                        }}
+                        className="w-11 h-11 rounded-full bg-black/40 border border-white/15 items-center justify-center shadow-lg"
+                    >
+                        <Icon name="X" size={22} color="white" />
+                    </Pressable>
 
-                {/* Credits Pill */}
-                <Pressable
-                    
-                    onPress={() => toggleCreditsModal(true, 'scan')}
-                    className="flex-row items-center gap-1.5 px-4 py-2 rounded-full bg-black/50 border border-white/15"
-                >
-                    <Icon name="Zap" size={19} color="primary" />
-                    <Text className="text-[14px] text-white" style={{ fontWeight: '700' }}>{credits}</Text>
-                    <Text className="text-[13px] text-white/70" style={{ fontWeight: '500' }}>Credits</Text>
-                </Pressable>
+                    {/* Credits Pill */}
+                    <Pressable
+                        onPress={() => toggleCreditsModal(true, 'scan')}
+                        className="flex-row items-center gap-1.5 px-4 py-2 rounded-full bg-black/50 border border-white/15 shadow-xl"
+                    >
+                        <Icon name="Zap" size={19} color="primary" />
+                        <Text className="text-[14px] text-white" style={{ fontWeight: '700' }}>{credits}</Text>
+                        <Text className="text-[13px] text-white/70" style={{ fontWeight: '500' }}>Credits</Text>
+                    </Pressable>
 
-                {/* Torch Toggle */}
-                <Pressable
-                    
-                    onPress={() => { haptics.selectionAsync(); setEnableTorch(!enableTorch); }}
-                    className={`w-11 h-11 rounded-full border items-center justify-center transition-all ${enableTorch ? 'bg-[#007AFF] border-[#007AFF]' : 'bg-black/40 border-white/15'}`}
-                >
-                    <Icon
-                        name={enableTorch ? 'Flashlight' : 'FlashlightOff'}
-                        size={21}
-                        color="white"
-                    />
-                </Pressable>
-            </View>
+                    {/* Torch Toggle */}
+                    <Pressable
+                        onPress={() => { haptics.selectionAsync(); setEnableTorch(!enableTorch); }}
+                        className={`w-11 h-11 rounded-full border items-center justify-center transition-all shadow-lg ${enableTorch ? 'bg-[#007AFF] border-[#007AFF]' : 'bg-black/40 border-white/15'}`}
+                    >
+                        <Icon
+                            name={enableTorch ? 'Flashlight' : 'FlashlightOff'}
+                            size={21}
+                            color="white"
+                        />
+                    </Pressable>
+                </View>
+            </LinearGradient>
 
             {/* Viewfinder Center */}
             <View className="flex-1 items-center justify-center px-6 my-1">
