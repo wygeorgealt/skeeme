@@ -77,18 +77,29 @@ func RunPostgresBackup() error {
 	// Clean up local file when done
 	defer os.Remove(localPath)
 
+	endpoint = strings.TrimRight(endpoint, "/")
+	if !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
+		endpoint = "https://" + endpoint
+	}
+
+	signingRegion := region
+	if signingRegion == "" || signingRegion == "auto" {
+		signingRegion = "us-east-1"
+	}
+
 	// Configure AWS SDK for Cloudflare R2
 	customResolver := aws.EndpointResolverWithOptionsFunc(func(service, reg string, options ...interface{}) (aws.Endpoint, error) {
 		return aws.Endpoint{
 			URL:               endpoint,
-			SigningRegion:     region,
+			SigningRegion:     signingRegion,
+			HostnameImmutable: true,
 		}, nil
 	})
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithEndpointResolverWithOptions(customResolver),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
-		config.WithRegion(region),
+		config.WithRegion(signingRegion),
 	)
 	if err != nil {
 		err = fmt.Errorf("failed to load AWS config: %w", err)
@@ -96,15 +107,11 @@ func RunPostgresBackup() error {
 		return err
 	}
 
-	endpoint = strings.TrimRight(endpoint, "/")
-	if !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
-		endpoint = "https://" + endpoint
-	}
-
 	// Cloudflare R2 requires Path-Style addressing (https://endpoint/bucket/key)
 	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.BaseEndpoint = aws.String(endpoint)
 		o.UsePathStyle = true
+		o.Region = signingRegion
 	})
 
 	// Upload to S3
