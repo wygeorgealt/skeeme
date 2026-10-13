@@ -12,9 +12,9 @@ import { useAuthStore } from '@/store/authStore';
 import { generateUUID } from '@/lib/utils';
 import EventSource from 'react-native-sse';
 
-// Point to the Node.js microservice
-// In production, this would be your deployed microservice URL
-const AI_SERVICE_URL = process.env.EXPO_PUBLIC_AI_SERVICE_URL || 'http://10.0.2.2:3001';
+// Point to the Go AI backend
+// In production, this matches EXPO_PUBLIC_API_URL or EXPO_PUBLIC_AI_SERVICE_URL
+const AI_SERVICE_URL = process.env.EXPO_PUBLIC_AI_SERVICE_URL || process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8080';
 
 export interface StreamCallbacks {
     onToken?: (token: string) => void;
@@ -24,7 +24,7 @@ export interface StreamCallbacks {
 }
 
 /**
- * Generic streaming fetch from the Node.js AI microservice.
+ * Generic streaming fetch from the Go AI backend.
  * Returns an abort function to cancel the stream.
  */
 export function streamFromAI(
@@ -72,21 +72,27 @@ export function streamFromAI(
                 console.error('Failed to parse SSE data', e);
             }
         } else if (event.type === 'error') {
-            // Note: react-native-sse sometimes emits an error when the stream finishes normally without [DONE]
-            // If we've already received data, we might just be done.
-            if (event.message?.includes('402')) {
+            es.close();
+
+            let errorData: any = null;
+            if (event.data) {
+                try {
+                    errorData = JSON.parse(event.data);
+                } catch (_) {}
+            }
+
+            if (event.message?.includes('402') || errorData?.error === 'insufficient_credits') {
                 isInsufficientCredits = true;
             }
-            
-            es.close();
-            
-            const errorMsg = event.message || 'Stream connection failed';
-            
-            // Only report error if we haven't received anything yet, or if it's a hard error like 402
-            if (fullText.length === 0 || isInsufficientCredits) {
+
+            const errorMsg = errorData?.error || event.message || 'Stream connection failed';
+
+            // If the server explicitly emitted an error event (e.g. incomplete_response or stream_interrupted),
+            // or if no text was received, or if insufficient credits, report clean error
+            if (errorData?.error || fullText.length === 0 || isInsufficientCredits) {
                 callbacks.onError?.(errorMsg, isInsufficientCredits);
             } else {
-                // If we have text and it errored, just complete it
+                // If we have full text and connection simply closed without error event
                 callbacks.onComplete?.(fullText);
             }
         }

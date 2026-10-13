@@ -117,6 +117,7 @@ func main() {
 	supportHandler := &handlers.SupportHandler{DB: database}
 		publicSupportHandler := &handlers.PublicSupportHandler{DB: database, Redis: redisClient}
 	gradeHandler := &handlers.GradeHandler{}
+	aiHandler := handlers.NewAIHandler(database, redisClient)
 
 	// Middleware
 	requireAuth := middleware.AuthMiddleware(database)
@@ -204,13 +205,22 @@ func main() {
 		r.Post("/cleanup", handleCleanup)
 	})
 	
-	// Internal AI Routes (Node.js AI service)
+	// Native Go AI Engine Routes
+	r.Group(func(r chi.Router) {
+		r.Use(requireAuth)
+		r.Post("/api/scan/solve", aiHandler.Solve)
+		r.Post("/api/scan/chat", aiHandler.Chat)
+		r.Post("/api/quizzes/generate", aiHandler.GenerateQuiz)
+		r.Post("/api/flashcards/generate", aiHandler.GenerateFlashcards)
+	})
+
+	// Legacy Internal AI Routes (retained for backward compatibility)
 	r.Route("/api/v2/internal/ai", func(r chi.Router) {
 		r.With(requireAuth).Post("/authorize", internalAIHandler.Authorize)
 		r.With(requireInternalAuth).Post("/refund", internalAIHandler.Refund)
 	})
 	
-		r.Route("/api/v2/student", func(r chi.Router) {
+	r.Route("/api/v2/student", func(r chi.Router) {
 		r.Route("/system", func(r chi.Router) {
 			r.Get("/pricing", systemHandler.Pricing)
 			r.Get("/app-version", systemHandler.AppVersion)
@@ -300,6 +310,12 @@ func main() {
 				r.Post("/", userExamHandler.Create)
 				r.Delete("/{id}", userExamHandler.Delete)
 			})
+
+			// AI Endpoints (Aliased under student API)
+			r.Post("/scan/solve", aiHandler.Solve)
+			r.Post("/scan/chat", aiHandler.Chat)
+			r.Post("/quizzes/generate", aiHandler.GenerateQuiz)
+			r.Post("/flashcards/generate", aiHandler.GenerateFlashcards)
 		})
 	})
 

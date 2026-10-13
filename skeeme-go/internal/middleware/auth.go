@@ -43,3 +43,7 @@ func GetUser(ctx context.Context) *models.User {
 	}
 	return nil
 }
+
+func SetUser(ctx context.Context, user *models.User) context.Context {
+	return context.WithValue(ctx, UserContextKey, user)
+}
