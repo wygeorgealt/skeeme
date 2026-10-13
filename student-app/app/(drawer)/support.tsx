@@ -120,12 +120,9 @@ export default function SupportScreen() {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <Animated.View key={`hero-${animKey}`} entering={FadeInDown.delay(80).duration(400)}>
-                    <Text style={[s.heroTitle, { color: C.text }]}>
+                <Animated.View key={`hero-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={{ marginBottom: 16 }}>
+                    <Text style={[s.heroTitle, { color: C.text, marginBottom: 0 }]}>
                         How can we help?
-                    </Text>
-                    <Text style={[s.heroSubtitle, { color: C.textSecondary }]}>
-                        Describe the issue or feedback below
                     </Text>
                 </Animated.View>
 

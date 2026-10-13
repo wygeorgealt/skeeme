@@ -255,10 +255,10 @@ export default function QuizHistoryDetailScreen() {
     if (!session) return null;
 
     const getRemark = (pct: number) => {
-        if (pct >= 90) return { title: "GENIUS!", subtitle: "Incredible work. You've mastered this topic.", icon: 'Trophy' as const };
-        if (pct >= 80) return { title: "GREAT JOB!", subtitle: "Solid understanding. Keep pushing forward!", icon: 'Award' as const };
-        if (pct >= 60) return { title: "GOOD EFFORT!", subtitle: "You're getting there. A quick review will help.", icon: 'Lightbulb' as const };
-        return { title: "KEEP TRYING!", subtitle: "Learning is a journey. Review and try again!", icon: 'Flame' as const };
+        if (pct >= 90) return { title: "EXCELLENT", subtitle: "Topic mastered", icon: 'Trophy' as const };
+        if (pct >= 80) return { title: "GREAT JOB", subtitle: "Strong understanding", icon: 'Award' as const };
+        if (pct >= 60) return { title: "GOOD PROGRESS", subtitle: "Review recommended", icon: 'Lightbulb' as const };
+        return { title: "NEEDS PRACTICE", subtitle: "Review and retake", icon: 'Flame' as const };
     };
 
     const remark = getRemark(session.score_percentage);

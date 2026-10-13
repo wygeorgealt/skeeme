@@ -101,7 +101,6 @@ export default function ExamsScreen() {
         <View style={{ flex: 1, backgroundColor: C.background }}>
             <ScreenHeader 
                 title="Your Exams" 
-                subtitle="Track your upcoming tests and reminders" 
                 onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/settings' as any))}
             />
             <ScrollView 

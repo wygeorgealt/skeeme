@@ -32,6 +32,7 @@ import { haptics } from '@/lib/haptics';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FlashcardDeckSummary } from '@/components/flashcards/FlashcardDeckSummary';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
 import { Flashcard as Card, FlashcardDeck } from '@/types';
 import { StreakAnimation } from '@/components/StreakAnimation';
@@ -683,17 +684,19 @@ export default function StudyDeckScreen() {
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
             {/* Header */}
-            <View style={{ paddingTop: insets.top, backgroundColor: C.background }} className="w-full">
-                <View className="h-16 px-4 flex-row items-center justify-between">
-                    <Pressable onPress={() => router.back()} className="w-11 h-11 items-center justify-center rounded-full">
-                        <Icon name="ArrowLeft" size={22} color="primary" />
-                    </Pressable>
-                    <View className="flex-col items-center justify-center flex-1 px-2" />
-                    <Pressable onPress={() => setIsFlagged(!isFlagged)} className="w-11 h-11 items-center justify-center rounded-full">
+            <ScreenHeader
+                title=""
+                onBack={() => router.back()}
+                rightAction={
+                    <Pressable
+                        onPress={() => setIsFlagged(!isFlagged)}
+                        hitSlop={8}
+                        className="w-10 h-10 items-center justify-center rounded-full"
+                    >
                         <Icon name={isFlagged ? "BookmarkCheck" : "Bookmark"} size={22} color={isFlagged ? "primary" : "textSecondary"} />
                     </Pressable>
-                </View>
-            </View>
+                }
+            />
 
             {/* Progress Section */}
             <View className="flex-col w-full px-4 mb-4 mt-2">

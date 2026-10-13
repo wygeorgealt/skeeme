@@ -59,8 +59,7 @@ export default function GenerateFlashcardScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}> 
             <ScreenHeader 
-                title="Generate Flashcards" 
-                subtitle="Transform notes or topics into active recall decks" 
+                title="Create Flashcards" 
             />
             <FlashcardEditor onGenerate={onGenerate} onPickFile={onPickFile} />
         </View>

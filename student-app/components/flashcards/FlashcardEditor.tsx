@@ -26,10 +26,10 @@ const SUGGESTIONS = [
 ];
 
 const FOCUS_OPTIONS = [
-    { id: 'concepts', title: 'Key Concepts & Definitions', icon: 'BookOpen' as const, desc: 'Term on front, clear definitions and core contextual clues on back.' },
-    { id: 'formulas', title: 'Formulas & Problem Solving', icon: 'Sigma' as const, desc: 'Equations, variable breakdowns, and step-by-step numerical applications.' },
-    { id: 'traps', title: 'High-Yield Exam Traps', icon: 'Zap' as const, desc: 'Common misconceptions, tricky edge cases, and test designer pitfalls.' },
-    { id: 'qa', title: 'Q&A Scenario Practice', icon: 'Brain' as const, desc: 'Real-world scenario cases and prompt questions designed for vocal review.' },
+    { id: 'concepts', title: 'Key Concepts & Definitions', icon: 'BookOpen' as const, desc: 'Essential terms and clear definitions' },
+    { id: 'formulas', title: 'Formulas & Problem Solving', icon: 'Sigma' as const, desc: 'Equations and step-by-step applications' },
+    { id: 'traps', title: 'High-Yield Exam Traps', icon: 'Zap' as const, desc: 'Common test pitfalls and edge cases' },
+    { id: 'qa', title: 'Q&A Scenario Practice', icon: 'Brain' as const, desc: 'Real-world prompt and scenario drills' },
 ] as const;
 
 export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
@@ -392,9 +392,6 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
                 <View style={{ paddingHorizontal: 2, marginBottom: 2 }}>
                     <Text style={{ fontSize: 17, fontWeight: '700', letterSpacing: -0.2, color: C.text }}>
                         Card Content Focus
-                    </Text>
-                    <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary, marginTop: 2 }}>
-                        Choose what to emphasize for spaced retention
                     </Text>
                 </View>
 

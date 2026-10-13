@@ -17,6 +17,7 @@ import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Icon } from '@/components/ui/Icon';
 import { useRouter, useNavigation } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -193,36 +194,23 @@ export default function ScanScreen() {
             <View style={{ flex: 1, backgroundColor: C.background }}>
                 <StatusBar style={isDark ? 'light' : 'dark'} />
                 {/* Result Header */}
-                <View 
-                    className="flex-row items-center justify-between px-4" 
-                    style={{ 
-                        paddingTop: Math.max(insets.top, 14),
-                        paddingBottom: 12,
-                        backgroundColor: C.background,
-                        borderBottomColor: C.border,
-                        borderBottomWidth: StyleSheet.hairlineWidth
-                    }}
-                >
-                    <Pressable
-                        onPress={() => setResults([])}
-                        className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent active:scale-95"
-                    >
-                        <Icon name="ArrowLeft" size={22} color="primary" />
-                    </Pressable>
-                    <View className="flex-1 items-center px-2">
-                        <Text style={{ fontSize: 18, fontWeight: '700', color: C.text }}>Question</Text>
-                    </View>
-                    <Pressable
-                        onPress={() => {
-                            haptics.selectionAsync();
-                            Alert.alert('Share', 'Exporting solution summary...');
-                        }}
-                        className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95"
-                        style={{ backgroundColor: C.surfaceLow }}
-                    >
-                        <Icon name="Share2" size={20} color="primary" />
-                    </Pressable>
-                </View>
+                <ScreenHeader
+                    title="Solution"
+                    onBack={() => setResults([])}
+                    rightAction={
+                        <Pressable
+                            onPress={() => {
+                                haptics.selectionAsync();
+                                Alert.alert('Share', 'Exporting solution summary...');
+                            }}
+                            hitSlop={8}
+                            className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95"
+                            style={{ backgroundColor: C.surfaceLow }}
+                        >
+                            <Icon name="Share2" size={20} color="primary" />
+                        </Pressable>
+                    }
+                />
 
                 <ScrollView
                     className="flex-1 w-full"

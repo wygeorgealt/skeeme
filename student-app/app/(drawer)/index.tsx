@@ -328,8 +328,8 @@ export default function HomeDashboard() {
                                     </Text>
                                     <Text style={styles.dailyGoalSub}>
                                         {goalProgress.isGoalMet
-                                            ? 'Daily goal completed! Streak active 🔥'
-                                            : `${goalProgress.totalCount - goalProgress.completedCount} more tasks to reach daily goal`}
+                                            ? 'Goal completed! Streak active 🔥'
+                                            : `${goalProgress.totalCount - goalProgress.completedCount} more tasks to reach goal`}
                                     </Text>
                                 </View>
                             </View>
@@ -359,7 +359,7 @@ export default function HomeDashboard() {
                             <View style={styles.proBannerTextWrap}>
                                 <Text style={styles.proBannerTitle}>Unlock Skeeme Pro</Text>
                                 <Text style={styles.proBannerSubtitle}>
-                                    Upgrade your learning with unlimited access to premium perks & instant AI tutor.
+                                    Unlimited AI practice, homework scans, and exams.
                                 </Text>
                             </View>
                         </View>
@@ -372,7 +372,7 @@ export default function HomeDashboard() {
                                 router.push('/(drawer)/account');
                             }}
                         >
-                            <Text style={styles.proUpgradeBtnText}>+ Upgrade to Pro</Text>
+                            <Text style={styles.proUpgradeBtnText}>Upgrade to Pro</Text>
                         </TouchableOpacity>
                     </LinearGradient>
 

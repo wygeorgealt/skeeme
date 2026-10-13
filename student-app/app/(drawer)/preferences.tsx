@@ -100,7 +100,6 @@ export default function PreferencesScreen() {
         <View style={{ flex: 1, backgroundColor: C.background }}>
             <ScreenHeader 
                 title="AI Personalization" 
-                subtitle="Shape how your tutor explains, challenges, and supports you" 
                 onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/settings' as any))}
             />
 

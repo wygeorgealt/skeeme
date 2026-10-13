@@ -13,6 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/theme';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
 type QuizSession = {
     id: number;
@@ -212,25 +213,12 @@ export default function StudyHistoryDashboard() {
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
-            <Animated.View entering={FadeInUp.duration(500)} style={{ paddingTop: Math.max(insets.top, 16) }} className="px-5 pb-4">
-                <View className="flex-row items-center gap-1">
-                    <Pressable 
-                        onPress={() => {
-                            haptics.selectionAsync(true);
-                            if (router.canGoBack()) {
-                                router.back();
-                            } else {
-                                router.replace('/(drawer)' as any);
-                            }
-                        }} 
-                        className="w-10 h-10 items-center justify-center rounded-full bg-transparent -ml-2" 
-                    >
-                        <Icon name="ArrowLeft" size={22} color="primary" />
-                    </Pressable>
-                    <Text style={{ fontSize: 26, fontWeight: '700', letterSpacing: -0.5, color: C.text }}>History</Text>
-                </View>
-                
-                <View className="mt-4 gap-4">
+            <ScreenHeader
+                title="History"
+                onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)' as any))}
+            />
+            <View className="px-5 pb-4">
+                <View className="mt-2 gap-4">
                     {/* Search Pill */}
                     <View className="relative w-full justify-center">
                         <View className="absolute left-3 z-10">
@@ -348,7 +336,7 @@ export default function StudyHistoryDashboard() {
                         })}
                     </View>
                 </View>
-            </Animated.View>
+            </View>
 
             <Animated.View entering={FadeInDown.delay(160).duration(400)} className="flex-1 px-5">
                 <SectionList

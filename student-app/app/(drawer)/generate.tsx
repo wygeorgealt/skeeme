@@ -621,7 +621,6 @@ export default function GenerateQuizScreen() {
             <View style={{ flex: 1, backgroundColor: C.background }}>
                 <ScreenHeader 
                     title={isLoading ? (loadingStage || 'Skeeming...') : 'Create Quiz'} 
-                    subtitle={!isLoading ? "Generate smart practice quizzes" : undefined}
                 />
 
                 {isLoading ? (
@@ -1005,9 +1004,8 @@ export default function GenerateQuizScreen() {
                             <Text className="text-[16px] font-[600] text-on-primary">{isLoading ? 'Generating...' : 'Generate Quiz'}</Text>
                             {!isLoading && <Text className="text-[13px] font-[400] text-on-primary/80">✨</Text>}
                         </Pressable>
-                        <View className="flex-row items-center justify-center gap-2">
-                            <View className="w-1.5 h-1.5 rounded-full bg-accent-electric-blue" />
-                            <Text className="text-[11px] font-[700] tracking-[0.5px]" style={{ color: C.textSecondary }}>Costs {user?.plan_name !== 'free' ? '0' : '30'} Credits • Instant AI Generation</Text>
+                        <View className="flex-row items-center justify-center gap-1.5">
+                            <Text className="text-[12px] font-[500]" style={{ color: C.textSecondary }}>{user?.plan_name !== 'free' ? 'Included with Pro' : '30 Credits'}</Text>
                         </View>
                     </View>
                 </BlurView>

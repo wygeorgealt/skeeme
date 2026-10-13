@@ -102,7 +102,6 @@ export default function ReferralScreen() {
 
             <ScreenHeader 
                 title="Earn Rewards" 
-                subtitle="Invite friends & earn credits" 
                 onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/settings' as any))}
             />
 
