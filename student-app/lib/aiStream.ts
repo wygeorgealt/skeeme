@@ -12,9 +12,24 @@ import { useAuthStore } from '@/store/authStore';
 import { generateUUID } from '@/lib/utils';
 import EventSource from 'react-native-sse';
 
-// Point to the Go AI backend
-// In production, this matches EXPO_PUBLIC_API_URL or EXPO_PUBLIC_AI_SERVICE_URL
-const AI_SERVICE_URL = process.env.EXPO_PUBLIC_AI_SERVICE_URL || process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8080';
+function getAIServiceBaseUrl(): string {
+    const aiUrl = process.env.EXPO_PUBLIC_AI_SERVICE_URL;
+    if (aiUrl && !aiUrl.includes('run.app')) {
+        return aiUrl.replace(/\/+$/, '');
+    }
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+    if (apiUrl) {
+        try {
+            const parsed = new URL(apiUrl);
+            return parsed.origin;
+        } catch (_) {
+            return apiUrl.replace(/\/api\/.*$/, '').replace(/\/+$/, '');
+        }
+    }
+    return 'http://10.0.2.2:8080';
+}
+
+const AI_SERVICE_URL = getAIServiceBaseUrl();
 
 export interface StreamCallbacks {
     onToken?: (token: string) => void;

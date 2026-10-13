@@ -104,13 +104,12 @@ export default function ChatScreen() {
       content: m.content,
     }));
 
-    // Stream from backend Node AI service
+    // Stream from Go AI backend (uses active default provider e.g. DeepSeek)
     abortStreamRef.current = streamScanFollowUpChat(
       {
         messages: apiMessages,
         context:
           'You are Skeemy, an intelligent, patient, and expert AI tutor designed for high school and university students. Help the student understand core academic concepts, solve problems step-by-step, and prepare for exams. Break down explanations clearly with bullet points and bold terms. Use markdown formatting and valid LaTeX for mathematical equations.',
-        provider: 'anthropic',
       },
       {
         onToken: (token: string) => {
@@ -193,21 +192,15 @@ export default function ChatScreen() {
           >
             <Icon name="ArrowLeft" size={20} color="text" />
           </Pressable>
-          <View className="flex-row items-center gap-3">
-            <View className="relative items-center justify-center w-10 h-10 rounded-full bg-primary-container">
-              <Icon name="Brain" size={22} color="primary" />
-              <View className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-tertiary border-[2px] border-surface" />
-            </View>
-            <View className="flex-col">
-              <Text style={{ color: C.text }} className="text-[16px] font-bold">
-                Chat With Skeemy
+          <View className="flex-col pl-1.5">
+            <Text style={{ color: C.text }} className="text-[17px] font-bold">
+              Chat With Skeemy
+            </Text>
+            <View className="flex-row items-center gap-1.5 mt-0.5">
+              <View className="w-2 h-2 rounded-full bg-emerald-500" />
+              <Text style={{ color: C.textSecondary }} className="text-[11px] font-semibold">
+                Online
               </Text>
-              <View className="flex-row items-center gap-1.5 mt-0.5">
-                <View className="w-1.5 h-1.5 rounded-full bg-tertiary" />
-                <Text style={{ color: C.textSecondary }} className="text-[11px] font-bold">
-                  Online
-                </Text>
-              </View>
             </View>
           </View>
         </View>
@@ -297,61 +290,56 @@ export default function ChatScreen() {
 
               // Assistant message
               return (
-                <View key={msg.id} className="flex-row items-start gap-2.5 w-full pr-2 mb-5">
-                  <View className="w-8 h-8 rounded-full bg-primary-container items-center justify-center mt-1 shrink-0">
-                    <Icon name="Sparkles" size={18} color="primary" />
-                  </View>
-                  <View className="flex-col w-full max-w-[92%] gap-1">
-                    <View
-                      style={{
-                        backgroundColor: C.card,
-                        borderColor: C.border,
-                      }}
-                      className="rounded-3xl rounded-tl-md p-4 shadow-sm border"
-                    >
-                      {msg.content ? (
-                        <Text style={{ color: C.text }} className="text-[15px] leading-[23px] font-normal">
-                          {msg.content}
+                <View key={msg.id} className="flex-col w-full max-w-[95%] gap-1 mb-5">
+                  <View
+                    style={{
+                      backgroundColor: C.card,
+                      borderColor: C.border,
+                    }}
+                    className="rounded-3xl rounded-tl-md p-4 shadow-sm border"
+                  >
+                    {msg.content ? (
+                      <Text style={{ color: C.text }} className="text-[15px] leading-[23px] font-normal">
+                        {msg.content}
+                      </Text>
+                    ) : (
+                      <View className="flex-row items-center gap-2 py-1">
+                        <ActivityIndicator size="small" color="#007AFF" />
+                        <Text style={{ color: C.textSecondary }} className="text-[13px] font-medium">
+                          Skeemy is thinking…
                         </Text>
-                      ) : (
-                        <View className="flex-row items-center gap-2 py-1">
-                          <ActivityIndicator size="small" color="#007AFF" />
-                          <Text style={{ color: C.textSecondary }} className="text-[13px] font-medium">
-                            Skeemy is thinking…
-                          </Text>
-                        </View>
-                      )}
+                      </View>
+                    )}
 
-                      {!msg.isStreaming && msg.content ? (
-                        <View
-                          style={{ borderTopColor: C.border }}
-                          className="flex-row flex-wrap items-center gap-2 pt-3 mt-3 border-t"
+                    {!msg.isStreaming && msg.content ? (
+                      <View
+                        style={{ borderTopColor: C.border }}
+                        className="flex-row flex-wrap items-center gap-2 pt-3 mt-3 border-t"
+                      >
+                        <Pressable
+                          onPress={() => handleCopy(msg.id, msg.content)}
+                          style={{ backgroundColor: C.surfaceLow }}
+                          className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full active:opacity-70"
                         >
-                          <Pressable
-                            onPress={() => handleCopy(msg.id, msg.content)}
-                            style={{ backgroundColor: C.surfaceLow }}
-                            className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full active:opacity-70"
-                          >
-                            <Icon name="Copy" size={14} color="textSecondary" />
-                            <Text style={{ color: C.text }} className="text-[11px] font-bold">
-                              {copiedId === msg.id ? 'Copied!' : 'Copy'}
-                            </Text>
-                          </Pressable>
-                          <Pressable
-                            onPress={() => router.push('/(drawer)/generate')}
-                            style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.15)' : '#E5F1FF' }}
-                            className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full active:opacity-70"
-                          >
-                            <Icon name="HelpCircle" size={14} color="primary" />
-                            <Text className="text-[11px] font-bold text-accent-electric-blue">Quiz me</Text>
-                          </Pressable>
-                        </View>
-                      ) : null}
-                    </View>
-                    <Text style={{ color: C.textSecondary }} className="text-[11px] font-bold pl-2 mt-0.5">
-                      Skeemy AI • {msg.time}
-                    </Text>
+                          <Icon name="Copy" size={14} color="textSecondary" />
+                          <Text style={{ color: C.text }} className="text-[11px] font-bold">
+                            {copiedId === msg.id ? 'Copied!' : 'Copy'}
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={() => router.push('/(drawer)/generate')}
+                          style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.15)' : '#E5F1FF' }}
+                          className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full active:opacity-70"
+                        >
+                          <Icon name="HelpCircle" size={14} color="primary" />
+                          <Text className="text-[11px] font-bold text-accent-electric-blue">Quiz me</Text>
+                        </Pressable>
+                      </View>
+                    ) : null}
                   </View>
+                  <Text style={{ color: C.textSecondary }} className="text-[11px] font-bold pl-2 mt-0.5">
+                    Skeemy AI • {msg.time}
+                  </Text>
                 </View>
               );
             })
@@ -388,7 +376,8 @@ export default function ChatScreen() {
               onPress={() => handleSend()}
               disabled={isGenerating || !inputVal.trim()}
               style={{
-                backgroundColor: isGenerating || !inputVal.trim() ? (isDark ? '#3A3A3C' : '#93C5FD') : '#007AFF',
+                backgroundColor: '#007AFF',
+                opacity: isGenerating || !inputVal.trim() ? 0.45 : 1,
               }}
               className="w-10 h-10 rounded-full items-center justify-center mr-0.5 active:scale-90"
             >

@@ -631,7 +631,7 @@ export default function GenerateQuizScreen() {
                 ) : (
                 <ScrollView
                     className="flex-1 w-full"
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 220, paddingTop: 16 }}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 110, paddingTop: 16 }}
                     showsVerticalScrollIndicator={false}
                 >
                     <View className="flex-col gap-6 w-full max-w-xl mx-auto">
@@ -1116,7 +1116,7 @@ export default function GenerateQuizScreen() {
                     ) : undefined}
                 />
 
-                <ScrollView className="flex-1 w-full" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 220 }} showsVerticalScrollIndicator={false}>
+                <ScrollView className="flex-1 w-full" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
                     
                     {/* Progress area */}
                     <View className="flex-col space-y-2.5 mb-6">

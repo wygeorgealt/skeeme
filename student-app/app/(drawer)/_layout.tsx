@@ -38,11 +38,32 @@ function TabBar({ state, descriptors, navigation }: any) {
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
+    const pathname = usePathname();
 
     // Check if any screen has requested to hide the tab bar
     const focusedRoute = state.routes[state.index];
-    const focusedOptions = descriptors[focusedRoute.key].options;
-    if (focusedOptions.tabBarStyle?.display === 'none') {
+    const focusedOptions = descriptors[focusedRoute?.key]?.options;
+    const hiddenScreens = [
+        'generate',
+        'chat',
+        'scan',
+        'account',
+        'preferences',
+        'settings',
+        'support',
+        'referral',
+        'exams',
+        'flashcards',
+    ];
+
+    if (
+        focusedOptions?.tabBarStyle?.display === 'none' ||
+        hiddenScreens.includes(focusedRoute?.name) ||
+        pathname?.includes('/generate') ||
+        pathname?.includes('/chat') ||
+        pathname?.includes('/scan') ||
+        pathname?.includes('/flashcards')
+    ) {
         return null;
     }
 
