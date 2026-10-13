@@ -2,13 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Pressable, View, Text, TextInput, ScrollView, Platform, KeyboardAvoidingView, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Icon } from '@/components/ui/Icon';
 import { haptics } from '@/lib/haptics';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import * as Clipboard from 'expo-clipboard';
 import { streamScanFollowUpChat } from '@/lib/aiStream';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 type ChatMessage = {
   id: string;
@@ -18,10 +19,15 @@ type ChatMessage = {
   isStreaming?: boolean;
 };
 
-const SUGGESTIONS = [
-  'Quiz me on Bayes Theorem with a 4-choice question',
-  'Summarize core kinematics formulas in Physics',
-  'Practice problem on calculus derivatives & chain rule',
+const PROMPTS = [
+  'Got a question? Ask me',
+  "Stuck on a problem? Let's solve it",
+  'Need help studying? Fire away',
+  'Curious about something? Ask away',
+  "Got homework doubts? Let's break it down",
+  'Prep time? Ask me anything',
+  "Need a quick explanation? I'm here",
+  'What are we learning today?',
 ];
 
 export default function ChatScreen() {
@@ -36,7 +42,16 @@ export default function ChatScreen() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [promptIndex, setPromptIndex] = useState(0);
   const abortStreamRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    if (messages.length > 0) return;
+    const interval = setInterval(() => {
+      setPromptIndex((prev) => (prev + 1) % PROMPTS.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [messages.length]);
 
   useEffect(() => {
     return () => {
@@ -174,46 +189,23 @@ export default function ChatScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-
-      {/* ── Header (Starts flush from screen top, padding for status bar) ── */}
-      <View
-        style={{
-          paddingTop: Math.max(insets.top, 10),
-          borderBottomColor: C.border,
-          backgroundColor: C.card,
-        }}
-        className="px-4 pb-3 flex-row items-center justify-between border-b z-50 shadow-xs"
-      >
-        <View className="flex-row items-center gap-1">
-          <Pressable
-            onPress={handleBack}
-            className="w-11 h-11 items-center justify-center rounded-full active:bg-surface-container-high"
-          >
-            <Icon name="ArrowLeft" size={20} color="text" />
-          </Pressable>
-          <View className="flex-col pl-1.5">
-            <Text style={{ color: C.text }} className="text-[17px] font-bold">
-              Chat With Skeemy
-            </Text>
-            <View className="flex-row items-center gap-1.5 mt-0.5">
-              <View className="w-2 h-2 rounded-full bg-emerald-500" />
-              <Text style={{ color: C.textSecondary }} className="text-[11px] font-semibold">
-                Online
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {messages.length > 0 && (
-          <Pressable
-            onPress={handleClearChat}
-            className="w-10 h-10 items-center justify-center rounded-full active:bg-surface-container-high"
-          >
-            <Icon name="RotateCcw" size={20} color="textSecondary" />
-          </Pressable>
-        )}
-      </View>
+      <ScreenHeader
+        title="Chat With Skeemy"
+        subtitle="Online"
+        onBack={handleBack}
+        showBorder={true}
+        rightAction={
+          messages.length > 0 ? (
+            <Pressable
+              onPress={handleClearChat}
+              hitSlop={8}
+              className="w-10 h-10 items-center justify-center rounded-full active:bg-surface-container-high"
+            >
+              <Icon name="RotateCcw" size={20} color="textSecondary" />
+            </Pressable>
+          ) : undefined
+        }
+      />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -227,43 +219,21 @@ export default function ChatScreen() {
           showsVerticalScrollIndicator={false}
         >
           {messages.length === 0 ? (
-            /* ── Welcome Empty State ── */
-            <View className="flex-1 items-center justify-center py-10 px-4">
-              <View className="w-20 h-20 rounded-full bg-primary-container items-center justify-center mb-5 shadow-sm">
-                <Icon name="Sparkles" size={38} color="primary" />
-              </View>
-              <Text style={{ color: C.text }} className="text-[22px] font-bold text-center mb-2">
-                Hi! I'm Skeemy 👋
-              </Text>
-              <Text style={{ color: C.textSecondary }} className="text-[14px] text-center max-w-[300px] leading-[20px] mb-8">
-                Your personal AI study partner. Ask me any conceptual question, get step-by-step problem derivations, or practice for exams.
-              </Text>
-
-              {/* Suggestions */}
-              <View className="w-full gap-2.5">
-                <Text style={{ color: C.textSecondary }} className="text-[12px] font-bold uppercase tracking-wider px-1 mb-1">
-                  Suggested Questions
+            /* ── Minimal Animated Prompt Empty State ── */
+            <View className="flex-1 items-center justify-center py-20 px-6">
+              <Animated.View
+                key={promptIndex}
+                entering={FadeIn.duration(450)}
+                exiting={FadeOut.duration(350)}
+                className="items-center justify-center max-w-[320px]"
+              >
+                <Text
+                  style={{ color: C.text }}
+                  className="text-[25px] font-bold text-center tracking-tight leading-8"
+                >
+                  {PROMPTS[promptIndex]}
                 </Text>
-                {SUGGESTIONS.map((item, idx) => (
-                  <Pressable
-                    key={idx}
-                    onPress={() => handleSend(item)}
-                    style={{
-                      backgroundColor: C.card,
-                      borderColor: C.border,
-                    }}
-                    className="p-3.5 rounded-2xl border flex-row items-center justify-between active:scale-[0.99] shadow-xs"
-                  >
-                    <View className="flex-row items-center gap-2.5 flex-1 pr-2">
-                      <Icon name="MessageSquare" size={18} color="primary" />
-                      <Text style={{ color: C.text }} className="text-[13px] font-semibold flex-1">
-                        {item}
-                      </Text>
-                    </View>
-                    <Icon name="ArrowRight" size={16} color="textSecondary" />
-                  </Pressable>
-                ))}
-              </View>
+              </Animated.View>
             </View>
           ) : (
             /* ── Active Conversation Stream ── */
