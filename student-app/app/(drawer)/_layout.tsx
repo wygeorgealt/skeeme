@@ -250,6 +250,7 @@ export default function TabLayout() {
         <>
             <Tabs
                 tabBar={(props) => <TabBar {...props} />}
+                backBehavior="history"
                 screenOptions={{
                     headerShown: false,
                     headerTransparent: true,
@@ -292,7 +293,6 @@ export default function TabLayout() {
                 <Tabs.Screen name="referral" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="exams" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="generate" options={{ href: null, tabBarStyle: { display: 'none' } }} />
-                <Tabs.Screen name="daily_study_goal" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="flashcards" options={{ href: null, tabBarStyle: { display: 'none' } }} />
 
             </Tabs>

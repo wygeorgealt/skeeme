@@ -134,7 +134,10 @@ export default function AccountScreen() {
 
     return (
         <View style={[s.container, { backgroundColor: C.background }]}>
-            <ScreenHeader title="Account" />
+            <ScreenHeader 
+                title="Account" 
+                onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/settings' as any))}
+            />
 
             <ScrollView 
                 contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 100 }]}

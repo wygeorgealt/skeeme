@@ -16,12 +16,11 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
 // ─── Row Component ───────────────────────────────────────────────────────────
 function SettingsRow({
-    icon, iconBg, iconColor, label, sublabel, value, onPress, isLast = false,
+    icon, label, sublabel, value, onPress, isLast = false,
     destructive = false, hasSwitch = false, switchValue = false, onSwitch,
     isDark,
 }: {
     icon: keyof typeof LucideIcons;
-    iconBg: string; iconColor: string;
     label: string; sublabel?: string; value?: string;
     onPress?: () => void; isLast?: boolean; destructive?: boolean;
     hasSwitch?: boolean; switchValue?: boolean; onSwitch?: (val: boolean) => void;
@@ -33,8 +32,13 @@ function SettingsRow({
             onPress={hasSwitch ? undefined : onPress}
             style={[styles.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : '#E3E2E7' }]}
         >
-            <View style={[styles.rowIcon, { backgroundColor: iconBg }]}>
-                <Icon name={icon} size={18} color={destructive ? 'destructive' : iconColor} />
+            <View style={styles.rowIcon}>
+                <Icon 
+                    name={icon} 
+                    size={20} 
+                    color={destructive ? 'destructive' : 'primary'} 
+                    animated={!destructive && !hasSwitch ? 'pulse' : false} 
+                />
             </View>
             <View style={styles.rowText}>
                 <Text style={[styles.rowLabel, { color: destructive ? '#BA1A1A' : C.text }]}>{label}</Text>
@@ -49,7 +53,7 @@ function SettingsRow({
                     thumbColor={Platform.OS === 'ios' ? undefined : '#FFFFFF'}
                 />
             ) : (
-                !!onPress && !destructive && <Icon name="ChevronRight" size={20} color="textSecondary" />
+                !!onPress && !destructive && <Icon name="ChevronRight" size={18} color="primary" />
             )}
         </Pressable>
     );
@@ -175,13 +179,10 @@ export default function SettingsScreen() {
                 {/* ── Study & Exam Preferences ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(150)}>
                     <Section title="Study & Exam Preferences" isDark={isDark}>
-                        <SettingsRow isDark={isDark} icon="GraduationCap" iconBg="#E5F1FF" iconColor="#007AFF"
+                        <SettingsRow isDark={isDark} icon="GraduationCap"
                             label="Target Exams" sublabel="SAT, AP Calculus, AP Physics"
                             onPress={() => router.push('/(drawer)/exams' as any)} />
-                        <SettingsRow isDark={isDark} icon="Target" iconBg="rgba(0,103,98,0.12)" iconColor="#006762"
-                            label="Daily Study Goal" sublabel="20 Questions / day"
-                            onPress={() => router.push('/(drawer)/daily_study_goal' as any)} />
-                        <SettingsRow isDark={isDark} icon="Bell" iconBg="rgba(186,26,26,0.1)" iconColor="#BA1A1A"
+                        <SettingsRow isDark={isDark} icon="Bell"
                             label="Study Reminders" sublabel="Smart evening alert (7:30 PM)"
                             hasSwitch switchValue={notificationsEnabled} onSwitch={setNotificationsEnabled} isLast />
                     </Section>
@@ -190,13 +191,13 @@ export default function SettingsScreen() {
                 {/* ── Personalization & Feel ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(200)}>
                     <Section title="Personalization & Feel" isDark={isDark}>
-                        <SettingsRow isDark={isDark} icon="Sparkles" iconBg="rgba(76,74,202,0.12)" iconColor="#4C4ACA"
+                        <SettingsRow isDark={isDark} icon="Smile"
                             label="Personalize Skeemy" sublabel="AI tone, style & goals"
                             onPress={() => router.push('/(drawer)/preferences' as any)} />
                         {/* Theme Picker */}
                         <View style={[styles.row, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : '#E3E2E7' }]}>
-                            <View style={[styles.rowIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#EEEDF3' }]}>
-                                <Icon name="Palette" size={18} color={isDark ? '#EBEBF5' : '#48484A'} />
+                            <View style={styles.rowIcon}>
+                                <Icon name="Palette" size={20} color="primary" animated="pulse" />
                             </View>
                             <View style={styles.rowText}>
                                 <Text style={[styles.rowLabel, { color: C.text }]}>Appearance</Text>
@@ -211,7 +212,7 @@ export default function SettingsScreen() {
                                 ))}
                             </View>
                         </View>
-                        <SettingsRow isDark={isDark} icon="Smartphone" iconBg={isDark ? 'rgba(255,255,255,0.08)' : '#EEEDF3'} iconColor={isDark ? '#EBEBF5' : '#48484A'}
+                        <SettingsRow isDark={isDark} icon="Smartphone"
                             label="Haptic Feedback" sublabel="Subtle buzz on correct solutions"
                             hasSwitch switchValue={hapticsEnabled} onSwitch={(val) => useAuthStore.getState().setHapticsEnabled(val)} isLast />
                     </Section>
@@ -221,8 +222,8 @@ export default function SettingsScreen() {
                 <Animated.View entering={FadeInDown.duration(400).delay(250)}>
                     <Section title="Subscription & Billing" isDark={isDark}>
                         <View style={[styles.row, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : '#E3E2E7' }]}>
-                            <View style={[styles.rowIcon, { backgroundColor: '#007AFF' }]}>
-                                <Icon name="Award" size={18} color="white" />
+                            <View style={styles.rowIcon}>
+                                <Icon name="Award" size={20} color="primary" animated="pulse" />
                             </View>
                             <View style={styles.rowText}>
                                 <Text style={[styles.rowLabel, { color: C.text }]}>{isPremium ? 'Skeeme Pro (Annual)' : 'Skeeme Free'}</Text>
@@ -232,13 +233,13 @@ export default function SettingsScreen() {
                                 <Text style={styles.activeBadgeText}>{isPremium ? 'Active' : 'Free'}</Text>
                             </View>
                         </View>
-                        <SettingsRow isDark={isDark} icon="CreditCard" iconBg="#E2DFFF" iconColor="#4C4ACA"
+                        <SettingsRow isDark={isDark} icon="CreditCard"
                             label="Manage Payment & Invoices"
                             onPress={() => router.push('/paywall')} />
-                        <SettingsRow isDark={isDark} icon="Gift" iconBg="rgba(52,199,89,0.12)" iconColor="#34C759"
+                        <SettingsRow isDark={isDark} icon="Gift"
                             label="Refer a Friend"
                             onPress={() => router.push('/(drawer)/referral' as any)} />
-                        <SettingsRow isDark={isDark} icon="RotateCcw" iconBg={isDark ? 'rgba(255,255,255,0.08)' : '#EEEDF3'} iconColor={isDark ? '#EBEBF5' : '#48484A'}
+                        <SettingsRow isDark={isDark} icon="RotateCcw"
                             label="Restore Apple In-App Purchases"
                             onPress={() => Alert.alert('Restore', 'No purchases to restore.')} isLast />
                     </Section>
@@ -247,13 +248,13 @@ export default function SettingsScreen() {
                 {/* ── Support & Community ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(300)}>
                     <Section title="Support & Community" isDark={isDark}>
-                        <SettingsRow isDark={isDark} icon="HelpCircle" iconBg="#E5F1FF" iconColor="#007AFF"
+                        <SettingsRow isDark={isDark} icon="HelpCircle"
                             label="Help Center & Exam Tips"
                             onPress={() => router.push('/(drawer)/support' as any)} />
-                        <SettingsRow isDark={isDark} icon="MessageSquare" iconBg="rgba(0,103,98,0.12)" iconColor="#006762"
+                        <SettingsRow isDark={isDark} icon="MessageSquare"
                             label="Send Feedback to Skeeme Team"
                             onPress={() => router.push('/(drawer)/support' as any)} />
-                        <SettingsRow isDark={isDark} icon="Lock" iconBg={isDark ? 'rgba(255,255,255,0.08)' : '#EEEDF3'} iconColor={isDark ? '#EBEBF5' : '#48484A'}
+                        <SettingsRow isDark={isDark} icon="Lock"
                             label="Privacy Policy & Terms of Service"
                             onPress={() => WebBrowser.openBrowserAsync('https://skeeme.com/privacy')} isLast />
                     </Section>
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
 
     // Row
     row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingRight: 14, paddingLeft: 12 },
-    rowIcon: { width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 },
+    rowIcon: { alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 },
     rowText: { flex: 1, minWidth: 0 },
     rowLabel: { fontSize: 16, fontWeight: '400' },
     rowSublabel: { fontSize: 12, marginTop: 1 },

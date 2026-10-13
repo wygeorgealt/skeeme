@@ -109,7 +109,10 @@ export default function SupportScreen() {
         >
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            <ScreenHeader title="Support" />
+            <ScreenHeader 
+                title="Support" 
+                onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/settings' as any))}
+            />
 
             <ScrollView
                 style={{ flex: 1 }}

@@ -26,6 +26,12 @@ import { haptics } from '@/lib/haptics';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { appStorage } from '@/lib/storage';
+import {
+    DailyActivityTask,
+    getDailyActivities,
+    toggleTaskCompletion,
+    calculateDailyGoalProgress,
+} from '@/lib/dailyActivitiesService';
 
 const { width } = Dimensions.get('window');
 
@@ -35,14 +41,28 @@ export default function HomeDashboard() {
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     const router = useRouter();
+    const scrollViewRef = React.useRef<ScrollView>(null);
 
     const user = useAuthStore((s) => s.user);
     const toggleCreditsModal = useAuthStore((s) => s.toggleCreditsModal);
 
     const [profileMenuVisible, setProfileMenuVisible] = useState(false);
-    const [dailyGoalTarget, setDailyGoalTarget] = useState(20);
+    const [dailyTasks, setDailyTasks] = useState<DailyActivityTask[]>([]);
 
     // Queries for live data from Brimble API
+    const { data: userExams = [] } = useQuery({
+        queryKey: ['user-exams'],
+        queryFn: async () => {
+            try {
+                const res = await api.get('user-exams');
+                return (res.data || []) as any[];
+            } catch {
+                return [];
+            }
+        },
+        staleTime: 60 * 1000,
+    });
+
     const { data: quizSessions = [] } = useQuery({
         queryKey: ['quiz-history'],
         queryFn: async () => {
@@ -69,23 +89,29 @@ export default function HomeDashboard() {
         staleTime: 60 * 1000,
     });
 
-    // Load saved daily goal target
+    // Generate dynamic daily tasks based on user prefs, exams, and history
     useEffect(() => {
-        appStorage.getItem('skeeme_daily_goal').then((val: string | null) => {
-            if (val) {
-                const parsed = parseInt(val, 10);
-                if (!isNaN(parsed) && parsed > 0) setDailyGoalTarget(parsed);
-            }
-        }).catch(() => {});
-    }, []);
+        getDailyActivities({
+            user,
+            exams: userExams,
+            flashcardDecks,
+            quizSessions,
+        })
+            .then(setDailyTasks)
+            .catch(() => {});
+    }, [user, userExams, flashcardDecks, quizSessions]);
 
-    // Daily progress calculations
-    const todayStr = new Date().toDateString();
-    const completedToday = quizSessions
-        .filter((q: any) => new Date(q.created_at).toDateString() === todayStr)
-        .reduce((acc: number, q: any) => acc + (q.total_questions || 0), 0);
-    const target = dailyGoalTarget || 20;
-    const progressPct = Math.min(100, Math.round((completedToday / target) * 100));
+    const handleToggleTask = async (taskId: string) => {
+        haptics.selectionAsync();
+        const updatedStatus = await toggleTaskCompletion(taskId);
+        setDailyTasks((prev) =>
+            prev.map((t) => (t.id === taskId ? { ...t, completed: updatedStatus } : t))
+        );
+    };
+
+    // Daily progress calculations from dynamic tasks
+    const goalProgress = calculateDailyGoalProgress(dailyTasks);
+    const progressPct = goalProgress.percentage;
 
     const totalCardsCount = flashcardDecks.reduce((acc: number, d: any) => acc + (d.flashcards_count || 0), 0);
     const recentDeck = flashcardDecks.length > 0 ? flashcardDecks[0] : null;
@@ -156,7 +182,7 @@ export default function HomeDashboard() {
                         activeOpacity={0.8}
                         onPress={() => {
                             haptics.selectionAsync();
-                            router.push('/(drawer)/daily_study_goal' as any);
+                            scrollViewRef.current?.scrollTo({ y: 320, animated: true });
                         }}
                         style={[
                             styles.badgePill,
@@ -259,6 +285,7 @@ export default function HomeDashboard() {
 
             {/* Main Scrollable Content */}
             <ScrollView
+                ref={scrollViewRef}
                 style={styles.scrollView}
                 contentContainerStyle={[
                     styles.scrollContent,
@@ -278,7 +305,10 @@ export default function HomeDashboard() {
                     {/* Daily Goal Card */}
                     <TouchableOpacity
                         activeOpacity={0.9}
-                        onPress={() => router.push('/(drawer)/daily_study_goal' as any)}
+                        onPress={() => {
+                            haptics.selectionAsync();
+                            scrollViewRef.current?.scrollTo({ y: 320, animated: true });
+                        }}
                         style={[
                             styles.dailyGoalCard,
                             {
@@ -297,15 +327,15 @@ export default function HomeDashboard() {
                                         Daily Goal
                                     </Text>
                                     <Text style={styles.dailyGoalSub}>
-                                        {completedToday >= target
-                                            ? 'Goal reached! Streak active 🔥'
-                                            : `${target - completedToday} more to reach daily goal`}
+                                        {goalProgress.isGoalMet
+                                            ? 'Daily goal completed! Streak active 🔥'
+                                            : `${goalProgress.totalCount - goalProgress.completedCount} more tasks to reach daily goal`}
                                     </Text>
                                 </View>
                             </View>
                             <View style={styles.dailyGoalCountPill}>
-                                <Text style={styles.dailyGoalCountCurrent}>{completedToday}</Text>
-                                <Text style={styles.dailyGoalCountTotal}>/ {target}</Text>
+                                <Text style={styles.dailyGoalCountCurrent}>{goalProgress.completedCount}</Text>
+                                <Text style={styles.dailyGoalCountTotal}>/ {goalProgress.totalCount}</Text>
                             </View>
                         </View>
 
@@ -381,7 +411,7 @@ export default function HomeDashboard() {
                             ]}
                             onPress={() => {
                                 haptics.impactAsync();
-                                router.push('/(drawer)/history' as any);
+                                router.push('/(drawer)/flashcards/create' as any);
                             }}
                         >
                             <View style={styles.tileIconCircle}>
@@ -426,99 +456,63 @@ export default function HomeDashboard() {
                         </View>
 
                         <View style={styles.tasksList}>
-                            {/* Task 1 */}
-                            <TouchableOpacity
-                                activeOpacity={0.85}
-                                style={[
-                                    styles.taskCard,
-                                    {
-                                        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                                        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                                    },
-                                ]}
-                                onPress={() => {
-                                    if (recentDeck) {
-                                        router.push(`/(drawer)/flashcards/${recentDeck.id}` as any);
-                                    } else {
-                                        router.push('/(drawer)/flashcards/create' as any);
-                                    }
-                                }}
-                            >
-                                <View style={styles.taskCardLeft}>
-                                    <View style={styles.taskIconCircle}>
-                                        <Icon name="Play" size={22} color="primary" animated="pulse" />
+                            {dailyTasks.map((task) => (
+                                <TouchableOpacity
+                                    key={task.id}
+                                    activeOpacity={0.85}
+                                    style={[
+                                        styles.taskCard,
+                                        {
+                                            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                            borderColor: task.completed
+                                                ? (isDark ? 'rgba(52, 199, 89, 0.35)' : 'rgba(52, 199, 89, 0.45)')
+                                                : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'),
+                                        },
+                                    ]}
+                                    onPress={() => {
+                                        haptics.impactAsync();
+                                        router.push(task.route as any);
+                                    }}
+                                >
+                                    <View style={styles.taskCardLeft}>
+                                        <View style={styles.taskIconCircle}>
+                                            <Icon
+                                                name={task.icon as any}
+                                                size={22}
+                                                color={task.completed ? 'success' : 'primary'}
+                                                animated={!task.completed ? 'pulse' : false}
+                                            />
+                                        </View>
+                                        <View style={styles.taskTextWrap}>
+                                            <Text
+                                                style={[
+                                                    styles.taskTitle,
+                                                    {
+                                                        color: isDark ? '#FFFFFF' : '#1C1C1E',
+                                                        textDecorationLine: task.completed ? 'line-through' : 'none',
+                                                        opacity: task.completed ? 0.65 : 1,
+                                                    },
+                                                ]}
+                                                numberOfLines={1}
+                                            >
+                                                {task.title}
+                                            </Text>
+                                        </View>
                                     </View>
-                                    <View style={styles.taskTextWrap}>
-                                        <Text
-                                            style={[styles.taskTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}
-                                            numberOfLines={1}
-                                        >
-                                            {recentDeck ? `Study "${recentDeck.title}"` : 'Create Your First Flashcard Deck'}
-                                        </Text>
-                                    </View>
-                                </View>
-                                <View style={styles.arrowPill}>
-                                    <Icon name="ArrowUpRight" size={18} color="primary" />
-                                </View>
-                            </TouchableOpacity>
-
-                            {/* Task 2 */}
-                            <TouchableOpacity
-                                activeOpacity={0.85}
-                                style={[
-                                    styles.taskCard,
-                                    {
-                                        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                                        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                                    },
-                                ]}
-                                onPress={() => router.push('/(drawer)/generate')}
-                            >
-                                <View style={styles.taskCardLeft}>
-                                    <View style={styles.taskIconCircle}>
-                                        <Icon name="Sparkles" size={22} color="primary" animated="pulse" />
-                                    </View>
-                                    <View style={styles.taskTextWrap}>
-                                        <Text
-                                            style={[styles.taskTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}
-                                        >
-                                            Take a Quick Test For Next Quiz
-                                        </Text>
-                                    </View>
-                                </View>
-                                <View style={styles.arrowPill}>
-                                    <Icon name="ArrowUpRight" size={18} color="primary" />
-                                </View>
-                            </TouchableOpacity>
-
-                            {/* Task 3: Camera Scanner */}
-                            <TouchableOpacity
-                                activeOpacity={0.85}
-                                style={[
-                                    styles.taskCard,
-                                    {
-                                        backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                                        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                                    },
-                                ]}
-                                onPress={() => router.push('/(drawer)/scan' as any)}
-                            >
-                                <View style={styles.taskCardLeft}>
-                                    <View style={styles.taskIconCircle}>
-                                        <Icon name="Scan" size={22} color="primary" animated="pulse" />
-                                    </View>
-                                    <View style={styles.taskTextWrap}>
-                                        <Text
-                                            style={[styles.taskTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}
-                                        >
-                                            Snap an Unsolved Question
-                                        </Text>
-                                    </View>
-                                </View>
-                                <View style={styles.arrowPill}>
-                                    <Icon name="ArrowUpRight" size={18} color="primary" />
-                                </View>
-                            </TouchableOpacity>
+                                    <TouchableOpacity
+                                        activeOpacity={0.7}
+                                        onPress={() => handleToggleTask(task.id)}
+                                        style={styles.arrowPill}
+                                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                                    >
+                                        <Icon
+                                            name={task.completed ? 'CheckCircle2' : 'ArrowUpRight'}
+                                            size={20}
+                                            color={task.completed ? 'success' : 'primary'}
+                                        />
+                                    </TouchableOpacity>
+                                </TouchableOpacity>
+                            ))}
                         </View>
                     </View>
                 </Animated.View>

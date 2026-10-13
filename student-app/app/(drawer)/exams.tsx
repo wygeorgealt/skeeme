@@ -99,7 +99,11 @@ export default function ExamsScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
-            <ScreenHeader title="Your Exams" subtitle="Track your upcoming tests and reminders" />
+            <ScreenHeader 
+                title="Your Exams" 
+                subtitle="Track your upcoming tests and reminders" 
+                onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/settings' as any))}
+            />
             <ScrollView 
                 contentContainerStyle={[s.scroll, { paddingTop: Spacing.sm, paddingBottom: 120 }]}
                 refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={C.primary} />}

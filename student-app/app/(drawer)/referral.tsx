@@ -26,6 +26,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/theme';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
 export default function ReferralScreen() {
     const { user, updateUser } = useAuthStore();
@@ -99,20 +100,11 @@ export default function ReferralScreen() {
         <View style={{ flex: 1, backgroundColor: C.background }}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            <Animated.View key={`header-${animKey}`} entering={FadeInUp.duration(500)} style={[s.header, { paddingTop: Math.max(insets.top, 12) }]}>
-                <TouchableOpacity
-                    onPress={() => router.navigate({ pathname: '/(drawer)/account' })}
-                    activeOpacity={0.7}
-                    style={[s.menuBtn, isDark ? s.menuBtnDark : s.menuBtnLight]}
-                >
-                    <AltArrowLeft width={24} height={24} color={isDark ? 'white' : '#1e293b'} />
-                </TouchableOpacity>
-                <View style={s.headerTextContainer}>
-                    <Text style={[s.headerTitle, { color: C.text }]}>Earn Rewards</Text>
-                    <Text style={[s.headerSubtitle, { color: C.textSecondary }]}>Invite friends & earn credits</Text>
-                </View>
-                <View style={{ width: 44 }} />
-            </Animated.View>
+            <ScreenHeader 
+                title="Earn Rewards" 
+                subtitle="Invite friends & earn credits" 
+                onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/settings' as any))}
+            />
 
             <ScrollView
                 style={s.scrollView}

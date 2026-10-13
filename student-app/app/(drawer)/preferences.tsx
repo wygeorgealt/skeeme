@@ -98,7 +98,11 @@ export default function PreferencesScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
-            <ScreenHeader title="AI Personalization" subtitle="Shape how your tutor explains, challenges, and supports you" />
+            <ScreenHeader 
+                title="AI Personalization" 
+                subtitle="Shape how your tutor explains, challenges, and supports you" 
+                onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/settings' as any))}
+            />
 
             <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
                 {/* 1. Field of Study */}
