@@ -223,8 +223,8 @@ export default function HomeDashboard() {
                                     router.push('/(drawer)/preferences' as any);
                                 }}
                             >
-                                <View style={[styles.menuIconWrap, { backgroundColor: '#EEF2FF' }]}>
-                                    <Icon name="Sparkles" size={18} color="#4F46E5" />
+                                <View style={styles.menuIconWrap}>
+                                    <Icon name="Sparkles" size={18} color="primary" />
                                 </View>
                                 <View style={styles.menuTextWrap}>
                                     <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
@@ -232,7 +232,7 @@ export default function HomeDashboard() {
                                     </Text>
                                     <Text style={styles.menuSubtitle}>AI style & study goals</Text>
                                 </View>
-                                <Icon name="ChevronRight" size={16} color="#8E8E93" />
+                                <Icon name="ChevronRight" size={16} color="primary" />
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -243,8 +243,8 @@ export default function HomeDashboard() {
                                     router.push('/(drawer)/settings' as any);
                                 }}
                             >
-                                <View style={[styles.menuIconWrap, { backgroundColor: '#F0FDFA' }]}>
-                                    <Icon name="Settings" size={18} color="#0D9488" />
+                                <View style={styles.menuIconWrap}>
+                                    <Icon name="Settings" size={18} color="primary" />
                                 </View>
                                 <View style={styles.menuTextWrap}>
                                     <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
@@ -252,7 +252,7 @@ export default function HomeDashboard() {
                                     </Text>
                                     <Text style={styles.menuSubtitle}>Account & notifications</Text>
                                 </View>
-                                <Icon name="ChevronRight" size={16} color="#8E8E93" />
+                                <Icon name="ChevronRight" size={16} color="primary" />
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -263,8 +263,8 @@ export default function HomeDashboard() {
                                     toggleCreditsModal(true, 'scan');
                                 }}
                             >
-                                <View style={[styles.menuIconWrap, { backgroundColor: '#007AFF' }]}>
-                                    <Icon name="Zap" size={18} color="white" />
+                                <View style={styles.menuIconWrap}>
+                                    <Icon name="Zap" size={18} color="primary" animated="pulse" />
                                 </View>
                                 <View style={styles.menuTextWrap}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -319,7 +319,7 @@ export default function HomeDashboard() {
                         <View style={styles.dailyGoalHeader}>
                             <View style={styles.dailyGoalLeft}>
                                 <View style={styles.targetIconWrap}>
-                                    <Icon name="Target" size={20} color="primary" />
+                                    <Icon name="Target" size={20} color="primary" animated="pulse" />
                                 </View>
                                 <View>
                                     <Text style={[styles.dailyGoalTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
@@ -353,7 +353,7 @@ export default function HomeDashboard() {
                     >
                         <View style={styles.proBannerContent}>
                             <View style={styles.crownCircle}>
-                                <Icon name="Award" size={26} color="white" />
+                                <Icon name="Award" size={26} color="white" animated="pulse" />
                             </View>
                             <View style={styles.proBannerTextWrap}>
                                 <Text style={styles.proBannerTitle}>Unlock Skeeme Pro</Text>
@@ -392,8 +392,8 @@ export default function HomeDashboard() {
                                 router.push('/(drawer)/generate');
                             }}
                         >
-                            <View style={[styles.tileIconCircle, { backgroundColor: '#EFF6FF' }]}>
-                                <Icon name="HelpCircle" size={24} color="primary" />
+                            <View style={styles.tileIconCircle}>
+                                <Icon name="HelpCircle" size={28} color="primary" animated="pulse" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>Quiz</Text>
                             <Text style={styles.tileSubtitle}>Timed drills</Text>
@@ -414,13 +414,8 @@ export default function HomeDashboard() {
                                 router.push('/(drawer)/history' as any);
                             }}
                         >
-                            <View
-                                style={[
-                                    styles.tileIconCircle,
-                                    { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', elevation: 2 },
-                                ]}
-                            >
-                                <Icon name="Layers" size={24} color="primary" />
+                            <View style={styles.tileIconCircle}>
+                                <Icon name="Layers" size={28} color="primary" animated="pulse" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
                                 Flashcards
@@ -445,8 +440,8 @@ export default function HomeDashboard() {
                                 router.push('/(drawer)/history');
                             }}
                         >
-                            <View style={[styles.tileIconCircle, { backgroundColor: '#EEF2FF' }]}>
-                                <Icon name="Clock" size={24} color="#4F46E5" />
+                            <View style={styles.tileIconCircle}>
+                                <Icon name="Clock" size={28} color="primary" animated="pulse" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>History</Text>
                             <Text style={styles.tileSubtitle}>Past sessions</Text>
@@ -484,8 +479,8 @@ export default function HomeDashboard() {
                                 }}
                             >
                                 <View style={styles.taskCardLeft}>
-                                    <View style={[styles.taskIconCircle, { backgroundColor: '#EFF6FF' }]}>
-                                        <Icon name="Play" size={20} color="primary" />
+                                    <View style={styles.taskIconCircle}>
+                                        <Icon name="Play" size={22} color="primary" animated="pulse" />
                                     </View>
                                     <View style={styles.taskTextWrap}>
                                         <Text
@@ -499,8 +494,8 @@ export default function HomeDashboard() {
                                         </Text>
                                     </View>
                                 </View>
-                                <View style={[styles.arrowPill, { borderColor: isDark ? '#333' : '#E5E5EA' }]}>
-                                    <Icon name="ArrowUpRight" size={16} color="#8E8E93" />
+                                <View style={styles.arrowPill}>
+                                    <Icon name="ArrowUpRight" size={18} color="primary" />
                                 </View>
                             </TouchableOpacity>
 
@@ -517,8 +512,8 @@ export default function HomeDashboard() {
                                 onPress={() => router.push('/(drawer)/generate')}
                             >
                                 <View style={styles.taskCardLeft}>
-                                    <View style={[styles.taskIconCircle, { backgroundColor: '#F0FDFA' }]}>
-                                        <Icon name="Sparkles" size={20} color="#0D9488" />
+                                    <View style={styles.taskIconCircle}>
+                                        <Icon name="Sparkles" size={22} color="primary" animated="pulse" />
                                     </View>
                                     <View style={styles.taskTextWrap}>
                                         <Text
@@ -529,8 +524,8 @@ export default function HomeDashboard() {
                                         <Text style={styles.taskDesc}>Formula cheatsheets & key shortcuts</Text>
                                     </View>
                                 </View>
-                                <View style={[styles.arrowPill, { borderColor: isDark ? '#333' : '#E5E5EA' }]}>
-                                    <Icon name="ArrowUpRight" size={16} color="#8E8E93" />
+                                <View style={styles.arrowPill}>
+                                    <Icon name="ArrowUpRight" size={18} color="primary" />
                                 </View>
                             </TouchableOpacity>
 
@@ -547,8 +542,8 @@ export default function HomeDashboard() {
                                 onPress={() => router.push('/(drawer)/scan' as any)}
                             >
                                 <View style={styles.taskCardLeft}>
-                                    <View style={[styles.taskIconCircle, { backgroundColor: '#FEF3C7' }]}>
-                                        <Icon name="Scan" size={20} color="#D97706" />
+                                    <View style={styles.taskIconCircle}>
+                                        <Icon name="Scan" size={22} color="primary" animated="pulse" />
                                     </View>
                                     <View style={styles.taskTextWrap}>
                                         <Text
@@ -559,8 +554,8 @@ export default function HomeDashboard() {
                                         <Text style={styles.taskDesc}>Instant step-by-step AI answers</Text>
                                     </View>
                                 </View>
-                                <View style={[styles.arrowPill, { borderColor: isDark ? '#333' : '#E5E5EA' }]}>
-                                    <Icon name="ArrowUpRight" size={16} color="#8E8E93" />
+                                <View style={styles.arrowPill}>
+                                    <Icon name="ArrowUpRight" size={18} color="primary" />
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -589,14 +584,8 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     avatarCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: '#EFF6FF',
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1.5,
-        borderColor: 'rgba(0, 122, 255, 0.25)',
     },
     profileGreeting: {
         fontSize: 16,
@@ -674,9 +663,6 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     menuIconWrap: {
-        width: 32,
-        height: 32,
-        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -749,10 +735,6 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     targetIconWrap: {
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        backgroundColor: '#EFF6FF',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -812,10 +794,6 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     crownCircle: {
-        width: 44,
-        height: 44,
-        borderRadius: 16,
-        backgroundColor: 'rgba(255,255,255,0.22)',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -870,9 +848,6 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     tileIconCircle: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 8,
@@ -929,9 +904,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     taskIconCircle: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -949,10 +921,6 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     arrowPill: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
         marginLeft: 8,
