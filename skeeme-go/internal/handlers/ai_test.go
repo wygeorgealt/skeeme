@@ -109,3 +109,64 @@ func TestAIHandler_RateLimit_Exceeded(t *testing.T) {
 		t.Fatalf("Expected status 429 Too Many Requests, got %d. Body: %s", rec.Code, rec.Body.String())
 	}
 }
+
+func TestAIHandler_AdminSwitch_VerifyAndSet(t *testing.T) {
+	db, _, rdb, mr := setupHandlerTestEnv(t)
+	defer db.Close()
+	defer mr.Close()
+
+	handler := NewAIHandler(db, rdb)
+
+	// 1. Password verification with wrong password -> 401
+	badVerifyReq := httptest.NewRequest(http.MethodPost, "/api/admin/ai/verify", strings.NewReader(`{"password":"wrong-password"}`))
+	badVerifyRec := httptest.NewRecorder()
+	handler.VerifyAdminPassword(badVerifyRec, badVerifyReq)
+	if badVerifyRec.Code != http.StatusUnauthorized {
+		t.Fatalf("Expected 401 for wrong password, got %d", badVerifyRec.Code)
+	}
+
+	// 2. Password verification with valid password -> 200
+	goodVerifyReq := httptest.NewRequest(http.MethodPost, "/api/admin/ai/verify", strings.NewReader(`{"password":"skeeme-admin-2026"}`))
+	goodVerifyRec := httptest.NewRecorder()
+	handler.VerifyAdminPassword(goodVerifyRec, goodVerifyReq)
+	if goodVerifyRec.Code != http.StatusOK {
+		t.Fatalf("Expected 200 for valid password, got %d", goodVerifyRec.Code)
+	}
+
+	// 3. Switch default provider to Anthropic
+	switchReq := httptest.NewRequest(http.MethodPost, "/api/admin/ai/provider", strings.NewReader(`{"password":"skeeme-admin-2026","provider":"anthropic"}`))
+	switchRec := httptest.NewRecorder()
+	handler.SetAdminProvider(switchRec, switchReq)
+	if switchRec.Code != http.StatusOK {
+		t.Fatalf("Expected 200 for setting provider, got %d. Body: %s", switchRec.Code, switchRec.Body.String())
+	}
+
+	var switchResp map[string]any
+	_ = json.Unmarshal(switchRec.Body.Bytes(), &switchResp)
+	if switchResp["active_provider"] != "anthropic" {
+		t.Fatalf("Expected active provider 'anthropic', got %v", switchResp["active_provider"])
+	}
+
+	// 4. Get active provider
+	getReq := httptest.NewRequest(http.MethodGet, "/api/admin/ai/provider", nil)
+	getRec := httptest.NewRecorder()
+	handler.GetAdminProvider(getRec, getReq)
+	var getResp map[string]any
+	_ = json.Unmarshal(getRec.Body.Bytes(), &getResp)
+	if getResp["active_provider"] != "anthropic" {
+		t.Fatalf("Expected active provider to be 'anthropic', got %v", getResp["active_provider"])
+	}
+
+	// 5. Switch back to DeepSeek
+	switchBackReq := httptest.NewRequest(http.MethodPost, "/api/admin/ai/provider", strings.NewReader(`{"password":"skeeme-admin-2026","provider":"deepseek"}`))
+	switchBackRec := httptest.NewRecorder()
+	handler.SetAdminProvider(switchBackRec, switchBackReq)
+	if switchBackRec.Code != http.StatusOK {
+		t.Fatalf("Expected 200 for setting provider back, got %d", switchBackRec.Code)
+	}
+
+	activeNow := handler.AIService.GetDefaultProvider(context.Background())
+	if activeNow != ai.ProviderDeepseek {
+		t.Fatalf("Expected active provider to be deepseek, got %v", activeNow)
+	}
+}

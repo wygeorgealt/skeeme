@@ -214,6 +214,12 @@ func main() {
 		r.Post("/api/flashcards/generate", aiHandler.GenerateFlashcards)
 	})
 
+	// Admin AI Switchboard (Password-protected Web UI & API)
+	r.Get("/admin/ai-switch", aiHandler.ServeSwitchUI)
+	r.Get("/api/admin/ai/provider", aiHandler.GetAdminProvider)
+	r.Post("/api/admin/ai/provider", aiHandler.SetAdminProvider)
+	r.Post("/api/admin/ai/verify", aiHandler.VerifyAdminPassword)
+
 	// Legacy Internal AI Routes (retained for backward compatibility)
 	r.Route("/api/v2/internal/ai", func(r chi.Router) {
 		r.With(requireAuth).Post("/authorize", internalAIHandler.Authorize)

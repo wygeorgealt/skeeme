@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
 )
 
 type mockAIClient struct {
@@ -102,5 +105,45 @@ func TestFallback_MidStreamForbidden(t *testing.T) {
 
 	if tokenCount != 2 {
 		t.Fatalf("Expected exactly 2 tokens from primary before abort, got %d", tokenCount)
+	}
+}
+
+func TestService_DefaultProvider_RedisDynamicSwitch(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("Failed to run miniredis: %v", err)
+	}
+	defer mr.Close()
+
+	rdb := redis.NewClient(&redis.Options{Addr: mr.Addr()})
+	defer rdb.Close()
+
+	service := NewService(rdb)
+	ctx := context.Background()
+
+	// 1. Initial default must be DeepSeek
+	initial := service.GetDefaultProvider(ctx)
+	if initial != ProviderDeepseek {
+		t.Fatalf("Expected default provider to be %s, got %s", ProviderDeepseek, initial)
+	}
+
+	// 2. Switch to Anthropic
+	if err := service.SetDefaultProvider(ctx, ProviderAnthropic); err != nil {
+		t.Fatalf("Failed to set default provider to Anthropic: %v", err)
+	}
+
+	switched := service.GetDefaultProvider(ctx)
+	if switched != ProviderAnthropic {
+		t.Fatalf("Expected switched provider to be %s, got %s", ProviderAnthropic, switched)
+	}
+
+	// 3. Switch back to DeepSeek
+	if err := service.SetDefaultProvider(ctx, ProviderDeepseek); err != nil {
+		t.Fatalf("Failed to switch back to DeepSeek: %v", err)
+	}
+
+	reverted := service.GetDefaultProvider(ctx)
+	if reverted != ProviderDeepseek {
+		t.Fatalf("Expected reverted provider to be %s, got %s", ProviderDeepseek, reverted)
 	}
 }

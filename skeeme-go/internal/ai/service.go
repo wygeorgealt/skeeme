@@ -5,15 +5,19 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type Service struct {
 	anthropic *AnthropicClient
 	deepseek  *DeepseekClient
 	vision    *VisionClient
+	redis     *redis.Client
 }
 
-func NewService() *Service {
+func NewService(rdb *redis.Client) *Service {
 	anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
 	deepseekKey := os.Getenv("DEEPSEEK_API_KEY")
 	visionKey := os.Getenv("GOOGLE_CLOUD_VISION_API_KEY")
@@ -37,25 +41,69 @@ func NewService() *Service {
 		anthropic: anthropic,
 		deepseek:  deepseek,
 		vision:    vision,
+		redis:     rdb,
+	}
+}
+
+// GetDefaultProvider returns the active default AI provider (checks Redis, then env, defaults to DeepSeek).
+func (s *Service) GetDefaultProvider(ctx context.Context) Provider {
+	if s.redis != nil {
+		val, err := s.redis.Get(ctx, "system:ai_default_provider").Result()
+		if err == nil {
+			val = strings.ToLower(strings.TrimSpace(val))
+			if val == string(ProviderAnthropic) || val == "claude" {
+				return ProviderAnthropic
+			}
+			if val == string(ProviderDeepseek) {
+				return ProviderDeepseek
+			}
+		}
+	}
+
+	envDefault := strings.ToLower(strings.TrimSpace(os.Getenv("DEFAULT_AI_PROVIDER")))
+	if envDefault == string(ProviderAnthropic) || envDefault == "claude" {
+		return ProviderAnthropic
+	}
+
+	return ProviderDeepseek
+}
+
+// SetDefaultProvider dynamically updates the active default AI provider in Redis.
+func (s *Service) SetDefaultProvider(ctx context.Context, p Provider) error {
+	if s.redis == nil {
+		return fmt.Errorf("redis client is not available")
+	}
+	clean := strings.ToLower(strings.TrimSpace(string(p)))
+	if clean == "claude" {
+		clean = string(ProviderAnthropic)
+	}
+	if clean != string(ProviderAnthropic) && clean != string(ProviderDeepseek) {
+		return fmt.Errorf("invalid provider '%s': must be 'deepseek' or 'anthropic'", clean)
+	}
+	return s.redis.Set(ctx, "system:ai_default_provider", clean, 0).Err()
+}
+
+// GetProviderStatus reports the configuration readiness of AI providers.
+func (s *Service) GetProviderStatus() map[string]bool {
+	return map[string]bool{
+		"anthropic_configured": s.anthropic != nil,
+		"deepseek_configured":  s.deepseek != nil,
+		"vision_configured":    s.vision != nil,
 	}
 }
 
 // resolveProviders returns the primary client and an optional fallback client.
-func (s *Service) resolveProviders(preferred Provider) (Client, Client, error) {
+func (s *Service) resolveProviders(ctx context.Context, preferred Provider) (Client, Client, error) {
 	var primary, fallback Client
 
-	if preferred == ProviderDeepseek {
-		if s.deepseek != nil {
-			primary = s.deepseek
-			if s.anthropic != nil {
-				fallback = s.anthropic
-			}
-		} else if s.anthropic != nil {
-			log.Printf("[aiService] Deepseek requested but not configured, using Anthropic")
-			primary = s.anthropic
-		}
-	} else {
-		// Default to Anthropic
+	target := preferred
+	if target == "" {
+		target = s.GetDefaultProvider(ctx)
+	} else if strings.ToLower(string(target)) == "claude" {
+		target = ProviderAnthropic
+	}
+
+	if target == ProviderAnthropic {
 		if s.anthropic != nil {
 			primary = s.anthropic
 			if s.deepseek != nil {
@@ -65,24 +113,34 @@ func (s *Service) resolveProviders(preferred Provider) (Client, Client, error) {
 			log.Printf("[aiService] Anthropic requested but not configured, using Deepseek")
 			primary = s.deepseek
 		}
+	} else {
+		// Default to DeepSeek
+		if s.deepseek != nil {
+			primary = s.deepseek
+			if s.anthropic != nil {
+				fallback = s.anthropic
+			}
+		} else if s.anthropic != nil {
+			log.Printf("[aiService] Deepseek requested but not configured, using Anthropic")
+			primary = s.anthropic
+		}
 	}
 
 	if primary == nil {
-		return nil, nil, fmt.Errorf("no AI provider configured (missing ANTHROPIC_API_KEY and DEEPSEEK_API_KEY)")
+		return nil, nil, fmt.Errorf("no AI provider configured (missing DEEPSEEK_API_KEY and ANTHROPIC_API_KEY)")
 	}
 
 	return primary, fallback, nil
 }
 
 // runWithFallback executes an operation with fallback ONLY before the first token.
-// Switching providers mid-stream would produce corrupted JSON.
 func (s *Service) runWithFallback(
 	ctx context.Context,
 	preferred Provider,
 	onToken StreamCallback,
 	execute func(client Client, cb StreamCallback) error,
 ) error {
-	primary, fallback, err := s.resolveProviders(preferred)
+	primary, fallback, err := s.resolveProviders(ctx, preferred)
 	if err != nil {
 		return err
 	}
@@ -100,7 +158,6 @@ func (s *Service) runWithFallback(
 	}
 
 	// CRITICAL SAFETY RULE: Fallback ONLY before the first token.
-	// If any tokens have already been emitted, falling back mid-stream produces garbage JSON.
 	if tokenCount > 0 {
 		log.Printf("[aiService] Primary provider failed mid-stream after %d tokens. Aborting without fallback: %v", tokenCount, primaryErr)
 		return primaryErr

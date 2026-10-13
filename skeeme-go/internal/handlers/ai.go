@@ -28,7 +28,7 @@ func NewAIHandler(db *sqlx.DB, redisClient *redis.Client) *AIHandler {
 	return &AIHandler{
 		DB:        db,
 		Redis:     redisClient,
-		AIService: ai.NewService(),
+		AIService: ai.NewService(redisClient),
 	}
 }
 
@@ -41,6 +41,16 @@ func (h *AIHandler) getIdempotencyKey(r *http.Request) string {
 		key = uuid.New().String()
 	}
 	return key
+}
+
+func (h *AIHandler) resolveModelUsed(ctx context.Context, provider ai.Provider) string {
+	if provider != "" {
+		return string(provider)
+	}
+	if h.AIService != nil {
+		return string(h.AIService.GetDefaultProvider(ctx))
+	}
+	return "deepseek"
 }
 
 func (h *AIHandler) getExtractedText(ctx context.Context, userID int64, extractionID string) string {
@@ -141,10 +151,7 @@ func (h *AIHandler) Solve(w http.ResponseWriter, r *http.Request) {
 	idempotencyKey := h.getIdempotencyKey(r)
 	cost := 25
 	actionType := "scan_solve"
-	modelUsed := string(req.Provider)
-	if modelUsed == "" {
-		modelUsed = "anthropic"
-	}
+	modelUsed := h.resolveModelUsed(r.Context(), req.Provider)
 
 	// In-process credit deduction
 	err := credits.Deduct(r.Context(), h.DB, h.Redis, user.ID, cost, idempotencyKey, actionType, modelUsed)
@@ -315,10 +322,7 @@ func (h *AIHandler) GenerateQuiz(w http.ResponseWriter, r *http.Request) {
 	idempotencyKey := h.getIdempotencyKey(r)
 	cost := req.QuestionCount * 10
 	actionType := "quiz_generation"
-	modelUsed := string(req.Provider)
-	if modelUsed == "" {
-		modelUsed = "anthropic"
-	}
+	modelUsed := h.resolveModelUsed(r.Context(), req.Provider)
 
 	// In-process credit deduction
 	err := credits.Deduct(r.Context(), h.DB, h.Redis, user.ID, cost, idempotencyKey, actionType, modelUsed)
@@ -431,10 +435,7 @@ func (h *AIHandler) GenerateFlashcards(w http.ResponseWriter, r *http.Request) {
 	idempotencyKey := h.getIdempotencyKey(r)
 	cost := req.CardCount * 5
 	actionType := "flashcard_generation"
-	modelUsed := string(req.Provider)
-	if modelUsed == "" {
-		modelUsed = "anthropic"
-	}
+	modelUsed := h.resolveModelUsed(r.Context(), req.Provider)
 
 	// In-process credit deduction
 	err := credits.Deduct(r.Context(), h.DB, h.Redis, user.ID, cost, idempotencyKey, actionType, modelUsed)
