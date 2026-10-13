@@ -54,8 +54,20 @@ func main() {
 			}
 		})
 
+		// In-process Database Backup to R2 (runs automatically inside Go, no external cron required)
+		backupSchedule := os.Getenv("BACKUP_CRON_SCHEDULE")
+		if backupSchedule == "" {
+			backupSchedule = "0 2 * * *" // Daily at 02:00 UTC
+		}
+		c.AddFunc(backupSchedule, func() {
+			log.Println("[Scheduler] Running scheduled database backup to R2...")
+			if err := jobs.RunPostgresBackup(); err != nil {
+				log.Printf("[Scheduler] Database backup failed: %v", err)
+			}
+		})
+
 		c.Start()
-		log.Println("[Scheduler] In-process background scheduler started (streaks, cleanups & health checks active; backup delegated to Brimble cron)")
+		log.Printf("[Scheduler] In-process background scheduler started (streaks, cleanups, health checks & backup on '%s' active)\n", backupSchedule)
 	}
 
 	// Initialize Redis
@@ -130,16 +142,18 @@ func main() {
 	r.Post("/api/webhooks/paystack", webhookHandler.Paystack)
 	r.Post("/api/webhooks/revenuecat", webhookHandler.RevenueCat)
 
-	// Cron endpoints (for Brimble HTTP cron schedules or external webhooks)
+	// Cron endpoints (for manual triggering, Brimble HTTP cron, or external webhooks)
 	r.Route("/api/cron", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				secret := os.Getenv("CRON_SECRET")
-				if secret != "" {
+				requireSecret := os.Getenv("REQUIRE_CRON_AUTH") == "true"
+				if requireSecret && secret != "" {
 					authHeader := r.Header.Get("Authorization")
 					cronHeader := r.Header.Get("X-Cron-Secret")
 					querySecret := r.URL.Query().Get("secret")
 					if cronHeader != secret && querySecret != secret && authHeader != "Bearer "+secret {
+						log.Printf("[Cron Route] Unauthorized request from IP %s (require auth active)\n", r.RemoteAddr)
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusUnauthorized)
 						_, _ = w.Write([]byte(`{"error":"unauthorized"}`))
@@ -151,7 +165,9 @@ func main() {
 		})
 
 		handleBackup := func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("[Cron Route] Backup triggered via %s from %s\n", r.Method, r.RemoteAddr)
 			if err := jobs.RunPostgresBackup(); err != nil {
+				log.Printf("[Cron Route] Backup failed: %v\n", err)
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte(fmt.Sprintf(`{"error":"%s"}`, err.Error())))
@@ -164,7 +180,9 @@ func main() {
 		r.Post("/backup", handleBackup)
 
 		handleStreaks := func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("[Cron Route] Streaks reset triggered via %s from %s\n", r.Method, r.RemoteAddr)
 			if err := jobs.ResetStreaks(database); err != nil {
+				log.Printf("[Cron Route] Streaks reset failed: %v\n", err)
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte(fmt.Sprintf(`{"error":"%s"}`, err.Error())))
@@ -177,6 +195,7 @@ func main() {
 		r.Post("/streaks", handleStreaks)
 
 		handleCleanup := func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("[Cron Route] Cleanup triggered via %s from %s\n", r.Method, r.RemoteAddr)
 			jobs.PendingCleanup(database)
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"status":"ok","message":"cleanup completed successfully"}`))

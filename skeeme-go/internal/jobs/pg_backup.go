@@ -50,7 +50,7 @@ func RunPostgresBackup() error {
 	localPath := filepath.Join("/tmp", filename)
 
 	// Run pg_dump and pipe to gzip
-	cmdStr := fmt.Sprintf("pg_dump '%s' | gzip > %s", dbURL, localPath)
+	cmdStr := fmt.Sprintf("set -e -o pipefail; pg_dump '%s' | gzip > %s", dbURL, localPath)
 	cmd := exec.Command("sh", "-c", cmdStr)
 	
 	var stderr bytes.Buffer
@@ -60,7 +60,19 @@ func RunPostgresBackup() error {
 		log.Printf("[Backup Job] %v\n", err)
 		return err
 	}
-	log.Printf("[Backup Job] Successfully created local dump: %s\n", localPath)
+
+	fi, err := os.Stat(localPath)
+	if err != nil {
+		err = fmt.Errorf("local backup file was not created: %w", err)
+		log.Printf("[Backup Job] %v\n", err)
+		return err
+	}
+	if fi.Size() < 50 {
+		err = fmt.Errorf("local backup file too small (%d bytes), likely empty dump. stderr: %s", fi.Size(), stderr.String())
+		log.Printf("[Backup Job] %v\n", err)
+		return err
+	}
+	log.Printf("[Backup Job] Successfully created local dump: %s (%d bytes)\n", localPath, fi.Size())
 
 	// Clean up local file when done
 	defer os.Remove(localPath)
