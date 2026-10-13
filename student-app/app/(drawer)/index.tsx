@@ -230,7 +230,6 @@ export default function HomeDashboard() {
                                     <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
                                         Personalization
                                     </Text>
-                                    <Text style={styles.menuSubtitle}>AI style & study goals</Text>
                                 </View>
                                 <Icon name="ChevronRight" size={16} color="primary" />
                             </TouchableOpacity>
@@ -250,7 +249,6 @@ export default function HomeDashboard() {
                                     <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
                                         Settings
                                     </Text>
-                                    <Text style={styles.menuSubtitle}>Account & notifications</Text>
                                 </View>
                                 <Icon name="ChevronRight" size={16} color="primary" />
                             </TouchableOpacity>
@@ -275,9 +273,6 @@ export default function HomeDashboard() {
                                             <Text style={styles.instantTagText}>+100 AI</Text>
                                         </View>
                                     </View>
-                                    <Text style={[styles.menuSubtitle, { color: 'rgba(0, 122, 255, 0.8)' }]}>
-                                        Instant AI tutor top-up
-                                    </Text>
                                 </View>
                                 <Icon name="PlusCircle" size={18} color="primary" />
                             </TouchableOpacity>
@@ -396,7 +391,6 @@ export default function HomeDashboard() {
                                 <Icon name="HelpCircle" size={28} color="primary" animated="pulse" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>Quiz</Text>
-                            <Text style={styles.tileSubtitle}>Timed drills</Text>
                         </TouchableOpacity>
 
                         {/* Flashcards */}
@@ -420,9 +414,6 @@ export default function HomeDashboard() {
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
                                 Flashcards
                             </Text>
-                            <Text style={[styles.tileSubtitle, { color: '#007AFF', fontWeight: '700' }]}>
-                                {flashcardDecks.length > 0 ? `${totalCardsCount} Cards` : 'New Deck'}
-                            </Text>
                         </TouchableOpacity>
 
                         {/* History */}
@@ -444,7 +435,6 @@ export default function HomeDashboard() {
                                 <Icon name="Clock" size={28} color="primary" animated="pulse" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>History</Text>
-                            <Text style={styles.tileSubtitle}>Past sessions</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -489,9 +479,6 @@ export default function HomeDashboard() {
                                         >
                                             {recentDeck ? `Study "${recentDeck.title}"` : 'Create Your First Flashcard Deck'}
                                         </Text>
-                                        <Text style={styles.taskDesc}>
-                                            {recentDeck ? `${recentDeck.flashcards_count} cards ready for review` : 'Master key terms with AI spaced repetition'}
-                                        </Text>
                                     </View>
                                 </View>
                                 <View style={styles.arrowPill}>
@@ -521,7 +508,6 @@ export default function HomeDashboard() {
                                         >
                                             Take a Quick Test For Next Quiz
                                         </Text>
-                                        <Text style={styles.taskDesc}>Formula cheatsheets & key shortcuts</Text>
                                     </View>
                                 </View>
                                 <View style={styles.arrowPill}>
@@ -551,7 +537,6 @@ export default function HomeDashboard() {
                                         >
                                             Snap an Unsolved Question
                                         </Text>
-                                        <Text style={styles.taskDesc}>Instant step-by-step AI answers</Text>
                                     </View>
                                 </View>
                                 <View style={styles.arrowPill}>
@@ -838,9 +823,10 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRadius: 20,
         borderWidth: 1,
-        paddingVertical: 14,
+        paddingVertical: 16,
         paddingHorizontal: 8,
         alignItems: 'center',
+        justifyContent: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.03,
@@ -853,8 +839,9 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     tileTitle: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: '700',
+        letterSpacing: -0.2,
     },
     tileSubtitle: {
         fontSize: 11,
