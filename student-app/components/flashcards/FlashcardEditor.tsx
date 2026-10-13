@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Pressable, 
+import { 
+    Pressable, 
     View,
     Text,
     TextInput,
-    TouchableOpacity,
     ActivityIndicator,
     ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 
 interface Props {
@@ -32,6 +34,9 @@ const FOCUS_OPTIONS = [
 
 export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
     const insets = useSafeAreaInsets();
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     
     const [mode, setMode] = useState<'topic' | 'file'>('topic');
     const [topic, setTopic] = useState('');
@@ -63,36 +68,56 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
 
     return (
         <ScrollView 
-            className="flex-1 bg-surface" 
-            contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 16, paddingHorizontal: 16, paddingTop: 16, gap: 24 }}
+            style={{ flex: 1, backgroundColor: C.background }}
+            contentContainerStyle={{ 
+                paddingBottom: Math.max(insets.bottom, 20) + 24, 
+                paddingHorizontal: 16, 
+                paddingTop: 12, 
+                gap: 20 
+            }}
+            showsVerticalScrollIndicator={false}
         >
-            {/* Header Context */}
-            <View className="flex-col gap-1">
-                <Text style={{ fontSize: 26, fontWeight: '700', letterSpacing: -0.5 }} className="text-on-surface">
-                    Generate Flashcards
-                </Text>
-                <Text style={{ fontSize: 13, fontWeight: '400' }} className="text-on-surface-variant">
-                    Transform complex lectures or study topics into active-recall flashcard decks.
-                </Text>
-            </View>
-
             {/* Segmented Source Toggle */}
-            <View className="p-1 rounded-2xl bg-surface-container flex-row items-center">
+            <View 
+                style={{ 
+                    backgroundColor: C.surfaceLow, 
+                    borderColor: C.border, 
+                    borderWidth: 1,
+                    borderRadius: 16,
+                    padding: 4,
+                    flexDirection: 'row',
+                    alignItems: 'center'
+                }}
+            >
                 <Pressable
                     onPress={() => {
                         haptics.selectionAsync();
                         setMode('topic');
                     }}
-                    className={`flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-1.5 ${mode === 'topic' ? 'bg-surface-container-lowest shadow-sm' : ''}`}
+                    style={{
+                        flex: 1,
+                        paddingVertical: 10,
+                        borderRadius: 12,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        backgroundColor: mode === 'topic' ? C.card : 'transparent',
+                        borderWidth: mode === 'topic' && isDark ? 1 : 0,
+                        borderColor: C.border,
+                    }}
                 >
                     <Icon
                         name="PenTool"
                         size={18}
-                        color={mode === 'topic' ? '#007AFF' : '#8E8E93'}
+                        color={mode === 'topic' ? C.primary : C.textSecondary}
                     />
                     <Text
-                        style={{ fontSize: 14, fontWeight: '600' }}
-                        className={mode === 'topic' ? 'text-accent-electric-blue' : 'text-on-surface-variant'}
+                        style={{ 
+                            fontSize: 14, 
+                            fontWeight: '600',
+                            color: mode === 'topic' ? C.primary : C.textSecondary
+                        }}
                     >
                         Input Topic
                     </Text>
@@ -104,16 +129,30 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
                         setMode('file');
                         if (onPickFile) await onPickFile();
                     }}
-                    className={`flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-1.5 ${mode === 'file' ? 'bg-surface-container-lowest shadow-sm' : ''}`}
+                    style={{
+                        flex: 1,
+                        paddingVertical: 10,
+                        borderRadius: 12,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        backgroundColor: mode === 'file' ? C.card : 'transparent',
+                        borderWidth: mode === 'file' && isDark ? 1 : 0,
+                        borderColor: C.border,
+                    }}
                 >
                     <Icon
                         name="UploadCloud"
                         size={18}
-                        color={mode === 'file' ? '#007AFF' : '#8E8E93'}
+                        color={mode === 'file' ? C.primary : C.textSecondary}
                     />
                     <Text
-                        style={{ fontSize: 14, fontWeight: '600' }}
-                        className={mode === 'file' ? 'text-accent-electric-blue' : 'text-on-surface-variant'}
+                        style={{ 
+                            fontSize: 14, 
+                            fontWeight: '600',
+                            color: mode === 'file' ? C.primary : C.textSecondary
+                        }}
                     >
                         Upload Notes
                     </Text>
@@ -122,140 +161,241 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
 
             {/* Dynamic Source Panel */}
             {mode === 'topic' ? (
-                <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm">
-                    <Text style={{ fontSize: 15, fontWeight: '700' }} className="text-on-surface mb-2">
+                <View 
+                    style={{ 
+                        backgroundColor: C.card, 
+                        borderColor: C.border, 
+                        borderWidth: 1,
+                        borderRadius: 24,
+                        padding: 18,
+                    }}
+                >
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 8 }}>
                         Study Subject or Topic
                     </Text>
                     <TextInput
                         placeholder="e.g. Organic Chemistry: Reactions, or AP US History 1920s..."
                         value={topic}
                         onChangeText={setTopic}
-                        placeholderTextColor="#8E8E93"
+                        placeholderTextColor={C.textTertiary}
                         multiline
                         numberOfLines={3}
-                        className="bg-surface-container-low rounded-2xl p-4 text-on-surface mb-3"
-                        style={{ fontSize: 15, textAlignVertical: 'top', minHeight: 84 }}
+                        style={{ 
+                            backgroundColor: C.surfaceLow,
+                            color: C.text,
+                            borderColor: C.border,
+                            borderWidth: 1,
+                            borderRadius: 16,
+                            padding: 14,
+                            fontSize: 15, 
+                            textAlignVertical: 'top', 
+                            minHeight: 88,
+                            marginBottom: 12
+                        }}
                     />
 
                     {/* Suggestions */}
-                    <Text style={{ fontSize: 12, fontWeight: '400' }} className="text-on-surface-variant mb-2">Popular suggestions:</Text>
-                    <View className="flex-row flex-wrap gap-2">
+                    <Text style={{ fontSize: 12, fontWeight: '500', color: C.textSecondary, marginBottom: 8 }}>
+                        Popular suggestions:
+                    </Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                         {SUGGESTIONS.map((item) => (
                             <Pressable
                                 key={item}
-                                
                                 onPress={() => {
                                     haptics.selectionAsync();
                                     setTopic(item);
                                 }}
-                                className="px-3 py-1.5 rounded-full bg-surface-container-low"
+                                style={{
+                                    paddingHorizontal: 12,
+                                    paddingVertical: 6,
+                                    borderRadius: 999,
+                                    backgroundColor: C.surfaceLow,
+                                    borderColor: C.border,
+                                    borderWidth: 1,
+                                }}
                             >
-                                <Text style={{ fontSize: 12, fontWeight: '500' }} className="text-on-surface-variant">{item}</Text>
+                                <Text style={{ fontSize: 12, fontWeight: '600', color: C.textSecondary }}>{item}</Text>
                             </Pressable>
                         ))}
                     </View>
                 </View>
             ) : (
-                <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm">
-                    <View className="bg-surface-container-low rounded-2xl p-4 flex-row items-center justify-between gap-3">
-                        <View className="flex-row items-center gap-3 flex-1">
-                            <View className="w-10 h-10 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm">
-                                <Icon name="UploadCloud" size={20} color="primary" />
-                            </View>
-                            <View className="flex-1">
-                                <Text style={{ fontSize: 14, fontWeight: '600' }} className="text-on-surface" numberOfLines={1}>
+                <View 
+                    style={{ 
+                        backgroundColor: C.card, 
+                        borderColor: C.border, 
+                        borderWidth: 1,
+                        borderRadius: 24,
+                        padding: 18,
+                    }}
+                >
+                    <View 
+                        style={{
+                            backgroundColor: C.surfaceLow,
+                            borderRadius: 16,
+                            padding: 14,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 12
+                        }}
+                    >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                            <Icon name="UploadCloud" size={26} color="primary" animated="pulse" />
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 14, fontWeight: '600', color: C.text }} numberOfLines={1}>
                                     Attach Lecture Slides or Notes
                                 </Text>
-                                <Text style={{ fontSize: 13, fontWeight: '400' }} className="text-on-surface-variant" numberOfLines={1}>
+                                <Text style={{ fontSize: 12, fontWeight: '400', color: C.textSecondary, marginTop: 2 }} numberOfLines={1}>
                                     PDF, DOCX, TXT (Max 25MB)
                                 </Text>
                             </View>
                         </View>
                         <Pressable 
                             onPress={onPickFile}
-                            className="px-3 py-2 rounded-xl bg-surface-container-lowest shadow-sm"
+                            style={{
+                                paddingHorizontal: 12,
+                                paddingVertical: 8,
+                                borderRadius: 12,
+                                backgroundColor: isDark ? 'rgba(0, 122, 255, 0.16)' : '#EBF5FF',
+                                borderColor: C.primary,
+                                borderWidth: 1,
+                            }}
                         >
-                            <Text style={{ fontSize: 14, fontWeight: '600' }} className="text-accent-electric-blue">Add Doc</Text>
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: C.primary }}>Add Doc</Text>
                         </Pressable>
                     </View>
                 </View>
             )}
 
             {/* Card Count Stepper & Presets */}
-            <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm">
-                <View className="flex-row items-center justify-between mb-4">
+            <View 
+                style={{ 
+                    backgroundColor: C.card, 
+                    borderColor: C.border, 
+                    borderWidth: 1,
+                    borderRadius: 24,
+                    padding: 18,
+                }}
+            >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                     <View>
-                        <Text style={{ fontSize: 15, fontWeight: '700' }} className="text-on-surface">
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: C.text }}>
                             Number of Cards
                         </Text>
-                        <Text style={{ fontSize: 12, fontWeight: '400' }} className="text-on-surface-variant">
+                        <Text style={{ fontSize: 12, fontWeight: '400', color: C.textSecondary, marginTop: 2 }}>
                             Min 5 • Max 20 cards per deck
                         </Text>
                     </View>
                 </View>
 
                 {/* Stepper Controller */}
-                <View className="bg-surface-container-low p-2 rounded-2xl flex-row items-center justify-between mb-3">
+                <View 
+                    style={{
+                        backgroundColor: C.surfaceLow,
+                        padding: 8,
+                        borderRadius: 18,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: 12
+                    }}
+                >
                     <Pressable
-                        
                         onPress={() => {
                             haptics.selectionAsync();
                             setCount(Math.max(5, count - 1));
                         }}
-                        className="w-12 h-12 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
+                        style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 12,
+                            backgroundColor: C.card,
+                            borderColor: C.border,
+                            borderWidth: 1,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
                     >
-                        <Icon name="Minus" size={18} color="text" />
+                        <Icon name="Minus" size={18} color="primary" />
                     </Pressable>
 
-                    <View className="items-center justify-center">
-                        <Text style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.4 }} className="text-on-surface">
+                    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ fontSize: 24, fontWeight: '800', letterSpacing: -0.4, color: C.text }}>
                             {count}
                         </Text>
-                        <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }} className="text-on-surface-variant uppercase">
+                        <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary, textTransform: 'uppercase' }}>
                             Cards
                         </Text>
                     </View>
 
                     <Pressable
-                        
                         onPress={() => {
                             haptics.selectionAsync();
                             setCount(Math.min(20, count + 1));
                         }}
-                        className="w-12 h-12 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
+                        style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 12,
+                            backgroundColor: C.card,
+                            borderColor: C.border,
+                            borderWidth: 1,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
                     >
-                        <Icon name="Plus" size={18} color="text" />
+                        <Icon name="Plus" size={18} color="primary" />
                     </Pressable>
                 </View>
 
                 {/* Preset Pills */}
-                <View className="flex-row gap-2">
-                    {[5, 10, 15, 20].map((num) => (
-                        <Pressable
-                            key={num}
-                            
-                            onPress={() => {
-                                haptics.selectionAsync();
-                                setCount(num);
-                            }}
-                            className={`flex-1 py-2 rounded-xl items-center justify-center ${count === num ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container-low'}`}
-                        >
-                            <Text
-                                style={{ fontSize: 14, fontWeight: '600' }}
-                                className={count === num ? 'text-on-primary' : 'text-on-surface-variant'}
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                    {[5, 10, 15, 20].map((num) => {
+                        const isSelected = count === num;
+                        return (
+                            <Pressable
+                                key={num}
+                                onPress={() => {
+                                    haptics.selectionAsync();
+                                    setCount(num);
+                                }}
+                                style={{
+                                    flex: 1,
+                                    paddingVertical: 10,
+                                    borderRadius: 12,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: isSelected ? C.primary : C.surfaceLow,
+                                    borderColor: isSelected ? C.primary : C.border,
+                                    borderWidth: 1,
+                                }}
                             >
-                                {num}
-                            </Text>
-                        </Pressable>
-                    ))}
+                                <Text
+                                    style={{ 
+                                        fontSize: 14, 
+                                        fontWeight: '700',
+                                        color: isSelected ? '#FFFFFF' : C.textSecondary 
+                                    }}
+                                >
+                                    {num}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
                 </View>
             </View>
 
             {/* Card Content Focus Section */}
-            <View className="flex-col gap-3">
-                <View className="px-1 mb-1">
-                    <Text style={{ fontSize: 20, fontWeight: '600', letterSpacing: -0.2 }} className="text-on-surface">Card Content Focus</Text>
-                    <Text style={{ fontSize: 13, fontWeight: '400' }} className="text-on-surface-variant">Choose what to emphasize for spaced retention</Text>
+            <View style={{ flexDirection: 'column', gap: 10 }}>
+                <View style={{ paddingHorizontal: 2, marginBottom: 2 }}>
+                    <Text style={{ fontSize: 17, fontWeight: '700', letterSpacing: -0.2, color: C.text }}>
+                        Card Content Focus
+                    </Text>
+                    <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary, marginTop: 2 }}>
+                        Choose what to emphasize for spaced retention
+                    </Text>
                 </View>
 
                 {FOCUS_OPTIONS.map((opt) => {
@@ -263,21 +403,51 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
                     return (
                         <Pressable
                             key={opt.id}
-                            
                             onPress={() => toggleFocus(opt.id)}
-                            className="bg-surface-container-lowest p-4 rounded-3xl shadow-sm flex-row items-start gap-3.5"
+                            style={{
+                                backgroundColor: isActive ? (isDark ? 'rgba(0, 122, 255, 0.12)' : '#F0F7FF') : C.card,
+                                borderColor: isActive ? C.primary : C.border,
+                                borderWidth: isActive ? 1.5 : 1,
+                                padding: 14,
+                                borderRadius: 20,
+                                flexDirection: 'row',
+                                alignItems: 'flex-start',
+                                gap: 14
+                            }}
                         >
-                            <View className={`w-11 h-11 rounded-2xl items-center justify-center mt-0.5 ${isActive ? 'bg-primary-container' : 'bg-surface-container-low'}`}>
-                                <Icon name={opt.icon} size={22} color={isActive ? 'primary' : 'muted'} />
+                            <View 
+                                style={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 12,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: isActive ? (isDark ? 'rgba(0, 122, 255, 0.22)' : '#DBEAFE') : C.surfaceLow,
+                                }}
+                            >
+                                <Icon name={opt.icon} size={22} color="primary" />
                             </View>
-                            <View className="flex-1">
-                                <View className="flex-row items-center justify-between mb-0.5">
-                                    <Text style={{ fontSize: 16, fontWeight: '600' }} className="text-on-surface">{opt.title}</Text>
-                                    <View className={`w-6 h-6 rounded-full items-center justify-center ${isActive ? 'bg-accent-electric-blue' : 'bg-surface-container-low'}`}>
-                                        {isActive && <Icon name="Check" size={14} color="white" />}
+                            <View style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                                    <Text style={{ fontSize: 15, fontWeight: '600', color: C.text }}>{opt.title}</Text>
+                                    <View 
+                                        style={{
+                                            width: 22,
+                                            height: 22,
+                                            borderRadius: 11,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            backgroundColor: isActive ? C.primary : 'transparent',
+                                            borderColor: isActive ? C.primary : C.border,
+                                            borderWidth: isActive ? 0 : 1.5,
+                                        }}
+                                    >
+                                        {isActive && <Icon name="Check" size={13} color="white" strokeWidth={2.8} />}
                                     </View>
                                 </View>
-                                <Text style={{ fontSize: 13, fontWeight: '400' }} className="text-on-surface-variant">{opt.desc}</Text>
+                                <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary, lineHeight: 18 }}>
+                                    {opt.desc}
+                                </Text>
                             </View>
                         </Pressable>
                     );
@@ -287,23 +457,30 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
             {/* Primary CTA Button */}
             <Pressable
                 disabled={loading}
-                
                 onPress={handleGenerate}
-                className="w-full h-14 rounded-2xl bg-accent-electric-blue items-center justify-center flex-row gap-2 mt-2"
                 style={{
+                    width: '100%',
+                    height: 56,
+                    borderRadius: 16,
+                    backgroundColor: C.primary,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'row',
+                    gap: 8,
+                    marginTop: 6,
                     shadowColor: '#007AFF',
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 24,
-                    elevation: 8,
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 16,
+                    elevation: 6,
                 }}
             >
                 {loading ? (
                     <ActivityIndicator color="#FFFFFF" />
                 ) : (
                     <>
-                        <Text style={{ fontSize: 16, fontWeight: '700' }} className="text-on-primary">Generate Flashcards</Text>
-                        <Icon name="Sparkles" size={18} color="white" />
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>Generate Flashcards</Text>
+                        <Icon name="Sparkles" size={18} color="white" animated="pulse" />
                     </>
                 )}
             </Pressable>

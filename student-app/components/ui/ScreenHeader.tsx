@@ -79,17 +79,11 @@ export function ScreenHeader({
         {showBack ? (
           <TouchableOpacity
             onPress={handleBack}
-            activeOpacity={0.7}
-            style={[
-              styles.backButton,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                borderColor: C.border,
-              },
-            ]}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.6}
+            style={styles.backButton}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Icon icon={ArrowLeft} size={20} color={C.text} strokeWidth={2.2} />
+            <Icon icon={ArrowLeft} size={22} color={C.primary} strokeWidth={2.4} />
           </TouchableOpacity>
         ) : (
           <View style={styles.placeholder} />
@@ -143,12 +137,12 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
+    width: 36,
+    height: 36,
+    alignItems: 'flex-start',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
   },
   titleContainer: {
     flex: 1,

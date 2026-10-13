@@ -36,6 +36,7 @@ import { QuizCelebration } from '@/components/quiz/QuizCelebration';
 import { Colors, Spacing, Radius } from '@/constants/theme';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { GlassSurface } from '@/components/liquid-glass/GlassSurface';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
 // ── SKELETON COMPONENTS ──────────────────────────────────────────────────────
 const SkeletonCard = ({ isDark }: { isDark: boolean }) => {
@@ -617,25 +618,11 @@ export default function GenerateQuizScreen() {
         const canGenerate = mode === 'topic' ? topic.trim().length > 0 : (selectedFile !== null && !isExtracting);
 
         return (
-            <View className="flex-1 bg-surface pt-safe">
-                {/* Header */}
-                <View className="h-16 px-4 flex-row items-center justify-between z-50 bg-surface-container-lowest/80" style={{ paddingTop: Math.max(insets.top, 16) }}>
-                    <Pressable
-                        onPress={() => {
-                            haptics.selectionAsync(true);
-                            if (router.canGoBack()) router.back();
-                            else router.replace('/(drawer)' as any);
-                        }}
-                        
-                        className="w-11 h-11 -ml-2 rounded-full items-center justify-center bg-transparent"
-                    >
-                        <Icon name="ArrowLeft" size={24} color="text" />
-                    </Pressable>
-                    <Text className="text-[20px] font-[600] tracking-[-0.2px] text-on-surface flex-1 text-center" numberOfLines={1}>
-                        {isLoading ? (loadingStage || 'Skeeming...') : 'Create Quiz'}
-                    </Text>
-                    <View className="w-11 h-11" />
-                </View>
+            <View style={{ flex: 1, backgroundColor: C.background }}>
+                <ScreenHeader 
+                    title={isLoading ? (loadingStage || 'Skeeming...') : 'Create Quiz'} 
+                    subtitle={!isLoading ? "Generate smart practice quizzes" : undefined}
+                />
 
                 {isLoading ? (
                     <View className="flex-1 px-4 pt-5">
@@ -650,38 +637,47 @@ export default function GenerateQuizScreen() {
                     <View className="flex-col gap-6 w-full max-w-xl mx-auto">
                         
                         {/* Section 1: Source Material Selector */}
-                        <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-4">
+                        <View 
+                            className="rounded-3xl p-5 shadow-sm flex-col gap-4"
+                            style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                        >
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
                                     <Icon name="Database" size={20} color="primary" />
-                                    <Text className="text-[16px] font-[600] text-on-surface">Quiz Source Material</Text>
+                                    <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Quiz Source Material</Text>
                                 </View>
                             </View>
 
-                            {/* Segmented iOS-Style Switcher */}
-                            <View className="p-1 bg-surface-container-low rounded-2xl flex-row items-center gap-1">
+                            {/* Segmented Switcher */}
+                            <View 
+                                className="p-1 rounded-2xl flex-row items-center gap-1"
+                                style={{ backgroundColor: C.surfaceLow }}
+                            >
                                 <Pressable 
-                                    className={`flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-2 ${mode === 'topic' ? 'bg-surface-container-lowest shadow-sm' : 'bg-transparent'}`}
+                                    className="flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-2"
+                                    style={mode === 'topic' ? { backgroundColor: C.card, shadowOpacity: 0.08, shadowRadius: 4, elevation: 1 } : { backgroundColor: 'transparent' }}
                                     onPress={() => { setMode('topic'); setSelectedFile(null); }}
-                                    
                                 >
                                     <Icon name="PenTool" size={18} color={mode === 'topic' ? 'primary' : 'textSecondary'} />
-                                    <Text className={`text-[14px] font-[600] ${mode === 'topic' ? 'text-accent-electric-blue' : 'text-on-surface-variant'}`}>Input Topic</Text>
+                                    <Text className="text-[14px] font-[600]" style={{ color: mode === 'topic' ? C.primary : C.textSecondary }}>Input Topic</Text>
                                 </Pressable>
                                 <Pressable 
-                                    className={`flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-2 ${mode === 'file' ? 'bg-surface-container-lowest shadow-sm' : 'bg-transparent'}`}
+                                    className="flex-1 py-2.5 rounded-xl flex-row items-center justify-center gap-2"
+                                    style={mode === 'file' ? { backgroundColor: C.card, shadowOpacity: 0.08, shadowRadius: 4, elevation: 1 } : { backgroundColor: 'transparent' }}
                                     onPress={() => { setMode('file'); }}
-                                    
                                 >
                                     <Icon name="UploadCloud" size={18} color={mode === 'file' ? 'primary' : 'textSecondary'} />
-                                    <Text className={`text-[14px] font-[600] ${mode === 'file' ? 'text-accent-electric-blue' : 'text-on-surface-variant'}`}>Upload Notes</Text>
+                                    <Text className="text-[14px] font-[600]" style={{ color: mode === 'file' ? C.primary : C.textSecondary }}>Upload Notes</Text>
                                 </Pressable>
                             </View>
 
                             {/* Tab View: Topic Input */}
                             {mode === 'topic' ? (
                                 <View className="flex-col gap-3">
-                                    <View className="bg-surface-container-low rounded-2xl p-3">
+                                    <View 
+                                        className="rounded-2xl p-3"
+                                        style={{ backgroundColor: C.surfaceLow }}
+                                    >
                                         <TextInput
                                             className="w-full bg-transparent text-[15px] font-[400]"
                                             placeholder="e.g. AP Calculus Derivatives, or paste your syllabus chapter..."
@@ -695,18 +691,23 @@ export default function GenerateQuizScreen() {
                                         />
                                         <View className="flex-row items-center justify-between pt-2">
                                             <Pressable onPress={() => setTopic('')} className="p-1">
-                                                <Icon name="X" size={18} color="textTertiary" />
+                                                <Icon name="X" size={18} color={C.textTertiary} />
                                             </Pressable>
                                         </View>
                                     </View>
 
                                     {/* Quick Topic Suggestion Chips */}
                                     <View className="flex-col gap-1.5">
-                                        <Text className="text-[11px] font-[700] tracking-[0.5px] text-on-surface-variant">Popular Suggestions</Text>
+                                        <Text className="text-[11px] font-[700] tracking-[0.5px]" style={{ color: C.textSecondary }}>Popular Suggestions</Text>
                                         <View className="flex-row flex-wrap gap-2">
                                             {['AP Calculus', 'Cell Biology', 'World History', 'Python Basics'].map(s => (
-                                                <Pressable key={s} onPress={() => setTopic(s)} className="px-3 py-1.5 rounded-full bg-surface-container-low active:bg-primary-container">
-                                                    <Text className="text-[11px] font-[700] tracking-[0.5px] text-on-surface">{s}</Text>
+                                                <Pressable 
+                                                    key={s} 
+                                                    onPress={() => setTopic(s)} 
+                                                    className="px-3 py-1.5 rounded-full"
+                                                    style={{ backgroundColor: C.surfaceLow }}
+                                                >
+                                                    <Text className="text-[11px] font-[700] tracking-[0.5px]" style={{ color: C.text }}>{s}</Text>
                                                 </Pressable>
                                             ))}
                                         </View>
@@ -718,8 +719,8 @@ export default function GenerateQuizScreen() {
                                     <Pressable 
                                         onPress={handleFileSelect}
                                         disabled={isProcessingFile}
-                                        
-                                        className="bg-surface-container-low rounded-2xl p-6 flex-col items-center justify-center text-center gap-3"
+                                        className="rounded-2xl p-6 flex-col items-center justify-center text-center gap-3"
+                                        style={{ backgroundColor: C.surfaceLow }}
                                     >
                                         {isProcessingFile ? (
                                             <View className="items-center">
@@ -728,31 +729,34 @@ export default function GenerateQuizScreen() {
                                             </View>
                                         ) : selectedFile ? (
                                             <>
-                                                <View className="w-14 h-14 rounded-2xl bg-surface-container-lowest items-center justify-center shadow-sm">
-                                                    <Icon name="FileText" size={32} color="primary" />
+                                                <View className="w-14 h-14 rounded-2xl items-center justify-center" style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.15)' : '#e0edff' }}>
+                                                    <Icon name="FileText" size={30} color="primary" animated="pulse" />
                                                 </View>
                                                 <View className="items-center">
-                                                    <Text className="text-[16px] font-[600] text-on-surface">{selectedFile.name}</Text>
+                                                    <Text className="text-[16px] font-[600]" style={{ color: C.text }}>{selectedFile.name}</Text>
                                                     {isExtracting ? (
                                                         <View className="flex-row items-center mt-1">
                                                             <LoadingSpinner size={14} color={C.primary} />
                                                             <Text className="text-[13px] font-[400] text-primary ml-1.5">Extracting text...</Text>
                                                         </View>
                                                     ) : (
-                                                        <Text className="text-[13px] font-[400] text-on-surface-variant mt-0.5">Ready to generate</Text>
+                                                        <Text className="text-[13px] font-[400] mt-0.5" style={{ color: C.textSecondary }}>Ready to generate</Text>
                                                     )}
                                                 </View>
                                             </>
                                         ) : (
                                             <>
-                                                <View className="w-14 h-14 rounded-2xl bg-surface-container-lowest items-center justify-center shadow-sm">
-                                                    <Icon name="Upload" size={32} color="primary" />
+                                                <View className="w-14 h-14 rounded-2xl items-center justify-center" style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.15)' : '#e0edff' }}>
+                                                    <Icon name="Upload" size={30} color="primary" animated="pulse" />
                                                 </View>
                                                 <View className="items-center">
-                                                    <Text className="text-[16px] font-[600] text-on-surface">Drop lecture slides, syllabus, or notes</Text>
-                                                    <Text className="text-[13px] font-[400] text-on-surface-variant mt-0.5">Supports PDF, DOCX, TXT (Max 5MB)</Text>
+                                                    <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Drop lecture slides, syllabus, or notes</Text>
+                                                    <Text className="text-[13px] font-[400] mt-0.5" style={{ color: C.textSecondary }}>Supports PDF, DOCX, TXT (Max 5MB)</Text>
                                                 </View>
-                                                <View className="mt-1 px-4 py-2 bg-primary-container rounded-xl flex-row items-center gap-1.5 shadow-sm">
+                                                <View 
+                                                    className="mt-1 px-4 py-2 rounded-xl flex-row items-center gap-1.5 shadow-sm"
+                                                    style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.2)' : '#e0edff' }}
+                                                >
                                                     <Icon name="PlusCircle" size={18} color="primary" />
                                                     <Text className="text-[14px] font-[600] text-accent-electric-blue">Add Document</Text>
                                                 </View>
@@ -764,32 +768,40 @@ export default function GenerateQuizScreen() {
                         </View>
 
                         {/* Section 2: Number of Questions */}
-                        <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-4">
+                        <View 
+                            className="rounded-3xl p-5 shadow-sm flex-col gap-4"
+                            style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                        >
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
                                     <Icon name="ListOrdered" size={20} color="primary" />
-                                    <Text className="text-[16px] font-[600] text-on-surface">Question Count</Text>
+                                    <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Question Count</Text>
                                 </View>
                             </View>
 
-                            <View className="bg-surface-container-low rounded-2xl p-4 flex-row items-center justify-between">
+                            <View 
+                                className="rounded-2xl p-4 flex-row items-center justify-between"
+                                style={{ backgroundColor: C.surfaceLow }}
+                            >
                                 <Pressable 
-                                    className="w-11 h-11 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
+                                    className="w-11 h-11 rounded-xl items-center justify-center"
+                                    style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: StyleSheet.hairlineWidth }}
                                     onPress={() => setQuestionCount(prev => String(Math.max(5, parseInt(prev) - 5)))}
                                 >
-                                    <Icon name="Minus" size={22} color="text" />
+                                    <Icon name="Minus" size={22} color="primary" />
                                 </Pressable>
                                 <View className="flex-col items-center">
                                     <View className="flex-row items-baseline gap-1">
                                         <Text className="text-[40px] font-[800] tracking-[-1.2px] text-accent-electric-blue">{questionCount}</Text>
-                                        <Text className="text-[16px] font-[600] text-on-surface-variant">Questions</Text>
+                                        <Text className="text-[16px] font-[600]" style={{ color: C.textSecondary }}>Questions</Text>
                                     </View>
                                 </View>
                                 <Pressable 
-                                    className="w-11 h-11 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
+                                    className="w-11 h-11 rounded-xl items-center justify-center"
+                                    style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: StyleSheet.hairlineWidth }}
                                     onPress={() => setQuestionCount(prev => String(Math.min(30, parseInt(prev) + 5)))}
                                 >
-                                    <Icon name="Plus" size={22} color="text" />
+                                    <Icon name="Plus" size={22} color="primary" />
                                 </Pressable>
                             </View>
 
@@ -798,22 +810,26 @@ export default function GenerateQuizScreen() {
                                     <Pressable 
                                         key={val}
                                         onPress={() => setQuestionCount(String(val))}
-                                        className={`py-2 flex-1 rounded-xl items-center justify-center ${parseInt(questionCount) === val ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container-low'}`}
+                                        className={`py-2 flex-1 rounded-xl items-center justify-center ${parseInt(questionCount) === val ? 'bg-accent-electric-blue shadow-sm' : ''}`}
+                                        style={parseInt(questionCount) === val ? undefined : { backgroundColor: C.surfaceLow }}
                                     >
-                                        <Text className={`text-[14px] font-[600] ${parseInt(questionCount) === val ? 'text-on-primary' : 'text-on-surface'}`}>{val}</Text>
+                                        <Text className={`text-[14px] font-[600] ${parseInt(questionCount) === val ? 'text-on-primary' : ''}`} style={parseInt(questionCount) === val ? undefined : { color: C.text }}>{val}</Text>
                                     </Pressable>
                                 ))}
                             </View>
                         </View>
 
                         {/* Section 3: Difficulty Level */}
-                        <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-4">
+                        <View 
+                            className="rounded-3xl p-5 shadow-sm flex-col gap-4"
+                            style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                        >
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
                                     <Icon name="Brain" size={20} color="primary" />
-                                    <Text className="text-[16px] font-[600] text-on-surface">Difficulty Depth</Text>
+                                    <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Difficulty Depth</Text>
                                 </View>
-                                <View className="bg-primary-container px-2.5 py-0.5 rounded-full">
+                                <View className="px-2.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.2)' : '#e0edff' }}>
                                     <Text className="text-[11px] font-[700] tracking-[0.5px] text-accent-electric-blue">
                                         {difficulty === 'easy' ? 'Foundational' : difficulty === 'medium' ? 'Standard' : 'Mastery / Trap'}
                                     </Text>
@@ -831,17 +847,22 @@ export default function GenerateQuizScreen() {
                                         <Pressable 
                                             key={opt.key}
                                             onPress={() => setDifficulty(opt.key as Difficulty)}
-                                            className={`flex-1 p-3.5 rounded-2xl flex-col justify-between h-[144px] ${isActive ? 'bg-primary-container shadow-sm' : 'bg-surface-container-low'}`}
+                                            className="flex-1 p-3.5 rounded-2xl flex-col justify-between h-[144px]"
+                                            style={{
+                                                backgroundColor: isActive ? (isDark ? 'rgba(0,122,255,0.18)' : '#e0edff') : C.surfaceLow,
+                                                borderColor: isActive ? C.primary : 'transparent',
+                                                borderWidth: 1,
+                                            }}
                                         >
                                             <View className="flex-row items-center justify-between w-full">
-                                                <View className="w-9 h-9 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm">
-                                                    <Icon name={opt.icon as any} size={20} color={isActive ? "primary" : "textSecondary"} />
+                                                <View className="w-9 h-9 rounded-xl items-center justify-center" style={{ backgroundColor: isActive ? 'transparent' : C.card }}>
+                                                    <Icon name={opt.icon as any} size={20} color="primary" animated={isActive ? "bounce" : undefined} />
                                                 </View>
                                                 {isActive && <Icon name="CheckCircle2" size={20} color="primary" />}
                                             </View>
                                             <View>
-                                                <Text className={`text-[16px] font-[600] ${isActive ? 'text-accent-electric-blue' : 'text-on-surface'}`}>{opt.label}</Text>
-                                                <Text className="text-[13px] font-[400] text-on-surface-variant mt-0.5 leading-[18px]" numberOfLines={2}>{opt.desc}</Text>
+                                                <Text className="text-[16px] font-[600]" style={{ color: isActive ? C.primary : C.text }}>{opt.label}</Text>
+                                                <Text className="text-[13px] font-[400] mt-0.5 leading-[18px]" style={{ color: C.textSecondary }} numberOfLines={2}>{opt.desc}</Text>
                                             </View>
                                         </Pressable>
                                     );
@@ -850,45 +871,53 @@ export default function GenerateQuizScreen() {
                         </View>
 
                         {/* Section 4: Timer */}
-                        <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-4">
+                        <View 
+                            className="rounded-3xl p-5 shadow-sm flex-col gap-4"
+                            style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                        >
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-3">
-                                    <View className="w-10 h-10 rounded-xl bg-surface-container-low items-center justify-center">
+                                    <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: C.surfaceLow }}>
                                         <Icon name="Timer" size={22} color="primary" />
                                     </View>
-                                    <Text className="text-[16px] font-[600] text-on-surface">Quiz Timer</Text>
+                                    <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Quiz Timer</Text>
                                 </View>
                                 <Pressable 
                                     onPress={() => setTimerEnabled(!timerEnabled)}
-                                    
-                                    className={`w-14 h-8 rounded-full p-1 justify-center ${timerEnabled ? 'bg-accent-electric-blue' : 'bg-surface-container-highest'}`}
+                                    className={`w-14 h-8 rounded-full p-1 justify-center ${timerEnabled ? 'bg-accent-electric-blue' : ''}`}
+                                    style={timerEnabled ? undefined : { backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}
                                 >
                                     <Animated.View style={{ transform: [{ translateX: timerEnabled ? 24 : 0 }] }}>
-                                        <View className="w-6 h-6 rounded-full bg-surface-container-lowest shadow-md" />
+                                        <View className="w-6 h-6 rounded-full shadow-md" style={{ backgroundColor: C.card }} />
                                     </Animated.View>
                                 </Pressable>
                             </View>
 
                             {timerEnabled && (
                                 <View className="flex-col gap-3 pt-2">
-                                    <View className="bg-surface-container-low rounded-2xl p-4 flex-row items-center justify-between">
+                                    <View 
+                                        className="rounded-2xl p-4 flex-row items-center justify-between"
+                                        style={{ backgroundColor: C.surfaceLow }}
+                                    >
                                         <Pressable 
-                                            className="w-10 h-10 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
+                                            className="w-10 h-10 rounded-xl items-center justify-center"
+                                            style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: StyleSheet.hairlineWidth }}
                                             onPress={() => setTimerMinutes(prev => String(Math.max(5, parseInt(prev || '10') - 5)))}
                                         >
-                                            <Icon name="Minus" size={20} color="text" />
+                                            <Icon name="Minus" size={20} color="primary" />
                                         </Pressable>
                                         <View className="flex-col items-center">
                                             <View className="flex-row items-baseline gap-1">
-                                                <Text className="text-[40px] font-[800] tracking-[-1.2px] text-on-surface">{timerMinutes}</Text>
-                                                <Text className="text-[16px] font-[600] text-on-surface-variant">min</Text>
+                                                <Text className="text-[40px] font-[800] tracking-[-1.2px]" style={{ color: C.text }}>{timerMinutes}</Text>
+                                                <Text className="text-[16px] font-[600]" style={{ color: C.textSecondary }}>min</Text>
                                             </View>
                                         </View>
                                         <Pressable 
-                                            className="w-10 h-10 rounded-xl bg-surface-container-lowest items-center justify-center shadow-sm"
+                                            className="w-10 h-10 rounded-xl items-center justify-center"
+                                            style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: StyleSheet.hairlineWidth }}
                                             onPress={() => setTimerMinutes(prev => String(Math.min(60, parseInt(prev || '10') + 5)))}
                                         >
-                                            <Icon name="Plus" size={20} color="text" />
+                                            <Icon name="Plus" size={20} color="primary" />
                                         </Pressable>
                                     </View>
 
@@ -897,9 +926,10 @@ export default function GenerateQuizScreen() {
                                             <Pressable 
                                                 key={val}
                                                 onPress={() => setTimerMinutes(String(val))}
-                                                className={`py-2 flex-1 rounded-xl items-center justify-center ${parseInt(timerMinutes) === val ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container-low'}`}
+                                                className={`py-2 flex-1 rounded-xl items-center justify-center ${parseInt(timerMinutes) === val ? 'bg-accent-electric-blue shadow-sm' : ''}`}
+                                                style={parseInt(timerMinutes) === val ? undefined : { backgroundColor: C.surfaceLow }}
                                             >
-                                                <Text className={`text-[14px] font-[600] ${parseInt(timerMinutes) === val ? 'text-on-primary' : 'text-on-surface'}`}>{val}m</Text>
+                                                <Text className={`text-[14px] font-[600] ${parseInt(timerMinutes) === val ? 'text-on-primary' : ''}`} style={parseInt(timerMinutes) === val ? undefined : { color: C.text }}>{val}m</Text>
                                             </Pressable>
                                         ))}
                                     </View>
@@ -908,11 +938,14 @@ export default function GenerateQuizScreen() {
                         </View>
 
                         {/* Section 5: Question Format Options */}
-                        <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm flex-col gap-3">
+                        <View 
+                            className="rounded-3xl p-5 shadow-sm flex-col gap-3"
+                            style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                        >
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
                                     <Icon name="Sliders" size={20} color="primary" />
-                                    <Text className="text-[16px] font-[600] text-on-surface">Question Formats</Text>
+                                    <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Question Formats</Text>
                                 </View>
                             </View>
                             <View className="flex-row flex-wrap gap-2.5">
@@ -926,10 +959,15 @@ export default function GenerateQuizScreen() {
                                         <Pressable 
                                             key={opt.key}
                                             onPress={() => setFormat(opt.key as FormatType)}
-                                            className={`px-4 py-2.5 rounded-2xl flex-row items-center gap-2 ${isActive ? 'bg-primary-container' : 'bg-surface-container-low'}`}
+                                            className="px-4 py-2.5 rounded-2xl flex-row items-center gap-2"
+                                            style={{
+                                                backgroundColor: isActive ? (isDark ? 'rgba(0,122,255,0.18)' : '#e0edff') : C.surfaceLow,
+                                                borderColor: isActive ? C.primary : 'transparent',
+                                                borderWidth: 1,
+                                            }}
                                         >
-                                            <Icon name={opt.icon as any} size={18} color={isActive ? "primary" : "textSecondary"} />
-                                            <Text className={`text-[14px] font-[600] ${isActive ? 'text-accent-electric-blue' : 'text-on-surface-variant'}`}>{opt.label}</Text>
+                                            <Icon name={opt.icon as any} size={18} color={isActive ? "primary" : "textSecondary"} animated={isActive ? "bounce" : undefined} />
+                                            <Text className="text-[14px] font-[600]" style={{ color: isActive ? C.primary : C.textSecondary }}>{opt.label}</Text>
                                         </Pressable>
                                     );
                                 })}
@@ -944,27 +982,32 @@ export default function GenerateQuizScreen() {
                 <BlurView
                     intensity={80}
                     tint={isDark ? 'dark' : 'light'}
-                    className="absolute bottom-0 left-0 right-0 p-4 z-40 bg-surface-container-lowest/80"
-                    style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+                    className="absolute bottom-0 left-0 right-0 p-4 z-40"
+                    style={{ 
+                        paddingBottom: Math.max(insets.bottom, 16),
+                        backgroundColor: isDark ? 'rgba(18,18,18,0.85)' : 'rgba(255,255,255,0.85)',
+                        borderTopColor: C.border,
+                        borderTopWidth: StyleSheet.hairlineWidth
+                    }}
                 >
                     <View className="max-w-xl mx-auto w-full flex-col gap-2">
                         <Pressable
                             onPress={handleGenerate}
                             disabled={!canGenerate || isLoading}
-                            className={`w-full h-14 rounded-2xl flex-row items-center justify-center gap-2 ${(!canGenerate || isLoading) ? 'opacity-50 bg-outline' : 'bg-accent-electric-blue'}`}
-                            style={canGenerate ? { shadowColor: '#007AFF', shadowOffset: {width:0, height:8}, shadowOpacity: 0.35, shadowRadius: 24 } : {}}
+                            className={`w-full h-14 rounded-2xl flex-row items-center justify-center gap-2 ${(!canGenerate || isLoading) ? 'opacity-50' : 'bg-accent-electric-blue'}`}
+                            style={canGenerate ? { shadowColor: '#007AFF', shadowOffset: {width:0, height:8}, shadowOpacity: 0.35, shadowRadius: 24 } : { backgroundColor: C.border }}
                         >
                             {isLoading ? (
                                 <LoadingSpinner size={22} color="white" />
                             ) : (
-                                <Icon name="Zap" size={22} color="white" />
+                                <Icon name="Zap" size={22} color="white" animated="pulse" />
                             )}
                             <Text className="text-[16px] font-[600] text-on-primary">{isLoading ? 'Generating...' : 'Generate Quiz'}</Text>
                             {!isLoading && <Text className="text-[13px] font-[400] text-on-primary/80">✨</Text>}
                         </Pressable>
                         <View className="flex-row items-center justify-center gap-2">
                             <View className="w-1.5 h-1.5 rounded-full bg-accent-electric-blue" />
-                            <Text className="text-[11px] font-[700] tracking-[0.5px] text-on-surface-variant">Costs {user?.plan_name !== 'free' ? '0' : '30'} Credits • Instant AI Generation</Text>
+                            <Text className="text-[11px] font-[700] tracking-[0.5px]" style={{ color: C.textSecondary }}>Costs {user?.plan_name !== 'free' ? '0' : '30'} Credits • Instant AI Generation</Text>
                         </View>
                     </View>
                 </BlurView>
@@ -1059,52 +1102,46 @@ export default function GenerateQuizScreen() {
         }
 
         return (
-            <View className="flex-1 bg-surface pt-safe">
-                {/* Header */}
-                <View className="h-16 px-5 flex-row items-center justify-between shadow-sm z-50 bg-surface/80" style={{ paddingTop: insets.top }}>
-                    <Pressable 
-                        onPress={() => {
-                            haptics.selectionAsync(true);
-                            if (router.canGoBack()) router.back();
-                            else router.replace('/(drawer)' as any);
-                        }}
-                        className="w-10 h-10 items-center justify-center rounded-full bg-surface-container-lowest shadow-sm"
-                    >
-                        <Icon name="ChevronLeft" size={24} color="text" />
-                    </Pressable>
-                    <View className="flex-1" />
-                    {timerEnabled && (
-                        <Pressable className="w-10 h-10 items-center justify-center rounded-full bg-surface-container-lowest shadow-sm">
-                            <Icon name="Timer" size={20} color="textTertiary" />
-                        </Pressable>
-                    )}
-                </View>
+            <View style={{ flex: 1, backgroundColor: C.background }}>
+                <ScreenHeader 
+                    title={`Question ${currentQIndex + 1} of ${questions.length}`}
+                    subtitle={topic || selectedFile?.name || 'Quiz'}
+                    rightAction={timerEnabled ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.surfaceLow }}>
+                            <Icon name="Timer" size={16} color={timeLeft < 60 ? '#FF3B30' : C.primary} animated={timeLeft < 60 ? 'pulse' : undefined} />
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: timeLeft < 60 ? '#FF3B30' : C.primary }}>
+                                {formatTime(timeLeft)}
+                            </Text>
+                        </View>
+                    ) : undefined}
+                />
 
                 <ScrollView className="flex-1 w-full" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 220 }} showsVerticalScrollIndicator={false}>
                     
                     {/* Progress area */}
                     <View className="flex-col space-y-2.5 mb-6">
-                        <Text className="font-[700] text-[15px] text-on-surface">Question {currentQIndex + 1}: {topic || (selectedFile?.name || 'Quiz')}</Text>
+                        <Text className="font-[700] text-[15px]" style={{ color: C.text }}>Question {currentQIndex + 1}: {topic || (selectedFile?.name || 'Quiz')}</Text>
                         
                         {/* Segmented pill progress */}
                         <View className="flex-row items-center gap-1.5 w-full">
                             {questions.map((_, i) => (
                                 <View 
                                     key={i} 
-                                    className={`h-1.5 flex-1 rounded-full ${i <= currentQIndex ? 'bg-accent-electric-blue' : 'bg-surface-container-high'}`} 
+                                    className={`h-1.5 flex-1 rounded-full ${i <= currentQIndex ? 'bg-accent-electric-blue' : ''}`}
+                                    style={i <= currentQIndex ? undefined : { backgroundColor: C.border }}
                                 />
                             ))}
                         </View>
                         
-                        <View className="flex-row items-center gap-4 text-[12px] text-on-surface-variant pt-0.5">
+                        <View className="flex-row items-center gap-4 text-[12px] pt-0.5">
                             <View className="flex-row items-center gap-1">
-                                <Icon name="Clock" size={14} color="textTertiary" />
-                                <Text className="text-on-surface-variant text-[12px]">Question {currentQIndex + 1}/{questions.length}</Text>
+                                <Icon name="Clock" size={14} color="primary" />
+                                <Text className="text-[12px]" style={{ color: C.textSecondary }}>Question {currentQIndex + 1}/{questions.length}</Text>
                             </View>
                             {timerEnabled && (
                                 <View className="flex-row items-center gap-1">
-                                    <Icon name="Timer" size={14} color={timeLeft < 60 ? '#FF3B30' : C.textTertiary} />
-                                    <Text className={`text-[12px] ${timeLeft < 60 ? 'text-[#FF3B30] font-[700]' : 'text-on-surface-variant'}`}>{formatTime(timeLeft)}</Text>
+                                    <Icon name="Timer" size={14} color={timeLeft < 60 ? '#FF3B30' : C.primary} animated={timeLeft < 60 ? 'pulse' : undefined} />
+                                    <Text className={`text-[12px] ${timeLeft < 60 ? 'text-[#FF3B30] font-[700]' : ''}`} style={timeLeft < 60 ? undefined : { color: C.textSecondary }}>{formatTime(timeLeft)}</Text>
                                 </View>
                             )}
                         </View>
@@ -1112,10 +1149,10 @@ export default function GenerateQuizScreen() {
 
                     {/* Question Typography */}
                     <View className="flex-col items-center text-center pt-2 mb-6">
-                        <View className="w-24 h-24 rounded-full bg-primary-container shadow-sm items-center justify-center mb-4">
-                            <Icon name="HelpCircle" size={40} color="primary" />
+                        <View className="w-24 h-24 rounded-full shadow-sm items-center justify-center mb-4" style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : '#e0edff' }}>
+                            <Icon name="HelpCircle" size={40} color="primary" animated="pulse" />
                         </View>
-                        <Text className="font-[700] text-[18px] text-on-surface leading-[26px] text-center">{q.question_text}</Text>
+                        <Text className="font-[700] text-[18px] leading-[26px] text-center" style={{ color: C.text }}>{q.question_text}</Text>
                     </View>
 
                     {/* Options */}
@@ -1127,50 +1164,46 @@ export default function GenerateQuizScreen() {
                                 const letters = ['A', 'B', 'C', 'D', 'E'];
                                 const letter = letters[oi] || `${oi + 1}`;
 
-                                let btnClass = "p-3.5 rounded-2xl bg-surface-container-lowest shadow-sm border-2 border-transparent flex-row items-center justify-between";
-                                let badgeClass = "w-8 h-8 rounded-full bg-surface-container-low flex items-center justify-center";
-                                let badgeTextClass = "font-[700] text-[13px] text-on-surface";
-                                let textClass = "font-[500] text-[13px] text-on-surface";
+                                let bgStyle = { backgroundColor: C.card, borderColor: C.border, borderWidth: 1 };
+                                let badgeBg = C.surfaceLow;
+                                let badgeColor = C.text;
                                 let icon = null;
 
                                 if (isRevealed) {
                                     if (isCorrectOpt) {
-                                        btnClass = "p-3.5 rounded-2xl bg-[#ecfdf5] shadow-sm border-2 border-[#10b981] flex-row items-center justify-between";
-                                        badgeClass = "w-8 h-8 rounded-full bg-[#ffffff] shadow-sm flex items-center justify-center";
-                                        badgeTextClass = "font-[700] text-[13px] text-[#047857]";
-                                        textClass = "font-[600] text-[13px] text-on-surface";
+                                        bgStyle = { backgroundColor: isDark ? 'rgba(16,185,129,0.15)' : '#ecfdf5', borderColor: '#10b981', borderWidth: 2 };
+                                        badgeBg = '#10b981';
+                                        badgeColor = '#FFFFFF';
                                         icon = <Icon name="CheckCircle2" size={18} color="success" />;
                                     } else if (isSelected && !isCorrectOpt) {
-                                        btnClass = "p-3.5 rounded-2xl bg-[#fef2f2] shadow-sm border-2 border-[#ef4444] flex-row items-center justify-between";
-                                        badgeClass = "w-8 h-8 rounded-full bg-[#ffffff] shadow-sm flex items-center justify-center";
-                                        badgeTextClass = "font-[700] text-[13px] text-[#b91c1c]";
-                                        textClass = "font-[600] text-[13px] text-on-surface";
+                                        bgStyle = { backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : '#fef2f2', borderColor: '#ef4444', borderWidth: 2 };
+                                        badgeBg = '#ef4444';
+                                        badgeColor = '#FFFFFF';
                                         icon = <Icon name="XCircle" size={18} color="destructive" />;
                                     }
                                 } else if (isSelected) {
-                                    btnClass = "p-3.5 rounded-2xl bg-primary-container shadow-sm border-2 border-[#007AFF] flex-row items-center justify-between";
-                                    badgeClass = "w-8 h-8 rounded-full bg-[#ffffff] shadow-sm flex items-center justify-center";
-                                    badgeTextClass = "font-[700] text-[13px] text-[#007AFF]";
-                                    textClass = "font-[600] text-[13px] text-on-surface";
+                                    bgStyle = { backgroundColor: isDark ? 'rgba(0,122,255,0.2)' : '#e0edff', borderColor: C.primary, borderWidth: 2 };
+                                    badgeBg = C.primary;
+                                    badgeColor = '#FFFFFF';
                                 }
 
                                 return (
                                     <Pressable
                                         key={oi}
-                                        
                                         onPress={() => {
                                             if (!isRevealed) {
                                                 haptics.selectionAsync();
                                                 setSelectedAnswers(p => ({ ...p, [currentQIndex]: opt }));
                                             }
                                         }}
-                                        className={btnClass}
+                                        className="p-3.5 rounded-2xl shadow-sm flex-row items-center justify-between"
+                                        style={bgStyle}
                                     >
                                         <View className="flex-row items-center gap-2.5 flex-1 pr-2">
-                                            <View className={badgeClass}>
-                                                <Text className={badgeTextClass}>{letter}</Text>
+                                            <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: badgeBg }}>
+                                                <Text className="font-[700] text-[13px]" style={{ color: badgeColor }}>{letter}</Text>
                                             </View>
-                                            <Text className={`${textClass} flex-1`}>{opt}</Text>
+                                            <Text className="font-[600] text-[13px] flex-1" style={{ color: C.text }}>{opt}</Text>
                                         </View>
                                         {icon && <View className="ml-2">{icon}</View>}
                                     </Pressable>
@@ -1185,9 +1218,9 @@ export default function GenerateQuizScreen() {
 
                     {/* Explanation */}
                     {isRevealed && (
-                        <View className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm flex-col space-y-3 mt-6">
-                            <Text className="font-[700] text-[15px] text-on-surface">AI Explanation</Text>
-                            <Text className="text-[13px] text-on-surface-variant leading-[20px]">
+                        <View className="rounded-2xl p-4 shadow-sm flex-col space-y-3 mt-6" style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}>
+                            <Text className="font-[700] text-[15px]" style={{ color: C.text }}>AI Explanation</Text>
+                            <Text className="text-[13px] leading-[20px]" style={{ color: C.textSecondary }}>
                                 {(() => {
                                     const isCorrect = selectedAnswers[currentQIndex] === q.correct_answer;
                                     let rawExpl = isCorrect ? (q.explanation_right || q.explanation) : (q.explanation_wrong || q.explanation);
@@ -1197,7 +1230,7 @@ export default function GenerateQuizScreen() {
                                         cleanExpl = cleanExpl.charAt(0).toUpperCase() + cleanExpl.slice(1);
                                     }
                                     return cleanExpl;
-                                    })()}
+                                })()}
                             </Text>
                         </View>
                     )}
@@ -1205,7 +1238,15 @@ export default function GenerateQuizScreen() {
                 </ScrollView>
 
                 {/* Navigation Footer */}
-                <View className="absolute bottom-0 left-0 right-0 p-5 bg-surface/90 pt-4 z-40 shadow-[0_-4px_24px_rgba(0,0,0,0.06)]" style={{ paddingBottom: Math.max(insets.bottom, 20) }}>
+                <View 
+                    className="absolute bottom-0 left-0 right-0 p-5 z-40" 
+                    style={{ 
+                        paddingBottom: Math.max(insets.bottom, 20),
+                        backgroundColor: isDark ? 'rgba(18,18,18,0.92)' : 'rgba(255,255,255,0.92)',
+                        borderTopColor: C.border,
+                        borderTopWidth: StyleSheet.hairlineWidth,
+                    }}
+                >
                     <View className="flex-row gap-3">
                         <Pressable 
                             disabled={currentQIndex === 0}
@@ -1214,18 +1255,20 @@ export default function GenerateQuizScreen() {
                                 setCurrentQIndex(p => p - 1);
                                 setIsRevealed(true); 
                             }}
-                            className={`h-12 flex-1 rounded-full flex-row items-center justify-center bg-surface-container-low shadow-sm ${currentQIndex === 0 ? 'opacity-50' : ''}`}
+                            className={`h-12 flex-1 rounded-full flex-row items-center justify-center shadow-sm ${currentQIndex === 0 ? 'opacity-50' : ''}`}
+                            style={{ backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}
                         >
-                            <Icon name="ArrowLeft" size={18} color="text" style={{ marginRight: 4 }} />
-                            <Text className="font-[600] text-[14px] text-on-surface">Previous</Text>
+                            <Icon name="ArrowLeft" size={18} color="primary" style={{ marginRight: 4 }} />
+                            <Text className="font-[600] text-[14px]" style={{ color: C.text }}>Previous</Text>
                         </Pressable>
                         
                         <Pressable 
                             onPress={handleNextPress}
                             disabled={!hasSelectedAction && !isRevealed}
-                            className={`h-12 flex-1 rounded-full flex-row items-center justify-center shadow-sm ${hasSelectedAction || isRevealed ? 'bg-[#007AFF]' : 'bg-surface-container-high'}`}
+                            className={`h-12 flex-1 rounded-full flex-row items-center justify-center shadow-sm ${hasSelectedAction || isRevealed ? 'bg-[#007AFF]' : ''}`}
+                            style={hasSelectedAction || isRevealed ? undefined : { backgroundColor: C.surfaceLow }}
                         >
-                            <Text className={`font-[600] text-[14px] mr-1 ${hasSelectedAction || isRevealed ? 'text-white' : 'text-on-surface-variant'}`}>
+                            <Text className={`font-[600] text-[14px] mr-1 ${hasSelectedAction || isRevealed ? 'text-white' : ''}`} style={hasSelectedAction || isRevealed ? undefined : { color: C.textSecondary }}>
                                 {isTheory ? (currentQIndex === questions.length - 1 ? 'Finish' : 'Next') : (!isRevealed ? 'Check' : (currentQIndex === questions.length - 1 ? 'Finish' : 'Next'))}
                             </Text>
                             {(hasSelectedAction || isRevealed) && <Icon name="ArrowRight" size={18} color="white" />}
@@ -1298,7 +1341,7 @@ export default function GenerateQuizScreen() {
                                     </Text>
                                 </View>
                                 {canExplain && (
-                                    <Icon name="ChevronRight" size={16} color="textTertiary" />
+                                    <Icon name="ChevronRight" size={16} color="primary" />
                                 )}
                             </View>
                         </Pressable>

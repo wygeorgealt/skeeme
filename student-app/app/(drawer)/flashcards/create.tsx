@@ -8,10 +8,15 @@ import { api } from '@/lib/api';
 import { router } from 'expo-router';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors } from '@/constants/theme';
 
 export default function GenerateFlashcardScreen() {
     const insets = useSafeAreaInsets();
     const [loading, setLoading] = useState(false);
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
 
     const onGenerate = useCallback(async ({ topic, count, contentFocus }: { topic?: string; count: number; contentFocus: string[] }) => {
         try {
@@ -52,8 +57,11 @@ export default function GenerateFlashcardScreen() {
     }, []);
 
     return (
-        <View className="flex-1 bg-surface"> 
-            <ScreenHeader title="New Flashcards" />
+        <View style={{ flex: 1, backgroundColor: C.background }}> 
+            <ScreenHeader 
+                title="Generate Flashcards" 
+                subtitle="Transform notes or topics into active recall decks" 
+            />
             <FlashcardEditor onGenerate={onGenerate} onPickFile={onPickFile} />
         </View>
     );

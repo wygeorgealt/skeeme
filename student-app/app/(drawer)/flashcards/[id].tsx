@@ -228,6 +228,7 @@ export default function StudyDeckScreen() {
     const [genStage, setGenStage] = useState('Researching...');
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const progressAnim = useSharedValue(0);
     const syncAnim = useSharedValue(0);
     const { user, updateUser } = useAuthStore();
@@ -678,18 +679,18 @@ export default function StudyDeckScreen() {
     const progressWidth = cards.length > 0 ? `${((currentIndex + 1) / cards.length) * 100}%` : '0%';
 
     return (
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
             {/* Header */}
-            <View style={{ paddingTop: insets.top }} className="w-full bg-surface/80">
+            <View style={{ paddingTop: insets.top, backgroundColor: C.background }} className="w-full">
                 <View className="h-16 px-4 flex-row items-center justify-between">
                     <Pressable onPress={() => router.back()} className="w-11 h-11 items-center justify-center rounded-full">
                         <Icon name="ArrowLeft" size={22} color="primary" />
                     </Pressable>
                     <View className="flex-col items-center justify-center flex-1 px-2" />
-                    <Pressable className="w-11 h-11 items-center justify-center rounded-full">
-                        <Icon name="Bookmark" size={22} color="textSecondary" />
+                    <Pressable onPress={() => setIsFlagged(!isFlagged)} className="w-11 h-11 items-center justify-center rounded-full">
+                        <Icon name={isFlagged ? "BookmarkCheck" : "Bookmark"} size={22} color={isFlagged ? "primary" : "textSecondary"} />
                     </Pressable>
                 </View>
             </View>
@@ -699,18 +700,18 @@ export default function StudyDeckScreen() {
                 <View className="flex-row items-center justify-between mb-2">
                     <View className="flex-row items-center gap-1.5">
                         <Animated.View style={pulseStyle} className="w-2 h-2 rounded-full bg-accent-electric-blue" />
-                        <Text className="font-label-sm text-on-surface-variant uppercase tracking-wider" style={{ fontSize: 11, fontWeight: '700' }}>
+                        <Text className="font-label-sm uppercase tracking-wider" style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }}>
                             {headerTitle}
                         </Text>
                     </View>
                 </View>
                 <View className="flex-col gap-1.5">
                     <View className="flex-row justify-between items-center">
-                        <Text className="font-label-sm text-on-surface" style={{ fontSize: 11, fontWeight: '600' }}>
+                        <Text className="font-label-sm" style={{ fontSize: 11, fontWeight: '600', color: C.text }}>
                             Card {currentIndex + 1} of {cards.length > 0 ? cards.length : totalCards}
                         </Text>
                     </View>
-                    <View className="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                    <View className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: C.border }}>
                         <Animated.View className="h-full bg-accent-electric-blue rounded-full" style={{ width: progressWidth as any }} />
                     </View>
                 </View>
@@ -760,43 +761,68 @@ export default function StudyDeckScreen() {
                         {/* Spaced Repetition Rating Bar */}
                         <View className="flex-col gap-2">
                             <View className="flex-row justify-between items-center px-1">
-                                <Text className="text-on-surface-variant font-label-sm" style={{ fontSize: 11, fontWeight: '600' }}>How well did you know this?</Text>
+                                <Text className="font-label-sm" style={{ fontSize: 11, fontWeight: '600', color: C.textSecondary }}>How well did you know this?</Text>
                             </View>
                             <View className="flex-row gap-2 justify-between">
-                                <Pressable onPress={() => handleRating('again')} className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-surface-container-lowest shadow-sm">
+                                <Pressable 
+                                    onPress={() => handleRating('again')} 
+                                    className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl shadow-sm"
+                                    style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                                >
                                     <View className="w-2 h-2 rounded-full bg-error mb-1" />
-                                    <Text className="font-label-sm font-bold text-on-surface" style={{ fontSize: 11 }}>Again</Text>
-                                    <Text className="font-label-sm text-on-surface-variant" style={{ fontSize: 10 }}>&lt; 1m</Text>
+                                    <Text className="font-label-sm font-bold" style={{ fontSize: 11, color: C.text }}>Again</Text>
+                                    <Text className="font-label-sm" style={{ fontSize: 10, color: C.textSecondary }}>&lt; 1m</Text>
                                 </Pressable>
                                 
-                                <Pressable onPress={() => handleRating('hard')} className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-surface-container-lowest shadow-sm">
+                                <Pressable 
+                                    onPress={() => handleRating('hard')} 
+                                    className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl shadow-sm"
+                                    style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                                >
                                     <View className="w-2 h-2 rounded-full bg-accent-indigo mb-1" />
-                                    <Text className="font-label-sm font-bold text-on-surface" style={{ fontSize: 11 }}>Hard</Text>
-                                    <Text className="font-label-sm text-on-surface-variant" style={{ fontSize: 10 }}>10m</Text>
+                                    <Text className="font-label-sm font-bold" style={{ fontSize: 11, color: C.text }}>Hard</Text>
+                                    <Text className="font-label-sm" style={{ fontSize: 10, color: C.textSecondary }}>10m</Text>
                                 </Pressable>
                                 
-                                <Pressable onPress={() => handleRating('good')} className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-primary-container shadow-md">
+                                <Pressable 
+                                    onPress={() => handleRating('good')} 
+                                    className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl shadow-md"
+                                    style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.2)' : '#e0edff', borderColor: C.primary, borderWidth: 1.5 }}
+                                >
                                     <View className="w-2 h-2 rounded-full bg-accent-electric-blue mb-1" />
                                     <Text className="font-label-sm font-bold text-accent-electric-blue" style={{ fontSize: 11 }}>Good</Text>
                                     <Text className="font-label-sm text-accent-electric-blue font-medium" style={{ fontSize: 10 }}>1d</Text>
                                 </Pressable>
                                 
-                                <Pressable onPress={() => handleRating('easy')} className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-surface-container-lowest shadow-sm">
+                                <Pressable 
+                                    onPress={() => handleRating('easy')} 
+                                    className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl shadow-sm"
+                                    style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                                >
                                     <View className="w-2 h-2 rounded-full bg-tertiary mb-1" />
-                                    <Text className="font-label-sm font-bold text-on-surface" style={{ fontSize: 11 }}>Easy</Text>
-                                    <Text className="font-label-sm text-on-surface-variant" style={{ fontSize: 10 }}>4d</Text>
+                                    <Text className="font-label-sm font-bold" style={{ fontSize: 11, color: C.text }}>Easy</Text>
+                                    <Text className="font-label-sm" style={{ fontSize: 10, color: C.textSecondary }}>4d</Text>
                                 </Pressable>
                             </View>
                         </View>
 
                         {/* Bottom Utility Dock */}
                         <View className="flex-row items-center justify-between mt-6">
-                            <Pressable onPress={prevCard} disabled={currentIndex === 0} className="w-12 h-12 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center">
-                                <Icon name="RotateCcw" size={20} color={isDark ? '#EBEBF5' : '#48484A'} style={{ opacity: currentIndex === 0 ? 0.3 : 1 }} />
+                            <Pressable 
+                                onPress={prevCard} 
+                                disabled={currentIndex === 0} 
+                                className="w-12 h-12 rounded-full shadow-sm flex items-center justify-center"
+                                style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                            >
+                                <Icon name="RotateCcw" size={20} color="primary" style={{ opacity: currentIndex === 0 ? 0.3 : 1 }} />
                             </Pressable>
 
-                            <Pressable onPress={() => setIsFlagged(!isFlagged)} className="w-12 h-12 rounded-full bg-surface-container-lowest shadow-sm flex items-center justify-center">
-                                <Icon name={isFlagged ? "BookmarkCheck" : "Bookmark"} size={20} color={isFlagged ? "primary" : (isDark ? '#EBEBF5' : '#48484A')} />
+                            <Pressable 
+                                onPress={() => setIsFlagged(!isFlagged)} 
+                                className="w-12 h-12 rounded-full shadow-sm flex items-center justify-center"
+                                style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                            >
+                                <Icon name={isFlagged ? "BookmarkCheck" : "Bookmark"} size={20} color={isFlagged ? "primary" : "textSecondary"} />
                             </Pressable>
                         </View>
                     </View>

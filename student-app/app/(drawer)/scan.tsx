@@ -17,6 +17,8 @@ import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
 import { useRouter, useNavigation } from 'expo-router';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors } from '@/constants/theme';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -45,6 +47,9 @@ export default function ScanScreen() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const navigation = useNavigation();
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const [permission, requestPermission] = useCameraPermissions();
     const cameraRef = useRef<CameraView>(null);
 
@@ -183,43 +188,54 @@ export default function ScanScreen() {
     if (results.length > 0) {
         const currentResult = results[0];
         return (
-            <View className="flex-1 bg-surface">
+            <View style={{ flex: 1, backgroundColor: C.background }}>
                 {/* Result Header */}
-                <View className="flex-row items-center justify-between px-4 h-16 bg-surface/85 border-b border-surface-container" style={{ paddingTop: insets.top }}>
+                <View 
+                    className="flex-row items-center justify-between px-4 h-16" 
+                    style={{ 
+                        paddingTop: insets.top,
+                        backgroundColor: C.background,
+                        borderBottomColor: C.border,
+                        borderBottomWidth: StyleSheet.hairlineWidth
+                    }}
+                >
                     <Pressable
-                        
                         onPress={() => setResults([])}
-                        className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-surface-container active:scale-95 transition-all"
+                        className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent active:scale-95"
                     >
-                        <Icon name="ArrowLeft" size={20} color="#1c1c1e" />
+                        <Icon name="ArrowLeft" size={22} color="primary" />
                     </Pressable>
                     <View className="flex-1 items-center px-2">
-                        <Text className="text-[18px] font-bold text-on-surface tracking-tight" style={{ fontWeight: '700' }}>Question</Text>
+                        <Text style={{ fontSize: 18, fontWeight: '700', color: C.text }}>Question</Text>
                     </View>
                     <Pressable
-                        
                         onPress={() => {
                             haptics.selectionAsync();
                             Alert.alert('Share', 'Exporting solution summary...');
                         }}
-                        className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-surface-container active:scale-95 transition-all"
+                        className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95"
+                        style={{ backgroundColor: C.surfaceLow }}
                     >
-                        <Icon name="Share2" size={20} color="#1c1c1e" />
+                        <Icon name="Share2" size={20} color="primary" />
                     </Pressable>
                 </View>
 
                 <ScrollView
-                    className="flex-1 w-full bg-surface"
+                    className="flex-1 w-full"
+                    style={{ backgroundColor: C.background }}
                     contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 120, paddingTop: 12 }}
                     showsVerticalScrollIndicator={false}
                 >
                     <View className="w-full max-w-md mx-auto px-4 space-y-4">
                         {/* Question Card */}
                         <View className="rounded-3xl relative py-1">
-                            <View className="bg-white rounded-2xl p-4 shadow-sm relative items-center border border-surface-container-low">
-                                <View className="absolute -left-1 -bottom-1 w-3 h-3 rounded-full bg-accent-electric-blue border-2 border-white shadow-sm z-10" />
+                            <View 
+                                className="rounded-2xl p-4 shadow-sm relative items-center"
+                                style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                            >
+                                <View className="absolute -left-1 -bottom-1 w-3 h-3 rounded-full bg-accent-electric-blue border-2 shadow-sm z-10" style={{ borderColor: C.card }} />
                                 <MathText content={currentResult.question || 'Scanned Problem'} />
-                                <Text className="text-[12px] text-on-surface-variant mt-1" style={{ fontWeight: '400' }}>
+                                <Text className="text-[12px] mt-1" style={{ fontWeight: '400', color: C.textSecondary }}>
                                     {currentResult.topic || 'Analyzed Question'}
                                 </Text>
                             </View>
@@ -227,37 +243,42 @@ export default function ScanScreen() {
 
                         {/* Model Switcher & Credits Pill */}
                         <View className="flex-row items-center justify-between gap-2 mt-4">
-                            <View className="flex-row p-1 bg-surface-container-low rounded-full">
+                            <View className="flex-row p-1 rounded-full" style={{ backgroundColor: C.surfaceLow }}>
                                 <Pressable
-                                    
                                     onPress={() => { haptics.selectionAsync(); setActiveModel('cloud'); }}
                                     className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${activeModel === 'cloud' ? 'bg-accent-electric-blue shadow-sm' : ''}`}
                                 >
-                                    <Icon name="Cloud" size={16} color={activeModel === 'cloud' ? '#FFFFFF' : '#48484a'} />
-                                    <Text className={`text-[14px] ${activeModel === 'cloud' ? 'text-on-primary' : 'text-on-surface-variant'}`} style={{ fontWeight: '600' }}>Cloud AI</Text>
+                                    <Icon name="Cloud" size={16} color={activeModel === 'cloud' ? '#FFFFFF' : 'primary'} />
+                                    <Text className={`text-[14px] ${activeModel === 'cloud' ? 'text-on-primary' : ''}`} style={{ fontWeight: '600', color: activeModel === 'cloud' ? '#FFFFFF' : C.textSecondary }}>Cloud AI</Text>
                                 </Pressable>
                                 <Pressable
-                                    
                                     onPress={() => { haptics.selectionAsync(); setActiveModel('skeemy'); }}
                                     className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${activeModel === 'skeemy' ? 'bg-accent-electric-blue shadow-sm' : ''}`}
                                 >
-                                    <Icon name="Sparkles" size={16} color={activeModel === 'skeemy' ? '#FFFFFF' : '#48484a'} />
-                                    <Text className={`text-[14px] ${activeModel === 'skeemy' ? 'text-on-primary' : 'text-on-surface-variant'}`} style={{ fontWeight: '600' }}>Skeemy</Text>
+                                    <Icon name="Sparkles" size={16} color={activeModel === 'skeemy' ? '#FFFFFF' : 'primary'} />
+                                    <Text className={`text-[14px] ${activeModel === 'skeemy' ? 'text-on-primary' : ''}`} style={{ fontWeight: '600', color: activeModel === 'skeemy' ? '#FFFFFF' : C.textSecondary }}>Skeemy</Text>
                                 </Pressable>
                             </View>
                             <Pressable
-                                
                                 onPress={() => toggleCreditsModal(true, 'scan')}
-                                className="flex-row items-center gap-1 px-3 py-1.5 bg-white rounded-full border border-surface-container"
+                                className="flex-row items-center gap-1 px-3 py-1.5 rounded-full"
+                                style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
                             >
                                 <Icon name="Zap" size={15} color="primary" />
-                                <Text className="text-[12px] font-bold text-on-surface">{credits}</Text>
-                                <Text className="text-[11px] text-on-surface-variant">left</Text>
+                                <Text className="text-[12px] font-bold" style={{ color: C.text }}>{credits}</Text>
+                                <Text className="text-[11px]" style={{ color: C.textSecondary }}>left</Text>
                             </Pressable>
                         </View>
 
                         {/* Solution Card */}
-                        <View className="bg-[#f4f8ff] border border-[#dbe8fd] rounded-2xl p-3.5 flex-row items-center justify-between mt-4">
+                        <View 
+                            className="rounded-2xl p-3.5 flex-row items-center justify-between mt-4"
+                            style={{ 
+                                backgroundColor: isDark ? 'rgba(0,122,255,0.15)' : '#f4f8ff',
+                                borderColor: isDark ? 'rgba(0,122,255,0.3)' : '#dbe8fd',
+                                borderWidth: 1
+                            }}
+                        >
                             <View className="flex-row items-center gap-3">
                                 <View className="w-8 h-8 rounded-full bg-accent-electric-blue items-center justify-center shadow-sm">
                                     <Icon name="Check" size={18} color="white" />
@@ -267,8 +288,8 @@ export default function ScanScreen() {
                                     <MathText content={currentResult.solution || 'No direct answer'} />
                                 </View>
                             </View>
-                            <View className="bg-[#e1f8f5] px-2 py-0.5 rounded-full">
-                                <Text className="text-[11px] text-[#00837c]" style={{ fontWeight: '600' }}>Verified</Text>
+                            <View className="px-2 py-0.5 rounded-full" style={{ backgroundColor: isDark ? 'rgba(0,163,156,0.2)' : '#e1f8f5' }}>
+                                <Text className="text-[11px]" style={{ fontWeight: '600', color: '#00837c' }}>Verified</Text>
                             </View>
                         </View>
 
@@ -277,15 +298,15 @@ export default function ScanScreen() {
                             <View className="pt-2 mt-2">
                                 <View className="flex-row items-center gap-1.5 mb-3">
                                     <Icon name="ListOrdered" size={18} color="primary" />
-                                    <Text className="text-on-surface text-[15px]" style={{ fontWeight: '700' }}>Step-by-step Explanation</Text>
+                                    <Text className="text-[15px]" style={{ fontWeight: '700', color: C.text }}>Step-by-step Explanation</Text>
                                 </View>
                                 <View className="pl-1 flex-col gap-4">
                                     {currentResult.steps.map((step, idx) => (
                                          <View key={idx} className="flex-row items-start gap-3">
-                                             <View className="w-6 h-6 rounded-full bg-primary-fixed items-center justify-center shadow-sm mt-0.5">
-                                                 <Text className="text-[#004493] text-[12px]" style={{ fontWeight: '700' }}>{idx + 1}</Text>
+                                             <View className="w-6 h-6 rounded-full items-center justify-center shadow-sm mt-0.5" style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.25)' : '#d8e2ff' }}>
+                                                 <Text style={{ fontWeight: '700', color: C.primary, fontSize: 12 }}>{idx + 1}</Text>
                                              </View>
-                                             <View className="flex-1 flex-col pl-0.5 bg-surface-container-low p-2.5 rounded-xl">
+                                             <View className="flex-1 flex-col pl-0.5 p-2.5 rounded-xl" style={{ backgroundColor: C.surfaceLow }}>
                                                  <MathText content={step} />
                                              </View>
                                          </View>
@@ -296,18 +317,24 @@ export default function ScanScreen() {
 
                         {/* Explanation Summary / Pro Tip */}
                         {currentResult.explanation && (
-                            <View className="p-3 bg-[#f0edff] border border-[#e2dfff] rounded-2xl flex-row items-start gap-2.5 mt-4">
-                                <Icon name="Lightbulb" size={20} color="#4c4aca" style={{ marginTop: 2 }} />
+                            <View 
+                                className="p-3 rounded-2xl flex-row items-start gap-2.5 mt-4"
+                                style={{ 
+                                    backgroundColor: isDark ? 'rgba(88,86,214,0.15)' : '#f0edff',
+                                    borderColor: isDark ? 'rgba(88,86,214,0.3)' : '#e2dfff',
+                                    borderWidth: 1
+                                }}
+                            >
+                                <Icon name="Lightbulb" size={20} color="primary" style={{ marginTop: 2 }} />
                                 <View className="flex-col flex-1">
-                                    <Text className="text-[13px] text-[#0c006a]" style={{ fontWeight: '700' }}>Quiz Hack</Text>
-                                    <Text className="text-[12px] text-[#0c006a] opacity-80 mt-0.5 leading-5">{currentResult.explanation}</Text>
+                                    <Text className="text-[13px]" style={{ fontWeight: '700', color: isDark ? '#b4b0ff' : '#0c006a' }}>Quiz Hack</Text>
+                                    <Text className="text-[12px] opacity-80 mt-0.5 leading-5" style={{ color: isDark ? '#d4d2ff' : '#0c006a' }}>{currentResult.explanation}</Text>
                                 </View>
                             </View>
                         )}
 
                         {/* Make Practice Questions */}
                         <Pressable
-                            
                             onPress={() => { haptics.impactAsync(); router.push('/(drawer)/generate'); }}
                             className="w-full h-12 rounded-2xl bg-accent-electric-blue items-center justify-center flex-row gap-2 shadow-sm active:scale-95 mt-4"
                         >
@@ -318,19 +345,29 @@ export default function ScanScreen() {
                 </ScrollView>
 
                 {/* Follow-up Chat Dock */}
-                <View className="absolute bottom-0 left-0 right-0 z-40 bg-surface/90 pb-4 shadow-lg border-t border-surface-container/50">
+                <View 
+                    className="absolute bottom-0 left-0 right-0 z-40 pb-4 shadow-lg"
+                    style={{ 
+                        backgroundColor: isDark ? 'rgba(18,18,18,0.92)' : 'rgba(255,255,255,0.92)',
+                        borderTopColor: C.border,
+                        borderTopWidth: StyleSheet.hairlineWidth
+                    }}
+                >
                     <View className="max-w-md mx-auto px-4 py-2.5">
-                        <View className="flex-row items-center bg-white rounded-full pl-4 pr-1.5 py-1.5 shadow-sm border border-surface-container">
-                            <Icon name="MessageSquare" size={20} color="#8e8e93" style={{ marginRight: 8 }} />
+                        <View 
+                            className="flex-row items-center rounded-full pl-4 pr-1.5 py-1.5 shadow-sm"
+                            style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
+                        >
+                            <Icon name="MessageSquare" size={20} color="primary" style={{ marginRight: 8 }} />
                             <TextInput
-                                className="flex-1 text-[15px] text-on-surface py-2"
+                                className="flex-1 text-[15px] py-2"
+                                style={{ color: C.text }}
                                 placeholder="Ask a question"
-                                placeholderTextColor="#8e8e93"
+                                placeholderTextColor={C.textTertiary}
                                 value={followUpText}
                                 onChangeText={setFollowUpText}
                             />
                             <Pressable
-                                
                                 onPress={() => {
                                     if (!followUpText.trim()) return;
                                     haptics.selectionAsync();

@@ -213,7 +213,7 @@ export default function StudyHistoryDashboard() {
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
             <Animated.View entering={FadeInUp.duration(500)} style={{ paddingTop: Math.max(insets.top, 16) }} className="px-5 pb-4">
-                <View className="flex-row items-center gap-2">
+                <View className="flex-row items-center gap-1">
                     <Pressable 
                         onPress={() => {
                             haptics.selectionAsync(true);
@@ -223,10 +223,9 @@ export default function StudyHistoryDashboard() {
                                 router.replace('/(drawer)' as any);
                             }
                         }} 
-                        style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }}
-                        className="w-11 h-11 items-center justify-center rounded-full" 
+                        className="w-10 h-10 items-center justify-center rounded-full bg-transparent -ml-2" 
                     >
-                        <Icon name="ArrowLeft" size={20} color="text" />
+                        <Icon name="ArrowLeft" size={22} color="primary" />
                     </Pressable>
                     <Text style={{ fontSize: 26, fontWeight: '700', letterSpacing: -0.5, color: C.text }}>History</Text>
                 </View>

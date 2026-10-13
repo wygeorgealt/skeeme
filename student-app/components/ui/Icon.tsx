@@ -1,6 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import * as LucideIcons from 'lucide-react-native';
 import { LucideIcon, LucideProps } from 'lucide-react-native';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withSequence, 
+  withTiming, 
+  withSpring,
+  Easing 
+} from 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors, Palette } from '@/constants/theme';
 
@@ -11,6 +20,8 @@ export type IconColorToken =
   | 'muted' 
   | 'text' 
   | 'textSecondary' 
+  | 'textTertiary'
+  | 'tertiary'
   | 'success' 
   | 'destructive' 
   | 'warning' 
@@ -25,6 +36,8 @@ export const ICON_SIZES: Record<'xs' | 'sm' | 'md' | 'lg' | 'xl', number> = {
   xl: 32,
 };
 
+export type IconAnimationType = boolean | 'pulse' | 'bounce' | 'spin';
+
 export interface IconProps extends Omit<LucideProps, 'size' | 'color'> {
   /** Lucide icon name (e.g. 'Search', 'ArrowLeft', 'BookOpen') */
   name?: keyof typeof LucideIcons;
@@ -32,18 +45,21 @@ export interface IconProps extends Omit<LucideProps, 'size' | 'color'> {
   icon?: LucideIcon;
   /** Preset size ('xs'|'sm'|'md'|'lg'|'xl') or explicit pixel number */
   size?: IconSize;
-  /** Semantic color token or custom color string */
+  /** Semantic color token or custom color string. Defaults to 'primary' (blue theme) */
   color?: IconColorToken | string;
   /** Stroke width in pixels. Defaults to 2 */
   strokeWidth?: number;
+  /** Optional smooth animation ('pulse' | 'bounce' | 'spin' | true) */
+  animated?: IconAnimationType;
 }
 
 export function Icon({
   name,
   icon: IconComponentProp,
   size = 'md',
-  color = 'text',
+  color = 'primary',
   strokeWidth = 2,
+  animated = false,
   style,
   ...rest
 }: IconProps) {
@@ -67,6 +83,9 @@ export function Icon({
         return C.text;
       case 'textSecondary':
         return C.textSecondary;
+      case 'textTertiary':
+      case 'tertiary':
+        return C.textTertiary;
       case 'success':
         return C.success;
       case 'destructive':
@@ -78,6 +97,11 @@ export function Icon({
       case 'border':
         return C.border;
       default:
+        // Handle common accidental string tokens
+        if (c === 'textTertiary' || c === 'tertiary') return C.textTertiary;
+        if (c === 'textSecondary' || c === 'muted') return C.textSecondary;
+        if (c === 'textPrimary' || c === 'text') return C.text;
+        if (c === 'primary') return C.primary;
         return c;
     }
   };
@@ -90,19 +114,80 @@ export function Icon({
     ComponentToRender = LucideIcons[name] as LucideIcon | undefined;
   }
 
+  // Animation values
+  const scale = useSharedValue(1);
+  const rotation = useSharedValue(0);
+  const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    if (!animated) {
+      scale.value = 1;
+      rotation.value = 0;
+      translateY.value = 0;
+      return;
+    }
+
+    if (animated === 'spin') {
+      rotation.value = withRepeat(
+        withTiming(360, { duration: 1200, easing: Easing.linear }),
+        -1,
+        false
+      );
+    } else if (animated === 'bounce') {
+      translateY.value = withRepeat(
+        withSequence(
+          withTiming(-4, { duration: 300, easing: Easing.out(Easing.quad) }),
+          withTiming(0, { duration: 300, easing: Easing.in(Easing.quad) })
+        ),
+        -1,
+        true
+      );
+    } else {
+      // 'pulse' or true: subtle gentle scale pulse
+      scale.value = withRepeat(
+        withSequence(
+          withTiming(1.12, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        true
+      );
+    }
+  }, [animated]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: scale.value },
+        { translateY: translateY.value },
+        { rotate: `${rotation.value}deg` },
+      ],
+    };
+  });
+
   if (!ComponentToRender) {
     return null;
   }
 
-  return (
+  const iconElement = (
     <ComponentToRender
       size={resolvedSize}
       color={resolvedColor}
       strokeWidth={strokeWidth}
-      style={style}
+      style={!animated ? style : undefined}
       {...rest}
     />
   );
+
+  if (animated) {
+    return (
+      <Animated.View style={[animatedStyle, style]}>
+        {iconElement}
+      </Animated.View>
+    );
+  }
+
+  return iconElement;
 }
 
 export default Icon;
