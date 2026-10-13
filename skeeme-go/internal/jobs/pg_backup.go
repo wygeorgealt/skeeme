@@ -96,7 +96,16 @@ func RunPostgresBackup() error {
 		return err
 	}
 
-	client := s3.NewFromConfig(cfg)
+	endpoint = strings.TrimRight(endpoint, "/")
+	if !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
+		endpoint = "https://" + endpoint
+	}
+
+	// Cloudflare R2 requires Path-Style addressing (https://endpoint/bucket/key)
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(endpoint)
+		o.UsePathStyle = true
+	})
 
 	// Upload to S3
 	file, err := os.Open(localPath)
