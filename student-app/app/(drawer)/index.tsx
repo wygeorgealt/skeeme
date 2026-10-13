@@ -224,7 +224,7 @@ export default function HomeDashboard() {
                                 }}
                             >
                                 <View style={styles.menuIconWrap}>
-                                    <Icon name="Sparkles" size={18} color="primary" />
+                                    <Icon name="Smile" size={20} color="primary" animated="pulse" />
                                 </View>
                                 <View style={styles.menuTextWrap}>
                                     <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
@@ -243,7 +243,7 @@ export default function HomeDashboard() {
                                 }}
                             >
                                 <View style={styles.menuIconWrap}>
-                                    <Icon name="Settings" size={18} color="primary" />
+                                    <Icon name="Settings" size={20} color="primary" />
                                 </View>
                                 <View style={styles.menuTextWrap}>
                                     <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
@@ -251,30 +251,6 @@ export default function HomeDashboard() {
                                     </Text>
                                 </View>
                                 <Icon name="ChevronRight" size={16} color="primary" />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.menuItem, styles.buyCreditsItem]}
-                                activeOpacity={0.7}
-                                onPress={() => {
-                                    setProfileMenuVisible(false);
-                                    toggleCreditsModal(true, 'scan');
-                                }}
-                            >
-                                <View style={styles.menuIconWrap}>
-                                    <Icon name="Zap" size={18} color="primary" animated="pulse" />
-                                </View>
-                                <View style={styles.menuTextWrap}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                        <Text style={[styles.menuTitle, { color: '#007AFF', fontWeight: '700' }]}>
-                                            Buy Credits
-                                        </Text>
-                                        <View style={styles.instantTag}>
-                                            <Text style={styles.instantTagText}>+100 AI</Text>
-                                        </View>
-                                    </View>
-                                </View>
-                                <Icon name="PlusCircle" size={18} color="primary" />
                             </TouchableOpacity>
                         </View>
                     </TouchableOpacity>
@@ -605,10 +581,11 @@ const styles = StyleSheet.create({
     dropdownMenu: {
         position: 'absolute',
         left: 18,
-        width: 270,
+        width: 250,
         borderRadius: 20,
         borderWidth: 1,
-        padding: 6,
+        padding: 10,
+        gap: 8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.15,
@@ -616,11 +593,12 @@ const styles = StyleSheet.create({
         elevation: 16,
     },
     dropdownHeader: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingHorizontal: 10,
+        paddingTop: 4,
+        paddingBottom: 8,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: 'rgba(0,0,0,0.08)',
-        marginBottom: 4,
+        marginBottom: 2,
     },
     planBadgeText: {
         fontSize: 11,
@@ -636,16 +614,10 @@ const styles = StyleSheet.create({
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
         borderRadius: 14,
-        gap: 10,
-    },
-    buyCreditsItem: {
-        backgroundColor: 'rgba(0, 122, 255, 0.08)',
-        borderWidth: 1,
-        borderColor: 'rgba(0, 122, 255, 0.2)',
-        marginTop: 4,
+        gap: 12,
     },
     menuIconWrap: {
         alignItems: 'center',
@@ -657,24 +629,6 @@ const styles = StyleSheet.create({
     menuTitle: {
         fontSize: 14,
         fontWeight: '600',
-    },
-    menuSubtitle: {
-        fontSize: 11,
-        color: '#8E8E93',
-        marginTop: 2,
-    },
-    instantTag: {
-        backgroundColor: '#FFF7ED',
-        borderWidth: 1,
-        borderColor: '#FDBA74',
-        borderRadius: 999,
-        paddingHorizontal: 6,
-        paddingVertical: 1,
-    },
-    instantTagText: {
-        fontSize: 10,
-        fontWeight: '700',
-        color: '#EA580C',
     },
     scrollView: {
         flex: 1,
