@@ -79,7 +79,11 @@ func (h *AIHandler) setupSSE(w http.ResponseWriter) (rc *http.ResponseController
 	w.Header().Set("X-Accel-Buffering", "no")
 
 	if flushErr := rc.Flush(); flushErr != nil {
-		return nil, nil, flushErr
+		if flusher, ok := w.(http.Flusher); ok {
+			flusher.Flush()
+		} else {
+			log.Printf("[aiHandler] Warning: initial SSE flush returned: %v", flushErr)
+		}
 	}
 
 	stopChan := make(chan struct{})
