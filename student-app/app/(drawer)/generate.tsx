@@ -84,13 +84,7 @@ const PROGRESS_STAGES = ['Skeeming', 'Extracting', 'Generating', 'Finalizing'];
 export default function GenerateQuizScreen() {
     const { user, updateUser } = useAuthStore();
     const queryClient = useQueryClient();
-    const [animKey, setAnimKey] = useState(0);
 
-    useFocusEffect(
-        useCallback(() => {
-            setAnimKey(prev => prev + 1);
-        }, [])
-    );
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -745,7 +739,10 @@ export default function GenerateQuizScreen() {
                                 <Pressable 
                                     className="w-11 h-11 rounded-xl items-center justify-center"
                                     style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: StyleSheet.hairlineWidth }}
-                                    onPress={() => setQuestionCount(prev => String(Math.max(5, parseInt(prev) - 5)))}
+                                    onPress={() => {
+                                        haptics.selectionAsync();
+                                        setQuestionCount(prev => String(Math.max(5, parseInt(prev) - 5)));
+                                    }}
                                 >
                                     <Icon name="Minus" size={22} color="primary" />
                                 </Pressable>
@@ -758,23 +755,44 @@ export default function GenerateQuizScreen() {
                                 <Pressable 
                                     className="w-11 h-11 rounded-xl items-center justify-center"
                                     style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: StyleSheet.hairlineWidth }}
-                                    onPress={() => setQuestionCount(prev => String(Math.min(30, parseInt(prev) + 5)))}
+                                    onPress={() => {
+                                        haptics.selectionAsync();
+                                        setQuestionCount(prev => String(Math.min(30, parseInt(prev) + 5)));
+                                    }}
                                 >
                                     <Icon name="Plus" size={22} color="primary" />
                                 </Pressable>
                             </View>
 
                             <View className="flex-row flex-wrap gap-2 w-full justify-between">
-                                {[5, 10, 15, 20, 30].map(val => (
-                                    <Pressable 
-                                        key={val}
-                                        onPress={() => setQuestionCount(String(val))}
-                                        className={`py-2 flex-1 rounded-xl items-center justify-center ${parseInt(questionCount) === val ? 'bg-accent-electric-blue shadow-sm' : ''}`}
-                                        style={parseInt(questionCount) === val ? undefined : { backgroundColor: C.surfaceLow }}
-                                    >
-                                        <Text className={`text-[14px] font-[600] ${parseInt(questionCount) === val ? 'text-on-primary' : ''}`} style={parseInt(questionCount) === val ? undefined : { color: C.text }}>{val}</Text>
-                                    </Pressable>
-                                ))}
+                                {[5, 10, 15, 20, 30].map(val => {
+                                    const isSelected = parseInt(questionCount) === val;
+                                    return (
+                                        <Pressable 
+                                            key={val}
+                                            onPress={() => {
+                                                haptics.selectionAsync();
+                                                setQuestionCount(String(val));
+                                            }}
+                                            className="py-2.5 flex-1 rounded-xl items-center justify-center"
+                                            style={{
+                                                backgroundColor: isSelected ? '#007AFF' : C.surfaceLow,
+                                                borderColor: isSelected ? '#007AFF' : C.border,
+                                                borderWidth: 1,
+                                            }}
+                                        >
+                                            <Text 
+                                                style={{ 
+                                                    fontSize: 14, 
+                                                    fontWeight: '700', 
+                                                    color: isSelected ? '#FFFFFF' : C.text 
+                                                }}
+                                            >
+                                                {val}
+                                            </Text>
+                                        </Pressable>
+                                    );
+                                })}
                             </View>
                         </View>
 
@@ -805,11 +823,14 @@ export default function GenerateQuizScreen() {
                                     return (
                                         <Pressable 
                                             key={opt.key}
-                                            onPress={() => setDifficulty(opt.key as Difficulty)}
+                                            onPress={() => {
+                                                haptics.selectionAsync();
+                                                setDifficulty(opt.key as Difficulty);
+                                            }}
                                             className="flex-1 p-3.5 rounded-2xl flex-col justify-between h-[144px]"
                                             style={{
                                                 backgroundColor: isActive ? (isDark ? 'rgba(0,122,255,0.18)' : '#e0edff') : C.surfaceLow,
-                                                borderColor: isActive ? C.primary : 'transparent',
+                                                borderColor: isActive ? '#007AFF' : 'transparent',
                                                 borderWidth: 1,
                                             }}
                                         >
@@ -820,7 +841,7 @@ export default function GenerateQuizScreen() {
                                                 {isActive && <Icon name="CheckCircle2" size={20} color="primary" />}
                                             </View>
                                             <View>
-                                                <Text className="text-[16px] font-[600]" style={{ color: isActive ? C.primary : C.text }}>{opt.label}</Text>
+                                                <Text className="text-[16px] font-[600]" style={{ color: isActive ? '#007AFF' : C.text }}>{opt.label}</Text>
                                                 <Text className="text-[13px] font-[400] mt-0.5 leading-[18px]" style={{ color: C.textSecondary }} numberOfLines={2}>{opt.desc}</Text>
                                             </View>
                                         </Pressable>
@@ -842,12 +863,29 @@ export default function GenerateQuizScreen() {
                                     <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Quiz Timer</Text>
                                 </View>
                                 <Pressable 
-                                    onPress={() => setTimerEnabled(!timerEnabled)}
-                                    className={`w-14 h-8 rounded-full p-1 justify-center ${timerEnabled ? 'bg-accent-electric-blue' : ''}`}
-                                    style={timerEnabled ? undefined : { backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}
+                                    onPress={() => {
+                                        haptics.selectionAsync();
+                                        setTimerEnabled(!timerEnabled);
+                                    }}
+                                    className="w-14 h-8 rounded-full p-1 justify-center"
+                                    style={{
+                                        backgroundColor: timerEnabled ? '#007AFF' : C.surfaceLow,
+                                        borderColor: timerEnabled ? '#007AFF' : C.border,
+                                        borderWidth: 1,
+                                    }}
                                 >
                                     <Animated.View style={{ transform: [{ translateX: timerEnabled ? 24 : 0 }] }}>
-                                        <View className="w-6 h-6 rounded-full shadow-md" style={{ backgroundColor: C.card }} />
+                                        <View 
+                                            className="w-6 h-6 rounded-full" 
+                                            style={{ 
+                                                backgroundColor: C.card,
+                                                shadowColor: '#000',
+                                                shadowOffset: { width: 0, height: 1 },
+                                                shadowOpacity: 0.15,
+                                                shadowRadius: 2,
+                                                elevation: 2,
+                                            }} 
+                                        />
                                     </Animated.View>
                                 </Pressable>
                             </View>
@@ -861,7 +899,10 @@ export default function GenerateQuizScreen() {
                                         <Pressable 
                                             className="w-10 h-10 rounded-xl items-center justify-center"
                                             style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: StyleSheet.hairlineWidth }}
-                                            onPress={() => setTimerMinutes(prev => String(Math.max(5, parseInt(prev || '10') - 5)))}
+                                            onPress={() => {
+                                                haptics.selectionAsync();
+                                                setTimerMinutes(prev => String(Math.max(5, parseInt(prev || '10') - 5)));
+                                            }}
                                         >
                                             <Icon name="Minus" size={20} color="primary" />
                                         </Pressable>
@@ -874,23 +915,44 @@ export default function GenerateQuizScreen() {
                                         <Pressable 
                                             className="w-10 h-10 rounded-xl items-center justify-center"
                                             style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: StyleSheet.hairlineWidth }}
-                                            onPress={() => setTimerMinutes(prev => String(Math.min(60, parseInt(prev || '10') + 5)))}
+                                            onPress={() => {
+                                                haptics.selectionAsync();
+                                                setTimerMinutes(prev => String(Math.min(60, parseInt(prev || '10') + 5)));
+                                            }}
                                         >
                                             <Icon name="Plus" size={20} color="primary" />
                                         </Pressable>
                                     </View>
 
                                     <View className="flex-row flex-wrap gap-2 w-full justify-between">
-                                        {[5, 15, 25, 45, 60].map(val => (
-                                            <Pressable 
-                                                key={val}
-                                                onPress={() => setTimerMinutes(String(val))}
-                                                className={`py-2 flex-1 rounded-xl items-center justify-center ${parseInt(timerMinutes) === val ? 'bg-accent-electric-blue shadow-sm' : ''}`}
-                                                style={parseInt(timerMinutes) === val ? undefined : { backgroundColor: C.surfaceLow }}
-                                            >
-                                                <Text className={`text-[14px] font-[600] ${parseInt(timerMinutes) === val ? 'text-on-primary' : ''}`} style={parseInt(timerMinutes) === val ? undefined : { color: C.text }}>{val}m</Text>
-                                            </Pressable>
-                                        ))}
+                                        {[5, 15, 25, 45, 60].map(val => {
+                                            const isSelected = parseInt(timerMinutes) === val;
+                                            return (
+                                                <Pressable 
+                                                    key={val}
+                                                    onPress={() => {
+                                                        haptics.selectionAsync();
+                                                        setTimerMinutes(String(val));
+                                                    }}
+                                                    className="py-2.5 flex-1 rounded-xl items-center justify-center"
+                                                    style={{
+                                                        backgroundColor: isSelected ? '#007AFF' : C.surfaceLow,
+                                                        borderColor: isSelected ? '#007AFF' : C.border,
+                                                        borderWidth: 1,
+                                                    }}
+                                                >
+                                                    <Text 
+                                                        style={{ 
+                                                            fontSize: 14, 
+                                                            fontWeight: '700', 
+                                                            color: isSelected ? '#FFFFFF' : C.text 
+                                                        }}
+                                                    >
+                                                        {val}m
+                                                    </Text>
+                                                </Pressable>
+                                            );
+                                        })}
                                     </View>
                                 </View>
                             )}
@@ -917,16 +979,19 @@ export default function GenerateQuizScreen() {
                                     return (
                                         <Pressable 
                                             key={opt.key}
-                                            onPress={() => setFormat(opt.key as FormatType)}
+                                            onPress={() => {
+                                                haptics.selectionAsync();
+                                                setFormat(opt.key as FormatType);
+                                            }}
                                             className="px-4 py-2.5 rounded-2xl flex-row items-center gap-2"
                                             style={{
                                                 backgroundColor: isActive ? (isDark ? 'rgba(0,122,255,0.18)' : '#e0edff') : C.surfaceLow,
-                                                borderColor: isActive ? C.primary : 'transparent',
+                                                borderColor: isActive ? '#007AFF' : 'transparent',
                                                 borderWidth: 1,
                                             }}
                                         >
                                             <Icon name={opt.icon as any} size={18} color={isActive ? "primary" : "textSecondary"} animated={isActive ? "bounce" : undefined} />
-                                            <Text className="text-[14px] font-[600]" style={{ color: isActive ? C.primary : C.textSecondary }}>{opt.label}</Text>
+                                            <Text className="text-[14px] font-[600]" style={{ color: isActive ? '#007AFF' : C.textSecondary }}>{opt.label}</Text>
                                         </Pressable>
                                     );
                                 })}
@@ -1193,8 +1258,13 @@ export default function GenerateQuizScreen() {
                                 setCurrentQIndex(p => p - 1);
                                 setIsRevealed(true); 
                             }}
-                            className={`h-12 flex-1 rounded-full flex-row items-center justify-center shadow-sm ${currentQIndex === 0 ? 'opacity-50' : ''}`}
-                            style={{ backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}
+                            className="h-12 flex-1 rounded-full flex-row items-center justify-center"
+                            style={{ 
+                                backgroundColor: C.surfaceLow, 
+                                borderColor: C.border, 
+                                borderWidth: 1,
+                                opacity: currentQIndex === 0 ? 0.5 : 1,
+                            }}
                         >
                             <Icon name="ArrowLeft" size={18} color="primary" style={{ marginRight: 4 }} />
                             <Text className="font-[600] text-[14px]" style={{ color: C.text }}>Previous</Text>
@@ -1203,10 +1273,13 @@ export default function GenerateQuizScreen() {
                         <Pressable 
                             onPress={handleNextPress}
                             disabled={!hasSelectedAction && !isRevealed}
-                            className={`h-12 flex-1 rounded-full flex-row items-center justify-center shadow-sm ${hasSelectedAction || isRevealed ? 'bg-[#007AFF]' : ''}`}
-                            style={hasSelectedAction || isRevealed ? undefined : { backgroundColor: C.surfaceLow }}
+                            className="h-12 flex-1 rounded-full flex-row items-center justify-center"
+                            style={{
+                                backgroundColor: (hasSelectedAction || isRevealed) ? '#007AFF' : C.surfaceLow,
+                                opacity: (!hasSelectedAction && !isRevealed) ? 0.6 : 1,
+                            }}
                         >
-                            <Text className={`font-[600] text-[14px] mr-1 ${hasSelectedAction || isRevealed ? 'text-white' : ''}`} style={hasSelectedAction || isRevealed ? undefined : { color: C.textSecondary }}>
+                            <Text className="font-[600] text-[14px] mr-1" style={{ color: (hasSelectedAction || isRevealed) ? '#FFFFFF' : C.textSecondary }}>
                                 {isTheory ? (currentQIndex === questions.length - 1 ? 'Finish' : 'Next') : (!isRevealed ? 'Check' : (currentQIndex === questions.length - 1 ? 'Finish' : 'Next'))}
                             </Text>
                             {(hasSelectedAction || isRevealed) && <Icon name="ArrowRight" size={18} color="white" />}

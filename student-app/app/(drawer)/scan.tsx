@@ -251,17 +251,23 @@ export default function ScanScreen() {
                             <View className="flex-row p-1 rounded-full" style={{ backgroundColor: C.surfaceLow }}>
                                 <Pressable
                                     onPress={() => { haptics.selectionAsync(); setActiveModel('cloud'); }}
-                                    className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${activeModel === 'cloud' ? 'bg-accent-electric-blue shadow-sm' : ''}`}
+                                    className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
+                                    style={{
+                                        backgroundColor: activeModel === 'cloud' ? '#007AFF' : 'transparent',
+                                    }}
                                 >
                                     <Icon name="Cloud" size={16} color={activeModel === 'cloud' ? '#FFFFFF' : 'primary'} />
-                                    <Text className={`text-[14px] ${activeModel === 'cloud' ? 'text-on-primary' : ''}`} style={{ fontWeight: '600', color: activeModel === 'cloud' ? '#FFFFFF' : C.textSecondary }}>Cloud AI</Text>
+                                    <Text className="text-[14px]" style={{ fontWeight: '600', color: activeModel === 'cloud' ? '#FFFFFF' : C.textSecondary }}>Cloud AI</Text>
                                 </Pressable>
                                 <Pressable
                                     onPress={() => { haptics.selectionAsync(); setActiveModel('skeemy'); }}
-                                    className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${activeModel === 'skeemy' ? 'bg-accent-electric-blue shadow-sm' : ''}`}
+                                    className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full"
+                                    style={{
+                                        backgroundColor: activeModel === 'skeemy' ? '#007AFF' : 'transparent',
+                                    }}
                                 >
                                     <Icon name="Sparkles" size={16} color={activeModel === 'skeemy' ? '#FFFFFF' : 'primary'} />
-                                    <Text className={`text-[14px] ${activeModel === 'skeemy' ? 'text-on-primary' : ''}`} style={{ fontWeight: '600', color: activeModel === 'skeemy' ? '#FFFFFF' : C.textSecondary }}>Skeemy</Text>
+                                    <Text className="text-[14px]" style={{ fontWeight: '600', color: activeModel === 'skeemy' ? '#FFFFFF' : C.textSecondary }}>Skeemy</Text>
                                 </Pressable>
                             </View>
                             <Pressable
@@ -473,7 +479,11 @@ export default function ScanScreen() {
                     {/* Torch Toggle */}
                     <Pressable
                         onPress={() => { haptics.selectionAsync(); setEnableTorch(!enableTorch); }}
-                        className={`w-11 h-11 rounded-full border items-center justify-center transition-all shadow-lg ${enableTorch ? 'bg-[#007AFF] border-[#007AFF]' : 'bg-black/40 border-white/15'}`}
+                        className="w-11 h-11 rounded-full border items-center justify-center"
+                        style={{
+                            backgroundColor: enableTorch ? '#007AFF' : 'rgba(0,0,0,0.4)',
+                            borderColor: enableTorch ? '#007AFF' : 'rgba(255,255,255,0.15)',
+                        }}
                     >
                         <Icon
                             name={enableTorch ? 'Flashlight' : 'FlashlightOff'}
