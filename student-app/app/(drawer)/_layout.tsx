@@ -291,7 +291,9 @@ export default function TabLayout() {
                     name="scan"
                     options={{
                         title: 'Scan',
+                        headerShown: false,
                         tabBarStyle: { display: 'none' },
+                        sceneStyle: { backgroundColor: '#090d16' },
                     }}
                 />
                 <Tabs.Screen

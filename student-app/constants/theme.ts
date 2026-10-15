@@ -22,9 +22,9 @@ export const Palette = {
     textTertiary: '#64748B',
   },
   light: {
-    background: '#F8F9FA',
+    background: '#FFFFFF',
     surface: '#FFFFFF',
-    surfaceLow: '#F1F3F5',
+    surfaceLow: '#F8F9FA',
     surfaceElevated: '#E9ECEF',
     border: 'rgba(0, 0, 0, 0.08)',
     borderStrong: 'rgba(0, 0, 0, 0.16)',

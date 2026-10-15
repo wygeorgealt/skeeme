@@ -168,7 +168,7 @@ export default function RootLayout() {
 
   // IMPORTANT: These must EXACTLY match Colors.light.background / Colors.dark.background
   // in constants/theme.ts — any mismatch creates a visible color strip behind the status bar.
-  const rootBg = isDark ? '#0D0D0D' : '#F2F2F7';
+  const rootBg = isDark ? '#0D0D0D' : '#FFFFFF';
 
   // Force-update check (only once auth is hydrated)
   useEffect(() => {

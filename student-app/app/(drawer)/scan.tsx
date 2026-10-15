@@ -17,6 +17,7 @@ import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Icon } from '@/components/ui/Icon';
 import { useRouter, useNavigation } from 'expo-router';
@@ -104,6 +105,18 @@ export default function ScanScreen() {
     useEffect(() => {
         navigation.setOptions({ tabBarStyle: { display: 'none' } });
     }, [navigation]);
+
+    // Ensure native system UI background matches camera dark background to prevent top status bar gap
+    useEffect(() => {
+        if (results.length === 0) {
+            SystemUI.setBackgroundColorAsync('#090d16').catch(() => {});
+        } else {
+            SystemUI.setBackgroundColorAsync(isDark ? '#0D0D0D' : '#FFFFFF').catch(() => {});
+        }
+        return () => {
+            SystemUI.setBackgroundColorAsync(isDark ? '#0D0D0D' : '#FFFFFF').catch(() => {});
+        };
+    }, [results.length, isDark]);
 
     const handleCapture = async () => {
         if (!cameraRef.current) return;
@@ -401,7 +414,7 @@ export default function ScanScreen() {
     }
 
     return (
-        <View className="flex-1 bg-[#090d16]">
+        <View style={{ flex: 1, backgroundColor: '#090d16', width: '100%', height: '100%' }}>
             <StatusBar style="light" />
 
             <CameraView
