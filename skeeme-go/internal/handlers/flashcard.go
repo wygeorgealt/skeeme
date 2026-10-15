@@ -162,6 +162,11 @@ func (h *FlashcardHandler) CreateDeck(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Deck created successfully",
 		"id":      newID,
+		"data": map[string]interface{}{
+			"id":          newID,
+			"title":       title,
+			"source_type": sourceType,
+		},
 	})
 }
 

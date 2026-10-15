@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 
@@ -61,14 +63,42 @@ func (h *ProfileHandler) Preferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req UpdatePreferencesRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	body, err := io.ReadAll(r.Body)
+	if err != nil || len(bytes.TrimSpace(body)) == 0 {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
-	// Update ai_preferences in DB
-	_, err := h.DB.ExecContext(r.Context(), "UPDATE users SET ai_preferences = $1::jsonb WHERE id = $2", req.AIPreferences, user.ID)
+	// Accept both { "ai_preferences": {...} } and a flat preferences object.
+	var req UpdatePreferencesRequest
+	_ = json.Unmarshal(body, &req)
+	prefs := bytes.TrimSpace(req.AIPreferences)
+	if len(prefs) == 0 || string(prefs) == "null" {
+		prefs = bytes.TrimSpace(body)
+	}
+
+	// Merge onto existing preferences so partial updates don't wipe other keys.
+	incoming := map[string]any{}
+	if err := json.Unmarshal(prefs, &incoming); err != nil {
+		http.Error(w, "Invalid preferences payload", http.StatusBadRequest)
+		return
+	}
+	merged := map[string]any{}
+	if len(user.AIPreferences) > 0 {
+		_ = json.Unmarshal(user.AIPreferences, &merged)
+	}
+	for k, v := range incoming {
+		merged[k] = v
+	}
+	mergedJSON, err := json.Marshal(merged)
+	if err != nil {
+		http.Error(w, "Invalid preferences payload", http.StatusBadRequest)
+		return
+	}
+	req.AIPreferences = mergedJSON
+
+	// Update ai_preferences in DB (pass as string so pq doesn't send bytea)
+	_, err = h.DB.ExecContext(r.Context(), "UPDATE users SET ai_preferences = $1::jsonb WHERE id = $2", string(mergedJSON), user.ID)
 	if err != nil {
 		log.Printf("Failed to update preferences for user %d: %v", user.ID, err)
 		http.Error(w, "Failed to update preferences", http.StatusInternalServerError)

@@ -41,7 +41,7 @@ func (h *OnboardingHandler) CompleteOnboarding(w http.ResponseWriter, r *http.Re
 	}
 	aiPrefsJSON, _ := json.Marshal(aiPrefs)
 
-	_, err := h.DB.ExecContext(r.Context(), "UPDATE users SET ai_preferences = $1 WHERE id = $2", aiPrefsJSON, user.ID)
+	_, err := h.DB.ExecContext(r.Context(), "UPDATE users SET ai_preferences = $1::jsonb WHERE id = $2", string(aiPrefsJSON), user.ID)
 	if err != nil {
 		http.Error(w, "Failed to update preferences", http.StatusInternalServerError)
 		return

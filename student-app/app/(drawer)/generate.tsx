@@ -590,7 +590,7 @@ export default function GenerateQuizScreen() {
                 ) : (
                 <ScrollView
                     className="flex-1 w-full"
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 110, paddingTop: 16 }}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: Math.max(insets.bottom, 16) + 24, paddingTop: 16 }}
                     showsVerticalScrollIndicator={false}
                 >
                     <View className="flex-col gap-6 w-full max-w-xl mx-auto">
@@ -932,25 +932,8 @@ export default function GenerateQuizScreen() {
                                 })}
                             </View>
                         </View>
-                        
-                    </View>
-                </ScrollView>
-                )}
-
-                {/* Bottom Sticky Action Bar */}
-                <BlurView
-                    intensity={80}
-                    tint={isDark ? 'dark' : 'light'}
-                    className="absolute bottom-0 left-0 right-0 p-4 z-40"
-                    style={{ 
-                        paddingBottom: Math.max(insets.bottom, 16),
-                        backgroundColor: isDark ? 'rgba(18,18,18,0.85)' : 'rgba(255,255,255,0.85)',
-                        borderTopColor: C.border,
-                        borderTopWidth: StyleSheet.hairlineWidth
-                    }}
-                >
-                    <View className="max-w-xl mx-auto w-full flex-col gap-2">
-                        <View style={{ width: '100%', alignItems: 'center' }}>
+                        {/* Primary CTA Button (matches Flashcards page) */}
+                        <View style={{ width: '100%', alignItems: 'center', marginTop: 10 }}>
                             <AnimatedButton
                                 title="Generate Quiz"
                                 onPress={handleGenerate}
@@ -962,11 +945,9 @@ export default function GenerateQuizScreen() {
                                 fullWidth
                             />
                         </View>
-                        <View className="flex-row items-center justify-center gap-1.5">
-                            <Text className="text-[12px] font-[500]" style={{ color: C.textSecondary }}>{user?.plan_name !== 'free' ? 'Included with Pro' : '30 Credits'}</Text>
-                        </View>
                     </View>
-                </BlurView>
+                </ScrollView>
+                )}
 
                 <OutOfCreditsModal
                     visible={showOutOfCredits}
