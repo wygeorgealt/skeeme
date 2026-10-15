@@ -421,7 +421,7 @@ export default function ScanScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: '#090d16', width: '100%', height: '100%' }}>
-            <StatusBar style="light" />
+            <StatusBar style="light" translucent backgroundColor="transparent" />
 
             <CameraView
                 style={StyleSheet.absoluteFill}

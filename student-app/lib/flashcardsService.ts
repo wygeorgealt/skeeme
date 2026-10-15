@@ -18,7 +18,12 @@ export async function createDeckFromExtraction(extractionId: string) {
 
 export async function fetchDeck(id: string) {
   const res = await api.get(`/flashcards/decks/${id}`);
-  return res.data?.data;
+  const raw = res.data?.data || res.data?.deck || res.data;
+  if (!raw) return null;
+  return {
+    ...raw,
+    flashcards: raw.flashcards || raw.cards || (res.data?.cards) || [],
+  };
 }
 
 export async function saveCards(deckId: string, cards: any[]) {

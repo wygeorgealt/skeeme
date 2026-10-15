@@ -271,9 +271,14 @@ export default function StudyDeckScreen() {
         queryKey: ['deck', id],
         queryFn: async () => {
             const res = await api.get(`/flashcards/decks/${id}`);
-            const data = res.data.data;
-            await storage.setItem(`cache_deck_detail_${id}`, JSON.stringify(data));
-            return data;
+            const raw = res.data?.data || res.data?.deck || res.data;
+            if (!raw) return null;
+            const normalized = {
+                ...raw,
+                flashcards: raw.flashcards || raw.cards || (res.data?.cards) || [],
+            };
+            await storage.setItem(`cache_deck_detail_${id}`, JSON.stringify(normalized));
+            return normalized;
         },
         staleTime: 5000,
     });
@@ -282,10 +287,10 @@ export default function StudyDeckScreen() {
 
     // Merge remote cards and streaming cards
     const cards = useMemo(() => {
-        const base = deck?.flashcards || [];
+        const base = deck?.flashcards || deck?.cards || [];
         const streaming = streamingCards.filter((sc: any) => !base.some((bc: any) => bc.front === sc.front));
         return [...base, ...streaming];
-    }, [deck?.flashcards, streamingCards]);
+    }, [deck?.flashcards, deck?.cards, streamingCards]);
 
     const totalCards = parseInt(card_count as string) || 0;
     // Decode title if it's URL-encoded
@@ -332,15 +337,17 @@ export default function StudyDeckScreen() {
     useEffect(() => {
         setCurrentIndex(0);
         setIsComplete(false);
+        setCachedDeck(null);
         setStreamingCards([]);
         setGenStage('Researching...');
-        setIsGenerating(false);
+        setIsGenerating(autoStart === 'true');
         progressAnim.value = 0;
     }, [id]);
 
     // Handle auto-start generation — cleanup on unmount to prevent memory leak (C2)
     useEffect(() => {
         if (autoStart === 'true' && id) {
+            setIsGenerating(true);
             startLiveGeneration();
         }
         return () => {

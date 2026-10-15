@@ -150,7 +150,7 @@ export default function HomeDashboard() {
     const streak = user?.streak?.current_streak ?? 0;
 
     return (
-        <View style={[styles.root, { backgroundColor: isDark ? '#0F1115' : '#F2F2F7' }]}>
+        <View style={[styles.root, { backgroundColor: isDark ? '#0F1115' : '#FFFFFF' }]}>
             {/* Top Navigation Bar */}
             <View style={[styles.topBar, { paddingTop: Math.max(insets.top, 12) + 6 }]}>
                 {/* Profile Pill with Dropdown Trigger */}
@@ -340,7 +340,7 @@ export default function HomeDashboard() {
                         </View>
 
                         {/* Progress Bar */}
-                        <View style={[styles.progressBarTrack, { backgroundColor: isDark ? '#2C2C2E' : '#F2F2F7' }]}>
+                        <View style={[styles.progressBarTrack, { backgroundColor: isDark ? '#2C2C2E' : '#EFEFF4' }]}>
                             <Animated.View style={[styles.progressBarFill, progressAnimatedStyle]} />
                         </View>
                     </TouchableOpacity>

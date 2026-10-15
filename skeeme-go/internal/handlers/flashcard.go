@@ -76,9 +76,26 @@ func (h *FlashcardHandler) GetDeck(w http.ResponseWriter, r *http.Request) {
 		cards = []models.Flashcard{}
 	}
 
+	deckResponse := map[string]interface{}{
+		"id":          deck.ID,
+		"user_id":     deck.UserID,
+		"title":       deck.Title,
+		"description": deck.Description,
+		"source_type": deck.SourceType,
+		"created_at":  deck.CreatedAt,
+		"updated_at":  deck.UpdatedAt,
+		"flashcards":  cards,
+		"cards":       cards,
+	}
+
 	response := map[string]interface{}{
-		"deck":  deck,
-		"cards": cards,
+		"data":        deckResponse,
+		"deck":        deckResponse,
+		"cards":       cards,
+		"flashcards":  cards,
+		"id":          deck.ID,
+		"title":       deck.Title,
+		"source_type": deck.SourceType,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -25,8 +25,19 @@ export default function GenerateFlashcardScreen() {
             setLoading(true);
             if (!topic || !topic.trim()) return Alert.alert('Required', 'Please enter a topic.');
             const deck = await createDeckFromTopic(topic.trim(), count);
-            if (deck?.id) router.replace(`/(drawer)/flashcards/${deck.id}` as any);
-            else Alert.alert('Error', 'Could not create deck');
+            if (deck?.id) {
+                router.replace({
+                    pathname: '/(drawer)/flashcards/[id]',
+                    params: {
+                        id: String(deck.id),
+                        autoStart: 'true',
+                        topic: topic.trim(),
+                        card_count: String(count || 15),
+                    },
+                } as any);
+            } else {
+                Alert.alert('Error', 'Could not create deck');
+            }
         } catch (err: any) {
             Alert.alert('Error', err?.response?.data?.message || 'Failed to create deck');
         } finally {
@@ -48,7 +59,16 @@ export default function GenerateFlashcardScreen() {
                 const extractionId = res.data?.extraction_id;
                 if (extractionId) {
                     const deck = await createDeckFromExtraction(extractionId);
-                    if (deck?.id) router.replace(`/(drawer)/flashcards/${deck.id}` as any);
+                    if (deck?.id) {
+                        router.replace({
+                            pathname: '/(drawer)/flashcards/[id]',
+                            params: {
+                                id: String(deck.id),
+                                autoStart: 'true',
+                                card_count: '15',
+                            },
+                        } as any);
+                    }
                 } else {
                     Alert.alert('Extraction Failed', 'Could not extract text from document.');
                 }
