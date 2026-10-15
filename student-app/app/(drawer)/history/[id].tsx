@@ -73,7 +73,12 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const isTheory = q.type === 'essay' || q.type === 'theory';
-    const parsedOptions: string[] = q.options ? JSON.parse(q.options) : [];
+    const parsedOptions: string[] = (() => {
+        const raw: any = q.options;
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw !== 'string' || !raw) return [];
+        try { const v = JSON.parse(raw); return Array.isArray(v) ? v : []; } catch { return []; }
+    })();
 
     return (
         <View style={s.qCard}>
@@ -203,7 +208,8 @@ export default function QuizHistoryDetailScreen() {
         queryKey: ['quiz-history', id],
         queryFn: async () => {
             const res = await api.get(`/quizzes/history/${id}`);
-            const data = res.data.data as QuizSessionDetail;
+            const body = res.data?.data ?? res.data;
+            const data = { ...body, questions: Array.isArray(body?.questions) ? body.questions : [] } as QuizSessionDetail;
             await storage.setItem(`cache_quiz_detail_${id}`, JSON.stringify(data));
             return data;
         }
@@ -215,7 +221,7 @@ export default function QuizHistoryDetailScreen() {
         if (!session) return;
         setIsExporting(true);
         try {
-            const html = generateQuizHTML(session.topic, session.score_percentage, session.questions);
+            const html = generateQuizHTML(session.topic, session.score_percentage, session.questions ?? []);
             const { uri } = await Print.printToFileAsync({
                 html,
                 base64: false
@@ -325,7 +331,7 @@ export default function QuizHistoryDetailScreen() {
                         <Text style={[s.reviewTitle, isDark ? s.textWhite : s.textSlate900]}>Detailed Review</Text>
                     </View>
 
-                    {session.questions.map((q, i) => (
+                    {(session.questions ?? []).map((q, i) => (
                         <HistoryQuestionCard key={q.id} q={q} index={i} />
                     ))}
                 </View>
