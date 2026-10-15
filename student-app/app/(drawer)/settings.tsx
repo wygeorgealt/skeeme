@@ -13,6 +13,7 @@ import * as LucideIcons from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { Colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { haptics } from '@/lib/haptics';
 
 // ─── Row Component ───────────────────────────────────────────────────────────
 function SettingsRow({
@@ -180,10 +181,10 @@ export default function SettingsScreen() {
                 <Animated.View entering={FadeInDown.duration(400).delay(150)}>
                     <Section title="Study & Exam Preferences" isDark={isDark}>
                         <SettingsRow isDark={isDark} icon="GraduationCap"
-                            label="Target Exams" sublabel="SAT, AP Calculus, AP Physics"
+                            label="Target Exams"
                             onPress={() => router.push('/(drawer)/exams' as any)} />
                         <SettingsRow isDark={isDark} icon="Bell"
-                            label="Study Reminders" sublabel="Smart evening alert (7:30 PM)"
+                            label="Study Reminders"
                             hasSwitch switchValue={notificationsEnabled} onSwitch={setNotificationsEnabled} isLast />
                     </Section>
                 </Animated.View>
@@ -192,28 +193,65 @@ export default function SettingsScreen() {
                 <Animated.View entering={FadeInDown.duration(400).delay(200)}>
                     <Section title="Personalization & Feel" isDark={isDark}>
                         <SettingsRow isDark={isDark} icon="Smile"
-                            label="Personalize Skeemy" sublabel="AI tone, style & goals"
+                            label="Personalize Skeemy"
                             onPress={() => router.push('/(drawer)/preferences' as any)} />
                         {/* Theme Picker */}
-                        <View style={[styles.row, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : '#E3E2E7' }]}>
-                            <View style={styles.rowIcon}>
-                                <Icon name="Palette" size={20} color="primary" animated="pulse" />
-                            </View>
-                            <View style={styles.rowText}>
+                        <View style={[styles.themeRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : '#E3E2E7' }]}>
+                            <View style={styles.themeRowHeader}>
+                                <View style={styles.rowIcon}>
+                                    <Icon name={theme === 'dark' ? 'Moon' : theme === 'light' ? 'Sun' : 'Monitor'} size={20} color="primary" />
+                                </View>
                                 <Text style={[styles.rowLabel, { color: C.text }]}>Appearance</Text>
                             </View>
-                            <View style={[styles.themePicker, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E3E2E7' }]}>
-                                {(['light', 'dark', 'system'] as const).map((t) => (
-                                    <View key={t} style={[styles.themeOption, theme === t && { backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 }]}>
-                                        <Pressable onPress={() => setTheme(t)} style={styles.themeOptionInner}>
-                                            <Text style={{ fontSize: 12, fontWeight: '700', textTransform: 'capitalize', color: theme === t ? '#007AFF' : C.textSecondary }}>{t}</Text>
+                            <View style={[styles.themePicker, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#EFEFF4' }]}>
+                                {([
+                                    { key: 'light', label: 'Light', icon: 'Sun' as const },
+                                    { key: 'dark', label: 'Dark', icon: 'Moon' as const },
+                                    { key: 'system', label: 'System', icon: 'Monitor' as const },
+                                ] as const).map(({ key, label, icon }) => {
+                                    const isSelected = theme === key;
+                                    return (
+                                        <Pressable
+                                            key={key}
+                                            onPress={() => {
+                                                haptics.selectionAsync();
+                                                setTheme(key);
+                                            }}
+                                            style={[
+                                                styles.themeOption,
+                                                isSelected && {
+                                                    backgroundColor: isDark ? '#2C2C2E' : '#FFFFFF',
+                                                    shadowColor: '#000',
+                                                    shadowOpacity: 0.08,
+                                                    shadowRadius: 4,
+                                                    shadowOffset: { width: 0, height: 1 },
+                                                    elevation: 2,
+                                                },
+                                            ]}
+                                        >
+                                            <Icon
+                                                name={icon}
+                                                size={15}
+                                                color={isSelected ? 'primary' : 'muted'}
+                                            />
+                                            <Text
+                                                style={[
+                                                    styles.themeOptionText,
+                                                    {
+                                                        color: isSelected ? (isDark ? '#FFFFFF' : '#1C1C1E') : C.textSecondary,
+                                                        fontWeight: isSelected ? '700' : '500',
+                                                    },
+                                                ]}
+                                            >
+                                                {label}
+                                            </Text>
                                         </Pressable>
-                                    </View>
-                                ))}
+                                    );
+                                })}
                             </View>
                         </View>
                         <SettingsRow isDark={isDark} icon="Smartphone"
-                            label="Haptic Feedback" sublabel="Subtle buzz on correct solutions"
+                            label="Haptic Feedback"
                             hasSwitch switchValue={hapticsEnabled} onSwitch={(val) => useAuthStore.getState().setHapticsEnabled(val)} isLast />
                     </Section>
                 </Animated.View>
@@ -226,8 +264,7 @@ export default function SettingsScreen() {
                                 <Icon name="Award" size={20} color="primary" animated="pulse" />
                             </View>
                             <View style={styles.rowText}>
-                                <Text style={[styles.rowLabel, { color: C.text }]}>{isPremium ? 'Skeeme Pro (Annual)' : 'Skeeme Free'}</Text>
-                                <Text style={[styles.rowSublabel, { color: C.textSecondary }]}>{isPremium ? 'Auto-renews Nov 14, 2025' : 'Upgrade to unlock all features'}</Text>
+                                <Text style={[styles.rowLabel, { color: C.text }]}>{isPremium ? 'Skeeme Pro' : 'Skeeme Free'}</Text>
                             </View>
                             <View style={styles.activeBadge}>
                                 <Text style={styles.activeBadgeText}>{isPremium ? 'Active' : 'Free'}</Text>
@@ -236,11 +273,8 @@ export default function SettingsScreen() {
                         <SettingsRow isDark={isDark} icon="CreditCard"
                             label="Manage Payment & Invoices"
                             onPress={() => router.push('/paywall')} />
-                        <SettingsRow isDark={isDark} icon="Gift"
-                            label="Refer a Friend"
-                            onPress={() => router.push('/(drawer)/referral' as any)} />
                         <SettingsRow isDark={isDark} icon="RotateCcw"
-                            label="Restore Apple In-App Purchases"
+                            label="Restore Purchases"
                             onPress={() => Alert.alert('Restore', 'No purchases to restore.')} isLast />
                     </Section>
                 </Animated.View>
@@ -315,22 +349,22 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-    scroll: { paddingHorizontal: 16, paddingTop: 8 },
+    scroll: { paddingHorizontal: 20, paddingTop: 10 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
     backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
     headerTitle: { fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
 
     // Profile
-    profileCard: { borderRadius: 20, padding: 16, marginBottom: 20, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3, overflow: 'hidden' },
+    profileCard: { borderRadius: 20, padding: 18, marginBottom: 20, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3, overflow: 'hidden' },
     profileBlob: { position: 'absolute', right: -30, top: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(0,122,255,0.05)' },
-    profileRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+    profileRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
     avatarWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     avatarInitial: { fontSize: 22, fontWeight: '800', color: '#007AFF' },
     profileName: { fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
     profileEmail: { fontSize: 13, marginTop: 2 },
     proBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(0,122,255,0.1)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
     proBadgeText: { fontSize: 11, fontWeight: '700', color: '#007AFF', letterSpacing: 0.5 },
-    balanceCard: { borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    balanceCard: { borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     balanceLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
     balanceValue: { fontSize: 18, fontWeight: '800', marginTop: 1 },
     topUpBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#007AFF', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
@@ -339,10 +373,10 @@ const styles = StyleSheet.create({
     // Section
     section: { marginBottom: 20 },
     sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, marginBottom: 8, marginLeft: 4 },
-    sectionCard: { borderRadius: 16, overflow: 'hidden', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+    sectionCard: { borderRadius: 18, overflow: 'hidden', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
 
     // Row
-    row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingRight: 14, paddingLeft: 12 },
+    row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 },
     rowIcon: { alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 },
     rowText: { flex: 1, minWidth: 0 },
     rowLabel: { fontSize: 16, fontWeight: '400' },
@@ -350,16 +384,18 @@ const styles = StyleSheet.create({
     rowValue: { fontSize: 15, marginRight: 6 },
 
     // Theme picker
-    themePicker: { flexDirection: 'row', borderRadius: 10, padding: 3, gap: 2 },
-    themeOption: { flex: 1, borderRadius: 7 },
-    themeOptionInner: { paddingVertical: 5, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
+    themeRow: { paddingVertical: 14, paddingHorizontal: 16 },
+    themeRowHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+    themePicker: { flexDirection: 'row', borderRadius: 12, padding: 3, gap: 3 },
+    themeOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 8, borderRadius: 9 },
+    themeOptionText: { fontSize: 13 },
 
     // Active badge
     activeBadge: { backgroundColor: 'rgba(0,122,255,0.1)', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 999 },
     activeBadgeText: { fontSize: 11, fontWeight: '700', color: '#007AFF' },
 
     // Sign Out
-    signOutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14 },
+    signOutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 15 },
     signOutText: { fontSize: 16, fontWeight: '600', color: '#BA1A1A' },
 
     // Delete Modal
