@@ -223,7 +223,7 @@ export function FlashcardDeckSummary({
       <View className="w-full bg-surface-container-lowest rounded-xl p-4 shadow-sm mt-2">
         <View className="flex-row items-center justify-between pb-2 mb-2 border-b border-surface-container">
           <View className="flex-row items-center gap-2">
-            <Icon name="Calendar" size={20} color="primary" />
+            <Icon name="Calendar" size={20} color="default" />
             <Text style={{ fontSize: 16, fontWeight: '600' }} className="text-on-surface">Upcoming Review</Text>
           </View>
           <View className="px-2 py-0.5 rounded-full bg-primary-container">
@@ -274,7 +274,7 @@ export function FlashcardDeckSummary({
 
         <View className="mt-4 bg-surface-container-low rounded-lg p-2.5 flex-row items-center justify-between">
           <View className="flex-row items-center gap-2">
-            <Icon name="Bell" size={18} color="primary" />
+            <Icon name="Bell" size={18} color="secondary" />
             <Text style={{ fontSize: 13, fontWeight: '500' }} className="text-on-surface">
               Smart Reminder set for <Text style={{ fontWeight: '700' }}>7:30 PM</Text>
             </Text>

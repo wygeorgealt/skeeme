@@ -112,7 +112,7 @@ export default function ExamsScreen() {
                     {exams.length === 0 ? (
                         <View style={s.emptyState}>
                             <AnimatedIcon size={64} animationType="wobble">
-                                <Icon name="Calendar" size={56} color="primary" />
+                                <Icon name="Calendar" size={56} color="secondary" />
                             </AnimatedIcon>
                             <Text style={[s.emptyText, { color: C.textSecondary }]}>No upcoming exams set.</Text>
                         </View>
@@ -124,7 +124,7 @@ export default function ExamsScreen() {
                                     <View style={s.examRow}>
                                         <View style={[s.examIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }]}>
                                             <AnimatedIcon size={24} animationType="wobble">
-                                                <Icon name="Calendar" size={20} color="primary" />
+                                                <Icon name="Calendar" size={20} color="default" />
                                             </AnimatedIcon>
                                         </View>
                                         <View style={{ flex: 1 }}>

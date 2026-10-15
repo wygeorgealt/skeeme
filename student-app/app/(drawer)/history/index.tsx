@@ -451,18 +451,18 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
                 <View className="flex-row items-start gap-3 flex-1">
                     <View
                         className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
-                        style={{ backgroundColor: isDark ? 'rgba(0,103,98,0.25)' : '#61F9EF' }}
+                        style={{ backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}
                     >
-                        <Icon name="BookOpen" size={22} color={isDark ? '#39DCD2' : '#006762'} />
+                        <Icon name="BookOpen" size={22} color="default" />
                     </View>
                     <View className="flex-1 flex-col">
                         <View className="flex-row items-center gap-1.5 flex-wrap">
                             <View
                                 className="px-2 py-0.5 rounded-full"
-                                style={{ backgroundColor: isDark ? 'rgba(0,103,98,0.3)' : 'rgba(97, 249, 239, 0.3)' }}
+                                style={{ backgroundColor: C.selectedBackground }}
                             >
-                                <Text style={{ color: isDark ? '#39DCD2' : '#00504C', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
-                                    {item.subject || 'Organic Chemistry'}
+                                <Text style={{ color: C.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
+                                    {item.subject || 'Summary'}
                                 </Text>
                             </View>
                             <View
@@ -512,8 +512,8 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
             <View className="flex-row items-center justify-between pt-1">
                 <Pressable
                     className="h-10 px-5 rounded-full flex-row items-center gap-1.5 active:opacity-80"
-                    style={{ backgroundColor: '#00837C' }}
-                    onPress={() => {}}
+                    style={{ backgroundColor: C.primary }}
+                    onPress={() => router.push('/(drawer)/summary' as any)}
                 >
                     <Icon name="BookOpen" size={16} color="white" />
                     <Text className="text-white" style={{ fontSize: 14, fontWeight: '600' }}>Read Summary</Text>
@@ -540,15 +540,15 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
             <View className="flex-row items-start justify-between gap-3">
                 <View className="flex-row items-start gap-3 flex-1">
                     <View
-                        style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : '#E5F1FF' }}
+                        style={{ backgroundColor: C.selectedBackground, borderColor: C.selectedBorder, borderWidth: 1 }}
                         className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
                     >
-                        <Icon name="CheckCircle2" size={22} color="primary" />
+                        <Icon name="CheckCircle2" size={20} color="primary" />
                     </View>
                     <View className="flex-1 flex-col">
                         <View className="flex-row items-center gap-1.5 flex-wrap">
                             <View
-                                style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : 'rgba(0,122,255,0.1)' }}
+                                style={{ backgroundColor: C.selectedBackground }}
                                 className="px-2 py-0.5 rounded-full"
                             >
                                 <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.primary }}>{subjectTag}</Text>
@@ -573,7 +573,7 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                 
                 <View className="items-end shrink-0">
                     <View
-                        style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.15)' : 'rgba(0,122,255,0.08)' }}
+                        style={{ backgroundColor: C.selectedBackground }}
                         className="w-12 h-12 rounded-full items-center justify-center relative"
                     >
                         <Svg width={48} height={48} viewBox="0 0 36 36" style={{ transform: [{ rotate: '-90deg' }] }}>
@@ -598,12 +598,12 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                         <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>Retake</Text>
                     </Pressable>
                     <Pressable
-                        style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                        style={{ backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}
                         className="h-10 px-4 rounded-full flex-row items-center gap-1 active:opacity-80"
                         onPress={() => router.push(`/(drawer)/history/${session.id}` as any)}
                     >
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: C.primary }}>Review</Text>
-                        <Icon name="ChevronRight" size={16} color="primary" />
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: C.text }}>Review</Text>
+                        <Icon name="ChevronRight" size={16} color="secondary" />
                     </Pressable>
                 </View>
                 <Pressable
@@ -634,17 +634,17 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                 <View className="flex-row items-start gap-3 flex-1">
                     <View
                         className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
-                        style={{ backgroundColor: isDark ? 'rgba(88,86,214,0.2)' : '#E2DFFF' }}
+                        style={{ backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}
                     >
-                        <Icon name="Layers" size={22} color="#5856D6" />
+                        <Icon name="Layers" size={22} color="default" />
                     </View>
                     <View className="flex-1 flex-col">
                         <View className="flex-row items-center gap-1.5 flex-wrap">
                             <View
                                 className="px-2 py-0.5 rounded-full"
-                                style={{ backgroundColor: isDark ? 'rgba(88,86,214,0.2)' : '#E2DFFF' }}
+                                style={{ backgroundColor: C.selectedBackground }}
                             >
-                                <Text style={{ color: isDark ? '#A5B4FC' : '#3631B4', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{subjectTag}</Text>
+                                <Text style={{ color: C.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{subjectTag}</Text>
                             </View>
                             <View
                                 className="px-2 py-0.5 rounded-full"
@@ -667,14 +667,14 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                     style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent' }}
                     className="w-10 h-10 rounded-full items-center justify-center shrink-0"
                 >
-                    <Icon name="Bookmark" size={20} color="#f59e0b" />
+                    <Icon name="Bookmark" size={20} color="secondary" />
                 </Pressable>
             </View>
             
             <View className="flex-row items-center justify-between pt-3">
                 <Pressable 
                     className="h-10 px-5 rounded-full flex-row items-center gap-1.5 active:opacity-80"
-                    style={{ backgroundColor: '#5856D6' }}
+                    style={{ backgroundColor: C.primary }}
                     onPress={() => router.push(`/(drawer)/flashcards/${deck.id}` as any)}
                 >
                     <Icon name="Play" size={16} color="white" />

@@ -220,7 +220,7 @@ export default function ScanScreen() {
                             className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95"
                             style={{ backgroundColor: C.surfaceLow }}
                         >
-                            <Icon name="Share2" size={20} color="primary" />
+                            <Icon name="Share2" size={20} color="default" />
                         </Pressable>
                     }
                 />
@@ -256,7 +256,7 @@ export default function ScanScreen() {
                                         backgroundColor: activeModel === 'cloud' ? '#007AFF' : 'transparent',
                                     }}
                                 >
-                                    <Icon name="Cloud" size={16} color={activeModel === 'cloud' ? '#FFFFFF' : 'primary'} />
+                                    <Icon name="Cloud" size={16} color={activeModel === 'cloud' ? '#FFFFFF' : 'secondary'} />
                                     <Text className="text-[14px]" style={{ fontWeight: '600', color: activeModel === 'cloud' ? '#FFFFFF' : C.textSecondary }}>Cloud AI</Text>
                                 </Pressable>
                                 <Pressable
@@ -266,7 +266,7 @@ export default function ScanScreen() {
                                         backgroundColor: activeModel === 'skeemy' ? '#007AFF' : 'transparent',
                                     }}
                                 >
-                                    <Icon name="Sparkles" size={16} color={activeModel === 'skeemy' ? '#FFFFFF' : 'primary'} />
+                                    <Icon name="Sparkles" size={16} color={activeModel === 'skeemy' ? '#FFFFFF' : 'secondary'} />
                                     <Text className="text-[14px]" style={{ fontWeight: '600', color: activeModel === 'skeemy' ? '#FFFFFF' : C.textSecondary }}>Skeemy</Text>
                                 </Pressable>
                             </View>
@@ -308,7 +308,7 @@ export default function ScanScreen() {
                         {currentResult.steps && currentResult.steps.length > 0 && (
                             <View className="pt-2 mt-2">
                                 <View className="flex-row items-center gap-1.5 mb-3">
-                                    <Icon name="ListOrdered" size={18} color="primary" />
+                                    <Icon name="ListOrdered" size={18} color="default" />
                                     <Text className="text-[15px]" style={{ fontWeight: '700', color: C.text }}>Step-by-step Explanation</Text>
                                 </View>
                                 <View className="pl-1 flex-col gap-4">
@@ -336,7 +336,7 @@ export default function ScanScreen() {
                                     borderWidth: 1
                                 }}
                             >
-                                <Icon name="Lightbulb" size={20} color="primary" style={{ marginTop: 2 }} />
+                                <Icon name="Lightbulb" size={20} color={isDark ? '#b4b0ff' : '#4c4aca'} style={{ marginTop: 2 }} />
                                 <View className="flex-col flex-1">
                                     <Text className="text-[13px]" style={{ fontWeight: '700', color: isDark ? '#b4b0ff' : '#0c006a' }}>Quiz Hack</Text>
                                     <Text className="text-[12px] opacity-80 mt-0.5 leading-5" style={{ color: isDark ? '#d4d2ff' : '#0c006a' }}>{currentResult.explanation}</Text>
@@ -369,7 +369,7 @@ export default function ScanScreen() {
                             className="flex-row items-center rounded-full pl-4 pr-1.5 py-1.5 shadow-sm"
                             style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
                         >
-                            <Icon name="MessageSquare" size={20} color="primary" style={{ marginRight: 8 }} />
+                            <Icon name="MessageSquare" size={20} color="secondary" style={{ marginRight: 8 }} />
                             <TextInput
                                 className="flex-1 text-[15px] py-2"
                                 style={{ color: C.text }}
@@ -532,7 +532,7 @@ export default function ScanScreen() {
 
                 {/* Instruction Pill */}
                 <View className="mt-4 px-4 py-2 rounded-full bg-black/60 border border-white/10 flex-row items-center gap-2">
-                    <Icon name="Scan" size={18} color="primary" />
+                    <Icon name="Scan" size={18} color="white" />
                     <Text className="text-[13px] text-white" style={{ fontWeight: '600' }}>{getInstructionText()}</Text>
                 </View>
 
@@ -566,7 +566,7 @@ export default function ScanScreen() {
                 {recentScans.length > 0 && (
                     <View className="w-full">
                         <View className="flex-row items-center gap-1.5 px-1 mb-2">
-                            <Icon name="Clock" size={16} color="primary" />
+                            <Icon name="Clock" size={16} color="secondary" />
                             <Text className="text-[12px] text-white/75 uppercase tracking-wider" style={{ fontWeight: '600' }}>Recent Scans</Text>
                         </View>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 2 }}>

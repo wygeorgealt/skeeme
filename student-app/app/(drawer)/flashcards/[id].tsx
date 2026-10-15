@@ -169,7 +169,7 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
                         {/* Bottom Prompt */}
                         <View className="flex-col gap-2 items-center pb-2">
                             <Animated.View style={bounceStyle} className="flex-row items-center py-1.5 px-3 rounded-full bg-surface-container-low gap-1.5">
-                                <Icon name="Hand" size={16} color="primary" />
+                                <Icon name="Hand" size={16} color="secondary" />
                                 <Text className="font-label-sm" style={{ fontSize: 11, fontWeight: '600', color: isDark ? '#EBEBF5' : '#48484A' }}>Tap anywhere to flip card</Text>
                             </Animated.View>
                         </View>
@@ -824,7 +824,7 @@ export default function StudyDeckScreen() {
                                 className="w-12 h-12 rounded-full shadow-sm flex items-center justify-center"
                                 style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
                             >
-                                <Icon name="RotateCcw" size={20} color="primary" style={{ opacity: currentIndex === 0 ? 0.3 : 1 }} />
+                                <Icon name="RotateCcw" size={20} color="default" style={{ opacity: currentIndex === 0 ? 0.3 : 1 }} />
                             </Pressable>
 
                             <Pressable 

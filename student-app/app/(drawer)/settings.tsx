@@ -37,8 +37,7 @@ function SettingsRow({
                 <Icon 
                     name={icon} 
                     size={20} 
-                    color={destructive ? 'destructive' : 'primary'} 
-                    animated={!destructive && !hasSwitch ? 'pulse' : false} 
+                    color={destructive ? 'destructive' : 'default'} 
                 />
             </View>
             <View style={styles.rowText}>
@@ -54,7 +53,7 @@ function SettingsRow({
                     thumbColor={Platform.OS === 'ios' ? undefined : '#FFFFFF'}
                 />
             ) : (
-                !!onPress && !destructive && <Icon name="ChevronRight" size={18} color="primary" />
+                !!onPress && !destructive && <Icon name="ChevronRight" size={18} color="secondary" />
             )}
         </Pressable>
     );
@@ -206,7 +205,7 @@ export default function SettingsScreen() {
                         <View style={[styles.themeRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : '#E3E2E7' }]}>
                             <View style={styles.themeRowHeader}>
                                 <View style={styles.rowIcon}>
-                                    <Icon name={theme === 'dark' ? 'Moon' : theme === 'light' ? 'Sun' : 'Monitor'} size={20} color="primary" />
+                                    <Icon name={theme === 'dark' ? 'Moon' : theme === 'light' ? 'Sun' : 'Monitor'} size={20} color="default" />
                                 </View>
                                 <Text style={[styles.rowLabel, { color: C.text }]}>Appearance</Text>
                             </View>

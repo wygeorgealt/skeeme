@@ -74,10 +74,18 @@ export const Colors = {
     borderStrong: Palette.light.borderStrong,
     
     // Icons
-    icon: Palette.light.textSecondary,
-    iconActive: Palette.blue.primary,
+    icon: Palette.light.textPrimary, // Default neutral icon (black / deep neutral slate)
+    iconSecondary: Palette.light.textSecondary, // Secondary icons & less important actions
+    iconTertiary: Palette.light.textTertiary, // Subtle muted / tertiary icons
+    iconMuted: Palette.light.textTertiary,
+    iconActive: Palette.blue.primary, // Reserved for active navigation, selected states, primary actions
     tabIconDefault: Palette.light.textTertiary,
     tabIconSelected: Palette.blue.primary,
+
+    // Interactive & Selected States
+    selectedBackground: '#EBF5FF', // Subtle pale blue for selected items
+    selectedBorder: 'rgba(0, 122, 255, 0.35)',
+    interactiveSurface: '#F1F5F9', // Subtle neutral surface for secondary buttons/controls
 
     // Card elevation
     cardShadowColor: '#000000',
@@ -122,10 +130,18 @@ export const Colors = {
     borderStrong: Palette.dark.borderStrong,
     
     // Icons
-    icon: Palette.dark.textSecondary,
+    icon: Palette.dark.textPrimary, // Default neutral icon (crisp white)
+    iconSecondary: Palette.dark.textSecondary, // Secondary icons
+    iconTertiary: Palette.dark.textTertiary,
+    iconMuted: Palette.dark.textTertiary,
     iconActive: Palette.blue.primary,
     tabIconDefault: Palette.dark.textTertiary,
     tabIconSelected: Palette.blue.primary,
+
+    // Interactive & Selected States
+    selectedBackground: 'rgba(0, 122, 255, 0.16)', // Subtle pale blue container in dark
+    selectedBorder: 'rgba(0, 122, 255, 0.45)',
+    interactiveSurface: '#1E222B',
 
     // Card elevation
     cardShadowColor: '#000000',

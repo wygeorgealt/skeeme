@@ -596,7 +596,7 @@ export default function GenerateQuizScreen() {
                         >
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
-                                    <Icon name="Database" size={20} color="primary" />
+                                    <Icon name="Database" size={20} color="default" />
                                     <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Quiz Source Material</Text>
                                 </View>
                             </View>
@@ -727,7 +727,7 @@ export default function GenerateQuizScreen() {
                         >
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
-                                    <Icon name="ListOrdered" size={20} color="primary" />
+                                    <Icon name="ListOrdered" size={20} color="default" />
                                     <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Question Count</Text>
                                 </View>
                             </View>
@@ -744,7 +744,7 @@ export default function GenerateQuizScreen() {
                                         setQuestionCount(prev => String(Math.max(5, parseInt(prev) - 5)));
                                     }}
                                 >
-                                    <Icon name="Minus" size={22} color="primary" />
+                                    <Icon name="Minus" size={20} color="default" />
                                 </Pressable>
                                 <View className="flex-col items-center">
                                     <View className="flex-row items-baseline gap-1">
@@ -760,7 +760,7 @@ export default function GenerateQuizScreen() {
                                         setQuestionCount(prev => String(Math.min(30, parseInt(prev) + 5)));
                                     }}
                                 >
-                                    <Icon name="Plus" size={22} color="primary" />
+                                    <Icon name="Plus" size={20} color="default" />
                                 </Pressable>
                             </View>
 
@@ -803,7 +803,7 @@ export default function GenerateQuizScreen() {
                         >
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
-                                    <Icon name="Brain" size={20} color="primary" />
+                                    <Icon name="Brain" size={20} color="default" />
                                     <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Difficulty Depth</Text>
                                 </View>
                                 <View className="px-2.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.2)' : '#e0edff' }}>
@@ -836,7 +836,7 @@ export default function GenerateQuizScreen() {
                                         >
                                             <View className="flex-row items-center justify-between w-full">
                                                 <View className="w-9 h-9 rounded-xl items-center justify-center" style={{ backgroundColor: isActive ? 'transparent' : C.card }}>
-                                                    <Icon name={opt.icon as any} size={20} color="primary" animated={isActive ? "bounce" : undefined} />
+                                                    <Icon name={opt.icon as any} size={20} color={isActive ? "primary" : "secondary"} />
                                                 </View>
                                                 {isActive && <Icon name="CheckCircle2" size={20} color="primary" />}
                                             </View>
@@ -858,7 +858,7 @@ export default function GenerateQuizScreen() {
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-3">
                                     <View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: C.surfaceLow }}>
-                                        <Icon name="Timer" size={22} color="primary" />
+                                        <Icon name="Timer" size={20} color="default" />
                                     </View>
                                     <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Quiz Timer</Text>
                                 </View>
@@ -904,7 +904,7 @@ export default function GenerateQuizScreen() {
                                                 setTimerMinutes(prev => String(Math.max(5, parseInt(prev || '10') - 5)));
                                             }}
                                         >
-                                            <Icon name="Minus" size={20} color="primary" />
+                                            <Icon name="Minus" size={20} color="default" />
                                         </Pressable>
                                         <View className="flex-col items-center">
                                             <View className="flex-row items-baseline gap-1">
@@ -920,7 +920,7 @@ export default function GenerateQuizScreen() {
                                                 setTimerMinutes(prev => String(Math.min(60, parseInt(prev || '10') + 5)));
                                             }}
                                         >
-                                            <Icon name="Plus" size={20} color="primary" />
+                                            <Icon name="Plus" size={20} color="default" />
                                         </Pressable>
                                     </View>
 
@@ -965,7 +965,7 @@ export default function GenerateQuizScreen() {
                         >
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center gap-2">
-                                    <Icon name="Sliders" size={20} color="primary" />
+                                    <Icon name="Sliders" size={20} color="default" />
                                     <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Question Formats</Text>
                                 </View>
                             </View>
@@ -1138,12 +1138,12 @@ export default function GenerateQuizScreen() {
                         
                         <View className="flex-row items-center gap-4 text-[12px] pt-0.5">
                             <View className="flex-row items-center gap-1">
-                                <Icon name="Clock" size={14} color="primary" />
+                                <Icon name="Clock" size={14} color="secondary" />
                                 <Text className="text-[12px]" style={{ color: C.textSecondary }}>Question {currentQIndex + 1}/{questions.length}</Text>
                             </View>
                             {timerEnabled && (
                                 <View className="flex-row items-center gap-1">
-                                    <Icon name="Timer" size={14} color={timeLeft < 60 ? '#FF3B30' : C.primary} animated={timeLeft < 60 ? 'pulse' : undefined} />
+                                    <Icon name="Timer" size={14} color={timeLeft < 60 ? '#FF3B30' : 'secondary'} animated={timeLeft < 60 ? 'pulse' : undefined} />
                                     <Text className={`text-[12px] ${timeLeft < 60 ? 'text-[#FF3B30] font-[700]' : ''}`} style={timeLeft < 60 ? undefined : { color: C.textSecondary }}>{formatTime(timeLeft)}</Text>
                                 </View>
                             )}
@@ -1152,8 +1152,8 @@ export default function GenerateQuizScreen() {
 
                     {/* Question Typography */}
                     <View className="flex-col items-center text-center pt-2 mb-6">
-                        <View className="w-24 h-24 rounded-full shadow-sm items-center justify-center mb-4" style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : '#e0edff' }}>
-                            <Icon name="HelpCircle" size={40} color="primary" animated="pulse" />
+                        <View className="w-20 h-20 rounded-full shadow-sm items-center justify-center mb-4" style={{ backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}>
+                            <Icon name="HelpCircle" size={36} color="default" />
                         </View>
                         <Text className="font-[700] text-[18px] leading-[26px] text-center" style={{ color: C.text }}>{q.question_text}</Text>
                     </View>
@@ -1266,7 +1266,7 @@ export default function GenerateQuizScreen() {
                                 opacity: currentQIndex === 0 ? 0.5 : 1,
                             }}
                         >
-                            <Icon name="ArrowLeft" size={18} color="primary" style={{ marginRight: 4 }} />
+                            <Icon name="ArrowLeft" size={18} color="default" style={{ marginRight: 4 }} />
                             <Text className="font-[600] text-[14px]" style={{ color: C.text }}>Previous</Text>
                         </Pressable>
                         

@@ -180,11 +180,11 @@ export default function AccountScreen() {
                 {/* ── Grid Region ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(300)} style={s.gridContainer}>
                     <TouchableOpacity 
-                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#FFF0F0' }]}
+                        style={[s.gridItem, { backgroundColor: isDark ? C.card : C.surfaceLow }]}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={Award} size={36} color="#EF4444" style={{ marginBottom: 4 }} />
-                        <Text style={[s.gridTitle, { color: '#EF4444' }]}>{user.streak?.current_streak || 0} Day</Text>
+                        <Icon icon={Award} size={30} color="default" style={{ marginBottom: 6 }} />
+                        <Text style={[s.gridTitle, { color: C.text }]}>{user.streak?.current_streak || 0} Day</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Streak</Text>
                     </TouchableOpacity>
 
@@ -193,7 +193,7 @@ export default function AccountScreen() {
                         onPress={() => router.push('/(drawer)/flashcards' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={Folder} size={36} color="primary" style={{ marginBottom: 4 }} />
+                        <Icon icon={Folder} size={30} color="default" style={{ marginBottom: 6 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>Flashcards</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Decks</Text>
                     </TouchableOpacity>
@@ -203,9 +203,9 @@ export default function AccountScreen() {
                         onPress={() => router.push('/(drawer)/history' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={Clock} size={36} color="primary" style={{ marginBottom: 4 }} />
+                        <Icon icon={Clock} size={30} color="default" style={{ marginBottom: 6 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>History</Text>
-                        <Text style={[s.gridSub, { color: C.textTertiary }]}>Past scans</Text>
+                        <Text style={[s.gridSub, { color: C.textTertiary }]}>Past sessions</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
@@ -213,19 +213,19 @@ export default function AccountScreen() {
                         onPress={() => router.push('/(drawer)/history/saved' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={Bookmark} size={36} color="#10B981" style={{ marginBottom: 4 }} />
+                        <Icon icon={Bookmark} size={30} color="default" style={{ marginBottom: 6 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>Saved</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Bookmarks</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
-                        style={[s.gridItem, { backgroundColor: isDark ? C.card : '#E5F1FF' }]}
+                        style={[s.gridItem, { backgroundColor: C.selectedBackground, borderColor: C.selectedBorder, borderWidth: 1 }]}
                         onPress={() => router.push('/(drawer)/generate' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={FileText} size={36} color="primary" style={{ marginBottom: 4 }} />
-                        <Text style={[s.gridTitle, { color: '#007AFF' }]}>Practice</Text>
-                        <Text style={[s.gridSub, { color: '#007AFF' }]}>Quizzes</Text>
+                        <Icon icon={FileText} size={30} color="primary" style={{ marginBottom: 6 }} />
+                        <Text style={[s.gridTitle, { color: C.primary }]}>Practice</Text>
+                        <Text style={[s.gridSub, { color: C.primary }]}>Quizzes</Text>
                     </TouchableOpacity>
                     
                     <TouchableOpacity 
@@ -233,7 +233,7 @@ export default function AccountScreen() {
                         onPress={() => router.push('/(drawer)/support' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={HelpCircle} size={36} color="#F59E0B" style={{ marginBottom: 4 }} />
+                        <Icon icon={HelpCircle} size={30} color="default" style={{ marginBottom: 6 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>Support</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Help & Feedback</Text>
                     </TouchableOpacity>
@@ -243,7 +243,7 @@ export default function AccountScreen() {
                         onPress={() => router.push('/(drawer)/preferences' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={Settings} size={36} color={C.text} />
+                        <Icon icon={Settings} size={30} color="default" />
                         <View style={{ flex: 1, marginLeft: 16 }}>
                             <Text style={[s.gridTitle, { color: C.text, textAlign: 'left', marginTop: 0 }]}>Personalize</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary, textAlign: 'left', lineHeight: 18 }]} numberOfLines={3}>{prefSummary}</Text>

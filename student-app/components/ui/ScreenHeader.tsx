@@ -83,7 +83,7 @@ export function ScreenHeader({
             style={styles.backButton}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Icon icon={ArrowLeft} size={22} color={C.primary} strokeWidth={2.4} />
+            <Icon icon={ArrowLeft} size={22} color={C.icon} strokeWidth={2.2} />
           </TouchableOpacity>
         ) : (
           <View style={styles.placeholder} />

@@ -244,7 +244,7 @@ export function FlashcardEditor({ onGenerate, onPickFile, initialTopic }: Props)
                         }}
                     >
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
-                            <Icon name="UploadCloud" size={26} color="primary" animated="pulse" />
+                            <Icon name="UploadCloud" size={26} color="default" />
                             <View style={{ flex: 1 }}>
                                 <Text style={{ fontSize: 14, fontWeight: '600', color: C.text }} numberOfLines={1}>
                                     Attach Lecture Slides or Notes
@@ -320,7 +320,7 @@ export function FlashcardEditor({ onGenerate, onPickFile, initialTopic }: Props)
                             justifyContent: 'center',
                         }}
                     >
-                        <Icon name="Minus" size={18} color="primary" />
+                        <Icon name="Minus" size={18} color="default" />
                     </Pressable>
 
                     <View style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -348,7 +348,7 @@ export function FlashcardEditor({ onGenerate, onPickFile, initialTopic }: Props)
                             justifyContent: 'center',
                         }}
                     >
-                        <Icon name="Plus" size={18} color="primary" />
+                        <Icon name="Plus" size={18} color="default" />
                     </Pressable>
                 </View>
 
@@ -424,7 +424,7 @@ export function FlashcardEditor({ onGenerate, onPickFile, initialTopic }: Props)
                                     backgroundColor: isActive ? (isDark ? 'rgba(0, 122, 255, 0.22)' : '#DBEAFE') : C.surfaceLow,
                                 }}
                             >
-                                <Icon name={opt.icon} size={22} color="primary" />
+                                <Icon name={opt.icon} size={22} color={isActive ? "primary" : "secondary"} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>

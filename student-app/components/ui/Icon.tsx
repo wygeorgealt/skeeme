@@ -15,8 +15,12 @@ import { Colors, Palette } from '@/constants/theme';
 
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
 export type IconColorToken = 
+  | 'default'
+  | 'neutral'
   | 'primary' 
+  | 'active'
   | 'accent' 
+  | 'secondary'
   | 'muted' 
   | 'text' 
   | 'textSecondary' 
@@ -45,7 +49,7 @@ export interface IconProps extends Omit<LucideProps, 'size' | 'color'> {
   icon?: LucideIcon;
   /** Preset size ('xs'|'sm'|'md'|'lg'|'xl') or explicit pixel number */
   size?: IconSize;
-  /** Semantic color token or custom color string. Defaults to 'primary' (blue theme) */
+  /** Semantic color token or custom color string. Defaults to 'default' (neutral dark / white) */
   color?: IconColorToken | string;
   /** Stroke width in pixels. Defaults to 2 */
   strokeWidth?: number;
@@ -57,7 +61,7 @@ export function Icon({
   name,
   icon: IconComponentProp,
   size = 'md',
-  color = 'primary',
+  color = 'default',
   strokeWidth = 2,
   animated = false,
   style,
@@ -73,19 +77,25 @@ export function Icon({
   // Resolve color
   const resolveColor = (c: IconColorToken | string): string => {
     switch (c) {
+      case 'default':
+      case 'neutral':
+      case 'text':
+      case 'textPrimary':
+        return C.icon;
+      case 'secondary':
+      case 'muted':
+      case 'textSecondary':
+        return C.iconSecondary;
+      case 'tertiary':
+      case 'textTertiary':
+      case 'iconMuted':
+        return C.iconTertiary;
       case 'primary':
+      case 'active':
+      case 'brand':
         return C.primary;
       case 'accent':
         return Palette.blue.accent;
-      case 'muted':
-        return C.textSecondary;
-      case 'text':
-        return C.text;
-      case 'textSecondary':
-        return C.textSecondary;
-      case 'textTertiary':
-      case 'tertiary':
-        return C.textTertiary;
       case 'success':
         return C.success;
       case 'destructive':
@@ -98,10 +108,10 @@ export function Icon({
         return C.border;
       default:
         // Handle common accidental string tokens
-        if (c === 'textTertiary' || c === 'tertiary') return C.textTertiary;
-        if (c === 'textSecondary' || c === 'muted') return C.textSecondary;
-        if (c === 'textPrimary' || c === 'text') return C.text;
-        if (c === 'primary') return C.primary;
+        if (c === 'textTertiary' || c === 'tertiary') return C.iconTertiary;
+        if (c === 'textSecondary' || c === 'muted' || c === 'secondary') return C.iconSecondary;
+        if (c === 'textPrimary' || c === 'text' || c === 'default') return C.icon;
+        if (c === 'primary' || c === 'active') return C.primary;
         return c;
     }
   };

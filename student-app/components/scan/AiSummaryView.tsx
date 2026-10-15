@@ -153,8 +153,8 @@ export function AiSummaryView(props: AiSummaryViewProps) {
                   style={{ minHeight: 100 }}
                 >
                   <View className="flex-row items-center mb-3">
-                    <View className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center mr-2">
-                      <Icon name="Sparkles" size={18} color="primary" />
+                    <View className="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center mr-2">
+                      <Icon name="Sparkles" size={18} color="default" />
                     </View>
                     <Text className="text-[13px] font-bold text-on-surface flex-1">{f.title}</Text>
                   </View>

@@ -312,12 +312,12 @@ export default function SummaryScreen() {
                                                             width: 30,
                                                             height: 30,
                                                             borderRadius: 10,
-                                                            backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : '#E5F1FF',
+                                                            backgroundColor: C.surfaceLow,
                                                             alignItems: 'center',
                                                             justifyContent: 'center',
                                                         }}
                                                     >
-                                                        <Icon name="Zap" size={16} color="primary" />
+                                                        <Icon name="Zap" size={16} color="default" />
                                                     </View>
                                                     <Text style={{ fontSize: 14, fontWeight: '700', color: C.text }} numberOfLines={1}>
                                                         {rf.title}
@@ -354,12 +354,12 @@ export default function SummaryScreen() {
                                             width: 42,
                                             height: 42,
                                             borderRadius: 14,
-                                            backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : '#E5F1FF',
+                                            backgroundColor: C.surfaceLow,
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                         }}
                                     >
-                                        <Icon name="Brain" size={20} color="primary" />
+                                        <Icon name="Brain" size={20} color="default" />
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 4 }}>
@@ -598,7 +598,7 @@ export default function SummaryScreen() {
                                     gap: 8,
                                 }}
                             >
-                                <Icon name="UploadCloud" size={28} color="primary" />
+                                <Icon name="UploadCloud" size={28} color="default" />
                                 <Text style={{ fontSize: 15, fontWeight: '700', color: C.text }}>
                                     {selectedFile ? selectedFile.name : 'Tap to Upload PDF or Notes'}
                                 </Text>
@@ -654,12 +654,12 @@ export default function SummaryScreen() {
                                                 width: 40,
                                                 height: 40,
                                                 borderRadius: 12,
-                                                backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : '#E5F1FF',
+                                                backgroundColor: C.surfaceLow,
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                             }}
                                         >
-                                            <Icon name="BookOpen" size={20} color="primary" />
+                                            <Icon name="BookOpen" size={20} color="default" />
                                         </View>
                                         <View style={{ flex: 1 }}>
                                             <Text style={{ fontSize: 15, fontWeight: '700', color: C.text }} numberOfLines={1}>

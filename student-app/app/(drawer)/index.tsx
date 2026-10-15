@@ -163,15 +163,15 @@ export default function HomeDashboard() {
                     }}
                 >
                     <View style={styles.avatarCircle}>
-                        <Icon name="User" size={18} color="primary" />
+                        <Icon name="User" size={18} color="default" />
                     </View>
                     <Text style={[styles.profileGreeting, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
                         Hello, <Text style={styles.profileNameBold}>{firstName}!</Text>
                     </Text>
                     <Icon
                         name={profileMenuVisible ? 'ChevronUp' : 'ChevronDown'}
-                        size={20}
-                        color="primary"
+                        size={18}
+                        color="secondary"
                     />
                 </TouchableOpacity>
 
@@ -250,14 +250,14 @@ export default function HomeDashboard() {
                                 }}
                             >
                                 <View style={styles.menuIconWrap}>
-                                    <Icon name="Smile" size={20} color="primary" animated="pulse" />
+                                    <Icon name="Smile" size={20} color="default" />
                                 </View>
                                 <View style={styles.menuTextWrap}>
                                     <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
                                         Personalization
                                     </Text>
                                 </View>
-                                <Icon name="ChevronRight" size={16} color="primary" />
+                                <Icon name="ChevronRight" size={16} color="secondary" />
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -269,14 +269,14 @@ export default function HomeDashboard() {
                                 }}
                             >
                                 <View style={styles.menuIconWrap}>
-                                    <Icon name="Settings" size={20} color="primary" />
+                                    <Icon name="Settings" size={20} color="default" />
                                 </View>
                                 <View style={styles.menuTextWrap}>
                                     <Text style={[styles.menuTitle, { color: isDark ? '#FFF' : '#1C1C1E' }]}>
                                         Settings
                                     </Text>
                                 </View>
-                                <Icon name="ChevronRight" size={16} color="primary" />
+                                <Icon name="ChevronRight" size={16} color="secondary" />
                             </TouchableOpacity>
                         </View>
                     </TouchableOpacity>
@@ -320,7 +320,7 @@ export default function HomeDashboard() {
                         <View style={styles.dailyGoalHeader}>
                             <View style={styles.dailyGoalLeft}>
                                 <View style={styles.targetIconWrap}>
-                                    <Icon name="BowArrow" size={20} color="primary" animated="pulse" />
+                                    <Icon name="BowArrow" size={20} color="default" />
                                 </View>
                                 <View>
                                     <Text style={[styles.dailyGoalTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
@@ -354,7 +354,7 @@ export default function HomeDashboard() {
                     >
                         <View style={styles.proBannerContent}>
                             <View style={styles.crownCircle}>
-                                <Icon name="Award" size={26} color="white" animated="pulse" />
+                                <Icon name="Award" size={26} color="white" />
                             </View>
                             <View style={styles.proBannerTextWrap}>
                                 <Text style={styles.proBannerTitle}>Unlock Skeeme Pro</Text>
@@ -394,7 +394,7 @@ export default function HomeDashboard() {
                             }}
                         >
                             <View style={styles.tileIconCircle}>
-                                <Icon name="HelpCircle" size={28} color="primary" animated="pulse" />
+                                <Icon name="HelpCircle" size={26} color="default" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>Quiz</Text>
                         </TouchableOpacity>
@@ -415,7 +415,7 @@ export default function HomeDashboard() {
                             }}
                         >
                             <View style={styles.tileIconCircle}>
-                                <Icon name="Layers" size={28} color="primary" animated="pulse" />
+                                <Icon name="Layers" size={26} color="default" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
                                 Flashcards
@@ -438,7 +438,7 @@ export default function HomeDashboard() {
                             }}
                         >
                             <View style={styles.tileIconCircle}>
-                                <Icon name="BookOpen" size={28} color="primary" animated="pulse" />
+                                <Icon name="BookOpen" size={26} color="default" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>Summary</Text>
                         </TouchableOpacity>
@@ -474,9 +474,9 @@ export default function HomeDashboard() {
                                     <View style={styles.taskCardLeft}>
                                         <View style={styles.taskIconCircle}>
                                             <Icon
-                                                name={task.completed ? 'CheckCircle2' : 'CircleDot'}
+                                                name={task.completed ? 'CheckCircle2' : 'Circle'}
                                                 size={20}
-                                                color={task.completed ? 'success' : 'primary'}
+                                                color={task.completed ? 'primary' : 'secondary'}
                                             />
                                         </View>
                                         <View style={styles.taskTextWrap}>
@@ -503,8 +503,8 @@ export default function HomeDashboard() {
                                     >
                                         <Icon
                                             name={task.completed ? 'CheckCircle2' : 'ArrowUpRight'}
-                                            size={20}
-                                            color={task.completed ? 'success' : 'primary'}
+                                            size={18}
+                                            color={task.completed ? 'primary' : 'secondary'}
                                         />
                                     </TouchableOpacity>
                                 </TouchableOpacity>
