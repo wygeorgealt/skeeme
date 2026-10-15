@@ -122,7 +122,7 @@ export default function NameScreen() {
                                     key={level.key}
                                     onPress={() => handleSelectLevel(level.key)}
                                     className={`w-[48%] relative flex-col justify-between p-4 rounded-2xl bg-surface-container-lowest transition-all ${
-                                        isSelected ? 'shadow-md border border-accent-electric-blue/10' : 'shadow-sm border border-transparent'
+                                        isSelected ? 'shadow-md border border-accent-electric-blue' : 'shadow-sm border border-transparent'
                                     }`}
                                 >
                                     <View className="flex-row items-center justify-between w-full mb-3">
@@ -134,11 +134,6 @@ export default function NameScreen() {
                                                 size={22} 
                                                 color={isSelected ? 'primary' : 'muted'} 
                                             />
-                                        </View>
-                                        <View className={`w-6 h-6 rounded-full items-center justify-center ${
-                                            isSelected ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container'
-                                        }`}>
-                                            {isSelected && <Icon name="Check" size={16} color="white" strokeWidth={3} />}
                                         </View>
                                     </View>
                                     <View className="flex-col gap-0.5">

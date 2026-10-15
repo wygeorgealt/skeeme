@@ -96,18 +96,6 @@ export default function ToneScreen() {
                                         <View className="flex-1 min-w-0">
                                             <View className="flex-row items-center justify-between gap-2 mb-1">
                                                 <Text className="font-semibold text-[16px] text-on-surface">{style.label}</Text>
-                                                <View className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                                                    isSelected ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container'
-                                                }`}>
-                                                    {isSelected && (
-                                                        <Icon 
-                                                            name="Check" 
-                                                            size={16} 
-                                                            color="white" 
-                                                            strokeWidth={3}
-                                                        />
-                                                    )}
-                                                </View>
                                             </View>
                                             <Text className="font-normal text-[15px] text-on-surface-variant leading-relaxed mb-3">
                                                 {style.desc}

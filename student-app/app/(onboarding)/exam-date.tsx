@@ -87,14 +87,6 @@ export default function ExamDateScreen() {
                                         </View>
                                         <Text className="text-[13px] text-on-surface-variant leading-relaxed">{g.desc}</Text>
                                     </View>
-                                    
-                                    <View className={`absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                                        isSelected ? 'bg-accent-electric-blue' : 'bg-surface-container-high'
-                                    }`}>
-                                        {isSelected && (
-                                            <Icon name="Check" size={16} color="white" strokeWidth={3} />
-                                        )}
-                                    </View>
                                 </Pressable>
                             </Animated.View>
                         );

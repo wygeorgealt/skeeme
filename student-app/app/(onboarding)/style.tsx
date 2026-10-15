@@ -116,15 +116,6 @@ export default function StyleScreen() {
                                                 )}
                                             </View>
                                         </View>
-                                        <View className={`w-6 h-6 rounded-full items-center justify-center transition-all ${
-                                            isSelected ? 'bg-accent-electric-blue' : 'bg-surface-container'
-                                        }`}>
-                                            {isSelected ? (
-                                                <Icon name="Check" size={16} color="white" strokeWidth={3} />
-                                            ) : (
-                                                <View className="w-2.5 h-2.5 rounded-full bg-surface-container-lowest opacity-0" />
-                                            )}
-                                        </View>
                                     </Pressable>
                                 </Animated.View>
                             );
@@ -154,11 +145,13 @@ export default function StyleScreen() {
                                             : 'bg-surface-container-lowest shadow-sm border border-transparent'
                                     }`}
                                 >
-                                    <Icon 
-                                        name={isSelected ? (f.isNone ? 'Smile' : 'Check') : (f.isNone ? 'Smile' : 'Plus')} 
-                                        size={18} 
-                                        color={isSelected ? 'white' : 'muted'} 
-                                    />
+                                    {f.isNone && (
+                                        <Icon 
+                                            name="Smile" 
+                                            size={18} 
+                                            color={isSelected ? 'white' : 'muted'} 
+                                        />
+                                    )}
                                     <Text className={`font-semibold text-[14px] ${
                                         isSelected ? 'text-on-primary' : 'text-on-surface'
                                     }`}>{f.label}</Text>

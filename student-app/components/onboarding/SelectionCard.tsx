@@ -3,7 +3,6 @@ import { View, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native
 import { Text } from '@/components/ui/Text';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { Colors } from '@/constants/theme';
 
@@ -64,18 +63,6 @@ export function SelectionCard({
                         <Text style={[s.desc, { color: C.textSecondary }]}>{desc}</Text>
                     ) : null}
                 </View>
-
-                {/* Check indicator */}
-                {isSelected ? (
-                    <View style={s.checkWrap}>
-                        <CheckCircle width={22} height={22} color="#007AFF" />
-                    </View>
-                ) : (
-                    <View style={[
-                        s.radioEmpty,
-                        { borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)' },
-                    ]} />
-                )}
             </TouchableOpacity>
         </Animated.View>
     );

@@ -93,13 +93,6 @@ export default function AnalogyScreen() {
                                                 : 'bg-surface-container hover:bg-surface-container-high'
                                         }`}
                                     >
-                                        {isSelected && (
-                                            <Icon 
-                                                name="Check" 
-                                                size={18} 
-                                                color="white" 
-                                            />
-                                        )}
                                         <Text className="text-[16px]">{ex.emoji}</Text>
                                         <Text className={`font-semibold text-[14px] ${
                                             isSelected ? 'text-on-primary' : 'text-on-surface'
@@ -136,11 +129,6 @@ export default function AnalogyScreen() {
                                                 isSelected ? 'bg-accent-electric-blue/15' : 'bg-surface-container-low'
                                             }`}>
                                                 <Text className="text-[20px]">{t.emoji}</Text>
-                                            </View>
-                                            <View className={`w-5 h-5 rounded-full flex items-center justify-center transition-opacity ${
-                                                isSelected ? 'bg-accent-electric-blue opacity-100 shadow-sm' : 'opacity-0'
-                                            }`}>
-                                                <Icon name="Check" size={14} color="white" strokeWidth={3} />
                                             </View>
                                         </View>
                                         <View className="mt-2 flex-col gap-0.5">

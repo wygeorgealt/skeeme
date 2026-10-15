@@ -79,10 +79,10 @@ export default function GoalScreen() {
                                 <Pressable
                                     onPress={() => toggleGoal(goal.key)}
                                     className={`flex-row items-center justify-between p-4 rounded-[24px] bg-surface-container-lowest transition-all active:scale-[0.98] ${
-                                        isSelected ? 'shadow-md border border-accent-electric-blue/10' : 'shadow-sm border border-transparent'
+                                        isSelected ? 'shadow-md border border-accent-electric-blue' : 'shadow-sm border border-transparent'
                                     }`}
                                 >
-                                    <View className="flex-row items-center gap-3.5 flex-1 pr-3">
+                                    <View className="flex-row items-center gap-3.5 flex-1">
                                         <View className="w-12 h-12 rounded-2xl bg-surface-container-low items-center justify-center shadow-sm">
                                             <Text className="text-[24px]">{goal.emoji}</Text>
                                         </View>
@@ -90,21 +90,6 @@ export default function GoalScreen() {
                                             <Text className="font-semibold text-[16px] text-on-surface" numberOfLines={1}>{goal.label}</Text>
                                             <Text className="text-[13px] text-on-surface-variant mt-0.5" numberOfLines={1}>{goal.desc}</Text>
                                         </View>
-                                    </View>
-                                    
-                                    <View className={`w-7 h-7 rounded-full items-center justify-center transition-all ${
-                                        isSelected 
-                                            ? 'bg-accent-electric-blue shadow-sm scale-100' 
-                                            : 'bg-surface-container-high scale-95'
-                                    }`}>
-                                        {isSelected && (
-                                            <Icon 
-                                                name="Check" 
-                                                size={18} 
-                                                color="white" 
-                                                strokeWidth={3}
-                                            />
-                                        )}
                                     </View>
                                 </Pressable>
                             </Animated.View>

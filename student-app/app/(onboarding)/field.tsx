@@ -148,13 +148,6 @@ export default function FieldScreen() {
                                         isActive ? 'bg-accent-electric-blue shadow-sm' : 'bg-surface-container-low'
                                     }`}
                                 >
-                                    {isActive && (
-                                        <Icon 
-                                            name="Check" 
-                                            size={18} 
-                                            color="white" 
-                                        />
-                                    )}
                                     <Text className={`font-semibold text-[14px] ${isActive ? 'text-on-primary' : 'text-on-surface-variant'}`}>
                                         {sub}
                                     </Text>

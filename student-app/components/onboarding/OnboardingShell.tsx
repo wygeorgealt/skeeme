@@ -6,6 +6,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { BlurView } from 'expo-blur';
 import { cssInterop } from 'nativewind';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 
 // Ensure Ionicons can accept className if needed, but standard style works too.
 
@@ -132,21 +133,18 @@ export function OnboardingShell({
                 >
                     <View className="px-4 pt-4 pb-4 bg-surface/85">
                         {footerExtra}
-                        <TouchableOpacity
-                            onPress={onCta}
-                            disabled={ctaDisabled || ctaLoading}
-                            activeOpacity={0.9}
-                            className={`w-full h-[52px] rounded-xl flex-row items-center justify-center gap-1 shadow-sm ${
-                                ctaDisabled ? 'bg-surface-container-high' : 'bg-accent-electric-blue'
-                            }`}
-                        >
-                            <Text className={`text-[16px] font-semibold ${ctaDisabled ? 'text-outline' : 'text-on-primary'}`}>
-                                {ctaLoading ? 'Loading...' : ctaTitle}
-                            </Text>
-                            {!ctaLoading && !ctaDisabled && (
-                                <Icon name="ArrowRight" size={20} color="white" />
-                            )}
-                        </TouchableOpacity>
+                        <View style={{ width: '100%', alignItems: 'center' }}>
+                            <AnimatedButton
+                                title={ctaTitle}
+                                onPress={onCta}
+                                loading={ctaLoading}
+                                disabled={ctaDisabled || ctaLoading}
+                                type="capsule"
+                                backgroundColor="#007AFF"
+                                shadowColor="#0066D6"
+                                fullWidth
+                            />
+                        </View>
                     </View>
                 </BlurView>
             )}

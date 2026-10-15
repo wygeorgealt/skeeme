@@ -14,6 +14,7 @@ import { Icon } from '@/components/ui/Icon';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -155,9 +156,8 @@ export default function PreferencesScreen() {
                                     }}
                                     className="flex-1 p-4 rounded-2xl border"
                                 >
-                                    <View className="flex-row items-center justify-between mb-2">
+                                    <View className="mb-2">
                                         <Text style={{ color: isSelected ? '#007AFF' : C.text }} className="font-bold">{item.label}</Text>
-                                        {isSelected && <Icon name="CheckCircle2" size={16} color="primary" />}
                                     </View>
                                     <Text style={{ color: isSelected ? '#007AFF' : C.textSecondary }} className="text-xs">{item.desc}</Text>
                                 </Pressable>
@@ -230,7 +230,6 @@ export default function PreferencesScreen() {
                                         <Text style={{ color: isSelected ? '#007AFF' : C.text }} className="font-bold text-base mb-0.5">{item.label}</Text>
                                         <Text style={{ color: isSelected ? '#007AFF' : C.textSecondary }} className="text-xs">{item.desc}</Text>
                                     </View>
-                                    {isSelected && <Icon name="CheckCircle2" size={24} color="primary" />}
                                 </Pressable>
                             );
                         })}
@@ -247,22 +246,18 @@ export default function PreferencesScreen() {
                 }}
                 className="absolute bottom-0 left-0 right-0 border-t px-6 pt-4"
             >
-                <Pressable
-                    onPress={handleSave}
-                    disabled={saving}
-                    style={{
-                        backgroundColor: saving ? (isDark ? '#3A3A3C' : '#E3E2E7') : '#007AFF',
-                        shadowColor: '#007AFF',
-                        shadowOffset: { width: 0, height: 8 },
-                        shadowOpacity: saving ? 0 : 0.3,
-                        shadowRadius: 16,
-                    }}
-                    className="w-full h-14 rounded-2xl flex-row items-center justify-center shadow-sm"
-                >
-                    <Text style={{ color: saving ? C.textSecondary : '#FFFFFF' }} className="font-bold text-base">
-                        {saving ? 'Saving...' : 'Save Preferences'}
-                    </Text>
-                </Pressable>
+                <View style={{ width: '100%', alignItems: 'center' }}>
+                    <AnimatedButton
+                        title="Save Preferences"
+                        onPress={handleSave}
+                        loading={saving}
+                        disabled={saving}
+                        type="capsule"
+                        backgroundColor="#007AFF"
+                        shadowColor="#0066D6"
+                        fullWidth
+                    />
+                </View>
             </View>
         </View>
     );
