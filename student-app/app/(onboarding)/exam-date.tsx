@@ -124,7 +124,7 @@ export default function ExamDateScreen() {
                             <View className="flex-col gap-1">
                                 <Text className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Target Exam / Course</Text>
                                 <View className="flex-row items-center rounded-xl bg-surface-container-low px-3 py-2.5 border border-transparent focus-within:border-accent-electric-blue/30">
-                                    <Icon name="GraduationCap" size={20} color="#8e8e93" style={{ marginRight: 8 }} />
+                                    <Icon name="GraduationCap" size={20} color="secondary" style={{ marginRight: 8 }} />
                                     <TextInput 
                                         className="flex-1 text-[15px] text-on-surface p-0 ml-2"
                                         placeholder="e.g. MCAT, USMLE, Midterms"
@@ -141,7 +141,7 @@ export default function ExamDateScreen() {
                                     onPress={() => setShowPicker(true)}
                                     className="flex-row items-center rounded-xl bg-surface-container-low px-3 py-3 border border-transparent"
                                 >
-                                    <Icon name="Calendar" size={20} color="primary" style={{ marginRight: 8 }} />
+                                    <Icon name="Calendar" size={20} color="secondary" style={{ marginRight: 8 }} />
                                     <Text className="flex-1 font-semibold text-[15px] text-on-surface ml-2">
                                         {date.toLocaleDateString(undefined, { dateStyle: 'long' })}
                                     </Text>

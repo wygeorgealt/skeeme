@@ -67,7 +67,7 @@ export function OnboardingShell({
                                 className="w-11 h-11 rounded-full items-center justify-center bg-transparent active:bg-surface-container-high"
                                 accessibilityLabel="Go back"
                             >
-                                <Icon name="ArrowLeft" size={24} color="text" />
+                                <Icon name="ArrowLeft" size={24} color="default" />
                             </TouchableOpacity>
                         ) : (
                             <View className="w-11 h-11" />

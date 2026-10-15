@@ -90,7 +90,7 @@ export default function ToneScreen() {
                                             <Icon 
                                                 name={style.icon as any} 
                                                 size={24} 
-                                                color={isSelected ? 'primary' : 'muted'} 
+                                                color={isSelected ? 'primary' : 'secondary'} 
                                             />
                                         </View>
                                         <View className="flex-1 min-w-0">
@@ -107,7 +107,7 @@ export default function ToneScreen() {
                                                 <Icon 
                                                     name={style.tagIcon as any} 
                                                     size={14} 
-                                                    color={isSelected ? 'primary' : 'muted'} 
+                                                    color={isSelected ? 'primary' : 'secondary'} 
                                                 />
                                                 <Text className={`font-semibold text-[11px] tracking-wide ${
                                                     isSelected ? 'text-accent-electric-blue' : 'text-on-surface-variant'
@@ -123,7 +123,7 @@ export default function ToneScreen() {
 
                 {/* Info Tooltip */}
                 <View className="w-full p-4 rounded-xl bg-surface-container-low flex-row items-center gap-3 mt-2">
-                    <Icon name="Info" size={20} color="primary" style={{ flexShrink: 0 }} />
+                    <Icon name="Info" size={20} color="secondary" style={{ flexShrink: 0 }} />
                     <Text className="font-normal text-[13px] text-on-surface-variant flex-1">
                         You can change explanation difficulty or ask for an alternative analogy at any point in any lesson.
                     </Text>

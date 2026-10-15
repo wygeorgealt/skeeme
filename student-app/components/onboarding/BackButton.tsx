@@ -7,7 +7,7 @@ export const BackButton = () => {
   const router = useRouter();
   return (
     <TouchableOpacity style={styles.button} onPress={() => router.back()} accessibilityLabel="Go back">
-      <Icon name="ArrowLeft" size={24} color="primary" />
+      <Icon name="ArrowLeft" size={24} color="default" />
     </TouchableOpacity>
   );
 };

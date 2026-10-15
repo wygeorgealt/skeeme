@@ -149,7 +149,7 @@ export default function StyleScreen() {
                                         <Icon 
                                             name="Smile" 
                                             size={18} 
-                                            color={isSelected ? 'white' : 'muted'} 
+                                            color={isSelected ? 'white' : 'secondary'} 
                                         />
                                     )}
                                     <Text className={`font-semibold text-[14px] ${

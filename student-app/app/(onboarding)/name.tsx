@@ -82,7 +82,7 @@ export default function NameScreen() {
                     
                     <View className="relative w-full rounded-2xl bg-surface-container-low transition-colors focus-within:bg-surface-container-lowest focus-within:shadow-sm flex-row items-center h-14 border border-transparent focus-within:border-accent-electric-blue/20">
                         <View className="absolute left-4 z-10">
-                            <Icon name="User" size={22} color="muted" />
+                            <Icon name="User" size={22} color="secondary" />
                         </View>
                         <TextInput
                             className="flex-1 h-full pl-12 pr-11 text-[17px] text-on-surface font-semibold"
@@ -98,7 +98,7 @@ export default function NameScreen() {
                                 onPress={() => setName('')}
                                 className="absolute right-3 w-8 h-8 rounded-full items-center justify-center active:bg-surface-container"
                             >
-                                <Icon name="XCircle" size={20} color="muted" />
+                                <Icon name="XCircle" size={20} color="secondary" />
                             </Pressable>
                         )}
                     </View>
@@ -132,7 +132,7 @@ export default function NameScreen() {
                                             <Icon 
                                                 name={level.icon as any} 
                                                 size={22} 
-                                                color={isSelected ? 'primary' : 'muted'} 
+                                                color={isSelected ? 'primary' : 'secondary'} 
                                             />
                                         </View>
                                     </View>
