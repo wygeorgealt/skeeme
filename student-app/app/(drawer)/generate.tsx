@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView, Alert, Animated, StyleSheet, Modal, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView, Alert, Animated, StyleSheet, Modal, Platform, BackHandler } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { streamQuizGenerate } from '@/lib/aiStream';
 
-import { useFocusEffect, useLocalSearchParams, useNavigation, router } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, router } from 'expo-router';
 import { api } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/authStore';
@@ -97,7 +97,6 @@ export default function GenerateQuizScreen() {
     const bgColor = isDark ? '#121212' : '#ffffff';
     const tintColor = isDark ? '#fff' : '#121212';
     const C = Colors[isDark ? 'dark' : 'light'];
-    const navigation = useNavigation() as any;
 
     // Setup state
     const [mode, setMode] = useState<QuizMode>('topic');
@@ -237,34 +236,44 @@ export default function GenerateQuizScreen() {
         setSelectedFile(null);
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            const onBeforeRemove = (e: any) => {
-                if (questions.length === 0 || currentQIndex >= questions.length) {
-                    return;
-                }
-                e.preventDefault();
-                Alert.alert(
-                    'Discard Quiz?',
-                    'Leaving now will discard your current progress. This quiz will not be saved.',
-                    [
-                        { text: 'Stay', style: 'cancel', onPress: () => {} },
-                        {
-                            text: 'Discard',
-                            style: 'destructive',
-                            onPress: () => navigation.dispatch(e.data.action),
+    const handleDiscardOrBack = useCallback(() => {
+        const isQuizActive = (questions.length > 0 && currentQIndex < questions.length) || isLoading;
+        if (isQuizActive) {
+            Alert.alert(
+                'Discard Quiz?',
+                'Leaving now will discard your current progress. This quiz will not be saved.',
+                [
+                    { text: 'Stay', style: 'cancel', onPress: () => {} },
+                    {
+                        text: 'Discard',
+                        style: 'destructive',
+                        onPress: () => {
+                            setQuestions([]);
+                            setIsLoading(false);
+                            if (timerRef.current) clearInterval(timerRef.current);
+                            if (router.canGoBack()) router.back();
+                            else router.replace('/(drawer)' as any);
                         },
-                    ]
-                );
-            };
+                    },
+                ]
+            );
+        } else {
+            if (router.canGoBack()) router.back();
+            else router.replace('/(drawer)' as any);
+        }
+    }, [questions.length, currentQIndex, isLoading]);
 
-            navigation.addListener('beforeRemove', onBeforeRemove);
-            return () => {
-                navigation.removeListener('beforeRemove', onBeforeRemove);
-                if (timerRef.current) clearInterval(timerRef.current);
-            };
-        }, [questions.length, currentQIndex, navigation])
-    );
+    // Handle hardware back on Android
+    useEffect(() => {
+        const isQuizActive = (questions.length > 0 && currentQIndex < questions.length) || isLoading;
+        if (!isQuizActive) return;
+
+        const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+            handleDiscardOrBack();
+            return true;
+        });
+        return () => sub.remove();
+    }, [questions.length, currentQIndex, isLoading, handleDiscardOrBack]);
 
     // File picker
     const handleFileSelect = async () => {
@@ -542,58 +551,10 @@ export default function GenerateQuizScreen() {
     }, [questions, totalAnswered, isSaved, isSavingHistory, mode, topic, selectedFile, difficulty, correctCount, theoryResults, selectedAnswers, timerEnabled, timerMinutes, timeLeft]);
 
 
-    // Programmatic header and tab bar control
-    useEffect(() => {
-        const isQuizActive = (questions.length > 0 && currentQIndex < questions.length) || isLoading;
-        
-        navigation.setOptions({ 
-            headerShown: false, // Always hide header in this screen as we have custom headers
-            tabBarStyle: isQuizActive ? { display: 'none' } : undefined
-        });
-
-        // If it's a tab navigator, we might need to set it on the parent
-        const parent = navigation.getParent();
-        if (parent) {
-            parent.setOptions({
-                tabBarStyle: isQuizActive ? { display: 'none' } : undefined
-            });
-        }
-    }, [questions.length, currentQIndex, isLoading, navigation]);
-
-    // Prevent accidental exit
-    useEffect(() => {
-        const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
-            const isQuizActive = (questions.length > 0 && currentQIndex < questions.length) || isLoading;
-            if (!isQuizActive) return;
-
-            e.preventDefault();
-            Alert.alert(
-                'Discard Quiz?',
-                'Leaving now will lose your progress. Are you sure?',
-                [
-                    { text: 'Stay', style: 'cancel' },
-                    { 
-                        text: 'Discard', 
-                        style: 'destructive', 
-                        onPress: () => {
-                            // Reset state and allow navigation
-                            setQuestions([]);
-                            setIsLoading(false);
-                            navigation.dispatch(e.data.action);
-                        }
-                    }
-                ]
-            );
-        });
-
-        return unsubscribe;
-    }, [navigation, questions.length, currentQIndex, isLoading]);
-
     // Automatically reset quiz when entering screen if a quiz is fully completed/refocused
-    useEffect(() => {
-        const unsubscribe = navigation.addListener('focus', () => {
+    useFocusEffect(
+        useCallback(() => {
             if (questions.length > 0 && currentQIndex >= questions.length) {
-                // Fully finished/on results screen -> reset to setup form
                 setQuestions([]);
                 setSelectedAnswers({});
                 setTheoryResults({});
@@ -608,10 +569,8 @@ export default function GenerateQuizScreen() {
                 setTopic('');
                 setSelectedFile(null);
             }
-        });
-
-        return unsubscribe;
-    }, [navigation, questions.length, currentQIndex]);
+        }, [questions.length, currentQIndex])
+    );
 
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
     if (questions.length === 0) {
@@ -621,6 +580,7 @@ export default function GenerateQuizScreen() {
             <View style={{ flex: 1, backgroundColor: C.background }}>
                 <ScreenHeader 
                     title={isLoading ? (loadingStage || 'Skeeming...') : 'Create Quiz'} 
+                    onBack={handleDiscardOrBack}
                 />
 
                 {isLoading ? (
@@ -990,20 +950,18 @@ export default function GenerateQuizScreen() {
                     }}
                 >
                     <View className="max-w-xl mx-auto w-full flex-col gap-2">
-                        <Pressable
-                            onPress={handleGenerate}
-                            disabled={!canGenerate || isLoading}
-                            className={`w-full h-14 rounded-2xl flex-row items-center justify-center gap-2 ${(!canGenerate || isLoading) ? 'opacity-50' : 'bg-accent-electric-blue'}`}
-                            style={canGenerate ? { shadowColor: '#007AFF', shadowOffset: {width:0, height:8}, shadowOpacity: 0.35, shadowRadius: 24 } : { backgroundColor: C.border }}
-                        >
-                            {isLoading ? (
-                                <LoadingSpinner size={22} color="white" />
-                            ) : (
-                                <Icon name="Zap" size={22} color="white" animated="pulse" />
-                            )}
-                            <Text className="text-[16px] font-[600] text-on-primary">{isLoading ? 'Generating...' : 'Generate Quiz'}</Text>
-                            {!isLoading && <Text className="text-[13px] font-[400] text-on-primary/80">✨</Text>}
-                        </Pressable>
+                        <View style={{ width: '100%', alignItems: 'center' }}>
+                            <AnimatedButton
+                                title="Generate Quiz"
+                                onPress={handleGenerate}
+                                loading={isLoading}
+                                disabled={!canGenerate || isLoading}
+                                type="capsule"
+                                backgroundColor="#007AFF"
+                                shadowColor="#0066D6"
+                                fullWidth
+                            />
+                        </View>
                         <View className="flex-row items-center justify-center gap-1.5">
                             <Text className="text-[12px] font-[500]" style={{ color: C.textSecondary }}>{user?.plan_name !== 'free' ? 'Included with Pro' : '30 Credits'}</Text>
                         </View>
@@ -1104,6 +1062,7 @@ export default function GenerateQuizScreen() {
                 <ScreenHeader 
                     title={`Question ${currentQIndex + 1} of ${questions.length}`}
                     subtitle={topic || selectedFile?.name || 'Quiz'}
+                    onBack={handleDiscardOrBack}
                     rightAction={timerEnabled ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.surfaceLow }}>
                             <Icon name="Timer" size={16} color={timeLeft < 60 ? '#FF3B30' : C.primary} animated={timeLeft < 60 ? 'pulse' : undefined} />

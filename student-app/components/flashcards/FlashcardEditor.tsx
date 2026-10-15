@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
@@ -16,6 +17,7 @@ import { haptics } from '@/lib/haptics';
 interface Props {
     onGenerate: (data: { topic?: string; count: number; contentFocus: string[] }) => Promise<void>;
     onPickFile?: () => Promise<void>;
+    initialTopic?: string;
 }
 
 const SUGGESTIONS = [
@@ -32,14 +34,14 @@ const FOCUS_OPTIONS = [
     { id: 'qa', title: 'Q&A Scenario Practice', icon: 'Brain' as const, desc: 'Real-world prompt and scenario drills' },
 ] as const;
 
-export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
+export function FlashcardEditor({ onGenerate, onPickFile, initialTopic }: Props) {
     const insets = useSafeAreaInsets();
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     
     const [mode, setMode] = useState<'topic' | 'file'>('topic');
-    const [topic, setTopic] = useState('');
+    const [topic, setTopic] = useState(initialTopic || '');
     const [count, setCount] = useState(15);
     const [contentFocus, setContentFocus] = useState<string[]>(['concepts', 'traps']);
     const [loading, setLoading] = useState(false);
@@ -452,35 +454,17 @@ export function FlashcardEditor({ onGenerate, onPickFile }: Props) {
             </View>
 
             {/* Primary CTA Button */}
-            <Pressable
-                disabled={loading}
-                onPress={handleGenerate}
-                style={{
-                    width: '100%',
-                    height: 56,
-                    borderRadius: 16,
-                    backgroundColor: C.primary,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexDirection: 'row',
-                    gap: 8,
-                    marginTop: 6,
-                    shadowColor: '#007AFF',
-                    shadowOffset: { width: 0, height: 6 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 16,
-                    elevation: 6,
-                }}
-            >
-                {loading ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                    <>
-                        <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>Generate Flashcards</Text>
-                        <Icon name="Sparkles" size={18} color="white" animated="pulse" />
-                    </>
-                )}
-            </Pressable>
+            <View style={{ width: '100%', alignItems: 'center', marginTop: 10 }}>
+                <AnimatedButton
+                    title="Generate Flashcards"
+                    onPress={handleGenerate}
+                    loading={loading}
+                    type="capsule"
+                    backgroundColor="#007AFF"
+                    shadowColor="#0066D6"
+                    fullWidth
+                />
+            </View>
 
         </ScrollView>
     );

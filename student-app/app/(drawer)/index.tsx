@@ -422,7 +422,7 @@ export default function HomeDashboard() {
                             </Text>
                         </TouchableOpacity>
 
-                        {/* History */}
+                        {/* Summary */}
                         <TouchableOpacity
                             activeOpacity={0.85}
                             style={[
@@ -434,13 +434,13 @@ export default function HomeDashboard() {
                             ]}
                             onPress={() => {
                                 haptics.impactAsync();
-                                router.push('/(drawer)/history');
+                                router.push('/(drawer)/summary' as any);
                             }}
                         >
                             <View style={styles.tileIconCircle}>
-                                <Icon name="Clock" size={28} color="primary" animated="pulse" />
+                                <Icon name="BookOpen" size={28} color="primary" animated="pulse" />
                             </View>
-                            <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>History</Text>
+                            <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>Summary</Text>
                         </TouchableOpacity>
                     </View>
 

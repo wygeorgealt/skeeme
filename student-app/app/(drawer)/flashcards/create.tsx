@@ -10,9 +10,11 @@ import { router } from 'expo-router';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function GenerateFlashcardScreen() {
     const insets = useSafeAreaInsets();
+    const params = useLocalSearchParams<{ topic?: string }>();
     const [loading, setLoading] = useState(false);
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
@@ -61,7 +63,7 @@ export default function GenerateFlashcardScreen() {
             <ScreenHeader 
                 title="Create Flashcards" 
             />
-            <FlashcardEditor onGenerate={onGenerate} onPickFile={onPickFile} />
+            <FlashcardEditor onGenerate={onGenerate} onPickFile={onPickFile} initialTopic={params.topic} />
         </View>
     );
 }

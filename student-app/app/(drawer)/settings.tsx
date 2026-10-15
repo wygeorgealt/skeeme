@@ -138,13 +138,13 @@ export default function SettingsScreen() {
                 contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom, 20) + 32 }]}
                 showsVerticalScrollIndicator={false}
             >
-                {/* ── Profile Card ── */}
+                {/* ── Profile Hero Card ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(80)}>
-                    <View style={[styles.profileCard, { backgroundColor: isDark ? C.card : '#FFFFFF', shadowColor: '#000' }]}>
+                    <View style={[styles.profileCard, { backgroundColor: isDark ? C.card : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', borderWidth: 1, shadowColor: '#000' }]}>
                         {/* Background accent blob */}
                         <View style={styles.profileBlob} />
                         <View style={styles.profileRow}>
-                            <View style={[styles.avatarWrap, { backgroundColor: '#007AFF20' }]}>
+                            <View style={[styles.avatarWrap, { backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : '#E5F1FF' }]}>
                                 <Text style={styles.avatarInitial}>{(user.name || 'U').charAt(0).toUpperCase()}</Text>
                             </View>
                             <View style={{ flex: 1, minWidth: 0 }}>
@@ -160,18 +160,28 @@ export default function SettingsScreen() {
                                 <Text style={[styles.profileEmail, { color: C.textSecondary }]} numberOfLines={1}>{user.email}</Text>
                             </View>
                         </View>
-                        {/* Balance subcard */}
-                        <View style={[styles.balanceCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F6F3F5' }]}>
-                            <View>
-                                <Text style={[styles.balanceLabel, { color: C.textSecondary }]}>BALANCE</Text>
-                                <Text style={[styles.balanceValue, { color: C.text }]}>{user.credits ?? 0} Credits</Text>
+
+                        {/* Plan subcard */}
+                        <View style={[styles.planCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F6F8FC', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderWidth: 1 }]}>
+                            <View style={styles.planLeft}>
+                                <View style={[styles.planIconWrap, { backgroundColor: isPremium ? (isDark ? 'rgba(0,122,255,0.2)' : '#DBEAFE') : (isDark ? 'rgba(255,255,255,0.08)' : '#E5E7EB') }]}>
+                                    <Icon name={isPremium ? "Award" : "Zap"} size={18} color={isPremium ? "primary" : "muted"} />
+                                </View>
+                                <View>
+                                    <Text style={[styles.planLabel, { color: C.textSecondary }]}>CURRENT PLAN</Text>
+                                    <Text style={[styles.planValue, { color: C.text }]}>{isPremium ? 'Skeeme Pro' : 'Free Plan'}</Text>
+                                </View>
                             </View>
                             <Pressable
-                                onPress={() => useAuthStore.getState().toggleCreditsModal(true, 'scan')}
-                                style={styles.topUpBtn}
+                                onPress={() => {
+                                    haptics.selectionAsync();
+                                    router.push('/paywall');
+                                }}
+                                style={[styles.planActionBtn, { backgroundColor: isPremium ? (isDark ? 'rgba(255,255,255,0.1)' : '#E9ECEF') : '#007AFF' }]}
                             >
-                                <Icon name="Plus" size={16} color="white" />
-                                <Text style={styles.topUpText}>Top Up</Text>
+                                <Text style={[styles.planActionText, { color: isPremium ? C.text : '#FFFFFF' }]}>
+                                    {isPremium ? 'Manage' : 'Upgrade'}
+                                </Text>
                             </Pressable>
                         </View>
                     </View>
@@ -189,12 +199,9 @@ export default function SettingsScreen() {
                     </Section>
                 </Animated.View>
 
-                {/* ── Personalization & Feel ── */}
+                {/* ── App Preferences ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(200)}>
-                    <Section title="Personalization & Feel" isDark={isDark}>
-                        <SettingsRow isDark={isDark} icon="Smile"
-                            label="Personalize Skeemy"
-                            onPress={() => router.push('/(drawer)/preferences' as any)} />
+                    <Section title="App Preferences" isDark={isDark}>
                         {/* Theme Picker */}
                         <View style={[styles.themeRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : '#E3E2E7' }]}>
                             <View style={styles.themeRowHeader}>
@@ -259,17 +266,6 @@ export default function SettingsScreen() {
                 {/* ── Subscription & Billing ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(250)}>
                     <Section title="Subscription & Billing" isDark={isDark}>
-                        <View style={[styles.row, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : '#E3E2E7' }]}>
-                            <View style={styles.rowIcon}>
-                                <Icon name="Award" size={20} color="primary" animated="pulse" />
-                            </View>
-                            <View style={styles.rowText}>
-                                <Text style={[styles.rowLabel, { color: C.text }]}>{isPremium ? 'Skeeme Pro' : 'Skeeme Free'}</Text>
-                            </View>
-                            <View style={styles.activeBadge}>
-                                <Text style={styles.activeBadgeText}>{isPremium ? 'Active' : 'Free'}</Text>
-                            </View>
-                        </View>
                         <SettingsRow isDark={isDark} icon="CreditCard"
                             label="Manage Payment & Invoices"
                             onPress={() => router.push('/paywall')} />
@@ -282,9 +278,6 @@ export default function SettingsScreen() {
                 {/* ── Support & Community ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(300)}>
                     <Section title="Support & Community" isDark={isDark}>
-                        <SettingsRow isDark={isDark} icon="HelpCircle"
-                            label="Help Center & Exam Tips"
-                            onPress={() => router.push('/(drawer)/support' as any)} />
                         <SettingsRow isDark={isDark} icon="MessageSquare"
                             label="Send Feedback to Skeeme Team"
                             onPress={() => router.push('/(drawer)/support' as any)} />
@@ -349,13 +342,13 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-    scroll: { paddingHorizontal: 20, paddingTop: 10 },
+    scroll: { paddingHorizontal: 22, paddingTop: 12 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
     backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
     headerTitle: { fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
 
     // Profile
-    profileCard: { borderRadius: 20, padding: 18, marginBottom: 20, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3, overflow: 'hidden' },
+    profileCard: { borderRadius: 20, padding: 20, marginBottom: 20, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3, overflow: 'hidden' },
     profileBlob: { position: 'absolute', right: -30, top: -30, width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(0,122,255,0.05)' },
     profileRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
     avatarWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
@@ -364,11 +357,13 @@ const styles = StyleSheet.create({
     profileEmail: { fontSize: 13, marginTop: 2 },
     proBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(0,122,255,0.1)', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999 },
     proBadgeText: { fontSize: 11, fontWeight: '700', color: '#007AFF', letterSpacing: 0.5 },
-    balanceCard: { borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    balanceLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
-    balanceValue: { fontSize: 18, fontWeight: '800', marginTop: 1 },
-    topUpBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#007AFF', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
-    topUpText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+    planCard: { borderRadius: 14, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    planLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    planIconWrap: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    planLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, marginBottom: 2 },
+    planValue: { fontSize: 16, fontWeight: '800' },
+    planActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
+    planActionText: { fontSize: 13, fontWeight: '700' },
 
     // Section
     section: { marginBottom: 20 },

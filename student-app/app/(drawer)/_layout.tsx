@@ -54,6 +54,7 @@ function TabBar({ state, descriptors, navigation }: any) {
         'referral',
         'exams',
         'flashcards',
+        'summary',
     ];
 
     if (
@@ -62,7 +63,8 @@ function TabBar({ state, descriptors, navigation }: any) {
         pathname?.includes('/generate') ||
         pathname?.includes('/chat') ||
         pathname?.includes('/scan') ||
-        pathname?.includes('/flashcards')
+        pathname?.includes('/flashcards') ||
+        pathname?.includes('/summary')
     ) {
         return null;
     }
@@ -315,6 +317,7 @@ export default function TabLayout() {
                 <Tabs.Screen name="exams" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="generate" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="flashcards" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+                <Tabs.Screen name="summary" options={{ href: null, tabBarStyle: { display: 'none' } }} />
 
             </Tabs>
 
