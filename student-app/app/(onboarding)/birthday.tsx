@@ -1,4 +1,4 @@
-import { View, TouchableOpacity, useColorScheme, StyleSheet, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { useState, useEffect } from 'react';
@@ -10,6 +10,7 @@ import Checklist from '@/assets/icons/pikaicons/check-tick-square.svg';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { Text } from '@/components/ui/Text';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function BirthdayScreen() {
     const router = useRouter();

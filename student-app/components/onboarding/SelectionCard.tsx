@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface SelectionCardProps {
     iconSource: any;

@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Text, Pressable } from 'react-native';
+import { View, TextInput, Text, Pressable, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import * as Haptics from 'expo-haptics';
 import { api } from '@/lib/api';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { Icon } from '@/components/ui/Icon';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors } from '@/constants/theme';
 
 const LEVELS = [
-    { key: 'high_school', label: 'High School', desc: 'Grades 9 – 12 prep', icon: 'BookOpen' },
-    { key: 'undergraduate', label: 'University', desc: 'Undergraduate', icon: 'Book' },
-    { key: 'graduate', label: 'Grad School', desc: 'Masters & PhD focus', icon: 'GraduationCap' },
+    { key: 'high_school', label: 'High School', desc: 'Grades 9 – 12', icon: 'BookOpen' },
+    { key: 'undergraduate', label: 'University', desc: 'Undergraduate degree', icon: 'Book' },
+    { key: 'graduate', label: 'Grad School', desc: 'Masters & PhD', icon: 'GraduationCap' },
     { key: 'professional', label: 'Professional', desc: 'Certifications & career', icon: 'Briefcase' },
 ];
 
@@ -21,6 +23,10 @@ export default function NameScreen() {
     const [name, setName] = useState('');
     const [selectedLevel, setSelectedLevel] = useState<string>('undergraduate');
     const [isLoading, setIsLoading] = useState(false);
+
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
 
     useEffect(() => {
         setOnboardingStep(1);
@@ -52,7 +58,6 @@ export default function NameScreen() {
                 }
             }
 
-            // In Stitch design, step 2 goes straight to what do you study (field of study).
             router.push('/(onboarding)/field');
         } finally {
             setIsLoading(false);
@@ -62,9 +67,9 @@ export default function NameScreen() {
     return (
         <OnboardingShell
             step={1}
-            totalSteps={9}
-            title="Let's get to know you"
-            subtitle="Personalize Skeeme to calibrate study paces, synthetic flashcards, and peer academic tone."
+            totalSteps={8}
+            title="What's your name?"
+            subtitle="Let's set up your profile and personalize your workspace."
             ctaTitle="Continue"
             ctaDisabled={!name.trim()}
             ctaLoading={isLoading}
@@ -72,22 +77,27 @@ export default function NameScreen() {
             showBack={true}
             hasKeyboard
         >
-            <View className="flex-col gap-8">
+            <View className="flex-col gap-6">
                 {/* Section 1: Name Input */}
                 <View className="flex-col gap-2">
-                    <View className="flex-row items-center gap-1">
-                        <Text className="text-[14px] font-semibold text-on-surface">What should we call you?</Text>
-                        <Text className="text-accent-electric-blue text-[10px]">●</Text>
-                    </View>
+                    <Text style={{ color: C.text }} className="text-[14px] font-semibold">Your Name</Text>
                     
-                    <View className="relative w-full rounded-2xl bg-surface-container-low transition-colors focus-within:bg-surface-container-lowest focus-within:shadow-sm flex-row items-center h-14 border border-transparent focus-within:border-accent-electric-blue/20">
+                    <View 
+                        className="relative w-full rounded-2xl flex-row items-center h-14"
+                        style={{
+                            backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F6F8FC',
+                            borderWidth: 1,
+                            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                        }}
+                    >
                         <View className="absolute left-4 z-10">
-                            <Icon name="User" size={22} color="secondary" />
+                            <Icon name="User" size={20} color="secondary" />
                         </View>
                         <TextInput
-                            className="flex-1 h-full pl-12 pr-11 text-[17px] text-on-surface font-semibold"
-                            placeholder="Your preferred name"
-                            placeholderTextColor="#8e8e93"
+                            className="flex-1 h-full pl-12 pr-11 text-[16px] font-semibold"
+                            style={{ color: C.text }}
+                            placeholder="Enter your name"
+                            placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                             value={name}
                             onChangeText={setName}
                             autoCapitalize="words"
@@ -96,49 +106,66 @@ export default function NameScreen() {
                         {name.length > 0 && (
                             <Pressable 
                                 onPress={() => setName('')}
-                                className="absolute right-3 w-8 h-8 rounded-full items-center justify-center active:bg-surface-container"
+                                className="absolute right-3 w-8 h-8 rounded-full items-center justify-center active:opacity-60"
                             >
-                                <Icon name="XCircle" size={20} color="secondary" />
+                                <Icon name="XCircle" size={18} color="secondary" />
                             </Pressable>
                         )}
                     </View>
-                    <Text className="text-[13px] text-outline pl-1 mt-1">This will appear on your collaborative boards and session digests.</Text>
                 </View>
 
                 {/* Section 2: Study Level Selection */}
                 <View className="flex-col gap-3">
-                    <View className="flex-row items-center justify-between">
-                        <Text className="text-[14px] font-semibold text-on-surface">What level are you studying at?</Text>
-                        <View className="bg-primary-container px-2.5 py-1 rounded-full">
-                            <Text className="text-[11px] font-bold text-accent-electric-blue">Adaptive Pace</Text>
-                        </View>
-                    </View>
+                    <Text style={{ color: C.text }} className="text-[14px] font-semibold">Current Level</Text>
 
                     <View className="flex-row flex-wrap justify-between gap-y-3">
-                        {LEVELS.map((level, idx) => {
+                        {LEVELS.map((level) => {
                             const isSelected = selectedLevel === level.key;
                             return (
                                 <Pressable
                                     key={level.key}
                                     onPress={() => handleSelectLevel(level.key)}
-                                    className={`w-[48%] relative flex-col justify-between p-4 rounded-2xl bg-surface-container-lowest transition-all ${
-                                        isSelected ? 'shadow-md border border-accent-electric-blue' : 'shadow-sm border border-transparent'
-                                    }`}
+                                    className="w-[48%] relative flex-col justify-between p-4 rounded-2xl active:scale-[0.98] transition-all"
+                                    style={{
+                                        backgroundColor: isSelected 
+                                            ? (isDark ? 'rgba(0,122,255,0.16)' : '#EBF5FF') 
+                                            : (isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF'),
+                                        borderWidth: 1.5,
+                                        borderColor: isSelected 
+                                            ? '#007AFF' 
+                                            : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+                                        minHeight: 124,
+                                    }}
                                 >
                                     <View className="flex-row items-center justify-between w-full mb-3">
-                                        <View className={`w-10 h-10 rounded-xl items-center justify-center ${
-                                            isSelected ? 'bg-primary-container' : 'bg-surface-container'
-                                        }`}>
+                                        <View 
+                                            className="w-10 h-10 rounded-xl items-center justify-center"
+                                            style={{
+                                                backgroundColor: isSelected 
+                                                    ? (isDark ? 'rgba(0,122,255,0.22)' : '#D8E2FF') 
+                                                    : (isDark ? 'rgba(255,255,255,0.08)' : '#F1F3F5')
+                                            }}
+                                        >
                                             <Icon 
                                                 name={level.icon as any} 
-                                                size={22} 
-                                                color={isSelected ? 'primary' : 'secondary'} 
+                                                size={20} 
+                                                color={isSelected ? 'primary' : 'default'} 
                                             />
                                         </View>
                                     </View>
                                     <View className="flex-col gap-0.5">
-                                        <Text className="text-[16px] font-semibold text-on-surface leading-tight">{level.label}</Text>
-                                        <Text className="text-[13px] text-on-surface-variant line-clamp-1" numberOfLines={1}>{level.desc}</Text>
+                                        <Text 
+                                            style={{ color: isSelected ? '#007AFF' : C.text }} 
+                                            className="text-[15px] font-semibold leading-snug"
+                                        >
+                                            {level.label}
+                                        </Text>
+                                        <Text 
+                                            style={{ color: C.textSecondary }} 
+                                            className="text-[12px] leading-tight mt-0.5"
+                                        >
+                                            {level.desc}
+                                        </Text>
                                     </View>
                                 </Pressable>
                             );

@@ -6,24 +6,30 @@ import * as Haptics from 'expo-haptics';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { Icon } from '@/components/ui/Icon';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors } from '@/constants/theme';
 
 const GOALS = [
-    { key: 'difficult-topics', label: 'Understand difficult topics', desc: 'Deep conceptual clarity', emoji: '🧠' },
-    { key: 'prep-exams', label: 'Prepare for exams', desc: 'Mock tests, practice drills & traps', emoji: '📝' },
-    { key: 'keep-up', label: 'Keep up with classes', desc: 'Daily summaries & lecture recaps', emoji: '📚' },
-    { key: 'solve-problems', label: 'Solve problems', desc: 'Step-by-step problem solver', emoji: '➗' },
-    { key: 'homework', label: 'Understand homework', desc: 'Guided hints without direct spoilers', emoji: '🔍' },
-    { key: 'revise-faster', label: 'Revise faster', desc: 'High-yield flashcards & cheatsheets', emoji: '⚡' },
-    { key: 'improve-grades', label: 'Improve my grades', desc: 'Predictive score insights & analytics', emoji: '📈' },
+    { key: 'difficult-topics', label: 'Understand difficult topics', desc: 'Break down complex concepts into first principles', icon: 'Lightbulb' },
+    { key: 'prep-exams', label: 'Prepare for exams', desc: 'Practice questions, formula recall & mock drills', icon: 'GraduationCap' },
+    { key: 'keep-up', label: 'Keep up with classes', desc: 'Daily reviews & quick summaries', icon: 'BookOpen' },
+    { key: 'solve-problems', label: 'Step-by-step problem solving', desc: 'Guided walkthroughs through math and science', icon: 'Calculator' },
+    { key: 'homework', label: 'Homework assistance', desc: 'Conceptual hints without outright spoilers', icon: 'FileCheck' },
+    { key: 'revise-faster', label: 'Rapid revision', desc: 'Spaced repetition flashcards & cheat sheets', icon: 'Zap' },
+    { key: 'improve-grades', label: 'Boost overall grades', desc: 'Diagnostic performance insights & weak-spot drills', icon: 'TrendingUp' },
 ];
 
 export default function GoalScreen() {
     const router = useRouter();
     const { setOnboardingStep, setOnboardingData } = useAuthStore();
-    const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+    const [selectedGoals, setSelectedGoals] = useState<string[]>(['difficult-topics', 'prep-exams']);
+
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
 
     useEffect(() => {
-        setOnboardingStep(3); // Adjusted step number in new flow
+        setOnboardingStep(3);
     }, []);
 
     const toggleGoal = (key: string) => {
@@ -46,50 +52,74 @@ export default function GoalScreen() {
     return (
         <OnboardingShell
             step={3}
-            totalSteps={9}
-            title="What can Skeeme help you with?"
-            subtitle="Select all that apply. This sets your core AI focus and dashboard priorities."
+            totalSteps={8}
+            title="What's your main goal?"
+            subtitle="Choose what you'd like to prioritize. You can select multiple."
             ctaDisabled={selectedGoals.length === 0}
             onCta={handleNext}
         >
-            <View className="flex-col gap-4 pb-4">
+            <View className="flex-col gap-3 pb-6">
                 {/* Active Count Pill */}
-                <View className="flex-row items-center mb-1">
-                    <View className={`px-2.5 py-0.5 rounded-full ${
-                        selectedGoals.length > 0 
-                            ? 'bg-accent-electric-blue shadow-sm' 
-                            : 'bg-surface-container-high'
-                    }`}>
-                        <Text className={`text-[11px] font-bold ${
-                            selectedGoals.length > 0 
-                                ? 'text-on-primary' 
-                                : 'text-on-surface-variant'
-                        }`}>
-                            {selectedGoals.length > 0 ? `${selectedGoals.length} selected` : 'None selected'}
+                <View className="flex-row items-center justify-between mb-1">
+                    <Text style={{ color: C.textSecondary }} className="text-[12px] font-semibold uppercase tracking-wider">
+                        Study Focus
+                    </Text>
+                    <View 
+                        className="px-2.5 py-0.5 rounded-full"
+                        style={{ backgroundColor: selectedGoals.length > 0 ? (isDark ? 'rgba(0,122,255,0.18)' : '#EBF5FF') : (isDark ? 'rgba(255,255,255,0.06)' : '#F1F3F5') }}
+                    >
+                        <Text className={`text-[11px] font-bold ${selectedGoals.length > 0 ? 'text-accent-electric-blue' : 'text-on-surface-variant'}`}>
+                            {selectedGoals.length} selected
                         </Text>
                     </View>
                 </View>
 
                 {/* Goals List */}
-                <View className="flex-col gap-2">
+                <View className="flex-col gap-3">
                     {GOALS.map((goal, index) => {
                         const isSelected = selectedGoals.includes(goal.key);
                         return (
-                            <Animated.View key={goal.key} entering={FadeInUp.delay(index * 50).duration(300)}>
+                            <Animated.View key={goal.key} entering={FadeInUp.delay(index * 40).duration(300)}>
                                 <Pressable
                                     onPress={() => toggleGoal(goal.key)}
-                                    className={`flex-row items-center justify-between p-4 rounded-[24px] bg-surface-container-lowest transition-all active:scale-[0.98] ${
-                                        isSelected ? 'shadow-md border border-accent-electric-blue' : 'shadow-sm border border-transparent'
-                                    }`}
+                                    className="flex-row items-center p-4 rounded-2xl active:scale-[0.99] transition-all"
+                                    style={{
+                                        backgroundColor: isSelected 
+                                            ? (isDark ? 'rgba(0,122,255,0.16)' : '#EBF5FF') 
+                                            : (isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF'),
+                                        borderWidth: 1.5,
+                                        borderColor: isSelected 
+                                            ? '#007AFF' 
+                                            : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+                                    }}
                                 >
-                                    <View className="flex-row items-center gap-3.5 flex-1">
-                                        <View className="w-12 h-12 rounded-2xl bg-surface-container-low items-center justify-center shadow-sm">
-                                            <Text className="text-[24px]">{goal.emoji}</Text>
-                                        </View>
-                                        <View className="flex-col flex-1">
-                                            <Text className="font-semibold text-[16px] text-on-surface" numberOfLines={1}>{goal.label}</Text>
-                                            <Text className="text-[13px] text-on-surface-variant mt-0.5" numberOfLines={1}>{goal.desc}</Text>
-                                        </View>
+                                    <View 
+                                        className="w-11 h-11 rounded-xl items-center justify-center mr-3.5 shrink-0"
+                                        style={{
+                                            backgroundColor: isSelected 
+                                                ? (isDark ? 'rgba(0,122,255,0.22)' : '#D8E2FF') 
+                                                : (isDark ? 'rgba(255,255,255,0.08)' : '#F1F3F5')
+                                        }}
+                                    >
+                                        <Icon 
+                                            name={goal.icon as any} 
+                                            size={20} 
+                                            color={isSelected ? 'primary' : 'default'} 
+                                        />
+                                    </View>
+                                    <View className="flex-col flex-1 min-w-0 pr-1">
+                                        <Text 
+                                            style={{ color: isSelected ? '#007AFF' : C.text }} 
+                                            className="font-semibold text-[15px] leading-snug"
+                                        >
+                                            {goal.label}
+                                        </Text>
+                                        <Text 
+                                            style={{ color: C.textSecondary }} 
+                                            className="text-[13px] leading-relaxed mt-0.5"
+                                        >
+                                            {goal.desc}
+                                        </Text>
                                     </View>
                                 </Pressable>
                             </Animated.View>

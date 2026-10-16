@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import { View, TouchableOpacity, useColorScheme, StyleSheet, ScrollView, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -8,6 +8,7 @@ import { Colors, Radius } from '@/constants/theme';
 import { isRunningInExpoGo } from 'expo';
 import Bell from '@/assets/icons/pikaicons/notification-bell-on.svg';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function NotificationScreen() {
     const router = useRouter();
@@ -58,9 +59,9 @@ export default function NotificationScreen() {
 
     return (
         <OnboardingShell
-            step={10}
-            totalSteps={10}
-            title="Stay on track—on autopilot."
+            step={8}
+            totalSteps={8}
+            title="Stay on track"
             subtitle="Get timely reminders before your exams to keep your streak alive."
             ctaTitle="Enable Notifications"
             onCta={handleEnableNotifications}

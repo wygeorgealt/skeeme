@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, useColorScheme, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { Text } from '@/components/ui/Text';
 import { Colors, Radius } from '@/constants/theme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function ReferralScreen() {
   const router = useRouter();

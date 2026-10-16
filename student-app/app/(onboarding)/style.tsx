@@ -6,24 +6,24 @@ import * as Haptics from 'expo-haptics';
 import { OnboardingShell } from '@/components/onboarding/OnboardingShell';
 import { Icon } from '@/components/ui/Icon';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors } from '@/constants/theme';
 
 const SENTIMENTS = [
-    { key: 'pretty-well', label: "I'm doing pretty well", emoji: '🙂' },
-    { key: 'okay', label: "I'm doing okay", emoji: '😐' },
-    { key: 'struggling-topics', label: "I'm struggling with some topics", subtitle: 'Normal curve detected · We will dial down cognitive load', emoji: '😵' },
-    { key: 'really-struggling', label: "I'm really struggling", emoji: '🔥' },
-    { key: 'get-better', label: "I want to get even better", emoji: '🚀' },
+    { key: 'pretty-well', label: "I'm doing well", icon: 'Sparkles' },
+    { key: 'okay', label: "I'm doing okay", icon: 'CheckCircle' },
+    { key: 'struggling-topics', label: "Struggling with some topics", icon: 'HelpCircle' },
+    { key: 'really-struggling', label: "Need significant help", icon: 'AlertCircle' },
+    { key: 'get-better', label: "Aiming for top percentile", icon: 'TrendingUp' },
 ];
 
 const FRICTIONS = [
-    { key: 'basics', label: 'Understanding the basics' },
-    { key: 'start', label: 'Knowing where to start' },
-    { key: 'remembering', label: 'Remembering what I learn' },
-    { key: 'solving', label: 'Solving problems' },
-    { key: 'focused', label: 'Staying focused' },
-    { key: 'exams', label: 'Preparing for exams' },
-    { key: 'explanations', label: 'Understanding explanations' },
-    { key: 'none', label: 'Nothing in particular', isNone: true },
+    { key: 'basics', label: 'Understanding core concepts' },
+    { key: 'remembering', label: 'Remembering formulas & definitions' },
+    { key: 'solving', label: 'Step-by-step problem solving' },
+    { key: 'focused', label: 'Staying consistent & focused' },
+    { key: 'exams', label: 'Test anxiety & timed exams' },
+    { key: 'none', label: 'No specific friction', isNone: true },
 ];
 
 export default function StyleScreen() {
@@ -31,7 +31,11 @@ export default function StyleScreen() {
     const { setOnboardingStep, setOnboardingData } = useAuthStore();
     
     const [sentiment, setSentiment] = useState<string>('struggling-topics');
-    const [selectedFrictions, setSelectedFrictions] = useState<string[]>(['basics', 'start', 'solving']);
+    const [selectedFrictions, setSelectedFrictions] = useState<string[]>(['basics', 'remembering']);
+
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
 
     useEffect(() => {
         setOnboardingStep(4);
@@ -60,14 +64,12 @@ export default function StyleScreen() {
     };
 
     const handleNext = () => {
-        if (!sentiment || selectedFrictions.length === 0) return;
+        if (!sentiment) return;
         
         setOnboardingData({ 
-            // Save sentiment and frictions. We map this to existing properties or new ones.
-            // learning_style is what was here before, we can overload it for now or add new props.
             learning_style: sentiment,
-            learning_friction: selectedFrictions.join(',')
-        } as any);
+            frictions: selectedFrictions.join(','),
+        });
         
         router.push('/(onboarding)/tone');
     };
@@ -75,61 +77,69 @@ export default function StyleScreen() {
     return (
         <OnboardingShell
             step={4}
-            totalSteps={9}
-            title="What makes studying difficult?"
-            subtitle="Be honest—Skeemy adapts to your friction points to keep you stress-free."
-            ctaDisabled={!sentiment || selectedFrictions.length === 0}
+            totalSteps={8}
+            title="How are your classes going?"
+            subtitle="Be honest—this helps us adapt explanation speed and detail."
+            ctaDisabled={!sentiment}
             onCta={handleNext}
         >
-            <View className="flex-col gap-8 pb-4">
-                
-                {/* Section 1: Sentiment */}
-                <View className="flex-col gap-4">
-                    <View className="flex-row items-center gap-1.5">
-                        <View className="w-6 h-6 rounded-full bg-primary items-center justify-center">
-                            <Text className="text-[11px] font-bold text-on-primary">1</Text>
-                        </View>
-                        <Text className="text-[18px] font-semibold text-on-surface tracking-tight">How are things going with school?</Text>
-                    </View>
+            <View className="flex-col gap-6 pb-6">
+                {/* Section 1: Academic Sentiment */}
+                <View className="flex-col gap-2.5">
+                    <Text style={{ color: C.text }} className="text-[14px] font-semibold">Current Academic Status</Text>
 
-                    <View className="flex-col gap-1.5">
-                        {SENTIMENTS.map((item, index) => {
-                            const isSelected = sentiment === item.key;
+                    <View className="flex-col gap-2.5">
+                        {SENTIMENTS.map(s => {
+                            const isSelected = sentiment === s.key;
                             return (
-                                <Animated.View key={item.key} entering={FadeInUp.delay(index * 40).duration(300)}>
-                                    <Pressable
-                                        onPress={() => toggleSentiment(item.key)}
-                                        className={`flex-row items-center justify-between p-4 rounded-xl transition-all active:scale-[0.99] ${
-                                            isSelected 
-                                                ? 'bg-primary-container shadow-md' 
-                                                : 'bg-surface-container-lowest shadow-sm'
-                                        }`}
+                                <Pressable
+                                    key={s.key}
+                                    onPress={() => toggleSentiment(s.key)}
+                                    className="flex-row items-center p-3.5 rounded-2xl active:scale-[0.99] transition-all"
+                                    style={{
+                                        backgroundColor: isSelected 
+                                            ? (isDark ? 'rgba(0,122,255,0.16)' : '#EBF5FF') 
+                                            : (isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF'),
+                                        borderWidth: 1.5,
+                                        borderColor: isSelected 
+                                            ? '#007AFF' 
+                                            : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+                                    }}
+                                >
+                                    <View 
+                                        className="w-10 h-10 rounded-xl items-center justify-center mr-3 shrink-0"
+                                        style={{
+                                            backgroundColor: isSelected 
+                                                ? (isDark ? 'rgba(0,122,255,0.22)' : '#D8E2FF') 
+                                                : (isDark ? 'rgba(255,255,255,0.08)' : '#F1F3F5')
+                                        }}
                                     >
-                                        <View className="flex-row items-center gap-3">
-                                            <Text className="text-[24px]">{item.emoji}</Text>
-                                            <View className="flex-col">
-                                                <Text className={`font-semibold text-[16px] ${
-                                                    isSelected ? 'text-on-primary-container' : 'text-on-surface'
-                                                }`}>{item.label}</Text>
-                                                {isSelected && item.subtitle && (
-                                                    <Text className="text-[13px] text-primary mt-0.5">{item.subtitle}</Text>
-                                                )}
-                                            </View>
-                                        </View>
-                                    </Pressable>
-                                </Animated.View>
+                                        <Icon 
+                                            name={s.icon as any} 
+                                            size={18} 
+                                            color={isSelected ? 'primary' : 'default'} 
+                                        />
+                                    </View>
+                                    <Text 
+                                        style={{ 
+                                            color: isSelected ? '#007AFF' : C.text,
+                                            fontWeight: isSelected ? '700' : '500',
+                                        }} 
+                                        className="text-[15px] flex-1 leading-snug"
+                                    >
+                                        {s.label}
+                                    </Text>
+                                </Pressable>
                             );
                         })}
                     </View>
                 </View>
 
-                {/* Section 2: Friction Points */}
-                <View className="flex-col gap-4">
-                    <View className="flex-row items-center gap-1.5">
-                        <View className="w-6 h-6 rounded-full bg-primary items-center justify-center">
-                            <Text className="text-[11px] font-bold text-on-primary">2</Text>
-                        </View>
-                        <Text className="text-[18px] font-semibold text-on-surface tracking-tight">What do you usually struggle with?</Text>
+                {/* Section 2: Main Study Challenges */}
+                <View className="flex-col gap-2.5">
+                    <View className="flex-row items-center justify-between">
+                        <Text style={{ color: C.text }} className="text-[14px] font-semibold">Biggest Challenges</Text>
+                        <Text style={{ color: C.textSecondary }} className="text-[12px]">Optional</Text>
                     </View>
 
                     <View className="flex-row flex-wrap gap-2.5">
@@ -139,22 +149,26 @@ export default function StyleScreen() {
                                 <Pressable
                                     key={f.key}
                                     onPress={() => toggleFriction(f.key, f.isNone)}
-                                    className={`flex-row items-center gap-2 px-4 py-3 rounded-full transition-all active:scale-95 ${
-                                        isSelected 
-                                            ? 'bg-accent-electric-blue shadow-md' 
-                                            : 'bg-surface-container-lowest shadow-sm border border-transparent'
-                                    }`}
+                                    className="px-4 py-2.5 rounded-xl transition-all active:scale-95"
+                                    style={{
+                                        backgroundColor: isSelected 
+                                            ? (isDark ? 'rgba(0,122,255,0.16)' : '#EBF5FF') 
+                                            : (isDark ? 'rgba(255,255,255,0.05)' : '#F6F8FC'),
+                                        borderWidth: 1.5,
+                                        borderColor: isSelected 
+                                            ? '#007AFF' 
+                                            : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+                                    }}
                                 >
-                                    {f.isNone && (
-                                        <Icon 
-                                            name="Smile" 
-                                            size={18} 
-                                            color={isSelected ? 'white' : 'secondary'} 
-                                        />
-                                    )}
-                                    <Text className={`font-semibold text-[14px] ${
-                                        isSelected ? 'text-on-primary' : 'text-on-surface'
-                                    }`}>{f.label}</Text>
+                                    <Text 
+                                        style={{ 
+                                            color: isSelected ? '#007AFF' : C.text,
+                                            fontWeight: isSelected ? '700' : '500',
+                                        }} 
+                                        className="text-[13px]"
+                                    >
+                                        {f.label}
+                                    </Text>
                                 </Pressable>
                             );
                         })}

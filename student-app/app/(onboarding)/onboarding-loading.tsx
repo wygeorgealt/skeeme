@@ -1,4 +1,4 @@
-import { View, StyleSheet, useColorScheme, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -18,6 +18,7 @@ import { api } from '@/lib/api';
 import { Icon } from '@/components/ui/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const BIG = 120;
 
@@ -216,7 +217,7 @@ export default function OnboardingLoadingScreen() {
             {/* Title */}
             <Animated.View entering={FadeInDown.duration(500).delay(200)} style={s.textGroup}>
                 <Text style={[s.title, { color: C.text }]}>
-                    {done ? 'Skeeme is ready for you 🎉' : 'Building your blueprint…'}
+                    {done ? 'Skeeme is ready for you' : 'Building your blueprint…'}
                 </Text>
                 <Text style={[s.subtitle, { color: C.textSecondary }]}>
                     {done
@@ -242,7 +243,9 @@ export default function OnboardingLoadingScreen() {
                 <Animated.View
                     entering={FadeInDown.duration(500).delay(100)}
                     style={[s.card, {
-                        backgroundColor: isDark ? '#1c1c1e' : '#ffffff',
+                        backgroundColor: isDark ? '#16181D' : '#ffffff',
+                        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                        borderWidth: 1,
                         shadowColor: '#000',
                     }]}
                 >

@@ -7,6 +7,8 @@ import { Icon } from '@/components/ui/Icon';
 import { BlurView } from 'expo-blur';
 import { cssInterop } from 'nativewind';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors } from '@/constants/theme';
 
 // Ensure Ionicons can accept className if needed, but standard style works too.
 
@@ -47,30 +49,39 @@ export function OnboardingShell({
 }: OnboardingShellProps) {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     
     // Progress calculation
     const progressPercent = Math.max(5, (step / totalSteps) * 100);
 
     const content = (
-        <View className="flex-1 bg-surface">
+        <View style={{ flex: 1, backgroundColor: C.background }}>
             {/* Header: Back + Skip */}
             <View 
-                className="w-full z-50 bg-surface/80" 
-                style={{ paddingTop: insets.top }}
+                className="w-full z-50" 
+                style={{ 
+                    paddingTop: insets.top,
+                    backgroundColor: isDark ? 'rgba(11,12,14,0.92)' : 'rgba(255,255,255,0.92)',
+                    borderBottomWidth: Platform.OS === 'ios' ? 0.5 : 1,
+                    borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                }}
             >
-                <View className="h-16 px-4 flex-row items-center justify-between">
+                <View className="h-14 px-4 flex-row items-center justify-between">
                     <View className="flex-row items-center">
                         {showBack ? (
                             <TouchableOpacity
                                 onPress={() => router.back()}
                                 activeOpacity={0.7}
-                                className="w-11 h-11 rounded-full items-center justify-center bg-transparent active:bg-surface-container-high"
+                                className="w-10 h-10 rounded-full items-center justify-center"
+                                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }}
                                 accessibilityLabel="Go back"
                             >
-                                <Icon name="ArrowLeft" size={24} color="default" />
+                                <Icon name="ArrowLeft" size={22} color="default" />
                             </TouchableOpacity>
                         ) : (
-                            <View className="w-11 h-11" />
+                            <View className="w-10 h-10" />
                         )}
                     </View>
                     <View className="flex-row items-center">
@@ -80,7 +91,7 @@ export function OnboardingShell({
                                 activeOpacity={0.7}
                                 className="min-h-[44px] px-3 items-center justify-center"
                             >
-                                <Text className="font-semibold text-[14px] text-outline">Skip</Text>
+                                <Text style={{ color: C.textSecondary }} className="font-semibold text-[14px]">Skip</Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -89,18 +100,23 @@ export function OnboardingShell({
 
             {/* Scrollable Content */}
             <ScrollView
-                className="flex-1 bg-surface w-full"
+                className="flex-1 w-full"
+                style={{ backgroundColor: C.background }}
                 contentContainerStyle={{
-                    paddingHorizontal: 16,
-                    paddingBottom: noStickyFooter ? 40 : 140,
+                    paddingHorizontal: 20,
+                    paddingTop: 16,
+                    paddingBottom: noStickyFooter ? 40 : 130,
                 }}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
-                <View className="flex-col w-full gap-6 mt-2">
+                <View className="flex-col w-full gap-5">
                     {/* Progress Milestone Header */}
-                    <View className="flex-col gap-1 pt-1">
-                        <View className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                    <View className="flex-col gap-1">
+                        <View 
+                            className="w-full h-1.5 rounded-full overflow-hidden"
+                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E9ECEF' }}
+                        >
                             <View 
                                 className="h-full bg-accent-electric-blue rounded-full" 
                                 style={{ width: `${progressPercent}%` }} 
@@ -109,15 +125,15 @@ export function OnboardingShell({
                     </View>
 
                     {/* Header Title & Subtitle */}
-                    <Animated.View entering={FadeInDown.duration(400).delay(50)} className="flex-col gap-1">
-                        <Text className="text-[26px] font-bold text-on-surface tracking-tight leading-8">{title}</Text>
+                    <Animated.View entering={FadeInDown.duration(400).delay(50)} className="flex-col gap-1.5">
+                        <Text style={{ color: C.text }} className="text-[26px] font-bold tracking-tight leading-8">{title}</Text>
                         {subtitle && (
-                            <Text className="text-[15px] text-on-surface-variant leading-relaxed mt-1">{subtitle}</Text>
+                            <Text style={{ color: C.textSecondary }} className="text-[15px] leading-relaxed">{subtitle}</Text>
                         )}
                     </Animated.View>
 
                     {/* Main Children Area */}
-                    <Animated.View entering={FadeInDown.duration(400).delay(100)} className="flex-col gap-4 mt-2">
+                    <Animated.View entering={FadeInDown.duration(400).delay(100)} className="flex-col gap-4 mt-1">
                         {children}
                     </Animated.View>
                 </View>
@@ -126,12 +142,19 @@ export function OnboardingShell({
             {/* Sticky CTA Footer */}
             {!noStickyFooter && onCta && (
                 <BlurView 
-                    intensity={Platform.OS === 'ios' ? 38 : 70} 
-                    tint="light" 
+                    intensity={Platform.OS === 'ios' ? 40 : 80} 
+                    tint={isDark ? 'dark' : 'light'} 
                     className="absolute bottom-0 w-full z-50 shadow-sm"
-                    style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+                    style={{ 
+                        paddingBottom: Math.max(insets.bottom, 16),
+                        borderTopWidth: Platform.OS === 'ios' ? 0.5 : 1,
+                        borderTopColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                    }}
                 >
-                    <View className="px-4 pt-4 pb-4 bg-surface/85">
+                    <View 
+                        className="px-4 pt-3 pb-3"
+                        style={{ backgroundColor: isDark ? 'rgba(11,12,14,0.75)' : 'rgba(255,255,255,0.75)' }}
+                    >
                         {footerExtra}
                         <View style={{ width: '100%', alignItems: 'center' }}>
                             <AnimatedButton
