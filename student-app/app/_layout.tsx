@@ -124,7 +124,11 @@ export default function RootLayout() {
       } else {
         // Allow all users (free or premium) to access the app after onboarding
         // If they run out of credits, the OutOfCreditsModal will block their actions but they can still view their history
-        if (isPublicRoute || !currentSegment) {
+        const authOnlyOnboardingRoutes = ['auth-select', 'create-account', 'preview'];
+        const isAuthEntryRoute =
+          ['login', 'signup', 'welcome', 'forgot-password', 'otp', 'new-password'].includes(currentSegment) ||
+          (currentSegment === '(onboarding)' && (!segments[1] || authOnlyOnboardingRoutes.includes(segments[1] as string)));
+        if (isAuthEntryRoute || !currentSegment) {
           router.replace('/(drawer)');
         }
       }

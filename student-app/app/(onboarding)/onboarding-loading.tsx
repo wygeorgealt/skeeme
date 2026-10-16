@@ -17,6 +17,7 @@ import { useStudent } from '@/hooks/useStudent';
 import { api } from '@/lib/api';
 import { Icon } from '@/components/ui/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 
 const BIG = 120;
 
@@ -258,7 +259,7 @@ export default function OnboardingLoadingScreen() {
                     ].map((row) => (
                         <View key={row.label} style={[s.row, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f4f3f8' }]}>
                             <View style={[s.rowIcon, { backgroundColor: isDark ? '#2c2c2e' : '#fff' }]}>
-                                <Icon name={row.icon as any} size={20} color="primary" />
+                                <Icon name={row.icon as any} size={20} color="secondary" />
                             </View>
                             <View style={{ flex: 1, minWidth: 0 }}>
                                 <Text style={[s.rowLabel, { color: C.textSecondary }]}>{row.label.toUpperCase()}</Text>
@@ -276,16 +277,16 @@ export default function OnboardingLoadingScreen() {
             {/* CTA */}
             {done && (
                 <Animated.View entering={FadeInDown.duration(400).delay(300)} style={s.ctaWrap}>
-                    <Pressable
+                    <AnimatedButton
+                        title="Start Learning"
                         onPress={handleContinue}
-                        style={({ pressed }) => [
-                            s.cta,
-                            { backgroundColor: C.primary, opacity: pressed ? 0.88 : 1 },
-                        ]}
-                    >
-                        <Text style={s.ctaText}>Start Learning</Text>
-                        <Icon name="ArrowRight" size={20} color="white" />
-                    </Pressable>
+                        type="capsule"
+                        backgroundColor="#007AFF"
+                        shadowColor="#0066D6"
+                        fullWidth
+                        style={{ height: 56 }}
+                        textStyle={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}
+                    />
                 </Animated.View>
             )}
 

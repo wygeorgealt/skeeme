@@ -65,7 +65,7 @@ export default function NotificationScreen() {
             ctaTitle="Enable Notifications"
             onCta={handleEnableNotifications}
             footerExtra={SkipButton}
-            showBack={false}
+            showBack={true}
         >
             {/* iOS-style single notification */}
             <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.illustrationSection}>

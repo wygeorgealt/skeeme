@@ -192,6 +192,13 @@ export default function SettingsScreen() {
                         <SettingsRow isDark={isDark} icon="GraduationCap"
                             label="Target Exams"
                             onPress={() => router.push('/(drawer)/exams' as any)} />
+                        <SettingsRow isDark={isDark} icon="Compass"
+                            label="Replay Onboarding Flow"
+                            sublabel="Walk through the setup screens again"
+                            onPress={() => {
+                                haptics.selectionAsync();
+                                router.push('/(onboarding)/name' as any);
+                            }} />
                         <SettingsRow isDark={isDark} icon="Bell"
                             label="Study Reminders"
                             hasSwitch switchValue={notificationsEnabled} onSwitch={setNotificationsEnabled} isLast />
