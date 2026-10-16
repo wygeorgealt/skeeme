@@ -3,7 +3,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -84,11 +84,39 @@ export default function StudyHistoryDashboard() {
         hydrate();
     }, []);
 
+    const normalizeDate = (val: any): string => {
+        if (!val) return new Date().toISOString();
+        if (typeof val === 'string') return val;
+        if (typeof val === 'object' && val.Time) return String(val.Time);
+        return new Date().toISOString();
+    };
+
+    const normalizeNumber = (val: any, fallback: number | null = null): number | null => {
+        if (val === null || val === undefined) return fallback;
+        if (typeof val === 'number') return isNaN(val) ? fallback : val;
+        if (typeof val === 'object' && val.Int64 !== undefined) {
+            return val.Valid ? val.Int64 : fallback;
+        }
+        const parsed = Number(val);
+        return isNaN(parsed) ? fallback : parsed;
+    };
+
     const { data: quizSessions, isLoading: loadingQuizzes, refetch: refetchQuizzes } = useQuery({
         queryKey: ['quiz-history'],
         queryFn: async () => {
             const res = await api.get('quizzes/history');
-            const data = (res.data.data || []) as QuizSession[];
+            const raw = res.data;
+            const rawList = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : []);
+            const data: QuizSession[] = rawList.map((q: any) => ({
+                id: normalizeNumber(q.id, 0) || 0,
+                topic: q.topic || 'Quiz',
+                difficulty: q.difficulty || 'medium',
+                score_percentage: normalizeNumber(q.score_percentage, 0) || 0,
+                total_questions: normalizeNumber(q.total_questions, 0) || 0,
+                correct_answers: normalizeNumber(q.correct_answers, 0) || 0,
+                time_spent_seconds: normalizeNumber(q.time_spent_seconds, null),
+                created_at: normalizeDate(q.created_at),
+            }));
             await storage.setItem('cache_quiz_history', JSON.stringify(data));
             return data;
         },
@@ -99,7 +127,14 @@ export default function StudyHistoryDashboard() {
         queryKey: ['flashcard-history'],
         queryFn: async () => {
             const res = await api.get('flashcards/decks');
-            const data = (res.data.data || []) as FlashcardDeck[];
+            const raw = res.data;
+            const rawList = Array.isArray(raw) ? raw : (Array.isArray(raw?.data) ? raw.data : []);
+            const data: FlashcardDeck[] = rawList.map((d: any) => ({
+                id: normalizeNumber(d.id, 0) || 0,
+                title: d.title || 'Flashcard Deck',
+                flashcards_count: normalizeNumber(d.flashcards_count, 0) || 0,
+                created_at: normalizeDate(d.created_at),
+            }));
             await storage.setItem('cache_flashcard_decks', JSON.stringify(data));
             return data;
         },
@@ -173,10 +208,15 @@ export default function StudyHistoryDashboard() {
         currentData = summaries;
     }
 
-    useEffect(() => {
-        if (activeTab === 'quizzes') refetchQuizzes();
-        else if (activeTab === 'flashcards') refetchDecks();
-    }, [activeTab, refetchQuizzes, refetchDecks]);
+    useFocusEffect(
+        useCallback(() => {
+            if (activeTab === 'quizzes') {
+                refetchQuizzes();
+            } else if (activeTab === 'flashcards') {
+                refetchDecks();
+            }
+        }, [activeTab, refetchQuizzes, refetchDecks])
+    );
     
     const getSections = (items: any[]) => {
         const today = new Date();
@@ -195,6 +235,10 @@ export default function StudyHistoryDashboard() {
 
         items.forEach(item => {
             const itemDate = new Date(item.created_at);
+            if (isNaN(itemDate.getTime())) {
+                groups['Older'].push(item);
+                return;
+            }
             if (itemDate >= today) groups['Today'].push(item);
             else if (itemDate >= yesterday) groups['Yesterday'].push(item);
             else if (itemDate >= weekAgo) groups['This Week'].push(item);

@@ -68,7 +68,8 @@ export default function HomeDashboard() {
         queryFn: async () => {
             try {
                 const res = await api.get('quizzes/history');
-                return (res.data?.data || []) as any[];
+                const raw = res.data;
+                return (Array.isArray(raw) ? raw : (raw?.data || [])) as any[];
             } catch {
                 return [];
             }
@@ -81,7 +82,8 @@ export default function HomeDashboard() {
         queryFn: async () => {
             try {
                 const res = await api.get('flashcards/decks');
-                return (res.data?.data || []) as any[];
+                const raw = res.data;
+                return (Array.isArray(raw) ? raw : (raw?.data || [])) as any[];
             } catch {
                 return [];
             }

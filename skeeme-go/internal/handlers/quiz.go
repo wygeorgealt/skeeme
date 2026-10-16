@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
@@ -13,6 +14,17 @@ import (
 
 type QuizHandler struct {
 	DB *sqlx.DB
+}
+
+type QuizSessionItemOut struct {
+	ID               int64   `json:"id"`
+	Topic            string  `json:"topic"`
+	Difficulty       string  `json:"difficulty"`
+	TotalQuestions   int     `json:"total_questions"`
+	CorrectAnswers   int     `json:"correct_answers"`
+	ScorePercentage  float64 `json:"score_percentage"`
+	TimeSpentSeconds *int64  `json:"time_spent_seconds"`
+	CreatedAt        *string `json:"created_at"`
 }
 
 func (h *QuizHandler) History(w http.ResponseWriter, r *http.Request) {
@@ -35,12 +47,34 @@ func (h *QuizHandler) History(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if sessions == nil {
-		sessions = []models.QuizSession{}
+	out := make([]QuizSessionItemOut, 0, len(sessions))
+	for _, s := range sessions {
+		var timeSpent *int64
+		if s.TimeSpentSeconds.Valid {
+			v := s.TimeSpentSeconds.Int64
+			timeSpent = &v
+		}
+		var createdAt *string
+		if s.CreatedAt.Valid {
+			t := s.CreatedAt.Time.Format(time.RFC3339)
+			createdAt = &t
+		}
+		out = append(out, QuizSessionItemOut{
+			ID:               s.ID,
+			Topic:            s.Topic,
+			Difficulty:       s.Difficulty,
+			TotalQuestions:   s.TotalQuestions,
+			CorrectAnswers:   s.CorrectAnswers,
+			ScorePercentage:  s.ScorePercentage,
+			TimeSpentSeconds: timeSpent,
+			CreatedAt:        createdAt,
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(sessions)
+	json.NewEncoder(w).Encode(map[string]any{
+		"data": out,
+	})
 }
 
 func (h *QuizHandler) GetSession(w http.ResponseWriter, r *http.Request) {

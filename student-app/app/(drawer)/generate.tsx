@@ -502,7 +502,7 @@ export default function GenerateQuizScreen() {
     const totalAnswered = mcqAnswered + theoryAnswered;
 
     const saveHistory = useCallback(async () => {
-        if (questions.length === 0 || totalAnswered !== questions.length || isSaved || isSavingHistory) return;
+        if (questions.length === 0 || isSaved || isSavingHistory) return;
 
         setIsSavingHistory(true);
         setSaveError(false);
@@ -523,9 +523,9 @@ export default function GenerateQuizScreen() {
                     type: q.question_type,
                     options: q.options,
                     correct_answer: q.correct_answer || q.explanation || '',
-                    user_answer: isTheory ? '(Theory Answer)' : selectedAnswers[qi],
+                    user_answer: isTheory ? '(Theory Answer)' : (selectedAnswers[qi] || ''),
                     is_correct: isCorrect,
-                    explanation: q.explanation,
+                    explanation: q.explanation || '',
                 };
             }),
         };
@@ -534,15 +534,24 @@ export default function GenerateQuizScreen() {
             const res = await api.post('quizzes/history', payload);
             setIsSaved(true);
             
-            // Refresh user stats via React Query
+            // Refresh user stats & history via React Query
             queryClient.invalidateQueries({ queryKey: ['student', 'me'] });
+            queryClient.invalidateQueries({ queryKey: ['quiz-history'] });
+            queryClient.invalidateQueries({ queryKey: ['offline-saved-quizzes'] });
         } catch (err) {
             if (__DEV__) console.warn('Failed to save quiz history', err);
             setSaveError(true);
         } finally {
             setIsSavingHistory(false);
         }
-    }, [questions, totalAnswered, isSaved, isSavingHistory, mode, topic, selectedFile, difficulty, correctCount, theoryResults, selectedAnswers, timerEnabled, timerMinutes, timeLeft]);
+    }, [questions, isSaved, isSavingHistory, mode, topic, selectedFile, difficulty, correctCount, theoryResults, selectedAnswers, timerEnabled, timerMinutes, timeLeft, queryClient]);
+
+    // Fallback: Ensure quiz history is saved once on results view if not already saved
+    useEffect(() => {
+        if (questions.length > 0 && currentQIndex >= questions.length && !isSaved && !isSavingHistory && !saveError) {
+            saveHistory();
+        }
+    }, [questions.length, currentQIndex, isSaved, isSavingHistory, saveError, saveHistory]);
 
 
     // Automatically reset quiz when entering screen if a quiz is fully completed/refocused
