@@ -4,6 +4,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
+import { MathText, formatMathPlainText } from '@/components/ui/MathText';
 import { streamQuizGenerate } from '@/lib/aiStream';
 
 import { useFocusEffect, useLocalSearchParams, router } from 'expo-router';
@@ -1164,7 +1165,7 @@ export default function GenerateQuizScreen() {
                         <View className="w-20 h-20 rounded-full shadow-sm items-center justify-center mb-4" style={{ backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}>
                             <Icon name="HelpCircle" size={36} color="default" />
                         </View>
-                        <Text className="font-[700] text-[18px] leading-[26px] text-center" style={{ color: C.text }}>{q.question_text}</Text>
+                        <MathText content={q.question_text} color={C.text} fontSize={18} fontWeight="700" textAlign="center" />
                     </View>
 
                     {/* Options */}
@@ -1215,7 +1216,9 @@ export default function GenerateQuizScreen() {
                                             <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: badgeBg }}>
                                                 <Text className="font-[700] text-[13px]" style={{ color: badgeColor }}>{letter}</Text>
                                             </View>
-                                            <Text className="font-[600] text-[13px] flex-1" style={{ color: C.text }}>{opt}</Text>
+                                            <View className="flex-1">
+                                                <MathText content={opt} color={C.text} fontSize={14} fontWeight="600" />
+                                            </View>
                                         </View>
                                         {icon && <View className="ml-2">{icon}</View>}
                                     </Pressable>
@@ -1231,9 +1234,9 @@ export default function GenerateQuizScreen() {
                     {/* Explanation */}
                     {isRevealed && (
                         <View className="rounded-2xl p-4 shadow-sm flex-col space-y-3 mt-6" style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}>
-                            <Text className="font-[700] text-[15px]" style={{ color: C.text }}>AI Explanation</Text>
-                            <Text className="text-[13px] leading-[20px]" style={{ color: C.textSecondary }}>
-                                {(() => {
+                            <Text className="font-[700] text-[15px] mb-1" style={{ color: C.text }}>AI Explanation</Text>
+                            <MathText
+                                content={(() => {
                                     const isCorrect = selectedAnswers[currentQIndex] === q.correct_answer;
                                     let rawExpl = isCorrect ? (q.explanation_right || q.explanation) : (q.explanation_wrong || q.explanation);
                                     let cleanExpl = rawExpl || `The correct answer is: ${q.correct_answer}.`;
@@ -1243,7 +1246,9 @@ export default function GenerateQuizScreen() {
                                     }
                                     return cleanExpl;
                                 })()}
-                            </Text>
+                                color={C.textSecondary}
+                                fontSize={14}
+                            />
                         </View>
                     )}
 
@@ -1355,7 +1360,7 @@ export default function GenerateQuizScreen() {
                                     )}
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={[s.reviewQuestion, { color: C.text }]} numberOfLines={1}>{q.question_text}</Text>
+                                    <Text style={[s.reviewQuestion, { color: C.text }]} numberOfLines={1}>{formatMathPlainText(q.question_text)}</Text>
                                     <Text style={s.reviewMeta} numberOfLines={1}>
                                         {isTheory ? (isCorrect ? 'Mastered' : 'Review Topic') : (isCorrect ? 'Correct · Tap to explain' : 'Incorrect · Tap to explain')}
                                     </Text>
@@ -1556,9 +1561,14 @@ export default function GenerateQuizScreen() {
                                     <Icon name="XCircle" size={18} color="destructive" />
                                 )}
                             </View>
-                            <Text style={[s.sheetTitle, { color: C.text }]} numberOfLines={2}>
-                                {explanationQ?.q.question_text}
-                            </Text>
+                            <View style={{ flex: 1 }}>
+                                <MathText
+                                    content={explanationQ?.q.question_text || ''}
+                                    color={C.text}
+                                    fontSize={16}
+                                    fontWeight="700"
+                                />
+                            </View>
                         </View>
 
                         {/* Correct Answer */}
@@ -1566,14 +1576,17 @@ export default function GenerateQuizScreen() {
                             <View style={{ marginBottom: 16 }}>
                                 <Text style={[s.sheetSectionLabel, { color: C.textTertiary }]}>CORRECT ANSWER</Text>
                                 <View style={[s.sheetAnswerBox, { backgroundColor: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.25)' }]}>
-                                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#10b981' }}>
-                                        {(() => {
+                                    <MathText
+                                        content={(() => {
                                             const options = explanationQ.q.options || [];
                                             const correctIdx = options.indexOf(explanationQ.q.correct_answer);
                                             const letter = ['A', 'B', 'C', 'D', 'E'][correctIdx];
-                                            return letter ? `Option ${letter}: ${explanationQ.q.correct_answer}` : explanationQ.q.correct_answer;
+                                            return letter ? `**Option ${letter}:** ${explanationQ.q.correct_answer}` : explanationQ.q.correct_answer;
                                         })()}
-                                    </Text>
+                                        color="#10b981"
+                                        fontSize={15}
+                                        fontWeight="600"
+                                    />
                                 </View>
                             </View>
                         )}
@@ -1589,14 +1602,17 @@ export default function GenerateQuizScreen() {
                                         borderColor: explanationQ.isCorrect ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)' 
                                     }
                                 ]}>
-                                    <Text style={{ fontSize: 15, fontWeight: '600', color: explanationQ.isCorrect ? '#10b981' : '#ef4444' }}>
-                                        {(() => {
+                                    <MathText
+                                        content={(() => {
                                             const options = explanationQ.q.options || [];
                                             const userIdx = options.indexOf(selectedAnswers[explanationQ.qi]);
                                             const letter = ['A', 'B', 'C', 'D', 'E'][userIdx];
-                                            return letter ? `Option ${letter}: ${selectedAnswers[explanationQ.qi]}` : selectedAnswers[explanationQ.qi];
+                                            return letter ? `**Option ${letter}:** ${selectedAnswers[explanationQ.qi]}` : selectedAnswers[explanationQ.qi];
                                         })()}
-                                    </Text>
+                                        color={explanationQ.isCorrect ? '#10b981' : '#ef4444'}
+                                        fontSize={15}
+                                        fontWeight="600"
+                                    />
                                 </View>
                             </View>
                         )}
@@ -1604,14 +1620,16 @@ export default function GenerateQuizScreen() {
                         {/* Explanation */}
                         <Text style={[s.sheetSectionLabel, { color: C.textTertiary }]}>EXPLANATION</Text>
                         <ScrollView style={s.explanationScroll} showsVerticalScrollIndicator={false}>
-                            <Text style={[s.explanationText, { color: C.textSecondary }]}>
-                                {(() => {
+                            <MathText
+                                content={(() => {
                                     if (!explanationQ) return '';
                                     const { q, isCorrect } = explanationQ;
                                     const targeted = isCorrect ? q.explanation_right : q.explanation_wrong;
                                     return targeted || q.explanation || 'No explanation was provided for this question.';
                                 })()}
-                            </Text>
+                                color={C.textSecondary}
+                                fontSize={15}
+                            />
                         </ScrollView>
 
                         {/* Close */}

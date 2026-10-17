@@ -138,22 +138,24 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
 
                             let bg = null, 
                                 borderColor = isDark ? s.borderWhite5 : s.borderSlate100,
-                                text = isDark ? s.textWhite40 : s.textSlate400,
+                                optColor = isDark ? '#94a3b8' : '#64748b',
                                 icon = null;
 
                             if (isCorrectOpt) {
                                 bg = isDark ? s.bgEmerald10 : s.bgEmerald50; 
-                                text = isDark ? s.textEmerald400 : s.textEmerald700; 
+                                optColor = isDark ? '#34d399' : '#047857'; 
                                 icon = 'checkmark-circle';
                             } else if (isSelected && !isCorrectOpt) {
                                 bg = isDark ? s.bgRed10 : s.bgRed50; 
-                                text = isDark ? s.textRed400 : s.textRed700; 
+                                optColor = isDark ? '#f87171' : '#b91c1c'; 
                                 icon = 'close-circle';
                             }
 
                             return (
                                 <View key={i} style={[s.optionRow, bg, borderColor]}>
-                                    <Text style={[s.optionText, text]}>{opt}</Text>
+                                    <View style={{ flex: 1, marginRight: 12 }}>
+                                        <MathText content={opt} color={optColor} fontSize={15} fontWeight="500" />
+                                    </View>
                                     {icon === 'checkmark-circle' && <Icon name="CheckCircle2" size={18} color="#10b981" />}
                                     {icon === 'close-circle' && <Icon name="XCircle" size={18} color="#ef4444" />}
                                 </View>

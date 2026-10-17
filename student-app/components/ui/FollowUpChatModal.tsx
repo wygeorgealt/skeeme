@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { streamScanFollowUpChat } from '@/lib/aiStream';
 import { Colors } from '@/constants/theme';
 import { ScanResult } from '@/lib/scanner';
+import { MathText } from '@/components/ui/MathText';
 import Animated, { FadeIn, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 
 interface Message {
@@ -131,24 +132,28 @@ export function FollowUpChatModal({ visible, onClose, scanContext, provider }: F
                         </View>
                     )}
                     
-                    {messages.map((msg, i) => (
-                        <View key={i} style={[s.messageRow, msg.role === 'user' ? s.userRow : s.aiRow]}>
-                            <View style={[
-                                s.bubble, 
-                                msg.role === 'user' 
-                                    ? [s.userBubble, { backgroundColor: C.primary }] 
-                                    : [s.aiBubble, isDark ? { backgroundColor: '#1C1C1E' } : { backgroundColor: '#F1F5F9' }]
-                            ]}>
-                                <Text style={[
-                                    s.messageText,
-                                    msg.role === 'user' ? { color: 'white' } : { color: C.text }
+                    {messages.map((msg, i) => {
+                        if (msg.role === 'assistant' && !msg.content && isLoading) return null;
+                        return (
+                            <View key={i} style={[s.messageRow, msg.role === 'user' ? s.userRow : s.aiRow]}>
+                                <View style={[
+                                    s.bubble, 
+                                    msg.role === 'user' 
+                                        ? [s.userBubble, { backgroundColor: C.primary }] 
+                                        : [s.aiBubble, isDark ? { backgroundColor: '#1C1C1E' } : { backgroundColor: '#F1F5F9' }]
                                 ]}>
-                                    {msg.content}
-                                </Text>
+                                    {msg.role === 'user' ? (
+                                        <Text style={[s.messageText, { color: 'white' }]}>
+                                            {msg.content}
+                                        </Text>
+                                    ) : (
+                                        <MathText content={msg.content} color={C.text} fontSize={15} />
+                                    )}
+                                </View>
                             </View>
-                        </View>
-                    ))}
-                    {isLoading && (
+                        );
+                    })}
+                    {isLoading && messages[messages.length - 1]?.content === '' && (
                         <View style={[s.messageRow, s.aiRow]}>
                             <View style={[s.bubble, s.aiBubble, isDark ? { backgroundColor: '#1C1C1E' } : { backgroundColor: '#F1F5F9' }, { padding: 12 }]}>
                                 <ActivityIndicator size="small" color={C.primary} />

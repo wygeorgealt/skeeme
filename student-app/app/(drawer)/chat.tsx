@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Icon } from '@/components/ui/Icon';
+import { MathText } from '@/components/ui/MathText';
 import { haptics } from '@/lib/haptics';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
@@ -354,9 +355,7 @@ export default function ChatScreen() {
                       }}
                       className="rounded-3xl rounded-tl-md p-4 shadow-sm border"
                     >
-                      <Text style={{ color: C.text }} className="text-[15px] leading-[23px] font-normal">
-                        {msg.content}
-                      </Text>
+                      <MathText content={msg.content} color={C.text} fontSize={15} />
 
                       {!msg.isStreaming ? (
                         <View

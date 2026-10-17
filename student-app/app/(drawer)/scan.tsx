@@ -239,7 +239,7 @@ export default function ScanScreen() {
                                 style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
                             >
                                 <View className="absolute -left-1 -bottom-1 w-3 h-3 rounded-full bg-accent-electric-blue border-2 shadow-sm z-10" style={{ borderColor: C.card }} />
-                                <MathText content={currentResult.question || 'Scanned Problem'} />
+                                <MathText content={currentResult.question || 'Scanned Problem'} color={C.text} fontSize={16} fontWeight="600" textAlign="center" />
                                 <Text className="text-[12px] mt-1" style={{ fontWeight: '400', color: C.textSecondary }}>
                                     {currentResult.topic || 'Analyzed Question'}
                                 </Text>
@@ -290,13 +290,13 @@ export default function ScanScreen() {
                                 borderWidth: 1
                             }}
                         >
-                            <View className="flex-row items-center gap-3">
+                            <View className="flex-row items-center gap-3 flex-1 pr-2">
                                 <View className="w-8 h-8 rounded-full bg-accent-electric-blue items-center justify-center shadow-sm">
                                     <Icon name="Check" size={18} color="white" />
                                 </View>
-                                <View>
-                                    <Text className="text-[10px] text-accent-electric-blue uppercase tracking-wider font-bold">Solution</Text>
-                                    <MathText content={currentResult.solution || 'No direct answer'} />
+                                <View className="flex-1">
+                                    <Text className="text-[10px] text-accent-electric-blue uppercase tracking-wider font-bold mb-0.5">Solution</Text>
+                                    <MathText content={currentResult.solution || 'No direct answer'} color={C.text} fontSize={16} fontWeight="700" />
                                 </View>
                             </View>
                             <View className="px-2 py-0.5 rounded-full" style={{ backgroundColor: isDark ? 'rgba(0,163,156,0.2)' : '#e1f8f5' }}>
@@ -318,7 +318,7 @@ export default function ScanScreen() {
                                                  <Text style={{ fontWeight: '700', color: C.primary, fontSize: 12 }}>{idx + 1}</Text>
                                              </View>
                                              <View className="flex-1 flex-col pl-0.5 p-2.5 rounded-xl" style={{ backgroundColor: C.surfaceLow }}>
-                                                 <MathText content={step} />
+                                                 <MathText content={step} color={C.text} fontSize={14} />
                                              </View>
                                          </View>
                                     ))}
@@ -338,8 +338,8 @@ export default function ScanScreen() {
                             >
                                 <Icon name="Lightbulb" size={20} color={isDark ? '#b4b0ff' : '#4c4aca'} style={{ marginTop: 2 }} />
                                 <View className="flex-col flex-1">
-                                    <Text className="text-[13px]" style={{ fontWeight: '700', color: isDark ? '#b4b0ff' : '#0c006a' }}>Quiz Hack</Text>
-                                    <Text className="text-[12px] opacity-80 mt-0.5 leading-5" style={{ color: isDark ? '#d4d2ff' : '#0c006a' }}>{currentResult.explanation}</Text>
+                                    <Text className="text-[13px] mb-1" style={{ fontWeight: '700', color: isDark ? '#b4b0ff' : '#0c006a' }}>Quiz Hack</Text>
+                                    <MathText content={currentResult.explanation} color={isDark ? '#d4d2ff' : '#0c006a'} fontSize={13} />
                                 </View>
                             </View>
                         )}
