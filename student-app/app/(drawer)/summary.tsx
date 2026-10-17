@@ -14,6 +14,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { Icon } from '@/components/ui/Icon';
+import { MathText, formatMathPlainText } from '@/components/ui/MathText';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { haptics } from '@/lib/haptics';
@@ -220,9 +221,13 @@ export default function SummaryScreen() {
                                     marginBottom: 18,
                                 }}
                             >
-                                <Text style={{ fontSize: 15, lineHeight: 22, color: C.textSecondary, marginBottom: 16 }}>
-                                    {viewingSummary.conceptText}
-                                </Text>
+                                <View style={{ marginBottom: 16 }}>
+                                    <MathText
+                                        content={viewingSummary.conceptText}
+                                        color={C.textSecondary}
+                                        fontSize={15}
+                                    />
+                                </View>
 
                                 <Text style={{ fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 12 }}>
                                     Key Points
@@ -241,9 +246,13 @@ export default function SummaryScreen() {
                                                     flexShrink: 0 
                                                 }} 
                                             />
-                                            <Text style={{ fontSize: 14, lineHeight: 20, color: C.text, flex: 1 }}>
-                                                {point}
-                                            </Text>
+                                            <View style={{ flex: 1 }}>
+                                                <MathText
+                                                    content={point}
+                                                    color={C.text}
+                                                    fontSize={14}
+                                                />
+                                            </View>
                                         </View>
                                     ))}
                                 </View>
@@ -262,15 +271,23 @@ export default function SummaryScreen() {
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 4 }}>
                                             {viewingSummary.mainFormula.variables.map((v, i) => (
                                                 <View key={i} style={{ alignItems: 'center', flex: 1 }}>
-                                                    <Text style={{ fontSize: 11, fontWeight: '600', color: C.textSecondary }}>{v.label}</Text>
+                                                    <Text style={{ fontSize: 11, fontWeight: '600', color: C.textSecondary }}>{formatMathPlainText(v.label)}</Text>
                                                     <Text style={{ fontSize: 11, color: C.textTertiary, marginTop: 1 }}>↓</Text>
                                                 </View>
                                             ))}
                                         </View>
                                         <View style={{ alignItems: 'center', justifyContent: 'center', paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : '#E3E2E7' }}>
-                                            <Text style={{ fontSize: 26, fontWeight: '800', letterSpacing: 1.2, color: C.text }}>
-                                                {viewingSummary.mainFormula.expression}
-                                            </Text>
+                                            <MathText
+                                                content={
+                                                    viewingSummary.mainFormula.expression.includes('$')
+                                                        ? viewingSummary.mainFormula.expression
+                                                        : `$${viewingSummary.mainFormula.expression}$`
+                                                }
+                                                color={C.text}
+                                                fontSize={22}
+                                                fontWeight="800"
+                                                textAlign="center"
+                                            />
                                         </View>
                                     </View>
                                 )}
@@ -291,14 +308,14 @@ export default function SummaryScreen() {
                                             <View 
                                                 key={idx}
                                                 style={{
-                                                    width: 170,
+                                                    width: 185,
                                                     backgroundColor: isDark ? C.card : '#FFFFFF',
                                                     borderRadius: 18,
                                                     padding: 16,
                                                     borderWidth: 1,
                                                     borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                                                     justifyContent: 'space-between',
-                                                    minHeight: 110,
+                                                    minHeight: 116,
                                                     shadowColor: '#000',
                                                     shadowOffset: { width: 0, height: 1 },
                                                     shadowOpacity: 0.04,
@@ -319,13 +336,16 @@ export default function SummaryScreen() {
                                                     >
                                                         <Icon name="Zap" size={16} color="default" />
                                                     </View>
-                                                    <Text style={{ fontSize: 14, fontWeight: '700', color: C.text }} numberOfLines={1}>
-                                                        {rf.title}
+                                                    <Text style={{ fontSize: 14, fontWeight: '700', color: C.text, flex: 1 }} numberOfLines={1}>
+                                                        {formatMathPlainText(rf.title)}
                                                     </Text>
                                                 </View>
-                                                <Text style={{ fontSize: 13, fontWeight: '600', color: C.textSecondary }}>
-                                                    {rf.expression}
-                                                </Text>
+                                                <MathText
+                                                    content={rf.expression}
+                                                    color={C.textSecondary}
+                                                    fontSize={13}
+                                                    fontWeight="600"
+                                                />
                                             </View>
                                         ))}
                                     </ScrollView>
@@ -363,11 +383,13 @@ export default function SummaryScreen() {
                                     </View>
                                     <View style={{ flex: 1 }}>
                                         <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, marginBottom: 4 }}>
-                                            {node.title}
+                                            {formatMathPlainText(node.title)}
                                         </Text>
-                                        <Text style={{ fontSize: 13, lineHeight: 18, color: C.textSecondary }}>
-                                            {node.desc}
-                                        </Text>
+                                        <MathText
+                                            content={node.desc}
+                                            color={C.textSecondary}
+                                            fontSize={13}
+                                        />
                                     </View>
                                 </View>
                             ))}
@@ -663,10 +685,10 @@ export default function SummaryScreen() {
                                         </View>
                                         <View style={{ flex: 1 }}>
                                             <Text style={{ fontSize: 15, fontWeight: '700', color: C.text }} numberOfLines={1}>
-                                                {s.title}
+                                                {formatMathPlainText(s.title)}
                                             </Text>
                                             <Text style={{ fontSize: 12, color: C.textSecondary, marginTop: 2 }} numberOfLines={1}>
-                                                {s.subtitle}
+                                                {formatMathPlainText(s.subtitle)}
                                             </Text>
                                         </View>
                                     </View>

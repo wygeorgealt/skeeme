@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { Pressable,  View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { Pressable, View, Text, ScrollView } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
+import { MathText, formatMathPlainText } from '@/components/ui/MathText';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 
 interface AiSummaryViewProps {
@@ -18,6 +21,9 @@ interface AiSummaryViewProps {
 
 export function AiSummaryView(props: AiSummaryViewProps) {
   const [activeTab, setActiveTab] = useState<'notes' | 'mindmap'>('notes');
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
+  const C = Colors[isDark ? 'dark' : 'light'];
 
   const handleTabPress = (tab: 'notes' | 'mindmap') => {
     haptics.selectionAsync(true);
@@ -38,8 +44,8 @@ export function AiSummaryView(props: AiSummaryViewProps) {
           <Icon name="ChevronLeft" size={20} color="text" />
         </Pressable>
         <View className="flex-col items-center justify-center text-center px-2 flex-1">
-          <Text className="text-[17px] font-bold text-on-surface tracking-tight leading-snug">{props.title || 'Summary'}</Text>
-          <Text className="text-[12px] font-medium text-on-surface-variant tracking-tight">{props.subtitle}</Text>
+          <Text className="text-[17px] font-bold text-on-surface tracking-tight leading-snug">{formatMathPlainText(props.title || 'Summary')}</Text>
+          <Text className="text-[12px] font-medium text-on-surface-variant tracking-tight">{formatMathPlainText(props.subtitle)}</Text>
         </View>
         <Pressable
           className="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center shadow-sm border border-outline-variant active:scale-95 transition-transform shrink-0"
@@ -75,12 +81,13 @@ export function AiSummaryView(props: AiSummaryViewProps) {
 
         {/* Main Summary Card */}
         <View className="bg-surface-container-lowest rounded-3xl p-5 shadow-sm border border-outline-variant relative mb-4">
-          <Text 
-            className="text-on-surface-variant mb-4" 
-            style={{ fontSize: 15, fontWeight: '400', lineHeight: 23 }}
-          >
-            {props.conceptText}
-          </Text>
+          <View className="mb-4">
+            <MathText
+              content={props.conceptText}
+              color={C.textSecondary}
+              fontSize={15}
+            />
+          </View>
 
           <Text 
             className="text-on-surface mb-2" 
@@ -92,12 +99,13 @@ export function AiSummaryView(props: AiSummaryViewProps) {
             {props.keyPoints.map((point, idx) => (
               <View key={idx} className="flex-row items-start mb-2">
                 <View className="w-1.5 h-1.5 rounded-full bg-on-surface-variant mt-2 mr-2 shrink-0" />
-                <Text 
-                  className="text-on-surface-variant flex-1" 
-                  style={{ fontSize: 13, fontWeight: '400', lineHeight: 20 }}
-                >
-                  {point}
-                </Text>
+                <View className="flex-1">
+                  <MathText
+                    content={point}
+                    color={C.textSecondary}
+                    fontSize={13}
+                  />
+                </View>
               </View>
             ))}
           </View>
@@ -109,7 +117,7 @@ export function AiSummaryView(props: AiSummaryViewProps) {
                 <View className="flex-row justify-between mb-2 px-1">
                   {props.mainFormula.variables.map((v, i) => (
                     <View key={i} className="items-center flex-1">
-                      <Text className="text-[11px] text-on-surface-variant font-medium">{v.label}</Text>
+                      <Text className="text-[11px] text-on-surface-variant font-medium">{formatMathPlainText(v.label)}</Text>
                       {v.direction && (
                         <Icon 
                           name={v.direction === 'up' ? 'ArrowUp' : 'ArrowDown'} 
@@ -122,9 +130,17 @@ export function AiSummaryView(props: AiSummaryViewProps) {
                   ))}
                 </View>
                 <View className="items-center justify-center pt-2 border-t border-outline-variant">
-                  <Text className="text-[22px] font-bold text-on-surface tracking-wider">
-                    {props.mainFormula.expression}
-                  </Text>
+                  <MathText
+                    content={
+                      props.mainFormula.expression.includes('$')
+                        ? props.mainFormula.expression
+                        : `$${props.mainFormula.expression}$`
+                    }
+                    color={C.text}
+                    fontSize={22}
+                    fontWeight="800"
+                    textAlign="center"
+                  />
                 </View>
               </View>
             </View>
@@ -149,18 +165,21 @@ export function AiSummaryView(props: AiSummaryViewProps) {
               {props.relatedFormulas.map((f, idx) => (
                 <View 
                   key={idx} 
-                  className="bg-surface-container-lowest rounded-2xl p-4 w-40 shadow-sm mr-3 border border-outline-variant flex-col justify-between"
-                  style={{ minHeight: 100 }}
+                  className="bg-surface-container-lowest rounded-2xl p-4 w-44 shadow-sm mr-3 border border-outline-variant flex-col justify-between"
+                  style={{ minHeight: 108 }}
                 >
                   <View className="flex-row items-center mb-3">
                     <View className="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center mr-2">
                       <Icon name="Sparkles" size={18} color="default" />
                     </View>
-                    <Text className="text-[13px] font-bold text-on-surface flex-1">{f.title}</Text>
+                    <Text className="text-[13px] font-bold text-on-surface flex-1">{formatMathPlainText(f.title)}</Text>
                   </View>
-                  <Text className="text-[12px] text-on-surface-variant font-medium">
-                    {f.expression}
-                  </Text>
+                  <MathText
+                    content={f.expression}
+                    color={C.textSecondary}
+                    fontSize={12}
+                    fontWeight="600"
+                  />
                 </View>
               ))}
             </ScrollView>
@@ -170,3 +189,4 @@ export function AiSummaryView(props: AiSummaryViewProps) {
     </View>
   );
 }
+

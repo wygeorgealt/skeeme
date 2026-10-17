@@ -23,62 +23,92 @@ const PRESET_KNOWLEDGE: Record<string, Partial<AiSummary>> = {
     'motion': {
         title: 'Motion & Force',
         subtitle: 'Physics • Motion & Force',
-        conceptText: 'Motion is the change in position of an object over time. It can be described in terms of speed, velocity, acceleration, and force.',
+        conceptText: '**Motion** is the change in position of an object over time. It is governed by **kinematics** ($v$, $a$) and **Newton\'s Laws of Motion** ($F = ma$).',
         keyPoints: [
-            'Motion occurs when an object changes its position over time relative to a reference point.',
-            'Speed is a scalar quantity defined as Distance / Time.',
-            'Velocity is a vector quantity defined as Displacement / Time.',
-            'Acceleration represents the rate of change of velocity over time.',
-            'Unbalanced force causes a change in motion according to Newton\'s Laws.',
+            '**Displacement** ($\\Delta x$) measures change in position relative to a reference frame.',
+            '**Speed** is a scalar quantity defined as $\\text{Speed} = \\frac{d}{t}$.',
+            '**Velocity** is a vector quantity defined as $v = \\frac{\\Delta x}{\\Delta t}$.',
+            '**Acceleration** represents the rate of change of velocity: $a = \\frac{v_f - v_i}{t}$.',
+            '**Newton\'s Second Law**: Net unbalanced force produces acceleration ($F_{\\text{net}} = ma$).',
         ],
         mainFormula: {
-            expression: 'F = ma',
+            expression: '$F = m \\cdot a$',
             variables: [
-                { label: 'Force', name: 'F', direction: 'down' },
-                { label: 'Mass', name: 'm', direction: 'down' },
-                { label: 'Accel', name: 'a', direction: 'down' },
+                { label: 'Force (F)', name: 'F', direction: 'down' },
+                { label: 'Mass (m)', name: 'm', direction: 'down' },
+                { label: 'Accel (a)', name: 'a', direction: 'down' },
             ],
         },
         relatedFormulas: [
-            { title: 'Speed', expression: 'Speed = Distance / Time', icon: 'Zap' },
-            { title: 'Acceleration', expression: 'a = (v₂ - v₁) / t', icon: 'Gauge' },
-            { title: 'Velocity', expression: 'v = Displacement / Time', icon: 'Clock' },
-            { title: 'Kinetic Energy', expression: 'KE = ½mv²', icon: 'Flame' },
+            { title: 'Velocity', expression: '$v = \\frac{\\Delta x}{\\Delta t}$', icon: 'Zap' },
+            { title: 'Acceleration', expression: '$a = \\frac{v_2 - v_1}{t}$', icon: 'Gauge' },
+            { title: 'Kinetic Energy', expression: '$KE = \\frac{1}{2}mv^2$', icon: 'Flame' },
+            { title: 'Momentum', expression: '$p = m \\cdot v$', icon: 'Clock' },
         ],
         mindmapNodes: [
-            { title: 'Kinematics', desc: 'Describing motion with distance, displacement, speed & velocity', icon: 'Compass' },
-            { title: 'Dynamics', desc: 'Forces, Newton\'s laws, friction and equilibrium', icon: 'Activity' },
-            { title: 'Energy & Work', desc: 'Work-energy theorem, conservation of momentum', icon: 'Zap' },
+            { title: 'Kinematics', desc: 'Describing motion with displacement $\\Delta x$, velocity $v$, and acceleration $a$', icon: 'Compass' },
+            { title: 'Dynamics', desc: '**Newton\'s Laws**, net force $\\sum F = ma$, friction, and equilibrium', icon: 'Activity' },
+            { title: 'Energy & Work', desc: 'Work-energy theorem ($W = \\Delta KE$) and conservation of momentum', icon: 'Zap' },
         ],
     },
     'biology': {
         title: 'Cell Division & Mitosis',
         subtitle: 'Biology • Cellular Processes',
-        conceptText: 'Mitosis is the process where a single cell divides into two identical daughter cells, essential for growth, repair, and asexual reproduction.',
+        conceptText: '**Mitosis** is the process where a single eukaryotic cell divides into **two genetically identical daughter cells** ($2n \\rightarrow 2n$), essential for growth and tissue repair.',
         keyPoints: [
-            'Interphase precedes mitosis, duplicating cellular DNA and organelles.',
-            'Prophase condenses chromatin into visible paired chromosomes.',
-            'Metaphase aligns sister chromatids across the equatorial metaphase plate.',
-            'Anaphase separates sister chromatids toward opposite spindle poles.',
-            'Telophase and cytokinesis reform nuclear envelopes and split the cytoplasm.',
+            '**Interphase** ($G_1, S, G_2$) precedes mitosis, replicating DNA and cellular organelles.',
+            '**Prophase** condenses chromatin into visible paired sister chromatids.',
+            '**Metaphase** aligns chromosomes along the equatorial **metaphase plate**.',
+            '**Anaphase** separates sister chromatids toward opposite spindle poles.',
+            '**Telophase & Cytokinesis** reform nuclear envelopes and divide the cytoplasm into $2^n$ cells.',
         ],
         mainFormula: {
-            expression: '2ⁿ Cells',
+            expression: '$N = N_0 \\cdot 2^n$',
             variables: [
-                { label: 'Daughter', name: '2', direction: 'down' },
-                { label: 'Cycles', name: 'n', direction: 'down' },
-                { label: 'Total', name: 'N', direction: 'down' },
+                { label: 'Initial (N₀)', name: 'N₀', direction: 'down' },
+                { label: 'Cycles (n)', name: 'n', direction: 'down' },
+                { label: 'Total (N)', name: 'N', direction: 'down' },
             ],
         },
         relatedFormulas: [
-            { title: 'Cell Cycle', expression: 'G₁ → S → G₂ → M Phase', icon: 'Clock' },
-            { title: 'Yield', expression: 'N = N₀ × 2ⁿ', icon: 'Activity' },
-            { title: 'Mitotic Index', expression: 'Cells in Mitosis / Total Cells', icon: 'Percent' },
+            { title: 'Cell Cycle', expression: '$G_1 \\rightarrow S \\rightarrow G_2 \\rightarrow M$', icon: 'Clock' },
+            { title: 'Cell Yield', expression: '$N = N_0 \\times 2^n$', icon: 'Activity' },
+            { title: 'Mitotic Index', expression: '$MI = \\frac{\\text{Mitotic}}{\\text{Total}}$', icon: 'Percent' },
         ],
         mindmapNodes: [
-            { title: 'Interphase (G1, S, G2)', desc: 'DNA replication and cell preparation', icon: 'Layers' },
-            { title: 'Mitotic Stages (PMAT)', desc: 'Prophase, Metaphase, Anaphase, Telophase', icon: 'Grid' },
-            { title: 'Cytokinesis', desc: 'Physical cleavage furrow and cell division', icon: 'Split' },
+            { title: 'Interphase (G₁, S, G₂)', desc: '**DNA replication** ($2n \\rightarrow 4c$) and organelle preparation', icon: 'Layers' },
+            { title: 'Mitotic Stages (PMAT)', desc: '**Prophase**, **Metaphase**, **Anaphase**, and **Telophase**', icon: 'Grid' },
+            { title: 'Cytokinesis', desc: 'Physical cleavage furrow or cell plate division into $2$ daughter cells', icon: 'Split' },
+        ],
+    },
+    'calculus': {
+        title: 'Calculus: Derivatives',
+        subtitle: 'Mathematics • Differential Calculus',
+        conceptText: 'The **derivative** $f\'(x)$ measures the **instantaneous rate of change** of a function or the slope of the tangent line at any point $x$.',
+        keyPoints: [
+            '**Limit Definition**: $f\'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}$.',
+            '**Power Rule**: For $f(x) = x^n$, the derivative is $\\frac{d}{dx}(x^n) = nx^{n-1}$.',
+            '**Product Rule**: $(uv)\' = u\'v + uv\'$.',
+            '**Chain Rule**: $\\frac{d}{dx}[f(g(x))] = f\'(g(x)) \\cdot g\'(x)$.',
+            '**Critical Points** occur where $f\'(x) = 0$ or $f\'(x)$ is undefined.',
+        ],
+        mainFormula: {
+            expression: '$\\frac{d}{dx}(x^n) = nx^{n-1}$',
+            variables: [
+                { label: 'Operator', name: 'd/dx', direction: 'down' },
+                { label: 'Base (xⁿ)', name: 'xⁿ', direction: 'down' },
+                { label: 'Slope', name: 'nxⁿ⁻¹', direction: 'down' },
+            ],
+        },
+        relatedFormulas: [
+            { title: 'Limit Def', expression: '$\\frac{f(x+h)-f(x)}{h}$', icon: 'Zap' },
+            { title: 'Chain Rule', expression: '$f\'(g(x)) \\cdot g\'(x)$', icon: 'Activity' },
+            { title: 'Quotient', expression: '$\\frac{u\'v - uv\'}{v^2}$', icon: 'Percent' },
+        ],
+        mindmapNodes: [
+            { title: 'Foundations & Limits', desc: 'Instantaneous rate of change via $\\lim_{h \\to 0} \\frac{\\Delta y}{\\Delta x}$', icon: 'Compass' },
+            { title: 'Differentiation Rules', desc: '**Power**, **Product**, **Quotient**, and **Chain** rules', icon: 'Zap' },
+            { title: 'Optimization & Curve Sketching', desc: 'Finding maxima/minima with $f\'(x) = 0$ and concavity via $f\'\'(x)$', icon: 'Activity' },
         ],
     },
 };
@@ -116,12 +146,75 @@ export async function generateAiSummary(topic: string, extractedText?: string): 
     const cleanTopic = topic.trim();
     const lower = cleanTopic.toLowerCase();
 
-    // Check knowledge matches first for instant fidelity
+    // Try live AI summary synthesis first for rich Markdown & LaTeX output
+    try {
+        const sourcePrompt = extractedText
+            ? `Topic: "${cleanTopic}"\nDocument Excerpt:\n${extractedText.slice(0, 3000)}`
+            : `Topic: "${cleanTopic}"`;
+
+        const res = await api.post('ai/chat', {
+            messages: [
+                {
+                    role: 'user',
+                    content: `Create a structured study summary for the following topic. Use **bold** for key terms and inline LaTeX ($...$) for mathematical or scientific formulas/symbols where appropriate. Return ONLY valid JSON (no markdown code fences) matching this exact structure:
+{
+  "title": "Concise Title",
+  "subtitle": "Subject • Subtopic",
+  "conceptText": "2-3 sentence overview using **bold** and $...$ math where appropriate.",
+  "keyPoints": ["4-5 bullet strings using **bold** and $...$ inline LaTeX"],
+  "mainFormula": {
+    "expression": "$LaTeX formula or key relation$",
+    "variables": [
+      { "label": "Var 1", "name": "x", "direction": "down" },
+      { "label": "Var 2", "name": "y", "direction": "down" },
+      { "label": "Result", "name": "z", "direction": "down" }
+    ]
+  },
+  "relatedFormulas": [
+    { "title": "Formula Name", "expression": "$LaTeX$", "icon": "Zap" }
+  ],
+  "mindmapNodes": [
+    { "title": "Node Title", "desc": "Concise explanation with **bold** or $...$", "icon": "Brain" }
+  ]
+}
+
+${sourcePrompt}`,
+                },
+            ],
+        });
+
+        const rawReply: string = res.data?.reply || res.data?.message || res.data?.content || '';
+        const jsonMatch = rawReply.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.title && parsed.conceptText && Array.isArray(parsed.keyPoints)) {
+                const aiResult: AiSummary = {
+                    id: generateUUID(),
+                    title: parsed.title,
+                    subtitle: parsed.subtitle || `Study Guide • ${parsed.title}`,
+                    conceptText: parsed.conceptText,
+                    keyPoints: parsed.keyPoints,
+                    mainFormula: parsed.mainFormula,
+                    relatedFormulas: Array.isArray(parsed.relatedFormulas) ? parsed.relatedFormulas : [],
+                    mindmapNodes: Array.isArray(parsed.mindmapNodes) ? parsed.mindmapNodes : [],
+                    createdAt: Date.now(),
+                };
+                await saveSummary(aiResult);
+                return aiResult;
+            }
+        }
+    } catch {
+        // Fall back cleanly to curated/local synthesis if offline or AI endpoint unavailable
+    }
+
+    // Check knowledge matches for instant fidelity
     let matchedKnowledge: Partial<AiSummary> | null = null;
     if (lower.includes('motion') || lower.includes('force') || lower.includes('physics')) {
         matchedKnowledge = PRESET_KNOWLEDGE['motion'];
     } else if (lower.includes('cell') || lower.includes('bio') || lower.includes('mitosis')) {
         matchedKnowledge = PRESET_KNOWLEDGE['biology'];
+    } else if (lower.includes('calc') || lower.includes('deriv')) {
+        matchedKnowledge = PRESET_KNOWLEDGE['calculus'];
     }
 
     if (matchedKnowledge) {
@@ -129,9 +222,9 @@ export async function generateAiSummary(topic: string, extractedText?: string): 
             id: generateUUID(),
             title: matchedKnowledge.title || cleanTopic,
             subtitle: matchedKnowledge.subtitle || cleanTopic,
-            conceptText: matchedKnowledge.conceptText || `${cleanTopic} is a fundamental concept requiring understanding of principles, definitions, and relationships.`,
+            conceptText: matchedKnowledge.conceptText || `**${cleanTopic}** is a fundamental concept requiring mastery of core principles, definitions, and mathematical relationships.`,
             keyPoints: matchedKnowledge.keyPoints || [
-                `Understanding the fundamental definition of ${cleanTopic}.`,
+                `Understanding the fundamental definition of **${cleanTopic}**.`,
                 'Key properties and observational evidence.',
                 'Mathematical or conceptual representations.',
                 'Exam applications and typical problem scenarios.',
@@ -157,28 +250,28 @@ export async function generateAiSummary(topic: string, extractedText?: string): 
         subtitle: `Study Guide • ${title}`,
         conceptText: extractedText 
             ? `${extractedText.slice(0, 220)}...`
-            : `${cleanTopic} encompasses critical theoretical principles, structured relationships, and core applications essential for academic mastery.`,
+            : `**${cleanTopic}** encompasses critical theoretical principles, structured relationships, and core applications essential for academic mastery.`,
         keyPoints: [
-            `Core definitions and structural framework of ${cleanTopic}.`,
+            `Core definitions and structural framework of **${cleanTopic}**.`,
             'Fundamental relationships and operational mechanisms.',
             'Standard problem-solving methodologies and formulas.',
-            'Common edge cases and key retention takeaways.',
+            'Common edge cases and high-yield retention takeaways.',
         ],
         mainFormula: {
-            expression: 'Key Relation: A ∝ B',
+            expression: '$A \\propto B$',
             variables: [
-                { label: 'Input', name: 'A', direction: 'down' },
-                { label: 'Rate', name: 'k', direction: 'down' },
-                { label: 'Output', name: 'B', direction: 'up' },
+                { label: 'Input (A)', name: 'A', direction: 'down' },
+                { label: 'Rate (k)', name: 'k', direction: 'down' },
+                { label: 'Output (B)', name: 'B', direction: 'up' },
             ],
         },
         relatedFormulas: [
-            { title: 'Core Principle', expression: 'Output = Rate × Time', icon: 'Zap' },
-            { title: 'Efficiency', expression: 'η = (Work Done) / (Total Energy)', icon: 'Activity' },
-            { title: 'Balance', expression: 'Σ Input = Σ Output', icon: 'Check' },
+            { title: 'Core Principle', expression: '$\\text{Output} = k \\cdot t$', icon: 'Zap' },
+            { title: 'Efficiency', expression: '$\\eta = \\frac{W_{\\text{out}}}{E_{\\text{in}}}$', icon: 'Activity' },
+            { title: 'Balance', expression: '$\\sum \\text{In} = \\sum \\text{Out}$', icon: 'Check' },
         ],
         mindmapNodes: [
-            { title: 'Core Concept', desc: `Essential principles of ${cleanTopic}`, icon: 'BookOpen' },
+            { title: 'Core Concept', desc: `Essential principles of **${cleanTopic}**`, icon: 'BookOpen' },
             { title: 'Key Mechanisms', desc: 'Step-by-step processes and interactions', icon: 'Layers' },
             { title: 'Exam Focus', desc: 'High-yield definitions and formulas', icon: 'Zap' },
         ],
@@ -188,3 +281,4 @@ export async function generateAiSummary(topic: string, extractedText?: string): 
     await saveSummary(result);
     return result;
 }
+
