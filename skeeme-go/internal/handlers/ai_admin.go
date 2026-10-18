@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"skeeme-go/internal/ai"
+	"skeeme-go/internal/middleware"
 )
 
 // checkAdminPassword verifies if the provided password matches any configured admin secret.
@@ -128,6 +131,185 @@ func (h *AIHandler) VerifyAdminPassword(w http.ResponseWriter, r *http.Request) 
 	}
 
 	json.NewEncoder(w).Encode(map[string]any{"valid": true})
+}
+
+// GrantAdminCredits sends credits to a target user (by email, ID, or current session)
+// and records them as purchased credits (type = 'purchase') in transactions + invoices.
+func (h *AIHandler) GrantAdminCredits(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Password    string `json:"password"`
+		Identifier  string `json:"identifier"` // email, user ID, or name
+		Amount      int    `json:"amount"`
+		Description string `json:"description"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&body)
+
+	pass := strings.TrimSpace(body.Password)
+	if pass == "" {
+		pass = h.extractAdminPassword(r)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if !checkAdminPassword(pass) {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "Invalid admin passkey",
+		})
+		return
+	}
+
+	if body.Amount <= 0 || body.Amount > 1000000 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "Amount must be between 1 and 1,000,000 credits",
+		})
+		return
+	}
+
+	identifier := strings.TrimSpace(body.Identifier)
+	if identifier == "" {
+		if authUser := middleware.GetUser(r.Context()); authUser != nil {
+			identifier = fmt.Sprintf("%d", authUser.ID)
+		}
+	}
+
+	if identifier == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "Please provide a user email or ID",
+		})
+		return
+	}
+
+	var targetUser struct {
+		ID               int64  `db:"id"`
+		Name             string `db:"name"`
+		Email            string `db:"email"`
+		Credits          int    `db:"credits"`
+		SubscriptionTier string `db:"subscription_tier"`
+	}
+
+	err := h.DB.GetContext(
+		r.Context(),
+		&targetUser,
+		`SELECT id, name, email, credits, COALESCE(subscription_tier, 'free') AS subscription_tier
+		 FROM users
+		 WHERE LOWER(email) = LOWER($1) OR id::text = $1 OR LOWER(name) = LOWER($1)
+		 LIMIT 1`,
+		identifier,
+	)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   fmt.Sprintf("No user found matching '%s'", identifier),
+		})
+		return
+	}
+
+	tx, err := h.DB.BeginTxx(r.Context(), nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "Failed to start database transaction",
+		})
+		return
+	}
+	defer tx.Rollback()
+
+	var newBalance int
+	err = tx.GetContext(
+		r.Context(),
+		&newBalance,
+		`UPDATE users
+		 SET credits = credits + $1,
+		     credits_emptied_at = NULL,
+		     updated_at = NOW()
+		 WHERE id = $2
+		 RETURNING credits`,
+		body.Amount,
+		targetUser.ID,
+	)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "Failed to update user credits",
+		})
+		return
+	}
+
+	desc := strings.TrimSpace(body.Description)
+	if desc == "" {
+		desc = fmt.Sprintf("Purchase of %d Skeeme Credits", body.Amount)
+	}
+	reqID := fmt.Sprintf("purchase_credit_pack_%d_%d", targetUser.ID, time.Now().UnixNano())
+	metaJSON := fmt.Sprintf(`{"source":"credit_pack","credits":%d,"credits_bought":true}`, body.Amount)
+
+	_, err = tx.ExecContext(
+		r.Context(),
+		`INSERT INTO transactions
+		 (user_id, type, action_type, request_id, amount, description, metadata, created_at, updated_at)
+		 VALUES ($1, 'purchase', 'credit_pack', $2, $3, $4, $5::jsonb, NOW(), NOW())`,
+		targetUser.ID,
+		reqID,
+		body.Amount,
+		desc,
+		metaJSON,
+	)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "Failed to record credit purchase transaction",
+		})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "Failed to commit credit purchase",
+		})
+		return
+	}
+
+	// Clear depletion cooldown in Redis if present
+	if h.Redis != nil {
+		emptiedKey := fmt.Sprintf("credits_emptied_at:%d", targetUser.ID)
+		_ = h.Redis.Del(r.Context(), emptiedKey).Err()
+	}
+
+	// Best-effort paid invoice record so billing history also reflects purchased credits
+	_, _ = h.DB.ExecContext(
+		r.Context(),
+		`INSERT INTO invoices (user_id, amount, currency, status, reference, payment_method, description, metadata, paid_at, created_at, updated_at)
+		 VALUES ($1, $2, 'NGN', 'paid', $3, 'credit_pack', $4, $5::jsonb, NOW(), NOW(), NOW())`,
+		targetUser.ID,
+		body.Amount,
+		reqID,
+		desc,
+		metaJSON,
+	)
+
+	json.NewEncoder(w).Encode(map[string]any{
+		"success": true,
+		"message": fmt.Sprintf("Successfully sent %d purchased credits to %s", body.Amount, targetUser.Email),
+		"user": map[string]any{
+			"id":               targetUser.ID,
+			"name":             targetUser.Name,
+			"email":            targetUser.Email,
+			"previous_credits": targetUser.Credits,
+			"added_credits":    body.Amount,
+			"credits":          newBalance,
+			"plan_name":        targetUser.SubscriptionTier,
+		},
+	})
 }
 
 // ServeSwitchUI serves the responsive single-page web application.
@@ -502,6 +684,24 @@ const switchUIHTML = `<!DOCTYPE html>
         </div>
       </div>
 
+      <!-- 3. Secret Credit Dispenser (Saved as Purchased Credits) -->
+      <div class="engine-card" style="text-align: left; display: flex; flex-direction: column; gap: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="active-engine-title" style="margin-bottom: 0;">Send Purchased Credits</div>
+          <span class="status-pill ready">PURCHASE LEDGER</span>
+        </div>
+        <input type="text" id="credit-user-input" class="input-box" placeholder="User email or ID (e.g. student@example.com)">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+          <button type="button" class="switch-opt" style="padding: 0.6rem; font-size: 0.82rem; border-color: var(--card-border);" onclick="setCreditAmount(100)">+100</button>
+          <button type="button" class="switch-opt" style="padding: 0.6rem; font-size: 0.82rem; border-color: var(--card-border);" onclick="setCreditAmount(500)">+500</button>
+          <button type="button" class="switch-opt" style="padding: 0.6rem; font-size: 0.82rem; border-color: var(--card-border);" onclick="setCreditAmount(1000)">+1,000</button>
+          <button type="button" class="switch-opt" style="padding: 0.6rem; font-size: 0.82rem; border-color: var(--card-border);" onclick="setCreditAmount(5000)">+5,000</button>
+        </div>
+        <input type="number" id="credit-amount-input" class="input-box" value="500" min="1" max="1000000" placeholder="Credits amount">
+        <button class="btn" id="btn-grant-credits" onclick="grantCredits()">Send Purchased Credits</button>
+        <div id="credit-result" style="font-size: 0.8rem; color: var(--success); display: none; font-family: 'JetBrains Mono', monospace;"></div>
+      </div>
+
       <button class="btn" style="background: rgba(255,255,255,0.06); box-shadow: none; font-size: 0.85rem;" onclick="handleLogout()">Lock Console</button>
     </div>
   </div>
@@ -516,6 +716,57 @@ const switchUIHTML = `<!DOCTYPE html>
       t.innerText = msg;
       t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function setCreditAmount(val) {
+      document.getElementById('credit-amount-input').value = val;
+    }
+
+    async function grantCredits() {
+      const identifier = document.getElementById('credit-user-input').value.trim();
+      const amount = parseInt(document.getElementById('credit-amount-input').value, 10);
+      const resEl = document.getElementById('credit-result');
+      const btn = document.getElementById('btn-grant-credits');
+
+      if (!identifier) {
+        showToast('Please enter a user email or ID');
+        return;
+      }
+      if (!amount || amount <= 0) {
+        showToast('Please enter a valid credit amount');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Sending...';
+      try {
+        const res = await fetch('/api/admin/credits/grant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            password: currentPassword,
+            identifier: identifier,
+            amount: amount
+          })
+        });
+        const data = await res.json();
+        if (data.success && data.user) {
+          resEl.style.display = 'block';
+          resEl.style.color = 'var(--success)';
+          resEl.innerText = data.user.email + ': ' + data.user.previous_credits + ' → ' + data.user.credits + ' credits (+' + data.user.added_credits + ' bought)';
+          showToast('Sent ' + amount + ' credits to ' + data.user.email);
+        } else {
+          resEl.style.display = 'block';
+          resEl.style.color = 'var(--danger)';
+          resEl.innerText = data.error || 'Failed to grant credits';
+          showToast(data.error || 'Failed to grant credits');
+        }
+      } catch (e) {
+        showToast('Network error while granting credits');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Send Purchased Credits';
+      }
     }
 
     async function handleLogin() {

@@ -73,6 +73,16 @@ export async function getSavedDecks(): Promise<OfflineSavedDeck[]> {
   return (await readJson<OfflineSavedDeck[]>(DECK_KEY)) ?? [];
 }
 
+export async function isQuizSaved(id: string): Promise<boolean> {
+  const current = await getSavedQuizzes();
+  return current.some((q) => q.id === id);
+}
+
+export async function isDeckSaved(id: string): Promise<boolean> {
+  const current = await getSavedDecks();
+  return current.some((d) => d.id === id);
+}
+
 export async function saveOfflineQuiz(quiz: Omit<OfflineSavedQuiz, 'saved_at'>): Promise<void> {
   const current = await getSavedQuizzes();
   const existingIdx = current.findIndex((q) => q.id === quiz.id);

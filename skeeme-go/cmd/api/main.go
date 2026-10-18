@@ -214,11 +214,13 @@ func main() {
 		r.Post("/api/flashcards/generate", aiHandler.GenerateFlashcards)
 	})
 
-	// Admin AI Switchboard (Password-protected Web UI & API)
+	// Admin AI Switchboard & Credit Dispenser (Password-protected Web UI & API)
 	r.Get("/admin/ai-switch", aiHandler.ServeSwitchUI)
+	r.Get("/admin/credits", aiHandler.ServeSwitchUI)
 	r.Get("/api/admin/ai/provider", aiHandler.GetAdminProvider)
 	r.Post("/api/admin/ai/provider", aiHandler.SetAdminProvider)
 	r.Post("/api/admin/ai/verify", aiHandler.VerifyAdminPassword)
+	r.Post("/api/admin/credits/grant", aiHandler.GrantAdminCredits)
 
 	// Legacy Internal AI Routes (retained for backward compatibility)
 	r.Route("/api/v2/internal/ai", func(r chi.Router) {
@@ -227,6 +229,8 @@ func main() {
 	})
 	
 	r.Route("/api/v2/student", func(r chi.Router) {
+		r.Post("/admin/credits/grant", aiHandler.GrantAdminCredits)
+
 		r.Route("/system", func(r chi.Router) {
 			r.Get("/pricing", systemHandler.Pricing)
 			r.Get("/app-version", systemHandler.AppVersion)

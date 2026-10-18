@@ -46,21 +46,26 @@ export default function SummaryScreen() {
     const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [viewingSummary, setViewingSummary] = useState<AiSummary | null>(null);
+    const [openedFromCreator, setOpenedFromCreator] = useState(false);
     const [pastSummaries, setPastSummaries] = useState<AiSummary[]>([]);
     const [activeTab, setActiveTab] = useState<'notes' | 'mindmap'>('notes');
 
     const loadSummaries = useCallback(async () => {
         const stored = await getStoredSummaries();
         setPastSummaries(stored);
-        if (stored.length > 0 && !viewingSummary && !topic) {
-            // Default to most recent if available
-            setViewingSummary(stored[0]);
-        }
-    }, [viewingSummary, topic]);
+    }, []);
 
     useEffect(() => {
         loadSummaries();
     }, [loadSummaries]);
+
+    const handleNavigateBack = useCallback(() => {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/(drawer)' as any);
+        }
+    }, []);
 
     const handleGenerate = async () => {
         if (mode === 'topic' && !topic.trim()) {
@@ -95,6 +100,7 @@ export default function SummaryScreen() {
 
             const targetTopic = mode === 'topic' ? topic : (selectedFile?.name || 'Document Summary');
             const summary = await generateAiSummary(targetTopic, extractedText);
+            setOpenedFromCreator(true);
             setViewingSummary(summary);
             await loadSummaries();
         } catch {
@@ -132,10 +138,21 @@ export default function SummaryScreen() {
                 <ScreenHeader 
                     title="Summary"
                     subtitle={viewingSummary.subtitle}
-                    onBack={() => setViewingSummary(null)}
+                    onBack={() => {
+                        if (openedFromCreator) {
+                            setOpenedFromCreator(false);
+                            setViewingSummary(null);
+                        } else {
+                            setViewingSummary(null);
+                            handleNavigateBack();
+                        }
+                    }}
                     rightAction={
                         <TouchableOpacity
-                            onPress={() => setViewingSummary(null)}
+                            onPress={() => {
+                                setOpenedFromCreator(false);
+                                setViewingSummary(null);
+                            }}
                             activeOpacity={0.7}
                             style={{
                                 paddingHorizontal: 12,
@@ -411,55 +428,44 @@ export default function SummaryScreen() {
                         borderTopWidth: StyleSheet.hairlineWidth,
                         borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : '#E3E2E7',
                         flexDirection: 'row',
+                        alignItems: 'center',
                         gap: 12,
                     }}
                 >
-                    <Pressable
-                        onPress={() => {
-                            haptics.impactAsync();
-                            router.push({
-                                pathname: '/(drawer)/generate',
-                                params: { topic: viewingSummary.title },
-                            });
-                        }}
-                        style={{
-                            flex: 1,
-                            height: 52,
-                            borderRadius: 16,
-                            backgroundColor: '#007AFF',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            shadowColor: '#007AFF',
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.3,
-                            shadowRadius: 10,
-                            elevation: 4,
-                        }}
-                    >
-                        <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '700' }}>Quiz Me</Text>
-                    </Pressable>
+                    <View style={{ flex: 1 }}>
+                        <AnimatedButton
+                            title="Quiz Me"
+                            onPress={() => {
+                                haptics.impactAsync();
+                                router.push({
+                                    pathname: '/(drawer)/generate',
+                                    params: { topic: viewingSummary.title },
+                                });
+                            }}
+                            type="capsule"
+                            backgroundColor="#007AFF"
+                            shadowColor="#0066D6"
+                            fullWidth
+                        />
+                    </View>
 
-                    <Pressable
-                        onPress={() => {
-                            haptics.impactAsync();
-                            router.push({
-                                pathname: '/(drawer)/flashcards/create',
-                                params: { topic: viewingSummary.title },
-                            });
-                        }}
-                        style={{
-                            flex: 1,
-                            height: 52,
-                            borderRadius: 16,
-                            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F0F3F8',
-                            borderWidth: 1,
-                            borderColor: isDark ? 'rgba(255,255,255,0.12)' : '#D0D7DE',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <Text style={{ color: C.text, fontSize: 15, fontWeight: '700' }}>Make Flashcards</Text>
-                    </Pressable>
+                    <View style={{ flex: 1 }}>
+                        <AnimatedButton
+                            title="Make Flashcards"
+                            onPress={() => {
+                                haptics.impactAsync();
+                                router.push({
+                                    pathname: '/(drawer)/flashcards/create',
+                                    params: { topic: viewingSummary.title },
+                                });
+                            }}
+                            type="capsule"
+                            backgroundColor={isDark ? '#2C2C2E' : '#E5E5EA'}
+                            shadowColor={isDark ? '#1C1C1E' : '#D1D1D6'}
+                            textColor={C.text}
+                            fullWidth
+                        />
+                    </View>
                 </View>
             </View>
         );
@@ -470,10 +476,7 @@ export default function SummaryScreen() {
         <View style={{ flex: 1, backgroundColor: C.background }}>
             <ScreenHeader 
                 title="AI Summary"
-                onBack={() => {
-                    if (router.canGoBack()) router.back();
-                    else router.replace('/(drawer)' as any);
-                }}
+                onBack={handleNavigateBack}
             />
 
             <ScrollView
@@ -657,6 +660,7 @@ export default function SummaryScreen() {
                                     key={s.id}
                                     onPress={() => {
                                         haptics.selectionAsync();
+                                        setOpenedFromCreator(true);
                                         setViewingSummary(s);
                                     }}
                                     style={{

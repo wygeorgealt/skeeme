@@ -38,6 +38,7 @@ import { Colors, Spacing, Radius } from '@/constants/theme';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { GlassSurface } from '@/components/liquid-glass/GlassSurface';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import Svg, { Circle } from 'react-native-svg';
 
 // ── SKELETON COMPONENTS ──────────────────────────────────────────────────────
 const SkeletonCard = ({ isDark }: { isDark: boolean }) => {
@@ -160,10 +161,21 @@ export default function GenerateQuizScreen() {
     const formatTime = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
     const startTimer = useCallback((minutes: number) => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
         setTimeLeft(minutes * 60);
         timerRef.current = setInterval(() => {
             setTimeLeft(prev => {
-                if (prev <= 1) { clearInterval(timerRef.current!); Alert.alert("Time's Up!", "Your study session has ended."); return 0; }
+                if (prev <= 1) {
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current);
+                        timerRef.current = null;
+                    }
+                    Alert.alert("Time's Up!", "Your study session has ended.");
+                    return 0;
+                }
                 return prev - 1;
             });
         }, 1000);
@@ -214,6 +226,19 @@ export default function GenerateQuizScreen() {
         }
     };
 
+    const [reviewFilter, setReviewFilter] = useState<'all' | 'missed' | 'correct'>('all');
+
+    const handleRetakeQuiz = () => {
+        haptics.impactAsync();
+        setSelectedAnswers({});
+        setTheoryResults({});
+        setCurrentQIndex(0);
+        setIsRevealed(false);
+        setIsCelebration(false);
+        setReviewFilter('all');
+        if (timerEnabled) startTimer(parseInt(timerMinutes));
+    };
+
     const handleResetQuiz = () => {
         haptics.impactAsync();
         setQuestions([]);
@@ -222,6 +247,7 @@ export default function GenerateQuizScreen() {
         setCurrentQIndex(0);
         setIsRevealed(false);
         setIsCelebration(false);
+        setReviewFilter('all');
         setTimeLeft(0);
         if (timerRef.current) {
             clearInterval(timerRef.current);
@@ -357,7 +383,13 @@ export default function GenerateQuizScreen() {
         setLoadingStage(mode === 'file' ? 'Analyzing Document...' : 'Analyzing Topic...');
         setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); 
         setCurrentQIndex(0); setIsRevealed(false);
-        if (timerRef.current) clearInterval(timerRef.current);
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+        if (timerEnabled) {
+            setTimeLeft((parseInt(timerMinutes) || 10) * 60);
+        }
 
         // Stage cycling logic
         const stages = mode === 'file' ? LOADING_STAGES_FILE : LOADING_STAGES_TOPIC;
@@ -389,7 +421,12 @@ export default function GenerateQuizScreen() {
                             const partial = parsePartialJson(accumulatedJson);
                             if (partial) {
                                 const qs = Array.isArray(partial) ? partial : (partial.questions || []);
-                                if (qs.length > 0) setQuestions(qs);
+                                if (qs.length > 0) {
+                                    setQuestions(qs);
+                                    if (timerEnabled && !timerRef.current) {
+                                        startTimer(parseInt(timerMinutes) || 10);
+                                    }
+                                }
                             }
                         } catch (e) {}
                     },
@@ -481,7 +518,7 @@ export default function GenerateQuizScreen() {
                 }
             }
             
-            if (timerEnabled) startTimer(parseInt(timerMinutes) || 10);
+            if (timerEnabled && !timerRef.current) startTimer(parseInt(timerMinutes) || 10);
             
             // Reset saved state for new quiz
             setIsSaved(false);
@@ -555,25 +592,31 @@ export default function GenerateQuizScreen() {
     }, [questions.length, currentQIndex, isSaved, isSavingHistory, saveError, saveHistory]);
 
 
-    // Automatically reset quiz when entering screen if a quiz is fully completed/refocused
+    // Track whether the user is currently viewing final results so we only reset when leaving the screen
+    const isResultsActiveRef = useRef(false);
+    isResultsActiveRef.current = questions.length > 0 && currentQIndex >= questions.length;
+
     useFocusEffect(
         useCallback(() => {
-            if (questions.length > 0 && currentQIndex >= questions.length) {
-                setQuestions([]);
-                setSelectedAnswers({});
-                setTheoryResults({});
-                setCurrentQIndex(0);
-                setIsRevealed(false);
-                setIsCelebration(false);
-                setTimeLeft(0);
-                if (timerRef.current) {
-                    clearInterval(timerRef.current);
-                    timerRef.current = null;
+            return () => {
+                if (isResultsActiveRef.current) {
+                    setQuestions([]);
+                    setSelectedAnswers({});
+                    setTheoryResults({});
+                    setCurrentQIndex(0);
+                    setIsRevealed(false);
+                    setIsCelebration(false);
+                    setReviewFilter('all');
+                    setTimeLeft(0);
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current);
+                        timerRef.current = null;
+                    }
+                    setTopic('');
+                    setSelectedFile(null);
                 }
-                setTopic('');
-                setSelectedFile(null);
-            }
-        }, [questions.length, currentQIndex])
+            };
+        }, [])
     );
 
     // ── SETUP FORM ─────────────────────────────────────────────────────────────
@@ -1077,6 +1120,10 @@ export default function GenerateQuizScreen() {
             } else {
                 // Move to next question or finish
                 if (currentQIndex === questions.length - 1) {
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current);
+                        timerRef.current = null;
+                    }
                     // Manual submission before celebration
                     if (!isSaved && !isSavingHistory) {
                         await saveHistory();
@@ -1113,6 +1160,17 @@ export default function GenerateQuizScreen() {
             );
         }
 
+        const totalTimerSeconds = Math.max(1, (parseInt(timerMinutes) || 10) * 60);
+        const timerProgress = Math.min(1, Math.max(0, timeLeft / totalTimerSeconds));
+        const isCriticalTime = timerEnabled && timeLeft > 0 && timeLeft <= 60;
+        const isWarningTime = timerEnabled && timeLeft > 60 && timeLeft <= 120;
+        const timerAccent = isCriticalTime ? '#EF4444' : isWarningTime ? '#F59E0B' : '#007AFF';
+        const timerRingSize = 26;
+        const timerRingStroke = 2.5;
+        const timerRingRadius = (timerRingSize - timerRingStroke) / 2;
+        const timerRingCirc = 2 * Math.PI * timerRingRadius;
+        const timerRingOffset = timerRingCirc * (1 - timerProgress);
+
         return (
             <View style={{ flex: 1, backgroundColor: C.background }}>
                 <ScreenHeader 
@@ -1120,9 +1178,79 @@ export default function GenerateQuizScreen() {
                     subtitle={topic || selectedFile?.name || 'Quiz'}
                     onBack={handleDiscardOrBack}
                     rightAction={timerEnabled ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: C.surfaceLow }}>
-                            <Icon name="Timer" size={16} color={timeLeft < 60 ? '#FF3B30' : C.primary} animated={timeLeft < 60 ? 'pulse' : undefined} />
-                            <Text style={{ fontSize: 13, fontWeight: '700', color: timeLeft < 60 ? '#FF3B30' : C.primary }}>
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 7,
+                                paddingLeft: 6,
+                                paddingRight: 11,
+                                paddingVertical: 5,
+                                borderRadius: 999,
+                                backgroundColor: isCriticalTime
+                                    ? (isDark ? 'rgba(239,68,68,0.16)' : '#FEF2F2')
+                                    : isWarningTime
+                                        ? (isDark ? 'rgba(245,158,11,0.14)' : '#FFFBEB')
+                                        : C.card,
+                                borderWidth: 1,
+                                borderColor: isCriticalTime
+                                    ? 'rgba(239,68,68,0.45)'
+                                    : isWarningTime
+                                        ? 'rgba(245,158,11,0.4)'
+                                        : C.border,
+                                shadowColor: isCriticalTime ? '#EF4444' : '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: isCriticalTime ? 0.18 : 0.05,
+                                shadowRadius: 6,
+                                elevation: 2,
+                            }}
+                        >
+                            <View style={{ width: timerRingSize, height: timerRingSize, alignItems: 'center', justifyContent: 'center' }}>
+                                <Svg width={timerRingSize} height={timerRingSize}>
+                                    <Circle
+                                        cx={timerRingSize / 2}
+                                        cy={timerRingSize / 2}
+                                        r={timerRingRadius}
+                                        stroke={isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'}
+                                        strokeWidth={timerRingStroke}
+                                        fill="none"
+                                    />
+                                    <Circle
+                                        cx={timerRingSize / 2}
+                                        cy={timerRingSize / 2}
+                                        r={timerRingRadius}
+                                        stroke={timerAccent}
+                                        strokeWidth={timerRingStroke}
+                                        strokeDasharray={timerRingCirc}
+                                        strokeDashoffset={timerRingOffset}
+                                        strokeLinecap="round"
+                                        fill="none"
+                                        transform={`rotate(-90 ${timerRingSize / 2} ${timerRingSize / 2})`}
+                                    />
+                                </Svg>
+                                <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Icon
+                                        name="Timer"
+                                        size={12}
+                                        color={isCriticalTime ? 'destructive' : isWarningTime ? 'warning' : 'default'}
+                                        animated={isCriticalTime ? 'pulse' : undefined}
+                                    />
+                                </View>
+                            </View>
+
+                            <Text
+                                style={{
+                                    fontSize: 13,
+                                    fontWeight: '800',
+                                    letterSpacing: 0.3,
+                                    fontVariant: ['tabular-nums'],
+                                    color: isCriticalTime
+                                        ? '#EF4444'
+                                        : isWarningTime
+                                            ? '#D97706'
+                                            : C.text,
+                                }}
+                            >
                                 {formatTime(timeLeft)}
                             </Text>
                         </View>
@@ -1131,33 +1259,15 @@ export default function GenerateQuizScreen() {
 
                 <ScrollView className="flex-1 w-full" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
                     
-                    {/* Progress area */}
-                    <View className="flex-col space-y-2.5 mb-6">
-                        <Text className="font-[700] text-[15px]" style={{ color: C.text }}>Question {currentQIndex + 1}: {topic || (selectedFile?.name || 'Quiz')}</Text>
-                        
-                        {/* Segmented pill progress */}
-                        <View className="flex-row items-center gap-1.5 w-full">
-                            {questions.map((_, i) => (
-                                <View 
-                                    key={i} 
-                                    className={`h-1.5 flex-1 rounded-full ${i <= currentQIndex ? 'bg-accent-electric-blue' : ''}`}
-                                    style={i <= currentQIndex ? undefined : { backgroundColor: C.border }}
-                                />
-                            ))}
-                        </View>
-                        
-                        <View className="flex-row items-center gap-4 text-[12px] pt-0.5">
-                            <View className="flex-row items-center gap-1">
-                                <Icon name="Clock" size={14} color="secondary" />
-                                <Text className="text-[12px]" style={{ color: C.textSecondary }}>Question {currentQIndex + 1}/{questions.length}</Text>
-                            </View>
-                            {timerEnabled && (
-                                <View className="flex-row items-center gap-1">
-                                    <Icon name="Timer" size={14} color={timeLeft < 60 ? '#FF3B30' : 'secondary'} animated={timeLeft < 60 ? 'pulse' : undefined} />
-                                    <Text className={`text-[12px] ${timeLeft < 60 ? 'text-[#FF3B30] font-[700]' : ''}`} style={timeLeft < 60 ? undefined : { color: C.textSecondary }}>{formatTime(timeLeft)}</Text>
-                                </View>
-                            )}
-                        </View>
+                    {/* Segmented completion bar */}
+                    <View className="flex-row items-center gap-1.5 w-full mt-2 mb-7">
+                        {questions.map((_, i) => (
+                            <View 
+                                key={i} 
+                                className={`h-2 flex-1 rounded-full ${i <= currentQIndex ? 'bg-accent-electric-blue' : ''}`}
+                                style={i <= currentQIndex ? undefined : { backgroundColor: C.border }}
+                            />
+                        ))}
                     </View>
 
                     {/* Question Typography */}
@@ -1306,72 +1416,612 @@ export default function GenerateQuizScreen() {
 
     // ── RESULTS VIEW ────────────────────────────────────────────────────────────
     const getRemark = (pct: number) => {
-        if (pct >= 90) return { title: "Excellent work", subtitle: "You have a strong grasp of this topic.", icon: 'Award' as const };
-        if (pct >= 75) return { title: "Well done", subtitle: "A few more reviews will make this stick.", icon: 'CheckCircle2' as const };
-        if (pct >= 50) return { title: "Keep practicing", subtitle: "Review the missed questions, then try again.", icon: 'HelpCircle' as const };
-        return { title: "Ready for another pass", subtitle: "Review the explanations and take your time.", icon: 'AlertTriangle' as const };
+        if (pct >= 90) return { title: 'Excellent Mastery', subtitle: 'You have a strong grasp of this topic.', tier: 'A+ · Mastery', accent: '#10B981', icon: 'Trophy' as const };
+        if (pct >= 75) return { title: 'Solid Performance', subtitle: 'A quick review of missed items will lock this in.', tier: 'B+ · Strong', accent: '#007AFF', icon: 'Award' as const };
+        if (pct >= 50) return { title: 'Building Momentum', subtitle: 'Review the missed questions below and try another pass.', tier: 'C · Developing', accent: '#F59E0B', icon: 'Target' as const };
+        return { title: 'Needs Another Pass', subtitle: 'Read through the AI explanations carefully and retake.', tier: 'Review Mode', accent: '#EF4444', icon: 'Flame' as const };
     };
     const remark = getRemark(percentage);
+    const missedCount = Math.max(0, questions.length - correctCount);
+    const ringSize = 92;
+    const ringStroke = 8;
+    const ringRadius = (ringSize - ringStroke) / 2;
+    const ringCircumference = 2 * Math.PI * ringRadius;
+    const ringDashoffset = ringCircumference * (1 - Math.min(100, Math.max(0, percentage)) / 100);
+
+    const filteredQuestions = questions
+        .map((q, qi) => {
+            const isTheory = q.question_type === 'essay';
+            const isCorrect = isTheory ? !!theoryResults[qi] : selectedAnswers[qi] === q.correct_answer;
+            return { q, qi, isTheory, isCorrect };
+        })
+        .filter(item => {
+            if (reviewFilter === 'missed') return !item.isCorrect;
+            if (reviewFilter === 'correct') return item.isCorrect;
+            return true;
+        });
+
+    const handleSaveOfflinePress = async () => {
+        if (questions.length === 0) {
+            Alert.alert('No Content', 'There are no questions to save.');
+            return;
+        }
+        if (isSavingOffline || isOfflineSaved) return;
+        try {
+            setSaveError(false);
+            setIsSavingOffline(true);
+            const deckTopic = mode === 'topic' ? topic : (selectedFile?.name || 'File Upload');
+
+            await saveOfflineQuiz({
+                id: `quiz_${Date.now().toString()}`,
+                mode,
+                topic: deckTopic,
+                difficulty,
+                percentage,
+                questions: questions.map((q, qi) => ({
+                    id: qi.toString(),
+                    type: q.question_type,
+                    question_type: q.question_type,
+                    question_text: q.question_text,
+                    options: q.options,
+                    correct_answer: q.correct_answer,
+                    explanation: q.explanation,
+                    explanation_right: q.explanation_right,
+                    explanation_wrong: q.explanation_wrong,
+                    user_answer: q.question_type === 'essay' ? '(Theory Answer)' : selectedAnswers[qi],
+                })),
+            });
+
+            setIsOfflineSaved(true);
+            haptics.notificationAsync('success' as any);
+        } catch {
+            setSaveError(true);
+            Alert.alert('Save Failed', 'Could not save this quiz for offline use.');
+        } finally {
+            setIsSavingOffline(false);
+        }
+    };
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
-            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 280, paddingTop: insets.top + 20 }} showsVerticalScrollIndicator={false}>
-                <View style={[s.resultsHeader, { backgroundColor: C.card, borderColor: C.separator }]}>
-                    <View style={s.resultsIconBox}>
-                        <Icon name={remark.icon} size={36} color="primary" />
+            <ScreenHeader
+                title="Quiz Report"
+                subtitle={formatMathPlainText(topic || selectedFile?.name || 'Study Session')}
+                onBack={handleResetQuiz}
+                rightAction={
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Pressable
+                            onPress={handleShare}
+                            disabled={isSharing}
+                            style={{
+                                width: 38,
+                                height: 38,
+                                borderRadius: 12,
+                                backgroundColor: C.surfaceLow,
+                                borderWidth: 1,
+                                borderColor: C.border,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            {isSharing ? (
+                                <LoadingSpinner size={16} color={C.primary} strokeWidth={2.5} />
+                            ) : (
+                                <Icon name="Share2" size={17} color="default" />
+                            )}
+                        </Pressable>
+                        <Pressable
+                            onPress={handleExportPDF}
+                            disabled={isExporting}
+                            style={{
+                                width: 38,
+                                height: 38,
+                                borderRadius: 12,
+                                backgroundColor: C.surfaceLow,
+                                borderWidth: 1,
+                                borderColor: C.border,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            {isExporting ? (
+                                <LoadingSpinner size={16} color={C.primary} strokeWidth={2.5} />
+                            ) : (
+                                <Icon name="Download" size={17} color="default" />
+                            )}
+                        </Pressable>
                     </View>
-                    <Text style={[s.resultsTitle, { color: C.primary }]}>{remark.title}</Text>
-                    <Text style={[s.scoreValue, { color: C.text }]}>{percentage}%</Text>
-                    <Text style={s.resultsSubtitle}>{remark.subtitle}</Text>
+                }
+            />
 
-                    {/* Meta Info */}
-                    <View style={s.resultsMeta}>
-                        <View style={s.metaCard}>
-                            <Icon name="CheckCircle2" size={16} color="success" />
-                            <Text style={[s.metaText, { color: C.textSecondary }]}>{correctCount} OK</Text>
+            <ScrollView
+                contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 175 }}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Split Bento Scorecard Hero */}
+                <View
+                    style={{
+                        backgroundColor: C.card,
+                        borderRadius: 28,
+                        padding: 22,
+                        borderWidth: 1,
+                        borderColor: C.border,
+                        marginBottom: 14,
+                    }}
+                >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+                        {/* Left Column: Tier Pill + Giant Score + Remark */}
+                        <View style={{ flex: 1 }}>
+                            <View
+                                style={{
+                                    alignSelf: 'flex-start',
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    paddingHorizontal: 10,
+                                    paddingVertical: 5,
+                                    borderRadius: 999,
+                                    backgroundColor: C.surfaceLow,
+                                    marginBottom: 10,
+                                }}
+                            >
+                                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: remark.accent }} />
+                                <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary, letterSpacing: 0.3 }}>
+                                    {remark.tier}
+                                </Text>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+                                <Text style={{ fontSize: 48, fontWeight: '900', color: C.text, letterSpacing: -1.8, lineHeight: 52 }}>
+                                    {percentage}%
+                                </Text>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: C.textSecondary }}>
+                                    SCORE
+                                </Text>
+                            </View>
+
+                            <Text style={{ fontSize: 16, fontWeight: '800', color: C.text, marginTop: 6 }}>
+                                {remark.title}
+                            </Text>
+                            <Text style={{ fontSize: 13, color: C.textSecondary, marginTop: 2, lineHeight: 18 }}>
+                                {remark.subtitle}
+                            </Text>
                         </View>
-                        <View style={s.metaCard}>
-                            <Icon name="Timer" size={16} color="primary" />
-                            <Text style={[s.metaText, { color: C.textSecondary }]}>
-                                {timerEnabled ? formatTime(((parseInt(timerMinutes) || 10) * 60) - timeLeft) : 'No Timer'}
+
+                        {/* Right Column: Radial Ring + Squircle Icon */}
+                        <View style={{ width: ringSize, height: ringSize, alignItems: 'center', justifyContent: 'center' }}>
+                            <Svg width={ringSize} height={ringSize}>
+                                <Circle
+                                    cx={ringSize / 2}
+                                    cy={ringSize / 2}
+                                    r={ringRadius}
+                                    stroke={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}
+                                    strokeWidth={ringStroke}
+                                    fill="none"
+                                />
+                                <Circle
+                                    cx={ringSize / 2}
+                                    cy={ringSize / 2}
+                                    r={ringRadius}
+                                    stroke={remark.accent}
+                                    strokeWidth={ringStroke}
+                                    strokeDasharray={ringCircumference}
+                                    strokeDashoffset={ringDashoffset}
+                                    strokeLinecap="round"
+                                    fill="none"
+                                    transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
+                                />
+                            </Svg>
+                            <View
+                                style={{
+                                    position: 'absolute',
+                                    width: 46,
+                                    height: 46,
+                                    borderRadius: 15,
+                                    backgroundColor: C.surfaceLow,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <Icon name={remark.icon} size={22} color="default" />
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Segmented Accuracy Bar + Offline Save Chip */}
+                    <View style={{ marginTop: 18, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.border }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: C.textSecondary }}>
+                                Accuracy Breakdown
+                            </Text>
+                            <Pressable
+                                onPress={handleSaveOfflinePress}
+                                disabled={isSavingOffline || isOfflineSaved}
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                    paddingHorizontal: 10,
+                                    paddingVertical: 4,
+                                    borderRadius: 999,
+                                    backgroundColor: isOfflineSaved
+                                        ? (isDark ? 'rgba(16,185,129,0.16)' : '#ECFDF5')
+                                        : C.surfaceLow,
+                                }}
+                            >
+                                <Icon
+                                    name={isOfflineSaved ? 'CheckCircle2' : 'Bookmark'}
+                                    size={13}
+                                    color={isOfflineSaved ? 'success' : 'default'}
+                                />
+                                <Text
+                                    style={{
+                                        fontSize: 11,
+                                        fontWeight: '700',
+                                        color: isOfflineSaved ? '#10B981' : C.text,
+                                    }}
+                                >
+                                    {isSavingOffline ? 'Saving...' : isOfflineSaved ? 'Saved Offline' : 'Save Offline'}
+                                </Text>
+                            </Pressable>
+                        </View>
+
+                        <View style={{ flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', backgroundColor: C.surfaceLow, gap: 3 }}>
+                            {correctCount > 0 && (
+                                <View
+                                    style={{
+                                        flex: correctCount,
+                                        backgroundColor: '#10B981',
+                                        borderRadius: 4,
+                                    }}
+                                />
+                            )}
+                            {missedCount > 0 && (
+                                <View
+                                    style={{
+                                        flex: missedCount,
+                                        backgroundColor: '#EF4444',
+                                        borderRadius: 4,
+                                    }}
+                                />
+                            )}
+                        </View>
+                    </View>
+                </View>
+
+                {/* 3-Column Bento Metrics Strip (New Squircle Icon Pattern) */}
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 22 }}>
+                    <View
+                        style={{
+                            flex: 1,
+                            backgroundColor: C.card,
+                            borderRadius: 22,
+                            padding: 14,
+                            borderWidth: 1,
+                            borderColor: C.border,
+                            gap: 10,
+                        }}
+                    >
+                        <View
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 12,
+                                backgroundColor: C.surfaceLow,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Icon name="CheckCircle2" size={18} color="default" />
+                        </View>
+                        <View>
+                            <Text style={{ fontSize: 20, fontWeight: '800', color: C.text }}>
+                                {correctCount}/{questions.length}
+                            </Text>
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: C.textSecondary, marginTop: 1 }}>
+                                Correct
+                            </Text>
+                        </View>
+                    </View>
+
+                    <View
+                        style={{
+                            flex: 1,
+                            backgroundColor: C.card,
+                            borderRadius: 22,
+                            padding: 14,
+                            borderWidth: 1,
+                            borderColor: C.border,
+                            gap: 10,
+                        }}
+                    >
+                        <View
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 12,
+                                backgroundColor: C.surfaceLow,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Icon name="XCircle" size={18} color="default" />
+                        </View>
+                        <View>
+                            <Text style={{ fontSize: 20, fontWeight: '800', color: C.text }}>
+                                {missedCount}
+                            </Text>
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: C.textSecondary, marginTop: 1 }}>
+                                Missed
+                            </Text>
+                        </View>
+                    </View>
+
+                    <View
+                        style={{
+                            flex: 1,
+                            backgroundColor: C.card,
+                            borderRadius: 22,
+                            padding: 14,
+                            borderWidth: 1,
+                            borderColor: C.border,
+                            gap: 10,
+                        }}
+                    >
+                        <View
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 12,
+                                backgroundColor: C.surfaceLow,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Icon name="Timer" size={18} color="default" />
+                        </View>
+                        <View>
+                            <Text style={{ fontSize: 20, fontWeight: '800', color: C.text }} numberOfLines={1}>
+                                {timerEnabled ? formatTime(((parseInt(timerMinutes) || 10) * 60) - timeLeft) : 'Untimed'}
+                            </Text>
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: C.textSecondary, marginTop: 1 }}>
+                                Duration
                             </Text>
                         </View>
                     </View>
                 </View>
 
-                {/* Review List */}
-                <Text style={s.sectionHeader}>Review Questions</Text>
-                {questions.map((q, qi) => {
-                    const isTheory = q.question_type === 'essay';
-                    const isCorrect = isTheory ? !!theoryResults[qi] : selectedAnswers[qi] === q.correct_answer;
-                    const canExplain = !isTheory;
-                    return (
+                {/* Non-blocking history-save failure banner */}
+                {saveError && (
+                    <View
+                        style={{
+                            marginBottom: 18,
+                            paddingHorizontal: 16,
+                            paddingVertical: 14,
+                            borderRadius: 18,
+                            backgroundColor: isDark ? 'rgba(245,158,11,0.12)' : '#FFF8E1',
+                            borderWidth: 1,
+                            borderColor: isDark ? 'rgba(245,158,11,0.3)' : 'rgba(245,158,11,0.4)',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 12,
+                        }}
+                    >
+                        <Icon name="AlertTriangle" size={18} color="warning" />
+                        <Text style={{ flex: 1, fontSize: 13, fontWeight: '500', color: isDark ? '#fcd34d' : '#92400e', lineHeight: 19 }}>
+                            Couldn&apos;t sync this session to Study History.
+                        </Text>
                         <Pressable
-                            key={qi}
-                            
-                            onPress={() => canExplain && setExplanationQ({ q, qi, isCorrect })}
+                            onPress={saveHistory}
+                            disabled={isSavingHistory}
+                            style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#f59e0b', borderRadius: 10 }}
                         >
-                            <View style={[s.reviewCard, { backgroundColor: C.card, borderColor: C.separator }]}>
-                                <View style={[s.reviewStatusBox, { backgroundColor: isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }]}>
-                                    {isCorrect ? (
-                                        <Icon name="CheckCircle2" size={18} color="success" />
-                                    ) : (
-                                        <Icon name="XCircle" size={18} color="destructive" />
-                                    )}
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={[s.reviewQuestion, { color: C.text }]} numberOfLines={1}>{formatMathPlainText(q.question_text)}</Text>
-                                    <Text style={s.reviewMeta} numberOfLines={1}>
-                                        {isTheory ? (isCorrect ? 'Mastered' : 'Review Topic') : (isCorrect ? 'Correct · Tap to explain' : 'Incorrect · Tap to explain')}
-                                    </Text>
-                                </View>
-                                {canExplain && (
-                                    <Icon name="ChevronRight" size={16} color="primary" />
-                                )}
-                            </View>
+                            <Text style={{ color: 'white', fontWeight: '700', fontSize: 12 }}>
+                                {isSavingHistory ? '...' : 'Retry'}
+                            </Text>
                         </Pressable>
-                    );
-                })}
+                    </View>
+                )}
+
+                {/* Filterable Question Breakdown Header */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View
+                            style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: 10,
+                                backgroundColor: C.surfaceLow,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Icon name="Layers" size={15} color="default" />
+                        </View>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: C.text }}>
+                            Question Breakdown
+                        </Text>
+                    </View>
+
+                    </View>
+
+                {/* Filtered Questions List */}
+                {filteredQuestions.length === 0 ? (
+                    <View
+                        style={{
+                            backgroundColor: C.card,
+                            borderRadius: 22,
+                            padding: 28,
+                            alignItems: 'center',
+                            borderWidth: 1,
+                            borderColor: C.border,
+                            gap: 8,
+                        }}
+                    >
+                        <View
+                            style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 14,
+                                backgroundColor: C.surfaceLow,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Icon name="CheckCircle2" size={22} color="default" />
+                        </View>
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: C.text }}>
+                            {reviewFilter === 'missed' ? 'Zero Missed Questions!' : 'No Matching Questions'}
+                        </Text>
+                        <Text style={{ fontSize: 13, color: C.textSecondary, textAlign: 'center' }}>
+                            {reviewFilter === 'missed'
+                                ? 'You answered every single question in this set correctly.'
+                                : 'Switch filter tabs above to view other questions.'}
+                        </Text>
+                    </View>
+                ) : (
+                    <View style={{ gap: 12 }}>
+                        {filteredQuestions.map(({ q, qi, isTheory, isCorrect }) => {
+                            const canExplain = !isTheory;
+                            const userAns = selectedAnswers[qi];
+                            return (
+                                <Pressable
+                                    key={qi}
+                                    onPress={() => canExplain && setExplanationQ({ q, qi, isCorrect })}
+                                    style={{
+                                        backgroundColor: C.card,
+                                        borderRadius: 22,
+                                        padding: 16,
+                                        borderWidth: 1,
+                                        borderColor: C.border,
+                                        gap: 10,
+                                    }}
+                                >
+                                    {/* Top Row: Question Number + Status Badge + Explain Action */}
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                            <View
+                                                style={{
+                                                    paddingHorizontal: 9,
+                                                    paddingVertical: 4,
+                                                    borderRadius: 8,
+                                                    backgroundColor: C.surfaceLow,
+                                                }}
+                                            >
+                                                <Text style={{ fontSize: 11, fontWeight: '800', color: C.text }}>
+                                                    Q{qi + 1}
+                                                </Text>
+                                            </View>
+
+                                            <View
+                                                style={{
+                                                    flexDirection: 'row',
+                                                    alignItems: 'center',
+                                                    gap: 5,
+                                                    paddingHorizontal: 9,
+                                                    paddingVertical: 4,
+                                                    borderRadius: 999,
+                                                    backgroundColor: isCorrect
+                                                        ? (isDark ? 'rgba(16,185,129,0.14)' : '#ECFDF5')
+                                                        : (isDark ? 'rgba(239,68,68,0.14)' : '#FEF2F2'),
+                                                }}
+                                            >
+                                                <Icon
+                                                    name={isCorrect ? 'CheckCircle2' : 'XCircle'}
+                                                    size={13}
+                                                    color={isCorrect ? 'success' : 'destructive'}
+                                                />
+                                                <Text
+                                                    style={{
+                                                        fontSize: 11,
+                                                        fontWeight: '700',
+                                                        color: isCorrect ? '#10B981' : '#EF4444',
+                                                    }}
+                                                >
+                                                    {isTheory ? (isCorrect ? 'Mastered' : 'Needs Review') : (isCorrect ? 'Correct' : 'Missed')}
+                                                </Text>
+                                            </View>
+                                        </View>
+
+                                        {canExplain && (
+                                            <View
+                                                style={{
+                                                    flexDirection: 'row',
+                                                    alignItems: 'center',
+                                                    paddingHorizontal: 10,
+                                                    paddingVertical: 5,
+                                                    borderRadius: 999,
+                                                    backgroundColor: C.surfaceLow,
+                                                }}
+                                            >
+                                                <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }}>
+                                                    Explain
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+
+                                    {/* Question Text */}
+                                    <MathText
+                                        content={q.question_text}
+                                        color={C.text}
+                                        fontSize={14}
+                                        fontWeight="600"
+                                    />
+
+                                    {/* Inline Answer Comparison Strip */}
+                                    {!isTheory && (
+                                        <View
+                                            style={{
+                                                backgroundColor: C.surfaceLow,
+                                                borderRadius: 14,
+                                                paddingHorizontal: 12,
+                                                paddingVertical: 9,
+                                                gap: 4,
+                                            }}
+                                        >
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }}>
+                                                    Your Answer:
+                                                </Text>
+                                                <Text
+                                                    style={{
+                                                        fontSize: 12,
+                                                        fontWeight: '700',
+                                                        color: isCorrect ? '#10B981' : '#EF4444',
+                                                        flex: 1,
+                                                    }}
+                                                    numberOfLines={1}
+                                                >
+                                                    {formatMathPlainText(userAns || 'Skipped')}
+                                                </Text>
+                                            </View>
+
+                                            {!isCorrect && q.correct_answer && (
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                    <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }}>
+                                                        Correct:
+                                                    </Text>
+                                                    <Text
+                                                        style={{
+                                                            fontSize: 12,
+                                                            fontWeight: '700',
+                                                            color: '#10B981',
+                                                            flex: 1,
+                                                        }}
+                                                        numberOfLines={1}
+                                                    >
+                                                        {formatMathPlainText(q.correct_answer)}
+                                                    </Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                    )}
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                )}
             </ScrollView>
 
             {/* Hidden capture view for sharing */}
@@ -1384,153 +2034,57 @@ export default function GenerateQuizScreen() {
                 viewShotRef={viewShotRef}
             />
 
-            {/* Actions Footer */}
-            <BlurView 
-                intensity={50} 
-                tint={isDark ? "dark" : "light"} 
-                style={[s.footer, { 
+            {/* Compact Dual-Action Bottom Bar */}
+            <BlurView
+                intensity={60}
+                tint={isDark ? 'dark' : 'light'}
+                style={{
                     position: 'absolute',
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    paddingBottom: Math.max(insets.bottom, 16) + 115, 
-                    paddingHorizontal: 24, 
-                    borderTopWidth: 0,
-                    backgroundColor: 'transparent'
-                }]}
+                    paddingTop: 14,
+                    paddingBottom: Math.max(insets.bottom, 16) + 74,
+                    paddingHorizontal: 20,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    borderTopColor: C.border,
+                    backgroundColor: isDark ? 'rgba(18,18,18,0.85)' : 'rgba(255,255,255,0.88)',
+                }}
             >
-                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
-
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <Pressable
-                        onPress={handleShare}
-                        disabled={isSharing}
-                        
-                        style={[s.shareBtn, isDark ? s.shareBtnDark : s.shareBtnLight]}
-                    >
-                        {isSharing ? (
-                            <LoadingSpinner size={24} color={C.primary} strokeWidth={3} />
-                        ) : (
-                            <>
-                                <Icon name="Share2" size={18} color="text" />
-                                <Text style={[s.actionBtnText, { color: C.text }]}>Share</Text>
-                            </>
-                        )}
-                    </Pressable>
-
-                    <Pressable
-                        onPress={handleExportPDF}
-                        disabled={isExporting}
-                        
-                        style={[s.exportBtn, { backgroundColor: C.primary }]}
-                    >
-                        <View style={s.exportBtnContent}>
-                            {isExporting ? (
-                                <LoadingSpinner size={24} color="white" strokeWidth={3} />
-                            ) : (
-                                <>
-                                    <Icon name="FileText" size={18} color="white" />
-                                    <Text style={s.exportBtnText}>Export</Text>
-                                </>
-                            )}
-                        </View>
-                    </Pressable>
-                </View>
-
-                {/* C3: Non-blocking history-save failure banner */}
-                {saveError && (
-                    <View style={{
-                        marginBottom: 16,
-                        paddingHorizontal: 16,
-                        paddingVertical: 14,
-                        borderRadius: 16,
-                        backgroundColor: isDark ? 'rgba(245,158,11,0.12)' : '#FFF8E1',
-                        borderWidth: 1,
-                        borderColor: isDark ? 'rgba(245,158,11,0.3)' : 'rgba(245,158,11,0.4)',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 12,
-                    }}>
-                        <Icon name="AlertTriangle" size={18} color="warning" />
-                        <Text style={{ flex: 1, fontSize: 13, fontWeight: '500', color: isDark ? '#fcd34d' : '#92400e', lineHeight: 20 }}>
-                            Quiz completed, but we couldn’t save it to your history. Your results won’t appear in Study History.
-                        </Text>
-                        <Pressable
-                            onPress={saveHistory}
-                            disabled={isSavingHistory}
-                            style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: '#f59e0b', borderRadius: 10 }}
-                        >
-                            <Text style={{ color: 'white', fontWeight: '700', fontSize: 12 }}>
-                                {isSavingHistory ? '...' : 'Retry'}
-                            </Text>
-                        </Pressable>
-                    </View>
-                )}
-
-                <View style={{ width: '100%', marginTop: 4 }}>
-                    <AnimatedButton
-                        title={isSavingOffline ? 'Saving…' : isOfflineSaved ? 'Saved for offline' : 'Save for offline'}
-                        onPress={async () => {
-                            if (questions.length === 0) {
-                                Alert.alert("No Content", "There are no questions to save.");
-                                return;
-                            }
-                            if (isSavingOffline || isOfflineSaved) return;
-                            try {
-                                setSaveError(false);
-                                setIsSavingOffline(true);
-                                const deckTopic = mode === 'topic' ? topic : (selectedFile?.name || 'File Upload');
-
-                                await saveOfflineQuiz({
-                                    id: `quiz_${Date.now().toString()}`,
-                                    mode,
-                                    topic: deckTopic,
-                                    difficulty,
-                                    percentage,
-                                    questions: questions.map((q, qi) => ({
-                                        id: qi.toString(),
-                                        type: q.question_type,
-                                        question_type: q.question_type,
-                                        question_text: q.question_text,
-                                        options: q.options,
-                                        correct_answer: q.correct_answer,
-                                        explanation: q.explanation,
-                                        explanation_right: q.explanation_right,
-                                        explanation_wrong: q.explanation_wrong,
-                                        user_answer: q.question_type === 'essay' ? '(Theory Answer)' : selectedAnswers[qi],
-                                    })),
-                                });
-
-                                setIsOfflineSaved(true);
-                                haptics.notificationAsync('success' as any);
-                            } catch {
-                                setSaveError(true);
-                                Alert.alert('Save Failed', 'Could not save this quiz for offline use.');
-                            } finally {
-                                setIsSavingOffline(false);
-                            }
+                        onPress={handleRetakeQuiz}
+                        style={{
+                            height: 50,
+                            paddingHorizontal: 20,
+                            borderRadius: 999,
+                            backgroundColor: C.surfaceLow,
+                            borderWidth: 1,
+                            borderColor: C.border,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 8,
                         }}
-                        type="capsule"
-                        backgroundColor={isDark ? 'rgba(52,199,89,0.15)' : '#E6F9EE'}
-                        style={{ borderColor: isDark ? 'rgba(52,199,89,0.35)' : 'rgba(52,199,89,0.35)', borderWidth: 1 }}
-                        textColor={isDark ? '#34C759' : '#34C759'}
-                        loading={isSavingOffline}
-                        fullWidth
-                    />
-                </View>
+                    >
+                        <Icon name="RotateCcw" size={17} color="default" />
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: C.text }}>
+                            Retake
+                        </Text>
+                    </Pressable>
 
-                <View style={{ width: '100%', marginTop: 10 }}>
-                    <AnimatedButton
-                        title="Done"
-                        onPress={handleResetQuiz}
-                        type="capsule"
-                        backgroundColor={isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7'}
-                        textColor={C.text}
-                        fullWidth
-                    />
+                    <View style={{ flex: 1 }}>
+                        <AnimatedButton
+                            title="New Quiz"
+                            onPress={handleResetQuiz}
+                            type="capsule"
+                            backgroundColor="#007AFF"
+                            shadowColor="#0066D6"
+                            fullWidth
+                        />
+                    </View>
                 </View>
-
             </BlurView>
-
 
             <OutOfCreditsModal visible={showOutOfCredits} onDismiss={() => setShowOutOfCredits(false)} featureAttempted="quiz" />
 
@@ -1553,13 +2107,13 @@ export default function GenerateQuizScreen() {
                         <View style={s.sheetHeader}>
                             <View style={[
                                 s.reviewStatusBox,
-                                { backgroundColor: explanationQ?.isCorrect ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', marginRight: 0 }
+                                { backgroundColor: C.surfaceLow, marginRight: 0 }
                             ]}>
-                                {explanationQ?.isCorrect ? (
-                                    <Icon name="CheckCircle2" size={18} color="success" />
-                                ) : (
-                                    <Icon name="XCircle" size={18} color="destructive" />
-                                )}
+                                <Icon
+                                    name={explanationQ?.isCorrect ? 'CheckCircle2' : 'XCircle'}
+                                    size={18}
+                                    color={explanationQ?.isCorrect ? 'success' : 'destructive'}
+                                />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <MathText
@@ -1635,7 +2189,6 @@ export default function GenerateQuizScreen() {
                         {/* Close */}
                         <Pressable
                             onPress={() => setExplanationQ(null)}
-                            
                             style={[s.sheetCloseBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F2F2F7' }]}
                         >
                             <Text style={[s.sheetCloseBtnText, { color: C.text }]}>Close</Text>

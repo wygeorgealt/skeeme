@@ -95,9 +95,18 @@ export async function getDailyActivities({
     const preferredSubject = closestExam?.title || fieldOfStudy || 'Core Study';
 
     // 2. Check automatic completions from today's live activity
+    const extractDateString = (val: any): string => {
+        if (!val) return '';
+        const raw = typeof val === 'object' && val.Time ? String(val.Time) : String(val);
+        const parsed = new Date(raw);
+        return isNaN(parsed.getTime()) ? '' : parsed.toDateString();
+    };
     const todayDateStr = new Date().toDateString();
     const hasQuizToday = quizSessions.some(
-        (q: any) => new Date(q.created_at).toDateString() === todayDateStr
+        (q: any) => extractDateString(q?.created_at) === todayDateStr
+    );
+    const hasFlashcardToday = flashcardDecks.some(
+        (d: any) => extractDateString(d?.created_at || d?.updated_at) === todayDateStr
     );
 
     // 3. Spaced Repetition Flashcards Task
@@ -158,16 +167,16 @@ export async function getDailyActivities({
     const rotation = dayOfYear % 3;
     if (closestExam && closestExam.daysLeft !== null && closestExam.daysLeft <= 7) {
         scanTitle = `Snap & Solve Exam Problems for ${closestExam.title}`;
-        scanRoute = `/(drawer)/scan`;
+        scanRoute = `/(drawer)/chat?openCamera=1`;
     } else if (rotation === 0) {
         scanTitle = `Snap & Solve an Unsolved Problem`;
-        scanRoute = `/(drawer)/scan`;
+        scanRoute = `/(drawer)/chat?openCamera=1`;
     } else if (rotation === 1) {
         scanTitle = `Ask Skeemy: Clarify a Tough ${preferredSubject} Topic`;
         scanRoute = `/(drawer)/chat`;
     } else {
         scanTitle = `Scan Notes or Diagram for Instant Solution`;
-        scanRoute = `/(drawer)/scan`;
+        scanRoute = `/(drawer)/chat?openCamera=1`;
     }
 
     const tasks: DailyActivityTask[] = [
@@ -177,7 +186,10 @@ export async function getDailyActivities({
             type: 'flashcards',
             icon: 'CircleDot',
             route: flashcardRoute,
-            completed: Boolean(completedMap[flashcardTaskId]),
+            completed:
+                completedMap[flashcardTaskId] !== undefined
+                    ? Boolean(completedMap[flashcardTaskId])
+                    : hasFlashcardToday,
         },
         {
             id: quizTaskId,
@@ -185,7 +197,10 @@ export async function getDailyActivities({
             type: 'quiz',
             icon: 'CircleDot',
             route: quizRoute,
-            completed: hasQuizToday || Boolean(completedMap[quizTaskId]),
+            completed:
+                completedMap[quizTaskId] !== undefined
+                    ? Boolean(completedMap[quizTaskId])
+                    : hasQuizToday,
         },
         {
             id: scanTaskId,

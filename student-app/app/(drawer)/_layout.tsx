@@ -2,6 +2,7 @@ import { Tabs, router, usePathname } from 'expo-router';
 import { View, TouchableOpacity, Text, StyleSheet, Platform, Alert } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
@@ -15,11 +16,11 @@ import { haptics } from '@/lib/haptics';
 
 import { Icon } from '@/components/ui/Icon';
 import { Home, Camera, History as HistoryIcon, MessageSquare } from 'lucide-react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, SharedValue } from 'react-native-reanimated';
+import Animated, { LinearTransition, FadeIn } from 'react-native-reanimated';
 
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 
-// ─── Stitch-style Floating Pill Navbar ────────────────────
+// ─── iOS Liquid Glass Floating Pill Navbar + Bottom Progressive Blur ─────────
 type TabDef = {
     name: string;
     label: string;
@@ -28,16 +29,16 @@ type TabDef = {
 
 const TAB_DEFS: TabDef[] = [
     { name: 'index', label: 'Home', icon: Home },
-    { name: 'scan', label: 'Scan', icon: Camera },
     { name: 'history', label: 'History', icon: HistoryIcon },
     { name: 'chat', label: 'Chat', icon: MessageSquare },
 ];
+
+const TAB_TRANSITION = LinearTransition.springify().damping(20).stiffness(220);
 
 function TabBar({ state, descriptors, navigation }: any) {
     const insets = useSafeAreaInsets();
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
-    const C = Colors[isDark ? 'dark' : 'light'];
     const pathname = usePathname();
 
     // Check if any screen has requested to hide the tab bar
@@ -45,7 +46,6 @@ function TabBar({ state, descriptors, navigation }: any) {
     const focusedOptions = descriptors[focusedRoute?.key]?.options;
     const hiddenScreens = [
         'generate',
-        'chat',
         'scan',
         'account',
         'preferences',
@@ -55,16 +55,17 @@ function TabBar({ state, descriptors, navigation }: any) {
         'exams',
         'flashcards',
         'summary',
+        'secret-credits',
     ];
 
     if (
         focusedOptions?.tabBarStyle?.display === 'none' ||
         hiddenScreens.includes(focusedRoute?.name) ||
         pathname?.includes('/generate') ||
-        pathname?.includes('/chat') ||
         pathname?.includes('/scan') ||
         pathname?.includes('/flashcards') ||
-        pathname?.includes('/summary')
+        pathname?.includes('/summary') ||
+        pathname?.includes('/secret-credits')
     ) {
         return null;
     }
@@ -81,116 +82,252 @@ function TabBar({ state, descriptors, navigation }: any) {
         };
     }).filter(Boolean);
 
+    const bottomOffset = Math.max(insets.bottom, 12) + 6;
+    // Starts low — tucked beneath the upper half of the navbar so it has no visible top border on static screens
+    const blurVeilHeight = bottomOffset + 38;
+
     return (
-        <View style={[pill.outerWrap, { bottom: Math.max(insets.bottom, 12) + 6 }]} pointerEvents="box-none">
-            <BlurView
-                intensity={Platform.OS === 'ios' ? 80 : 100}
-                tint={isDark ? 'dark' : 'light'}
-                style={[
-                    pill.blurPill,
-                    {
-                        backgroundColor: isDark
-                            ? (Platform.OS === 'android' ? '#16181D' : 'rgba(22,24,29,0.88)')
-                            : (Platform.OS === 'android' ? '#FFFFFF' : 'rgba(255,255,255,0.92)'),
-                        borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 12 },
-                        shadowOpacity: 0.12,
-                        shadowRadius: 32,
-                        elevation: 20,
-                    },
-                ]}
+        <View style={pill.rootContainer} pointerEvents="box-none">
+            {/* Subtle Progressive Bottom Blur Zone (invisible until content scrolls under the dock) */}
+            <View
+                pointerEvents="none"
+                style={[pill.bottomBlurVeil, { height: blurVeilHeight }]}
             >
-                {visibleTabs.map((item: any) => {
-                    const { route, isFocused, tabDef } = item;
+                <BlurView
+                    intensity={Platform.OS === 'ios' ? 3 : 6}
+                    tint={isDark ? 'dark' : 'light'}
+                    blurMethod="dimezisBlurView"
+                    style={pill.blurStep1}
+                />
+                <BlurView
+                    intensity={Platform.OS === 'ios' ? 10 : 16}
+                    tint={isDark ? 'dark' : 'light'}
+                    blurMethod="dimezisBlurView"
+                    style={pill.blurStep2}
+                />
+                <BlurView
+                    intensity={Platform.OS === 'ios' ? 22 : 30}
+                    tint={isDark ? 'dark' : 'light'}
+                    blurMethod="dimezisBlurView"
+                    style={pill.blurStep3}
+                />
+                <BlurView
+                    intensity={Platform.OS === 'ios' ? 40 : 50}
+                    tint={isDark ? 'dark' : 'light'}
+                    blurMethod="dimezisBlurView"
+                    style={pill.blurStep4}
+                />
+            </View>
 
-                    if (isFocused) {
-                        // Active tab — blue pill with icon + label
-                        return (
-                            <TouchableOpacity
-                                key={route.key}
-                                onPress={() => {
-                                    haptics.selectionAsync(true);
-                                    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-                                    if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
-                                }}
-                                activeOpacity={0.85}
-                                style={pill.activeTab}
-                            >
-                                <Icon icon={tabDef.icon} size={18} color="#FFFFFF" strokeWidth={2.4} />
-                                <Text style={pill.activeLabel}>{tabDef.label}</Text>
-                            </TouchableOpacity>
-                        );
-                    }
+            {/* Floating Liquid Glass Capsule Navbar */}
+            <View style={[pill.outerWrap, { bottom: bottomOffset }]} pointerEvents="box-none">
+                <View
+                    style={[
+                        pill.shadowShell,
+                        {
+                            shadowColor: isDark ? '#000000' : '#0F172A',
+                            shadowOpacity: isDark ? 0.5 : 0.16,
+                        },
+                    ]}
+                >
+                    <BlurView
+                        intensity={Platform.OS === 'ios' ? 88 : 100}
+                        tint={isDark ? 'dark' : 'light'}
+                        blurMethod="dimezisBlurView"
+                        style={[
+                            pill.blurPill,
+                            {
+                                backgroundColor: isDark
+                                    ? 'rgba(10, 12, 18, 0.86)'
+                                    : 'rgba(230, 235, 245, 0.82)',
+                                borderColor: isDark
+                                    ? 'rgba(255, 255, 255, 0.14)'
+                                    : 'rgba(15, 23, 42, 0.10)',
+                            },
+                        ]}
+                    >
+                        {/* Liquid Glass Specular Rim */}
+                        <LinearGradient
+                            pointerEvents="none"
+                            colors={
+                                isDark
+                                    ? [
+                                          'rgba(255,255,255,0.12)',
+                                          'rgba(255,255,255,0.02)',
+                                          'rgba(255,255,255,0)',
+                                      ]
+                                    : [
+                                          'rgba(255,255,255,0.75)',
+                                          'rgba(255,255,255,0.20)',
+                                          'rgba(215,224,238,0.35)',
+                                      ]
+                            }
+                            locations={[0, 0.4, 1]}
+                            style={StyleSheet.absoluteFill}
+                        />
 
-                    // Inactive tab — circular icon only
-                    return (
-                        <TouchableOpacity
-                            key={route.key}
-                            onPress={() => {
-                                haptics.selectionAsync(true);
-                                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-                                if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
-                            }}
-                            activeOpacity={0.7}
-                            style={pill.inactiveTab}
-                        >
-                            <Icon
-                                icon={tabDef.icon}
-                                size={19}
-                                color={isDark ? '#9CA3AF' : '#8E8E93'}
-                                strokeWidth={2}
-                            />
-                        </TouchableOpacity>
-                    );
-                })}
-            </BlurView>
+                        {visibleTabs.map((item: any) => {
+                            const { route, isFocused, tabDef } = item;
+
+                            if (isFocused) {
+                                // Active tab — smooth expanding electric-blue Liquid Glass pill
+                                return (
+                                    <Animated.View key={route.key} layout={TAB_TRANSITION}>
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                haptics.selectionAsync(true);
+                                                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                                                if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
+                                            }}
+                                            activeOpacity={0.85}
+                                            style={pill.activeTab}
+                                        >
+                                            <LinearGradient
+                                                colors={['#2B93FF', '#007AFF', '#005ECE']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 0, y: 1 }}
+                                                style={StyleSheet.absoluteFill}
+                                            />
+                                            <LinearGradient
+                                                pointerEvents="none"
+                                                colors={['rgba(255,255,255,0.34)', 'rgba(255,255,255,0)']}
+                                                style={pill.activeSpecular}
+                                            />
+                                            <Icon icon={tabDef.icon} size={20} color="#FFFFFF" strokeWidth={2.5} />
+                                            <Text style={pill.activeLabel}>
+                                                {tabDef.label}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </Animated.View>
+                                );
+                            }
+
+                            // Inactive tab — consistent circular glass button
+                            return (
+                                <Animated.View key={route.key} layout={TAB_TRANSITION}>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            haptics.selectionAsync(true);
+                                            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                                            if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
+                                        }}
+                                        activeOpacity={0.7}
+                                        style={pill.inactiveTab}
+                                    >
+                                        <Icon
+                                            icon={tabDef.icon}
+                                            size={21}
+                                            color={isDark ? '#94A3B8' : '#475569'}
+                                            strokeWidth={2.1}
+                                        />
+                                    </TouchableOpacity>
+                                </Animated.View>
+                            );
+                        })}
+                    </BlurView>
+                </View>
+            </View>
         </View>
     );
 }
 
 const pill = StyleSheet.create({
+    rootContainer: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 50,
+    },
+    bottomBlurVeil: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflow: 'hidden',
+    },
+    blurStep1: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+    },
+    blurStep2: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: '22%',
+        bottom: 0,
+    },
+    blurStep3: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: '48%',
+        bottom: 0,
+    },
+    blurStep4: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: '72%',
+        bottom: 0,
+    },
     outerWrap: {
         position: 'absolute',
         left: 0,
         right: 0,
-        bottom: 20,
         alignItems: 'center',
+    },
+    shadowShell: {
+        borderRadius: 999,
+        shadowOffset: { width: 0, height: 14 },
+        shadowRadius: 30,
+        elevation: 24,
     },
     blurPill: {
+        height: 62,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 6,
-        paddingHorizontal: 6,
-        borderWidth: StyleSheet.hairlineWidth,
+        paddingHorizontal: 8,
+        borderWidth: 1,
         borderRadius: 999,
         overflow: 'hidden',
-        gap: 4,
+        gap: 6,
     },
     activeTab: {
+        height: 48,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        backgroundColor: '#007AFF',
+        justifyContent: 'center',
+        gap: 8,
         borderRadius: 999,
-        paddingVertical: 10,
-        paddingHorizontal: 18,
+        paddingHorizontal: 22,
+        overflow: 'hidden',
         shadowColor: '#007AFF',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOpacity: 0.35,
+        shadowRadius: 10,
+        elevation: 6,
+    },
+    activeSpecular: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '50%',
     },
     activeLabel: {
         color: '#FFFFFF',
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '700',
         letterSpacing: -0.2,
     },
     inactiveTab: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
+        width: 54,
+        height: 48,
+        borderRadius: 24,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -291,6 +428,7 @@ export default function TabLayout() {
                     name="scan"
                     options={{
                         title: 'Scan',
+                        href: null,
                         headerShown: false,
                         tabBarStyle: { display: 'none' },
                         sceneStyle: { backgroundColor: '#090d16' },
@@ -306,7 +444,6 @@ export default function TabLayout() {
                     name="chat"
                     options={{
                         title: 'Chat',
-                        tabBarStyle: { display: 'none' },
                     }}
                 />
 
@@ -320,6 +457,7 @@ export default function TabLayout() {
                 <Tabs.Screen name="generate" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="flashcards" options={{ href: null, tabBarStyle: { display: 'none' } }} />
                 <Tabs.Screen name="summary" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+                <Tabs.Screen name="secret-credits" options={{ href: null, tabBarStyle: { display: 'none' } }} />
 
             </Tabs>
 

@@ -1,6 +1,6 @@
-import { Pressable, Text, View, TouchableOpacity, TextInput, SectionList, RefreshControl, Platform, Alert } from 'react-native';
+import { Pressable, Text, View, ActivityIndicator, TextInput, SectionList, RefreshControl, Platform, Alert } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { router, useFocusEffect } from 'expo-router';
@@ -14,6 +14,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { saveOfflineQuiz, saveOfflineDeck, isQuizSaved, isDeckSaved } from '@/lib/offlineSaved';
 
 type QuizSession = {
     id: number;
@@ -24,6 +25,7 @@ type QuizSession = {
     correct_answers: number;
     time_spent_seconds: number | null;
     created_at: string;
+    questions?: any[];
 };
 
 type FlashcardDeck = {
@@ -31,6 +33,14 @@ type FlashcardDeck = {
     title: string;
     flashcards_count: number;
     created_at: string;
+    flashcards?: any[];
+    cards?: any[];
+};
+
+const toSentenceCase = (text?: string): string => {
+    if (!text) return '';
+    const trimmed = text.trim();
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 };
 
 // Storage helpers using FileSystem for larger cache data
@@ -189,8 +199,6 @@ export default function StudyHistoryDashboard() {
     const summaries = cachedSummaries;
 
     const totalSessions = quizzes.length + decks.length + summaries.length;
-    const totalScore = quizzes.length > 0 ? quizzes.reduce((acc, q) => acc + (Number(q.score_percentage) || 0), 0) : 0;
-    const avgMastery = quizzes.length > 0 ? Math.round(totalScore / quizzes.length) : 0;
     const totalSeconds = quizzes.reduce((acc, q) => acc + (Number(q.time_spent_seconds) || 0), 0);
     const totalMinutes = Math.round(totalSeconds / 60) + (decks.length * 5);
     const studyTimeText = totalMinutes >= 60 ? `${(totalMinutes / 60).toFixed(1)}h` : `${totalMinutes}m`;
@@ -255,6 +263,30 @@ export default function StudyHistoryDashboard() {
 
     const sections = getSections(isLoading && currentData.length === 0 ? [] : currentData);
 
+    const handleClearArchive = () => {
+        haptics.impactAsync();
+        Alert.alert(
+            "Clear Archive",
+            "Are you sure you want to clear your local session history? Cloud data can be refreshed anytime.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Clear",
+                    style: "destructive",
+                    onPress: async () => {
+                        await storage.setItem('cache_quiz_history', '[]');
+                        await storage.setItem('cache_flashcard_decks', '[]');
+                        setCachedQuizzes([]);
+                        setCachedDecks([]);
+                        refetchQuizzes();
+                        refetchDecks();
+                        haptics.notificationAsync('success' as any);
+                    }
+                }
+            ]
+        );
+    };
+
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
             <ScreenHeader
@@ -283,7 +315,7 @@ export default function StudyHistoryDashboard() {
                         />
                     </View>
 
-                    {/* Quick Stats Bento Banner */}
+                    {/* Quick Stats Bento Banner (2-Column: Sessions & Study Time) */}
                     <View
                         style={{
                             backgroundColor: C.card,
@@ -294,7 +326,7 @@ export default function StudyHistoryDashboard() {
                     >
                         <View
                             style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F4F3F8' }}
-                            className="flex-1 items-center justify-center py-2 px-1 rounded-2xl"
+                            className="flex-1 items-center justify-center py-2.5 px-1 rounded-2xl"
                         >
                             <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: C.text }}>
                                 {totalSessions}
@@ -302,20 +334,8 @@ export default function StudyHistoryDashboard() {
                             <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }} className="mt-0.5">Sessions</Text>
                         </View>
                         <View
-                            style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.15)' : '#E5F1FF' }}
-                            className="flex-1 items-center justify-center py-2 px-1 rounded-2xl"
-                        >
-                            <View className="flex-row items-center gap-1">
-                                <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: C.primary }}>
-                                    {avgMastery}%
-                                </Text>
-                                <Icon name="TrendingUp" size={14} color="primary" />
-                            </View>
-                            <Text style={{ fontSize: 11, fontWeight: '700', color: C.primary }} className="mt-0.5">Avg Mastery</Text>
-                        </View>
-                        <View
                             style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F4F3F8' }}
-                            className="flex-1 items-center justify-center py-2 px-1 rounded-2xl"
+                            className="flex-1 items-center justify-center py-2.5 px-1 rounded-2xl"
                         >
                             <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.2, color: C.text }}>
                                 {studyTimeText}
@@ -402,34 +422,29 @@ export default function StudyHistoryDashboard() {
                         const isQuiz = activeTab === 'quizzes';
                         const isFlashcard = activeTab === 'flashcards';
                         const id = item.id;
-                        const title = isQuiz ? (item as QuizSession).topic : (item as FlashcardDeck).title;
+                        const title = isQuiz ? toSentenceCase((item as QuizSession).topic) : (item as FlashcardDeck).title;
 
                         const renderRightActions = () => (
-                            <View style={{ width: 90 }}>
+                            <View style={{ width: 84, height: '100%', justifyContent: 'center', alignItems: 'flex-end' }}>
                                 <Pressable 
                                     style={{ 
                                         backgroundColor: C.destructive, 
-                                        flexDirection: 'row',
-                                        justifyContent: 'flex-end',
-                                        alignItems: 'center', 
-                                        width: 200,
+                                        width: 76,
                                         height: '100%', 
-                                        position: 'absolute',
-                                        right: 0,
                                         borderRadius: 24,
-                                        marginBottom: 12
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                     }}
                                     onPress={() => handleDelete(id, title, isQuiz ? 'quiz' : 'flashcard')}
                                 >
-                                    <View style={{ width: 90, height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Icon name="Trash2" size={24} color="white" />
-                                    </View>
+                                    <Icon name="Trash2" size={22} color="white" />
                                 </Pressable>
                             </View>
                         );
 
                         return (
                             <Swipeable 
+                                containerStyle={{ marginBottom: 12 }}
                                 renderRightActions={renderRightActions} 
                                 overshootRight={false} 
                             >
@@ -463,14 +478,19 @@ export default function StudyHistoryDashboard() {
                     ListFooterComponent={
                         sections.length > 0 ? (
                             <View className="pt-6 pb-12 flex-col items-center gap-3">
-                                <View className="flex-row items-center justify-center gap-4">
-                                    <Text style={{ color: C.textTertiary }}>•</Text>
-                                    <Pressable className="flex-row items-center gap-1.5 active:opacity-70">
-                                        <Icon name="Trash2" size={16} color="textSecondary" />
-                                        <Text style={{ fontSize: 14, fontWeight: '600', color: C.textSecondary }}>Clear Archive</Text>
-                                    </Pressable>
-                                </View>
-                                <Text style={{ fontSize: 13, color: C.textSecondary }}>Showing recent cloud synced sessions.</Text>
+                                <Pressable
+                                    onPress={handleClearArchive}
+                                    style={{
+                                        backgroundColor: C.card,
+                                        borderColor: C.border,
+                                        borderWidth: 1,
+                                    }}
+                                    className="px-5 py-2.5 rounded-full flex-row items-center gap-2 active:opacity-75 shadow-sm"
+                                >
+                                    <Icon name="Trash2" size={15} color="destructive" />
+                                    <Text style={{ fontSize: 13, fontWeight: '700', color: C.destructive }}>Clear Archive</Text>
+                                </Pressable>
+                                <Text style={{ fontSize: 12, color: C.textSecondary }}>Showing recent cloud synced sessions.</Text>
                             </View>
                         ) : null
                     }
@@ -489,7 +509,7 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
                 borderColor: C.border,
                 borderWidth: 1,
             }}
-            className="p-5 rounded-[24px] mb-3 flex-col gap-3.5 shadow-sm"
+            className="p-5 rounded-[24px] flex-col gap-3.5 shadow-sm"
         >
             <View className="flex-row items-start justify-between gap-3">
                 <View className="flex-row items-start gap-3 flex-1">
@@ -501,14 +521,6 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
                     </View>
                     <View className="flex-1 flex-col">
                         <View className="flex-row items-center gap-1.5 flex-wrap">
-                            <View
-                                className="px-2 py-0.5 rounded-full"
-                                style={{ backgroundColor: C.selectedBackground }}
-                            >
-                                <Text style={{ color: C.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>
-                                    {item.subject || 'Summary'}
-                                </Text>
-                            </View>
                             <View
                                 className="px-2 py-0.5 rounded-full"
                                 style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
@@ -569,9 +581,56 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
 
 function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolean; C: any }) {
     const pct = session.score_percentage || 0;
-    const subjectTag = session.topic ? (session.topic.split(' ')[0] || 'Quiz') : 'Quiz';
+    const displayTopic = toSentenceCase(session.topic);
     const difficultyTag = session.difficulty ? (session.difficulty.charAt(0).toUpperCase() + session.difficulty.slice(1)) : 'Practice';
     
+    const [isDownloaded, setIsDownloaded] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    useEffect(() => {
+        isQuizSaved(session.id.toString()).then(setIsDownloaded);
+    }, [session.id]);
+
+    const handleDownloadQuiz = async () => {
+        try {
+            haptics.impactAsync();
+            if (isDownloaded) {
+                Alert.alert("Offline Saved", `"${displayTopic}" is already downloaded on your device for offline practice.`);
+                return;
+            }
+            setIsDownloading(true);
+
+            let quizData: any = session;
+            const res = await api.get(`/quizzes/history/${session.id}`).catch(() => null);
+            if (res?.data?.data) quizData = res.data.data;
+            else if (res?.data) quizData = res.data;
+
+            const questionsToSave = (quizData.questions || []).map((q: any) => ({
+                question_text: q.question || q.question_text || '',
+                question_type: q.type || q.question_type || 'multiple_choice',
+                correct_answer: q.correct_answer || '',
+                options: Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : []),
+            }));
+
+            await saveOfflineQuiz({
+                id: session.id.toString(),
+                mode: 'topic',
+                topic: session.topic,
+                difficulty: session.difficulty || 'medium',
+                percentage: session.score_percentage || 0,
+                questions: questionsToSave,
+            });
+
+            setIsDownloaded(true);
+            haptics.notificationAsync('success' as any);
+            Alert.alert("Saved Offline", `"${displayTopic}" is now downloaded for offline study!`);
+        } catch (e) {
+            Alert.alert("Download Failed", "Could not save quiz offline. Check your connection.");
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     return (
         <View
             style={{
@@ -579,40 +638,26 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                 borderColor: C.border,
                 borderWidth: 1,
             }}
-            className="p-5 rounded-[24px] mb-3 flex-col gap-3.5 shadow-sm"
+            className="p-5 rounded-[24px] flex-col gap-3.5 shadow-sm"
         >
             <View className="flex-row items-start justify-between gap-3">
-                <View className="flex-row items-start gap-3 flex-1">
-                    <View
-                        style={{ backgroundColor: C.selectedBackground, borderColor: C.selectedBorder, borderWidth: 1 }}
-                        className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
-                    >
-                        <Icon name="CheckCircle2" size={20} color="primary" />
-                    </View>
-                    <View className="flex-1 flex-col">
-                        <View className="flex-row items-center gap-1.5 flex-wrap">
-                            <View
-                                style={{ backgroundColor: C.selectedBackground }}
-                                className="px-2 py-0.5 rounded-full"
-                            >
-                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.primary }}>{subjectTag}</Text>
-                            </View>
-                            <View
-                                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
-                                className="px-2 py-0.5 rounded-full"
-                            >
-                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }}>
-                                    {difficultyTag}
-                                </Text>
-                            </View>
+                <View className="flex-1 flex-col">
+                    <View className="flex-row items-center gap-1.5 flex-wrap">
+                        <View
+                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                            className="px-2 py-0.5 rounded-full"
+                        >
+                            <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }}>
+                                {difficultyTag}
+                            </Text>
                         </View>
-                        <Text style={{ fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: C.text }} className="mt-1" numberOfLines={1}>
-                            {session.topic}
-                        </Text>
-                        <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary }} className="mt-0.5">
-                            {session.total_questions} Questions • {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
                     </View>
+                    <Text style={{ fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: C.text }} className="mt-1" numberOfLines={1}>
+                        {displayTopic}
+                    </Text>
+                    <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary }} className="mt-0.5">
+                        {session.total_questions} Questions • {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
                 </View>
                 
                 <View className="items-end shrink-0">
@@ -650,12 +695,27 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                         <Icon name="ChevronRight" size={16} color="secondary" />
                     </Pressable>
                 </View>
+
+                {/* Download for offline usage */}
                 <Pressable
-                    style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent' }}
-                    className="w-10 h-10 rounded-full items-center justify-center active:bg-surface-container-low"
-                    onPress={() => {}}
+                    style={{
+                        backgroundColor: isDownloaded
+                            ? (isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5')
+                            : (isDark ? 'rgba(255,255,255,0.06)' : C.surfaceLow),
+                        borderColor: isDownloaded ? '#10B981' : C.border,
+                        borderWidth: 1,
+                    }}
+                    className="w-10 h-10 rounded-full items-center justify-center active:opacity-70"
+                    onPress={handleDownloadQuiz}
+                    disabled={isDownloading}
                 >
-                    <Icon name="MoreVertical" size={18} color="textSecondary" />
+                    {isDownloading ? (
+                        <ActivityIndicator size="small" color={C.primary} />
+                    ) : isDownloaded ? (
+                        <Icon name="Check" size={17} color="success" />
+                    ) : (
+                        <Icon name="Download" size={17} color="textSecondary" />
+                    )}
                 </Pressable>
             </View>
         </View>
@@ -663,8 +723,48 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
 }
 
 function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C: any }) {
-    const subjectTag = deck.title ? (deck.title.split(' ')[0] || 'Deck') : 'Deck';
-    
+    const [isDownloaded, setIsDownloaded] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    useEffect(() => {
+        isDeckSaved(deck.id.toString()).then(setIsDownloaded);
+    }, [deck.id]);
+
+    const handleDownloadDeck = async () => {
+        try {
+            haptics.impactAsync();
+            if (isDownloaded) {
+                Alert.alert("Offline Saved", `"${deck.title}" is already saved on your device for offline study.`);
+                return;
+            }
+            setIsDownloading(true);
+
+            let deckData: any = deck;
+            const res = await api.get(`/flashcards/decks/${deck.id}`).catch(() => null);
+            const raw = res?.data?.data || res?.data?.deck || res?.data;
+            if (raw) deckData = { ...raw, flashcards: raw.flashcards || raw.cards || [] };
+
+            const cardsToSave = (deckData.flashcards || deckData.cards || []).map((c: any) => ({
+                front: c.front || '',
+                back: c.back || '',
+            }));
+
+            await saveOfflineDeck({
+                id: deck.id.toString(),
+                title: deck.title,
+                cards: cardsToSave,
+            });
+
+            setIsDownloaded(true);
+            haptics.notificationAsync('success' as any);
+            Alert.alert("Saved Offline", `"${deck.title}" is now downloaded for offline study!`);
+        } catch (e) {
+            Alert.alert("Download Failed", "Could not save deck offline. Check your connection.");
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     return (
         <View
             style={{
@@ -672,46 +772,48 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                 borderColor: C.border,
                 borderWidth: 1,
             }}
-            className="p-5 rounded-[24px] mb-3 flex-col gap-3.5 shadow-sm"
+            className="p-5 rounded-[24px] flex-col gap-3.5 shadow-sm"
         >
             <View className="flex-row items-start justify-between gap-3">
-                <View className="flex-row items-start gap-3 flex-1">
-                    <View
-                        className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
-                        style={{ backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}
-                    >
-                        <Icon name="Layers" size={22} color="default" />
-                    </View>
-                    <View className="flex-1 flex-col">
-                        <View className="flex-row items-center gap-1.5 flex-wrap">
-                            <View
-                                className="px-2 py-0.5 rounded-full"
-                                style={{ backgroundColor: C.selectedBackground }}
-                            >
-                                <Text style={{ color: C.primary, fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{subjectTag}</Text>
-                            </View>
-                            <View
-                                className="px-2 py-0.5 rounded-full"
-                                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
-                            >
-                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }}>
-                                    {deck.flashcards_count} Cards
-                                </Text>
-                            </View>
+                <View className="flex-1 flex-col">
+                    <View className="flex-row items-center gap-1.5 flex-wrap">
+                        <View
+                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                            className="px-2 py-0.5 rounded-full"
+                        >
+                            <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }}>
+                                {deck.flashcards_count} Cards
+                            </Text>
                         </View>
-                        <Text style={{ fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: C.text }} className="mt-1" numberOfLines={1}>
-                            {deck.title}
-                        </Text>
-                        <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary }} className="mt-0.5">
-                            {new Date(deck.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
                     </View>
+                    <Text style={{ fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: C.text }} className="mt-1" numberOfLines={1}>
+                        {deck.title}
+                    </Text>
+                    <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary }} className="mt-0.5">
+                        {new Date(deck.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
                 </View>
+
+                {/* Download button replaces save/bookmark */}
                 <Pressable
-                    style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'transparent' }}
-                    className="w-10 h-10 rounded-full items-center justify-center shrink-0"
+                    style={{
+                        backgroundColor: isDownloaded
+                            ? (isDark ? 'rgba(16,185,129,0.15)' : '#ECFDF5')
+                            : (isDark ? 'rgba(255,255,255,0.06)' : C.surfaceLow),
+                        borderColor: isDownloaded ? '#10B981' : C.border,
+                        borderWidth: 1,
+                    }}
+                    className="w-10 h-10 rounded-full items-center justify-center shrink-0 active:opacity-70"
+                    onPress={handleDownloadDeck}
+                    disabled={isDownloading}
                 >
-                    <Icon name="Bookmark" size={20} color="secondary" />
+                    {isDownloading ? (
+                        <ActivityIndicator size="small" color={C.primary} />
+                    ) : isDownloaded ? (
+                        <Icon name="Check" size={17} color="success" />
+                    ) : (
+                        <Icon name="Download" size={17} color="textSecondary" />
+                    )}
                 </Pressable>
             </View>
             

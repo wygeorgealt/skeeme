@@ -1,12 +1,11 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Dimensions, useColorScheme } from 'react-native';
+import { View, StyleSheet, Dimensions } from 'react-native';
 import Animated, { 
     useSharedValue, 
     useAnimatedProps, 
     withTiming, 
     withSpring, 
     withDelay,
-    interpolate,
     useAnimatedStyle,
     FadeInUp,
     ZoomIn,
@@ -14,21 +13,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { Text } from '@/components/ui/Text';
-import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
-import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
-import CupStar from '@/assets/icons/pikaicons/award-medal.svg';
-import MedalRibbonsStar from '@/assets/icons/pikaicons/award-medal.svg';
-import CheckCircle from '@/assets/icons/pikaicons/check-tick-circle.svg';
-import InfoCircle from '@/assets/icons/pikaicons/troubleshoot.svg';
-import Danger from '@/assets/icons/pikaicons/troubleshoot.svg';
-import Fire from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
+import { Icon } from '@/components/ui/Icon';
+import { Colors } from '@/constants/theme';
 import { BlurView } from 'expo-blur';
 import { haptics } from '@/lib/haptics';
-import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import * as ExpoHaptics from 'expo-haptics';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface QuizCelebrationProps {
@@ -39,8 +31,9 @@ interface QuizCelebrationProps {
 }
 
 export const QuizCelebration: React.FC<QuizCelebrationProps> = ({ score, onShowResults, onRetake, isDark }) => {
+    const C = Colors[isDark ? 'dark' : 'light'];
     const size = 220;
-    const strokeWidth = 15;
+    const strokeWidth = 14;
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
     
@@ -51,8 +44,8 @@ export const QuizCelebration: React.FC<QuizCelebrationProps> = ({ score, onShowR
     useEffect(() => {
         haptics.notificationAsync(ExpoHaptics.NotificationFeedbackType.Success, true);
         scale.value = withSpring(1, { damping: 12, stiffness: 100 });
-        progress.value = withDelay(500, withTiming(score / 100, { duration: 1500 }));
-        textOpacity.value = withDelay(1200, withTiming(1, { duration: 800 }));
+        progress.value = withDelay(400, withTiming(score / 100, { duration: 1300 }));
+        textOpacity.value = withDelay(900, withTiming(1, { duration: 600 }));
     }, [score]);
 
     const animatedCircleProps = useAnimatedProps(() => ({
@@ -64,26 +57,25 @@ export const QuizCelebration: React.FC<QuizCelebrationProps> = ({ score, onShowR
     }));
 
     const getCelebrationMeta = () => {
-        if (score >= 90) return { title: 'Mastery!', subtitle: 'You completely nailed this topic.', color: '#34C759', icon: CupStar };
-        if (score >= 70) return { title: 'Great Job!', subtitle: 'Solid understanding. Keep it up!', color: '#007AFF', icon: Fire };
-        return { title: 'Good Effort!', subtitle: 'Practice makes perfect. Try again?', color: '#FF9500', icon: Fire };
+        if (score >= 90) return { title: 'Mastery!', subtitle: 'You completely nailed this topic.', color: '#10B981', iconName: 'Trophy' as const };
+        if (score >= 70) return { title: 'Great Job!', subtitle: 'Solid understanding. Keep it up!', color: '#007AFF', iconName: 'Award' as const };
+        return { title: 'Good Effort!', subtitle: 'Review the explanations and try again.', color: '#F59E0B', iconName: 'Flame' as const };
     };
 
     const meta = getCelebrationMeta();
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: C.background }]}>
             <Animated.View entering={FadeIn} style={StyleSheet.absoluteFill}>
-                <BlurView intensity={20} style={StyleSheet.absoluteFill} tint={isDark ? 'dark' : 'light'} />
+                <BlurView intensity={25} style={StyleSheet.absoluteFill} tint={isDark ? 'dark' : 'light'} />
             </Animated.View>
 
             <Animated.View style={[styles.main, mainStyle]}>
-
                 <Svg width={size} height={size}>
                     <Defs>
                         <LinearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                             <Stop offset="0%" stopColor={meta.color} />
-                            <Stop offset="100%" stopColor={isDark ? '#fff' : meta.color} stopOpacity={0.8} />
+                            <Stop offset="100%" stopColor="#007AFF" stopOpacity={0.9} />
                         </LinearGradient>
                     </Defs>
                     
@@ -91,7 +83,7 @@ export const QuizCelebration: React.FC<QuizCelebrationProps> = ({ score, onShowR
                         cx={size / 2}
                         cy={size / 2}
                         r={radius}
-                        stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'}
+                        stroke={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}
                         strokeWidth={strokeWidth}
                         fill="none"
                     />
@@ -112,25 +104,38 @@ export const QuizCelebration: React.FC<QuizCelebrationProps> = ({ score, onShowR
 
                 <View style={StyleSheet.absoluteFill}>
                     <View style={styles.content}>
-                        <Animated.View entering={ZoomIn.delay(800)}>
-                            <meta.icon width={size * 0.25} height={size * 0.25} color={meta.color} />
+                        <Animated.View
+                            entering={ZoomIn.delay(600)}
+                            style={{
+                                width: 52,
+                                height: 52,
+                                borderRadius: 16,
+                                backgroundColor: C.surfaceLow,
+                                borderWidth: 1,
+                                borderColor: C.border,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: 6,
+                            }}
+                        >
+                            <Icon name={meta.iconName} size={26} color="default" />
                         </Animated.View>
                         <View style={styles.scoreContainer}>
-                            <Text style={[styles.scoreText, { color: isDark ? '#fff' : '#000' }]}>{score}%</Text>
+                            <Text style={[styles.scoreText, { color: C.text }]}>{score}%</Text>
                         </View>
                     </View>
                 </View>
             </Animated.View>
 
             <Animated.View style={[styles.textContainer, { opacity: textOpacity }]}>
-                <Text style={[styles.title, { color: isDark ? '#fff' : '#000' }]}>{meta.title}</Text>
-                <Text style={styles.subtitle}>{meta.subtitle}</Text>
+                <Text style={[styles.title, { color: C.text }]}>{meta.title}</Text>
+                <Text style={[styles.subtitle, { color: C.textSecondary }]}>{meta.subtitle}</Text>
             </Animated.View>
 
-            <Animated.View entering={FadeInUp.delay(1500).springify()} style={[styles.actions, { gap: 12, paddingHorizontal: 20 }]}>
+            <Animated.View entering={FadeInUp.delay(1100).springify()} style={[styles.actions, { gap: 12, paddingHorizontal: 24 }]}>
                 <View style={{ width: '100%' }}>
                     <AnimatedButton
-                        title="Show Results"
+                        title="View Full Breakdown"
                         onPress={onShowResults}
                         type="capsule"
                         backgroundColor="#007AFF"
@@ -146,6 +151,7 @@ export const QuizCelebration: React.FC<QuizCelebrationProps> = ({ score, onShowR
                         type="capsule"
                         backgroundColor={isDark ? '#2C2C2E' : '#E5E5EA'}
                         shadowColor={isDark ? '#1C1C1E' : '#D1D1D6'}
+                        textColor={C.text}
                         fullWidth
                     />
                 </View>

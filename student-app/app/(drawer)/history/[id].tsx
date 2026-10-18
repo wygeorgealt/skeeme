@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import { View, ScrollView, TouchableOpacity, Platform, Alert, StyleSheet } from 'react-native';
+import { View, ScrollView, Pressable, Platform, Alert, StyleSheet } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
@@ -14,14 +14,15 @@ import { ShareCard } from '@/components/ui/ShareCard';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import * as Print from 'expo-print';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
-import { MathText } from '@/components/ui/MathText';
+import { MathText, formatMathPlainText } from '@/components/ui/MathText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/theme';
 import { Icon } from '@/components/ui/Icon';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { BlurView } from 'expo-blur';
-import Animated, { FadeInDown, FadeInUp, ZoomIn, useSharedValue, useAnimatedStyle, withSpring, withDelay } from 'react-native-reanimated';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
+import { haptics } from '@/lib/haptics';
+import Svg, { Circle } from 'react-native-svg';
 
 // Storage helpers
 const storage = {
@@ -72,7 +73,10 @@ type QuizSessionDetail = {
 function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number }) {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const C = Colors[isDark ? 'dark' : 'light'];
     const isTheory = q.type === 'essay' || q.type === 'theory';
+    const [showExplanation, setShowExplanation] = useState(!q.is_correct);
+
     const parsedOptions: string[] = (() => {
         const raw: any = q.options;
         if (Array.isArray(raw)) return raw;
@@ -81,103 +85,207 @@ function HistoryQuestionCard({ q, index }: { q: QuizQuestionItem, index: number 
     })();
 
     return (
-        <View style={s.qCard}>
-            {/* Header */}
-            <View style={s.qHeader}>
-                <View style={[s.qIcon, q.is_correct ? s.bgEmerald10 : s.bgRed10]}>
-                    {q.is_correct ? (
-                        <Icon name="CheckCircle2" size={18} color="#10b981" />
-                    ) : (
-                        <Icon name="XCircle" size={18} color="#ef4444" />
-                    )}
+        <View
+            style={{
+                backgroundColor: C.card,
+                borderRadius: 24,
+                padding: 18,
+                borderWidth: 1,
+                borderColor: C.border,
+                marginBottom: 14,
+                gap: 12,
+            }}
+        >
+            {/* Header Row */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View
+                        style={{
+                            paddingHorizontal: 10,
+                            paddingVertical: 4,
+                            borderRadius: 8,
+                            backgroundColor: C.surfaceLow,
+                        }}
+                    >
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: C.text }}>
+                            Q{index + 1}
+                        </Text>
+                    </View>
+
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 5,
+                            paddingHorizontal: 9,
+                            paddingVertical: 4,
+                            borderRadius: 999,
+                            backgroundColor: q.is_correct
+                                ? (isDark ? 'rgba(16,185,129,0.14)' : '#ECFDF5')
+                                : (isDark ? 'rgba(239,68,68,0.14)' : '#FEF2F2'),
+                        }}
+                    >
+                        <Icon
+                            name={q.is_correct ? 'CheckCircle2' : 'XCircle'}
+                            size={13}
+                            color={q.is_correct ? 'success' : 'destructive'}
+                        />
+                        <Text
+                            style={{
+                                fontSize: 11,
+                                fontWeight: '700',
+                                color: q.is_correct ? '#10B981' : '#EF4444',
+                            }}
+                        >
+                            {q.is_correct ? 'Correct' : 'Missed'}
+                        </Text>
+                    </View>
                 </View>
-                <View style={s.flex1}>
-                    <Text style={s.qLabel}>
-                        Question {index + 1}
-                    </Text>
+
+                {q.explanation ? (
+                    <Pressable
+                        onPress={() => {
+                            haptics.selectionAsync();
+                            setShowExplanation(prev => !prev);
+                        }}
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            borderRadius: 999,
+                            backgroundColor: C.surfaceLow,
+                        }}
+                    >
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }}>
+                            {showExplanation ? 'Hide Why' : 'Explain'}
+                        </Text>
+                    </Pressable>
+                ) : null}
+            </View>
+
+            {/* Question Stem */}
+            <MathText
+                content={q.question}
+                color={C.text}
+                fontSize={15}
+                fontWeight="700"
+                containerStyle={{ width: '100%' }}
+            />
+
+            {/* Options / Model Answer */}
+            {isTheory ? (
+                <View style={{ gap: 10 }}>
+                    <View
+                        style={{
+                            backgroundColor: C.surfaceLow,
+                            borderRadius: 16,
+                            padding: 14,
+                            gap: 6,
+                        }}
+                    >
+                        <Text style={{ fontSize: 10, fontWeight: '800', color: C.textSecondary, letterSpacing: 1 }}>
+                            MODEL ANSWER
+                        </Text>
+                        <MathText
+                            content={q.correct_answer}
+                            color={C.text}
+                            fontSize={14}
+                        />
+                    </View>
+                </View>
+            ) : (
+                <View style={{ gap: 8 }}>
+                    {parsedOptions.map((opt, i) => {
+                        const isSelected = q.user_answer === opt;
+                        const isCorrectOpt = q.correct_answer === opt;
+                        const letter = ['A', 'B', 'C', 'D', 'E'][i] || `${i + 1}`;
+
+                        let rowBg = C.surfaceLow;
+                        let rowBorder = 'transparent';
+                        let optColor = C.textSecondary;
+                        let badgeBg = C.card;
+                        let badgeText = C.textSecondary;
+
+                        if (isCorrectOpt) {
+                            rowBg = isDark ? 'rgba(16,185,129,0.12)' : '#ECFDF5';
+                            rowBorder = '#10B981';
+                            optColor = isDark ? '#34D399' : '#047857';
+                            badgeBg = '#10B981';
+                            badgeText = '#FFFFFF';
+                        } else if (isSelected && !isCorrectOpt) {
+                            rowBg = isDark ? 'rgba(239,68,68,0.12)' : '#FEF2F2';
+                            rowBorder = '#EF4444';
+                            optColor = isDark ? '#F87171' : '#B91C1C';
+                            badgeBg = '#EF4444';
+                            badgeText = '#FFFFFF';
+                        }
+
+                        return (
+                            <View
+                                key={i}
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    paddingHorizontal: 12,
+                                    paddingVertical: 11,
+                                    borderRadius: 14,
+                                    backgroundColor: rowBg,
+                                    borderWidth: 1,
+                                    borderColor: rowBorder,
+                                    gap: 10,
+                                }}
+                            >
+                                <View
+                                    style={{
+                                        width: 26,
+                                        height: 26,
+                                        borderRadius: 8,
+                                        backgroundColor: badgeBg,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <Text style={{ fontSize: 12, fontWeight: '800', color: badgeText }}>
+                                        {letter}
+                                    </Text>
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <MathText content={opt} color={optColor} fontSize={14} fontWeight="600" />
+                                </View>
+                                {isCorrectOpt && <Icon name="CheckCircle2" size={16} color="success" />}
+                                {isSelected && !isCorrectOpt && <Icon name="XCircle" size={16} color="destructive" />}
+                            </View>
+                        );
+                    })}
+                </View>
+            )}
+
+            {/* Collapsible AI Explanation */}
+            {q.explanation && showExplanation && (
+                <View
+                    style={{
+                        backgroundColor: C.surfaceLow,
+                        borderRadius: 16,
+                        padding: 14,
+                        borderWidth: 1,
+                        borderColor: C.border,
+                        gap: 6,
+                    }}
+                >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Icon name="Lightbulb" size={14} color="default" />
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: C.text, letterSpacing: 0.6 }}>
+                            AI EXPLANATION
+                        </Text>
+                    </View>
                     <MathText
-                        content={q.question}
-                        color={isDark ? 'white' : '#0f172a'}
-                        fontSize={18}
-                        containerStyle={{ width: '100%' }}
+                        content={q.explanation}
+                        color={C.textSecondary}
+                        fontSize={14}
                     />
                 </View>
-            </View>
-
-            {/* Answer Display */}
-            <View style={s.answerPl}>
-                {isTheory ? (
-                    <View>
-                        <View>
-                            <Text style={s.modelAnswerLabel}>Model Answer</Text>
-                            <MathText
-                                content={q.correct_answer}
-                                color={isDark ? '#cbd5e1' : '#334155'}
-                                fontSize={15}
-                            />
-                        </View>
-                        {q.explanation && (
-                            <View style={[s.feedbackBox, isDark ? s.bgEmeraldDark : s.bgEmeraldLight, { marginTop: 24 }]}>
-                                <View style={s.feedbackHeader}>
-                                    <Icon name="Sparkles" size={14} color="#10b981" />
-                                    <Text style={s.feedbackTitle}>AI Feedback</Text>
-                                </View>
-                                <MathText
-                                    content={q.explanation}
-                                    color={isDark ? '#bef264' : '#064e3b'}
-                                    fontSize={15}
-                                />
-                            </View>
-                        )}
-                    </View>
-                ) : (
-                    <View>
-                        {parsedOptions.map((opt, i) => {
-                            const isSelected = q.user_answer === opt;
-                            const isCorrectOpt = q.correct_answer === opt;
-
-                            let bg = null, 
-                                borderColor = isDark ? s.borderWhite5 : s.borderSlate100,
-                                optColor = isDark ? '#94a3b8' : '#64748b',
-                                icon = null;
-
-                            if (isCorrectOpt) {
-                                bg = isDark ? s.bgEmerald10 : s.bgEmerald50; 
-                                optColor = isDark ? '#34d399' : '#047857'; 
-                                icon = 'checkmark-circle';
-                            } else if (isSelected && !isCorrectOpt) {
-                                bg = isDark ? s.bgRed10 : s.bgRed50; 
-                                optColor = isDark ? '#f87171' : '#b91c1c'; 
-                                icon = 'close-circle';
-                            }
-
-                            return (
-                                <View key={i} style={[s.optionRow, bg, borderColor]}>
-                                    <View style={{ flex: 1, marginRight: 12 }}>
-                                        <MathText content={opt} color={optColor} fontSize={15} fontWeight="500" />
-                                    </View>
-                                    {icon === 'checkmark-circle' && <Icon name="CheckCircle2" size={18} color="#10b981" />}
-                                    {icon === 'close-circle' && <Icon name="XCircle" size={18} color="#ef4444" />}
-                                </View>
-                            );
-                        })}
-                        
-                        {q.explanation && (
-                            <View style={[s.feedbackBox, isDark ? s.bgEmeraldDark : s.bgEmeraldLight]}>
-                                <View style={s.feedbackHeader}>
-                                    <Icon name="Lightbulb" size={14} color="#10b981" />
-                                    <Text style={s.feedbackTitle}>Explanation</Text>
-                                </View>
-                                <MathText
-                                    content={q.explanation}
-                                    color={isDark ? '#bef264' : '#064e3b'}
-                                    fontSize={15}
-                                />
-                            </View>
-                        )}
-                    </View>
-                )}
-            </View>
+            )}
         </View>
     );
 }
@@ -187,11 +295,10 @@ export default function QuizHistoryDetailScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
-    const { user } = useAuthStore();
     const bgColor = C.background;
-    const tintColor = isDark ? '#fff' : '#121212';
     const [isSharing, setIsSharing] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [reviewFilter, setReviewFilter] = useState<'all' | 'missed' | 'correct'>('all');
     const [cachedSession, setCachedSession] = useState<QuizSessionDetail | null>(null);
     const viewShotRef = useRef<View>(null);
     const insets = useSafeAreaInsets();
@@ -237,10 +344,23 @@ export default function QuizHistoryDetailScreen() {
         }
     };
 
+    const handleShare = async () => {
+        if (!viewShotRef.current) return;
+        setIsSharing(true);
+        try {
+            const uri = await captureRef(viewShotRef.current, { format: 'png', quality: 1.0 });
+            await Sharing.shareAsync(uri);
+        } catch (e) {
+            if (__DEV__) console.error(e);
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
     if (isLoading && !session) return (
         <View style={{ flex: 1, backgroundColor: bgColor }}>
             <Stack.Screen options={{ headerShown: false }} />
-            <ScreenHeader title="Quiz Results" />
+            <ScreenHeader title="Quiz Report" />
             <View style={s.loadingHeader}>
                 <SkeletonLoader width={80} height={80} borderRadius={40} style={{ marginBottom: 20 }} />
                 <SkeletonLoader width={120} height={40} style={{ marginBottom: 12 }} />
@@ -262,14 +382,31 @@ export default function QuizHistoryDetailScreen() {
 
     if (!session) return null;
 
+    const scorePct = Math.round(session.score_percentage || 0);
+    const totalQ = session.total_questions || (session.questions?.length ?? 0);
+    const correctQ = session.correct_answers ?? (session.questions?.filter(q => q.is_correct).length ?? 0);
+    const missedQ = Math.max(0, totalQ - correctQ);
+
     const getRemark = (pct: number) => {
-        if (pct >= 90) return { title: "EXCELLENT", subtitle: "Topic mastered", icon: 'Trophy' as const };
-        if (pct >= 80) return { title: "GREAT JOB", subtitle: "Strong understanding", icon: 'Award' as const };
-        if (pct >= 60) return { title: "GOOD PROGRESS", subtitle: "Review recommended", icon: 'Lightbulb' as const };
-        return { title: "NEEDS PRACTICE", subtitle: "Review and retake", icon: 'Flame' as const };
+        if (pct >= 90) return { title: 'Excellent Mastery', subtitle: 'Topic mastered with high accuracy.', tier: 'A+ · Mastery', accent: '#10B981', icon: 'Trophy' as const };
+        if (pct >= 75) return { title: 'Strong Understanding', subtitle: 'Great grasp of core concepts.', tier: 'B+ · Strong', accent: '#007AFF', icon: 'Award' as const };
+        if (pct >= 50) return { title: 'Good Progress', subtitle: 'Review missed items below to lock this in.', tier: 'C · Developing', accent: '#F59E0B', icon: 'Target' as const };
+        return { title: 'Needs Practice', subtitle: 'Review the explanations and retake.', tier: 'Review Mode', accent: '#EF4444', icon: 'Flame' as const };
     };
 
-    const remark = getRemark(session.score_percentage);
+    const remark = getRemark(scorePct);
+    const ringSize = 92;
+    const ringStroke = 8;
+    const ringRadius = (ringSize - ringStroke) / 2;
+    const ringCircumference = 2 * Math.PI * ringRadius;
+    const ringDashoffset = ringCircumference * (1 - Math.min(100, Math.max(0, scorePct)) / 100);
+
+    const allQuestions = (session.questions ?? []).map((q, index) => ({ q, index }));
+    const filteredQuestions = allQuestions.filter(({ q }) => {
+        if (reviewFilter === 'missed') return !q.is_correct;
+        if (reviewFilter === 'correct') return q.is_correct;
+        return true;
+    });
 
     return (
         <View style={{ flex: 1, backgroundColor: bgColor }}>
@@ -277,118 +414,263 @@ export default function QuizHistoryDetailScreen() {
 
             <ShareCard
                 type="quiz"
-                data={{ topic: session.topic, score_percentage: Math.round(session.score_percentage) }}
+                data={{ topic: session.topic, score_percentage: scorePct }}
                 viewShotRef={viewShotRef}
             />
 
-            <ScreenHeader title="Quiz Results" />
+            <ScreenHeader
+                title="Quiz Report"
+                subtitle={formatMathPlainText(session.topic || 'Study Session')}
+                rightAction={
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Pressable
+                            onPress={handleShare}
+                            disabled={isSharing}
+                            style={{
+                                width: 38,
+                                height: 38,
+                                borderRadius: 12,
+                                backgroundColor: C.surfaceLow,
+                                borderWidth: 1,
+                                borderColor: C.border,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            {isSharing ? (
+                                <LoadingSpinner size={16} color={C.primary} strokeWidth={2.5} />
+                            ) : (
+                                <Icon name="Share2" size={17} color="default" />
+                            )}
+                        </Pressable>
+                        <Pressable
+                            onPress={handleExport}
+                            disabled={isExporting}
+                            style={{
+                                width: 38,
+                                height: 38,
+                                borderRadius: 12,
+                                backgroundColor: C.surfaceLow,
+                                borderWidth: 1,
+                                borderColor: C.border,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            {isExporting ? (
+                                <LoadingSpinner size={16} color={C.primary} strokeWidth={2.5} />
+                            ) : (
+                                <Icon name="Download" size={17} color="default" />
+                            )}
+                        </Pressable>
+                    </View>
+                }
+            />
 
-            <ScrollView 
-                style={s.scrollView} 
-                contentContainerStyle={{ paddingBottom: 200 }}
+            <ScrollView
+                style={s.scrollView}
+                contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: Math.max(insets.bottom, 24) + 32 }}
                 showsVerticalScrollIndicator={false}
-                bounces={false}
             >
-                {/* Top Score Area */}
-                <View style={s.scoreArea}>
-                    <Animated.View 
-                        entering={ZoomIn.duration(800).springify()}
-                        style={[s.scoreIconBox, isDark ? s.bgWhite10 : s.bgSlate100]}
-                    >
-                        <Icon name={remark.icon} size={36} color="primary" />
-                    </Animated.View>
-                    <Animated.Text entering={FadeInDown.delay(300)} style={s.scoreTag}>{remark.title}</Animated.Text>
-                    <Animated.Text entering={FadeInDown.delay(500)} style={[s.scoreText, isDark ? s.textWhite : s.textSlate900]}>
-                        {Math.round(session.score_percentage)}%
-                    </Animated.Text>
-                    <Animated.Text entering={FadeInDown.delay(700)} style={[s.scoreSubtitle, isDark ? s.textWhite60 : s.textSlate500]}>
-                        {remark.subtitle}
-                    </Animated.Text>
-                </View>
-
-                {/* Bottom Content Container */}
-                <View style={[s.contentContainer, isDark ? s.bgDark : s.bgWhite]}>
-                    
-                    {/* Topic Box - Borderless */}
-                    <View style={[s.topicBox, isDark ? s.bgGrayDark : s.bgGrayLight]}>
-                        <Text style={s.topicLabel}>Topic</Text>
-                        <Text style={[s.topicTitle, isDark ? s.textWhite : s.textSlate900]}>{session.topic}</Text>
-                    </View>
-
-                    {/* Stats Row */}
-                    <View style={s.statsRow}>
-                        <View style={[s.statCard, isDark ? s.bgGrayDark : s.bgGrayLight]}>
-                            <Text style={s.statLabelCorrect}>Correct</Text>
-                            <Text style={[s.statValue, isDark ? s.textWhite : s.textSlate900]}>{session.correct_answers}</Text>
-                        </View>
-                        <View style={[s.statCard, isDark ? s.bgGrayDark : s.bgGrayLight]}>
-                            <Text style={s.statLabelMissed}>Missed</Text>
-                            <Text style={[s.statValue, isDark ? s.textWhite : s.textSlate900]}>{session.total_questions - session.correct_answers}</Text>
-                        </View>
-                    </View>
-
-                    {/* Detailed Review Section */}
-                    <View style={s.reviewDividerRow}>
-                        <View style={s.dividerLine} />
-                        <Text style={[s.reviewTitle, isDark ? s.textWhite : s.textSlate900]}>Detailed Review</Text>
-                    </View>
-
-                    {(session.questions ?? []).map((q, i) => (
-                        <HistoryQuestionCard key={q.id} q={q} index={i} />
-                    ))}
-                </View>
-            </ScrollView>
-
-            {/* Floating Action Buttons */}
-            <BlurView 
-                intensity={50} 
-                tint={isDark ? "dark" : "light"} 
-                style={[
-                    s.footer, 
-                    isDark ? s.footerDark : s.footerLight,
-                        {
-                            bottom: 0,
-                            paddingBottom: Math.max(insets.bottom, 16) + 75,
-                            backgroundColor: 'transparent',
-                            borderTopWidth: 0,
-                        }
-                ]}
-            >
-                <TouchableOpacity
-                    onPress={handleExport}
-                    disabled={isExporting}
-                    activeOpacity={0.7}
-                    style={[s.exportBtn, isDark ? s.bgWhite : s.bgSlate900]}
-                >
-                    {isExporting ? <LoadingSpinner size={24} color={isDark ? 'black' : 'white'} /> : (
-                        <View style={s.exportBtnContent}>
-                            <Icon name="FileText" size={20} color={isDark ? 'black' : 'white'} />
-                            <Text style={[s.exportBtnText, isDark ? s.textBlack : s.textWhite]}>Save Report</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={async () => {
-                        if (!viewShotRef.current) return;
-                        setIsSharing(true);
-                        try {
-                            const uri = await captureRef(viewShotRef.current, { format: 'png', quality: 1.0 });
-                            await Sharing.shareAsync(uri);
-                        } catch (e) {
-                            if (__DEV__) console.error(e);
-                        } finally {
-                            setIsSharing(false);
-                        }
+                {/* Split Bento Scorecard Hero */}
+                <View
+                    style={{
+                        backgroundColor: C.card,
+                        borderRadius: 28,
+                        padding: 22,
+                        borderWidth: 1,
+                        borderColor: C.border,
+                        marginBottom: 14,
                     }}
-                    activeOpacity={0.7}
-                    disabled={isSharing}
-                    style={s.shareBtn}
                 >
-                    {isSharing ? <LoadingSpinner size={24} color="white" /> : (
-                        <Icon name="Share2" size={20} color="white" />
-                    )}
-                </TouchableOpacity>
-            </BlurView>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+                        <View style={{ flex: 1 }}>
+                            <View
+                                style={{
+                                    alignSelf: 'flex-start',
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    paddingHorizontal: 10,
+                                    paddingVertical: 5,
+                                    borderRadius: 999,
+                                    backgroundColor: C.surfaceLow,
+                                    marginBottom: 10,
+                                }}
+                            >
+                                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: remark.accent }} />
+                                <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary, letterSpacing: 0.3 }}>
+                                    {remark.tier}
+                                </Text>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+                                <Text style={{ fontSize: 48, fontWeight: '900', color: C.text, letterSpacing: -1.8, lineHeight: 52 }}>
+                                    {scorePct}%
+                                </Text>
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: C.textSecondary }}>
+                                    SCORE
+                                </Text>
+                            </View>
+
+                            <Text style={{ fontSize: 16, fontWeight: '800', color: C.text, marginTop: 6 }}>
+                                {remark.title}
+                            </Text>
+                            <Text style={{ fontSize: 13, color: C.textSecondary, marginTop: 2, lineHeight: 18 }}>
+                                {remark.subtitle}
+                            </Text>
+                        </View>
+
+                        <View style={{ width: ringSize, height: ringSize, alignItems: 'center', justifyContent: 'center' }}>
+                            <Svg width={ringSize} height={ringSize}>
+                                <Circle
+                                    cx={ringSize / 2}
+                                    cy={ringSize / 2}
+                                    r={ringRadius}
+                                    stroke={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}
+                                    strokeWidth={ringStroke}
+                                    fill="none"
+                                />
+                                <Circle
+                                    cx={ringSize / 2}
+                                    cy={ringSize / 2}
+                                    r={ringRadius}
+                                    stroke={remark.accent}
+                                    strokeWidth={ringStroke}
+                                    strokeDasharray={ringCircumference}
+                                    strokeDashoffset={ringDashoffset}
+                                    strokeLinecap="round"
+                                    fill="none"
+                                    transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
+                                />
+                            </Svg>
+                            <View
+                                style={{
+                                    position: 'absolute',
+                                    width: 46,
+                                    height: 46,
+                                    borderRadius: 15,
+                                    backgroundColor: C.surfaceLow,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <Icon name={remark.icon} size={22} color="default" />
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Segmented Accuracy Bar */}
+                    <View style={{ marginTop: 18, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.border }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: C.textSecondary }} numberOfLines={1}>
+                                Topic: {formatMathPlainText(session.topic)}
+                            </Text>
+                            <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }}>
+                                {correctQ} of {totalQ} correct
+                            </Text>
+                        </View>
+
+                        <View style={{ flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', backgroundColor: C.surfaceLow, gap: 3 }}>
+                            {correctQ > 0 && (
+                                <View style={{ flex: correctQ, backgroundColor: '#10B981', borderRadius: 4 }} />
+                            )}
+                            {missedQ > 0 && (
+                                <View style={{ flex: missedQ, backgroundColor: '#EF4444', borderRadius: 4 }} />
+                            )}
+                        </View>
+                    </View>
+                </View>
+
+                {/* 3-Column Bento Metrics Strip */}
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 22 }}>
+                    <View
+                        style={{
+                            flex: 1,
+                            backgroundColor: C.card,
+                            borderRadius: 22,
+                            padding: 14,
+                            borderWidth: 1,
+                            borderColor: C.border,
+                            gap: 10,
+                        }}
+                    >
+                        <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: C.surfaceLow, alignItems: 'center', justifyContent: 'center' }}>
+                            <Icon name="CheckCircle2" size={18} color="default" />
+                        </View>
+                        <View>
+                            <Text style={{ fontSize: 20, fontWeight: '800', color: C.text }}>
+                                {correctQ}/{totalQ}
+                            </Text>
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: C.textSecondary, marginTop: 1 }}>
+                                Correct
+                            </Text>
+                        </View>
+                    </View>
+
+                    <View
+                        style={{
+                            flex: 1,
+                            backgroundColor: C.card,
+                            borderRadius: 22,
+                            padding: 14,
+                            borderWidth: 1,
+                            borderColor: C.border,
+                            gap: 10,
+                        }}
+                    >
+                        <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: C.surfaceLow, alignItems: 'center', justifyContent: 'center' }}>
+                            <Icon name="XCircle" size={18} color="default" />
+                        </View>
+                        <View>
+                            <Text style={{ fontSize: 20, fontWeight: '800', color: C.text }}>
+                                {missedQ}
+                            </Text>
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: C.textSecondary, marginTop: 1 }}>
+                                Missed
+                            </Text>
+                        </View>
+                    </View>
+
+                    <View
+                        style={{
+                            flex: 1,
+                            backgroundColor: C.card,
+                            borderRadius: 22,
+                            padding: 14,
+                            borderWidth: 1,
+                            borderColor: C.border,
+                            gap: 10,
+                        }}
+                    >
+                        <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: C.surfaceLow, alignItems: 'center', justifyContent: 'center' }}>
+                            <Icon name="Brain" size={18} color="default" />
+                        </View>
+                        <View>
+                            <Text style={{ fontSize: 17, fontWeight: '800', color: C.text, textTransform: 'capitalize' }} numberOfLines={1}>
+                                {session.difficulty || 'Standard'}
+                            </Text>
+                            <Text style={{ fontSize: 12, fontWeight: '600', color: C.textSecondary, marginTop: 1 }}>
+                                Difficulty
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Detailed Review Header */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                    <View style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: C.surfaceLow, alignItems: 'center', justifyContent: 'center' }}>
+                        <Icon name="Layers" size={15} color="default" />
+                    </View>
+                    <Text style={{ fontSize: 16, fontWeight: '800', color: C.text }}>
+                        Detailed Review
+                    </Text>
+                </View>
+
+                {allQuestions.map(({ q, index }) => (
+                    <HistoryQuestionCard key={q.id || index} q={q} index={index} />
+                ))}
+            </ScrollView>
         </View>
     );
 }

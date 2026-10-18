@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -25,7 +25,6 @@ import { useAuthStore } from '@/store/authStore';
 import { haptics } from '@/lib/haptics';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { appStorage } from '@/lib/storage';
 import {
     DailyActivityTask,
     getDailyActivities,
@@ -34,6 +33,7 @@ import {
 } from '@/lib/dailyActivitiesService';
 
 const { width } = Dimensions.get('window');
+const EMPTY_ARRAY: any[] = [];
 
 export default function HomeDashboard() {
     const insets = useSafeAreaInsets();
@@ -50,7 +50,7 @@ export default function HomeDashboard() {
     const [dailyTasks, setDailyTasks] = useState<DailyActivityTask[]>([]);
 
     // Queries for live data from Brimble API
-    const { data: userExams = [] } = useQuery({
+    const { data: userExams = EMPTY_ARRAY } = useQuery({
         queryKey: ['user-exams'],
         queryFn: async () => {
             try {
@@ -63,7 +63,7 @@ export default function HomeDashboard() {
         staleTime: 60 * 1000,
     });
 
-    const { data: quizSessions = [] } = useQuery({
+    const { data: quizSessions = EMPTY_ARRAY } = useQuery({
         queryKey: ['quiz-history'],
         queryFn: async () => {
             try {
@@ -77,7 +77,7 @@ export default function HomeDashboard() {
         staleTime: 60 * 1000,
     });
 
-    const { data: flashcardDecks = [] } = useQuery({
+    const { data: flashcardDecks = EMPTY_ARRAY } = useQuery({
         queryKey: ['flashcard-history'],
         queryFn: async () => {
             try {
@@ -91,8 +91,7 @@ export default function HomeDashboard() {
         staleTime: 60 * 1000,
     });
 
-    // Generate dynamic daily tasks based on user prefs, exams, and history
-    useEffect(() => {
+    const syncDailyTasks = useCallback(() => {
         getDailyActivities({
             user,
             exams: userExams,
@@ -103,11 +102,31 @@ export default function HomeDashboard() {
             .catch(() => {});
     }, [user, userExams, flashcardDecks, quizSessions]);
 
+    // Generate dynamic daily tasks based on user prefs, exams, and history
+    useEffect(() => {
+        syncDailyTasks();
+    }, [syncDailyTasks]);
+
+    // Refresh tasks when returning to dashboard
+    useFocusEffect(
+        useCallback(() => {
+            syncDailyTasks();
+        }, [syncDailyTasks])
+    );
+
     const handleToggleTask = async (taskId: string) => {
         haptics.selectionAsync();
-        const updatedStatus = await toggleTaskCompletion(taskId);
+        const target = dailyTasks.find((t) => t.id === taskId);
+        const nextStatus = target ? !target.completed : true;
+
+        // Optimistically update UI immediately so Daily Goal bar moves right away
         setDailyTasks((prev) =>
-            prev.map((t) => (t.id === taskId ? { ...t, completed: updatedStatus } : t))
+            prev.map((t) => (t.id === taskId ? { ...t, completed: nextStatus } : t))
+        );
+
+        const persistedStatus = await toggleTaskCompletion(taskId, nextStatus);
+        setDailyTasks((prev) =>
+            prev.map((t) => (t.id === taskId ? { ...t, completed: persistedStatus } : t))
         );
     };
 
@@ -115,23 +134,24 @@ export default function HomeDashboard() {
     const goalProgress = calculateDailyGoalProgress(dailyTasks);
     const progressPct = goalProgress.percentage;
 
-    const totalCardsCount = flashcardDecks.reduce((acc: number, d: any) => acc + (d.flashcards_count || 0), 0);
-    const recentDeck = flashcardDecks.length > 0 ? flashcardDecks[0] : null;
-
     // Animations
     const headerOpacity = useSharedValue(0);
     const headerY = useSharedValue(14);
     const contentOpacity = useSharedValue(0);
     const progressWidth = useSharedValue(0);
+    const trackWidthSV = useSharedValue(0);
 
     useEffect(() => {
         headerOpacity.value = withTiming(1, { duration: 400 });
         headerY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
         contentOpacity.value = withDelay(150, withTiming(1, { duration: 500 }));
-        progressWidth.value = withDelay(
-            300,
-            withTiming(Math.max(5, progressPct), { duration: 800, easing: Easing.out(Easing.cubic) })
-        );
+    }, []);
+
+    useEffect(() => {
+        progressWidth.value = withTiming(progressPct, {
+            duration: 500,
+            easing: Easing.out(Easing.cubic),
+        });
     }, [progressPct]);
 
     const headerAnimatedStyle = useAnimatedStyle(() => ({
@@ -143,9 +163,18 @@ export default function HomeDashboard() {
         opacity: contentOpacity.value,
     }));
 
-    const progressAnimatedStyle = useAnimatedStyle(() => ({
-        width: `${progressWidth.value}%`,
-    }));
+    const progressAnimatedStyle = useAnimatedStyle(() => {
+        const pct = Math.max(0, Math.min(100, progressWidth.value));
+        if (trackWidthSV.value > 0) {
+            const targetPx = pct > 0 ? Math.max(12, (pct / 100) * trackWidthSV.value) : 0;
+            return {
+                width: targetPx,
+            };
+        }
+        return {
+            width: `${pct}%`,
+        };
+    });
 
     const firstName = user?.name ? user.name.split(' ')[0] : 'there';
     const credits = user?.credits ?? 0;
@@ -204,6 +233,11 @@ export default function HomeDashboard() {
                         onPress={() => {
                             haptics.selectionAsync();
                             toggleCreditsModal(true, 'scan');
+                        }}
+                        delayLongPress={450}
+                        onLongPress={() => {
+                            haptics.impactAsync();
+                            router.push('/(drawer)/secret-credits' as any);
                         }}
                         style={[
                             styles.badgePill,
@@ -330,7 +364,7 @@ export default function HomeDashboard() {
                                     </Text>
                                     <Text style={styles.dailyGoalSub}>
                                         {goalProgress.isGoalMet
-                                            ? 'Goal completed! Streak active 🔥'
+                                            ? 'Goal completed! Streak active'
                                             : `${goalProgress.totalCount - goalProgress.completedCount} more tasks to reach goal`}
                                     </Text>
                                 </View>
@@ -342,8 +376,22 @@ export default function HomeDashboard() {
                         </View>
 
                         {/* Progress Bar */}
-                        <View style={[styles.progressBarTrack, { backgroundColor: isDark ? '#2C2C2E' : '#EFEFF4' }]}>
-                            <Animated.View style={[styles.progressBarFill, progressAnimatedStyle]} />
+                        <View
+                            onLayout={(e) => {
+                                const w = e.nativeEvent.layout.width;
+                                if (w > 0) {
+                                    trackWidthSV.value = w;
+                                }
+                            }}
+                            style={[styles.progressBarTrack, { backgroundColor: isDark ? '#2C2C2E' : '#EFEFF4' }]}
+                        >
+                            <Animated.View
+                                style={[
+                                    styles.progressBarFill,
+                                    { backgroundColor: goalProgress.isGoalMet ? '#34C759' : '#007AFF' },
+                                    progressAnimatedStyle,
+                                ]}
+                            />
                         </View>
                     </TouchableOpacity>
 
@@ -474,13 +522,18 @@ export default function HomeDashboard() {
                                     }}
                                 >
                                     <View style={styles.taskCardLeft}>
-                                        <View style={styles.taskIconCircle}>
+                                        <TouchableOpacity
+                                            activeOpacity={0.7}
+                                            onPress={() => handleToggleTask(task.id)}
+                                            style={styles.taskIconCircle}
+                                            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                                        >
                                             <Icon
                                                 name={task.completed ? 'CheckCircle2' : 'Circle'}
                                                 size={20}
                                                 color={task.completed ? 'primary' : 'secondary'}
                                             />
-                                        </View>
+                                        </TouchableOpacity>
                                         <View style={styles.taskTextWrap}>
                                             <Text
                                                 style={[

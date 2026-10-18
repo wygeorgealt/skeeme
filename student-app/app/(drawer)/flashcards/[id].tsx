@@ -362,9 +362,9 @@ export default function StudyDeckScreen() {
         const cleanup = streamFlashcardGenerate(
             {
                 deck_id: id as string,
-                topic: topic as string,
+                topic: (topic as string) || decodedTitle || 'General Study',
                 card_count: parseInt(card_count as string) || 10,
-                difficulty: difficulty as string,
+                difficulty: (difficulty as string) || 'medium',
             },
             {
                 onStatus: (message) => {
@@ -565,31 +565,75 @@ export default function StudyDeckScreen() {
     };
 
     if (error && !deck) return (
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <View style={s.errorCenter}>
-                <AnimatedIcon size={64} animationType="wobble">
-                    <Icon name="AlertTriangle" size={48} color="#FF9500" />
-                </AnimatedIcon>
-                <Text style={[s.errorTitle, isDark ? s.textWhite : s.textSlate900]}>Deck not found</Text>
-                <Text style={s.errorSubtitle}>
-                    We couldn&apos;t load this flashcard deck. It might have been deleted or there was a connection issue.
-                </Text>
-                <View style={s.mt4}>
-                    <AnimatedButton
-                        title="Go Back"
-                        onPress={() => router.back()}
-                        type="capsule"
-                        backgroundColor="#007AFF"
-                        shadowColor="#0066D6"
-                        fullWidth
-                    />
+        <View style={{ flex: 1, backgroundColor: C.background }}>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <ScreenHeader title="Study Deck" onBack={() => router.back()} />
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28, paddingBottom: 48 }}>
+                <View
+                    style={{
+                        width: '100%',
+                        backgroundColor: C.card,
+                        borderRadius: 28,
+                        padding: 28,
+                        alignItems: 'center',
+                        borderWidth: 1,
+                        borderColor: C.border,
+                    }}
+                >
+                    <View
+                        style={{
+                            width: 68,
+                            height: 68,
+                            borderRadius: 22,
+                            backgroundColor: C.surfaceLow,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: 20,
+                            borderWidth: 1,
+                            borderColor: C.border,
+                        }}
+                    >
+                        <Icon name="AlertTriangle" size={30} color="warning" />
+                    </View>
+                    <Text style={{ fontSize: 20, fontWeight: '800', color: C.text, textAlign: 'center', marginBottom: 8 }}>
+                        Deck Unavailable
+                    </Text>
+                    <Text style={{ fontSize: 14, color: C.textSecondary, textAlign: 'center', lineHeight: 21, marginBottom: 24 }}>
+                        We couldn&apos;t load this flashcard deck. It may have been removed or your connection was interrupted.
+                    </Text>
+                    <View style={{ width: '100%', gap: 10 }}>
+                        <AnimatedButton
+                            title="Retry Loading"
+                            onPress={() => refetch()}
+                            type="capsule"
+                            backgroundColor="#007AFF"
+                            shadowColor="#0066D6"
+                            fullWidth
+                        />
+                        <Pressable
+                            onPress={() => router.back()}
+                            style={{
+                                height: 48,
+                                borderRadius: 999,
+                                backgroundColor: C.surfaceLow,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderWidth: 1,
+                                borderColor: C.border,
+                            }}
+                        >
+                            <Text style={{ fontSize: 14, fontWeight: '700', color: C.text }}>Go Back</Text>
+                        </Pressable>
+                    </View>
                 </View>
             </View>
         </View>
     );
 
     if (isLoading && !deck) return (
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+        <View style={{ flex: 1, backgroundColor: C.background }}>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <ScreenHeader title="Loading Deck..." onBack={() => router.back()} />
             <View style={s.loadingWrapper}>
                 <SkeletonLoader width={120} height={16} style={{ marginBottom: 12, borderRadius: 8 }} />
                 <SkeletonLoader width="60%" height={32} style={{ marginBottom: 48, borderRadius: 12 }} />
@@ -603,18 +647,111 @@ export default function StudyDeckScreen() {
 
     // Show "no cards" only if we're NOT generating AND don't have streaming cards AND deck is empty
     if (!deck || !deck.flashcards || (!isGenerating && streamingCards.length === 0 && deck.flashcards.length === 0)) return (
-        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <View style={s.errorCenter}>
-                <Text style={s.noCardsText}>No cards found in this deck.</Text>
-                <View style={s.mt4}>
-                    <AnimatedButton
-                        title="Go Back"
-                        onPress={() => router.back()}
-                        type="capsule"
-                        backgroundColor="transparent"
-                        textColor="#007AFF"
-                        fullWidth
-                    />
+        <View style={{ flex: 1, backgroundColor: C.background }}>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <ScreenHeader
+                title={decodedTitle || 'Flashcard Deck'}
+                subtitle="Empty Deck"
+                onBack={() => router.back()}
+            />
+
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 40 }}>
+                {/* Main Empty State Card */}
+                <View
+                    style={{
+                        width: '100%',
+                        backgroundColor: C.card,
+                        borderRadius: 28,
+                        padding: 28,
+                        borderWidth: 1,
+                        borderColor: C.border,
+                        alignItems: 'center',
+                    }}
+                >
+                    <View
+                        style={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: 20,
+                            backgroundColor: C.surfaceLow,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: 16,
+                            borderWidth: 1,
+                            borderColor: C.border,
+                        }}
+                    >
+                        <Icon name="Layers" size={30} color="default" />
+                    </View>
+
+                    {decodedTitle ? (
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 6,
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 999,
+                                backgroundColor: C.surfaceLow,
+                                marginBottom: 14,
+                            }}
+                        >
+                            <Icon name="BookOpen" size={14} color="default" />
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: C.textSecondary }} numberOfLines={1}>
+                                {decodedTitle}
+                            </Text>
+                        </View>
+                    ) : null}
+
+                    <Text style={{ fontSize: 22, fontWeight: '800', color: C.text, textAlign: 'center', letterSpacing: -0.4, marginBottom: 8 }}>
+                        No Cards in This Deck
+                    </Text>
+                    <Text style={{ fontSize: 14, color: C.textSecondary, textAlign: 'center', lineHeight: 21, marginBottom: 28 }}>
+                        This deck doesn&apos;t have any study cards yet. You can generate AI flashcards for this topic right now or create a new deck.
+                    </Text>
+
+                    {/* Primary & Secondary Actions */}
+                    <View style={{ width: '100%', gap: 10 }}>
+                        <AnimatedButton
+                            title={decodedTitle ? 'Generate Cards for Deck' : 'Create New Flashcards'}
+                            onPress={() => {
+                                haptics.impactAsync();
+                                if (id && (decodedTitle || topic)) {
+                                    startLiveGeneration();
+                                } else {
+                                    router.replace('/(drawer)/flashcards' as any);
+                                }
+                            }}
+                            type="capsule"
+                            backgroundColor="#007AFF"
+                            shadowColor="#0066D6"
+                            fullWidth
+                        />
+
+                        <Pressable
+                            onPress={() => {
+                                haptics.selectionAsync();
+                                router.back();
+                            }}
+                            style={{
+                                height: 48,
+                                borderRadius: 999,
+                                backgroundColor: C.surfaceLow,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                                borderWidth: 1,
+                                borderColor: C.border,
+                            }}
+                        >
+                            <Icon name="ArrowLeft" size={16} color="default" />
+                            <Text style={{ fontSize: 14, fontWeight: '700', color: C.text }}>
+                                Back to Library
+                            </Text>
+                        </Pressable>
+                    </View>
                 </View>
             </View>
         </View>
