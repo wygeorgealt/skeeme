@@ -47,26 +47,44 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
     }, [visible]);
 
     useEffect(() => {
-        if (!user?.next_free_refill_at) return;
+        if (!visible) return;
+        if (featureAttempted !== 'chat' && !user?.next_free_refill_at) return;
 
-        const timer = setInterval(() => {
+        const updateCountdown = () => {
             const now = new Date().getTime();
-            const refillTime = user.next_free_refill_at ? new Date(user.next_free_refill_at).getTime() : 0;
+            let refillTime = 0;
+
+            if (featureAttempted === 'chat') {
+                const nextDay = new Date();
+                nextDay.setHours(24, 0, 0, 0);
+                refillTime = nextDay.getTime();
+            } else if (user?.next_free_refill_at) {
+                refillTime = new Date(user.next_free_refill_at).getTime();
+            }
+
             const diff = refillTime - now;
 
             if (diff <= 0) {
                 setTimeLeft('Now!');
-                clearInterval(timer);
+                return false;
             } else {
                 const hours = Math.floor(diff / (1000 * 60 * 60));
                 const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const secs = Math.floor((diff % (1000 * 60)) / 1000);
                 setTimeLeft(`${hours}h ${mins}m ${secs}s`);
+                return true;
+            }
+        };
+
+        updateCountdown();
+        const timer = setInterval(() => {
+            if (!updateCountdown()) {
+                clearInterval(timer);
             }
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [user?.next_free_refill_at]);
+    }, [visible, featureAttempted, user?.next_free_refill_at]);
 
     if (!visible) return null;
 
@@ -144,7 +162,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                         </Text>
 
                         {/* Refill Timer UI */}
-                        {user?.next_free_refill_at && (
+                        {(featureAttempted === 'chat' || user?.next_free_refill_at) && (
                             <View style={[styles.timerBox, { backgroundColor: isDark ? 'rgba(52, 199, 89, 0.1)' : 'rgba(52, 199, 89, 0.05)' }]}>
                                 <Icon name="Clock" size={18} color="#34C759" />
                                 <Text style={styles.timerLabel}>REFILL IN: </Text>
