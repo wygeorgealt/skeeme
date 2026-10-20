@@ -165,12 +165,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     toggleCreditsModal: (show, feature, force) => {
-        // P1: Show the modal immediately — never block the UI with a network call.
-        // The old version did `await apiStandard.get('me')` here which froze the UI
-        // for the entire server roundtrip before the modal appeared.
-        const alreadyShown = get().creditsModalShownThisSession;
+        // Show the modal immediately -- never block user interactions
         if (show) {
-            if (alreadyShown && !force) return;
             set({ showCreditsModal: true, creditsModalFeature: feature || null, creditsModalShownThisSession: true });
 
             // Background refresh: silently check if credits were topped up.
@@ -185,17 +181,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                         const currentCredits = merged.credits ?? 0;
                         const isUnlimited = (merged.plan_name ?? 'free') !== 'free';
                         if (!isUnlimited && currentCredits > 0 && !force && feature !== 'chat') {
-                            // They have credits now — auto-dismiss
-                            set({ showCreditsModal: false, creditsModalFeature: null });
+                            // They have credits now -- auto-dismiss
+                            set({ showCreditsModal: false, creditsModalFeature: null, creditsModalShownThisSession: false });
                         }
                     }
-                }).catch(() => { /* ignore — modal stays visible */ });
+                }).catch(() => { /* ignore -- modal stays visible */ });
             }).catch(() => {});
             return;
         }
 
         // Always allow dismissal
-        set({ showCreditsModal: false, creditsModalFeature: null });
+        set({ showCreditsModal: false, creditsModalFeature: null, creditsModalShownThisSession: false });
     },
 
     toggleCooldownModal: (show) => {

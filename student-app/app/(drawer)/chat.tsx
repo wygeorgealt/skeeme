@@ -58,6 +58,10 @@ type ChatMessage = {
   prompt?: string;
   /** Explicit topic extracted from scan or response */
   topic?: string;
+  /** Indicates if this message is an in-chat troubleshooting error */
+  isError?: boolean;
+  /** Action button to show for this error: retry or upgrade */
+  errorAction?: 'retry' | 'upgrade';
 };
 
 const PROMPTS = [
@@ -261,6 +265,187 @@ function formatScanResultsToMarkdown(results: ScanResult[]): { markdown: string;
   };
 }
 
+/**
+ * Detects obvious non-educational / off-topic queries to provide fast client-side
+ * restriction without consuming the student's daily quota.
+ */
+function isNonEducationalMessage(rawText: string): boolean {
+  const text = rawText.trim().toLowerCase();
+  if (text.length < 3) return false;
+
+  const patterns = [
+    // Flirting / Romance / Dating
+    /\b(how to get a (girlfriend|boyfriend)|who is your (crush|girlfriend|boyfriend)|will you marry me|i love you|dating advice|pick up lines?|rate (my|her|his) looks?|how to flirt)\b/i,
+    // Video Games / Cheats / Virtual currency
+    /\b(fortnite (hacks?|v-?bucks|skins?|aimbot)|roblox (codes?|robux|scripts?)|minecraft (seeds?|mods?|dupe)|gta (cheats?|v|online money)|cheat codes for|how to get free (robux|v-?bucks))\b/i,
+    // Celebrity Gossip / Pop culture drama
+    /\b(kardashian|taylor swift (dating|boyfriend)|celebrity gossip|hollywood drama|who is dating who)\b/i,
+    // Malicious hacking / illegal activities
+    /\b(how to (hack|ddos|crack) (a |into )?(wifi|account|password|website|phone|camera)|make a (bomb|weapon|explosive)|how to steal|how to pirate (movies?|games?))\b/i,
+    // Joke / Entertainment only requests
+    /\b(tell me a (joke|dirty joke|roast)|tell a funny story|roast me|write a (rap|song|diss track) about (roblox|fortnite|my friend|tiktok))\b/i,
+    // Gambling / Financial speculation
+    /\b(crypto (signals?|prediction|pump)|buy (bitcoin|doge|crypto|shib)|forex signals?|sports betting (picks?|odds?|tips?))\b/i,
+    // Sports scores & predictions (not physics/mechanics of sports)
+    /\b(who won the (match|game|super bowl|world cup|premier league|champions league|el clasico)|score of the (match|game) (yesterday|today))\b/i,
+  ];
+
+  return patterns.some((p) => p.test(text));
+}
+
+/**
+ * Returns formatted in-chat troubleshooting guides for study errors, matching ChatGPT-style resolution steps.
+ */
+function getChatErrorResponse(
+  error: any,
+  options?: { isScan?: boolean; isLimit?: boolean; isInsufficientCredits?: boolean }
+): { markdown: string; errorAction?: 'retry' | 'upgrade' } {
+  const errStr = (typeof error === 'string' ? error : error?.message || '').toLowerCase();
+
+  // 1. Quota / Limits (Daily free chat limit)
+  if (options?.isLimit || errStr.includes('limit_reached') || errStr.includes('free message')) {
+    return {
+      markdown: [
+        '### ⏳ Ur limit has reached',
+        '',
+        "You've used your 2 free messages for today.",
+        '',
+        '**How to resolve this:**',
+        '• Your 2 free messages will automatically refill at midnight',
+        '• Upgrade to Pro for unlimited messages, instant explanations, and step-by-step math solutions',
+      ].join('\n'),
+      errorAction: 'upgrade',
+    };
+  }
+
+  // 2. Credits (Scan & solve insufficient credits)
+  if (options?.isInsufficientCredits || errStr.includes('insufficient') || errStr.includes('credit')) {
+    return {
+      markdown: [
+        '### ⚡ Insufficient credits',
+        '',
+        "You've used all your credits to scan and solve problems.",
+        '',
+        '**How to resolve this:**',
+        '• Upgrade to Pro to get a 500-credit daily refill and unlimited practice',
+        '• Top up your credit balance to continue scanning problems',
+      ].join('\n'),
+      errorAction: 'upgrade',
+    };
+  }
+
+  // 3. Suspicious activity / Rate limit / Firewall (429 or bot detection)
+  if (
+    errStr.includes('429') ||
+    errStr.includes('rate limit') ||
+    errStr.includes('too many') ||
+    errStr.includes('suspicious') ||
+    errStr.includes('unusual') ||
+    errStr.includes('blocked')
+  ) {
+    return {
+      markdown: [
+        '### 🛡️ Unusual activity detected',
+        '',
+        'Our system detected rapid requests or security flags from this network.',
+        '',
+        '**How to resolve this:**',
+        '• Wait a few seconds before sending another message',
+        '• Disable VPNs or proxies that might route your connection through flagged IPs',
+        '• Avoid rapid repeated taps or automated tools',
+      ].join('\n'),
+      errorAction: 'retry',
+    };
+  }
+
+  // 4. Network / Connection / WebSocket
+  if (
+    errStr.includes('network') ||
+    errStr.includes('connection') ||
+    errStr.includes('timeout') ||
+    errStr.includes('offline') ||
+    errStr.includes('socket') ||
+    errStr.includes('failed to fetch') ||
+    errStr.includes('abort')
+  ) {
+    return {
+      markdown: [
+        '### 📡 A network error occurred',
+        '',
+        'Unable to establish a reliable connection to our study servers.',
+        '',
+        '**How to resolve this:**',
+        '• Check your internet connection (Wi-Fi or cellular data)',
+        '• Turn off VPNs, proxies, or private DNS filters',
+        '• Tap Retry below to reconnect and send your message again',
+      ].join('\n'),
+      errorAction: 'retry',
+    };
+  }
+
+  // 5. Problem preparing chat / image input
+  if (
+    options?.isScan ||
+    errStr.includes('image') ||
+    errStr.includes('detect') ||
+    errStr.includes('prepare') ||
+    errStr.includes('format')
+  ) {
+    return {
+      markdown: [
+        '### 📷 There was a problem preparing your chat',
+        '',
+        "We couldn't clearly read or extract the question from the selected image.",
+        '',
+        '**How to resolve this:**',
+        '• Ensure the photo is sharp, well-lit, and the problem is clearly framed',
+        '• Crop out excessive borders, glare, or dark backgrounds',
+        '• Or type the question directly into the chat box',
+      ].join('\n'),
+      errorAction: 'retry',
+    };
+  }
+
+  // 6. Response generation error (Upstream AI failure)
+  if (
+    errStr.includes('500') ||
+    errStr.includes('502') ||
+    errStr.includes('503') ||
+    errStr.includes('server') ||
+    errStr.includes('generate')
+  ) {
+    return {
+      markdown: [
+        '### ⚠️ There was an error generating a response',
+        '',
+        'Skeemy was unable to produce an answer for this request due to a temporary service issue.',
+        '',
+        '**How to resolve this:**',
+        '• Tap the Retry button below to regenerate the response',
+        '• Try rephrasing or simplifying your question',
+        '• Wait a moment and send your request again',
+      ].join('\n'),
+      errorAction: 'retry',
+    };
+  }
+
+  // 7. General fallback: Something went wrong
+  return {
+    markdown: [
+      '### ⚠️ Something went wrong',
+      '',
+      'A temporary server issue or local glitch occurred while generating your answer.',
+      '',
+      '**How to resolve this:**',
+      '• Tap Retry to regenerate the answer',
+      '• Switch between Wi-Fi and mobile data if your connection is unstable',
+      '• Turn off any VPN or proxy connections',
+      '• Start a fresh chat thread if the issue persists',
+    ].join('\n'),
+    errorAction: 'retry',
+  };
+}
+
 /** Smooth greyish fading "Thinking..." indicator */
 function ThinkingLoader({ isDark }: { isDark: boolean }) {
   const fadeAnim = useRef(new RNAnimated.Value(0.3)).current;
@@ -458,28 +643,131 @@ export default function ChatScreen() {
     }
   };
 
-  const handleSend = async (textToSend?: string) => {
+  const handleRetry = (msg: ChatMessage) => {
+    if (isGenerating) return;
+    haptics.selectionAsync();
+    setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+    handleSend(msg.prompt, msg.imageUri);
+  };
+
+  const handleSend = async (textToSend?: string, imageOverride?: string | null) => {
     if (isGenerating) return;
 
-    // Free users: 2 free messages per day (do not use credits to chat)
+    const text = (textToSend !== undefined ? textToSend : inputVal).trim();
+    const imageToSend = imageOverride !== undefined ? imageOverride : attachedImageUri;
     const isPro = user?.plan_name === 'pro' || user?.plan_name === 'max';
-    if (!isPro) {
-      const todayCount = await getDailyChatCount(user?.id);
-      setDailyChatCount(todayCount);
-      if (todayCount >= 2) {
+    const isScanAction = Boolean(imageToSend);
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // If an image is attached, this is a Scan & Solve action (uses credits, NOT free chat messages)
+    if (isScanAction) {
+      const userCredits = user?.credits ?? 0;
+      if (!isPro && userCredits <= 0) {
         haptics.impactAsync();
-        toggleCreditsModal(true, 'chat');
+        const { markdown, errorAction } = getChatErrorResponse('insufficient_credits', { isInsufficientCredits: true });
+        const userMsg: ChatMessage = {
+          id: `user-${Date.now()}`,
+          role: 'user',
+          content: text || 'Scan & solve study problem',
+          imageUri: imageToSend || undefined,
+          time: now,
+        };
+        const errorAssistantMsg: ChatMessage = {
+          id: `assistant-${Date.now() + 1}`,
+          role: 'assistant',
+          content: markdown,
+          time: now,
+          isStreaming: false,
+          isError: true,
+          errorAction,
+          prompt: text,
+          imageUri: imageToSend || undefined,
+        };
+        setMessages((prev) => [...prev, userMsg, errorAssistantMsg]);
+        setInputVal('');
+        setAttachedImageUri(null);
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
         return;
+      }
+    } else {
+      // Free users: 2 free messages per day (do not use credits to chat)
+      if (!isPro) {
+        const todayCount = await getDailyChatCount(user?.id);
+        setDailyChatCount(todayCount);
+        if (todayCount >= 2) {
+          haptics.impactAsync();
+          const { markdown, errorAction } = getChatErrorResponse('limit_reached', { isLimit: true });
+          const userMsg: ChatMessage = {
+            id: `user-${Date.now()}`,
+            role: 'user',
+            content: text || 'Study question',
+            time: now,
+          };
+          const errorAssistantMsg: ChatMessage = {
+            id: `assistant-${Date.now() + 1}`,
+            role: 'assistant',
+            content: markdown,
+            time: now,
+            isStreaming: false,
+            isError: true,
+            errorAction,
+            prompt: text,
+          };
+          setMessages((prev) => [...prev, userMsg, errorAssistantMsg]);
+          setInputVal('');
+          setTimeout(() => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+          return;
+        }
       }
     }
 
-    const text = (textToSend !== undefined ? textToSend : inputVal).trim();
-    const imageToSend = attachedImageUri;
-
     if (!text && !imageToSend) return;
 
+    // Check if the message is off-topic / non-educational
+    if (!isScanAction && isNonEducationalMessage(text)) {
+      haptics.impactAsync();
+      const nonEduResponse = [
+        '### 🎓 Academic Subjects Only',
+        '',
+        "I am Skeemy, your AI study tutor, and I'm dedicated exclusively to helping you learn and excel in academic subjects.",
+        '',
+        '**How I can help you:**',
+        '• Solve and break down math, physics, chemistry, and biology problems step-by-step',
+        '• Explain historical events, literary works, philosophy, and economics',
+        '• Learn computer science, coding, and algorithms',
+        '• Practice languages, vocabulary, and prepare for upcoming exams',
+        '',
+        'Please ask a homework question or academic concept you would like to work through together!',
+      ].join('\n');
+
+      const userMsg: ChatMessage = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: text,
+        time: now,
+      };
+      const assistantMsg: ChatMessage = {
+        id: `assistant-${Date.now() + 1}`,
+        role: 'assistant',
+        content: nonEduResponse,
+        time: now,
+        isStreaming: false,
+        prompt: text,
+      };
+
+      setMessages((prev) => [...prev, userMsg, assistantMsg]);
+      setInputVal('');
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+      return;
+    }
+
     haptics.impactAsync();
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const displayPrompt = text || (imageToSend ? 'Solve and explain this problem step-by-step' : '');
 
     const userMsg: ChatMessage = {
@@ -498,6 +786,7 @@ export default function ChatScreen() {
       time: now,
       isStreaming: true,
       prompt: displayPrompt,
+      imageUri: imageToSend || undefined,
     };
 
     const updatedMessages = [...messages, userMsg];
@@ -506,7 +795,7 @@ export default function ChatScreen() {
     setAttachedImageUri(null);
     setIsGenerating(true);
 
-    if (!isPro) {
+    if (!isPro && !isScanAction) {
       const nextCount = await incrementDailyChatCount(user?.id);
       setDailyChatCount(nextCount);
     }
@@ -570,17 +859,18 @@ export default function ChatScreen() {
           },
           onError: (err, isInsufficientCredits) => {
             setIsGenerating(false);
-            if (isInsufficientCredits) {
-              toggleCreditsModal(true, isPro ? 'scan' : 'chat');
-            }
+            const { markdown, errorAction } = getChatErrorResponse(err, {
+              isScan: true,
+              isInsufficientCredits,
+            });
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantId
                   ? {
                       ...m,
-                      content: isInsufficientCredits
-                        ? (!isPro ? 'Ur limit has reached. Please upgrade to Pro to continue.' : 'You do not have enough credits to solve this scan. Please top up your credits.')
-                        : m.content || `Unable to analyze the image right now (${err}). Please try again.`,
+                      content: markdown,
+                      isError: true,
+                      errorAction,
                       isStreaming: false,
                     }
                   : m
@@ -591,12 +881,15 @@ export default function ChatScreen() {
         });
       } catch (e: any) {
         setIsGenerating(false);
+        const { markdown, errorAction } = getChatErrorResponse(e, { isScan: true });
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
               ? {
                   ...m,
-                  content: e?.message || 'Could not process the selected image.',
+                  content: markdown,
+                  isError: true,
+                  errorAction,
                   isStreaming: false,
                 }
               : m
@@ -616,7 +909,7 @@ export default function ChatScreen() {
       {
         messages: apiMessages,
         context:
-          'You are Skeemy, an intelligent, patient, and expert AI tutor designed for high school and university students. Help the student understand core academic concepts, solve problems step-by-step, and prepare for exams. Whenever you explain an academic concept, topic, or comparison, begin your response with a concise "## Topic Title" markdown heading (2 to 5 words in Title Case, e.g. "## Cache and Load Balancing" or "## Newton\'s Second Law") that names the core subject of your answer. Use clean markdown formatting and valid LaTeX for mathematical equations.',
+          'You are Skeemy, an intelligent, patient, and expert AI tutor designed for high school and university students. Help the student understand core academic concepts, solve problems step-by-step, and prepare for exams. Whenever you explain an academic concept, topic, or comparison, begin your response with a concise "## Topic Title" markdown heading (2 to 5 words in Title Case, e.g. "## Cache and Load Balancing" or "## Newton\'s Second Law") that names the core subject of your answer. Use clean markdown formatting and valid LaTeX for mathematical equations.\n\nCRITICAL DOMAIN RESTRICTION - EDUCATIONAL ONLY:\nYou are strictly an academic and educational tutor. You ONLY assist with academic subjects (Math, Sciences, History, Literature, Computer Science, Economics, Languages, Philosophy, Exam Prep, Homework, and Study Skills). If the user asks a non-educational or off-topic question (e.g. casual small talk beyond a brief greeting, dating/relationship advice, celebrity gossip, gaming advice/cheats, sports scores/betting, pop culture trivia, creative entertainment unrelated to learning, financial trading, or non-academic tasks), YOU MUST POLITELY DECLINE TO ANSWER. Start your response with "### 🎓 Academic Subjects Only", explain that Skeemy is strictly an AI study tutor for academic learning, and invite them to ask a study question or scan a homework problem. Do NOT answer the off-topic request.',
       },
       {
         onToken: (token: string) => {
@@ -641,18 +934,17 @@ export default function ChatScreen() {
         },
         onError: (err?: string, isInsufficient?: boolean) => {
           setIsGenerating(false);
-          if (isInsufficient || err?.includes('limit_reached') || err?.includes('limit')) {
-            toggleCreditsModal(true, 'chat');
-          }
+          const { markdown, errorAction } = getChatErrorResponse(err, {
+            isLimit: isInsufficient || err?.includes('limit_reached'),
+          });
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantId
                 ? {
                     ...m,
-                    content:
-                      (isInsufficient || err?.includes('limit_reached'))
-                        ? 'Ur limit has reached. Please upgrade to Pro to continue chatting.'
-                        : m.content || "I'm having trouble connecting to the study server. Please verify your connection or try again in a moment.",
+                    content: markdown,
+                    isError: true,
+                    errorAction,
                     isStreaming: false,
                   }
                 : m
@@ -781,10 +1073,21 @@ export default function ChatScreen() {
                 <View key={msg.id} className="flex-col w-full max-w-[95%] mb-5">
                   {hasVisibleContent ? (
                     <View
-                      style={{
-                        backgroundColor: C.card,
-                        borderColor: C.border,
-                      }}
+                      style={[
+                        {
+                          backgroundColor: C.card,
+                          borderColor: msg.isError
+                            ? isDark
+                              ? 'rgba(255, 69, 58, 0.4)'
+                              : 'rgba(255, 59, 48, 0.3)'
+                            : C.border,
+                        },
+                        msg.isError && {
+                          backgroundColor: isDark
+                            ? 'rgba(255, 69, 58, 0.06)'
+                            : 'rgba(255, 59, 48, 0.03)',
+                        },
+                      ]}
                       className="rounded-3xl rounded-tl-md p-4 shadow-sm border"
                     >
                       <MathText content={msg.content} color={C.text} fontSize={15} />
@@ -794,6 +1097,28 @@ export default function ChatScreen() {
                           style={{ borderTopColor: C.border }}
                           className="flex-row flex-wrap items-center gap-2 pt-3 mt-3 border-t"
                         >
+                          {msg.isError && msg.errorAction === 'upgrade' && (
+                            <Pressable
+                              onPress={() => {
+                                haptics.selectionAsync();
+                                router.push('/paywall');
+                              }}
+                              className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-electric-blue active:opacity-80"
+                            >
+                              <Icon name="Zap" size={13} color="white" />
+                              <Text className="text-[11px] font-bold text-white">Upgrade to Pro</Text>
+                            </Pressable>
+                          )}
+                          {msg.isError && msg.errorAction === 'retry' && (
+                            <Pressable
+                              onPress={() => handleRetry(msg)}
+                              style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.15)' : '#E5F1FF' }}
+                              className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full active:opacity-70"
+                            >
+                              <Icon name="RotateCw" size={13} color="primary" />
+                              <Text className="text-[11px] font-bold text-accent-electric-blue">Retry</Text>
+                            </Pressable>
+                          )}
                           <Pressable
                             onPress={() => handleCopy(msg.id, msg.content)}
                             style={{ backgroundColor: C.surfaceLow }}
@@ -804,7 +1129,7 @@ export default function ChatScreen() {
                               {copiedId === msg.id ? 'Copied!' : 'Copy'}
                             </Text>
                           </Pressable>
-                          {showQuiz && (
+                          {!msg.isError && showQuiz && (
                             <Animated.View entering={FadeIn.duration(300)}>
                               <Pressable
                                 onPress={() => {

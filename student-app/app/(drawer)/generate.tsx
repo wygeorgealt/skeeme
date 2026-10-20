@@ -647,12 +647,6 @@ export default function GenerateQuizScreen() {
                             className="rounded-3xl p-5 shadow-sm flex-col gap-4"
                             style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
                         >
-                            <View className="flex-row items-center justify-between">
-                                <View className="flex-row items-center gap-2">
-                                    <Icon name="Database" size={20} color="default" />
-                                    <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Quiz Source Material</Text>
-                                </View>
-                            </View>
 
                             {/* Segmented Switcher */}
                             <View 
@@ -854,49 +848,33 @@ export default function GenerateQuizScreen() {
                             className="rounded-3xl p-5 shadow-sm flex-col gap-4"
                             style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
                         >
-                            <View className="flex-row items-center justify-between">
-                                <View className="flex-row items-center gap-2">
-                                    <Icon name="Brain" size={20} color="default" />
-                                    <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Difficulty Depth</Text>
-                                </View>
-                                <View className="px-2.5 py-0.5 rounded-full" style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.2)' : '#e0edff' }}>
-                                    <Text className="text-[11px] font-[700] tracking-[0.5px] text-accent-electric-blue">
-                                        {difficulty === 'easy' ? 'Foundational' : difficulty === 'medium' ? 'Standard' : 'Mastery / Trap'}
-                                    </Text>
-                                </View>
+                            <View className="flex-row items-center gap-2">
+                                <Icon name="Brain" size={20} color="default" />
+                                <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Difficulty</Text>
                             </View>
 
                             <View className="flex-row gap-2.5 w-full">
                                 {[
-                                    { key: 'easy', icon: 'Sparkles', label: 'Easy', desc: 'Foundations & recall' },
-                                    { key: 'medium', icon: 'GraduationCap', label: 'Medium', desc: 'Exam standard' },
-                                    { key: 'hard', icon: 'Flame', label: 'Hard', desc: 'Deep mastery & traps' },
+                                    { key: 'easy', label: 'Easy' },
+                                    { key: 'medium', label: 'Medium' },
+                                    { key: 'hard', label: 'Hard' },
                                 ].map(opt => {
                                     const isActive = difficulty === opt.key;
                                     return (
-                                        <Pressable 
+                                        <Pressable
                                             key={opt.key}
                                             onPress={() => {
                                                 haptics.selectionAsync();
                                                 setDifficulty(opt.key as Difficulty);
                                             }}
-                                            className="flex-1 p-3.5 rounded-2xl flex-col justify-between h-[144px]"
+                                            className="flex-1 py-4 rounded-2xl items-center justify-center"
                                             style={{
                                                 backgroundColor: isActive ? (isDark ? 'rgba(0,122,255,0.18)' : '#e0edff') : C.surfaceLow,
                                                 borderColor: isActive ? '#007AFF' : 'transparent',
                                                 borderWidth: 1,
                                             }}
                                         >
-                                            <View className="flex-row items-center justify-between w-full">
-                                                <View className="w-9 h-9 rounded-xl items-center justify-center" style={{ backgroundColor: isActive ? 'transparent' : C.card }}>
-                                                    <Icon name={opt.icon as any} size={20} color={isActive ? "primary" : "secondary"} />
-                                                </View>
-                                                {isActive && <Icon name="CheckCircle2" size={20} color="primary" />}
-                                            </View>
-                                            <View>
-                                                <Text className="text-[16px] font-[600]" style={{ color: isActive ? '#007AFF' : C.text }}>{opt.label}</Text>
-                                                <Text className="text-[13px] font-[400] mt-0.5 leading-[18px]" style={{ color: C.textSecondary }} numberOfLines={2}>{opt.desc}</Text>
-                                            </View>
+                                            <Text className="text-[16px] font-[600]" style={{ color: isActive ? '#007AFF' : C.text }}>{opt.label}</Text>
                                         </Pressable>
                                     );
                                 })}
@@ -1011,45 +989,6 @@ export default function GenerateQuizScreen() {
                             )}
                         </View>
 
-                        {/* Section 5: Question Format Options */}
-                        <View 
-                            className="rounded-3xl p-5 shadow-sm flex-col gap-3"
-                            style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
-                        >
-                            <View className="flex-row items-center justify-between">
-                                <View className="flex-row items-center gap-2">
-                                    <Icon name="Sliders" size={20} color="default" />
-                                    <Text className="text-[16px] font-[600]" style={{ color: C.text }}>Question Formats</Text>
-                                </View>
-                            </View>
-                            <View className="flex-row flex-wrap gap-2.5">
-                                {[
-                                    { key: 'mcq', icon: 'CheckCircle2', label: 'Multiple Choice' },
-                                    { key: 'theory', icon: 'FileText', label: 'True / False / Essay' },
-                                    { key: 'both', icon: 'Layers', label: 'Mixed' }
-                                ].map(opt => {
-                                    const isActive = format === opt.key;
-                                    return (
-                                        <Pressable 
-                                            key={opt.key}
-                                            onPress={() => {
-                                                haptics.selectionAsync();
-                                                setFormat(opt.key as FormatType);
-                                            }}
-                                            className="px-4 py-2.5 rounded-2xl flex-row items-center gap-2"
-                                            style={{
-                                                backgroundColor: isActive ? (isDark ? 'rgba(0,122,255,0.18)' : '#e0edff') : C.surfaceLow,
-                                                borderColor: isActive ? '#007AFF' : 'transparent',
-                                                borderWidth: 1,
-                                            }}
-                                        >
-                                            <Icon name={opt.icon as any} size={18} color={isActive ? "primary" : "textSecondary"} animated={isActive ? "bounce" : undefined} />
-                                            <Text className="text-[14px] font-[600]" style={{ color: isActive ? '#007AFF' : C.textSecondary }}>{opt.label}</Text>
-                                        </Pressable>
-                                    );
-                                })}
-                            </View>
-                        </View>
                         {/* Primary CTA Button (matches Flashcards page) */}
                         <View style={{ width: '100%', alignItems: 'center', marginTop: 10 }}>
                             <AnimatedButton
