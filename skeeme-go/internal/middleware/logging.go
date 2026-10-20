@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"time"
+
 	"skeeme-go/internal/logger"
 )
 
@@ -55,7 +57,16 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 			level = "success"
 		}
 
-		logger.Send(level, r.Method+" "+r.URL.Path, map[string]any{
+		uri := r.URL.RequestURI()
+		if uri == "" {
+			uri = r.URL.Path
+		}
+
+		msg := fmt.Sprintf("%s %s [%d] in %v (%d bytes)", r.Method, uri, rw.status, duration.Round(time.Millisecond), rw.written)
+
+		logger.Send(level, msg, map[string]any{
+			"method":   r.Method,
+			"uri":      uri,
 			"status":   rw.status,
 			"duration": duration.String(),
 			"ip":       r.RemoteAddr,

@@ -23,6 +23,8 @@ func Send(level, message string, data any) {
 	// Log to local console first
 	if level == "error" {
 		log.Printf("[ERROR] %s | %v\n", message, data)
+	} else if level == "warn" {
+		log.Printf("[WARN] %s | %v\n", message, data)
 	} else {
 		log.Printf("[%s] %s\n", level, message)
 	}

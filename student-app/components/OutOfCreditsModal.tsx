@@ -2,9 +2,7 @@ import { Text } from '@/components/ui/Text';
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, useColorScheme, Share, Platform, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
-import RoundArrowUp from '@/assets/icons/pikaicons/arrow-up.svg';
-import Forward from '@/assets/icons/pikaicons/arrow-right.svg';
-import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
+import { Icon } from '@/components/ui/Icon';
 import { router } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -13,7 +11,8 @@ import Animated, {
     FadeIn, 
     FadeOut, 
     SlideInDown, 
-    SlideOutDown 
+    SlideOutDown,
+    Easing,
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
@@ -21,7 +20,7 @@ const { width } = Dimensions.get('window');
 interface OutOfCreditsModalProps {
     visible: boolean;
     onDismiss: () => void;
-    featureAttempted: 'scan' | 'quiz' | 'flashcard';
+    featureAttempted: 'scan' | 'quiz' | 'flashcard' | 'chat';
 }
 
 export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted }: OutOfCreditsModalProps) {
@@ -34,7 +33,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
     // Log the event to backend
     const logEvent = async () => {
         // Only log if they are actually out of credits (ignore upsell popups)
-        if (user && (user.credits ?? 0) > 0) return;
+        if (featureAttempted !== 'chat' && user && (user.credits ?? 0) > 0) return;
         
         try {
             await api.post('credits/out-of-credits', { feature_attempted: featureAttempted });
@@ -76,25 +75,20 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
         router.push('/paywall');
     };
 
-    const handleShare = async () => {
-        try {
-            const res = await api.get('referral/my-code');
-            await Share.share({
-                message: res.data.share_text,
-            });
-        } catch {
-            await Share.share({
-                message: "I've been using Skeeme to study smarter — it builds quizzes and flashcards from my notes using AI. Download: https://skeeme.com/students",
-            });
-        }
-    };
+    const isPro = user?.plan_name === 'pro' || user?.plan_name === 'max';
 
     let titleText = "You've been working hard.";
     let descText = "But you've used all your credits for now. Keep the momentum going.";
+    let iconName: any = "Wallet";
 
-    if (user?.plan_name === 'pro' || user?.plan_name === 'max') {
+    if (featureAttempted === 'chat') {
+        titleText = "Ur limit has reached";
+        descText = "You've used your 2 free messages for today. Upgrade to Pro for unlimited messages.";
+        iconName = "MessageSquare";
+    } else if (isPro) {
         titleText = "Credits Exhausted";
         descText = "You've used your daily credits. Don't worry, your plan gives you a 500 credit refill every day.";
+        iconName = "Wallet";
     }
 
     return (
@@ -107,24 +101,25 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
             <View style={styles.container}>
                 {/* Backdrop */}
                 <Animated.View 
-                    entering={FadeIn} 
-                    exiting={FadeOut} 
+                    entering={FadeIn.duration(180)} 
+                    exiting={FadeOut.duration(150)} 
                     style={StyleSheet.absoluteFill}
                 >
                     <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss}>
                         <BlurView 
-                            intensity={25} 
+                            intensity={5} 
+                            blurMethod="dimezisBlurView"
                             style={StyleSheet.absoluteFill} 
                             tint={isDark ? 'dark' : 'light'} 
                         />
-                        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)' }]} />
+                        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.18)' }]} />
                     </Pressable>
                 </Animated.View>
 
                 {/* Bottom Sheet */}
                 <Animated.View
-                    entering={SlideInDown.springify().damping(20).stiffness(150)}
-                    exiting={SlideOutDown}
+                    entering={SlideInDown.duration(220).easing(Easing.out(Easing.cubic))}
+                    exiting={SlideOutDown.duration(180).easing(Easing.in(Easing.cubic))}
                     style={[
                         styles.sheet,
                         { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' }
@@ -135,9 +130,9 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                     <View style={styles.content}>
                         <View style={[
                             styles.iconWrapper, 
-                            { backgroundColor: isDark ? 'rgba(0, 122, 255, 0.15)' : 'rgba(0, 122, 255, 0.08)' }
+                            { backgroundColor: isDark ? '#252528' : '#F5F5F7' }
                         ]}>
-                            <AnimatedIcon source={require('@/assets/3dicons/3dicons-wallet-front-color.png')} size={48} animationType="wobble" />
+                            <Icon name={iconName} size={32} color="default" />
                         </View>
 
                         <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
@@ -151,7 +146,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                         {/* Refill Timer UI */}
                         {user?.next_free_refill_at && (
                             <View style={[styles.timerBox, { backgroundColor: isDark ? 'rgba(52, 199, 89, 0.1)' : 'rgba(52, 199, 89, 0.05)' }]}>
-                                <AnimatedIcon source={require('@/assets/3dicons/3dicons-clock-front-color.png')} size={20} animationType="spin" />
+                                <Icon name="Clock" size={18} color="#34C759" />
                                 <Text style={styles.timerLabel}>REFILL IN: </Text>
                                 <Text style={styles.timerValue}>{timeLeft || '--:--:--'}</Text>
                             </View>
@@ -159,7 +154,7 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
 
                         {/* Actions */}
                         <View style={styles.actions}>
-                            {user?.plan_name !== 'pro' && user?.plan_name !== 'max' && (
+                            {!isPro ? (
                                 <AnimatedButton
                                     title="Upgrade to Pro"
                                     onPress={handleUpgrade}
@@ -168,24 +163,15 @@ export default function OutOfCreditsModal({ visible, onDismiss, featureAttempted
                                     shadowColor="#0066D6"
                                     fullWidth
                                 />
+                            ) : (
+                                <TouchableOpacity
+                                    onPress={onDismiss}
+                                    activeOpacity={0.8}
+                                    style={styles.primaryBtn}
+                                >
+                                    <Text style={styles.primaryBtnText}>Got it</Text>
+                                </TouchableOpacity>
                             )}
-
-                            <TouchableOpacity
-                                onPress={() => {
-                                    onDismiss();
-                                    // Small delay to ensure the OutOfCreditsModal is fully dismissed 
-                                    setTimeout(() => {
-                                        router.push('/referral');
-                                    }, 500);
-                                }}
-                                activeOpacity={0.8}
-                                style={user?.plan_name === 'pro' || user?.plan_name === 'max' ? styles.primaryBtn : [styles.secondaryBtn, { borderColor: isDark ? '#3A3A3C' : '#E5E5EA' }]}
-                            >
-                                <Forward width={20} height={20} color={user?.plan_name === 'pro' || user?.plan_name === 'max' ? '#FFFFFF' : (isDark ? '#FFFFFF' : '#000000')} />
-                                <Text style={user?.plan_name === 'pro' || user?.plan_name === 'max' ? styles.primaryBtnText : [styles.secondaryBtnText, { color: isDark ? '#FFFFFF' : '#000000' }]}>
-                                    Earn more credits
-                                </Text>
-                            </TouchableOpacity>
                         </View>
                     </View>
                 </Animated.View>
@@ -218,9 +204,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     iconWrapper: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
+        width: 68,
+        height: 68,
+        borderRadius: 34,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 20,

@@ -52,6 +52,10 @@ export function streamFromAI(
     let isConnecting = true;
     callbacks.onStatus?.('Connecting...');
 
+    if (__DEV__) {
+        console.log(`[AI Stream] ⚡ Connecting to ${AI_SERVICE_URL}${endpoint}`);
+    }
+
     const es = new EventSource(`${AI_SERVICE_URL}${endpoint}`, {
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -73,6 +77,9 @@ export function streamFromAI(
         } else if (event.type === 'message') {
             if (event.data === '[DONE]') {
                 es.close();
+                if (__DEV__) {
+                    console.log(`[AI Stream] ✅ Stream complete from ${endpoint} (${fullText.length} chars)`);
+                }
                 callbacks.onComplete?.(fullText);
                 return;
             }
@@ -96,7 +103,7 @@ export function streamFromAI(
                 } catch (_) {}
             }
 
-            if (event.message?.includes('402') || errorData?.error === 'insufficient_credits') {
+            if (event.message?.includes('402') || errorData?.error === 'insufficient_credits' || errorData?.error === 'limit_reached') {
                 isInsufficientCredits = true;
             }
 
@@ -105,6 +112,9 @@ export function streamFromAI(
             // If the server explicitly emitted an error event (e.g. incomplete_response or stream_interrupted),
             // or if no text was received, or if insufficient credits, report clean error
             if (errorData?.error || fullText.length === 0 || isInsufficientCredits) {
+                if (__DEV__) {
+                    console.warn(`[AI Stream] ❌ Stream error on ${endpoint}:`, errorMsg);
+                }
                 callbacks.onError?.(errorMsg, isInsufficientCredits);
             } else {
                 // If we have full text and connection simply closed without error event

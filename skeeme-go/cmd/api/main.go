@@ -23,6 +23,53 @@ func main() {
 	// Load .env if present (mostly for local development)
 	_ = godotenv.Load()
 
+	// Allow /app/api to also execute one-off cron commands directly (e.g., `/app/api backup`)
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "backup":
+			log.Println("[API CLI] Running Postgres backup to R2...")
+			if err := jobs.RunPostgresBackup(); err != nil {
+				log.Fatalf("[API CLI] Backup failed: %v", err)
+			}
+			log.Println("[API CLI] Backup finished successfully.")
+			return
+		case "streaks":
+			database, err := db.NewStudentDB()
+			if err != nil {
+				log.Fatalf("[API CLI] DB connection failed: %v", err)
+			}
+			defer database.Close()
+			if err := jobs.ResetStreaks(database); err != nil {
+				log.Fatalf("[API CLI] ResetStreaks failed: %v", err)
+			}
+			log.Println("[API CLI] Streaks reset successfully.")
+			return
+		case "cleanup":
+			database, err := db.NewStudentDB()
+			if err != nil {
+				log.Fatalf("[API CLI] DB connection failed: %v", err)
+			}
+			defer database.Close()
+			jobs.PendingCleanup(database)
+			log.Println("[API CLI] Cleanup finished.")
+			return
+		case "health":
+			jobs.AIHealthCheck()
+			return
+		case "all":
+			database, err := db.NewStudentDB()
+			if err != nil {
+				log.Fatalf("[API CLI] DB connection failed: %v", err)
+			}
+			defer database.Close()
+			_ = jobs.ResetStreaks(database)
+			jobs.PendingCleanup(database)
+			_ = jobs.RunPostgresBackup()
+			jobs.AIHealthCheck()
+			return
+		}
+	}
+
 	// Initialize DB
 	database, err := db.NewStudentDB()
 	if err != nil {
@@ -57,7 +104,7 @@ func main() {
 		// In-process Database Backup to R2 (runs automatically inside Go, no external cron required)
 		backupSchedule := os.Getenv("BACKUP_CRON_SCHEDULE")
 		if backupSchedule == "" {
-			backupSchedule = "0 2 * * *" // Daily at 02:00 UTC
+			backupSchedule = "0 * * * *" // Hourly at minute 0 UTC
 		}
 		c.AddFunc(backupSchedule, func() {
 			log.Println("[Scheduler] Running scheduled database backup to R2...")

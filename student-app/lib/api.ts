@@ -56,9 +56,10 @@ api.interceptors.request.use(
             }
         }
 
-        if (__DEV__ && config.method?.toUpperCase() !== 'GET') {
-            const fullUrl = `${config.baseURL}${config.url}`;
-            console.log(`[API] ${config.method?.toUpperCase()} ${fullUrl}`);
+        (config as any).metadata = { startTime: Date.now() };
+        if (__DEV__) {
+            const fullUrl = `${config.baseURL || ''}${config.url || ''}`;
+            console.log(`[API] 🚀 ${config.method?.toUpperCase()} ${fullUrl}`);
         }
         const token = useAuthStore.getState().token;
         if (token) {
@@ -76,8 +77,11 @@ api.interceptors.response.use(
         // later, genuinely new outage to be surfaced once.
         serviceFailureNotified = false;
         useAuthStore.getState().setConnectionState('online');
-        if (__DEV__ && response.config.method?.toUpperCase() !== 'GET') {
-            console.log(`[API] ✅ ${response.status} from ${response.config.url}`);
+        if (__DEV__) {
+            const duration = (response.config as any)?.metadata?.startTime
+                ? ` (${Date.now() - (response.config as any).metadata.startTime}ms)`
+                : '';
+            console.log(`[API] ✅ ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}${duration}`);
         }
         // Consistent data extraction helper:
         // Returns response.data.data if it exists, otherwise response.data
@@ -87,6 +91,11 @@ api.interceptors.response.use(
         const { config, response } = error;
         const url = config?.url;
         const { user, logout } = useAuthStore.getState();
+
+        if (__DEV__) {
+            const status = response?.status || 'ERR';
+            console.warn(`[API] ❌ ${status} ${config?.method?.toUpperCase()} ${url}:`, error?.response?.data?.message || error?.message || error);
+        }
 
         // 1. Handle 401 Unauthorized
         if (response?.status === 401) {

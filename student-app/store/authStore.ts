@@ -32,10 +32,10 @@ interface AuthState {
     devReset: () => Promise<void>;
     // Credits Modal
     showCreditsModal: boolean;
-    creditsModalFeature: 'scan' | 'quiz' | 'flashcard' | null;
+    creditsModalFeature: 'scan' | 'quiz' | 'flashcard' | 'chat' | null;
     // Only show the credits modal once per app session unless forced
     creditsModalShownThisSession: boolean;
-    toggleCreditsModal: (show: boolean, feature?: 'scan' | 'quiz' | 'flashcard' | null, force?: boolean) => void;
+    toggleCreditsModal: (show: boolean, feature?: 'scan' | 'quiz' | 'flashcard' | 'chat' | null, force?: boolean) => void;
     // Cooldown Modal
     showCooldownModal: boolean;
     toggleCooldownModal: (show: boolean) => void;
@@ -184,7 +184,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
                         const currentCredits = merged.credits ?? 0;
                         const isUnlimited = (merged.plan_name ?? 'free') !== 'free';
-                        if (!isUnlimited && currentCredits > 0 && !force) {
+                        if (!isUnlimited && currentCredits > 0 && !force && feature !== 'chat') {
                             // They have credits now — auto-dismiss
                             set({ showCreditsModal: false, creditsModalFeature: null });
                         }

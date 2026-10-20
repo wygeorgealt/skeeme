@@ -252,6 +252,26 @@ func (h *AIHandler) Chat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isPro := user.SubscriptionTier == "pro" || user.SubscriptionTier == "max"
+	if !isPro && h.Redis != nil {
+		todayKey := fmt.Sprintf("daily_chat_count:%d:%s", user.ID, time.Now().UTC().Format("2006-01-02"))
+		count, err := h.Redis.Incr(r.Context(), todayKey).Result()
+		if err == nil {
+			if count == 1 {
+				h.Redis.Expire(r.Context(), todayKey, 24*time.Hour)
+			}
+			if count > 2 {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusPaymentRequired) // 402
+				json.NewEncoder(w).Encode(map[string]string{
+					"error":   "limit_reached",
+					"message": "Ur limit has reached",
+				})
+				return
+			}
+		}
+	}
+
 	rc, stopHeartbeat, err := h.setupSSE(w)
 	if err != nil {
 		http.Error(w, `{"error":"Streaming unsupported"}`, http.StatusInternalServerError)

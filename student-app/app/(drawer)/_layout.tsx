@@ -47,6 +47,7 @@ function TabBar({ state, descriptors, navigation }: any) {
     const hiddenScreens = [
         'generate',
         'scan',
+        'chat',
         'account',
         'preferences',
         'settings',
@@ -63,6 +64,7 @@ function TabBar({ state, descriptors, navigation }: any) {
         hiddenScreens.includes(focusedRoute?.name) ||
         pathname?.includes('/generate') ||
         pathname?.includes('/scan') ||
+        pathname?.includes('/chat') ||
         pathname?.includes('/flashcards') ||
         pathname?.includes('/summary') ||
         pathname?.includes('/secret-credits')
@@ -444,6 +446,8 @@ export default function TabLayout() {
                     name="chat"
                     options={{
                         title: 'Chat',
+                        headerShown: false,
+                        tabBarStyle: { display: 'none' },
                     }}
                 />
 

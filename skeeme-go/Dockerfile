@@ -16,12 +16,13 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /app/bin/cli ./cmd/cli
 FROM alpine:latest
 
 # Add ca-certificates for external API calls, tzdata, and postgresql-client tools
-RUN apk --no-cache add ca-certificates tzdata postgresql-client gzip bash
+RUN apk --no-cache add ca-certificates tzdata postgresql-client gzip bash curl
 
 WORKDIR /app
 COPY --from=builder /app/bin/api /app/api
 COPY --from=builder /app/bin/cli /app/cli
 COPY --from=builder /app/bin/cli /usr/local/bin/cli
+RUN chmod +x /app/api /app/cli /usr/local/bin/cli
 
 EXPOSE 8080
 

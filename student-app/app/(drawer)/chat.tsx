@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Pressable,
+  TouchableOpacity,
   View,
   Text,
   TextInput,
@@ -9,10 +10,14 @@ import {
   KeyboardAvoidingView,
   Alert,
   Image,
+  Modal,
+  Dimensions,
   StyleSheet,
+  Animated as RNAnimated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -25,8 +30,12 @@ import * as Clipboard from 'expo-clipboard';
 import { streamScanFollowUpChat } from '@/lib/aiStream';
 import { scannerService, ScanResult } from '@/lib/scanner';
 import { useAuthStore } from '@/store/authStore';
+import { appStorage } from '@/lib/storage';
 import Animated, {
   FadeIn,
+  FadeOut,
+  SlideInDown,
+  SlideOutDown,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -34,6 +43,8 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type ChatMessage = {
   id: string;
@@ -250,58 +261,72 @@ function formatScanResultsToMarkdown(results: ScanResult[]): { markdown: string;
   };
 }
 
-/** ChatGPT-style three bouncing dots loader */
-function TypingDots({ isDark }: { isDark: boolean }) {
-  const dotColor = isDark ? '#60A5FA' : '#007AFF';
-  return (
-    <View style={styles.typingContainer}>
-      <Dot index={0} color={dotColor} />
-      <Dot index={1} color={dotColor} />
-      <Dot index={2} color={dotColor} />
-    </View>
-  );
-}
-
-function Dot({ index, color }: { index: number; color: string }) {
-  const progress = useSharedValue(0);
+/** Smooth greyish fading "Thinking..." indicator */
+function ThinkingLoader({ isDark }: { isDark: boolean }) {
+  const fadeAnim = useRef(new RNAnimated.Value(0.3)).current;
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      progress.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 360, easing: Easing.out(Easing.quad) }),
-          withTiming(0, { duration: 360, easing: Easing.in(Easing.quad) })
-        ),
-        -1,
-        false
-      );
-    }, index * 150);
-
-    return () => clearTimeout(timer);
-  }, [index, progress]);
-
-  const animatedDotStyle = useAnimatedStyle(() => ({
-    opacity: 0.35 + progress.value * 0.65,
-    transform: [
-      { translateY: -4 * progress.value },
-      { scale: 0.9 + progress.value * 0.22 },
-    ],
-  }));
+    const loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 750,
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(fadeAnim, {
+          toValue: 0.28,
+          duration: 750,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [fadeAnim]);
 
   return (
-    <Animated.View
-      style={[
-        {
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: color,
-        },
-        animatedDotStyle,
-      ]}
-    />
+    <RNAnimated.View style={[styles.thinkingWrap, { opacity: fadeAnim }]}>
+      <Text
+        style={[
+          styles.thinkingText,
+          { color: isDark ? '#98989F' : '#6E6E73' },
+        ]}
+      >
+        Thinking...
+      </Text>
+    </RNAnimated.View>
   );
 }
+
+/** Get deterministic YYYY-MM-DD key in local time */
+const getTodayDateKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const getDailyChatKey = (userId?: number | string) =>
+  `skeeme_daily_chat_count_${getTodayDateKey()}_${userId || 'guest'}`;
+
+export const getDailyChatCount = async (userId?: number | string): Promise<number> => {
+  try {
+    const val = await appStorage.getItem(getDailyChatKey(userId));
+    return val ? parseInt(val, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+};
+
+export const incrementDailyChatCount = async (userId?: number | string): Promise<number> => {
+  try {
+    const key = getDailyChatKey(userId);
+    const current = await getDailyChatCount(userId);
+    const next = current + 1;
+    await appStorage.setItem(key, String(next));
+    return next;
+  } catch {
+    return 1;
+  }
+};
 
 export default function ChatScreen() {
   const router = useRouter();
@@ -312,21 +337,29 @@ export default function ChatScreen() {
   const C = Colors[isDark ? 'dark' : 'light'];
   const scrollViewRef = useRef<ScrollView>(null);
 
+  const user = useAuthStore((s) => s.user);
   const toggleCreditsModal = useAuthStore((s) => s.toggleCreditsModal);
   const checkAuth = useAuthStore((s) => s.checkAuth);
+
+  const isPro = user?.plan_name === 'pro' || user?.plan_name === 'max';
+  const isOutOfCredits = !isPro && (user?.credits ?? 0) <= 0;
 
   const [inputVal, setInputVal] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [promptIndex, setPromptIndex] = useState(() => Math.floor(Math.random() * PROMPTS.length));
+  const [dailyChatCount, setDailyChatCount] = useState<number>(0);
+
+  const isOutOfFreeMessages = !isPro && dailyChatCount >= 2;
 
   // Image attachment state (ChatGPT / Claude / Gemini composer style)
   const [attachedImageUri, setAttachedImageUri] = useState<string | null>(null);
+  const [attachModalVisible, setAttachModalVisible] = useState(false);
 
   const abortStreamRef = useRef<(() => void) | null>(null);
 
-  // Pick a fresh greeting each time the screen is entered
+  // Pick a fresh greeting and sync daily chat count each time the screen is entered
   useFocusEffect(
     useCallback(() => {
       setPromptIndex((prev) => {
@@ -334,16 +367,24 @@ export default function ChatScreen() {
         if (next === prev) next = (next + 1) % PROMPTS.length;
         return next;
       });
-    }, [])
+      getDailyChatCount(user?.id).then((count) => {
+        setDailyChatCount(count);
+      });
+    }, [user?.id])
   );
 
   // Auto-open camera if navigated with ?openCamera=1
   useEffect(() => {
     if (params.openCamera === '1' || params.openCamera === 'true') {
-      handleOpenCamera();
-      router.setParams({ openCamera: undefined } as any);
+      if (isOutOfCredits) {
+        router.setParams({ openCamera: undefined } as any);
+        router.push('/paywall');
+      } else {
+        handleOpenCamera();
+        router.setParams({ openCamera: undefined } as any);
+      }
     }
-  }, [params.openCamera]);
+  }, [params.openCamera, isOutOfCredits]);
 
   useEffect(() => {
     return () => {
@@ -375,6 +416,10 @@ export default function ChatScreen() {
   };
 
   const handleOpenCamera = async () => {
+    if (isOutOfCredits) {
+      router.push('/paywall');
+      return;
+    }
     try {
       await haptics.selectionAsync();
       const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -395,6 +440,10 @@ export default function ChatScreen() {
   };
 
   const handlePickImage = async () => {
+    if (isOutOfCredits) {
+      router.push('/paywall');
+      return;
+    }
     try {
       await haptics.selectionAsync();
       const res = await ImagePicker.launchImageLibraryAsync({
@@ -410,10 +459,24 @@ export default function ChatScreen() {
   };
 
   const handleSend = async (textToSend?: string) => {
+    if (isGenerating) return;
+
+    // Free users: 2 free messages per day (do not use credits to chat)
+    const isPro = user?.plan_name === 'pro' || user?.plan_name === 'max';
+    if (!isPro) {
+      const todayCount = await getDailyChatCount(user?.id);
+      setDailyChatCount(todayCount);
+      if (todayCount >= 2) {
+        haptics.impactAsync();
+        toggleCreditsModal(true, 'chat');
+        return;
+      }
+    }
+
     const text = (textToSend !== undefined ? textToSend : inputVal).trim();
     const imageToSend = attachedImageUri;
 
-    if ((!text && !imageToSend) || isGenerating) return;
+    if (!text && !imageToSend) return;
 
     haptics.impactAsync();
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -442,6 +505,11 @@ export default function ChatScreen() {
     setInputVal('');
     setAttachedImageUri(null);
     setIsGenerating(true);
+
+    if (!isPro) {
+      const nextCount = await incrementDailyChatCount(user?.id);
+      setDailyChatCount(nextCount);
+    }
 
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -503,7 +571,7 @@ export default function ChatScreen() {
           onError: (err, isInsufficientCredits) => {
             setIsGenerating(false);
             if (isInsufficientCredits) {
-              toggleCreditsModal(true, 'scan');
+              toggleCreditsModal(true, isPro ? 'scan' : 'chat');
             }
             setMessages((prev) =>
               prev.map((m) =>
@@ -511,7 +579,7 @@ export default function ChatScreen() {
                   ? {
                       ...m,
                       content: isInsufficientCredits
-                        ? 'You do not have enough credits to solve this scan. Please top up your credits.'
+                        ? (!isPro ? 'Ur limit has reached. Please upgrade to Pro to continue.' : 'You do not have enough credits to solve this scan. Please top up your credits.')
                         : m.content || `Unable to analyze the image right now (${err}). Please try again.`,
                       isStreaming: false,
                     }
@@ -571,16 +639,20 @@ export default function ChatScreen() {
           abortStreamRef.current = null;
           haptics.selectionAsync(true);
         },
-        onError: () => {
+        onError: (err?: string, isInsufficient?: boolean) => {
           setIsGenerating(false);
+          if (isInsufficient || err?.includes('limit_reached') || err?.includes('limit')) {
+            toggleCreditsModal(true, 'chat');
+          }
           setMessages((prev) =>
             prev.map((m) =>
               m.id === assistantId
                 ? {
                     ...m,
                     content:
-                      m.content ||
-                      "I'm having trouble connecting to the study server. Please verify your connection or try again in a moment.",
+                      (isInsufficient || err?.includes('limit_reached'))
+                        ? 'Ur limit has reached. Please upgrade to Pro to continue chatting.'
+                        : m.content || "I'm having trouble connecting to the study server. Please verify your connection or try again in a moment.",
                     isStreaming: false,
                   }
                 : m
@@ -611,12 +683,12 @@ export default function ChatScreen() {
     ]);
   };
 
-  const canSend = !isGenerating && (Boolean(inputVal.trim()) || Boolean(attachedImageUri));
+  const canSend = !isGenerating && (isOutOfFreeMessages || Boolean(inputVal.trim()) || Boolean(attachedImageUri));
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
       <ScreenHeader
-        title="Chat With Skeemy"
+        title=""
         onBack={handleBack}
         rightAction={
           messages.length > 0 ? (
@@ -639,7 +711,7 @@ export default function ChatScreen() {
         <ScrollView
           ref={scrollViewRef}
           className="flex-1 px-4 pt-4"
-          contentContainerStyle={{ paddingBottom: 140, flexGrow: 1 }}
+          contentContainerStyle={{ paddingBottom: 32, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
         >
           {messages.length === 0 ? (
@@ -700,8 +772,9 @@ export default function ChatScreen() {
                 );
               }
 
-              // Assistant message
-              const hasVisibleContent = msg.content.trim().length > 0;
+              // Assistant message — wait until visible text (not just leading # or *) has arrived
+              const hasVisibleContent =
+                msg.content.replace(/^[#*\-\s>`~_]+/g, '').trim().length > 0;
               const showQuiz = !msg.isStreaming && isQuizWorthy(msg.content, msg.prompt, Boolean(msg.topic));
 
               return (
@@ -754,17 +827,7 @@ export default function ChatScreen() {
                       ) : null}
                     </View>
                   ) : (
-                    <View
-                      style={[
-                        styles.loaderBubble,
-                        {
-                          backgroundColor: C.card,
-                          borderColor: C.border,
-                        },
-                      ]}
-                    >
-                      <TypingDots isDark={isDark} />
-                    </View>
+                    <ThinkingLoader isDark={isDark} />
                   )}
                 </View>
               );
@@ -775,8 +838,8 @@ export default function ChatScreen() {
         {/* ── Bottom Multimodal Input Dock (ChatGPT / Claude / Gemini Style) ── */}
         <View
           style={{
-            paddingBottom: Math.max(insets.bottom, 12) + 74,
-            backgroundColor: 'transparent',
+            paddingBottom: Math.max(insets.bottom, 12),
+            backgroundColor: C.background,
           }}
           className="pt-2 px-4"
         >
@@ -820,24 +883,18 @@ export default function ChatScreen() {
               </View>
             ) : null}
 
-            {/* Input Row: Camera + Gallery + TextInput + Send */}
+            {/* Input Row: Plus Button + TextInput + Send */}
             <View style={styles.composerRow}>
               <Pressable
-                onPress={handleOpenCamera}
+                onPress={() => {
+                  haptics.selectionAsync();
+                  setAttachModalVisible(true);
+                }}
                 disabled={isGenerating}
                 hitSlop={6}
                 style={[styles.mediaIconBtn, { backgroundColor: C.surfaceLow }]}
               >
-                <Icon name="Camera" size={18} color="default" />
-              </Pressable>
-
-              <Pressable
-                onPress={handlePickImage}
-                disabled={isGenerating}
-                hitSlop={6}
-                style={[styles.mediaIconBtn, { backgroundColor: C.surfaceLow }]}
-              >
-                <Icon name="Image" size={18} color="default" />
+                <Icon name="Plus" size={20} color="default" />
               </Pressable>
 
               <TextInput
@@ -872,30 +929,190 @@ export default function ChatScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* ── Attachment Bottom Sheet Modal ── */}
+      {attachModalVisible && (
+        <Modal
+          transparent
+          visible={attachModalVisible}
+          animationType="none"
+          onRequestClose={() => setAttachModalVisible(false)}
+        >
+          <View style={styles.sheetContainer}>
+            {/* Backdrop */}
+            <Animated.View
+              entering={FadeIn.duration(180)}
+              exiting={FadeOut.duration(150)}
+              style={StyleSheet.absoluteFill}
+            >
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => setAttachModalVisible(false)}
+              >
+                <BlurView
+                  intensity={5}
+                  blurMethod="dimezisBlurView"
+                  style={StyleSheet.absoluteFill}
+                  tint={isDark ? 'dark' : 'light'}
+                />
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    { backgroundColor: 'rgba(0,0,0,0.18)' },
+                  ]}
+                />
+              </Pressable>
+            </Animated.View>
+
+            {/* Bottom Sheet */}
+            <Animated.View
+              entering={SlideInDown.duration(220).easing(Easing.out(Easing.cubic))}
+              exiting={SlideOutDown.duration(180).easing(Easing.in(Easing.cubic))}
+              style={[
+                styles.sheet,
+                { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
+              ]}
+            >
+              <View
+                style={[
+                  styles.sheetHandle,
+                  { backgroundColor: isDark ? '#3A3A3C' : '#E5E5EA' },
+                ]}
+              />
+
+              <View style={styles.sheetContent}>
+                <View style={styles.attachGrid}>
+                  {/* Square 1: Camera */}
+                  <TouchableOpacity
+                    activeOpacity={isOutOfCredits ? 0.7 : 0.85}
+                    onPress={() => {
+                      if (isOutOfCredits) {
+                        haptics.impactAsync();
+                        setAttachModalVisible(false);
+                        router.push('/paywall');
+                        return;
+                      }
+                      haptics.selectionAsync();
+                      setAttachModalVisible(false);
+                      setTimeout(() => {
+                        handleOpenCamera();
+                      }, 220);
+                    }}
+                    style={[
+                      styles.attachSquare,
+                      {
+                        backgroundColor: isDark ? '#252528' : '#F8F9FA',
+                        borderColor: isDark
+                          ? 'rgba(255,255,255,0.08)'
+                          : 'rgba(0,0,0,0.08)',
+                      },
+                      isOutOfCredits && {
+                        opacity: 0.45,
+                        backgroundColor: isDark ? '#1E1E20' : '#F0F1F3',
+                        borderColor: isDark
+                          ? 'rgba(255,255,255,0.04)'
+                          : 'rgba(0,0,0,0.04)',
+                      },
+                    ]}
+                  >
+                    {isOutOfCredits && (
+                      <View style={styles.attachLockBadge}>
+                        <Icon name="Lock" size={13} color="muted" />
+                      </View>
+                    )}
+                    <View style={styles.attachIconWrap}>
+                      <Icon
+                        name="Camera"
+                        size={26}
+                        color={isOutOfCredits ? 'muted' : 'default'}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.attachSquareTitle,
+                        { color: isDark ? '#FFFFFF' : '#1C1C1E' },
+                        isOutOfCredits && { color: isDark ? '#8E8E93' : '#8E8E93' },
+                      ]}
+                    >
+                      Camera
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Square 2: Photos */}
+                  <TouchableOpacity
+                    activeOpacity={isOutOfCredits ? 0.7 : 0.85}
+                    onPress={() => {
+                      if (isOutOfCredits) {
+                        haptics.impactAsync();
+                        setAttachModalVisible(false);
+                        router.push('/paywall');
+                        return;
+                      }
+                      haptics.selectionAsync();
+                      setAttachModalVisible(false);
+                      setTimeout(() => {
+                        handlePickImage();
+                      }, 220);
+                    }}
+                    style={[
+                      styles.attachSquare,
+                      {
+                        backgroundColor: isDark ? '#252528' : '#F8F9FA',
+                        borderColor: isDark
+                          ? 'rgba(255,255,255,0.08)'
+                          : 'rgba(0,0,0,0.08)',
+                      },
+                      isOutOfCredits && {
+                        opacity: 0.45,
+                        backgroundColor: isDark ? '#1E1E20' : '#F0F1F3',
+                        borderColor: isDark
+                          ? 'rgba(255,255,255,0.04)'
+                          : 'rgba(0,0,0,0.04)',
+                      },
+                    ]}
+                  >
+                    {isOutOfCredits && (
+                      <View style={styles.attachLockBadge}>
+                        <Icon name="Lock" size={13} color="muted" />
+                      </View>
+                    )}
+                    <View style={styles.attachIconWrap}>
+                      <Icon
+                        name="Image"
+                        size={26}
+                        color={isOutOfCredits ? 'muted' : 'default'}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.attachSquareTitle,
+                        { color: isDark ? '#FFFFFF' : '#1C1C1E' },
+                        isOutOfCredits && { color: isDark ? '#8E8E93' : '#8E8E93' },
+                      ]}
+                    >
+                      Photos
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Animated.View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  loaderBubble: {
+  thinkingWrap: {
     alignSelf: 'flex-start',
-    borderRadius: 24,
-    borderTopLeftRadius: 6,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    borderWidth: 1,
-    minWidth: 68,
-    minHeight: 46,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 8,
   },
-  typingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    height: 18,
-    minWidth: 40,
+  thinkingText: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.1,
   },
   composerCard: {
     borderRadius: 28,
@@ -963,5 +1180,56 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  sheetContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    width: SCREEN_WIDTH,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    paddingTop: 14,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 5,
+    borderRadius: 2.5,
+    alignSelf: 'center',
+    marginBottom: 24,
+  },
+  sheetContent: {
+    paddingHorizontal: 24,
+  },
+  attachGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  attachSquare: {
+    flex: 1,
+    aspectRatio: 1.2,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+  attachIconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  attachSquareTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  attachLockBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
 });

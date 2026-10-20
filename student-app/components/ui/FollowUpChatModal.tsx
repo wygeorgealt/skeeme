@@ -48,8 +48,8 @@ export function FollowUpChatModal({ visible, onClose, scanContext, provider }: F
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
 
-        if (!isPro && questionsAsked >= 1) {
-            useAuthStore.getState().toggleCreditsModal(true, 'scan');
+        if (!isPro && questionsAsked >= 2) {
+            useAuthStore.getState().toggleCreditsModal(true, 'chat');
             return;
         }
 
