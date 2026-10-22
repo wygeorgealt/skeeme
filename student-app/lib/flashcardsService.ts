@@ -17,7 +17,7 @@ export async function createDeckFromExtraction(extractionId: string, title?: str
 }
 
 export async function fetchDeck(id: string) {
-  const res = await api.get(`/flashcards/decks/${id}`);
+  const res = await api.get(`flashcards/decks/${id}`);
   const raw = res.data?.data || res.data?.deck || res.data;
   if (!raw) return null;
   return {

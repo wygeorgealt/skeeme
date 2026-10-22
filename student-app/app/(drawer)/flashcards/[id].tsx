@@ -133,16 +133,39 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
 
     const showLoading = isGenerating && !card.front;
 
-    return (
-        <View style={{ height: 400, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
-            {/* Layers behind active card */}
-            <View style={{ position: 'absolute', width: '86%', height: 350, backgroundColor: isDark ? '#2A2A2D' : '#e9e7ed', borderRadius: 28, transform: [{ translateY: 28 }, { scale: 0.90 }], opacity: 0.5 }} />
-            <View style={{ position: 'absolute', width: '93%', height: 368, backgroundColor: isDark ? '#3A3A3E' : '#eeedf3', borderRadius: 30, transform: [{ translateY: 14 }, { scale: 0.95 }], opacity: 0.8 }} />
+    const cardHeight = useMemo(() => {
+        const len = Math.max((card?.front || '').length, (card?.back || '').length);
+        if (len > 240) return Math.min(SCREEN_HEIGHT * 0.60, 520);
+        if (len > 100) return Math.min(SCREEN_HEIGHT * 0.55, 475);
+        return Math.min(SCREEN_HEIGHT * 0.52, 445);
+    }, [card?.front, card?.back]);
 
-            <Pressable  onPress={handleFlip} style={{ flex: 1, width: '100%' }}>
+    const frontFontSize = useMemo(() => {
+        const len = (card?.front || '').length;
+        if (len > 220) return 14;
+        if (len > 120) return 15.5;
+        if (len > 60) return 17;
+        return 18.5;
+    }, [card?.front]);
+
+    const backFontSize = useMemo(() => {
+        const len = (card?.back || '').length;
+        if (len > 220) return 13;
+        if (len > 120) return 14;
+        if (len > 60) return 15;
+        return 16;
+    }, [card?.back]);
+
+    return (
+        <View style={{ height: cardHeight, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Layers behind active card */}
+            <View style={{ position: 'absolute', width: '88%', height: cardHeight - 36, backgroundColor: isDark ? '#2A2A2D' : '#e9e7ed', borderRadius: 28, transform: [{ translateY: 24 }, { scale: 0.90 }], opacity: 0.5 }} />
+            <View style={{ position: 'absolute', width: '94%', height: cardHeight - 18, backgroundColor: isDark ? '#3A3A3E' : '#eeedf3', borderRadius: 30, transform: [{ translateY: 12 }, { scale: 0.95 }], opacity: 0.8 }} />
+
+            <Pressable onPress={handleFlip} style={{ flex: 1, width: '100%' }}>
                 {/* FRONT FACE */}
                 <Animated.View style={[frontAnimatedStyle, { flex: 1 }]}>
-                    <View className="flex-1 rounded-[32px] p-6 justify-between shadow-xl" style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderWidth: StyleSheet.hairlineWidth, borderColor: isDark ? 'rgba(84,84,88,0.5)' : 'rgba(60,60,67,0.12)' }}>
+                    <View className="flex-1 rounded-[32px] p-5 justify-between shadow-xl" style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderWidth: StyleSheet.hairlineWidth, borderColor: isDark ? 'rgba(84,84,88,0.5)' : 'rgba(60,60,67,0.12)' }}>
                         {/* Top Metadata */}
                         <View className="flex-row items-center justify-between">
                             <View className="px-2 py-1 rounded-full bg-surface-container">
@@ -151,27 +174,31 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
                         </View>
 
                         {/* Center Content */}
-                        <View className="flex-1 justify-center items-center">
+                        <ScrollView 
+                            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 4 }}
+                            showsVerticalScrollIndicator={false}
+                            nestedScrollEnabled
+                            style={{ width: '100%' }}
+                        >
                             {showLoading ? (
                                 <View className="items-center">
                                     <ActivityIndicator size="large" color="#007AFF" />
-                                    <Text className="mt-4 text-center" style={{ fontSize: 16, color: isDark ? '#FFFFFF' : '#1E293B' }}>Generating card...</Text>
+                                    <Text className="mt-4 text-center" style={{ fontSize: 15, color: isDark ? '#FFFFFF' : '#1E293B' }}>Generating card...</Text>
                                 </View>
                             ) : (
                                 <MathText
                                     content={card.front}
                                     color={isDark ? '#FFF' : '#000'}
-                                    fontSize={22}
+                                    fontSize={frontFontSize}
                                     containerStyle={{ width: '100%', textAlign: 'center' }}
                                 />
                             )}
-                        </View>
+                        </ScrollView>
 
                         {/* Bottom Prompt */}
-                        <View className="flex-col gap-2 items-center pb-2">
-                            <Animated.View style={bounceStyle} className="flex-row items-center py-1.5 px-3 rounded-full bg-surface-container-low gap-1.5">
-                                <Icon name="Hand" size={16} color="secondary" />
-                                <Text className="font-label-sm" style={{ fontSize: 11, fontWeight: '600', color: isDark ? '#EBEBF5' : '#48484A' }}>Tap anywhere to flip card</Text>
+                        <View className="flex-col gap-2 items-center pb-1">
+                            <Animated.View style={bounceStyle} className="flex-row items-center py-1.5 px-3 rounded-full bg-surface-container-low">
+                                <Text className="font-label-sm" style={{ fontSize: 11, fontWeight: '600', color: isDark ? '#EBEBF5' : '#48484A' }}>Tap to flip</Text>
                             </Animated.View>
                         </View>
                     </View>
@@ -179,7 +206,7 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
 
                 {/* BACK FACE */}
                 <Animated.View style={[backAnimatedStyle, { flex: 1 }]}>
-                    <View className="flex-1 rounded-[32px] p-6 justify-between shadow-xl" style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderWidth: StyleSheet.hairlineWidth, borderColor: isDark ? 'rgba(84,84,88,0.5)' : 'rgba(60,60,67,0.12)' }}>
+                    <View className="flex-1 rounded-[32px] p-5 justify-between shadow-xl" style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderWidth: StyleSheet.hairlineWidth, borderColor: isDark ? 'rgba(84,84,88,0.5)' : 'rgba(60,60,67,0.12)' }}>
                         {/* Top Back Tag */}
                         <View className="flex-row items-center justify-between">
                             <View className="px-2.5 py-1 rounded-full bg-tertiary flex-row items-center gap-1">
@@ -193,7 +220,12 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
                         </View>
 
                         {/* Center Content */}
-                        <View className="flex-1 justify-center items-center">
+                        <ScrollView 
+                            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 4 }}
+                            showsVerticalScrollIndicator={false}
+                            nestedScrollEnabled
+                            style={{ width: '100%' }}
+                        >
                             {showLoading ? (
                                 <View className="items-center">
                                     <ActivityIndicator size="large" color="#34C759" />
@@ -202,11 +234,11 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
                                 <MathText
                                     content={card.back}
                                     color={isDark ? '#FFF' : '#000'}
-                                    fontSize={18}
+                                    fontSize={backFontSize}
                                     containerStyle={{ width: '100%', textAlign: 'center' }}
                                 />
                             )}
-                        </View>
+                        </ScrollView>
                     </View>
                 </Animated.View>
             </Pressable>
@@ -278,7 +310,7 @@ export default function StudyDeckScreen() {
     const { data: remoteDeck, isLoading, error, refetch } = useQuery({
         queryKey: ['deck', id],
         queryFn: async () => {
-            const res = await api.get(`/flashcards/decks/${id}`);
+            const res = await api.get(`flashcards/decks/${id}`);
             const raw = res.data?.data || res.data?.deck || res.data;
             if (!raw) return null;
             const normalized = {
@@ -820,8 +852,10 @@ export default function StudyDeckScreen() {
             <FlashcardDeckSummary
                 deckTitle={decodedTitle || 'Study Deck'}
                 subject="General"
-                totalCards={deck.flashcards.length}
-                ratings={ratings}
+                totalCards={deck?.flashcards?.length || cards.length}
+                ratings={ratings.easy + ratings.good + ratings.hard + ratings.again > 0 
+                    ? ratings 
+                    : { easy: deck?.flashcards?.length || cards.length, good: 0, hard: 0, again: 0 }}
                 sessionDurationMs={totalTimeSeconds * 1000}
                 streakCount={useAuthStore.getState().user?.streak?.current_streak || 0}
                 onFinish={() => router.back()}
@@ -888,12 +922,12 @@ export default function StudyDeckScreen() {
                 scrollEventThrottle={16}
             >
                 {cards.map((card: any, index: number) => (
-                    <View key={card.id?.toString() || `stream-${index}`} style={{ width: SCREEN_WIDTH, height: '100%', paddingHorizontal: 24 }}>
+                    <View key={card.id?.toString() || `stream-${index}`} style={{ width: SCREEN_WIDTH, height: '100%', paddingHorizontal: 16 }}>
                         <FlashcardItem card={card} isActive={currentIndex === index} isDark={isDark} isGenerating={isGenerating} />
                     </View>
                 ))}
                 {isGenerating && cards.length < (parseInt(card_count as string) || 0) && (
-                    <View style={{ width: SCREEN_WIDTH, height: '100%', paddingHorizontal: 24 }}>
+                    <View style={{ width: SCREEN_WIDTH, height: '100%', paddingHorizontal: 16 }}>
                         <View style={[s.loadingPlaceholder, isDark ? s.bgGrayDark : s.bgWhite, { marginTop: 20 }]}>
                             <SkeletonLoader width="60%" height={24} style={{ marginBottom: 16 }} />
                             <SkeletonLoader width="80%" height={16} />
@@ -903,89 +937,44 @@ export default function StudyDeckScreen() {
             </ScrollView>
 
             {/* Navigation Footer */}
-            <View className="px-4 pb-12 pt-5">
-                {currentIndex === cards.length - 1 && !isGenerating ? (
-                    <View className="w-full h-16 rounded-full overflow-hidden">
-                        <AnimatedButton
-                            title="Finish Deck"
-                            onPress={nextCard}
-                            type="capsule"
-                            backgroundColor="#007AFF"
-                            shadowColor="#0066D6"
-                            fullWidth
-                        />
-                    </View>
-                ) : (
-                    <View>
-                        {/* Spaced Repetition Rating Bar */}
-                        <View className="flex-col gap-2">
-                            <View className="flex-row justify-between items-center px-1">
-                                <Text className="font-label-sm" style={{ fontSize: 11, fontWeight: '600', color: C.textSecondary }}>How well did you know this?</Text>
-                            </View>
-                            <View className="flex-row gap-2 justify-between">
-                                <Pressable 
-                                    onPress={() => handleRating('again')} 
-                                    className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl shadow-sm"
-                                    style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
-                                >
-                                    <View className="w-2 h-2 rounded-full bg-error mb-1" />
-                                    <Text className="font-label-sm font-bold" style={{ fontSize: 11, color: C.text }}>Again</Text>
-                                    <Text className="font-label-sm" style={{ fontSize: 10, color: C.textSecondary }}>&lt; 1m</Text>
-                                </Pressable>
-                                
-                                <Pressable 
-                                    onPress={() => handleRating('hard')} 
-                                    className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl shadow-sm"
-                                    style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
-                                >
-                                    <View className="w-2 h-2 rounded-full bg-accent-indigo mb-1" />
-                                    <Text className="font-label-sm font-bold" style={{ fontSize: 11, color: C.text }}>Hard</Text>
-                                    <Text className="font-label-sm" style={{ fontSize: 10, color: C.textSecondary }}>10m</Text>
-                                </Pressable>
-                                
-                                <Pressable 
-                                    onPress={() => handleRating('good')} 
-                                    className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl shadow-md"
-                                    style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.2)' : '#e0edff', borderColor: C.primary, borderWidth: 1.5 }}
-                                >
-                                    <View className="w-2 h-2 rounded-full bg-accent-electric-blue mb-1" />
-                                    <Text className="font-label-sm font-bold text-accent-electric-blue" style={{ fontSize: 11 }}>Good</Text>
-                                    <Text className="font-label-sm text-accent-electric-blue font-medium" style={{ fontSize: 10 }}>1d</Text>
-                                </Pressable>
-                                
-                                <Pressable 
-                                    onPress={() => handleRating('easy')} 
-                                    className="flex-1 flex-col items-center justify-center py-2.5 px-1 rounded-2xl shadow-sm"
-                                    style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
-                                >
-                                    <View className="w-2 h-2 rounded-full bg-tertiary mb-1" />
-                                    <Text className="font-label-sm font-bold" style={{ fontSize: 11, color: C.text }}>Easy</Text>
-                                    <Text className="font-label-sm" style={{ fontSize: 10, color: C.textSecondary }}>4d</Text>
-                                </Pressable>
-                            </View>
-                        </View>
+            <View className="px-4 pb-12 pt-4">
+                <View className="flex-row items-center gap-3">
+                    <Pressable 
+                        onPress={prevCard} 
+                        disabled={currentIndex === 0} 
+                        className="w-14 h-14 rounded-2xl shadow-sm flex items-center justify-center"
+                        style={{ 
+                            backgroundColor: C.card, 
+                            borderColor: C.border, 
+                            borderWidth: 1,
+                            opacity: currentIndex === 0 ? 0.35 : 1
+                        }}
+                    >
+                        <Icon name="ChevronLeft" size={24} color={currentIndex === 0 ? "muted" : "default"} />
+                    </Pressable>
 
-                        {/* Bottom Utility Dock */}
-                        <View className="flex-row items-center justify-between mt-6">
-                            <Pressable 
-                                onPress={prevCard} 
-                                disabled={currentIndex === 0} 
-                                className="w-12 h-12 rounded-full shadow-sm flex items-center justify-center"
-                                style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
-                            >
-                                <Icon name="RotateCcw" size={20} color="default" style={{ opacity: currentIndex === 0 ? 0.3 : 1 }} />
-                            </Pressable>
-
-                            <Pressable 
-                                onPress={() => setIsFlagged(!isFlagged)} 
-                                className="w-12 h-12 rounded-full shadow-sm flex items-center justify-center"
-                                style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
-                            >
-                                <Icon name={isFlagged ? "BookmarkCheck" : "Bookmark"} size={20} color={isFlagged ? "primary" : "textSecondary"} />
-                            </Pressable>
+                    {currentIndex === cards.length - 1 && !isGenerating ? (
+                        <View className="flex-1 h-14 rounded-2xl overflow-hidden">
+                            <AnimatedButton
+                                title="Finish Deck"
+                                onPress={nextCard}
+                                type="capsule"
+                                backgroundColor="#007AFF"
+                                shadowColor="#0066D6"
+                                fullWidth
+                            />
                         </View>
-                    </View>
-                )}
+                    ) : (
+                        <Pressable 
+                            onPress={nextCard} 
+                            className="flex-1 h-14 rounded-2xl bg-accent-electric-blue flex-row items-center justify-center gap-2 shadow-sm"
+                            style={{ shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12 }}
+                        >
+                            <Text className="text-white font-bold text-[16px]">Next Card</Text>
+                            <Icon name="ChevronRight" size={20} color="white" />
+                        </Pressable>
+                    )}
+                </View>
             </View>
         </View>
     );
