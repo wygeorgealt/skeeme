@@ -11,8 +11,8 @@ export async function createDeckFromTopic(topic: string, count?: number) {
   return extractDeck(res.data);
 }
 
-export async function createDeckFromExtraction(extractionId: string) {
-  const res = await api.post('flashcards/decks', { extraction_id: extractionId });
+export async function createDeckFromExtraction(extractionId: string, title?: string) {
+  const res = await api.post('flashcards/decks', { extraction_id: extractionId, topic: title });
   return extractDeck(res.data);
 }
 

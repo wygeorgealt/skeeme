@@ -51,6 +51,13 @@ type FlashcardRequest struct {
 	Provider     Provider `json:"provider"`
 }
 
+// SummaryRequest holds parameters for generating a study summary
+type SummaryRequest struct {
+	Topic        string   `json:"topic"`
+	ExtractionID string   `json:"extraction_id"`
+	Provider     Provider `json:"provider"`
+}
+
 // Client defines the interface for an AI model provider
 type Client interface {
 	StreamCompletion(ctx context.Context, systemPrompt string, messages []Message, onToken StreamCallback) error

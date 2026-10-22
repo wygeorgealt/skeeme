@@ -24,8 +24,11 @@ import {
     AiSummary, 
     getStoredSummaries, 
     generateAiSummary, 
-    deleteSummary 
+    deleteSummary,
+    SummaryError,
 } from '@/lib/summaryService';
+import { useAuthStore } from '@/store/authStore';
+import { SUMMARY_COST, verifySufficientCredits, syncCreditBalance } from '@/lib/creditCosts';
 
 const SUGGESTIONS = [
     'Physics: Motion & Force',
@@ -40,6 +43,8 @@ export default function SummaryScreen() {
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     const params = useLocalSearchParams<{ topic?: string }>();
+    const toggleCreditsModal = useAuthStore((st) => st.toggleCreditsModal);
+    const checkAuth = useAuthStore((st) => st.checkAuth);
 
     const [mode, setMode] = useState<'topic' | 'file'>('topic');
     const [topic, setTopic] = useState(params.topic || '');
@@ -68,6 +73,7 @@ export default function SummaryScreen() {
     }, []);
 
     const handleGenerate = async () => {
+        if (isLoading) return;
         if (mode === 'topic' && !topic.trim()) {
             return Alert.alert('Required', 'Please enter a topic to summarize.');
         }
@@ -75,10 +81,13 @@ export default function SummaryScreen() {
             return Alert.alert('Required', 'Please select a document to summarize.');
         }
 
+        const canAfford = await verifySufficientCredits(SUMMARY_COST, 'scan', true);
+        if (!canAfford) return;
+
         setIsLoading(true);
         try {
             await haptics.impactAsync();
-            let extractedText: string | undefined = undefined;
+            let extractionId: string | null = null;
 
             if (mode === 'file' && selectedFile) {
                 try {
@@ -88,23 +97,40 @@ export default function SummaryScreen() {
                         name: selectedFile.name || 'document',
                         type: selectedFile.mimeType || 'application/octet-stream',
                     } as any);
-                    fd.append('type', 'summary');
                     const res = await api.post('files/extract', fd, {
                         headers: { 'Content-Type': 'multipart/form-data' },
                     });
-                    extractedText = res.data?.text || res.data?.extracted_text;
-                } catch {
-                    // Fall back cleanly if upload extraction endpoint is offline
+                    extractionId = res.data?.extraction_id || null;
+                } catch (e: any) {
+                    setIsLoading(false);
+                    return Alert.alert(
+                        'Could not read document',
+                        e?.response?.data?.message || 'We could not extract text from this file. Try a text-based PDF, DOCX or TXT.'
+                    );
+                }
+                if (!extractionId) {
+                    setIsLoading(false);
+                    return Alert.alert('Could not read document', 'No readable text was found in this file.');
                 }
             }
 
             const targetTopic = mode === 'topic' ? topic : (selectedFile?.name || 'Document Summary');
-            const summary = await generateAiSummary(targetTopic, extractedText);
+            const summary = await generateAiSummary(targetTopic, extractionId);
             setOpenedFromCreator(true);
+            setActiveTab('notes');
             setViewingSummary(summary);
             await loadSummaries();
-        } catch {
-            Alert.alert('Error', 'Failed to generate summary. Please try again.');
+            syncCreditBalance().catch(() => {});
+        } catch (e: any) {
+            if (e instanceof SummaryError && e.code === 'insufficient_credits') {
+                toggleCreditsModal(true, 'scan');
+            } else if (e instanceof SummaryError && e.code === 'non_educational') {
+                Alert.alert('Academic topics only', 'Skeemy summaries are for study subjects like maths, science, history, languages and exam prep. Try an academic topic.');
+            } else if (e instanceof SummaryError && e.code === 'incomplete') {
+                Alert.alert('Summary incomplete', 'The AI returned an incomplete summary. Your credits were refunded. Please try again.');
+            } else {
+                Alert.alert('Network error', 'Could not reach the study server. Check your connection and try again. You were not charged.');
+            }
         } finally {
             setIsLoading(false);
         }

@@ -36,6 +36,7 @@ import { scannerService, ScanResult } from '@/lib/scanner';
 import { haptics } from '@/lib/haptics';
 import { MathText } from '@/components/ui/MathText';
 import { appStorage } from '@/lib/storage';
+import { SCAN_SOLVE_COST, verifySufficientCredits, syncCreditBalance } from '@/lib/creditCosts';
 
 const { width } = Dimensions.get('window');
 
@@ -155,6 +156,9 @@ export default function ScanScreen() {
     };
 
     const processImage = async (uri: string) => {
+        const canAfford = await verifySufficientCredits(SCAN_SOLVE_COST, 'scan', true);
+        if (!canAfford) return;
+
         setLoading(true);
         try {
             const manip = await manipulateAsync(
@@ -169,6 +173,7 @@ export default function ScanScreen() {
             if (resp.results && resp.results.length > 0) {
                 setResults(resp.results);
                 await haptics.notificationAsync();
+                syncCreditBalance().catch(() => {});
 
                 const topResult = resp.results[0];
                 const newScanItem: RecentScanItem = {

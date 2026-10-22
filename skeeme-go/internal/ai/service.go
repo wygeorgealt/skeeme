@@ -201,6 +201,15 @@ func (s *Service) StreamQuiz(ctx context.Context, req QuizRequest, content strin
 	})
 }
 
+func (s *Service) StreamSummary(ctx context.Context, req SummaryRequest, content string, onToken StreamCallback) error {
+	userPrompt := fmt.Sprintf("Topic: %s\n\nSource material (use this if present, otherwise rely on the topic):\n%s", req.Topic, content)
+	messages := []Message{{Role: "user", Content: userPrompt}}
+
+	return s.runWithFallback(ctx, req.Provider, onToken, func(c Client, cb StreamCallback) error {
+		return c.StreamCompletion(ctx, SummaryGenerationSystemPrompt, messages, cb)
+	})
+}
+
 func (s *Service) StreamFlashcards(ctx context.Context, req FlashcardRequest, content string, onToken StreamCallback) error {
 	systemPrompt := FlashcardGenerationSystemPrompt(req.CardCount, req.Difficulty)
 	userPrompt := fmt.Sprintf("Topic / Source Material:\n%s", content)

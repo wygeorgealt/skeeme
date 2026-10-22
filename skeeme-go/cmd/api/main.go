@@ -260,6 +260,7 @@ func main() {
 		r.Post("/api/scan/chat", aiHandler.Chat)
 		r.Post("/api/quizzes/generate", aiHandler.GenerateQuiz)
 		r.Post("/api/flashcards/generate", aiHandler.GenerateFlashcards)
+		r.Post("/api/summaries/generate", aiHandler.GenerateSummary)
 	})
 
 	// Admin AI Switchboard & Credit Dispenser (Password-protected Web UI & API)
@@ -374,6 +375,7 @@ func main() {
 			r.Post("/scan/chat", aiHandler.Chat)
 			r.Post("/quizzes/generate", aiHandler.GenerateQuiz)
 			r.Post("/flashcards/generate", aiHandler.GenerateFlashcards)
+			r.Post("/summaries/generate", aiHandler.GenerateSummary)
 		})
 	})
 

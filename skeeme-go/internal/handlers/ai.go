@@ -153,7 +153,7 @@ func (h *AIHandler) Solve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idempotencyKey := h.getIdempotencyKey(r)
-	cost := 25
+	cost := credits.ScanSolveCost
 	actionType := "scan_solve"
 	modelUsed := h.resolveModelUsed(r.Context(), req.Provider)
 
@@ -344,7 +344,7 @@ func (h *AIHandler) GenerateQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idempotencyKey := h.getIdempotencyKey(r)
-	cost := req.QuestionCount * 10
+	cost := credits.QuizCost(req.QuestionCount)
 	actionType := "quiz_generation"
 	modelUsed := h.resolveModelUsed(r.Context(), req.Provider)
 
@@ -457,7 +457,7 @@ func (h *AIHandler) GenerateFlashcards(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idempotencyKey := h.getIdempotencyKey(r)
-	cost := req.CardCount * 5
+	cost := credits.FlashcardCost(req.CardCount)
 	actionType := "flashcard_generation"
 	modelUsed := h.resolveModelUsed(r.Context(), req.Provider)
 

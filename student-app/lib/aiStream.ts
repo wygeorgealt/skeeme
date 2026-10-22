@@ -179,6 +179,19 @@ export function streamFlashcardGenerate(
 }
 
 /**
+ * Stream a study-summary generation request (notes + mind map JSON).
+ */
+export function streamSummaryGenerate(
+    params: {
+        topic: string;
+        extraction_id?: string | null;
+    },
+    callbacks: StreamCallbacks
+): () => void {
+    return streamFromAI('/api/summaries/generate', params, callbacks);
+}
+
+/**
  * Stream a follow-up chat request for a scan.
  */
 export function streamScanFollowUpChat(

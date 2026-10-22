@@ -31,6 +31,7 @@ import { streamScanFollowUpChat } from '@/lib/aiStream';
 import { scannerService, ScanResult } from '@/lib/scanner';
 import { useAuthStore } from '@/store/authStore';
 import { appStorage } from '@/lib/storage';
+import { SCAN_SOLVE_COST, hasEnoughCredits, verifySufficientCredits, syncCreditBalance } from '@/lib/creditCosts';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -527,7 +528,7 @@ export default function ChatScreen() {
   const checkAuth = useAuthStore((s) => s.checkAuth);
 
   const isPro = user?.plan_name === 'pro' || user?.plan_name === 'max';
-  const isOutOfCredits = !isPro && (user?.credits ?? 0) <= 0;
+  const isOutOfCredits = !hasEnoughCredits(user, SCAN_SOLVE_COST);
 
   const [inputVal, setInputVal] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -661,8 +662,8 @@ export default function ChatScreen() {
 
     // If an image is attached, this is a Scan & Solve action (uses credits, NOT free chat messages)
     if (isScanAction) {
-      const userCredits = user?.credits ?? 0;
-      if (!isPro && userCredits <= 0) {
+      const canAfford = await verifySufficientCredits(SCAN_SOLVE_COST, 'scan', false);
+      if (!canAfford) {
         haptics.impactAsync();
         const { markdown, errorAction } = getChatErrorResponse('insufficient_credits', { isInsufficientCredits: true });
         const userMsg: ChatMessage = {
@@ -854,7 +855,7 @@ export default function ChatScreen() {
               prev.map((m) => (m.id === assistantId ? { ...m, isStreaming: false } : m))
             );
             abortStreamRef.current = null;
-            checkAuth().catch(() => {});
+            syncCreditBalance().catch(() => {});
             haptics.selectionAsync(true);
           },
           onError: (err, isInsufficientCredits) => {

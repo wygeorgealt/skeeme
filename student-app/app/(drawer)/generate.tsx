@@ -6,6 +6,7 @@ import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimate
 import { Icon } from '@/components/ui/Icon';
 import { MathText, formatMathPlainText } from '@/components/ui/MathText';
 import { streamQuizGenerate } from '@/lib/aiStream';
+import { quizCost, hasEnoughCredits, verifySufficientCredits, syncCreditBalance } from '@/lib/creditCosts';
 
 import { useFocusEffect, useLocalSearchParams, router } from 'expo-router';
 import { api } from '@/lib/api';
@@ -353,30 +354,13 @@ export default function GenerateQuizScreen() {
         if (mode === 'topic' && !topic.trim()) return Alert.alert('Required', 'Please enter a topic.');
         if (mode === 'file' && !selectedFile) return Alert.alert('Required', 'Please select a document.');
         
-        const pricingConfig = useAuthStore.getState().pricingConfig;
-        const planTier = user?.plan_name === 'free' ? 'free' : 'paid';
-        const flatCost = (pricingConfig?.rates?.quiz_generation as any)?.[planTier] ?? 30;
-
-
-
-        // Pre-flight check
-        let currentCredits = user?.credits ?? 0;
-        let isUnlimited = (user?.plan_name ?? 'free') !== 'free';
-
-        if (!isUnlimited && currentCredits <= 0) {
-            try {
-                await queryClient.refetchQueries({ queryKey: ['student', 'me'] });
-                const refreshed = useAuthStore.getState().user;
-                if (refreshed) {
-                    currentCredits = refreshed.credits ?? currentCredits;
-                    isUnlimited = (refreshed.plan_name ?? 'free') !== 'free';
-                }
-            } catch (e) { }
-
-            if (!isUnlimited && currentCredits <= 0) {
-                setShowOutOfCredits(true);
-                return;
-            }
+        // Pre-flight: make sure the balance covers the WHOLE quiz before anything starts,
+        // so the user is never stopped or errored mid-generation.
+        const quizCreditCost = quizCost(parseInt(questionCount) || 10);
+        const canAfford = await verifySufficientCredits(quizCreditCost, 'quiz', false);
+        if (!canAfford) {
+            setShowOutOfCredits(true);
+            return;
         }
 
         setIsLoading(true);
@@ -509,7 +493,8 @@ export default function GenerateQuizScreen() {
             posthog.capture('quiz_generated_stream', { mode, difficulty, format });
             markGenerationSuccess('quiz').catch(() => {});
 
-            // Refresh user credits via React Query
+            // Refresh user credits
+            await syncCreditBalance();
             await queryClient.refetchQueries({ queryKey: ['student', 'me'] });
             const refreshed = useAuthStore.getState().user;
             if (refreshed) {

@@ -14,6 +14,7 @@ import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { MathText } from '@/components/ui/MathText';
 import { useAuthStore } from '@/store/authStore';
 import { streamFlashcardGenerate } from '@/lib/aiStream';
+import { syncCreditBalance } from '@/lib/creditCosts';
 import * as SecureStore from 'expo-secure-store';
 import Animated, {
     interpolate,
@@ -217,7 +218,14 @@ FlashcardItem.displayName = 'FlashcardItem';
 
 
 export default function StudyDeckScreen() {
-    const { id, autoStart, topic, card_count, difficulty } = useLocalSearchParams();
+    const { id, autoStart, topic, card_count, difficulty, extraction_id } = useLocalSearchParams<{
+        id: string;
+        autoStart?: string;
+        topic?: string;
+        card_count?: string;
+        difficulty?: string;
+        extraction_id?: string;
+    }>();
     const scrollRef = useRef<ScrollView>(null);
     const esRef = useRef<any>(null);
     const queryClient = useQueryClient();
@@ -362,9 +370,10 @@ export default function StudyDeckScreen() {
         const cleanup = streamFlashcardGenerate(
             {
                 deck_id: id as string,
-                topic: (topic as string) || decodedTitle || 'General Study',
+                topic: (topic as string) || decodedTitle || (extraction_id ? 'Document Flashcards' : 'General Study'),
                 card_count: parseInt(card_count as string) || 10,
                 difficulty: (difficulty as string) || 'medium',
+                extraction_id: (extraction_id as string) || null,
             },
             {
                 onStatus: (message) => {
@@ -432,6 +441,9 @@ export default function StudyDeckScreen() {
                 });
             }
             markGenerationSuccess('flashcard').catch(() => {});
+            // Refresh the credit balance so all screens show the post-generation balance
+            syncCreditBalance().catch(() => {});
+            queryClient.invalidateQueries({ queryKey: ['student', 'me'] });
         } catch (err) {
             if (__DEV__) console.warn('Failed to save streamed flashcards:', err);
             Alert.alert('Save Failed', 'Unable to persist generated flashcards. Please try again.');

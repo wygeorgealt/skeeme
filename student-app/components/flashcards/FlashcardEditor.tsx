@@ -15,8 +15,11 @@ import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 
 interface Props {
-    onGenerate: (data: { topic?: string; count: number; contentFocus: string[] }) => Promise<void>;
+    onGenerate: (data: { topic?: string; count: number; contentFocus: string[]; mode: 'topic' | 'file' }) => Promise<void>;
     onPickFile?: () => Promise<void>;
+    selectedFile?: { name: string; size?: number } | null;
+    isExtracting?: boolean;
+    onClearFile?: () => void;
     initialTopic?: string;
 }
 
@@ -34,7 +37,14 @@ const FOCUS_OPTIONS = [
     { id: 'qa', title: 'Q&A Scenario Practice', icon: 'Brain' as const, desc: 'Real-world prompt and scenario drills' },
 ] as const;
 
-export function FlashcardEditor({ onGenerate, onPickFile, initialTopic }: Props) {
+export function FlashcardEditor({ 
+    onGenerate, 
+    onPickFile, 
+    selectedFile,
+    isExtracting = false,
+    onClearFile,
+    initialTopic 
+}: Props) {
     const insets = useSafeAreaInsets();
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
@@ -52,9 +62,10 @@ export function FlashcardEditor({ onGenerate, onPickFile, initialTopic }: Props)
         try {
             await haptics.impactAsync();
             await onGenerate({ 
-                topic: mode === 'topic' ? topic : undefined, 
+                topic: mode === 'topic' ? topic : (selectedFile?.name || ''), 
                 count, 
-                contentFocus 
+                contentFocus,
+                mode,
             });
         } finally {
             setLoading(false);
@@ -129,7 +140,7 @@ export function FlashcardEditor({ onGenerate, onPickFile, initialTopic }: Props)
                     onPress={async () => {
                         haptics.selectionAsync();
                         setMode('file');
-                        if (onPickFile) await onPickFile();
+                        if (!selectedFile && onPickFile) await onPickFile();
                     }}
                     style={{
                         flex: 1,
@@ -244,29 +255,47 @@ export function FlashcardEditor({ onGenerate, onPickFile, initialTopic }: Props)
                         }}
                     >
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
-                            <Icon name="UploadCloud" size={26} color="default" />
+                            <Icon name={selectedFile ? "FileText" : "UploadCloud"} size={26} color={selectedFile ? "primary" : "default"} />
                             <View style={{ flex: 1 }}>
                                 <Text style={{ fontSize: 14, fontWeight: '600', color: C.text }} numberOfLines={1}>
-                                    Attach Lecture Slides or Notes
+                                    {selectedFile ? selectedFile.name : 'Attach Lecture Slides or Notes'}
                                 </Text>
-                                <Text style={{ fontSize: 12, fontWeight: '400', color: C.textSecondary, marginTop: 2 }} numberOfLines={1}>
-                                    PDF, DOCX, TXT (Max 25MB)
+                                <Text style={{ fontSize: 12, fontWeight: '400', color: isExtracting ? C.primary : (selectedFile ? '#00837C' : C.textSecondary), marginTop: 2 }} numberOfLines={1}>
+                                    {isExtracting ? 'Extracting text from document...' : (selectedFile ? 'Document ready for flashcards' : 'PDF, DOCX, TXT (Max 25MB)')}
                                 </Text>
                             </View>
                         </View>
-                        <Pressable 
-                            onPress={onPickFile}
-                            style={{
-                                paddingHorizontal: 12,
-                                paddingVertical: 8,
-                                borderRadius: 12,
-                                backgroundColor: isDark ? 'rgba(0, 122, 255, 0.16)' : '#EBF5FF',
-                                borderColor: C.primary,
-                                borderWidth: 1,
-                            }}
-                        >
-                            <Text style={{ fontSize: 13, fontWeight: '700', color: C.primary }}>Add Doc</Text>
-                        </Pressable>
+                        {isExtracting ? (
+                            <ActivityIndicator size="small" color={C.primary} />
+                        ) : selectedFile ? (
+                            <Pressable 
+                                onPress={onClearFile || onPickFile}
+                                style={{
+                                    paddingHorizontal: 12,
+                                    paddingVertical: 8,
+                                    borderRadius: 12,
+                                    backgroundColor: isDark ? 'rgba(255, 69, 58, 0.16)' : '#FEE2E2',
+                                    borderColor: isDark ? 'rgba(255, 69, 58, 0.4)' : '#FCA5A5',
+                                    borderWidth: 1,
+                                }}
+                            >
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: '#DC2626' }}>Remove</Text>
+                            </Pressable>
+                        ) : (
+                            <Pressable 
+                                onPress={onPickFile}
+                                style={{
+                                    paddingHorizontal: 12,
+                                    paddingVertical: 8,
+                                    borderRadius: 12,
+                                    backgroundColor: isDark ? 'rgba(0, 122, 255, 0.16)' : '#EBF5FF',
+                                    borderColor: C.primary,
+                                    borderWidth: 1,
+                                }}
+                            >
+                                <Text style={{ fontSize: 13, fontWeight: '700', color: C.primary }}>Add Doc</Text>
+                            </Pressable>
+                        )}
                     </View>
                 </View>
             )}
