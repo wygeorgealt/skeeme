@@ -142,7 +142,10 @@ export default function StudyHistoryDashboard() {
             const data: FlashcardDeck[] = rawList.map((d: any) => ({
                 id: normalizeNumber(d.id, 0) || 0,
                 title: d.title || 'Flashcard Deck',
-                flashcards_count: normalizeNumber(d.flashcards_count, 0) || 0,
+                flashcards_count: normalizeNumber(
+                    d.flashcards_count,
+                    Array.isArray(d.flashcards) ? d.flashcards.length : Array.isArray(d.cards) ? d.cards.length : 0
+                ) || 0,
                 created_at: normalizeDate(d.created_at),
             }));
             await storage.setItem('cache_flashcard_decks', JSON.stringify(data));
@@ -291,7 +294,7 @@ export default function StudyHistoryDashboard() {
         <View style={{ flex: 1, backgroundColor: C.background }}>
             <ScreenHeader
                 title="History"
-                onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)' as any))}
+                onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/(tabs)' as any))}
             />
             <View className="px-5 pb-4">
                 <View className="mt-2 gap-4">
@@ -490,7 +493,6 @@ export default function StudyHistoryDashboard() {
                                     <Icon name="Trash2" size={15} color="destructive" />
                                     <Text style={{ fontSize: 13, fontWeight: '700', color: C.destructive }}>Clear Archive</Text>
                                 </Pressable>
-                                <Text style={{ fontSize: 12, color: C.textSecondary }}>Showing recent cloud synced sessions.</Text>
                             </View>
                         ) : null
                     }
@@ -509,28 +511,28 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
                 borderColor: C.border,
                 borderWidth: 1,
             }}
-            className="p-5 rounded-[24px] flex-col gap-3.5 shadow-sm"
+            className="p-5 rounded-[26px] flex-col gap-4 shadow-sm"
         >
-            <View className="flex-row items-start justify-between gap-3">
+            <View className="flex-row items-center justify-between gap-3">
                 <View className="flex-row items-start gap-3 flex-1">
                     <View
                         className="w-11 h-11 rounded-2xl items-center justify-center shrink-0 mt-0.5"
-                        style={{ backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}
+                        style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.14)' : '#EAF3FF' }}
                     >
-                        <Icon name="BookOpen" size={22} color="default" />
+                        <Icon name="BookOpen" size={21} color="primary" />
                     </View>
                     <View className="flex-1 flex-col">
                         <View className="flex-row items-center gap-1.5 flex-wrap">
                             <View
                                 className="px-2 py-0.5 rounded-full"
-                                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                                style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.12)' : '#EAF3FF' }}
                             >
-                                <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }}>
-                                    Summary + Map
+                                <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 0.4, color: C.primary }}>
+                                    SUMMARY
                                 </Text>
                             </View>
                         </View>
-                        <Text style={{ fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: C.text }} className="mt-1" numberOfLines={1}>
+                        <Text style={{ fontSize: 18, fontWeight: '700', letterSpacing: -0.3, color: C.text }} className="mt-1" numberOfLines={2}>
                             {item.title || 'Alkene Addition Reactions'}
                         </Text>
                         <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary }} className="mt-0.5">
@@ -542,7 +544,10 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
             </View>
 
             {/* Concepts preview pills */}
-            <View className="flex-row items-center gap-2 overflow-hidden py-1">
+            <View
+                className="flex-row items-center gap-2 overflow-hidden pt-3"
+                style={{ borderTopWidth: 1, borderTopColor: C.border }}
+            >
                 <View
                     style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
                     className="px-2.5 py-1 rounded-xl flex-row items-center gap-1.5"
@@ -573,6 +578,7 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
                 >
                     <Icon name="BookOpen" size={16} color="white" />
                     <Text className="text-white" style={{ fontSize: 14, fontWeight: '600' }}>Read Summary</Text>
+                    <Icon name="ArrowRight" size={15} color="white" />
                 </Pressable>
             </View>
         </View>
@@ -638,42 +644,68 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                 borderColor: C.border,
                 borderWidth: 1,
             }}
-            className="p-5 rounded-[24px] flex-col gap-3.5 shadow-sm"
+            className="p-5 rounded-[26px] flex-col gap-4 shadow-sm"
         >
-            <View className="flex-row items-start justify-between gap-3">
+            <View className="flex-row items-center justify-between gap-3">
+                <View
+                    className="w-11 h-11 rounded-2xl items-center justify-center shrink-0"
+                    style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.14)' : '#EAF3FF' }}
+                >
+                    <Icon name="Quiz" size={21} color="primary" />
+                </View>
                 <View className="flex-1 flex-col">
                     <View className="flex-row items-center gap-1.5 flex-wrap">
+                        <View
+                            style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.12)' : '#EAF3FF' }}
+                            className="px-2 py-0.5 rounded-full"
+                        >
+                            <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 0.4, color: C.primary }}>
+                                QUIZ
+                            </Text>
+                        </View>
                         <View
                             style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
                             className="px-2 py-0.5 rounded-full"
                         >
-                            <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }}>
+                            <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 0.4, color: C.textSecondary }}>
                                 {difficultyTag}
                             </Text>
                         </View>
                     </View>
-                    <Text style={{ fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: C.text }} className="mt-1" numberOfLines={1}>
+                    <Text style={{ fontSize: 18, fontWeight: '700', letterSpacing: -0.3, color: C.text }} className="mt-1" numberOfLines={2}>
                         {displayTopic}
-                    </Text>
-                    <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary }} className="mt-0.5">
-                        {session.total_questions} Questions • {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                 </View>
                 
                 <View className="items-end shrink-0">
                     <View
                         style={{ backgroundColor: C.selectedBackground }}
-                        className="w-12 h-12 rounded-full items-center justify-center relative"
+                        className="w-[58px] h-[58px] rounded-full items-center justify-center relative"
                     >
-                        <Svg width={48} height={48} viewBox="0 0 36 36" style={{ transform: [{ rotate: '-90deg' }] }}>
+                        <Svg width={58} height={58} viewBox="0 0 36 36" style={{ transform: [{ rotate: '-90deg' }] }}>
                             <Circle cx="18" cy="18" r="15.9155" fill="none" stroke={isDark ? '#2C2C2E' : '#E3E2E7'} strokeWidth="3.5" />
                             <Circle cx="18" cy="18" r="15.9155" fill="none" stroke={C.primary} strokeWidth="3.5" strokeDasharray={`${pct}, 100`} strokeLinecap="round" />
                         </Svg>
                         <View className="absolute inset-0 items-center justify-center">
-                            <Text style={{ fontSize: 11, fontWeight: '700', color: C.primary }}>{Math.round(pct)}%</Text>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: C.primary }}>{Math.round(pct)}%</Text>
                         </View>
                     </View>
                 </View>
+            </View>
+
+            <View
+                className="flex-row items-center gap-2 pt-2"
+                style={{ borderTopWidth: 1, borderTopColor: C.border }}
+            >
+                <Icon name="ListChecks" size={14} color="secondary" />
+                <Text style={{ fontSize: 12, fontWeight: '500', color: C.textSecondary }}>
+                    {session.total_questions} questions
+                </Text>
+                <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: C.textTertiary }} />
+                <Icon name="Clock" size={14} color="secondary" />
+                <Text style={{ fontSize: 12, fontWeight: '500', color: C.textSecondary }}>
+                    {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Text>
             </View>
             
             <View className="flex-row items-center justify-between pt-1">
@@ -689,7 +721,7 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                     <Pressable
                         style={{ backgroundColor: C.surfaceLow, borderColor: C.border, borderWidth: 1 }}
                         className="h-10 px-4 rounded-full flex-row items-center gap-1 active:opacity-80"
-                        onPress={() => router.push(`/(drawer)/history/${session.id}` as any)}
+                        onPress={() => router.push(`/(drawer)/(tabs)/history/${session.id}` as any)}
                     >
                         <Text style={{ fontSize: 14, fontWeight: '600', color: C.text }}>Review</Text>
                         <Icon name="ChevronRight" size={16} color="secondary" />
@@ -772,25 +804,28 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                 borderColor: C.border,
                 borderWidth: 1,
             }}
-            className="p-5 rounded-[24px] flex-col gap-3.5 shadow-sm"
+            className="p-5 rounded-[26px] flex-col gap-4 shadow-sm"
         >
-            <View className="flex-row items-start justify-between gap-3">
+            <View className="flex-row items-center justify-between gap-3">
+                <View
+                    className="w-11 h-11 rounded-2xl items-center justify-center shrink-0"
+                    style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.14)' : '#EAF3FF' }}
+                >
+                    <Icon name="Flashcards" size={21} color="primary" />
+                </View>
                 <View className="flex-1 flex-col">
                     <View className="flex-row items-center gap-1.5 flex-wrap">
                         <View
-                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
+                            style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.12)' : '#EAF3FF' }}
                             className="px-2 py-0.5 rounded-full"
                         >
-                            <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: C.textSecondary }}>
-                                {deck.flashcards_count} Cards
+                            <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 0.4, color: C.primary }}>
+                                {deck.flashcards_count} cards
                             </Text>
                         </View>
                     </View>
-                    <Text style={{ fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: C.text }} className="mt-1" numberOfLines={1}>
+                    <Text style={{ fontSize: 18, fontWeight: '700', letterSpacing: -0.3, color: C.text }} className="mt-1" numberOfLines={2}>
                         {deck.title}
-                    </Text>
-                    <Text style={{ fontSize: 13, fontWeight: '400', color: C.textSecondary }} className="mt-0.5">
-                        {new Date(deck.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                 </View>
 
@@ -817,7 +852,10 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                 </Pressable>
             </View>
             
-            <View className="flex-row items-center justify-between pt-3">
+            <View
+                className="flex-row items-center justify-between pt-3"
+                style={{ borderTopWidth: 1, borderTopColor: C.border }}
+            >
                 <Pressable 
                     className="h-10 px-5 rounded-full flex-row items-center gap-1.5 active:opacity-80"
                     style={{ backgroundColor: C.primary }}
@@ -827,7 +865,7 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                     <Text className="text-white" style={{ fontSize: 14, fontWeight: '600' }}>Study Deck</Text>
                 </Pressable>
                 <Text style={{ fontSize: 13, color: C.textSecondary }}>
-                    {new Date(deck.created_at).toLocaleDateString()}
+                    {new Date(deck.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                 </Text>
             </View>
         </View>

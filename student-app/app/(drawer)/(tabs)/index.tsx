@@ -12,6 +12,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
+import { Glass } from '@/components/ui/Glass';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
     useSharedValue,
@@ -25,6 +26,7 @@ import { useAuthStore } from '@/store/authStore';
 import { haptics } from '@/lib/haptics';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { StreakAnimation } from '@/components/StreakAnimation';
 import {
     DailyActivityTask,
     getDailyActivities,
@@ -47,6 +49,7 @@ export default function HomeDashboard() {
     const toggleCreditsModal = useAuthStore((s) => s.toggleCreditsModal);
 
     const [profileMenuVisible, setProfileMenuVisible] = useState(false);
+    const [streakPresentationVisible, setStreakPresentationVisible] = useState(false);
     const [dailyTasks, setDailyTasks] = useState<DailyActivityTask[]>([]);
 
     // Queries for live data from Brimble API
@@ -213,7 +216,11 @@ export default function HomeDashboard() {
                         activeOpacity={0.8}
                         onPress={() => {
                             haptics.selectionAsync();
-                            scrollViewRef.current?.scrollTo({ y: 320, animated: true });
+                            if (streak > 0) {
+                                setStreakPresentationVisible(true);
+                            } else {
+                                scrollViewRef.current?.scrollTo({ y: 320, animated: true });
+                            }
                         }}
                         style={[
                             styles.badgePill,
@@ -261,13 +268,16 @@ export default function HomeDashboard() {
                         activeOpacity={1}
                         onPress={() => setProfileMenuVisible(false)}
                     >
-                        <View
+                        <Glass
+                            fallbackColor={isDark ? '#1C1C1E' : '#FFFFFF'}
+                            fallbackStyle={[
+                                styles.dropdownFallback,
+                                { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' },
+                            ]}
                             style={[
                                 styles.dropdownMenu,
                                 {
                                     top: Math.max(insets.top, 12) + 52,
-                                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
                                 },
                             ]}
                         >
@@ -314,7 +324,7 @@ export default function HomeDashboard() {
                                 </View>
                                 <Icon name="ChevronRight" size={16} color="secondary" />
                             </TouchableOpacity>
-                        </View>
+                        </Glass>
                     </TouchableOpacity>
                 </Modal>
             )}
@@ -356,7 +366,7 @@ export default function HomeDashboard() {
                         <View style={styles.dailyGoalHeader}>
                             <View style={styles.dailyGoalLeft}>
                                 <View style={styles.targetIconWrap}>
-                                    <Icon name="BowArrow" size={20} color="default" />
+                                    <Icon name="Target" size={20} color="default" />
                                 </View>
                                 <View>
                                     <Text style={[styles.dailyGoalTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
@@ -465,7 +475,7 @@ export default function HomeDashboard() {
                             }}
                         >
                             <View style={styles.tileIconCircle}>
-                                <Icon name="Layers" size={26} color="default" />
+                                <Icon name="Flashcards" size={26} color="default" />
                             </View>
                             <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
                                 Flashcards
@@ -568,6 +578,42 @@ export default function HomeDashboard() {
                     </View>
                 </Animated.View>
             </ScrollView>
+            <Modal
+                visible={streakPresentationVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setStreakPresentationVisible(false)}
+            >
+                <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={() => setStreakPresentationVisible(false)}
+                    style={styles.streakModalOverlay}
+                >
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        onPress={() => {}}
+                        style={[
+                            styles.streakModalCard,
+                            { backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF' },
+                        ]}
+                    >
+                        <StreakAnimation isDark={isDark} size={210} />
+                        <Text style={[styles.streakModalTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
+                            {streak} {streak === 1 ? 'Day' : 'Days'} Streak
+                        </Text>
+                        <Text style={[styles.streakModalSubtitle, { color: isDark ? '#A1A1AA' : '#6B7280' }]}>
+                            Keep showing up every day to keep it going.
+                        </Text>
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => setStreakPresentationVisible(false)}
+                            style={styles.streakModalButton}
+                        >
+                            <Text style={styles.streakModalButtonText}>Keep it going</Text>
+                        </TouchableOpacity>
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 }
@@ -623,19 +669,57 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.3)',
     },
+    streakModalOverlay: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        backgroundColor: 'rgba(0,0,0,0.48)',
+    },
+    streakModalCard: {
+        width: '100%',
+        maxWidth: 360,
+        alignItems: 'center',
+        borderRadius: 28,
+        padding: 24,
+    },
+    streakModalTitle: {
+        fontSize: 26,
+        fontWeight: '800',
+        letterSpacing: -0.5,
+        textAlign: 'center',
+    },
+    streakModalSubtitle: {
+        fontSize: 15,
+        lineHeight: 21,
+        textAlign: 'center',
+        marginTop: 8,
+        marginBottom: 24,
+    },
+    streakModalButton: {
+        width: '100%',
+        minHeight: 54,
+        borderRadius: 999,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#007AFF',
+    },
+    streakModalButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '700',
+    },
     dropdownMenu: {
         position: 'absolute',
         left: 18,
         width: 250,
         borderRadius: 20,
-        borderWidth: 1,
         padding: 10,
         gap: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.15,
-        shadowRadius: 28,
-        elevation: 16,
+    },
+    dropdownFallback: {
+        borderWidth: 1,
+        borderRadius: 20,
     },
     dropdownHeader: {
         paddingHorizontal: 10,

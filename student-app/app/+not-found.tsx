@@ -21,7 +21,7 @@ export default function NotFoundScreen() {
 
             <AnimatedButton
                 title="Go Home"
-                onPress={() => router.replace('/(drawer)')}
+                onPress={() => router.replace('/(drawer)/(tabs)')}
                 type="capsule"
                 backgroundColor="#4f46e5"
                 shadowColor="#4338ca"

@@ -1,4 +1,5 @@
-import PostHog from 'posthog-react-native';
+import React from 'react';
+import PostHog, { PostHogProvider } from 'posthog-react-native';
 
 const POSTHOG_PLACEHOLDER_KEY = 'phc_placeholder';
 
@@ -20,14 +21,27 @@ const sessionReplayEnabled =
 
 function createNoopPostHog(): PostHog {
     const noop = () => {};
-    return {
+    const dummy: Record<string, any> = {
         capture: noop,
         identify: noop,
         reset: noop,
         screen: noop,
         flush: async () => {},
         shutdown: async () => {},
-    } as unknown as PostHog;
+        optIn: noop,
+        optOut: noop,
+        isOptIn: () => true,
+        isOptOut: () => false,
+        on: noop,
+        off: noop,
+        getDistinctId: () => '',
+    };
+    return new Proxy(dummy, {
+        get(target, prop) {
+            if (prop in target) return target[prop as string];
+            return noop;
+        }
+    }) as unknown as PostHog;
 }
 
 export const posthog: PostHog = isPostHogEnabled
@@ -37,3 +51,14 @@ export const posthog: PostHog = isPostHogEnabled
           captureAppLifecycleEvents: true,
       })
     : createNoopPostHog();
+
+export const OptionalPostHogProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    if (!isPostHogEnabled) {
+        return <>{children}</>;
+    }
+    return (
+        <PostHogProvider client={posthog} autocapture={{ captureScreens: false, captureTouches: false }}>
+            {children}
+        </PostHogProvider>
+    );
+};

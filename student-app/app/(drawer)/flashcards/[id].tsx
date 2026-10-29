@@ -1,13 +1,14 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect, memo, useMemo, useCallback } from 'react';
-import { Pressable, View, TouchableOpacity, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, StyleSheet, Platform, LayoutAnimation, Alert, ActivityIndicator } from 'react-native';
+import { Pressable, View, Dimensions, ScrollView, NativeSyntheticEvent, NativeScrollEvent, StyleSheet, Platform, LayoutAnimation, Alert, ActivityIndicator } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { StatusBar } from 'expo-status-bar';
-import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
+import { Stack, useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Colors } from '@/constants/theme';
 import { Icon } from '@/components/ui/Icon';
+import { Glass } from '@/components/ui/Glass';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
@@ -207,18 +208,6 @@ const FlashcardItem = memo(({ card, isActive, isDark, isGenerating }: { card: Ca
                 {/* BACK FACE */}
                 <Animated.View style={[backAnimatedStyle, { flex: 1 }]}>
                     <View className="flex-1 rounded-[32px] p-5 justify-between shadow-xl" style={{ backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF', borderWidth: StyleSheet.hairlineWidth, borderColor: isDark ? 'rgba(84,84,88,0.5)' : 'rgba(60,60,67,0.12)' }}>
-                        {/* Top Back Tag */}
-                        <View className="flex-row items-center justify-between">
-                            <View className="px-2.5 py-1 rounded-full bg-tertiary flex-row items-center gap-1">
-                                <Icon name="CheckCircle2" size={14} color="white" />
-                                <Text className="text-on-tertiary font-label-sm" style={{ fontSize: 11, fontWeight: '700', color: '#FFF' }}>Verified Solution</Text>
-                            </View>
-                            <View className="h-8 px-3 rounded-full bg-surface-container flex-row items-center gap-1 justify-center">
-                                <Icon name="RotateCcw" size={14} color={isDark ? '#EBEBF5' : '#48484A'} />
-                                <Text className="text-on-surface-variant font-label-sm" style={{ fontSize: 11, fontWeight: '600' }}>Question</Text>
-                            </View>
-                        </View>
-
                         {/* Center Content */}
                         <ScrollView 
                             contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 4 }}
@@ -273,6 +262,7 @@ export default function StudyDeckScreen() {
     const progressAnim = useSharedValue(0);
     const syncAnim = useSharedValue(0);
     const { user, updateUser } = useAuthStore();
+    const [today] = useState(() => new Date().toISOString().split('T')[0]);
     const [isSavingSession, setIsSavingSession] = useState(false);
     const [rewardMessage, setRewardMessage] = useState('');
     const [showMilestone, setShowMilestone] = useState(false);
@@ -538,17 +528,14 @@ export default function StudyDeckScreen() {
             setRewardMessage(REWARD_MESSAGES[Math.floor(Math.random() * REWARD_MESSAGES.length)]);
 
             // Determine if we should show the big celebration
-            const streak = typeof user?.streak === 'number' ? user.streak : (user?.streak?.current_streak || 0);
+            const currentStreak = typeof user?.streak === 'number' ? user.streak : (user?.streak?.current_streak || 0);
             const lastDate = typeof user?.streak === 'object' ? user.streak?.last_study_date : null;
-            const today = new Date().toISOString().split('T')[0];
+            const studiedToday = typeof lastDate === 'string' && lastDate.slice(0, 10) === today;
 
-            // Show milestone if they haven't studied today yet AND it's a milestone count
-            // (Note: streak will increment after saving, so we check current+1)
-            const nextStreak = streak + 1;
-            const isFirstStudyToday = lastDate !== today;
+            const nextStreak = currentStreak + (studiedToday ? 0 : 1);
             const isMilestoneCount = nextStreak === 1 || nextStreak % 7 === 0;
 
-            setShowMilestone(isFirstStudyToday && isMilestoneCount);
+            setShowMilestone(!studiedToday && isMilestoneCount);
             setIsComplete(true);
         }
     };
@@ -564,6 +551,7 @@ export default function StudyDeckScreen() {
         }
     };
 
+
     const saveFlashcardSession = useCallback(async () => {
         if (!deck || isSavingSession) return;
 
@@ -571,19 +559,20 @@ export default function StudyDeckScreen() {
         try {
             // Record the completion in history/sessions
             const res = await api.post('flashcards/history', {
-                deck_id: id,
+                flashcard_deck_id: Number(id),
                 cards_count: deck.flashcards.length,
-                completed_at: new Date().toISOString(),
             });
 
-            // Refresh user stats via React Query cache
+            if (res.data?.streak) {
+                updateUser({ streak: res.data.streak });
+            }
             queryClient.invalidateQueries({ queryKey: ['student', 'me'] });
         } catch (err) {
             if (__DEV__) console.warn('Failed to save flashcard session:', err);
         } finally {
             setIsSavingSession(false);
         }
-    }, [id, deck, isSavingSession]);
+    }, [id, deck, isSavingSession, queryClient, updateUser]);
 
     useEffect(() => {
         if (isComplete) {
@@ -802,7 +791,10 @@ export default function StudyDeckScreen() {
     );
 
     if (isComplete) {
-        const streak = typeof user?.streak === 'number' ? user.streak : (user?.streak?.current_streak || 1);
+        const currentStreak = typeof user?.streak === 'number' ? user.streak : (user?.streak?.current_streak || 0);
+        const lastStudyDate = typeof user?.streak === 'object' ? user.streak?.last_study_date : null;
+        const studiedToday = typeof lastStudyDate === 'string' && lastStudyDate.slice(0, 10) === today;
+        const streak = currentStreak + (studiedToday ? 0 : 1);
         const cardsForOffline = (deck?.flashcards || []).map((c: any) => ({
             front: c.front,
             back: c.back,
@@ -812,9 +804,9 @@ export default function StudyDeckScreen() {
         if (showMilestone) {
             return (
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? '#000' : '#FFF', zIndex: 9999 }]}>
+                    <Stack.Screen options={{ headerShown: false }} />
                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
                         <StreakAnimation
-                            streakCount={streak}
                             isDark={isDark}
                             size={SCREEN_WIDTH * 0.7}
                         />
@@ -939,40 +931,88 @@ export default function StudyDeckScreen() {
             {/* Navigation Footer */}
             <View className="px-4 pb-12 pt-4">
                 <View className="flex-row items-center gap-3">
-                    <Pressable 
-                        onPress={prevCard} 
-                        disabled={currentIndex === 0} 
-                        className="w-14 h-14 rounded-2xl shadow-sm flex items-center justify-center"
-                        style={{ 
-                            backgroundColor: C.card, 
-                            borderColor: C.border, 
-                            borderWidth: 1,
-                            opacity: currentIndex === 0 ? 0.35 : 1
+                    <Glass
+                        fallbackColor={isDark ? '#25262B' : '#F2F2F7'}
+                        fallbackStyle={{ borderColor: C.border, borderWidth: 1 }}
+                        interactive={currentIndex > 0}
+                        style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: 20,
+                            overflow: 'hidden',
+                            opacity: currentIndex === 0 ? 0.45 : 1,
                         }}
                     >
-                        <Icon name="ChevronLeft" size={24} color={currentIndex === 0 ? "muted" : "default"} />
-                    </Pressable>
+                        <Pressable
+                            onPress={prevCard}
+                            disabled={currentIndex === 0}
+                            accessibilityRole="button"
+                            accessibilityLabel="Previous card"
+                            accessibilityState={{ disabled: currentIndex === 0 }}
+                            style={{
+                                flex: 1,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Icon
+                                name="ChevronLeft"
+                                size={24}
+                                color={currentIndex === 0 ? 'muted' : 'default'}
+                            />
+                        </Pressable>
+                    </Glass>
 
                     {currentIndex === cards.length - 1 && !isGenerating ? (
-                        <View className="flex-1 h-14 rounded-2xl overflow-hidden">
-                            <AnimatedButton
-                                title="Finish Deck"
-                                onPress={nextCard}
-                                type="capsule"
-                                backgroundColor="#007AFF"
-                                shadowColor="#0066D6"
-                                fullWidth
-                            />
-                        </View>
-                    ) : (
-                        <Pressable 
-                            onPress={nextCard} 
-                            className="flex-1 h-14 rounded-2xl bg-accent-electric-blue flex-row items-center justify-center gap-2 shadow-sm"
-                            style={{ shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12 }}
+                        <Glass
+                            fallbackColor={C.primary}
+                            tintColor={C.primary}
+                            interactive
+                            style={{ flex: 1, height: 56, borderRadius: 22, overflow: 'hidden' }}
                         >
-                            <Text className="text-white font-bold text-[16px]">Next Card</Text>
-                            <Icon name="ChevronRight" size={20} color="white" />
-                        </Pressable>
+                            <Pressable
+                                onPress={nextCard}
+                                accessibilityRole="button"
+                                accessibilityLabel="Finish deck"
+                                style={{
+                                    flex: 1,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 8,
+                                }}
+                            >
+                                <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
+                                    Finish Deck
+                                </Text>
+                                <Icon name="Check" size={20} color="white" />
+                            </Pressable>
+                        </Glass>
+                    ) : (
+                        <Glass
+                            fallbackColor={C.primary}
+                            tintColor={C.primary}
+                            interactive
+                            style={{ flex: 1, height: 56, borderRadius: 22, overflow: 'hidden' }}
+                        >
+                            <Pressable
+                                onPress={nextCard}
+                                accessibilityRole="button"
+                                accessibilityLabel="Next card"
+                                style={{
+                                    flex: 1,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 8,
+                                }}
+                            >
+                                <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
+                                    Next Card
+                                </Text>
+                                <Icon name="ChevronRight" size={20} color="white" />
+                            </Pressable>
+                        </Glass>
                     )}
                 </View>
             </View>

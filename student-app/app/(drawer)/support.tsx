@@ -92,7 +92,7 @@ export default function SupportScreen() {
             });
 
             Alert.alert('Message Sent', 'Our support team will get back to you shortly.', [
-                { text: 'Okay', onPress: () => (router.canGoBack() ? router.back() : router.replace('/(drawer)' as any)) }
+                { text: 'Okay', onPress: () => (router.canGoBack() ? router.back() : router.replace('/(drawer)/(tabs)' as any)) }
             ]);
         } catch (error: any) {
             const msg = error.response?.data?.message || 'Something went wrong. Please try again.';

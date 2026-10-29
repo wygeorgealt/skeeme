@@ -32,7 +32,7 @@ import { haptics } from '@/lib/haptics';
 import { QuizMode, Difficulty, FormatType, Question } from '@/components/quiz/QuizTypes';
 import { MCQCard } from '@/components/quiz/MCQCard';
 import { TheoryCard } from '@/components/quiz/TheoryCard';
-import { BlurView } from 'expo-blur';
+import { Glass } from '@/components/ui/Glass';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QuizCelebration } from '@/components/quiz/QuizCelebration';
 import { Colors, Spacing, Radius } from '@/constants/theme';
@@ -274,14 +274,14 @@ export default function GenerateQuizScreen() {
                             setIsLoading(false);
                             if (timerRef.current) clearInterval(timerRef.current);
                             if (router.canGoBack()) router.back();
-                            else router.replace('/(drawer)' as any);
+                            else router.replace('/(drawer)/(tabs)' as any);
                         },
                     },
                 ]
             );
         } else {
             if (router.canGoBack()) router.back();
-            else router.replace('/(drawer)' as any);
+            else router.replace('/(drawer)/(tabs)' as any);
         }
     }, [questions.length, currentQIndex, isLoading]);
 
@@ -1959,56 +1959,54 @@ export default function GenerateQuizScreen() {
             />
 
             {/* Compact Dual-Action Bottom Bar */}
-            <BlurView
-                intensity={60}
-                tint={isDark ? 'dark' : 'light'}
+            <View
                 style={{
                     position: 'absolute',
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    paddingTop: 14,
                     paddingBottom: Math.max(insets.bottom, 16) + 74,
                     paddingHorizontal: 20,
-                    borderTopWidth: StyleSheet.hairlineWidth,
-                    borderTopColor: C.border,
-                    backgroundColor: isDark ? 'rgba(18,18,18,0.85)' : 'rgba(255,255,255,0.88)',
                 }}
             >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <Pressable
-                        onPress={handleRetakeQuiz}
-                        style={{
-                            height: 50,
-                            paddingHorizontal: 20,
-                            borderRadius: 999,
-                            backgroundColor: C.surfaceLow,
-                            borderWidth: 1,
-                            borderColor: C.border,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 8,
-                        }}
-                    >
-                        <Icon name="RotateCcw" size={17} color="default" />
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: C.text }}>
-                            Retake
-                        </Text>
-                    </Pressable>
+                <Glass
+                    fallbackColor={C.card}
+                    fallbackStyle={{ borderRadius: 999, borderColor: C.border }}
+                    style={{ borderRadius: 999, padding: 8 }}
+                >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <Pressable
+                            onPress={handleRetakeQuiz}
+                            accessibilityRole="button"
+                            style={{
+                                minHeight: 50,
+                                paddingHorizontal: 20,
+                                borderRadius: 999,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                            }}
+                        >
+                            <Icon name="RotateCcw" size={20} color="default" />
+                            <Text style={{ fontSize: 14, fontWeight: '700', color: C.text }}>
+                                Retake
+                            </Text>
+                        </Pressable>
 
-                    <View style={{ flex: 1 }}>
-                        <AnimatedButton
-                            title="New Quiz"
-                            onPress={handleResetQuiz}
-                            type="capsule"
-                            backgroundColor="#007AFF"
-                            shadowColor="#0066D6"
-                            fullWidth
-                        />
+                        <View style={{ flex: 1 }}>
+                            <AnimatedButton
+                                title="New Quiz"
+                                onPress={handleResetQuiz}
+                                type="capsule"
+                                backgroundColor="#007AFF"
+                                shadowColor="#0066D6"
+                                fullWidth
+                            />
+                        </View>
                     </View>
-                </View>
-            </BlurView>
+                </Glass>
+            </View>
 
             <OutOfCreditsModal visible={showOutOfCredits} onDismiss={() => setShowOutOfCredits(false)} featureAttempted="quiz" />
 

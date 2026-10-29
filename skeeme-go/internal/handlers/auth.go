@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -258,8 +260,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 			credits, referral_code, ai_preferences, created_at, updated_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()) RETURNING id
 	`
-	err = h.DB.QueryRowContext(r.Context(), query, 
-		fullName, firstName, lastName, cleanEmail, string(hashedPassword), 
+	err = h.DB.QueryRowContext(r.Context(), query,
+		fullName, firstName, lastName, cleanEmail, string(hashedPassword),
 		&role, "pending", 100, refCode, aiPrefsJSON,
 	).Scan(&userID)
 
@@ -295,7 +297,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	code := fmt.Sprintf("%06d", rand.Intn(1000000))
 	h.Redis.Set(r.Context(), fmt.Sprintf("otp_token_%s", req.Email), code, 10*time.Minute)
-	
+
 	emailService := services.NewEmailService()
 	emailService.SendOTP(req.Email, code, "verification")
 
@@ -406,7 +408,7 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	
+
 	// Update password, and if user was pending, mark as active & email verified
 	res, err := h.DB.ExecContext(r.Context(), `
 		UPDATE users 
@@ -448,8 +450,31 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	
+
 	user.PopulateTransientFields(r.Context(), h.Redis)
+	var streak models.UserStreak
+	var lastStudyDate sql.NullTime
+	err := h.DB.QueryRowxContext(r.Context(), `
+		SELECT current_streak, longest_streak, unclaimed_reward, last_study_date
+		FROM study_streaks
+		WHERE user_id = $1
+	`, user.ID).Scan(
+		&streak.CurrentStreak,
+		&streak.LongestStreak,
+		&streak.UnclaimedReward,
+		&lastStudyDate,
+	)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("[auth] Me streak query error for user %d: %v", user.ID, err)
+		http.Error(w, "Failed to fetch user streak", http.StatusInternalServerError)
+		return
+	}
+	if err == nil {
+		if lastStudyDate.Valid {
+			streak.LastStudyDate = &lastStudyDate.Time
+		}
+		user.Streak = &streak
+	}
 
 	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
 	w.Header().Set("Content-Type", "application/json")

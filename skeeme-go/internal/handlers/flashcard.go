@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -15,6 +16,17 @@ type FlashcardHandler struct {
 	DB *sqlx.DB
 }
 
+type flashcardDeckListItem struct {
+	ID              int64          `db:"id" json:"id"`
+	UserID          int64          `db:"user_id" json:"user_id"`
+	Title           string         `db:"title" json:"title"`
+	Description     sql.NullString `db:"description" json:"description"`
+	SourceType      string         `db:"source_type" json:"source_type"`
+	CreatedAt       sql.NullTime   `db:"created_at" json:"created_at"`
+	UpdatedAt       sql.NullTime   `db:"updated_at" json:"updated_at"`
+	FlashcardsCount int            `db:"flashcards_count" json:"flashcards_count"`
+}
+
 func (h *FlashcardHandler) ListDecks(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
 	if user == nil {
@@ -23,10 +35,17 @@ func (h *FlashcardHandler) ListDecks(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
 		return
 	}
-	
-	var decks []models.FlashcardDeck
-	err := h.DB.SelectContext(r.Context(), &decks, 
-		"SELECT * FROM flashcard_decks WHERE user_id = $1 ORDER BY created_at DESC", user.ID)
+
+	var decks []flashcardDeckListItem
+	err := h.DB.SelectContext(r.Context(), &decks, `
+		SELECT d.id, d.user_id, d.title, d.description, d.source_type, d.created_at, d.updated_at,
+			COUNT(f.id) AS flashcards_count
+		FROM flashcard_decks d
+		LEFT JOIN flashcards f ON f.flashcard_deck_id = d.id
+		WHERE d.user_id = $1
+		GROUP BY d.id
+		ORDER BY d.created_at DESC
+	`, user.ID)
 	if err != nil {
 		log.Printf("[flashcard] ListDecks DB error for user %d: %v", user.ID, err)
 		w.Header().Set("Content-Type", "application/json")
@@ -34,9 +53,9 @@ func (h *FlashcardHandler) ListDecks(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to fetch flashcard decks from database"})
 		return
 	}
-	
+
 	if decks == nil {
-		decks = []models.FlashcardDeck{}
+		decks = []flashcardDeckListItem{}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -71,7 +90,7 @@ func (h *FlashcardHandler) GetDeck(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to load cards for this deck"})
 		return
 	}
-	
+
 	if cards == nil {
 		cards = []models.Flashcard{}
 	}
@@ -144,7 +163,7 @@ func (h *FlashcardHandler) CreateDeck(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
 		return
 	}
-	
+
 	var req CreateDeckRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		// Ignore decode errors since form-data might be sent, just default title
@@ -262,9 +281,9 @@ func (h *FlashcardHandler) History(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
 		return
 	}
-	
+
 	var sessions []models.FlashcardSession
-	err := h.DB.SelectContext(r.Context(), &sessions, 
+	err := h.DB.SelectContext(r.Context(), &sessions,
 		"SELECT * FROM flashcard_sessions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100", user.ID)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -294,7 +313,7 @@ func (h *FlashcardHandler) StoreSession(w http.ResponseWriter, r *http.Request) 
 		json.NewEncoder(w).Encode(map[string]any{"message": "Unauthorized access"})
 		return
 	}
-	
+
 	var req StoreSessionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -303,13 +322,69 @@ func (h *FlashcardHandler) StoreSession(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	tx, err := h.DB.BeginTxx(r.Context(), nil)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Database transaction error"})
+		return
+	}
+	defer tx.Rollback()
+
 	var newID int64
-	err := h.DB.QueryRowContext(r.Context(), `
+	err = tx.QueryRowContext(r.Context(), `
 		INSERT INTO flashcard_sessions (user_id, flashcard_deck_id, cards_count, completed_at, created_at, updated_at)
 		VALUES ($1, $2, $3, NOW(), NOW(), NOW()) RETURNING id
 	`, user.ID, req.FlashcardDeckID, req.CardsCount).Scan(&newID)
-
 	if err != nil {
+		log.Printf("[flashcard] StoreSession insert error for user %d: %v", user.ID, err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to record study session"})
+		return
+	}
+
+	var streak struct {
+		CurrentStreak   int          `db:"current_streak" json:"current_streak"`
+		LongestStreak   int          `db:"longest_streak" json:"longest_streak"`
+		UnclaimedReward int          `db:"unclaimed_reward" json:"unclaimed_reward"`
+		LastStudyDate   sql.NullTime `db:"last_study_date" json:"-"`
+	}
+	err = tx.GetContext(r.Context(), &streak, `
+		INSERT INTO study_streaks
+			(user_id, current_streak, longest_streak, last_study_date, created_at, updated_at)
+		VALUES ($1, 1, 1, CURRENT_DATE, NOW(), NOW())
+		ON CONFLICT (user_id) DO UPDATE SET
+			current_streak = CASE
+				WHEN study_streaks.last_study_date::date = CURRENT_DATE THEN study_streaks.current_streak
+				WHEN study_streaks.last_study_date::date = CURRENT_DATE - 1 THEN study_streaks.current_streak + 1
+				ELSE 1
+			END,
+			longest_streak = GREATEST(
+				study_streaks.longest_streak,
+				CASE
+					WHEN study_streaks.last_study_date::date = CURRENT_DATE THEN study_streaks.current_streak
+					WHEN study_streaks.last_study_date::date = CURRENT_DATE - 1 THEN study_streaks.current_streak + 1
+					ELSE 1
+				END
+			),
+			last_study_date = CASE
+				WHEN study_streaks.last_study_date::date = CURRENT_DATE THEN study_streaks.last_study_date
+				ELSE CURRENT_DATE
+			END,
+			updated_at = NOW()
+		RETURNING current_streak, longest_streak, unclaimed_reward, last_study_date
+	`, user.ID)
+	if err != nil {
+		log.Printf("[flashcard] StoreSession streak update error for user %d: %v", user.ID, err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to update study streak"})
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Printf("[flashcard] StoreSession commit error for user %d: %v", user.ID, err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to record study session"})
@@ -321,5 +396,11 @@ func (h *FlashcardHandler) StoreSession(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Study session recorded successfully",
 		"id":      newID,
+		"streak": map[string]interface{}{
+			"current_streak":   streak.CurrentStreak,
+			"longest_streak":   streak.LongestStreak,
+			"unclaimed_reward": streak.UnclaimedReward,
+			"last_study_date":  streak.LastStudyDate.Time,
+		},
 	})
 }

@@ -463,7 +463,7 @@ export default function ScanScreen() {
                             if (router.canGoBack()) {
                                 router.back();
                             } else {
-                                router.replace('/(drawer)' as any);
+                                router.replace('/(drawer)/(tabs)' as any);
                             }
                         }}
                         className="w-11 h-11 rounded-full bg-black/40 border border-white/15 items-center justify-center shadow-lg"

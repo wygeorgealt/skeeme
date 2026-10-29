@@ -68,7 +68,7 @@ export default function SummaryScreen() {
         if (router.canGoBack()) {
             router.back();
         } else {
-            router.replace('/(drawer)' as any);
+            router.replace('/(drawer)/(tabs)' as any);
         }
     }, []);
 

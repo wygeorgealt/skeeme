@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedProps,
@@ -12,20 +12,16 @@ import Animated, {
     useAnimatedStyle,
 } from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import Fire from '@/assets/icons/pikaicons/sparkle-ai-01.svg';
-import { Text } from './ui/Text';
+import { Icon } from './ui/Icon';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface StreakAnimationProps {
-    streakCount: number;
     size?: number;
     isDark?: boolean;
 }
 
 export const StreakAnimation: React.FC<StreakAnimationProps> = ({
-    streakCount,
     size = 180,
     isDark = false
 }) => {
@@ -37,7 +33,6 @@ export const StreakAnimation: React.FC<StreakAnimationProps> = ({
     const progress = useSharedValue(0);
     const scale = useSharedValue(0);
     const fireScale = useSharedValue(0);
-    const countOpacity = useSharedValue(0);
     const rotation = useSharedValue(0);
 
     useEffect(() => {
@@ -50,9 +45,6 @@ export const StreakAnimation: React.FC<StreakAnimationProps> = ({
         // Fire icon pop
         fireScale.value = withDelay(800, withSpring(1, { damping: 8, stiffness: 120 }));
         
-        // Count fade in
-        countOpacity.value = withDelay(1200, withTiming(1, { duration: 500 }));
-
         // Constant subtle rotation for the background glow
         rotation.value = withRepeat(withTiming(360, { duration: 10000 }), -1, false);
     }, []);
@@ -70,11 +62,6 @@ export const StreakAnimation: React.FC<StreakAnimationProps> = ({
             { scale: fireScale.value },
             { translateY: withRepeat(withSequence(withTiming(-5, { duration: 1000 }), withTiming(0, { duration: 1000 })), -1, true) }
         ],
-    }));
-
-    const countStyle = useAnimatedStyle(() => ({
-        opacity: countOpacity.value,
-        transform: [{ translateY: interpolate(countOpacity.value, [0, 1], [10, 0]) }],
     }));
 
     // Particle animations
@@ -134,12 +121,7 @@ export const StreakAnimation: React.FC<StreakAnimationProps> = ({
                 <View style={StyleSheet.absoluteFill}>
                     <View style={styles.content}>
                         <Animated.View style={fireIconStyle}>
-                            <Fire width={size * 0.35} height={size * 0.35} color="#FF4500" />
-                        </Animated.View>
-                        
-                        <Animated.View style={[styles.countContainer, countStyle]}>
-                            <Text style={styles.countText}>{streakCount}</Text>
-                            <Text style={styles.dayText}>DAY STREAK</Text>
+                            <Icon name="Flame" size={size * 0.35} color="#FF4500" />
                         </Animated.View>
                     </View>
                 </View>
@@ -201,23 +183,5 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 10,
-    },
-    countContainer: {
-        alignItems: 'center',
-        marginTop: -5,
-    },
-    countText: {
-        fontSize: 42,
-        fontWeight: '900',
-        color: '#FF4500',
-        lineHeight: 48,
-    },
-    dayText: {
-        fontSize: 12,
-        fontWeight: '800',
-        color: '#FF8C00',
-        letterSpacing: 1.5,
-        marginTop: -2,
     }
 });

@@ -27,9 +27,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { GoogleIcon, AppleIcon } from '@/components/ui/BrandIcons';
+import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { Icon } from '@/components/ui/Icon';
 import { haptics } from '@/lib/haptics';
+
+const MailButtonIcon = ({ width = 22 }: { width?: number }) => (
+    <Icon name="Mail" size={width} color="#FFFFFF" />
+);
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -162,7 +166,7 @@ export default function AuthSelectScreen() {
             const result = await signInWithGoogle();
             if (result) {
                 login(result.user, result.token);
-                router.replace('/(drawer)');
+                router.replace('/(drawer)/(tabs)');
             }
         } finally {
             setIsGoogleLoading(false);
@@ -284,42 +288,48 @@ export default function AuthSelectScreen() {
                 {/* ── Bottom Action Buttons & Legal ── */}
                 <View style={styles.bottomSection}>
                     {/* Continue with Google Button */}
-                    <TouchableOpacity
+                    <AnimatedButton
+                        title="Continue with Google"
                         onPress={handleGoogleSignIn}
-                        disabled={isGoogleLoading}
-                        activeOpacity={0.88}
-                        style={styles.googleButton}
-                    >
-                        {isGoogleLoading ? (
-                            <ActivityIndicator size="small" color="#0F172A" />
-                        ) : (
-                            <>
-                                <GoogleIcon width={22} height={22} />
-                                <Text style={styles.googleButtonText}>Continue with Google</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
+                        loading={isGoogleLoading}
+                        type="capsule"
+                        backgroundColor="#FFFFFF"
+                        shadowColor="#CBD5E1"
+                        textColor="#0F172A"
+                        icon="google"
+                        iconSize={22}
+                        style={{ marginBottom: 4 }}
+                        fullWidth
+                    />
 
                     {/* Continue with Email Button */}
-                    <TouchableOpacity
+                    <AnimatedButton
+                        title="Continue with Email"
                         onPress={handleEmailSignIn}
-                        activeOpacity={0.88}
-                        style={styles.emailButton}
-                    >
-                        <Icon name="Mail" size={22} color="white" />
-                        <Text style={styles.emailButtonText}>Continue with Email</Text>
-                    </TouchableOpacity>
+                        type="capsule"
+                        backgroundColor="#1E293B"
+                        shadowColor="#090E1A"
+                        textColor="#FFFFFF"
+                        customIcon={MailButtonIcon}
+                        iconSize={22}
+                        style={{ marginBottom: 4 }}
+                        fullWidth
+                    />
 
                     {/* Continue with Apple (iOS only) */}
                     {Platform.OS === 'ios' && (
-                        <TouchableOpacity
+                        <AnimatedButton
+                            title="Continue with Apple"
                             onPress={() => router.push('/signup')}
-                            activeOpacity={0.88}
-                            style={styles.appleButton}
-                        >
-                            <AppleIcon width={22} height={22} color="#FFFFFF" />
-                            <Text style={styles.appleButtonText}>Continue with Apple</Text>
-                        </TouchableOpacity>
+                            type="capsule"
+                            backgroundColor="#18181B"
+                            shadowColor="#000000"
+                            textColor="#FFFFFF"
+                            icon="apple"
+                            iconSize={22}
+                            style={{ marginBottom: 4 }}
+                            fullWidth
+                        />
                     )}
 
                     {/* Legal Terms Footer */}

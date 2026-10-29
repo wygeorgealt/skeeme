@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { Icon } from '@/components/ui/Icon';
+import { Glass } from '@/components/ui/Glass';
 import { MathText } from '@/components/ui/MathText';
 import { haptics } from '@/lib/haptics';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -585,7 +586,7 @@ export default function ChatScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/(drawer)' as any);
+      router.replace('/(drawer)/(tabs)' as any);
     }
   };
 
@@ -983,11 +984,14 @@ export default function ChatScreen() {
       <ScreenHeader
         title=""
         onBack={handleBack}
+        transparent
         rightAction={
           messages.length > 0 ? (
             <Pressable
               onPress={handleClearChat}
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Clear conversation"
               className="w-10 h-10 items-center justify-center rounded-full active:bg-surface-container-high"
             >
               <Icon name="RotateCcw" size={20} color="textSecondary" />
@@ -1165,18 +1169,14 @@ export default function ChatScreen() {
         <View
           style={{
             paddingBottom: Math.max(insets.bottom, 12),
-            backgroundColor: C.background,
+            backgroundColor: 'transparent',
           }}
           className="pt-2 px-4"
         >
-          <View
-            style={[
-              styles.composerCard,
-              {
-                backgroundColor: C.card,
-                borderColor: C.border,
-              },
-            ]}
+          <Glass
+            fallbackColor={C.card}
+            fallbackStyle={[styles.composerFallback, { borderColor: C.border }]}
+            style={styles.composerCard}
           >
             {/* Attached Image Preview Tray inside the Composer */}
             {attachedImageUri ? (
@@ -1218,6 +1218,8 @@ export default function ChatScreen() {
                 }}
                 disabled={isGenerating}
                 hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel="Attach an image or file"
                 style={[styles.mediaIconBtn, { backgroundColor: C.surfaceLow }]}
               >
                 <Icon name="Plus" size={20} color="default" />
@@ -1241,6 +1243,9 @@ export default function ChatScreen() {
               <Pressable
                 onPress={() => handleSend()}
                 disabled={!canSend}
+                accessibilityRole="button"
+                accessibilityLabel="Send message"
+                accessibilityState={{ disabled: !canSend }}
                 style={[
                   styles.sendBtn,
                   {
@@ -1252,7 +1257,7 @@ export default function ChatScreen() {
                 <Icon name="ArrowUp" size={20} color="white" />
               </Pressable>
             </View>
-          </View>
+          </Glass>
         </View>
       </KeyboardAvoidingView>
 
@@ -1441,15 +1446,14 @@ const styles = StyleSheet.create({
     letterSpacing: -0.1,
   },
   composerCard: {
+    overflow: 'hidden',
     borderRadius: 28,
-    borderWidth: 1,
     paddingHorizontal: 8,
-    paddingVertical: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    paddingVertical: 8,
+  },
+  composerFallback: {
+    borderWidth: 1,
+    borderRadius: 28,
   },
   attachmentTray: {
     flexDirection: 'row',
@@ -1488,9 +1492,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   mediaIconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1501,9 +1505,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },

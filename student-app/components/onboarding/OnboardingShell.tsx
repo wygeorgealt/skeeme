@@ -1,11 +1,8 @@
 import React from 'react';
-import { View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Text, Pressable } from 'react-native';
+import { View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Icon } from '@/components/ui/Icon';
-import { BlurView } from 'expo-blur';
-import { cssInterop } from 'nativewind';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
@@ -47,7 +44,6 @@ export function OnboardingShell({
     showSkip = false,
     onSkip,
 }: OnboardingShellProps) {
-    const router = useRouter();
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -58,45 +54,31 @@ export function OnboardingShell({
 
     const content = (
         <View style={{ flex: 1, backgroundColor: C.background }}>
-            {/* Header: Back + Skip */}
-            <View 
-                className="w-full z-50" 
-                style={{ 
-                    paddingTop: insets.top,
-                    backgroundColor: isDark ? 'rgba(11,12,14,0.92)' : 'rgba(255,255,255,0.92)',
-                    borderBottomWidth: Platform.OS === 'ios' ? 0.5 : 1,
-                    borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+            <Stack.Screen
+                options={{
+                    headerShown: true,
+                    headerTitle: '',
+                    headerBackVisible: showBack,
+                    headerBackTitle: '',
+                    headerTintColor: C.icon,
+                    headerTransparent: false,
+                    headerRight: showSkip
+                        ? () => (
+                              <TouchableOpacity
+                                  onPress={onSkip}
+                                  activeOpacity={0.7}
+                                  accessibilityRole="button"
+                                  accessibilityLabel="Skip onboarding step"
+                                  style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 }}
+                              >
+                                  <Text style={{ color: C.textSecondary, fontWeight: '600', fontSize: 14 }}>
+                                      Skip
+                                  </Text>
+                              </TouchableOpacity>
+                          )
+                        : undefined,
                 }}
-            >
-                <View className="h-14 px-4 flex-row items-center justify-between">
-                    <View className="flex-row items-center">
-                        {showBack ? (
-                            <TouchableOpacity
-                                onPress={() => router.back()}
-                                activeOpacity={0.7}
-                                className="w-10 h-10 rounded-full items-center justify-center"
-                                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }}
-                                accessibilityLabel="Go back"
-                            >
-                                <Icon name="ArrowLeft" size={22} color="default" />
-                            </TouchableOpacity>
-                        ) : (
-                            <View className="w-10 h-10" />
-                        )}
-                    </View>
-                    <View className="flex-row items-center">
-                        {showSkip && (
-                            <TouchableOpacity
-                                onPress={onSkip}
-                                activeOpacity={0.7}
-                                className="min-h-[44px] px-3 items-center justify-center"
-                            >
-                                <Text style={{ color: C.textSecondary }} className="font-semibold text-[14px]">Skip</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                </View>
-            </View>
+            />
 
             {/* Scrollable Content */}
             <ScrollView
@@ -141,19 +123,17 @@ export function OnboardingShell({
 
             {/* Sticky CTA Footer */}
             {!noStickyFooter && onCta && (
-                <BlurView 
-                    intensity={Platform.OS === 'ios' ? 40 : 80} 
-                    tint={isDark ? 'dark' : 'light'} 
-                    className="absolute bottom-0 w-full z-50 shadow-sm"
-                    style={{ 
+                <View
+                    className="absolute bottom-0 w-full z-50"
+                    style={{
                         paddingBottom: Math.max(insets.bottom, 16),
-                        borderTopWidth: Platform.OS === 'ios' ? 0.5 : 1,
+                        borderTopWidth: StyleSheet.hairlineWidth,
                         borderTopColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                        backgroundColor: C.background,
                     }}
                 >
-                    <View 
+                    <View
                         className="px-4 pt-3 pb-3"
-                        style={{ backgroundColor: isDark ? 'rgba(11,12,14,0.75)' : 'rgba(255,255,255,0.75)' }}
                     >
                         {footerExtra}
                         <View style={{ width: '100%', alignItems: 'center' }}>
@@ -169,7 +149,7 @@ export function OnboardingShell({
                             />
                         </View>
                     </View>
-                </BlurView>
+                </View>
             )}
         </View>
     );

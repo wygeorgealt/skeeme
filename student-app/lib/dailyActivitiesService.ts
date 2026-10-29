@@ -167,16 +167,16 @@ export async function getDailyActivities({
     const rotation = dayOfYear % 3;
     if (closestExam && closestExam.daysLeft !== null && closestExam.daysLeft <= 7) {
         scanTitle = `Snap & Solve Exam Problems for ${closestExam.title}`;
-        scanRoute = `/(drawer)/chat?openCamera=1`;
+        scanRoute = `/(drawer)/(tabs)/chat?openCamera=1`;
     } else if (rotation === 0) {
         scanTitle = `Snap & Solve an Unsolved Problem`;
-        scanRoute = `/(drawer)/chat?openCamera=1`;
+        scanRoute = `/(drawer)/(tabs)/chat?openCamera=1`;
     } else if (rotation === 1) {
         scanTitle = `Ask Skeemy: Clarify a Tough ${preferredSubject} Topic`;
-        scanRoute = `/(drawer)/chat`;
+        scanRoute = `/(drawer)/(tabs)/chat`;
     } else {
         scanTitle = `Scan Notes or Diagram for Instant Solution`;
-        scanRoute = `/(drawer)/chat?openCamera=1`;
+        scanRoute = `/(drawer)/(tabs)/chat?openCamera=1`;
     }
 
     const tasks: DailyActivityTask[] = [

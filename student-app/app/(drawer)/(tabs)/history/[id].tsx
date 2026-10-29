@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/Text';
 import { View, ScrollView, Pressable, Platform, Alert, StyleSheet } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Stack, useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
@@ -18,6 +18,7 @@ import { MathText, formatMathPlainText } from '@/components/ui/MathText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 import { Icon } from '@/components/ui/Icon';
+import { Glass } from '@/components/ui/Glass';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { BlurView } from 'expo-blur';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
@@ -359,7 +360,6 @@ export default function QuizHistoryDetailScreen() {
 
     if (isLoading && !session) return (
         <View style={{ flex: 1, backgroundColor: bgColor }}>
-            <Stack.Screen options={{ headerShown: false }} />
             <ScreenHeader title="Quiz Report" />
             <View style={s.loadingHeader}>
                 <SkeletonLoader width={80} height={80} borderRadius={40} style={{ marginBottom: 20 }} />
@@ -410,8 +410,6 @@ export default function QuizHistoryDetailScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: bgColor }}>
-            <Stack.Screen options={{ headerShown: false }} />
-
             <ShareCard
                 type="quiz"
                 data={{ topic: session.topic, score_percentage: scorePct }}
@@ -422,17 +420,28 @@ export default function QuizHistoryDetailScreen() {
                 title="Quiz Report"
                 subtitle={formatMathPlainText(session.topic || 'Study Session')}
                 rightAction={
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Glass
+                        fallbackColor={isDark ? '#25262B' : 'rgba(255,255,255,0.88)'}
+                        fallbackStyle={{ borderColor: C.border, borderWidth: 1 }}
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 2,
+                            padding: 4,
+                            borderRadius: 999,
+                            overflow: 'hidden',
+                        }}
+                    >
                         <Pressable
                             onPress={handleShare}
                             disabled={isSharing}
+                            accessibilityRole="button"
+                            accessibilityLabel="Share quiz report"
+                            hitSlop={4}
                             style={{
-                                width: 38,
-                                height: 38,
-                                borderRadius: 12,
-                                backgroundColor: C.surfaceLow,
-                                borderWidth: 1,
-                                borderColor: C.border,
+                                width: 44,
+                                height: 44,
+                                borderRadius: 999,
                                 alignItems: 'center',
                                 justifyContent: 'center',
                             }}
@@ -440,19 +449,19 @@ export default function QuizHistoryDetailScreen() {
                             {isSharing ? (
                                 <LoadingSpinner size={16} color={C.primary} strokeWidth={2.5} />
                             ) : (
-                                <Icon name="Share2" size={17} color="default" />
+                                <Icon name="Share2" size={20} color="default" />
                             )}
                         </Pressable>
                         <Pressable
                             onPress={handleExport}
                             disabled={isExporting}
+                            accessibilityRole="button"
+                            accessibilityLabel="Export quiz report as PDF"
+                            hitSlop={4}
                             style={{
-                                width: 38,
-                                height: 38,
-                                borderRadius: 12,
-                                backgroundColor: C.surfaceLow,
-                                borderWidth: 1,
-                                borderColor: C.border,
+                                width: 44,
+                                height: 44,
+                                borderRadius: 999,
                                 alignItems: 'center',
                                 justifyContent: 'center',
                             }}
@@ -460,10 +469,10 @@ export default function QuizHistoryDetailScreen() {
                             {isExporting ? (
                                 <LoadingSpinner size={16} color={C.primary} strokeWidth={2.5} />
                             ) : (
-                                <Icon name="Download" size={17} color="default" />
+                                <Icon name="Download" size={20} color="default" />
                             )}
                         </Pressable>
-                    </View>
+                    </Glass>
                 }
             />
 

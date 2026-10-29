@@ -150,10 +150,22 @@ export default function ExamsScreen() {
                 </Animated.View>
             </ScrollView>
 
-            <TouchableOpacity style={[s.fab, { backgroundColor: C.primary }]} activeOpacity={0.8} onPress={() => setIsModalOpen(true)}>
-                <AnimatedIcon size={32} animationType="pop">
-                    <Icon name="Plus" size={32} color="white" />
-                </AnimatedIcon>
+            <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => setIsModalOpen(true)}
+                style={[
+                    s.fab,
+                    {
+                        backgroundColor: C.primary,
+                        shadowColor: C.primary,
+                        shadowOpacity: 0.35,
+                        shadowRadius: 18,
+                        shadowOffset: { width: 0, height: 10 },
+                        elevation: 10,
+                    },
+                ]}
+            >
+                <Icon name="Plus" size={28} color="white" />
             </TouchableOpacity>
 
             <Modal visible={isModalOpen} animationType="slide" transparent>

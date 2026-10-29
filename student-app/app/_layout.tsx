@@ -24,18 +24,18 @@ if (Platform.OS === 'android') {
 }
 import AnimatedSplash from '@/components/AnimatedSplash';
 import Animated, { FadeOut } from 'react-native-reanimated';
-import { NetworkStatus } from '@/components/NetworkStatus';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
-import { PostHogProvider } from 'posthog-react-native';
-import { posthog } from '@/lib/posthog';
+// import { posthog, OptionalPostHogProvider } from '@/lib/posthog';
 import { SuperwallProviderWrapper } from '@/lib/monetization';
 import * as SystemUI from 'expo-system-ui';
 import DangerTriangle from '@/assets/icons/pikaicons/troubleshoot.svg';
 import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
 import { initializeMonetization } from '@/lib/monetization';
 import * as Application from 'expo-application';
-import { api, apiStandard } from '@/lib/api';
+import NetInfo from '@react-native-community/netinfo';
+import { api, apiStandard, resetServiceFailureNotification } from '@/lib/api';
+import * as Haptics from 'expo-haptics';
 
 
 
@@ -129,7 +129,7 @@ export default function RootLayout() {
           ['login', 'signup', 'welcome', 'forgot-password', 'otp', 'new-password'].includes(currentSegment) ||
           (currentSegment === '(onboarding)' && (!segments[1] || authOnlyOnboardingRoutes.includes(segments[1] as string)));
         if (isAuthEntryRoute || !currentSegment) {
-          router.replace('/(drawer)');
+          router.replace('/(drawer)/(tabs)');
         }
       }
     } else {
@@ -154,7 +154,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (segments.length > 0) {
       const currentRoute = segments.join('/');
-      posthog.screen(currentRoute);
+      // posthog.screen(currentRoute);
     }
   }, [segments]);
 
@@ -223,8 +223,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: rootBg }}>
       <View style={{ flex: 1, backgroundColor: rootBg }}>
         <SuperwallProviderWrapper>
-          <PostHogProvider client={posthog} autocapture={{ captureScreens: false, captureTouches: false }}>
-            <QueryProvider>
+          <QueryProvider>
             <PollingSync user={user} />
             <ServiceHealthMonitor userId={user?.id ?? null} />
             <ThemeProvider value={{
@@ -243,9 +242,7 @@ export default function RootLayout() {
                 </Animated.View>
               )}
 
-              <NetworkStatus />
-
-              <Stack screenOptions={{ headerShown: false, headerTransparent: true, statusBarTranslucent: true, contentStyle: { backgroundColor: rootBg } }}>
+              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: rootBg } }}>
                 <Stack.Screen name="(onboarding)" options={{ headerShown: false, animation: 'fade' }} />
                 <Stack.Screen name="welcome" options={{ headerShown: false, animation: 'fade' }} />
                 <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
@@ -354,8 +351,7 @@ export default function RootLayout() {
               <StatusBar style={isDark ? 'light' : 'dark'} />
             </ThemeProvider>
           </QueryProvider>
-        </PostHogProvider>
-      </SuperwallProviderWrapper>
+        </SuperwallProviderWrapper>
       </View>
     </GestureHandlerRootView>
   );
@@ -395,22 +391,33 @@ function PollingSync({ user }: { user: { id: number } | null }) {
 function ServiceHealthMonitor({ userId }: { userId: number | null }) {
   const connectionState = useAuthStore((state) => state.connectionState);
   const setConnectionState = useAuthStore((state) => state.setConnectionState);
+  const setGlobalError = useAuthStore((state) => state.setGlobalError);
 
   useEffect(() => {
-    if (!userId || connectionState === 'offline') return;
+    if (connectionState === 'offline') return;
     let cancelled = false;
     const probe = async () => {
       try {
         await api.get('system/app-version', { timeout: 5000, skipGlobalError: true } as any);
-        if (!cancelled) setConnectionState('online');
+        if (!cancelled) {
+          setConnectionState('online');
+          setGlobalError(null);
+        }
       } catch {
         // The API interceptor distinguishes an offline device from an unavailable server.
       }
     };
-    probe();
-    const subscription = AppState.addEventListener('change', (state) => { if (state === 'active') probe(); });
-    return () => { cancelled = true; subscription.remove(); };
-  }, [userId, connectionState, setConnectionState]);
+    if (userId || connectionState === 'serverDown') {
+      probe();
+    }
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') probe();
+    });
+    return () => {
+      cancelled = true;
+      subscription.remove();
+    };
+  }, [userId, connectionState, setConnectionState, setGlobalError]);
   return null;
 }
 
@@ -440,18 +447,34 @@ function CooldownModalWrapper() {
 }
 
 function GlobalErrorModalWrapper() {
-  const { globalError, setGlobalError } = useAuthStore();
+  const { globalError, setGlobalError, setConnectionState } = useAuthStore();
   const [retrying, setRetrying] = useState(false);
   const GlobalErrorModal = require('@/components/GlobalErrorModal').default;
+
+  const handleDismiss = () => {
+    resetServiceFailureNotification();
+    setGlobalError(null);
+  };
 
   const retry = async () => {
     setRetrying(true);
     try {
+      const [netState] = await Promise.all([
+        NetInfo.fetch(),
+        new Promise((resolve) => setTimeout(resolve, 400)),
+      ]);
+      if (netState.isConnected === false) {
+        setConnectionState('offline');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
       await api.get('system/app-version', { timeout: 5000, skipGlobalError: true } as any);
-      useAuthStore.getState().setConnectionState('online');
+      resetServiceFailureNotification();
+      setConnectionState('online');
       setGlobalError(null);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
-      // The modal stays open with the current friendly message.
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setRetrying(false);
     }
@@ -461,7 +484,7 @@ function GlobalErrorModalWrapper() {
     <GlobalErrorModal
       visible={globalError !== null}
       error={globalError}
-      onDismiss={() => setGlobalError(null)}
+      onDismiss={handleDismiss}
       onRetry={retry}
       retrying={retrying}
     />
@@ -494,6 +517,7 @@ function EnjoyReviewModalWrapper() {
 }
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  console.error("ErrorBoundary caught error:", error?.message, error?.stack);
   const colorScheme = useNativeColorScheme();
   const isDark = colorScheme === 'dark';
 

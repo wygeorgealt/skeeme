@@ -197,13 +197,10 @@ export default function OnboardingLoadingScreen() {
 
             {/* Orb with circular progress ring */}
             <Animated.View entering={FadeIn.duration(600)} style={s.orbWrap}>
-                {/* Track ring */}
                 <View style={[s.ring, { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]} />
-                {/* Icon orb */}
-                <View style={[s.orb, { backgroundColor: isDark ? '#1c1c1e' : '#ffffff', shadowColor: C.primary }]}>
-                    <Icon name="GraduationCap" size={44} color="primary" />
+                <View style={[s.orb, { backgroundColor: isDark ? '#1c1c1e' : '#ffffff', shadowColor: C.primary }]}> 
+                    <Icon name="GraduationCap" size={42} color="primary" />
                 </View>
-                {/* Check badge — shown when done */}
                 {done && (
                     <Animated.View
                         entering={FadeInDown.springify()}
@@ -214,7 +211,6 @@ export default function OnboardingLoadingScreen() {
                 )}
             </Animated.View>
 
-            {/* Title */}
             <Animated.View entering={FadeInDown.duration(500).delay(200)} style={s.textGroup}>
                 <Text style={[s.title, { color: C.text }]}>
                     {done ? 'Skeeme is ready for you' : 'Building your blueprint…'}

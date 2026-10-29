@@ -9,7 +9,6 @@ import * as WebBrowser from 'expo-web-browser';
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Icon } from '@/components/ui/Icon';
-import * as LucideIcons from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
 import { Colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -21,7 +20,7 @@ function SettingsRow({
     destructive = false, hasSwitch = false, switchValue = false, onSwitch,
     isDark,
 }: {
-    icon: keyof typeof LucideIcons;
+    icon: string;
     label: string; sublabel?: string; value?: string;
     onPress?: () => void; isLast?: boolean; destructive?: boolean;
     hasSwitch?: boolean; switchValue?: boolean; onSwitch?: (val: boolean) => void;

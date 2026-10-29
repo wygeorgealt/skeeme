@@ -4,7 +4,10 @@ export default function OnboardingLayout() {
     return (
         <Stack
             screenOptions={{
-                headerShown: false,
+                headerShown: true,
+                headerTitle: '',
+                headerBackTitle: '',
+                headerTransparent: false,
                 animation: 'slide_from_right',
                 gestureEnabled: false,
                 contentStyle: { backgroundColor: 'transparent' },

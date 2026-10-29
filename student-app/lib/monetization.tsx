@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator, Text, Platform } from 'react-native';
 import RevenueCatUI from 'react-native-purchases-ui';
 import {
   initializeRevenueCat,
@@ -13,11 +13,13 @@ import {
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 const SUPERWALL_PLACEHOLDER = 'pk_placeholder';
-const SW_KEY = process.env.EXPO_PUBLIC_SUPERWALL_PUBLIC_KEY;
+const SW_IOS_KEY = process.env.EXPO_PUBLIC_SUPERWALL_IOS_KEY || process.env.EXPO_PUBLIC_SUPERWALL_APPLE_KEY || process.env.EXPO_PUBLIC_SUPERWALL_PUBLIC_KEY;
+const SW_ANDROID_KEY = process.env.EXPO_PUBLIC_SUPERWALL_ANDROID_KEY || process.env.EXPO_PUBLIC_SUPERWALL_PUBLIC_KEY;
+const activeKey = Platform.OS === 'ios' ? SW_IOS_KEY : SW_ANDROID_KEY;
 
 // Completely disable Superwall if running inside Expo Go, because it lacks the required native modules and crashes the navigator.
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-export const isSuperwallEnabled = !isExpoGo && !!SW_KEY && SW_KEY !== SUPERWALL_PLACEHOLDER;
+export const isSuperwallEnabled = !isExpoGo && !!activeKey && activeKey !== SUPERWALL_PLACEHOLDER;
 
 // ------------------------------------------------------------------
 // Imperative helpers – these use the zustand store directly so they
@@ -285,7 +287,7 @@ const PurchaseController: React.FC<{ children: React.ReactNode }> = ({ children 
 export const SuperwallProviderWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!_SuperwallProvider) return <>{children}</>;
 
-  const apiKeys = { ios: SW_KEY || '', android: SW_KEY || '' };
+  const apiKeys = { ios: SW_IOS_KEY || '', android: SW_ANDROID_KEY || '' };
 
   return (
     <PurchaseController>

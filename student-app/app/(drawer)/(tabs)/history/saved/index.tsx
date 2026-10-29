@@ -204,8 +204,8 @@ export default function SavedOfflineDashboard() {
             );
 
             const openRoute = type === 'quiz'
-              ? `/(drawer)/history/saved/quiz/${item.id}`
-              : `/(drawer)/history/saved/flashcards/${item.id}`;
+              ? `/(drawer)/(tabs)/history/saved/quiz/${item.id}`
+              : `/(drawer)/(tabs)/history/saved/flashcards/${item.id}`;
 
             return (
               <Swipeable renderRightActions={() => rightActions} overshootRight={false} containerStyle={{ marginBottom: 12 }}>

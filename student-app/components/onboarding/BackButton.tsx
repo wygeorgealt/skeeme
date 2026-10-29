@@ -1,20 +1,23 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Icon } from '@/components/ui/Icon';
+import { LiquidGlassIconButton } from '@/components/ui/LiquidGlassIconButton';
 
 export const BackButton = () => {
   const router = useRouter();
   return (
-    <TouchableOpacity style={styles.button} onPress={() => router.back()} accessibilityLabel="Go back">
-      <Icon name="ArrowLeft" size={24} color="default" />
-    </TouchableOpacity>
+    <LiquidGlassIconButton
+      style={styles.button}
+      onPress={() => router.back()}
+      accessibilityLabel="Go back"
+      icon="ArrowLeft"
+      size={48}
+    />
   );
 };
 
 const styles = StyleSheet.create({
   button: {
-    padding: 8,
     position: 'absolute',
     left: 16,
     top: 16,

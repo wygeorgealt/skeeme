@@ -9,17 +9,6 @@ import { Text } from '@/components/ui/Text';
 import { Colors, Radius } from '@/constants/theme';
 import { Icon } from '@/components/ui/Icon';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { 
-    User as UserIcon, 
-    Award, 
-    Folder, 
-    Clock, 
-    Bookmark, 
-    HelpCircle, 
-    Settings, 
-    ChevronRight, 
-    FileText 
-} from 'lucide-react-native';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
@@ -57,7 +46,7 @@ function SettingsRow({
                     thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : switchValue ? C.primary : '#f4f3f4'}
                 />
             ) : (
-                <Icon icon={ChevronRight} size={20} color={C.textTertiary} />
+                <Icon name="ChevronRight" size={20} color={C.textTertiary} />
             )}
         </TouchableOpacity>
     );
@@ -147,7 +136,7 @@ export default function AccountScreen() {
                 <Animated.View entering={FadeInDown.duration(400).delay(100)} style={s.headerWrap}>
                     <View style={s.headerLeft}>
                         <View style={[s.avatarOuter, { backgroundColor: isDark ? 'rgba(0,122,255,0.18)' : '#E5F1FF' }]}>
-                            <Icon icon={UserIcon} size={26} color="primary" />
+                            <Icon name="User" size={26} color="primary" />
                         </View>
                         <View>
                             <Text style={[s.headerTitle, { color: C.text }]}>{user.name}</Text>
@@ -183,7 +172,7 @@ export default function AccountScreen() {
                         style={[s.gridItem, { backgroundColor: isDark ? C.card : C.surfaceLow }]}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={Award} size={30} color="default" style={{ marginBottom: 6 }} />
+                        <Icon name="Award" size={30} color="default" style={{ marginBottom: 6 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>{user.streak?.current_streak || 0} Day</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Streak</Text>
                     </TouchableOpacity>
@@ -193,27 +182,27 @@ export default function AccountScreen() {
                         onPress={() => router.push('/(drawer)/flashcards' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={Folder} size={30} color="default" style={{ marginBottom: 6 }} />
+                        <Icon name="Folder" size={30} color="default" style={{ marginBottom: 6 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>Flashcards</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Decks</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
                         style={[s.gridItem, { backgroundColor: isDark ? C.card : C.surfaceLow }]}
-                        onPress={() => router.push('/(drawer)/history' as any)}
+                        onPress={() => router.push('/(drawer)/(tabs)/history' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={Clock} size={30} color="default" style={{ marginBottom: 6 }} />
+                        <Icon name="Clock" size={30} color="default" style={{ marginBottom: 6 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>History</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Past sessions</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
                         style={[s.gridItem, { backgroundColor: isDark ? C.card : C.surfaceLow }]}
-                        onPress={() => router.push('/(drawer)/history/saved' as any)}
+                        onPress={() => router.push('/(drawer)/(tabs)/history/saved' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={Bookmark} size={30} color="default" style={{ marginBottom: 6 }} />
+                        <Icon name="Bookmark" size={30} color="default" style={{ marginBottom: 6 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>Saved</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Bookmarks</Text>
                     </TouchableOpacity>
@@ -223,7 +212,7 @@ export default function AccountScreen() {
                         onPress={() => router.push('/(drawer)/generate' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={FileText} size={30} color="primary" style={{ marginBottom: 6 }} />
+                        <Icon name="FileText" size={30} color="primary" style={{ marginBottom: 6 }} />
                         <Text style={[s.gridTitle, { color: C.primary }]}>Practice</Text>
                         <Text style={[s.gridSub, { color: C.primary }]}>Quizzes</Text>
                     </TouchableOpacity>
@@ -233,7 +222,7 @@ export default function AccountScreen() {
                         onPress={() => router.push('/(drawer)/support' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={HelpCircle} size={30} color="default" style={{ marginBottom: 6 }} />
+                        <Icon name="HelpCircle" size={30} color="default" style={{ marginBottom: 6 }} />
                         <Text style={[s.gridTitle, { color: C.text }]}>Support</Text>
                         <Text style={[s.gridSub, { color: C.textTertiary }]}>Help & Feedback</Text>
                     </TouchableOpacity>
@@ -243,7 +232,7 @@ export default function AccountScreen() {
                         onPress={() => router.push('/(drawer)/preferences' as any)}
                         activeOpacity={0.7}
                     >
-                        <Icon icon={Settings} size={30} color="default" />
+                        <Icon name="Settings" size={30} color="default" />
                         <View style={{ flex: 1, marginLeft: 16 }}>
                             <Text style={[s.gridTitle, { color: C.text, textAlign: 'left', marginTop: 0 }]}>Personalize</Text>
                             <Text style={[s.gridSub, { color: C.textTertiary, textAlign: 'left', lineHeight: 18 }]} numberOfLines={3}>{prefSummary}</Text>

@@ -112,7 +112,7 @@ export default function OtpScreen() {
                 const { user: authedUser, token: authToken } = verifyRes.data;
                 const { login } = useAuthStore.getState();
                 await login(authedUser, authToken);
-                router.replace('/(drawer)'); 
+                router.replace('/(drawer)/(tabs)');
 
             } else {
                 router.replace(`/new-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`);

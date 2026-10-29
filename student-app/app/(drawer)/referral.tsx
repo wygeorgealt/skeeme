@@ -4,7 +4,6 @@ import { View, ScrollView, TouchableOpacity, StyleSheet, Share } from 'react-nat
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Stack } from 'expo-router';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
@@ -98,8 +97,6 @@ export default function ReferralScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
-            <Stack.Screen options={{ headerShown: false }} />
-
             <ScreenHeader 
                 title="Earn Rewards" 
                 onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/settings' as any))}

@@ -25,7 +25,7 @@ export default function BuyCreditsScreen() {
         if (router.canGoBack()) {
             router.back();
         } else {
-            router.replace('/(drawer)');
+            router.replace('/(drawer)/(tabs)');
         }
     };
 

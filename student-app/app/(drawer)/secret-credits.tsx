@@ -112,7 +112,7 @@ export default function SecretCreditsScreen() {
         <View style={[s.root, { backgroundColor: C.background }]}>
             <ScreenHeader
                 title="Secret Credit Dispenser"
-                onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)' as any))}
+                onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/(tabs)' as any))}
             />
 
             <KeyboardAvoidingView

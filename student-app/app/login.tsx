@@ -75,7 +75,7 @@ export default function LoginScreen() {
             login(user, token);
             setFailedAttempts(0);
             setLockoutTimeLeft(0);
-            router.replace('/(drawer)');
+            router.replace('/(drawer)/(tabs)');
         } catch (error: any) {
             const status = error.response?.status;
             

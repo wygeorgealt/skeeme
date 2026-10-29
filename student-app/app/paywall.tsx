@@ -16,17 +16,17 @@ export default function PaywallScreen() {
     useEffect(() => {
         // If already subscribed and coming from onboarding, skip paywall
         if (fromOnboarding && user && user.plan_name !== 'free') {
-            router.replace('/(drawer)');
+            router.replace('/(drawer)/(tabs)');
         }
     }, [user, fromOnboarding]);
 
     const handleNavigation = () => {
         if (fromOnboarding) {
-            router.replace('/(drawer)');
+            router.replace('/(drawer)/(tabs)');
         } else if (router.canGoBack()) {
             router.back();
         } else {
-            router.replace('/(drawer)');
+            router.replace('/(drawer)/(tabs)');
         }
     };
 
@@ -91,4 +91,3 @@ const s = StyleSheet.create({
         zIndex: 2,
     },
 });
-

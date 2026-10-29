@@ -117,16 +117,17 @@ export default function ExamDateScreen() {
                         <View className="flex-col gap-2">
                             <Text style={{ color: C.text }} className="text-[14px] font-semibold">Exam / Course Title</Text>
                             <View 
-                                className="flex-row items-center rounded-xl px-3.5 h-13"
+                                className="flex-row items-center rounded-xl px-4"
                                 style={{
+                                    height: 52,
                                     backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F6F8FC',
                                     borderWidth: 1,
                                     borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                                 }}
                             >
-                                <Icon name="GraduationCap" size={18} color="secondary" />
+                                <Icon name="GraduationCap" size={20} color="secondary" />
                                 <TextInput 
-                                    className="flex-1 text-[15px] font-medium ml-2.5"
+                                    className="flex-1 text-[15px] font-medium ml-3 h-full"
                                     style={{ color: C.text }}
                                     placeholder="e.g. MCAT, USMLE, Midterms..."
                                     placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
@@ -140,15 +141,16 @@ export default function ExamDateScreen() {
                             <Text style={{ color: C.text }} className="text-[14px] font-semibold">Target Date</Text>
                             <Pressable 
                                 onPress={() => setShowPicker(true)}
-                                className="flex-row items-center rounded-xl px-3.5 h-13"
+                                className="flex-row items-center rounded-xl px-4"
                                 style={{
+                                    height: 52,
                                     backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F6F8FC',
                                     borderWidth: 1,
                                     borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                                 }}
                             >
-                                <Icon name="Calendar" size={18} color="secondary" />
-                                <Text style={{ color: C.text }} className="flex-1 font-semibold text-[15px] ml-2.5">
+                                <Icon name="Calendar" size={20} color="secondary" />
+                                <Text style={{ color: C.text }} className="flex-1 font-semibold text-[15px] ml-3">
                                     {date.toLocaleDateString(undefined, { dateStyle: 'long' })}
                                 </Text>
                             </Pressable>

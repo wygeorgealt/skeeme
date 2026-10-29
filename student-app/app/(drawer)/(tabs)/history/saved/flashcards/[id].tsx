@@ -203,4 +203,3 @@ const styles = StyleSheet.create({
   resultTitle: { fontSize: 22, fontWeight: '900', marginTop: 12 },
   resultSub: { marginTop: 10, lineHeight: 20, fontWeight: '600' },
 });
-

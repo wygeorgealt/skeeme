@@ -127,19 +127,29 @@ export default function FieldScreen() {
                             </Pressable>
                         </View>
                     ) : (
-                        <View className="flex-col gap-3">
+                        <View className="flex-col gap-3.5">
                             <View 
-                                className="flex-row items-center px-3.5 h-13 rounded-xl"
                                 style={{
-                                    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F6F8FC',
-                                    borderWidth: 1,
-                                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                                    height: 58,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    paddingHorizontal: 16,
+                                    borderRadius: 16,
+                                    backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : '#F1F5F9',
+                                    borderWidth: 1.5,
+                                    borderColor: isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0',
                                 }}
                             >
-                                <Icon name="Search" size={18} color="secondary" />
+                                <Icon name="Search" size={22} color="secondary" />
                                 <TextInput
-                                    className="flex-1 ml-2.5 text-[15px] font-medium"
-                                    style={{ color: C.text }}
+                                    style={{
+                                        flex: 1,
+                                        marginLeft: 12,
+                                        fontSize: 16,
+                                        fontWeight: '600',
+                                        color: C.text,
+                                        height: '100%',
+                                    }}
                                     placeholder="Search or enter major (e.g. Biology)..."
                                     placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
                                     value={fieldInput}
@@ -149,12 +159,26 @@ export default function FieldScreen() {
                                     }}
                                     returnKeyType="done"
                                 />
+                                {fieldInput.length > 0 && (
+                                    <Pressable 
+                                        onPress={() => setFieldInput('')} 
+                                        hitSlop={8}
+                                        style={{ marginRight: 8 }}
+                                    >
+                                        <Icon name="XCircle" size={18} color="secondary" />
+                                    </Pressable>
+                                )}
                                 {fieldInput.trim().length > 0 && (
                                     <Pressable 
                                         onPress={() => selectMajor(fieldInput.trim())}
-                                        className="px-3 py-1.5 rounded-lg bg-accent-electric-blue active:opacity-80"
+                                        style={{
+                                            paddingHorizontal: 14,
+                                            paddingVertical: 8,
+                                            borderRadius: 10,
+                                            backgroundColor: '#007AFF',
+                                        }}
                                     >
-                                        <Text className="text-white text-[13px] font-semibold">Select</Text>
+                                        <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>Select</Text>
                                     </Pressable>
                                 )}
                             </View>

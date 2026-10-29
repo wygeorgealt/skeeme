@@ -19,21 +19,21 @@ import { AnimatedButton } from 'react-native-3d-animated-buttons';
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
 const STYLES = [
-    { key: 'simple', label: 'Simple', desc: 'Everyday language & analogies' },
-    { key: 'detailed', label: 'Detailed', desc: 'In-depth academic breakdown' },
+    { key: 'simple', label: 'Simple', desc: 'Everyday language & analogies', icon: 'MessageCircle' },
+    { key: 'detailed', label: 'Detailed', desc: 'In-depth academic breakdown', icon: 'BookOpen' },
 ];
 
 const TONES = [
-    { key: 'supportive', label: 'Supportive', emoji: '🤗' },
-    { key: 'strict', label: 'Strict', emoji: '📐' },
-    { key: 'concise', label: 'Concise', emoji: '⚡' },
-    { key: 'fun', label: 'Fun & Witty', emoji: '😂' },
+    { key: 'supportive', label: 'Supportive', icon: 'Heart' },
+    { key: 'strict', label: 'Strict', icon: 'CheckCircle2' },
+    { key: 'concise', label: 'Concise', icon: 'AlignLeft' },
+    { key: 'fun', label: 'Fun & Witty', icon: 'Smile' },
 ];
 
 const GOALS = [
-    { key: 'conceptual', label: 'Deep Dive', desc: 'First-principles theory' },
-    { key: 'exam', label: 'Exam Prep', desc: 'High-yield tips & traps' },
-    { key: 'cheat', label: 'Cheat Sheet', desc: 'Quick summaries' },
+    { key: 'conceptual', label: 'Deep Dive', desc: 'First-principles theory', icon: 'Lightbulb' },
+    { key: 'exam', label: 'Exam Prep', desc: 'High-yield tips & traps', icon: 'ListChecks' },
+    { key: 'cheat', label: 'Cheat Sheet', desc: 'Quick summaries', icon: 'FileText' },
 ];
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ export default function PreferencesScreen() {
             updateUser({ ai_preferences: res.data.ai_preferences });
             haptics.notificationAsync(ExpoHaptics.NotificationFeedbackType.Success, true);
             Alert.alert('Saved!', 'Your AI will now adapt to your preferences.', [
-                { text: 'Got it', onPress: () => (router.canGoBack() ? router.back() : router.replace('/(drawer)' as any)) },
+                { text: 'Got it', onPress: () => (router.canGoBack() ? router.back() : router.replace('/(drawer)/(tabs)' as any)) },
             ]);
         } catch {
             haptics.notificationAsync(ExpoHaptics.NotificationFeedbackType.Error, true);
@@ -156,7 +156,12 @@ export default function PreferencesScreen() {
                                     }}
                                     className="flex-1 p-4 rounded-2xl border"
                                 >
-                                    <View className="mb-2">
+                                    <View className="flex-row items-center gap-2 mb-2">
+                                        <Icon
+                                            name={item.icon}
+                                            size={17}
+                                            color={isSelected ? '#007AFF' : 'secondary'}
+                                        />
                                         <Text style={{ color: isSelected ? '#007AFF' : C.text }} className="font-bold">{item.label}</Text>
                                     </View>
                                     <Text style={{ color: isSelected ? '#007AFF' : C.textSecondary }} className="text-xs">{item.desc}</Text>
@@ -190,9 +195,13 @@ export default function PreferencesScreen() {
                                         backgroundColor: isSelected ? '#007AFF' : innerBg,
                                         borderColor: isSelected ? '#007AFF' : cardBorder,
                                     }}
-                                    className="flex-row items-center gap-2 px-4 py-2.5 rounded-full border shadow-sm"
+                                    className="flex-row items-center gap-2 px-4 py-2.5 rounded-full border"
                                 >
-                                    <Text>{item.emoji}</Text>
+                                    <Icon
+                                        name={item.icon}
+                                        size={17}
+                                        color={isSelected ? '#FFFFFF' : 'secondary'}
+                                    />
                                     <Text style={{ color: isSelected ? '#FFFFFF' : C.text }} className="font-bold">{item.label}</Text>
                                 </Pressable>
                             );
@@ -226,6 +235,25 @@ export default function PreferencesScreen() {
                                     }}
                                     className="flex-row items-center p-4 rounded-2xl border shadow-sm"
                                 >
+                                    <View
+                                        style={{
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: 12,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            backgroundColor: isSelected
+                                                ? (isDark ? 'rgba(0,122,255,0.2)' : 'rgba(0,122,255,0.12)')
+                                                : (isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF'),
+                                            marginRight: 12,
+                                        }}
+                                    >
+                                        <Icon
+                                            name={item.icon}
+                                            size={18}
+                                            color={isSelected ? 'primary' : 'secondary'}
+                                        />
+                                    </View>
                                     <View className="flex-1">
                                         <Text style={{ color: isSelected ? '#007AFF' : C.text }} className="font-bold text-base mb-0.5">{item.label}</Text>
                                         <Text style={{ color: isSelected ? '#007AFF' : C.textSecondary }} className="text-xs">{item.desc}</Text>

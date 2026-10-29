@@ -28,19 +28,44 @@ const RETRY_DELAY = 1000; // 1s
 // request blocks the JS thread and compounds during streaming bursts.
 let cachedNetInfo: NetInfoState | null = null;
 let serviceFailureNotified = false;
-NetInfo.addEventListener((state) => {
-    cachedNetInfo = state;
-    if (state.isConnected === false || state.isInternetReachable === false) {
-        useAuthStore.getState().setConnectionState('offline');
-    } else if (state.isConnected === true && useAuthStore.getState().connectionState === 'offline') {
-        // Network transport returned; wait for the health probe before enabling
-        // generation actions again.
-        useAuthStore.getState().setConnectionState('serverDown');
-    }
-});
+let lastDismissedAt = 0;
 
-function notifyServiceFailure(message: string) {
-    if (serviceFailureNotified) return;
+export function resetServiceFailureNotification() {
+    serviceFailureNotified = false;
+    lastDismissedAt = Date.now();
+}
+
+function handleNetInfoChange(state: NetInfoState) {
+    cachedNetInfo = state;
+    const isOffline = state.isConnected === false || state.isInternetReachable === false;
+    const store = useAuthStore.getState();
+
+    if (isOffline) {
+        if (store.connectionState !== 'offline') {
+            store.setConnectionState('offline');
+            notifyServiceFailure(
+                'You’re offline. Check your Wi-Fi or mobile data connection, or continue with content already saved on this device.',
+                true
+            );
+        }
+    } else if (state.isConnected === true && state.isInternetReachable !== false) {
+        serviceFailureNotified = false;
+        if (store.connectionState === 'offline') {
+            store.setConnectionState('online');
+            if (store.globalError?.toLowerCase().includes('offline')) {
+                store.setGlobalError(null);
+            }
+        }
+    }
+}
+
+NetInfo.fetch().then(handleNetInfoChange).catch(() => undefined);
+NetInfo.addEventListener(handleNetInfoChange);
+
+function notifyServiceFailure(message: string, force = false) {
+    // Prevent concurrent failing requests in the same burst from re-opening the modal
+    // immediately after the user dismisses it (1.5s cooldown), unless forced by a state transition.
+    if (!force && (serviceFailureNotified || Date.now() - lastDismissedAt < 1500)) return;
     serviceFailureNotified = true;
     useAuthStore.getState().setGlobalError(message);
 }

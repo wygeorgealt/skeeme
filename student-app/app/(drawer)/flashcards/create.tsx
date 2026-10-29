@@ -166,7 +166,7 @@ export default function GenerateFlashcardScreen() {
 
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}> 
-            <ScreenHeader title="Create Flashcards" />
+            <ScreenHeader title="Create Flashcards" onBack={() => router.back()} />
             <FlashcardEditor 
                 onGenerate={onGenerate} 
                 onPickFile={onPickFile} 
