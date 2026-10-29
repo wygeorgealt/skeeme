@@ -331,6 +331,22 @@ func (h *FlashcardHandler) StoreSession(w http.ResponseWriter, r *http.Request) 
 	}
 	defer tx.Rollback()
 
+	var alreadyStudiedToday bool
+	err = tx.GetContext(r.Context(), &alreadyStudiedToday, `
+		SELECT EXISTS (
+			SELECT 1
+			FROM study_streaks
+			WHERE user_id = $1 AND last_study_date::date = CURRENT_DATE
+		)
+	`, user.ID)
+	if err != nil {
+		log.Printf("[flashcard] StoreSession study-date lookup error for user %d: %v", user.ID, err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to check study streak"})
+		return
+	}
+
 	var newID int64
 	err = tx.QueryRowContext(r.Context(), `
 		INSERT INTO flashcard_sessions (user_id, flashcard_deck_id, cards_count, completed_at, created_at, updated_at)
@@ -394,8 +410,9 @@ func (h *FlashcardHandler) StoreSession(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "Study session recorded successfully",
-		"id":      newID,
+		"message":          "Study session recorded successfully",
+		"id":               newID,
+		"is_new_study_day": !alreadyStudiedToday,
 		"streak": map[string]interface{}{
 			"current_streak":   streak.CurrentStreak,
 			"longest_streak":   streak.LongestStreak,

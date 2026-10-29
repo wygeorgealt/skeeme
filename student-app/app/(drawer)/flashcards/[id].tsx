@@ -262,7 +262,6 @@ export default function StudyDeckScreen() {
     const progressAnim = useSharedValue(0);
     const syncAnim = useSharedValue(0);
     const { user, updateUser } = useAuthStore();
-    const [today] = useState(() => new Date().toISOString().split('T')[0]);
     const [isSavingSession, setIsSavingSession] = useState(false);
     const [rewardMessage, setRewardMessage] = useState('');
     const [showMilestone, setShowMilestone] = useState(false);
@@ -514,7 +513,8 @@ export default function StudyDeckScreen() {
         }
     }, [currentIndex, cards]);
 
-    const nextCard = () => {
+    const nextCard = async () => {
+        if (isSavingSession) return;
         if (cards.length === 0) return;
         if (currentIndex < cards.length - 1) {
             haptics.impactAsync();
@@ -527,15 +527,19 @@ export default function StudyDeckScreen() {
             haptics.notificationAsync('success' as any);
             setRewardMessage(REWARD_MESSAGES[Math.floor(Math.random() * REWARD_MESSAGES.length)]);
 
-            // Determine if we should show the big celebration
-            const currentStreak = typeof user?.streak === 'number' ? user.streak : (user?.streak?.current_streak || 0);
-            const lastDate = typeof user?.streak === 'object' ? user.streak?.last_study_date : null;
-            const studiedToday = typeof lastDate === 'string' && lastDate.slice(0, 10) === today;
-
-            const nextStreak = currentStreak + (studiedToday ? 0 : 1);
-            const isMilestoneCount = nextStreak === 1 || nextStreak % 7 === 0;
-
-            setShowMilestone(!studiedToday && isMilestoneCount);
+            try {
+                const result = await saveFlashcardSession();
+                const streak = result.streak;
+                const isMilestoneCount = streak.current_streak === 1 || streak.current_streak % 7 === 0;
+                setShowMilestone(result.is_new_study_day && isMilestoneCount);
+            } catch (error) {
+                if (__DEV__) console.warn('Failed to save flashcard session:', error);
+                setShowMilestone(false);
+                Alert.alert(
+                    'Couldn’t save your study session',
+                    'Your streak was not updated. Please check your connection and try again later.'
+                );
+            }
             setIsComplete(true);
         }
     };
@@ -553,32 +557,34 @@ export default function StudyDeckScreen() {
 
 
     const saveFlashcardSession = useCallback(async () => {
-        if (!deck || isSavingSession) return;
+        if (!deck) {
+            throw new Error('Flashcard deck is not loaded.');
+        }
 
         setIsSavingSession(true);
         try {
-            // Record the completion in history/sessions
             const res = await api.post('flashcards/history', {
                 flashcard_deck_id: Number(id),
                 cards_count: deck.flashcards.length,
             });
 
-            if (res.data?.streak) {
-                updateUser({ streak: res.data.streak });
+            const streak = res.data?.streak;
+            if (
+                !streak ||
+                typeof streak.current_streak !== 'number' ||
+                typeof streak.longest_streak !== 'number' ||
+                typeof res.data?.is_new_study_day !== 'boolean'
+            ) {
+                throw new Error('The server did not return the saved streak.');
             }
+
+            await updateUser({ streak });
             queryClient.invalidateQueries({ queryKey: ['student', 'me'] });
-        } catch (err) {
-            if (__DEV__) console.warn('Failed to save flashcard session:', err);
+            return { streak, is_new_study_day: res.data.is_new_study_day };
         } finally {
             setIsSavingSession(false);
         }
-    }, [id, deck, isSavingSession, queryClient, updateUser]);
-
-    useEffect(() => {
-        if (isComplete) {
-            saveFlashcardSession();
-        }
-    }, [isComplete]);
+    }, [id, deck, queryClient, updateUser]);
 
     const restartSession = () => {
         haptics.impactAsync();
@@ -791,10 +797,7 @@ export default function StudyDeckScreen() {
     );
 
     if (isComplete) {
-        const currentStreak = typeof user?.streak === 'number' ? user.streak : (user?.streak?.current_streak || 0);
-        const lastStudyDate = typeof user?.streak === 'object' ? user.streak?.last_study_date : null;
-        const studiedToday = typeof lastStudyDate === 'string' && lastStudyDate.slice(0, 10) === today;
-        const streak = currentStreak + (studiedToday ? 0 : 1);
+        const streak = typeof user?.streak === 'number' ? user.streak : (user?.streak?.current_streak || 0);
         const cardsForOffline = (deck?.flashcards || []).map((c: any) => ({
             front: c.front,
             back: c.back,
@@ -972,8 +975,10 @@ export default function StudyDeckScreen() {
                         >
                             <Pressable
                                 onPress={nextCard}
+                                disabled={isSavingSession}
                                 accessibilityRole="button"
                                 accessibilityLabel="Finish deck"
+                                accessibilityState={{ disabled: isSavingSession, busy: isSavingSession }}
                                 style={{
                                     flex: 1,
                                     flexDirection: 'row',
@@ -983,9 +988,9 @@ export default function StudyDeckScreen() {
                                 }}
                             >
                                 <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
-                                    Finish Deck
+                                    {isSavingSession ? 'Saving...' : 'Finish Deck'}
                                 </Text>
-                                <Icon name="Check" size={20} color="white" />
+                                {!isSavingSession && <Icon name="Check" size={20} color="white" />}
                             </Pressable>
                         </Glass>
                     ) : (
