@@ -10,11 +10,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptics } from '@/lib/haptics';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Icon } from '@/components/ui/Icon';
-import Svg, { Circle } from 'react-native-svg';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { saveOfflineQuiz, saveOfflineDeck, isQuizSaved, isDeckSaved } from '@/lib/offlineSaved';
+import { formatTopicTitle } from '@/lib/formatTopicTitle';
 
 type QuizSession = {
     id: number;
@@ -35,12 +35,6 @@ type FlashcardDeck = {
     created_at: string;
     flashcards?: any[];
     cards?: any[];
-};
-
-const toSentenceCase = (text?: string): string => {
-    if (!text) return '';
-    const trimmed = text.trim();
-    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 };
 
 // Storage helpers using FileSystem for larger cache data
@@ -425,7 +419,7 @@ export default function StudyHistoryDashboard() {
                         const isQuiz = activeTab === 'quizzes';
                         const isFlashcard = activeTab === 'flashcards';
                         const id = item.id;
-                        const title = isQuiz ? toSentenceCase((item as QuizSession).topic) : (item as FlashcardDeck).title;
+                        const title = isQuiz ? formatTopicTitle((item as QuizSession).topic) : (item as FlashcardDeck).title;
 
                         const renderRightActions = () => (
                             <View style={{ width: 84, height: '100%', justifyContent: 'center', alignItems: 'flex-end' }}>
@@ -586,8 +580,7 @@ function SummaryCard({ item, isDark, C }: { item: any; isDark: boolean; C: any }
 }
 
 function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolean; C: any }) {
-    const pct = session.score_percentage || 0;
-    const displayTopic = toSentenceCase(session.topic);
+    const displayTopic = formatTopicTitle(session.topic);
     const difficultyTag = session.difficulty ? (session.difficulty.charAt(0).toUpperCase() + session.difficulty.slice(1)) : 'Practice';
     
     const [isDownloaded, setIsDownloaded] = useState(false);
@@ -606,17 +599,36 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
             }
             setIsDownloading(true);
 
-            let quizData: any = session;
-            const res = await api.get(`/quizzes/history/${session.id}`).catch(() => null);
-            if (res?.data?.data) quizData = res.data.data;
-            else if (res?.data) quizData = res.data;
+            const res = await api.get(`/quizzes/history/${session.id}`);
+            const quizData = res.data?.data || res.data;
+            if (!Array.isArray(quizData?.questions) || quizData.questions.length === 0) {
+                throw new Error('This quiz has no saved questions to download.');
+            }
 
-            const questionsToSave = (quizData.questions || []).map((q: any) => ({
-                question_text: q.question || q.question_text || '',
-                question_type: q.type || q.question_type || 'multiple_choice',
-                correct_answer: q.correct_answer || '',
-                options: Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options) : []),
-            }));
+            const questionsToSave = quizData.questions.map((q: any, index: number) => {
+                const rawOptions = q.options;
+                let options: string[] = [];
+                if (Array.isArray(rawOptions)) {
+                    options = rawOptions;
+                } else if (typeof rawOptions === 'string' && rawOptions.trim()) {
+                    const parsedOptions: unknown = JSON.parse(rawOptions);
+                    if (!Array.isArray(parsedOptions) || !parsedOptions.every((option) => typeof option === 'string')) {
+                        throw new Error(`Question ${index + 1} has invalid answer choices.`);
+                    }
+                    options = parsedOptions;
+                }
+
+                return {
+                    question_text: q.question || q.question_text || '',
+                    question_type: q.type || q.question_type || 'multiple_choice',
+                    correct_answer: q.correct_answer || '',
+                    options,
+                    type: q.type || q.question_type || 'multiple_choice',
+                    explanation: q.explanation || '',
+                    user_answer: q.user_answer ?? null,
+                    is_correct: Boolean(q.is_correct),
+                };
+            });
 
             await saveOfflineQuiz({
                 id: session.id.toString(),
@@ -630,8 +642,9 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
             setIsDownloaded(true);
             haptics.notificationAsync('success' as any);
             Alert.alert("Saved Offline", `"${displayTopic}" is now downloaded for offline study!`);
-        } catch (e) {
-            Alert.alert("Download Failed", "Could not save quiz offline. Check your connection.");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Could not save quiz offline.';
+            Alert.alert('Download Failed', message);
         } finally {
             setIsDownloading(false);
         }
@@ -647,22 +660,8 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
             className="p-5 rounded-[26px] flex-col gap-4 shadow-sm"
         >
             <View className="flex-row items-center justify-between gap-3">
-                <View
-                    className="w-11 h-11 rounded-2xl items-center justify-center shrink-0"
-                    style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.14)' : '#EAF3FF' }}
-                >
-                    <Icon name="Quiz" size={21} color="primary" />
-                </View>
                 <View className="flex-1 flex-col">
                     <View className="flex-row items-center gap-1.5 flex-wrap">
-                        <View
-                            style={{ backgroundColor: isDark ? 'rgba(0,122,255,0.12)' : '#EAF3FF' }}
-                            className="px-2 py-0.5 rounded-full"
-                        >
-                            <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 0.4, color: C.primary }}>
-                                QUIZ
-                            </Text>
-                        </View>
                         <View
                             style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F4F3F8' }}
                             className="px-2 py-0.5 rounded-full"
@@ -675,21 +674,6 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                     <Text style={{ fontSize: 18, fontWeight: '700', letterSpacing: -0.3, color: C.text }} className="mt-1" numberOfLines={2}>
                         {displayTopic}
                     </Text>
-                </View>
-                
-                <View className="items-end shrink-0">
-                    <View
-                        style={{ backgroundColor: C.selectedBackground }}
-                        className="w-[58px] h-[58px] rounded-full items-center justify-center relative"
-                    >
-                        <Svg width={58} height={58} viewBox="0 0 36 36" style={{ transform: [{ rotate: '-90deg' }] }}>
-                            <Circle cx="18" cy="18" r="15.9155" fill="none" stroke={isDark ? '#2C2C2E' : '#E3E2E7'} strokeWidth="3.5" />
-                            <Circle cx="18" cy="18" r="15.9155" fill="none" stroke={C.primary} strokeWidth="3.5" strokeDasharray={`${pct}, 100`} strokeLinecap="round" />
-                        </Svg>
-                        <View className="absolute inset-0 items-center justify-center">
-                            <Text style={{ fontSize: 12, fontWeight: '700', color: C.primary }}>{Math.round(pct)}%</Text>
-                        </View>
-                    </View>
                 </View>
             </View>
 
@@ -740,13 +724,15 @@ function QuizCard({ session, isDark, C }: { session: QuizSession; isDark: boolea
                     className="w-10 h-10 rounded-full items-center justify-center active:opacity-70"
                     onPress={handleDownloadQuiz}
                     disabled={isDownloading}
+                    accessibilityRole="button"
+                    accessibilityLabel={isDownloaded ? 'Quiz saved offline' : 'Save quiz offline'}
                 >
                     {isDownloading ? (
                         <ActivityIndicator size="small" color={C.primary} />
                     ) : isDownloaded ? (
-                        <Icon name="Check" size={17} color="success" />
+                        <Icon name="BookmarkCheck" size={17} color="success" />
                     ) : (
-                        <Icon name="Download" size={17} color="textSecondary" />
+                        <Icon name="Bookmark" size={17} color="textSecondary" />
                     )}
                 </Pressable>
             </View>
@@ -771,14 +757,16 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
             }
             setIsDownloading(true);
 
-            let deckData: any = deck;
-            const res = await api.get(`/flashcards/decks/${deck.id}`).catch(() => null);
-            const raw = res?.data?.data || res?.data?.deck || res?.data;
-            if (raw) deckData = { ...raw, flashcards: raw.flashcards || raw.cards || [] };
+            const res = await api.get(`/flashcards/decks/${deck.id}`);
+            const deckData = res.data?.data || res.data?.deck || res.data;
+            const sourceCards = deckData?.flashcards || deckData?.cards;
+            if (!Array.isArray(sourceCards) || sourceCards.length === 0) {
+                throw new Error('This deck has no cards to download.');
+            }
 
-            const cardsToSave = (deckData.flashcards || deckData.cards || []).map((c: any) => ({
-                front: c.front || '',
-                back: c.back || '',
+            const cardsToSave = sourceCards.map((card: any) => ({
+                front: card.front || '',
+                back: card.back || '',
             }));
 
             await saveOfflineDeck({
@@ -790,8 +778,9 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
             setIsDownloaded(true);
             haptics.notificationAsync('success' as any);
             Alert.alert("Saved Offline", `"${deck.title}" is now downloaded for offline study!`);
-        } catch (e) {
-            Alert.alert("Download Failed", "Could not save deck offline. Check your connection.");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Could not save deck offline.';
+            Alert.alert('Download Failed', message);
         } finally {
             setIsDownloading(false);
         }
@@ -841,13 +830,15 @@ function DeckCard({ deck, isDark, C }: { deck: FlashcardDeck; isDark: boolean; C
                     className="w-10 h-10 rounded-full items-center justify-center shrink-0 active:opacity-70"
                     onPress={handleDownloadDeck}
                     disabled={isDownloading}
+                    accessibilityRole="button"
+                    accessibilityLabel={isDownloaded ? 'Deck saved offline' : 'Save deck offline'}
                 >
                     {isDownloading ? (
                         <ActivityIndicator size="small" color={C.primary} />
                     ) : isDownloaded ? (
-                        <Icon name="Check" size={17} color="success" />
+                        <Icon name="BookmarkCheck" size={17} color="success" />
                     ) : (
-                        <Icon name="Download" size={17} color="textSecondary" />
+                        <Icon name="Bookmark" size={17} color="textSecondary" />
                     )}
                 </Pressable>
             </View>

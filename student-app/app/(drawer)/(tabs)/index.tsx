@@ -94,16 +94,30 @@ export default function HomeDashboard() {
         staleTime: 60 * 1000,
     });
 
-    const syncDailyTasks = useCallback(() => {
+    const {
+        data: flashcardSessions = EMPTY_ARRAY,
+        refetch: refetchFlashcardSessions,
+    } = useQuery({
+        queryKey: ['flashcard-session-history'],
+        queryFn: async () => {
+            const res = await api.get('flashcards/history');
+            const raw = res.data;
+            return (Array.isArray(raw) ? raw : (raw?.data || [])) as any[];
+        },
+        staleTime: 60 * 1000,
+    });
+
+    const syncDailyTasks = useCallback((sessions = flashcardSessions) => {
         getDailyActivities({
             user,
             exams: userExams,
             flashcardDecks,
+            flashcardSessions: sessions,
             quizSessions,
         })
             .then(setDailyTasks)
             .catch(() => {});
-    }, [user, userExams, flashcardDecks, quizSessions]);
+    }, [user, userExams, flashcardDecks, flashcardSessions, quizSessions]);
 
     // Generate dynamic daily tasks based on user prefs, exams, and history
     useEffect(() => {
@@ -113,8 +127,10 @@ export default function HomeDashboard() {
     // Refresh tasks when returning to dashboard
     useFocusEffect(
         useCallback(() => {
-            syncDailyTasks();
-        }, [syncDailyTasks])
+            refetchFlashcardSessions().then(({ data }) => {
+                syncDailyTasks(data ?? flashcardSessions);
+            });
+        }, [refetchFlashcardSessions, syncDailyTasks, flashcardSessions])
     );
 
     const handleToggleTask = async (taskId: string) => {
@@ -141,21 +157,12 @@ export default function HomeDashboard() {
     const headerOpacity = useSharedValue(0);
     const headerY = useSharedValue(14);
     const contentOpacity = useSharedValue(0);
-    const progressWidth = useSharedValue(0);
-    const trackWidthSV = useSharedValue(0);
 
     useEffect(() => {
         headerOpacity.value = withTiming(1, { duration: 400 });
         headerY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
         contentOpacity.value = withDelay(150, withTiming(1, { duration: 500 }));
     }, []);
-
-    useEffect(() => {
-        progressWidth.value = withTiming(progressPct, {
-            duration: 500,
-            easing: Easing.out(Easing.cubic),
-        });
-    }, [progressPct]);
 
     const headerAnimatedStyle = useAnimatedStyle(() => ({
         opacity: headerOpacity.value,
@@ -165,19 +172,6 @@ export default function HomeDashboard() {
     const contentAnimatedStyle = useAnimatedStyle(() => ({
         opacity: contentOpacity.value,
     }));
-
-    const progressAnimatedStyle = useAnimatedStyle(() => {
-        const pct = Math.max(0, Math.min(100, progressWidth.value));
-        if (trackWidthSV.value > 0) {
-            const targetPx = pct > 0 ? Math.max(12, (pct / 100) * trackWidthSV.value) : 0;
-            return {
-                width: targetPx,
-            };
-        }
-        return {
-            width: `${pct}%`,
-        };
-    });
 
     const firstName = user?.name ? user.name.split(' ')[0] : 'there';
     const credits = user?.credits ?? 0;
@@ -387,19 +381,22 @@ export default function HomeDashboard() {
 
                         {/* Progress Bar */}
                         <View
-                            onLayout={(e) => {
-                                const w = e.nativeEvent.layout.width;
-                                if (w > 0) {
-                                    trackWidthSV.value = w;
-                                }
+                            accessibilityRole="progressbar"
+                            accessibilityValue={{
+                                min: 0,
+                                max: goalProgress.totalCount,
+                                now: goalProgress.completedCount,
                             }}
                             style={[styles.progressBarTrack, { backgroundColor: isDark ? '#2C2C2E' : '#EFEFF4' }]}
                         >
-                            <Animated.View
+                            <View
                                 style={[
                                     styles.progressBarFill,
                                     { backgroundColor: goalProgress.isGoalMet ? '#34C759' : '#007AFF' },
-                                    progressAnimatedStyle,
+                                    {
+                                        width: `${progressPct}%`,
+                                        minWidth: progressPct > 0 ? 12 : 0,
+                                    },
                                 ]}
                             />
                         </View>
@@ -846,6 +843,7 @@ const styles = StyleSheet.create({
         height: '100%',
         backgroundColor: '#007AFF',
         borderRadius: 999,
+        minWidth: 0,
     },
     proBanner: {
         borderRadius: 24,

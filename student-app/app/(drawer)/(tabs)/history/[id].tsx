@@ -23,7 +23,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { BlurView } from 'expo-blur';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { haptics } from '@/lib/haptics';
-import Svg, { Circle } from 'react-native-svg';
+import { formatTopicTitle } from '@/lib/formatTopicTitle';
 
 // Storage helpers
 const storage = {
@@ -331,7 +331,7 @@ export default function QuizHistoryDetailScreen() {
         if (!session) return;
         setIsExporting(true);
         try {
-            const html = generateQuizHTML(session.topic, session.score_percentage, session.questions ?? []);
+            const html = generateQuizHTML(formatTopicTitle(session.topic), session.score_percentage, session.questions ?? []);
             const { uri } = await Print.printToFileAsync({
                 html,
                 base64: false
@@ -388,19 +388,13 @@ export default function QuizHistoryDetailScreen() {
     const missedQ = Math.max(0, totalQ - correctQ);
 
     const getRemark = (pct: number) => {
-        if (pct >= 90) return { title: 'Excellent Mastery', subtitle: 'Topic mastered with high accuracy.', tier: 'A+ · Mastery', accent: '#10B981', icon: 'Trophy' as const };
-        if (pct >= 75) return { title: 'Strong Understanding', subtitle: 'Great grasp of core concepts.', tier: 'B+ · Strong', accent: '#007AFF', icon: 'Award' as const };
-        if (pct >= 50) return { title: 'Good Progress', subtitle: 'Review missed items below to lock this in.', tier: 'C · Developing', accent: '#F59E0B', icon: 'Target' as const };
-        return { title: 'Needs Practice', subtitle: 'Review the explanations and retake.', tier: 'Review Mode', accent: '#EF4444', icon: 'Flame' as const };
+        if (pct >= 90) return { title: 'Excellent Mastery', subtitle: 'Topic mastered with high accuracy.', tier: 'A+ · Mastery', accent: '#10B981' };
+        if (pct >= 75) return { title: 'Strong Understanding', subtitle: 'Great grasp of core concepts.', tier: 'B+ · Strong', accent: '#007AFF' };
+        if (pct >= 50) return { title: 'Good Progress', subtitle: 'Review missed items below to lock this in.', tier: 'C · Developing', accent: '#F59E0B' };
+        return { title: 'Needs Practice', subtitle: 'Review the explanations and retake.', tier: 'Review Mode', accent: '#EF4444' };
     };
 
     const remark = getRemark(scorePct);
-    const ringSize = 92;
-    const ringStroke = 8;
-    const ringRadius = (ringSize - ringStroke) / 2;
-    const ringCircumference = 2 * Math.PI * ringRadius;
-    const ringDashoffset = ringCircumference * (1 - Math.min(100, Math.max(0, scorePct)) / 100);
-
     const allQuestions = (session.questions ?? []).map((q, index) => ({ q, index }));
     const filteredQuestions = allQuestions.filter(({ q }) => {
         if (reviewFilter === 'missed') return !q.is_correct;
@@ -412,67 +406,58 @@ export default function QuizHistoryDetailScreen() {
         <View style={{ flex: 1, backgroundColor: bgColor }}>
             <ShareCard
                 type="quiz"
-                data={{ topic: session.topic, score_percentage: scorePct }}
+                data={{ topic: formatTopicTitle(session.topic), score_percentage: scorePct }}
                 viewShotRef={viewShotRef}
             />
 
             <ScreenHeader
                 title="Quiz Report"
-                subtitle={formatMathPlainText(session.topic || 'Study Session')}
+                subtitle={formatMathPlainText(formatTopicTitle(session.topic || 'Study Session'))}
                 rightAction={
-                    <Glass
-                        fallbackColor={isDark ? '#25262B' : 'rgba(255,255,255,0.88)'}
-                        fallbackStyle={{ borderColor: C.border, borderWidth: 1 }}
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 2,
-                            padding: 4,
-                            borderRadius: 999,
-                            overflow: 'hidden',
-                        }}
-                    >
-                        <Pressable
-                            onPress={handleShare}
-                            disabled={isSharing}
-                            accessibilityRole="button"
-                            accessibilityLabel="Share quiz report"
-                            hitSlop={4}
-                            style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 999,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Glass
+                            fallbackColor={isDark ? '#25262B' : 'rgba(255,255,255,0.88)'}
+                            fallbackStyle={{ borderColor: C.border, borderWidth: 1 }}
+                            interactive
+                            style={{ width: 44, height: 44, borderRadius: 22, overflow: 'hidden' }}
                         >
-                            {isSharing ? (
-                                <LoadingSpinner size={16} color={C.primary} strokeWidth={2.5} />
-                            ) : (
-                                <Icon name="Share2" size={20} color="default" />
-                            )}
-                        </Pressable>
-                        <Pressable
-                            onPress={handleExport}
-                            disabled={isExporting}
-                            accessibilityRole="button"
-                            accessibilityLabel="Export quiz report as PDF"
-                            hitSlop={4}
-                            style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 999,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
+                            <Pressable
+                                onPress={handleShare}
+                                disabled={isSharing}
+                                accessibilityRole="button"
+                                accessibilityLabel="Share quiz report"
+                                hitSlop={4}
+                                style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+                            >
+                                {isSharing ? (
+                                    <LoadingSpinner size={16} color={C.primary} strokeWidth={2.5} />
+                                ) : (
+                                    <Icon name="Share2" size={20} color="default" />
+                                )}
+                            </Pressable>
+                        </Glass>
+                        <Glass
+                            fallbackColor={isDark ? '#25262B' : 'rgba(255,255,255,0.88)'}
+                            fallbackStyle={{ borderColor: C.border, borderWidth: 1 }}
+                            interactive
+                            style={{ width: 44, height: 44, borderRadius: 22, overflow: 'hidden' }}
                         >
-                            {isExporting ? (
-                                <LoadingSpinner size={16} color={C.primary} strokeWidth={2.5} />
-                            ) : (
-                                <Icon name="Download" size={20} color="default" />
-                            )}
-                        </Pressable>
-                    </Glass>
+                            <Pressable
+                                onPress={handleExport}
+                                disabled={isExporting}
+                                accessibilityRole="button"
+                                accessibilityLabel="Export quiz report as PDF"
+                                hitSlop={4}
+                                style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+                            >
+                                {isExporting ? (
+                                    <LoadingSpinner size={16} color={C.primary} strokeWidth={2.5} />
+                                ) : (
+                                    <Icon name="Download" size={20} color="default" />
+                                )}
+                            </Pressable>
+                        </Glass>
+                    </View>
                 }
             />
 
@@ -492,8 +477,8 @@ export default function QuizHistoryDetailScreen() {
                         marginBottom: 14,
                     }}
                 >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-                        <View style={{ flex: 1 }}>
+                    <View>
+                        <View>
                             <View
                                 style={{
                                     alignSelf: 'flex-start',
@@ -530,64 +515,6 @@ export default function QuizHistoryDetailScreen() {
                             </Text>
                         </View>
 
-                        <View style={{ width: ringSize, height: ringSize, alignItems: 'center', justifyContent: 'center' }}>
-                            <Svg width={ringSize} height={ringSize}>
-                                <Circle
-                                    cx={ringSize / 2}
-                                    cy={ringSize / 2}
-                                    r={ringRadius}
-                                    stroke={isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}
-                                    strokeWidth={ringStroke}
-                                    fill="none"
-                                />
-                                <Circle
-                                    cx={ringSize / 2}
-                                    cy={ringSize / 2}
-                                    r={ringRadius}
-                                    stroke={remark.accent}
-                                    strokeWidth={ringStroke}
-                                    strokeDasharray={ringCircumference}
-                                    strokeDashoffset={ringDashoffset}
-                                    strokeLinecap="round"
-                                    fill="none"
-                                    transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
-                                />
-                            </Svg>
-                            <View
-                                style={{
-                                    position: 'absolute',
-                                    width: 46,
-                                    height: 46,
-                                    borderRadius: 15,
-                                    backgroundColor: C.surfaceLow,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <Icon name={remark.icon} size={22} color="default" />
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* Segmented Accuracy Bar */}
-                    <View style={{ marginTop: 18, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.border }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <Text style={{ fontSize: 12, fontWeight: '600', color: C.textSecondary }} numberOfLines={1}>
-                                Topic: {formatMathPlainText(session.topic)}
-                            </Text>
-                            <Text style={{ fontSize: 11, fontWeight: '700', color: C.textSecondary }}>
-                                {correctQ} of {totalQ} correct
-                            </Text>
-                        </View>
-
-                        <View style={{ flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden', backgroundColor: C.surfaceLow, gap: 3 }}>
-                            {correctQ > 0 && (
-                                <View style={{ flex: correctQ, backgroundColor: '#10B981', borderRadius: 4 }} />
-                            )}
-                            {missedQ > 0 && (
-                                <View style={{ flex: missedQ, backgroundColor: '#EF4444', borderRadius: 4 }} />
-                            )}
-                        </View>
                     </View>
                 </View>
 
@@ -664,16 +591,6 @@ export default function QuizHistoryDetailScreen() {
                             </Text>
                         </View>
                     </View>
-                </View>
-
-                {/* Detailed Review Header */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                    <View style={{ width: 30, height: 30, borderRadius: 10, backgroundColor: C.surfaceLow, alignItems: 'center', justifyContent: 'center' }}>
-                        <Icon name="Layers" size={15} color="default" />
-                    </View>
-                    <Text style={{ fontSize: 16, fontWeight: '800', color: C.text }}>
-                        Detailed Review
-                    </Text>
                 </View>
 
                 {allQuestions.map(({ q, index }) => (

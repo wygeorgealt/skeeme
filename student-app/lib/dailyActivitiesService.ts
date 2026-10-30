@@ -50,11 +50,13 @@ export async function getDailyActivities({
     user,
     exams = [],
     flashcardDecks = [],
+    flashcardSessions = [],
     quizSessions = [],
 }: {
     user: any;
     exams?: any[];
     flashcardDecks?: any[];
+    flashcardSessions?: any[];
     quizSessions?: any[];
 }): Promise<DailyActivityTask[]> {
     const todayKey = getTodayKey();
@@ -105,8 +107,8 @@ export async function getDailyActivities({
     const hasQuizToday = quizSessions.some(
         (q: any) => extractDateString(q?.created_at) === todayDateStr
     );
-    const hasFlashcardToday = flashcardDecks.some(
-        (d: any) => extractDateString(d?.created_at || d?.updated_at) === todayDateStr
+    const hasFlashcardToday = flashcardSessions.some(
+        (session: any) => extractDateString(session?.completed_at || session?.created_at) === todayDateStr
     );
 
     // 3. Spaced Repetition Flashcards Task
@@ -186,10 +188,7 @@ export async function getDailyActivities({
             type: 'flashcards',
             icon: 'CircleDot',
             route: flashcardRoute,
-            completed:
-                completedMap[flashcardTaskId] !== undefined
-                    ? Boolean(completedMap[flashcardTaskId])
-                    : hasFlashcardToday,
+            completed: Boolean(completedMap[flashcardTaskId] || hasFlashcardToday),
         },
         {
             id: quizTaskId,

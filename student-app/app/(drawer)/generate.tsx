@@ -1398,9 +1398,10 @@ export default function GenerateQuizScreen() {
 
             setIsOfflineSaved(true);
             haptics.notificationAsync('success' as any);
-        } catch {
+        } catch (error) {
             setSaveError(true);
-            Alert.alert('Save Failed', 'Could not save this quiz for offline use.');
+            const message = error instanceof Error ? error.message : 'Could not save this quiz for offline use.';
+            Alert.alert('Save Failed', message);
         } finally {
             setIsSavingOffline(false);
         }

@@ -60,7 +60,8 @@ export default function SavedQuizOfflineScreen() {
     if (!quiz?.questions) return [];
     // Stored shape in offline save will be same questions payload from generate.tsx:
     return (quiz.questions || []).map((q: any) => {
-      const type = q.type === 'essay' ? 'essay' : (q.type || 'mcq');
+      const savedType = q.type ?? q.question_type;
+      const type = savedType === 'essay' ? 'essay' : (savedType || 'mcq');
       return {
         question_text: q.question_text ?? q.question ?? '',
         question_type: type === 'essay' ? 'essay' : 'mcq',

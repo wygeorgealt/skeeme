@@ -580,6 +580,7 @@ export default function StudyDeckScreen() {
 
             await updateUser({ streak });
             queryClient.invalidateQueries({ queryKey: ['student', 'me'] });
+            queryClient.invalidateQueries({ queryKey: ['flashcard-session-history'] });
             return { streak, is_new_study_day: res.data.is_new_study_day };
         } finally {
             setIsSavingSession(false);
