@@ -13,7 +13,7 @@ import (
 type Service struct {
 	anthropic *AnthropicClient
 	deepseek  *DeepseekClient
-	vision    *VisionClient
+	vision    OCRClient
 	redis     *redis.Client
 }
 
@@ -21,11 +21,9 @@ func NewService(rdb *redis.Client) *Service {
 	anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
 	deepseekKey := os.Getenv("DEEPSEEK_API_KEY")
 	visionKey := os.Getenv("GOOGLE_CLOUD_VISION_API_KEY")
+	replicateToken := os.Getenv("REPLICATE_API_TOKEN")
 
-	var vision *VisionClient
-	if visionKey != "" {
-		vision = NewVisionClient(visionKey)
-	}
+	vision := NewOCRClient(replicateToken, visionKey)
 
 	var anthropic *AnthropicClient
 	if anthropicKey != "" {

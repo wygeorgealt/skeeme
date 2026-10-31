@@ -12,16 +12,19 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
+const OFFLINE_ICON = require('../assets/3dicons/3dicons-wifi-front-color.png');
+const ERROR_ICON = require('../assets/3dicons/warning-3d icon.png');
 
 interface GlobalErrorModalProps {
     visible: boolean;
     error: string | null;
     onDismiss: () => void;
+    onContinueOffline?: () => void;
     onRetry?: () => void;
     retrying?: boolean;
 }
 
-export default function GlobalErrorModal({ visible, error, onDismiss, onRetry, retrying = false }: GlobalErrorModalProps) {
+export default function GlobalErrorModal({ visible, error, onDismiss, onContinueOffline, onRetry, retrying = false }: GlobalErrorModalProps) {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
@@ -35,9 +38,7 @@ export default function GlobalErrorModal({ visible, error, onDismiss, onRetry, r
     const iconBoxBg = isOffline
         ? (isDark ? 'rgba(0, 122, 255, 0.15)' : 'rgba(0, 122, 255, 0.08)')
         : (isDark ? 'rgba(255, 59, 48, 0.15)' : 'rgba(255, 59, 48, 0.08)');
-    const iconSource = isOffline
-        ? require('@/assets/3dicons/3dicons-wifi-front-color.png')
-        : require('@/assets/3dicons/warning-3d icon.png');
+    const iconSource = isOffline ? OFFLINE_ICON : ERROR_ICON;
 
     return (
         <Modal
@@ -112,7 +113,7 @@ export default function GlobalErrorModal({ visible, error, onDismiss, onRetry, r
 
                             {onRetry ? (
                                 <TouchableOpacity
-                                    onPress={onDismiss}
+                                    onPress={isOffline ? (onContinueOffline || onDismiss) : onDismiss}
                                     activeOpacity={0.75}
                                     style={[
                                         styles.secondaryBtn,

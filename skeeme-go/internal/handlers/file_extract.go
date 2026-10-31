@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -13,12 +15,14 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/ledongthuc/pdf"
 	"github.com/redis/go-redis/v9"
+	"skeeme-go/internal/ai"
 	"skeeme-go/internal/middleware"
 )
 
 type FileExtractHandler struct {
 	DB    *sqlx.DB
 	Redis *redis.Client
+	OCR   ai.OCRClient
 }
 
 type FileExtractResponse struct {
@@ -32,7 +36,8 @@ func (h *FileExtractHandler) Extract(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		http.Error(w, "File too large or invalid format", http.StatusBadRequest)
 		return
@@ -57,11 +62,50 @@ func (h *FileExtractHandler) Extract(w http.ResponseWriter, r *http.Request) {
 
 	if strings.HasSuffix(filename, ".pdf") {
 		text, err := extractPdfText(content, int64(len(content)))
-		if err != nil {
+		if err == nil {
+			extractedText = text
+		}
+		if strings.TrimSpace(extractedText) == "" && h.OCR != nil {
+			allowed, limitErr := h.checkOCRRateLimit(r, user.ID)
+			if limitErr != nil {
+				log.Printf("[fileExtract] OCR rate limit check failed: %v", limitErr)
+				http.Error(w, "OCR is temporarily unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			if !allowed {
+				http.Error(w, "Too many OCR requests. Please wait a moment and try again.", http.StatusTooManyRequests)
+				return
+			}
+			mediaType := http.DetectContentType(content)
+			extractedText, err = h.OCR.ExtractText(r.Context(), encodeImageData(mediaType, content))
+			if err != nil {
+				http.Error(w, "Failed to extract text from PDF", http.StatusUnprocessableEntity)
+				return
+			}
+		} else if err != nil {
 			http.Error(w, "Failed to extract text from PDF", http.StatusUnprocessableEntity)
 			return
 		}
-		extractedText = text
+	} else if mediaType := http.DetectContentType(content); strings.HasPrefix(mediaType, "image/") {
+		if h.OCR == nil {
+			http.Error(w, "Image OCR is not configured", http.StatusServiceUnavailable)
+			return
+		}
+		allowed, limitErr := h.checkOCRRateLimit(r, user.ID)
+		if limitErr != nil {
+			log.Printf("[fileExtract] OCR rate limit check failed: %v", limitErr)
+			http.Error(w, "OCR is temporarily unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		if !allowed {
+			http.Error(w, "Too many OCR requests. Please wait a moment and try again.", http.StatusTooManyRequests)
+			return
+		}
+		extractedText, err = h.OCR.ExtractText(r.Context(), encodeImageData(mediaType, content))
+		if err != nil {
+			http.Error(w, "Failed to extract text from image", http.StatusUnprocessableEntity)
+			return
+		}
 	} else {
 		// Fallback for TXT or other text formats
 		extractedText = string(content)
@@ -95,6 +139,28 @@ func (h *FileExtractHandler) Extract(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
+}
+
+func (h *FileExtractHandler) checkOCRRateLimit(r *http.Request, userID int64) (bool, error) {
+	if h.Redis == nil {
+		return false, fmt.Errorf("Redis is not configured")
+	}
+
+	key := fmt.Sprintf("ratelimit:ocr:%d", userID)
+	count, err := h.Redis.Incr(r.Context(), key).Result()
+	if err != nil {
+		return false, err
+	}
+	if count == 1 {
+		if err := h.Redis.Expire(r.Context(), key, time.Minute).Err(); err != nil {
+			return false, err
+		}
+	}
+	return count <= 10, nil
+}
+
+func encodeImageData(mediaType string, content []byte) string {
+	return "data:" + mediaType + ";base64," + base64.StdEncoding.EncodeToString(content)
 }
 
 // Helper to extract text using ledongthuc/pdf

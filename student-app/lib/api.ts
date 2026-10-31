@@ -29,9 +29,16 @@ const RETRY_DELAY = 1000; // 1s
 let cachedNetInfo: NetInfoState | null = null;
 let serviceFailureNotified = false;
 let lastDismissedAt = 0;
+let offlinePromptSuppressed = false;
 
 export function resetServiceFailureNotification() {
     serviceFailureNotified = false;
+    lastDismissedAt = Date.now();
+}
+
+export function continueOffline() {
+    offlinePromptSuppressed = true;
+    serviceFailureNotified = true;
     lastDismissedAt = Date.now();
 }
 
@@ -43,12 +50,15 @@ function handleNetInfoChange(state: NetInfoState) {
     if (isOffline) {
         if (store.connectionState !== 'offline') {
             store.setConnectionState('offline');
-            notifyServiceFailure(
-                'You’re offline. Check your Wi-Fi or mobile data connection, or continue with content already saved on this device.',
-                true
-            );
+            if (!offlinePromptSuppressed) {
+                notifyServiceFailure(
+                    'Check your Wi-Fi or mobile data connection, or continue with content already saved on this device.',
+                    true
+                );
+            }
         }
     } else if (state.isConnected === true && state.isInternetReachable !== false) {
+        if (state.isInternetReachable === true) offlinePromptSuppressed = false;
         serviceFailureNotified = false;
         if (store.connectionState === 'offline') {
             store.setConnectionState('online');
@@ -100,6 +110,7 @@ api.interceptors.response.use(
     (response) => {
         // A successful response marks the current outage as recovered, allowing a
         // later, genuinely new outage to be surfaced once.
+        offlinePromptSuppressed = false;
         serviceFailureNotified = false;
         useAuthStore.getState().setConnectionState('online');
         if (__DEV__) {
@@ -116,6 +127,11 @@ api.interceptors.response.use(
         const { config, response } = error;
         const url = config?.url;
         const { user, logout } = useAuthStore.getState();
+
+        if (response) {
+            offlinePromptSuppressed = false;
+            serviceFailureNotified = false;
+        }
 
         if (__DEV__) {
             const status = response?.status || 'ERR';
@@ -182,9 +198,12 @@ api.interceptors.response.use(
         } else if (isNetworkError) {
             const offline = cachedNetInfo?.isConnected === false || cachedNetInfo?.isInternetReachable === false;
             useAuthStore.getState().setConnectionState(offline ? 'offline' : 'serverDown');
-            notifyServiceFailure(offline
-                ? 'You’re offline. You can continue with content already saved on this device.'
-                : 'Skeeme can’t reach the server right now. Please try again later.');
+            const awaitingConnectivity = offlinePromptSuppressed && cachedNetInfo?.isInternetReachable !== true;
+            if (!awaitingConnectivity) {
+                notifyServiceFailure(offline
+                    ? 'You’re offline. You can continue with content already saved on this device.'
+                    : 'Skeeme can’t reach the server right now. Please try again later.');
+            }
         }
 
         // Sanitize raw errors before they reach local Alert.alert() catches

@@ -17,10 +17,10 @@ type DeepseekClient struct {
 	apiKey       string
 	model        string
 	httpClient   *http.Client
-	visionClient *VisionClient
+	visionClient OCRClient
 }
 
-func NewDeepseekClient(apiKey string, visionClient *VisionClient) *DeepseekClient {
+func NewDeepseekClient(apiKey string, visionClient OCRClient) *DeepseekClient {
 	model := os.Getenv("DEEPSEEK_MODEL")
 	if model == "" {
 		model = "deepseek-chat"

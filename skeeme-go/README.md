@@ -69,6 +69,7 @@ ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 DEEPSEEK_API_KEY=sk-...
 DEEPSEEK_MODEL=deepseek-chat
 GOOGLE_CLOUD_VISION_API_KEY=AIzaSy...
+REPLICATE_API_TOKEN=your_replicate_api_token
 DEFAULT_AI_PROVIDER=deepseek         # deepseek | anthropic
 
 # ── Administrative & Internal Secrets ────────────────────────
@@ -92,6 +93,12 @@ BACKUP_R2_PREFIX=backups/
 BACKUP_CRON_SCHEDULE="0 * * * *"    # Hourly at minute 0 UTC
 DISABLE_INTERNAL_CRON=false
 ```
+
+When `REPLICATE_API_TOKEN` is configured, scanned-image OCR uses
+`lucataco/deepseek-ocr` through Replicate; otherwise OCR falls back to Google
+Cloud Vision. Set the token as a server-side secret in the deployment platform,
+not in the mobile app or a committed environment file. Replicate charges for
+model predictions, and image uploads are sent to Replicate for processing.
 
 ---
 

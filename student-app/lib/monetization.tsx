@@ -257,11 +257,48 @@ const PurchaseController: React.FC<{ children: React.ReactNode }> = ({ children 
   const controller = React.useMemo(() => ({
     onPurchase: async (params: any) => {
       try {
-        await purchaseProductById(params.productId);
+        const Purchases = require('react-native-purchases').default;
+        const { PRODUCT_CATEGORY, PURCHASES_ERROR_CODE } = require('react-native-purchases');
+
+        const products = await Promise.all([
+          Purchases.getProducts([params.productId], PRODUCT_CATEGORY.SUBSCRIPTION),
+          Purchases.getProducts([params.productId], PRODUCT_CATEGORY.NON_SUBSCRIPTION),
+        ]).then((results: any[]) => results.flat());
+
+        const product =
+          products.find((p: any) => p.identifier === params.productId) ??
+          (Platform.OS === 'android'
+            ? products.find((p: any) => p.identifier === `${params.productId}:${params.basePlanId}`)
+            : undefined) ??
+          products[0];
+
+        if (!product) {
+          // Fallback to purchaseProductById helper
+          await purchaseProductById(params.productId);
+          return { type: 'purchased' as const };
+        }
+
+        if (Platform.OS === 'android' && product.subscriptionOptions?.length) {
+          const optionId = params.offerId
+            ? `${params.basePlanId}:${params.offerId}`
+            : params.basePlanId;
+          const option = product.subscriptionOptions.find((opt: any) => opt.id === optionId);
+
+          if (!option) {
+            return { type: 'failed' as const, error: 'Subscription option not found' };
+          }
+
+          await Purchases.purchaseSubscriptionOption(option);
+          return { type: 'purchased' as const };
+        }
+
+        await Purchases.purchaseStoreProduct(product);
         return { type: 'purchased' as const };
       } catch (e: any) {
-        if (e.userCancelled) return { type: 'cancelled' as const };
-        return { type: 'failed' as const, error: e.message };
+        if (e.userCancelled || e.code === '1') {
+          return { type: 'cancelled' as const };
+        }
+        return { type: 'failed' as const, error: e.message || 'Purchase failed' };
       }
     },
     onPurchaseRestore: async () => {
@@ -269,7 +306,7 @@ const PurchaseController: React.FC<{ children: React.ReactNode }> = ({ children 
         await rcRestore();
         return { type: 'restored' as const };
       } catch (e: any) {
-        return { type: 'failed' as const, error: e.message };
+        return { type: 'failed' as const, error: e.message || 'Restore failed' };
       }
     }
   }), []);

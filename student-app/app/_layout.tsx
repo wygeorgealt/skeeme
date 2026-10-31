@@ -34,7 +34,7 @@ import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
 import { initializeMonetization } from '@/lib/monetization';
 import * as Application from 'expo-application';
 import NetInfo from '@react-native-community/netinfo';
-import { api, apiStandard, resetServiceFailureNotification } from '@/lib/api';
+import { api, apiStandard, continueOffline, resetServiceFailureNotification } from '@/lib/api';
 import * as Haptics from 'expo-haptics';
 
 
@@ -456,6 +456,12 @@ function GlobalErrorModalWrapper() {
     setGlobalError(null);
   };
 
+  const handleContinueOffline = () => {
+    continueOffline();
+    setConnectionState('offline');
+    setGlobalError(null);
+  };
+
   const retry = async () => {
     setRetrying(true);
     try {
@@ -485,6 +491,7 @@ function GlobalErrorModalWrapper() {
       visible={globalError !== null}
       error={globalError}
       onDismiss={handleDismiss}
+      onContinueOffline={handleContinueOffline}
       onRetry={retry}
       retrying={retrying}
     />

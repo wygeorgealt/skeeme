@@ -1,4 +1,4 @@
-import { Pressable, Text, View, ActivityIndicator, TextInput, SectionList, RefreshControl, Platform, Alert } from 'react-native';
+import { Pressable, Text, View, ActivityIndicator, TextInput, SectionList, RefreshControl, Platform, Alert, StyleSheet } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptics } from '@/lib/haptics';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Icon } from '@/components/ui/Icon';
+import { BlurView } from 'expo-blur';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
@@ -341,60 +342,86 @@ export default function StudyHistoryDashboard() {
                         </View>
                     </View>
 
-                    {/* Segmented Control with Counts */}
+                    {/* Segmented Control with Counts (Liquid Glass like bottom navbar) */}
                     <View
                         style={{
-                            flexDirection: 'row',
-                            padding: 4,
                             borderRadius: 999,
-                            backgroundColor: C.card,
-                            borderColor: C.border,
+                            overflow: 'hidden',
                             borderWidth: 1,
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.9)',
+                            backgroundColor: isDark ? 'rgba(30, 30, 35, 0.55)' : 'rgba(255, 255, 255, 0.65)',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: isDark ? 0.35 : 0.08,
+                            shadowRadius: 12,
+                            elevation: 4,
                         }}
                     >
-                        {[
-                            { key: 'quizzes', label: 'Quizzes', count: quizzes.length },
-                            { key: 'flashcards', label: 'Decks', count: decks.length },
-                            { key: 'summaries', label: 'Summaries', count: summaries.length },
-                        ].map(({ key, label, count }) => {
-                            const isActive = activeTab === key;
-                            return (
-                                <Pressable
-                                    key={key}
-                                    onPress={() => {
-                                        haptics.impactAsync();
-                                        setActiveTab(key as any);
-                                    }}
-                                    style={{
-                                        flex: 1,
-                                        paddingVertical: 8,
-                                        paddingHorizontal: 4,
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        borderRadius: 999,
-                                        backgroundColor: isActive ? C.primary : 'transparent',
-                                        shadowColor: isActive ? C.primary : undefined,
-                                        shadowOffset: isActive ? { width: 0, height: 2 } : undefined,
-                                        shadowOpacity: isActive ? 0.2 : 0,
-                                        shadowRadius: isActive ? 4 : 0,
-                                        elevation: isActive ? 2 : 0,
-                                    }}
-                                >
-                                    <Text
+                        <BlurView
+                            intensity={65}
+                            tint={isDark ? 'systemMaterialDark' : 'systemMaterialLight'}
+                            style={StyleSheet.absoluteFill}
+                        />
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                padding: 4,
+                                alignItems: 'center',
+                            }}
+                        >
+                            {[
+                                { key: 'quizzes', label: 'Quizzes', count: quizzes.length },
+                                { key: 'flashcards', label: 'Decks', count: decks.length },
+                                { key: 'summaries', label: 'Summaries', count: summaries.length },
+                            ].map(({ key, label, count }) => {
+                                const isActive = activeTab === key;
+                                return (
+                                    <Pressable
+                                        key={key}
+                                        onPress={() => {
+                                            haptics.impactAsync();
+                                            setActiveTab(key as any);
+                                        }}
                                         style={{
-                                            fontSize: 13,
-                                            fontWeight: isActive ? '700' : '500',
-                                            color: isActive ? '#FFFFFF' : C.textSecondary,
+                                            flex: 1,
+                                            paddingVertical: 9,
+                                            paddingHorizontal: 8,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderRadius: 999,
+                                            backgroundColor: isActive
+                                                ? (isDark ? 'rgba(0, 122, 255, 0.28)' : 'rgba(0, 122, 255, 0.12)')
+                                                : 'transparent',
+                                            borderWidth: isActive ? 1 : 0,
+                                            borderColor: isActive
+                                                ? (isDark ? 'rgba(0, 122, 255, 0.45)' : 'rgba(0, 122, 255, 0.22)')
+                                                : 'transparent',
                                         }}
                                     >
-                                        {label}{' '}
-                                        <Text style={{ opacity: isActive ? 0.85 : 0.6, fontSize: 12, fontWeight: '400', color: isActive ? '#FFFFFF' : C.textSecondary }}>
-                                            ({count})
+                                        <Text
+                                            style={{
+                                                fontSize: 13.5,
+                                                fontWeight: isActive ? '700' : '600',
+                                                color: isActive ? '#007AFF' : (isDark ? '#94A3B8' : '#64748B'),
+                                                letterSpacing: -0.2,
+                                            }}
+                                        >
+                                            {label}{' '}
+                                            <Text
+                                                style={{
+                                                    fontSize: 12,
+                                                    fontWeight: isActive ? '700' : '500',
+                                                    color: isActive ? '#007AFF' : (isDark ? '#64748B' : '#94A3B8'),
+                                                    opacity: isActive ? 0.85 : 0.8,
+                                                }}
+                                            >
+                                                ({count})
+                                            </Text>
                                         </Text>
-                                    </Text>
-                                </Pressable>
-                            );
-                        })}
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
                     </View>
                 </View>
             </View>

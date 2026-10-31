@@ -12,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 
+	"skeeme-go/internal/ai"
 	"skeeme-go/internal/cache"
 	"skeeme-go/internal/db"
 	"skeeme-go/internal/handlers"
@@ -133,7 +134,7 @@ func main() {
 	r.Use(middleware.LoggingMiddleware)
 	r.Use(middleware.FirewallMiddleware(redisClient))
 	r.Use(chimw.Recoverer)
-	
+
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"}, // Adjust for production
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
@@ -157,13 +158,14 @@ func main() {
 	streakHandler := &handlers.StreakHandler{DB: database}
 	pushTokenHandler := &handlers.PushTokenHandler{DB: database}
 	onboardingHandler := &handlers.OnboardingHandler{DB: database}
-	fileExtractHandler := &handlers.FileExtractHandler{DB: database, Redis: redisClient}
+	ocrClient := ai.NewOCRClient(os.Getenv("REPLICATE_API_TOKEN"), os.Getenv("GOOGLE_CLOUD_VISION_API_KEY"))
+	fileExtractHandler := &handlers.FileExtractHandler{DB: database, Redis: redisClient, OCR: ocrClient}
 	userExamHandler := &handlers.UserExamHandler{DB: database}
 	billingHandler := &handlers.BillingHandler{DB: database}
 	webhookHandler := &handlers.WebhookHandler{DB: database}
 	referralHandler := &handlers.ReferralHandler{DB: database}
 	supportHandler := &handlers.SupportHandler{DB: database}
-		publicSupportHandler := &handlers.PublicSupportHandler{DB: database, Redis: redisClient}
+	publicSupportHandler := &handlers.PublicSupportHandler{DB: database, Redis: redisClient}
 	gradeHandler := &handlers.GradeHandler{}
 	aiHandler := handlers.NewAIHandler(database, redisClient)
 
@@ -186,7 +188,7 @@ func main() {
 	r.Head("/health", healthHandler.Check)
 	r.Get("/api/health", healthHandler.Check)
 	r.Head("/api/health", healthHandler.Check)
-	
+
 	// Webhooks (public)
 	r.Post("/api/webhooks/paystack", webhookHandler.Paystack)
 	r.Post("/api/webhooks/revenuecat", webhookHandler.RevenueCat)
@@ -252,7 +254,7 @@ func main() {
 		r.Get("/cleanup", handleCleanup)
 		r.Post("/cleanup", handleCleanup)
 	})
-	
+
 	// Native Go AI Engine Routes
 	r.Group(func(r chi.Router) {
 		r.Use(requireAuth)
@@ -276,7 +278,7 @@ func main() {
 		r.With(requireAuth).Post("/authorize", internalAIHandler.Authorize)
 		r.With(requireInternalAuth).Post("/refund", internalAIHandler.Refund)
 	})
-	
+
 	r.Route("/api/v2/student", func(r chi.Router) {
 		r.Post("/admin/credits/grant", aiHandler.GrantAdminCredits)
 
@@ -301,7 +303,7 @@ func main() {
 		// Protected Routes
 		r.Group(func(r chi.Router) {
 			r.Use(requireAuth)
-			
+
 			r.Post("/logout", authHandler.Logout)
 			r.Get("/me", authHandler.Me)
 			r.Patch("/profile", profileHandler.Update)
@@ -311,7 +313,7 @@ func main() {
 			r.Post("/quizzes/grade-theory", gradeHandler.GradeTheory)
 			r.Delete("/profile", profileHandler.DeleteAccount)
 			r.Post("/profile/password", profileHandler.UpdatePassword)
-			
+
 			// Support
 			r.Post("/support/contact", supportHandler.Contact)
 
@@ -322,7 +324,7 @@ func main() {
 
 			// Data & Session Endpoints
 			r.Get("/sync", syncHandler.Sync)
-			
+
 			r.Route("/quizzes/history", func(r chi.Router) {
 				r.Get("/", quizHandler.History)
 				r.Post("/", quizHandler.StoreSession)
@@ -343,7 +345,7 @@ func main() {
 					r.Post("/", flashcardHandler.StoreSession)
 				})
 			})
-			
+
 			r.Route("/streaks", func(r chi.Router) {
 				r.Get("/heatmap", streakHandler.Heatmap)
 				r.Get("/freezes", streakHandler.Freezes)
@@ -352,7 +354,7 @@ func main() {
 
 			// Notifications
 			r.Post("/device-token", pushTokenHandler.UpdateToken)
-			
+
 			// Referrals
 			r.Get("/referral/my-code", referralHandler.MyCode)
 			r.Get("/referral/stats", referralHandler.Stats)
