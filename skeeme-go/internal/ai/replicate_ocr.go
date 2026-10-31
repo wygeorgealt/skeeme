@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	replicateModelPath = "/v1/models/lucataco/deepseek-ocr/predictions"
-	replicateFileLimit = 1 << 20
+	replicatePredictionPath = "/v1/predictions"
+	replicateModelVersion   = "cb3b474fbfc56b1664c8c7841550bccecbe7b74c30e45ce938ffca1180b4dff5"
+	replicateFileLimit      = 1 << 20
 )
 
 type OCRClient interface {
@@ -48,7 +49,8 @@ func NewOCRClient(replicateToken, googleVisionKey string) OCRClient {
 }
 
 type replicatePredictionRequest struct {
-	Input replicateOCRInput `json:"input"`
+	Version string            `json:"version"`
+	Input   replicateOCRInput `json:"input"`
 }
 
 type replicateOCRInput struct {
@@ -161,6 +163,7 @@ func (c *ReplicateOCRClient) uploadInputFile(ctx context.Context, mediaType stri
 
 func (c *ReplicateOCRClient) createPrediction(ctx context.Context, image string) (replicatePrediction, error) {
 	payload := replicatePredictionRequest{
+		Version: replicateModelVersion,
 		Input: replicateOCRInput{
 			Image:          image,
 			TaskType:       "Free OCR",
@@ -173,7 +176,7 @@ func (c *ReplicateOCRClient) createPrediction(ctx context.Context, image string)
 		return replicatePrediction{}, fmt.Errorf("encode Replicate OCR request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+replicateModelPath, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+replicatePredictionPath, bytes.NewReader(body))
 	if err != nil {
 		return replicatePrediction{}, fmt.Errorf("create Replicate OCR request: %w", err)
 	}

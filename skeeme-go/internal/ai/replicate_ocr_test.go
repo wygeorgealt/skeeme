@@ -12,7 +12,7 @@ import (
 
 func TestReplicateOCRExtractText(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost || r.URL.Path != replicateModelPath {
+		if r.Method != http.MethodPost || r.URL.Path != replicatePredictionPath {
 			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.Path)
 		}
 		if got := r.Header.Get("Authorization"); got != "Bearer test-token" {
@@ -25,6 +25,9 @@ func TestReplicateOCRExtractText(t *testing.T) {
 		var payload replicatePredictionRequest
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			t.Fatalf("decode request: %v", err)
+		}
+		if payload.Version != replicateModelVersion {
+			t.Errorf("unexpected model version %q", payload.Version)
 		}
 		if payload.Input.Image != "data:image/png;base64,aGVsbG8=" {
 			t.Errorf("unexpected image input %q", payload.Input.Image)

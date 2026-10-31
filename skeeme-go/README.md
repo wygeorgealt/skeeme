@@ -95,10 +95,11 @@ DISABLE_INTERNAL_CRON=false
 ```
 
 When `REPLICATE_API_TOKEN` is configured, scanned-image OCR uses
-`lucataco/deepseek-ocr` through Replicate; otherwise OCR falls back to Google
-Cloud Vision. Set the token as a server-side secret in the deployment platform,
-not in the mobile app or a committed environment file. Replicate charges for
-model predictions, and image uploads are sent to Replicate for processing.
+the pinned `lucataco/deepseek-ocr` model version through Replicate's community
+predictions API; otherwise OCR falls back to Google Cloud Vision. Set the token
+as a server-side secret in the deployment platform, not in the mobile app or a
+committed environment file. Replicate charges for model predictions, and image
+uploads are sent to Replicate for processing.
 
 ---
 
