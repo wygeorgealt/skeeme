@@ -11,7 +11,7 @@ export default function PaywallScreen() {
     const fromOnboarding = params.fromOnboarding === 'true';
 
     // Dynamic import to avoid errors if Superwall is not installed
-    const { isSuperwallEnabled, Paywall } = require('@/lib/monetization');
+    const { Paywall } = require('@/lib/monetization');
 
     useEffect(() => {
         // If already subscribed and coming from onboarding, skip paywall
@@ -42,17 +42,6 @@ export default function PaywallScreen() {
     };
 
     const handleDismiss = () => {
-        // User closed the paywall without buying. Fire the win-back discount trigger!
-        if (isSuperwallEnabled) {
-            try {
-                const { SuperwallExpoModule } = require('expo-superwall');
-                if (SuperwallExpoModule) {
-                    SuperwallExpoModule.registerPlacement('holiday_promo');
-                }
-            } catch (e) {
-                console.warn('[Superwall] Failed to trigger holiday_promo', e);
-            }
-        }
         handleNavigation();
     };
 

@@ -426,7 +426,7 @@ export default function HomeDashboard() {
                             style={styles.proUpgradeBtn}
                             onPress={() => {
                                 haptics.selectionAsync();
-                                router.push('/(drawer)/account');
+                                router.push('/paywall');
                             }}
                         >
                             <Text style={styles.proUpgradeBtnText}>Upgrade to Pro</Text>

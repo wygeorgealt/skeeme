@@ -648,11 +648,14 @@ export default function ChatScreen() {
   const handleRetry = (msg: ChatMessage) => {
     if (isGenerating) return;
     haptics.selectionAsync();
-    setMessages((prev) => prev.filter((m) => m.id !== msg.id));
-    handleSend(msg.prompt, msg.imageUri);
+    handleSend(msg.prompt, msg.imageUri, msg);
   };
 
-  const handleSend = async (textToSend?: string, imageOverride?: string | null) => {
+  const handleSend = async (
+    textToSend?: string,
+    imageOverride?: string | null,
+    retryMessage?: ChatMessage
+  ) => {
     if (isGenerating) return;
 
     const text = (textToSend !== undefined ? textToSend : inputVal).trim();
@@ -675,7 +678,7 @@ export default function ChatScreen() {
           time: now,
         };
         const errorAssistantMsg: ChatMessage = {
-          id: `assistant-${Date.now() + 1}`,
+          id: retryMessage?.id ?? `assistant-${Date.now() + 1}`,
           role: 'assistant',
           content: markdown,
           time: now,
@@ -685,7 +688,11 @@ export default function ChatScreen() {
           prompt: text,
           imageUri: imageToSend || undefined,
         };
-        setMessages((prev) => [...prev, userMsg, errorAssistantMsg]);
+        setMessages((prev) =>
+          retryMessage
+            ? prev.map((m) => (m.id === retryMessage.id ? errorAssistantMsg : m))
+            : [...prev, userMsg, errorAssistantMsg]
+        );
         setInputVal('');
         setAttachedImageUri(null);
         setTimeout(() => {
@@ -708,7 +715,7 @@ export default function ChatScreen() {
             time: now,
           };
           const errorAssistantMsg: ChatMessage = {
-            id: `assistant-${Date.now() + 1}`,
+            id: retryMessage?.id ?? `assistant-${Date.now() + 1}`,
             role: 'assistant',
             content: markdown,
             time: now,
@@ -717,7 +724,11 @@ export default function ChatScreen() {
             errorAction,
             prompt: text,
           };
-          setMessages((prev) => [...prev, userMsg, errorAssistantMsg]);
+          setMessages((prev) =>
+            retryMessage
+              ? prev.map((m) => (m.id === retryMessage.id ? errorAssistantMsg : m))
+              : [...prev, userMsg, errorAssistantMsg]
+          );
           setInputVal('');
           setTimeout(() => {
             scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -780,7 +791,7 @@ export default function ChatScreen() {
       time: now,
     };
 
-    const assistantId = `assistant-${Date.now() + 1}`;
+    const assistantId = retryMessage?.id ?? `assistant-${Date.now() + 1}`;
     const assistantPlaceholder: ChatMessage = {
       id: assistantId,
       role: 'assistant',
@@ -791,7 +802,9 @@ export default function ChatScreen() {
       imageUri: imageToSend || undefined,
     };
 
-    const updatedMessages = [...messages, userMsg];
+    const updatedMessages = retryMessage
+      ? messages.filter((m) => m.id !== retryMessage.id)
+      : [...messages, userMsg];
     setMessages([...updatedMessages, assistantPlaceholder]);
     setInputVal('');
     setAttachedImageUri(null);

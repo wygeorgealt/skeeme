@@ -24,7 +24,7 @@
         "EXPO_PUBLIC_SUPERWALL_ANDROID_KEY": "pk_l_9lXsSttsnBbL6jLjgPb",
         "EXPO_PUBLIC_SUPERWALL_PUBLIC_KEY": "pk_JLrPQpMksatDpp8hdnpdl",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_ZUwiPwLYzGscZwqYfxzfsVxSEor",
-        "EXPO_PUBLIC_REVENUECAT_APPLE_KEY": "test_bXKLJRirXqyjtjUfJQzLWWHDvfg"
+        "EXPO_PUBLIC_REVENUECAT_APPLE_KEY": "appl_ZuICjscjuLFkHOJznKJUIybxAkh"
       }
     },
     "production": {
@@ -38,7 +38,7 @@
         "EXPO_PUBLIC_SUPERWALL_ANDROID_KEY": "pk_l_9lXsSttsnBbL6jLjgPb",
         "EXPO_PUBLIC_SUPERWALL_PUBLIC_KEY": "pk_JLrPQpMksatDpp8hdnpdl",
         "EXPO_PUBLIC_REVENUECAT_ANDROID_KEY": "goog_ZUwiPwLYzGscZwqYfxzfsVxSEor",
-        "EXPO_PUBLIC_REVENUECAT_APPLE_KEY": "test_bXKLJRirXqyjtjUfJQzLWWHDvfg"
+        "EXPO_PUBLIC_REVENUECAT_APPLE_KEY": "appl_ZuICjscjuLFkHOJznKJUIybxAkh"
       }
     }
   },
