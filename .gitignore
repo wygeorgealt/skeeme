@@ -34,6 +34,7 @@ landing/dist/
 # ── Dump (legacy code preserved for audit) ─────────────────────────────────
 _dump/node_modules/
 _dump/vendor/
+_dump
 
 # ── IDE ────────────────────────────────────────────────────────────────────
 .vscode/
@@ -43,3 +44,4 @@ _dump/vendor/
 # ── UI/Ux ──────────────────────────────────────────────────────────────────
 stitch_skeeme
 node_modules
+.superwall

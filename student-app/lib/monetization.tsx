@@ -153,7 +153,7 @@ export const logout = async () => {
 export const SuperwallTrigger: React.FC<any> = ({ placement, onPurchaseCompleted, onRestoreCompleted, onDismiss }) => {
     const { usePlacement, useSuperwall } = require('expo-superwall');
     const { isConfigured } = useSuperwall();
-    const [triggered, setTriggered] = React.useState(false);
+    const hasRegisteredPlacement = React.useRef(false);
 
     const onDismissRef = React.useRef(onDismiss);
     const onPurchaseCompletedRef = React.useRef(onPurchaseCompleted);
@@ -165,7 +165,7 @@ export const SuperwallTrigger: React.FC<any> = ({ placement, onPurchaseCompleted
         onRestoreCompletedRef.current = onRestoreCompleted;
     });
 
-    const { registerPlacement, state } = usePlacement({
+    const { registerPlacement } = usePlacement({
         onDismiss: (info: any, result: any) => {
             if (result && result.type === 'purchased') {
                 onPurchaseCompletedRef.current?.();
@@ -176,32 +176,45 @@ export const SuperwallTrigger: React.FC<any> = ({ placement, onPurchaseCompleted
             }
         },
         onSkip: (reason: any) => {
-            console.warn('[Superwall] Paywall skipped:', reason);
+            console.warn(`[Superwall] Paywall skipped for "${placement}":`, reason);
             onDismissRef.current?.();
         },
         onError: (error: any) => {
-            console.warn('[Superwall] Paywall error:', error);
+            console.warn(`[Superwall] Paywall error for "${placement}":`, error);
             onDismissRef.current?.();
         }
     });
 
     React.useEffect(() => {
-        // Only trigger once, and only when Superwall is fully configured
-        if (!triggered && isConfigured) {
-            setTriggered(true);
-            
-            // Sync status right before presenting to avoid Timeout 105
-            isUnlimitedMember().then((isPro: boolean) => {
-                const { useSuperwallStore } = require('expo-superwall');
-                const store = useSuperwallStore.getState();
-                store.setSubscriptionStatus({ status: isPro ? 'ACTIVE' : 'INACTIVE' }).then(() => {
-                    registerPlacement({ placement });
-                }).catch(() => {
-                    registerPlacement({ placement });
-                });
-            });
-        }
-    }, [triggered, isConfigured, registerPlacement, placement]);
+        if (!isConfigured || hasRegisteredPlacement.current) return;
+
+        hasRegisteredPlacement.current = true;
+        const presentPlacement = async () => {
+            let isPro: boolean | undefined;
+            try {
+                isPro = await isUnlimitedMember();
+            } catch (error) {
+                console.warn('[Superwall] Could not sync subscription status before placement', error);
+            }
+
+            if (isPro !== undefined) {
+                try {
+                    const { useSuperwallStore } = require('expo-superwall');
+                    await useSuperwallStore.getState().setSubscriptionStatus({
+                        status: isPro ? 'ACTIVE' : 'INACTIVE'
+                    });
+                } catch (error) {
+                    console.warn('[Superwall] Could not update subscription status before placement', error);
+                }
+            }
+
+            await registerPlacement({ placement });
+        };
+
+        void presentPlacement().catch((error) => {
+            console.warn(`[Superwall] Could not register placement "${placement}"`, error);
+        });
+    }, [isConfigured, registerPlacement, placement]);
 
     return (
         <View style={{ flex: 1 }} />
@@ -328,10 +341,14 @@ export const SuperwallProviderWrapper: React.FC<{ children: React.ReactNode }> =
 
   return (
     <PurchaseController>
-      <_SuperwallProvider apiKeys={apiKeys}>
+      <_SuperwallProvider
+        apiKeys={apiKeys}
+        onConfigurationError={(error: Error) => {
+          console.warn('[Superwall] Configuration failed', error);
+        }}
+      >
         {children}
       </_SuperwallProvider>
     </PurchaseController>
   );
 };
-
