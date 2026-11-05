@@ -1,45 +1,134 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f2e8" />
     <title>Skeeme | Terms of Service</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Text:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>html { scroll-behavior: smooth; } body.legal-page { background:#f9fbff!important; color:#17212b!important; font-family:"Google Sans Text",Arial,sans-serif; }</style>
+    <link rel="preload" href="/fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/literata-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/legal.css" />
   </head>
-  <body class="legal-page antialiased">
-    <div class="legal-shell mx-auto max-w-4xl px-6 py-10 md:py-16">
-      <header class="mb-10 border-b border-white/10 pb-6">
-        <div class="flex items-center gap-3">
-          <img src="/skeeme-logo.png" alt="Skeeme" class="h-10 w-10 rounded-xl" />
-          <div>
-            <div class="legal-label text-xs uppercase tracking-[0.2em]">Skeeme</div>
-            <div class="legal-title text-2xl font-semibold">Terms of Service</div>
-          </div>
-        </div>
-      </header>
-
-      <main class="space-y-8 text-sm leading-7">
-        <p>These Terms of Service govern your access to and use of Skeeme (“Service”), including the mobile app and web experience operated by Skeeme.</p>
-        <span class="updated">Last updated: September 10, 2026</span>
-
-        <section>
-          <h2 class="mb-3 text-xl font-semibold text-white">1. Acceptance of Terms</h2>
-          <p>By creating an account or using the Service, you agree to these Terms. If you do not agree, you must not access or use the Service.</p>
-        </section>
-
-        <section>
-          <h2 class="mb-3 text-xl font-semibold text-white">11. Contact</h2>
-          <p>If you have questions about these Terms, visit our <a href="/contact" class="text-blue-600">contact page</a>.</p>
-        </section>
-      </main>
-
-      <div class="mt-10 flex justify-start">
-        <a href="/" class="back-home rounded-full px-5 py-2.5 text-sm font-medium transition hover:scale-[1.01]">Back to home</a>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="/" aria-label="Skeeme home">
+          <span class="brand-mark"><img src="/skeeme-logo.png" alt="" /></span>
+          <span>Skeeme</span>
+        </a>
+        <nav class="legal-nav" aria-label="Legal navigation">
+          <a href="/">Home</a>
+          <a href="/privacy.html">Privacy</a>
+          <a href="/terms.html" aria-current="page">Terms</a>
+        </nav>
       </div>
-    </div>
+    </header>
+
+    <main class="legal-shell" id="main" tabindex="-1">
+      <article class="legal-sheet" aria-labelledby="legal-title">
+        <header class="legal-heading">
+          <h1 id="legal-title">Terms of Service</h1>
+          <p class="legal-intro">These Terms explain the rules for using Skeeme’s mobile app, website, study features, and subscriptions.</p>
+          <p class="legal-updated"><time datetime="2026-11-05">Last updated: November 5, 2026</time></p>
+        </header>
+        <div class="legal-content">
+        <section class="legal-section">
+          <h2>1. Acceptance of Terms</h2>
+          <p>These Terms of Service (“Terms”) are an agreement between you and the operator of Skeeme (“Skeeme,” “we,” “us,” or “our”). They apply to your access to and use of the Skeeme mobile application, website, and related services (together, the “Service”). By creating an account, accessing, or using the Service, you agree to these Terms and our <a href="/privacy.html">Privacy Policy</a>. If you do not agree, do not use the Service.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>2. Eligibility</h2>
+          <p>You must be at least 13 years old to use the Service. If you are under the age of majority where you live, you may use it only with a parent or legal guardian’s permission and supervision. That parent or guardian must read and agree to these Terms on your behalf and is responsible for your use of the Service. By allowing a minor to use Skeeme, the parent or guardian confirms they have authority to do so. Do not use the Service if you do not meet these requirements.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>3. Account and Access</h2>
+          <p>Some features require an account. You agree to provide accurate information and keep it current, protect your sign-in credentials, and promptly tell us if you suspect someone has accessed your account without permission. You are responsible for activity through your account, subject to rights that cannot be limited by law. Do not share, sell, or transfer your account, or use another person’s account without permission. We may ask you to verify information needed to protect your account or provide the Service.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>4. The Service and AI Features</h2>
+          <p>Skeeme provides study tools that may include importing or scanning study materials, explanations, AI-assisted chat, summaries, quizzes, flashcards, study planning, and progress features. Features may change over time, and some may be unavailable in certain locations, on certain devices, or on particular plans.</p>
+          <p>AI-generated responses can be inaccurate, incomplete, out of date, or unsuitable for your situation. Check important information against reliable course materials or other appropriate sources before relying on it. Skeeme is a study aid, not a guarantee of correct answers, grades, or other academic results, and it does not replace your own judgment or instruction from your school or educators.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>5. Your Content and AI Processing</h2>
+          <p>“Your Content” means the notes, documents, images, prompts, questions, and other material you submit to the Service, as well as material you create there. You retain your rights to Your Content. You are responsible for it and must have the rights and permissions needed to submit it and allow its processing under these Terms.</p>
+          <p>You give Skeeme permission to host, store, reproduce, and process Your Content only as reasonably necessary to provide the features you request, operate and secure the Service, and provide support. When you use an AI feature, relevant content may be sent to third-party AI providers to generate a response. Your Content is not used to train AI models. More detail about information handling is in our <a href="/privacy.html">Privacy Policy</a>.</p>
+          <p>AI responses, summaries, questions, and other material generated for you (“Generated Content”) are provided to support your studies. They may not be unique, complete, or accurate. You are responsible for reviewing Generated Content before using or sharing it. You may use it for your personal, lawful study purposes, subject to these Terms and any rights in material included in it.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>6. Acceptable Use</h2>
+          <p>You may not use the Service to break the law, violate another person’s rights, distribute content you are not allowed to share, harass or harm others, or submit content that is unlawful, deceptive, or abusive. You may not probe or bypass security, interfere with the Service or another user’s access, introduce malware, scrape or copy the Service using automated means without permission, reverse engineer it except where the law permits, or use the Service to build or train a competing model or service. You may not evade usage limits or misuse free trials, promotions, or payment features.</p>
+          <p>We may investigate suspected misuse and take reasonable steps to protect users and the Service, consistent with applicable law.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>7. Skeeme’s Materials</h2>
+          <p>The Service, including its software, design, branding, text, and other materials provided by Skeeme, is owned by Skeeme or its licensors and is protected by intellectual-property laws. We give you a limited, personal, non-exclusive, non-transferable, revocable right to use the Service for your own lawful study purposes, in accordance with these Terms. No other rights are granted. You may not copy, modify, distribute, sell, or create derivative works from Skeeme’s materials except where we or the law expressly allow it.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>8. Subscriptions, Trials, and Payments</h2>
+          <p>Skeeme offers paid subscriptions and may offer free trials or introductory offers for certain plans. The price, billing period, trial length, renewal terms, and other applicable details will be shown before you confirm a purchase. Taxes may apply. Subscription purchases for the mobile app are billed through the store used for the purchase, such as Google Play or Apple’s App Store, and are also subject to that store’s terms.</p>
+          <p>Unless the purchase screen says otherwise, a subscription renews automatically at the displayed price and interval until you cancel. If a trial or introductory offer converts to a paid subscription, the purchase screen will show the applicable renewal terms. To avoid a renewal charge, cancel before the current billing period or trial ends. You can manage or cancel a subscription in the app or through the Google Play or Apple App Store account used to subscribe. Removing the app or closing your Skeeme account does not itself cancel a store subscription.</p>
+          <p>Cancellation generally stops future renewals; access to paid features may continue until the end of the period already paid for, subject to the purchase terms. The relevant store processes billing and controls refunds under its policies. Contact that store to request a refund. Nothing in these Terms limits refund or other consumer rights that apply by law.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>9. Third-Party Services</h2>
+          <p>The Service may rely on third-party services, including app stores and providers that process content to return AI-generated responses. Your use of those services may also be governed by their own terms and privacy notices. We are not responsible for third-party services we do not control. This does not reduce any rights or responsibilities that cannot be excluded under applicable law.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>10. Privacy</h2>
+          <p>Our <a href="/privacy.html">Privacy Policy</a> explains how information is handled in connection with the Service. Please read it before using Skeeme. These Terms do not replace any privacy rights or obligations that apply by law.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>11. Suspension and Ending Your Use</h2>
+          <p>You may stop using the Service at any time. You can request account deletion through the available support channels; handling of account and content data after a request is described in the Privacy Policy and remains subject to legal, security, and operational requirements.</p>
+          <p>We may suspend or restrict access, or end these Terms for your account, when reasonably necessary to address a serious or repeated breach of these Terms, protect users or the Service, comply with law, or respond to a security risk. Where appropriate and permitted by law, we will provide notice and an opportunity to address the issue. Ending access does not automatically cancel a subscription billed by an app store; cancel it with the store as described above.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>12. Changes or Interruptions to the Service</h2>
+          <p>We work to keep Skeeme useful and available, but we do not promise uninterrupted or error-free access. Maintenance, technical issues, network failures, or events outside our reasonable control may temporarily affect the Service. We may add, change, or discontinue features. If we discontinue a paid feature or make a material change to a subscription, we will handle it in accordance with applicable law and the purchase terms.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>13. Disclaimers</h2>
+          <p>To the extent permitted by law, the Service is provided “as is” and “as available.” We do not promise that it will be uninterrupted, secure, error-free, or suitable for every purpose, or that AI-generated material will be accurate or available. Nothing in these Terms excludes a warranty or right that cannot legally be excluded.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>14. Limits on Liability</h2>
+          <p>To the extent permitted by applicable law, Skeeme will not be liable for indirect, incidental, special, consequential, exemplary, or punitive loss, or for loss of data, profits, or opportunities, arising from your use of or inability to use the Service. Nothing in these Terms limits liability that cannot lawfully be limited, including liability for fraud, intentional misconduct, or death or personal injury caused by negligence where such a limitation is prohibited. Your mandatory consumer rights remain unaffected.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>15. Changes to These Terms</h2>
+          <p>We may update these Terms as the Service or applicable requirements change. We will post the current version here and update the date above. If a change is material, we will take reasonable steps to give notice through the Service or another appropriate channel. Where required by law, we will ask for your agreement. Otherwise, continued use after the updated Terms take effect means you accept them. If you do not agree, stop using the Service.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>16. General</h2>
+          <p>If any part of these Terms cannot be enforced, the remaining parts continue to apply to the extent permitted by law. If we do not enforce a provision, that does not waive our right to do so later. These Terms and the policies they refer to describe the agreement about your use of the Service, subject to any additional terms shown when you use a particular feature or make a purchase. You may have rights under local law that apply regardless of these Terms.</p>
+        </section>
+
+        <section class="legal-section">
+          <h2>17. Contact</h2>
+          <p>Questions about these Terms? Email us at <a href="mailto:support@contact.skeeme.com">support@contact.skeeme.com</a>.</p>
+        </section>
+        </div>
+        <footer class="legal-footer">
+          <a href="/" class="back-home">Back to home</a>
+        </footer>
+      </article>
+    </main>
   </body>
 </html>
