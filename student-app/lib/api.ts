@@ -29,16 +29,9 @@ const RETRY_DELAY = 1000; // 1s
 let cachedNetInfo: NetInfoState | null = null;
 let serviceFailureNotified = false;
 let lastDismissedAt = 0;
-let offlinePromptSuppressed = false;
 
 export function resetServiceFailureNotification() {
     serviceFailureNotified = false;
-    lastDismissedAt = Date.now();
-}
-
-export function continueOffline() {
-    offlinePromptSuppressed = true;
-    serviceFailureNotified = true;
     lastDismissedAt = Date.now();
 }
 
@@ -50,21 +43,13 @@ function handleNetInfoChange(state: NetInfoState) {
     if (isOffline) {
         if (store.connectionState !== 'offline') {
             store.setConnectionState('offline');
-            if (!offlinePromptSuppressed) {
-                notifyServiceFailure(
-                    'Check your Wi-Fi or mobile data connection, or continue with content already saved on this device.',
-                    true
-                );
-            }
         }
+        store.setGlobalError(null);
     } else if (state.isConnected === true && state.isInternetReachable !== false) {
-        if (state.isInternetReachable === true) offlinePromptSuppressed = false;
         serviceFailureNotified = false;
         if (store.connectionState === 'offline') {
             store.setConnectionState('online');
-            if (store.globalError?.toLowerCase().includes('offline')) {
-                store.setGlobalError(null);
-            }
+            store.setGlobalError(null);
         }
     }
 }
@@ -72,10 +57,9 @@ function handleNetInfoChange(state: NetInfoState) {
 NetInfo.fetch().then(handleNetInfoChange).catch(() => undefined);
 NetInfo.addEventListener(handleNetInfoChange);
 
-function notifyServiceFailure(message: string, force = false) {
-    // Prevent concurrent failing requests in the same burst from re-opening the modal
-    // immediately after the user dismisses it (1.5s cooldown), unless forced by a state transition.
-    if (!force && (serviceFailureNotified || Date.now() - lastDismissedAt < 1500)) return;
+function notifyServiceFailure(message: string) {
+    // Prevent concurrent failing requests from re-opening the modal after dismissal.
+    if (serviceFailureNotified || Date.now() - lastDismissedAt < 1500) return;
     serviceFailureNotified = true;
     useAuthStore.getState().setGlobalError(message);
 }
@@ -110,7 +94,6 @@ api.interceptors.response.use(
     (response) => {
         // A successful response marks the current outage as recovered, allowing a
         // later, genuinely new outage to be surfaced once.
-        offlinePromptSuppressed = false;
         serviceFailureNotified = false;
         useAuthStore.getState().setConnectionState('online');
         if (__DEV__) {
@@ -129,7 +112,6 @@ api.interceptors.response.use(
         const { user, logout } = useAuthStore.getState();
 
         if (response) {
-            offlinePromptSuppressed = false;
             serviceFailureNotified = false;
         }
 
@@ -201,12 +183,13 @@ api.interceptors.response.use(
             notifyServiceFailure('Skeeme is temporarily unavailable. Your saved content is still available offline; please try again later.');
         } else if (isNetworkError) {
             const offline = cachedNetInfo?.isConnected === false || cachedNetInfo?.isInternetReachable === false;
-            useAuthStore.getState().setConnectionState(offline ? 'offline' : 'serverDown');
-            const awaitingConnectivity = offlinePromptSuppressed && cachedNetInfo?.isInternetReachable !== true;
-            if (!awaitingConnectivity) {
-                notifyServiceFailure(offline
-                    ? 'You’re offline. You can continue with content already saved on this device.'
-                    : 'Skeeme can’t reach the server right now. Please try again later.');
+            const store = useAuthStore.getState();
+            if (offline) {
+                store.setConnectionState('offline');
+                store.setGlobalError(null);
+            } else {
+                store.setConnectionState('serverDown');
+                notifyServiceFailure('Skeeme can’t reach the server right now. Please try again later.');
             }
         }
 

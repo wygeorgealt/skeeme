@@ -134,6 +134,19 @@ export default function GenerateQuizScreen() {
     const [isSavingOffline, setIsSavingOffline] = useState(false);
     const [isOfflineSaved, setIsOfflineSaved] = useState(false);
 
+    useEffect(() => {
+        return useAuthStore.subscribe((state, previousState) => {
+            if (state.connectionState === 'offline' && previousState.connectionState !== 'offline') {
+                setShowErrorModal(false);
+            }
+        });
+    }, []);
+
+    const showGenerationError = (message: string) => {
+        setGlobalError(message);
+        setShowErrorModal(useAuthStore.getState().connectionState !== 'offline');
+    };
+
     // P5: Memoize score calculation — was running .filter() across all answers
     // on every render of this 1649-line component.
     const correctCount = useMemo(() =>
@@ -409,8 +422,7 @@ export default function GenerateQuizScreen() {
                         clearInterval(stageInterval);
                         setIsLoading(false);
                         if (!isDailyLimitReached) {
-                            setGlobalError(error || 'Skeeme is down, Please try again later.');
-                            setShowErrorModal(true);
+                            showGenerationError(error || 'Skeeme is down, Please try again later.');
                         }
                     },
                 }
@@ -419,8 +431,7 @@ export default function GenerateQuizScreen() {
         } catch (e: any) {
             clearInterval(stageInterval);
             setIsLoading(false);
-            setGlobalError('Failed to start generation. Please check your connection.');
-            setShowErrorModal(true);
+            showGenerationError('Failed to start generation. Please check your connection.');
         }
     };
 

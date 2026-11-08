@@ -12,33 +12,23 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
-const OFFLINE_ICON = require('../assets/3dicons/3dicons-wifi-front-color.png');
 const ERROR_ICON = require('../assets/3dicons/warning-3d icon.png');
 
 interface GlobalErrorModalProps {
     visible: boolean;
     error: string | null;
     onDismiss: () => void;
-    onContinueOffline?: () => void;
     onRetry?: () => void;
     retrying?: boolean;
 }
 
-export default function GlobalErrorModal({ visible, error, onDismiss, onContinueOffline, onRetry, retrying = false }: GlobalErrorModalProps) {
+export default function GlobalErrorModal({ visible, error, onDismiss, onRetry, retrying = false }: GlobalErrorModalProps) {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
 
-    const isOffline = error?.toLowerCase().includes('offline') || error?.toLowerCase().includes('internet');
-    const title = isOffline ? 'You’re offline' : 'Skeeme is unavailable';
-    const badgeLabel = isOffline ? 'NO INTERNET CONNECTION' : 'SERVICE STATUS';
-    const badgeColor = isOffline ? '#FF9500' : '#FF3B30';
-    const badgeBg = isOffline
-        ? (isDark ? 'rgba(255, 149, 0, 0.16)' : 'rgba(255, 149, 0, 0.1)')
-        : (isDark ? 'rgba(255, 59, 48, 0.16)' : 'rgba(255, 59, 48, 0.1)');
-    const iconBoxBg = isOffline
-        ? (isDark ? 'rgba(0, 122, 255, 0.15)' : 'rgba(0, 122, 255, 0.08)')
-        : (isDark ? 'rgba(255, 59, 48, 0.15)' : 'rgba(255, 59, 48, 0.08)');
-    const iconSource = isOffline ? OFFLINE_ICON : ERROR_ICON;
+    const badgeColor = '#FF3B30';
+    const badgeBg = isDark ? 'rgba(255, 59, 48, 0.16)' : 'rgba(255, 59, 48, 0.1)';
+    const iconBoxBg = isDark ? 'rgba(255, 59, 48, 0.15)' : 'rgba(255, 59, 48, 0.08)';
 
     return (
         <Modal
@@ -78,21 +68,21 @@ export default function GlobalErrorModal({ visible, error, onDismiss, onContinue
                     <View style={styles.content}>
                         <View style={[styles.iconBox, { backgroundColor: iconBoxBg }]}>
                             <AnimatedIcon
-                                source={iconSource}
+                                source={ERROR_ICON}
                                 size={52}
-                                animationType={isOffline ? 'twist' : 'wobble'}
+                                animationType="wobble"
                             />
                         </View>
 
                         <View style={[styles.statusPill, { backgroundColor: badgeBg }]}>
                             <View style={[styles.statusDot, { backgroundColor: badgeColor }]} />
                             <Text style={[styles.statusPillText, { color: badgeColor }]}>
-                                {badgeLabel}
+                                SERVICE STATUS
                             </Text>
                         </View>
 
                         <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#000000' }]}>
-                            {title}
+                            Skeeme is unavailable
                         </Text>
                         
                         <Text style={[styles.message, { color: isDark ? '#A1A1AA' : '#64748B' }]}>
@@ -113,7 +103,7 @@ export default function GlobalErrorModal({ visible, error, onDismiss, onContinue
 
                             {onRetry ? (
                                 <TouchableOpacity
-                                    onPress={isOffline ? (onContinueOffline || onDismiss) : onDismiss}
+                                    onPress={onDismiss}
                                     activeOpacity={0.75}
                                     style={[
                                         styles.secondaryBtn,
@@ -121,7 +111,7 @@ export default function GlobalErrorModal({ visible, error, onDismiss, onContinue
                                     ]}
                                 >
                                     <Text style={[styles.secondaryBtnText, { color: isDark ? '#E2E8F0' : '#334155' }]}>
-                                        {isOffline ? 'Continue offline' : 'Dismiss'}
+                                        Dismiss
                                     </Text>
                                 </TouchableOpacity>
                             ) : null}

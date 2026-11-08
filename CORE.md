@@ -250,6 +250,14 @@ or diagnosing live behavior. `PlacementNotFound` had been reported from app
 runtime even though dashboard routes appeared correct. A later simulator screenshot
 showed the paywall itself displaying.
 
+On 2026-11-08, the iOS simulator dev client loaded the Superwall native module,
+but tapping Upgrade emitted `Trying to present paywall without the Superwall
+config.` The local iOS public key was verified to match app `47457`. After the
+user restarted Metro with `--dev-client --clear` and fully relaunched the
+simulator app, they reported that both paywalls worked. The exact cause was not
+confirmed. Metro's package `exports` fallback warning and RevenueCat's
+`Purchases-LogHandlerEvent` warnings did not establish the cause.
+
 The free-trial switch on paywall `287634` changes UI state only; it cannot change
 Apple's subscription offer or a user's eligibility. Its editor changes were
 published on 2026-11-08. The Android discount editor preview showed $9.74/year
@@ -473,6 +481,19 @@ action. Do not include unrelated personal information or secrets.
 - Remaining: ship the app build containing the 50% genuine-dismissal routing and
   verify the App Store subscription submission/review state (`READY_TO_SUBMIT`
   at last check) before expecting eligible live customers to purchase the offer.
+
+### 2026-11-08 — Diagnose Superwall configuration error in iOS dev client
+
+- The user reported the homepage upgrade button failing with
+  `Trying to present paywall without the Superwall config.` after restarting
+  Metro with `--dev-client --clear`. The simulator logs show the Expo Superwall
+  native module loading; the local iOS public key matches Superwall app `47457`.
+- A temporary key-free diagnostic showed the JS store as configured while the
+  native SDK reported `PENDING`; the instrumentation and temporary development
+  config-manager debug logging were removed after the user confirmed both
+  paywalls started working following a full app relaunch.
+- Root cause was not confirmed. No provider, API-key, placement, or campaign
+  changes were made to address this runtime issue.
 
 ### 2026-11-08 — Replace student credits with daily plan quotas
 

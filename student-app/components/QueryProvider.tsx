@@ -1,6 +1,13 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import NetInfo from '@react-native-community/netinfo';
 import type { AxiosError } from 'axios';
-import { ReactNode } from 'react';
+import { createElement, type ReactNode } from 'react';
+
+onlineManager.setEventListener((setOnline) =>
+    NetInfo.addEventListener((state) => {
+        setOnline(state.isConnected !== false && state.isInternetReachable !== false);
+    })
+);
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -19,9 +26,5 @@ const queryClient = new QueryClient({
 });
 
 export function QueryProvider({ children }: { children: ReactNode }) {
-    return (
-        <QueryClientProvider client={queryClient}>
-            {children}
-        </QueryClientProvider>
-    );
+    return createElement(QueryClientProvider, { client: queryClient }, children);
 }
