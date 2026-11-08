@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, ActivityIndicator, Text, Platform } from 'react-native';
 import RevenueCatUI from 'react-native-purchases-ui';
+import type { PaywallSkippedReason } from 'expo-superwall';
 import {
   initializeRevenueCat,
   identifyUser as rcIdentify,
@@ -150,7 +151,29 @@ export const logout = async () => {
 // Paywall components
 // ------------------------------------------------------------------
 
-export const SuperwallTrigger: React.FC<any> = ({ placement, onPurchaseCompleted, onRestoreCompleted, onDismiss }) => {
+type PaywallCallback = () => void | Promise<void>;
+
+type SuperwallTriggerProps = {
+    placement: string;
+    onPurchaseCompleted?: PaywallCallback;
+    onRestoreCompleted?: PaywallCallback;
+    onDismiss?: PaywallCallback;
+    onSkip?: (reason: PaywallSkippedReason) => void;
+    onError?: (error: string) => void;
+};
+
+type PaywallProps = SuperwallTriggerProps & {
+    style?: React.ComponentProps<typeof RevenueCatUI.Paywall>['style'];
+};
+
+export const SuperwallTrigger: React.FC<SuperwallTriggerProps> = ({
+    placement,
+    onPurchaseCompleted,
+    onRestoreCompleted,
+    onDismiss,
+    onSkip,
+    onError,
+}) => {
     const { usePlacement, useSuperwall } = require('expo-superwall');
     const { isConfigured } = useSuperwall();
     const hasRegisteredPlacement = React.useRef(false);
@@ -158,11 +181,15 @@ export const SuperwallTrigger: React.FC<any> = ({ placement, onPurchaseCompleted
     const onDismissRef = React.useRef(onDismiss);
     const onPurchaseCompletedRef = React.useRef(onPurchaseCompleted);
     const onRestoreCompletedRef = React.useRef(onRestoreCompleted);
+    const onSkipRef = React.useRef(onSkip);
+    const onErrorRef = React.useRef(onError);
 
     React.useEffect(() => {
         onDismissRef.current = onDismiss;
         onPurchaseCompletedRef.current = onPurchaseCompleted;
         onRestoreCompletedRef.current = onRestoreCompleted;
+        onSkipRef.current = onSkip;
+        onErrorRef.current = onError;
     });
 
     const { registerPlacement } = usePlacement({
@@ -175,13 +202,21 @@ export const SuperwallTrigger: React.FC<any> = ({ placement, onPurchaseCompleted
                 onDismissRef.current?.();
             }
         },
-        onSkip: (reason: any) => {
+        onSkip: (reason: PaywallSkippedReason) => {
             console.warn(`[Superwall] Paywall skipped for "${placement}":`, reason);
-            onDismissRef.current?.();
+            if (onSkipRef.current) {
+                onSkipRef.current(reason);
+            } else {
+                onDismissRef.current?.();
+            }
         },
-        onError: (error: any) => {
+        onError: (error: string) => {
             console.warn(`[Superwall] Paywall error for "${placement}":`, error);
-            onDismissRef.current?.();
+            if (onErrorRef.current) {
+                onErrorRef.current(error);
+            } else {
+                onDismissRef.current?.();
+            }
         }
     });
 
@@ -221,8 +256,15 @@ export const SuperwallTrigger: React.FC<any> = ({ placement, onPurchaseCompleted
     );
 };
 
-export const Paywall: React.FC<any> = (props) => {
-  const { style, placement = "campaign_trigger", onPurchaseCompleted, onRestoreCompleted, onDismiss } = props;
+export const Paywall: React.FC<PaywallProps> = ({
+  style,
+  placement = "campaign_trigger",
+  onPurchaseCompleted,
+  onRestoreCompleted,
+  onDismiss,
+  onSkip,
+  onError,
+}) => {
 
   if (isSuperwallEnabled) {
     return (
@@ -231,6 +273,8 @@ export const Paywall: React.FC<any> = (props) => {
            onPurchaseCompleted={onPurchaseCompleted} 
            onRestoreCompleted={onRestoreCompleted}
            onDismiss={onDismiss} 
+           onSkip={onSkip}
+           onError={onError}
         />
     );
   }

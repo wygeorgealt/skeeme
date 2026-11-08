@@ -222,30 +222,40 @@ pruned by the backend scheduler/cleanup command; daily usage totals are retained
 
 ### Superwall state and caution
 
-Last known dashboard state from a prior read:
+Last verified dashboard state on 2026-11-08:
 
 - Superwall project `24476`; iOS app `47457`; Android app `47458`.
 - iOS upgrade placement `upgrade_trigger` routes to the iOS upgrade paywall
   (paywall `287634`).
 - iOS onboarding placement `onboarding_trigger` routes to the iOS onboarding
   paywall (paywall `287635`).
-- Campaigns were enabled and the two paywalls were reported published. Discount
-  and credits campaigns were intentionally deferred because no matching Apple
-  offer/credit SKUs had been configured.
+- The upgrade paywall `287634` is published. Both `upgrade_trigger` and
+  `onboarding_trigger` currently route to it.
+- The iOS yearly discount paywall `290222` is published (version 5) and bound to
+  `com.skeeme.app.pro_yearly`. Its Apple introductory offer is pay up front for
+  one year: $17.49 in the US, then the existing $34.99 annual renewal. Apple
+  equalizes the offer across the 175 territories where the product is available.
+  The monthly 7-day intro offer is in the same subscription group; customers who
+  used it cannot use the annual intro offer.
+- Campaign `117415` uses `upgrade_discount_trigger`; its placement and no-active-Pro
+  audience are enabled, with paywall `290222` as the 100% treatment. The app code
+  samples 50% of genuine iOS upgrade-paywall dismissals into this placement, so
+  the app build containing that code must ship before users can trigger it.
+- App Store Connect currently reports both subscription products as
+  `READY_TO_SUBMIT`. Verify their submission/review status before expecting the
+  annual offer to be available for live purchases.
 
 This is a historical snapshot; verify in the Superwall dashboard before changing
 or diagnosing live behavior. `PlacementNotFound` had been reported from app
 runtime even though dashboard routes appeared correct. A later simulator screenshot
 showed the paywall itself displaying.
 
-In the live editor, the free-trial switch row was wired to toggle its local state,
-and the CTA was changed to buy `com.skeeme.app.pro_monthly`. The off-state was
-previewed and the default restored. The CTA pointed to product index 1 because an
-old `primary` product still pointed to a missing Play Store SKU. The editor tab
-showed an unsaved marker after these edits; whether the changes were saved and
-published is unknown. Verify and preferably make the valid iOS monthly SKU the
-primary product before relying on this setup. The switch changes UI state only;
-it cannot change Apple's subscription offer or a user's eligibility.
+The free-trial switch on paywall `287634` changes UI state only; it cannot change
+Apple's subscription offer or a user's eligibility. Its editor changes were
+published on 2026-11-08. The Android discount editor preview showed $9.74/year
+(50% off $19.49), while the configured Play Store promotional yearly product is
+$7.49/year; verify this price/copy mismatch before relying on the Android offer.
+No Android paywall or product was changed during the iOS discount work.
 
 ## iOS build and TestFlight
 
@@ -416,6 +426,53 @@ is pre-existing rather than silently broadening scope.
 Add one short dated entry after each engineering task. Include the user goal,
 important files/areas changed, exact validation performed, and any remaining
 action. Do not include unrelated personal information or secrets.
+
+### 2026-11-08 — Add iOS yearly discount follow-up draft
+
+- Duplicated Android discount paywall `234322` into iOS as draft `290222`,
+  removed the Play Store bindings, and bound the iOS annual SKU
+  `com.skeeme.app.pro_yearly`. Copy now uses the localized first-year offer price
+  only for introductory-offer-eligible users and otherwise displays the regular
+  annual plan and renewal price.
+- The initial App Store offer was intended to be $17.49 for one year in the US.
+  Later verification found that Apple's configured US price was $17.99; the
+  correction is recorded in the activation entry below.
+- Created campaign `117415` for `upgrade_discount_trigger`, with the draft paywall
+  as its treatment. The campaign placement and audience are disabled pending
+  publication and app rollout.
+- Updated `student-app/app/paywall.tsx` to offer the follow-up to 50% of iOS
+  upgrade-paywall dismissals (not onboarding, skips, or errors), and
+  `student-app/lib/monetization.tsx` to distinguish genuine dismissals from
+  placement skips/errors.
+- Validation at that checkpoint: `cd student-app && ./node_modules/.bin/tsc
+  --noEmit` passed; targeted ESLint completed with existing warnings and no
+  errors; `git diff --check` passed. The paywall was still a draft and the
+  campaign placement/audience were disabled. The editor preview had no store
+  price values, so dynamic prices appeared blank.
+- The app build was not created or shipped; see the activation entry for the
+  current dashboard state and remaining rollout steps.
+
+### 2026-11-08 — Correct and activate iOS yearly discount follow-up
+
+- Verified the App Store offer was pay up front for one year, but its US price was
+  $17.99 instead of the approved $17.49. Apple has a $17.49 price point. With user
+  approval, removed the existing offer records and recreated offers for all 175
+  available territories at the $17.49 US reference price, starting 2026-11-08.
+  The regular $34.99 US annual renewal price was not changed.
+- Published paywall `290222` as version 5 and enabled campaign `117415`'s
+  `upgrade_discount_trigger` placement and no-active-Pro audience. The treatment
+  points to the yearly discount paywall.
+- The CLI's `asc offers create` documentation says overlapping offers are
+  overwritten, but Apple rejected the attempted replacement with HTTP 409. This
+  was reproduced on current CLI 2.5.1 and reported to Superwall (feedback request
+  16). The rejected request did not change the offer; the existing offers were
+  then replaced with the user's approval.
+- Validation: App Store Connect returned 175 offers with no mode/duration/date
+  mismatches and a US price of $17.49; `paywalls get` confirmed paywall version 5
+  is active; `campaigns get` confirmed the placement and audience are enabled.
+- Remaining: ship the app build containing the 50% genuine-dismissal routing and
+  verify the App Store subscription submission/review state (`READY_TO_SUBMIT`
+  at last check) before expecting eligible live customers to purchase the offer.
 
 ### 2026-11-08 — Replace student credits with daily plan quotas
 

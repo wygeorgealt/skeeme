@@ -1,14 +1,16 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Platform, View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { router, useLocalSearchParams } from 'expo-router';
 import { posthog } from '@/lib/posthog';
 import { BlurView } from 'expo-blur';
+import { isSuperwallEnabled } from '@/lib/monetization';
 
 export default function PaywallScreen() {
     const { user, checkAuth } = useAuthStore();
     const params = useLocalSearchParams();
     const fromOnboarding = params.fromOnboarding === 'true';
+    const [showDiscount, setShowDiscount] = useState(false);
 
     // Dynamic import to avoid errors if Superwall is not installed
     const { Paywall } = require('@/lib/monetization');
@@ -42,8 +44,25 @@ export default function PaywallScreen() {
     };
 
     const handleDismiss = () => {
+        if (
+            !showDiscount &&
+            !fromOnboarding &&
+            Platform.OS === 'ios' &&
+            isSuperwallEnabled &&
+            Math.random() < 0.5
+        ) {
+            setShowDiscount(true);
+            return;
+        }
+
         handleNavigation();
     };
+
+    const placement = showDiscount
+        ? 'upgrade_discount_trigger'
+        : fromOnboarding
+            ? 'onboarding_trigger'
+            : 'upgrade_trigger';
 
     return (
         <View style={s.container}>
@@ -53,11 +72,14 @@ export default function PaywallScreen() {
 
             {/* Superwall renders its native paywall on top of this */}
             <Paywall
-                placement={fromOnboarding ? 'onboarding_trigger' : 'upgrade_trigger'}
+                key={placement}
+                placement={placement}
                 style={s.paywall}
                 onPurchaseCompleted={handlePurchaseCompleted}
                 onRestoreCompleted={handleRestoreCompleted}
                 onDismiss={handleDismiss}
+                onSkip={handleNavigation}
+                onError={handleNavigation}
             />
         </View>
     );
