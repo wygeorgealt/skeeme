@@ -1,6 +1,6 @@
 # Skeeme Backend (`skeeme-go`) 🚀
 
-The primary backend service for the Skeeme study platform, engineered in **Go** for high throughput, minimal memory footprint, and low latency. It provides a robust RESTful API, atomic credit accounting, multi-provider AI routing, automated background scheduling, and seamless Laravel Sanctum token compatibility.
+The primary backend service for the Skeeme study platform, engineered in **Go** for high throughput, minimal memory footprint, and low latency. It provides a robust RESTful API, atomic daily AI quotas, multi-provider AI routing, automated background scheduling, and seamless Laravel Sanctum token compatibility.
 
 > [!NOTE]
 > **Live Production Server**: Hosted on Brimble at [`https://skeeme.brimble.app`](https://skeeme.brimble.app)  
@@ -24,7 +24,8 @@ skeeme-go/
 │   ├── ai/                     # AI Engine (Anthropic, DeepSeek, Google Cloud Vision, prompts)
 │   ├── auth/                   # Sanctum-compatible token verification (SHA-256)
 │   ├── cache/                  # Redis client wrapper & caching utilities
-│   ├── credits/                # Transactional credit engine & pricing matrix
+│   ├── credits/                # Legacy credit engine retained for compatibility
+│   ├── usage/                  # Server-authoritative daily AI quotas/reservations
 │   ├── db/                     # PostgreSQL connection pool using sqlx
 │   ├── handlers/               # HTTP route handlers (Auth, AI, Quizzes, Flashcards, Billing, etc.)
 │   ├── jobs/                   # Background tasks (R2 backup, streak reset, DB cleanup, AI health)
@@ -33,7 +34,8 @@ skeeme-go/
 │   ├── models/                 # Data structs (User, Token, Quiz, Flashcard, Streak, Transaction)
 │   └── services/               # External services (e.g. Resend Email)
 ├── migrations/
-│   └── 001_schema.sql          # Reference PostgreSQL database schema
+│   ├── 001_schema.sql          # Reference PostgreSQL database schema
+│   └── 002_daily_ai_usage.sql  # Free/Pro daily AI quota tables
 ├── Dockerfile                  # Production container definition
 ├── go.mod                      # Go module dependencies (Go 1.25+)
 ├── go.sum                      # Dependency checksums

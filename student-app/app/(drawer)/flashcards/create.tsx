@@ -5,7 +5,7 @@ import { createDeckFromTopic, createDeckFromExtraction } from '@/lib/flashcardsS
 import * as DocumentPicker from 'expo-document-picker';
 import { api } from '@/lib/api';
 import { router, useLocalSearchParams } from 'expo-router';
-import { flashcardCost, verifySufficientCredits } from '@/lib/creditCosts';
+import { useAuthStore } from '@/store/authStore';
 
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -13,6 +13,7 @@ import { Colors } from '@/constants/theme';
 
 export default function GenerateFlashcardScreen() {
     const params = useLocalSearchParams<{ topic?: string }>();
+    const user = useAuthStore((s) => s.user);
     const [loading, setLoading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
     const [extractionId, setExtractionId] = useState<string | null>(null);
@@ -117,13 +118,6 @@ export default function GenerateFlashcardScreen() {
                 }
             }
 
-            // Universal fresh credit check before deck creation or routing
-            const requiredCredits = flashcardCost(count || 15);
-            const canAfford = await verifySufficientCredits(requiredCredits, 'flashcard', true);
-            if (!canAfford) {
-                return;
-            }
-
             if (mode === 'file') {
                 const deckTitle = selectedFile?.name?.replace(/\.[^/.]+$/, '') || 'Document Flashcards';
                 const deck = await createDeckFromExtraction(extractionId!, deckTitle);
@@ -174,6 +168,7 @@ export default function GenerateFlashcardScreen() {
                 isExtracting={isExtracting}
                 onClearFile={onClearFile}
                 initialTopic={params.topic} 
+                maxCount={user?.plan_name && user.plan_name !== 'free' ? 30 : 10}
             />
         </View>
     );

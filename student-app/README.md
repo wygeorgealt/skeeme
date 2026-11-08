@@ -1,6 +1,6 @@
 # Skeeme Mobile Client (`student-app`) 📱
 
-The student-facing mobile application for **Skeeme**, built with **React Native (0.86)**, **React 19**, and **Expo SDK 57**. It provides an engaging, fluid, and responsive learning experience with camera scanning, real-time streaming AI assistance, KaTeX math equation rendering, flashcard study decks, quiz engines, and streak heatmaps.
+The student-facing mobile application for **Skeeme**, built with **React Native (0.86)**, **React 19**, and **Expo SDK 57**. It provides an engaging, fluid, and responsive learning experience with camera scanning, real-time streaming AI assistance, KaTeX math equation rendering, flashcard study decks, quiz engines, and streak heatmaps. AI usage is limited by daily Free/Pro quotas enforced by the backend; the mobile client does not use a credit balance.
 
 ---
 
@@ -15,7 +15,6 @@ student-app/
 │   ├── otp.tsx                 # One-time passcode verification
 │   ├── forgot-password.tsx     # Password recovery
 │   ├── paywall.tsx             # Monetization & upgrade screen
-│   ├── buy-credits.tsx         # In-app credit package top-ups
 │   ├── (onboarding)/           # Multi-step personalization onboarding flow
 │   │   ├── name.tsx            # Student name input
 │   │   ├── education.tsx       # Educational tier selection
@@ -34,7 +33,7 @@ student-app/
 │       ├── history/            # Quiz & problem-solving history
 │       ├── exams.tsx           # Upcoming exams countdown tracker
 │       ├── summary.tsx         # Lecture & document summary viewer
-│       ├── referral.tsx        # Referral program & reward claiming
+│       ├── referral.tsx        # Invite code sharing
 │       └── settings.tsx        # User settings & profile
 ├── assets/                     # App icons, SVG illustrations, splash screens
 ├── components/                 # Reusable UI components (LatexRenderer, Modals, Buttons)
@@ -61,6 +60,18 @@ student-app/
 
 ---
 
+## Daily AI quotas
+
+Free users receive 2 tutor chat requests, 1 scan/solve, 1 quiz of up to 10
+questions, 1 flashcard set of up to 10 cards, and 1 summary per UTC day. Pro
+includes 200 tutor chat requests and 30 of each other generation feature per UTC
+day. The Go backend is authoritative; the app displays a plan-limit modal when a
+quota is reached. Subscription prices are unchanged and ads remain deferred.
+
+Before deploying quota changes, apply
+[`skeeme-go/migrations/002_daily_ai_usage.sql`](../skeeme-go/migrations/002_daily_ai_usage.sql)
+to the backend database.
+
 ## 🎨 Tech Stack & Libraries
 
 - **Framework**: [Expo SDK 57](https://expo.dev/) (React Native 0.86, React 19.2)
@@ -82,7 +93,7 @@ Create a `.env` file in `student-app/`:
 ```env
 # ── API Backend ─────────────────────────────────────────────
 # Live Production Backend (default):
-EXPO_PUBLIC_API_URL=https://skeeme.brimble.app/api/v2/student/
+EXPO_PUBLIC_API_URL=https://skeeme....
 
 # Local backend alternative:
 # EXPO_PUBLIC_API_URL=http://localhost:8080/api/v2/student/

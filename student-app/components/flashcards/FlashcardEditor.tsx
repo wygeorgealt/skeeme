@@ -21,6 +21,7 @@ interface Props {
     isExtracting?: boolean;
     onClearFile?: () => void;
     initialTopic?: string;
+    maxCount?: number;
 }
 
 const SUGGESTIONS = [
@@ -43,7 +44,8 @@ export function FlashcardEditor({
     selectedFile,
     isExtracting = false,
     onClearFile,
-    initialTopic 
+    initialTopic,
+    maxCount = 10,
 }: Props) {
     const insets = useSafeAreaInsets();
     const scheme = useColorScheme();
@@ -52,7 +54,7 @@ export function FlashcardEditor({
     
     const [mode, setMode] = useState<'topic' | 'file'>('topic');
     const [topic, setTopic] = useState(initialTopic || '');
-    const [count, setCount] = useState(15);
+    const [count, setCount] = useState(Math.min(15, maxCount));
     const [contentFocus, setContentFocus] = useState<string[]>(['concepts', 'traps']);
     const [loading, setLoading] = useState(false);
 
@@ -316,7 +318,7 @@ export function FlashcardEditor({
                             Number of Cards
                         </Text>
                         <Text style={{ fontSize: 12, fontWeight: '400', color: C.textSecondary, marginTop: 2 }}>
-                            Min 5 • Max 20 cards per deck
+                            Min 5 • Max {maxCount} cards per set
                         </Text>
                     </View>
                 </View>
@@ -364,7 +366,7 @@ export function FlashcardEditor({
                     <Pressable
                         onPress={() => {
                             haptics.selectionAsync();
-                            setCount(Math.min(20, count + 1));
+                            setCount(Math.min(maxCount, count + 1));
                         }}
                         style={{
                             width: 44,
@@ -383,7 +385,7 @@ export function FlashcardEditor({
 
                 {/* Preset Pills */}
                 <View style={{ flexDirection: 'row', gap: 8 }}>
-                    {[5, 10, 15, 20].map((num) => {
+                    {[5, 10, 15, 20, 25, 30].filter((num) => num <= maxCount).map((num) => {
                         const isSelected = count === num;
                         return (
                             <Pressable

@@ -38,46 +38,46 @@ func setupHandlerTestEnv(t *testing.T) (*sqlx.DB, sqlmock.Sqlmock, *redis.Client
 	return sqlxDB, mock, rdb, mr
 }
 
-func TestAIHandler_InsufficientCredits(t *testing.T) {
+func TestAIHandler_DailyLimitReached(t *testing.T) {
 	db, mock, rdb, mr := setupHandlerTestEnv(t)
 	defer db.Close()
 	defer mr.Close()
 
-	user := &models.User{
-		ID:    1,
-		Email: "test@skeeme.com",
-	}
+	user := &models.User{ID: 1, Email: "test@skeeme.com", SubscriptionTier: "free"}
 
 	handler := NewAIHandler(db, rdb)
 
-	// User has 10 credits, but solve costs 25
+	requestID := "limit-test"
 	mock.ExpectBegin()
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT 1 FROM transactions WHERE request_id = $1")).
+	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO ai_daily_usage_requests")).
+		WithArgs(user.ID, requestID, "scan", sqlmock.AnyArg()).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectQuery(regexp.QuoteMeta("INSERT INTO ai_daily_usage")).
+		WithArgs(user.ID, "scan", sqlmock.AnyArg(), 1).
 		WillReturnError(sql.ErrNoRows)
-
-	rows := sqlmock.NewRows([]string{"credits", "subscription_tier"}).
-		AddRow(10, "free")
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT credits, subscription_tier FROM users WHERE id = $1 FOR UPDATE")).
-		WithArgs(user.ID).
-		WillReturnRows(rows)
-
 	mock.ExpectRollback()
 
 	body := `{"image":"data:image/png;base64,abc123"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/scan/solve", bytes.NewReader([]byte(body)))
+	req.Header.Set("Idempotency-Key", requestID)
 	req = req.WithContext(middleware.SetUser(req.Context(), user))
 	rec := httptest.NewRecorder()
 
 	handler.Solve(rec, req)
 
-	if rec.Code != http.StatusPaymentRequired {
-		t.Fatalf("Expected status 402 Payment Required, got %d. Body: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("Expected status 429 Too Many Requests, got %d. Body: %s", rec.Code, rec.Body.String())
 	}
 
-	var resp map[string]string
-	_ = json.Unmarshal(rec.Body.Bytes(), &resp)
-	if !strings.Contains(resp["error"], "not have enough credits") {
-		t.Errorf("Expected insufficient credits error, got: %s", resp["error"])
+	var resp map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp["code"] != "daily_limit_reached" || resp["feature"] != "scan" || resp["limit"] != float64(1) {
+		t.Fatalf("Unexpected daily limit response: %v", resp)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
 	}
 }
 

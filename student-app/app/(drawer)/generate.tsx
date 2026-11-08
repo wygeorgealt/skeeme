@@ -6,7 +6,6 @@ import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimate
 import { Icon } from '@/components/ui/Icon';
 import { MathText, formatMathPlainText } from '@/components/ui/MathText';
 import { streamQuizGenerate } from '@/lib/aiStream';
-import { quizCost, hasEnoughCredits, verifySufficientCredits, syncCreditBalance } from '@/lib/creditCosts';
 
 import { useFocusEffect, useLocalSearchParams, router } from 'expo-router';
 import { api } from '@/lib/api';
@@ -19,7 +18,6 @@ import * as Print from 'expo-print';
 import { ShareCard } from '@/components/ui/ShareCard';
 import { generateQuizHTML } from '@/lib/pdfGenerator';
 // import { generateUUID } from '@/lib/utils';
-import OutOfCreditsModal from '@/components/OutOfCreditsModal';
 import { posthog } from '@/lib/posthog';
 import { markGenerationSuccess } from '@/lib/storeReview';
 import { markFreePaywallOfferShown, shouldShowFreePaywallOffer } from '@/lib/freeOffer';
@@ -85,7 +83,7 @@ const PROGRESS_STAGES = ['Skeeming', 'Extracting', 'Generating', 'Finalizing'];
 // MAIN SCREEN
 // ══════════════════════════════════════════════════════════════════════════════
 export default function GenerateQuizScreen() {
-    const { user, updateUser } = useAuthStore();
+    const user = useAuthStore((s) => s.user);
     const queryClient = useQueryClient();
 
     const insets = useSafeAreaInsets();
@@ -126,8 +124,6 @@ export default function GenerateQuizScreen() {
     const [saveError, setSaveError] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
-    const [showOutOfCredits, setShowOutOfCredits] = useState(false);
-    const [creditRefreshKey, setCreditRefreshKey] = useState(0);
     const [explanationQ, setExplanationQ] = useState<{ q: Question; qi: number; isCorrect: boolean } | null>(null);
     const [globalError, setGlobalError] = useState<string | null>(null);
     const [showErrorModal, setShowErrorModal] = useState(false);
@@ -354,15 +350,6 @@ export default function GenerateQuizScreen() {
         if (mode === 'topic' && !topic.trim()) return Alert.alert('Required', 'Please enter a topic.');
         if (mode === 'file' && !selectedFile) return Alert.alert('Required', 'Please select a document.');
         
-        // Pre-flight: make sure the balance covers the WHOLE quiz before anything starts,
-        // so the user is never stopped or errored mid-generation.
-        const quizCreditCost = quizCost(parseInt(questionCount) || 10);
-        const canAfford = await verifySufficientCredits(quizCreditCost, 'quiz', false);
-        if (!canAfford) {
-            setShowOutOfCredits(true);
-            return;
-        }
-
         setIsLoading(true);
         setLoadingStage(mode === 'file' ? 'Analyzing Document...' : 'Analyzing Topic...');
         setQuestions([]); setSelectedAnswers({}); setTheoryResults({}); 
@@ -418,12 +405,10 @@ export default function GenerateQuizScreen() {
                         clearInterval(stageInterval);
                         finishGeneration(fullText || accumulatedJson);
                     },
-                    onError: (error, isInsufficientCredits) => {
+                    onError: (error, isDailyLimitReached) => {
                         clearInterval(stageInterval);
                         setIsLoading(false);
-                        if (isInsufficientCredits) {
-                            setShowOutOfCredits(true);
-                        } else {
+                        if (!isDailyLimitReached) {
                             setGlobalError(error || 'Skeeme is down, Please try again later.');
                             setShowErrorModal(true);
                         }
@@ -493,16 +478,6 @@ export default function GenerateQuizScreen() {
             posthog.capture('quiz_generated_stream', { mode, difficulty, format });
             markGenerationSuccess('quiz').catch(() => {});
 
-            // Refresh user credits
-            await syncCreditBalance();
-            await queryClient.refetchQueries({ queryKey: ['student', 'me'] });
-            const refreshed = useAuthStore.getState().user;
-            if (refreshed) {
-                if (refreshed.credits === 0 && (refreshed.plan_name ?? 'free') === 'free') {
-                    setShowOutOfCredits(true);
-                }
-            }
-            
             if (timerEnabled && !timerRef.current) startTimer(parseInt(timerMinutes) || 10);
             
             // Reset saved state for new quiz
@@ -768,12 +743,13 @@ export default function GenerateQuizScreen() {
                                 className="rounded-2xl p-4 flex-row items-center justify-between"
                                 style={{ backgroundColor: C.surfaceLow }}
                             >
-                                <Pressable 
+                                <Pressable
                                     className="w-11 h-11 rounded-xl items-center justify-center"
                                     style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: StyleSheet.hairlineWidth }}
                                     onPress={() => {
                                         haptics.selectionAsync();
-                                        setQuestionCount(prev => String(Math.max(5, parseInt(prev) - 5)));
+                                        const maxCount = user?.plan_name && user.plan_name !== 'free' ? 30 : 10;
+                                        setQuestionCount(prev => String(Math.max(5, Math.min(maxCount, parseInt(prev) - 5))));
                                     }}
                                 >
                                     <Icon name="Minus" size={20} color="default" />
@@ -789,7 +765,8 @@ export default function GenerateQuizScreen() {
                                     style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: StyleSheet.hairlineWidth }}
                                     onPress={() => {
                                         haptics.selectionAsync();
-                                        setQuestionCount(prev => String(Math.min(30, parseInt(prev) + 5)));
+                                        const maxCount = user?.plan_name && user.plan_name !== 'free' ? 30 : 10;
+                                        setQuestionCount(prev => String(Math.min(maxCount, parseInt(prev) + 5)));
                                     }}
                                 >
                                     <Icon name="Plus" size={20} color="default" />
@@ -797,7 +774,9 @@ export default function GenerateQuizScreen() {
                             </View>
 
                             <View className="flex-row flex-wrap gap-2 w-full justify-between">
-                                {[5, 10, 15, 20, 30].map(val => {
+                                {[5, 10, 15, 20, 30]
+                                    .filter((val) => (user?.plan_name && user.plan_name !== 'free') || val <= 10)
+                                    .map(val => {
                                     const isSelected = parseInt(questionCount) === val;
                                     return (
                                         <Pressable 
@@ -990,12 +969,6 @@ export default function GenerateQuizScreen() {
                     </View>
                 </ScrollView>
                 )}
-
-                <OutOfCreditsModal
-                    visible={showOutOfCredits}
-                    onDismiss={() => setShowOutOfCredits(false)}
-                    featureAttempted="quiz"
-                />
 
                 <GlobalErrorModal 
                     visible={showErrorModal}
@@ -2008,8 +1981,6 @@ export default function GenerateQuizScreen() {
                     </View>
                 </Glass>
             </View>
-
-            <OutOfCreditsModal visible={showOutOfCredits} onDismiss={() => setShowOutOfCredits(false)} featureAttempted="quiz" />
 
             {/* Explanation Modal */}
             <Modal

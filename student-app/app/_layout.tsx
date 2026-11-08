@@ -122,8 +122,7 @@ export default function RootLayout() {
           router.replace('/(onboarding)/name');
         }
       } else {
-        // Allow all users (free or premium) to access the app after onboarding
-        // If they run out of credits, the OutOfCreditsModal will block their actions but they can still view their history
+        // Allow all users (Free or Pro) to access the app after onboarding.
         const authOnlyOnboardingRoutes = ['auth-select', 'create-account', 'preview'];
         const isAuthEntryRoute =
           ['login', 'signup', 'welcome', 'forgot-password', 'otp', 'new-password'].includes(currentSegment) ||
@@ -252,7 +251,6 @@ export default function RootLayout() {
                 <Stack.Screen name="new-password" options={{ headerShown: false, animation: 'slide_from_right' }} />
                 <Stack.Screen name="(drawer)" options={{ headerShown: false, animation: 'fade', headerTransparent: true }} />
                 <Stack.Screen name="paywall" options={{ headerShown: false, animation: 'fade' }} />
-                <Stack.Screen name="buy-credits" options={{ headerShown: false, animation: 'slide_from_bottom', presentation: 'modal' }} />
                 <Stack.Screen name="billing" options={{ headerShown: false, animation: 'slide_from_right' }} />
 
                 <Stack.Screen name="+not-found" />
@@ -342,10 +340,9 @@ export default function RootLayout() {
               )}
 
               {/* Global Modals */}
-              <OutOfCreditsModalWrapper />
+              <PlanLimitModalWrapper />
               <CooldownModalWrapper />
               <GlobalErrorModalWrapper />
-              <StreakRewardModalWrapper />
               <EnjoyReviewModalWrapper />
 
               <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -371,7 +368,7 @@ function PollingSync({ user }: { user: { id: number } | null }) {
       }
     });
 
-    // 2. Poll every 30 seconds to keep limits/credits synced dynamically
+    // 2. Poll every 30 seconds to keep account and subscription state synced.
     const interval = setInterval(() => {
       refetch();
     }, 30000);
@@ -421,15 +418,15 @@ function ServiceHealthMonitor({ userId }: { userId: number | null }) {
   return null;
 }
 
-function OutOfCreditsModalWrapper() {
-  const { showCreditsModal, creditsModalFeature, toggleCreditsModal } = useAuthStore();
-  const OutOfCreditsModal = require('@/components/OutOfCreditsModal').default;
+function PlanLimitModalWrapper() {
+  const { showPlanLimitModal, planLimitFeature, togglePlanLimitModal } = useAuthStore();
+  const PlanLimitModal = require('@/components/PlanLimitModal').default;
 
   return (
-    <OutOfCreditsModal
-      visible={showCreditsModal}
-      onDismiss={() => toggleCreditsModal(false)}
-      featureAttempted={creditsModalFeature || 'scan'}
+    <PlanLimitModal
+      visible={showPlanLimitModal}
+      onDismiss={() => togglePlanLimitModal(false)}
+      featureAttempted={planLimitFeature || 'scan'}
     />
   );
 }
@@ -494,19 +491,6 @@ function GlobalErrorModalWrapper() {
       onContinueOffline={handleContinueOffline}
       onRetry={retry}
       retrying={retrying}
-    />
-  );
-}
-
-function StreakRewardModalWrapper() {
-  const { showStreakRewardModal, streakRewardData, toggleStreakRewardModal } = useAuthStore();
-  const { RewardModal } = require('@/components/RewardModal');
-
-  return (
-    <RewardModal
-      isVisible={showStreakRewardModal}
-      onClose={() => toggleStreakRewardModal(false)}
-      reward={streakRewardData}
     />
   );
 }

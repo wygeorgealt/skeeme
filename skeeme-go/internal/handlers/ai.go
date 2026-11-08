@@ -14,8 +14,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
 	"skeeme-go/internal/ai"
-	"skeeme-go/internal/credits"
 	"skeeme-go/internal/middleware"
+	dailyusage "skeeme-go/internal/usage"
 )
 
 type AIHandler struct {
@@ -30,27 +30,6 @@ func NewAIHandler(db *sqlx.DB, redisClient *redis.Client) *AIHandler {
 		Redis:     redisClient,
 		AIService: ai.NewService(redisClient),
 	}
-}
-
-func (h *AIHandler) getIdempotencyKey(r *http.Request) string {
-	key := r.Header.Get("Idempotency-Key")
-	if key == "" {
-		key = r.Header.Get("idempotency-key")
-	}
-	if key == "" {
-		key = uuid.New().String()
-	}
-	return key
-}
-
-func (h *AIHandler) resolveModelUsed(ctx context.Context, provider ai.Provider) string {
-	if provider != "" {
-		return string(provider)
-	}
-	if h.AIService != nil {
-		return string(h.AIService.GetDefaultProvider(ctx))
-	}
-	return "deepseek"
 }
 
 func (h *AIHandler) getExtractedText(ctx context.Context, userID int64, extractionID string) string {
@@ -124,6 +103,56 @@ func (h *AIHandler) checkRateLimit(ctx context.Context, userID int64) bool {
 	return allowed
 }
 
+func (h *AIHandler) getIdempotencyKey(r *http.Request) string {
+	key := r.Header.Get("Idempotency-Key")
+	if key == "" {
+		key = uuid.NewString()
+	}
+	return key
+}
+
+func (h *AIHandler) reserveDailyUsage(w http.ResponseWriter, r *http.Request, userID int64, tier, requestID string, feature dailyusage.Feature) (dailyusage.Reservation, bool) {
+	reservation, err := dailyusage.Reserve(r.Context(), h.DB, userID, requestID, feature, tier, time.Now())
+	if err == nil {
+		return reservation, true
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err == dailyusage.ErrDailyLimitReached {
+		w.WriteHeader(http.StatusTooManyRequests)
+		json.NewEncoder(w).Encode(map[string]any{
+			"error":    "daily_limit_reached",
+			"code":     "daily_limit_reached",
+			"feature":  string(feature),
+			"limit":    reservation.Limit,
+			"used":     reservation.Limit,
+			"reset_at": dailyusage.NextResetUTC(time.Now()).Format(time.RFC3339),
+		})
+		return dailyusage.Reservation{}, false
+	}
+
+	log.Printf("[aiHandler] Daily usage authorization failed for user %d feature %s: %v", userID, feature, err)
+	w.WriteHeader(http.StatusInternalServerError)
+	json.NewEncoder(w).Encode(map[string]string{"error": "usage_authorization_failed"})
+	return dailyusage.Reservation{}, false
+}
+
+func (h *AIHandler) releaseDailyUsage(reservation dailyusage.Reservation) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := dailyusage.Release(ctx, h.DB, reservation); err != nil {
+		log.Printf("[aiHandler] Failed to release daily usage reservation for user %d feature %s: %v", reservation.UserID, reservation.Feature, err)
+	}
+}
+
+func (h *AIHandler) completeDailyUsage(reservation dailyusage.Reservation) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := dailyusage.Complete(ctx, h.DB, reservation); err != nil {
+		log.Printf("[aiHandler] Failed to complete daily usage reservation for user %d feature %s: %v", reservation.UserID, reservation.Feature, err)
+	}
+}
+
 // Solve handles POST /api/scan/solve
 func (h *AIHandler) Solve(w http.ResponseWriter, r *http.Request) {
 	user := middleware.GetUser(r.Context())
@@ -152,27 +181,16 @@ func (h *AIHandler) Solve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idempotencyKey := h.getIdempotencyKey(r)
-	cost := credits.ScanSolveCost
-	actionType := "scan_solve"
-	modelUsed := h.resolveModelUsed(r.Context(), req.Provider)
-
-	// In-process credit deduction
-	err := credits.Deduct(r.Context(), h.DB, h.Redis, user.ID, cost, idempotencyKey, actionType, modelUsed)
-	if err != nil {
-		if err == credits.ErrInsufficientCredits {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusPaymentRequired) // 402
-			json.NewEncoder(w).Encode(map[string]string{
-				"error": "You do not have enough credits to solve this scan. Please refill or upgrade.",
-			})
-			return
-		}
-		if err != credits.ErrDuplicateRequest {
-			http.Error(w, `{"error":"Credit authorization failed: `+err.Error()+`"}`, http.StatusInternalServerError)
-			return
-		}
+	reservation, ok := h.reserveDailyUsage(w, r, user.ID, user.SubscriptionTier, h.getIdempotencyKey(r), dailyusage.Scan)
+	if !ok {
+		return
 	}
+	usageSucceeded := false
+	defer func() {
+		if !usageSucceeded {
+			h.releaseDailyUsage(reservation)
+		}
+	}()
 
 	rc, stopHeartbeat, err := h.setupSSE(w)
 	if err != nil {
@@ -198,10 +216,6 @@ func (h *AIHandler) Solve(w http.ResponseWriter, r *http.Request) {
 
 	if streamErr != nil {
 		log.Printf("[aiHandler] Solve stream error for user %d: %v", user.ID, streamErr)
-		refundCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = credits.Refund(refundCtx, h.DB, h.Redis, user.ID, cost, "refund_"+idempotencyKey, actionType)
-
 		fmt.Fprintf(w, "event: error\ndata: {\"error\":\"stream_interrupted\"}\n\n")
 		_ = rc.Flush()
 		return
@@ -210,16 +224,14 @@ func (h *AIHandler) Solve(w http.ResponseWriter, r *http.Request) {
 	// Validate JSON integrity to protect against max_tokens truncation edge cases
 	finalOutput := strings.TrimSpace(accumulatedText.String())
 	if !json.Valid([]byte(finalOutput)) {
-		log.Printf("[aiHandler] Solve stream returned truncated/invalid JSON for user %d. Refunding.", user.ID)
-		refundCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = credits.Refund(refundCtx, h.DB, h.Redis, user.ID, cost, "refund_"+idempotencyKey, actionType)
-
+		log.Printf("[aiHandler] Solve stream returned truncated/invalid JSON for user %d.", user.ID)
 		fmt.Fprintf(w, "event: error\ndata: {\"error\":\"incomplete_response\"}\n\n")
 		_ = rc.Flush()
 		return
 	}
 
+	h.completeDailyUsage(reservation)
+	usageSucceeded = true
 	fmt.Fprintf(w, "data: [DONE]\n\n")
 	_ = rc.Flush()
 }
@@ -252,25 +264,16 @@ func (h *AIHandler) Chat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isPro := user.SubscriptionTier == "pro" || user.SubscriptionTier == "max"
-	if !isPro && h.Redis != nil {
-		todayKey := fmt.Sprintf("daily_chat_count:%d:%s", user.ID, time.Now().UTC().Format("2006-01-02"))
-		count, err := h.Redis.Incr(r.Context(), todayKey).Result()
-		if err == nil {
-			if count == 1 {
-				h.Redis.Expire(r.Context(), todayKey, 24*time.Hour)
-			}
-			if count > 2 {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusPaymentRequired) // 402
-				json.NewEncoder(w).Encode(map[string]string{
-					"error":   "limit_reached",
-					"message": "Ur limit has reached",
-				})
-				return
-			}
-		}
+	reservation, ok := h.reserveDailyUsage(w, r, user.ID, user.SubscriptionTier, h.getIdempotencyKey(r), dailyusage.Chat)
+	if !ok {
+		return
 	}
+	usageSucceeded := false
+	defer func() {
+		if !usageSucceeded {
+			h.releaseDailyUsage(reservation)
+		}
+	}()
 
 	rc, stopHeartbeat, err := h.setupSSE(w)
 	if err != nil {
@@ -298,6 +301,8 @@ func (h *AIHandler) Chat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.completeDailyUsage(reservation)
+	usageSucceeded = true
 	fmt.Fprintf(w, "data: [DONE]\n\n")
 	_ = rc.Flush()
 }
@@ -331,6 +336,11 @@ func (h *AIHandler) GenerateQuiz(w http.ResponseWriter, r *http.Request) {
 	if req.QuestionCount > 30 {
 		req.QuestionCount = 30
 	}
+	if dailyusage.IsFreeTier(user.SubscriptionTier) {
+		if req.QuestionCount > 10 {
+			req.QuestionCount = 10
+		}
+	}
 
 	extractedText := h.getExtractedText(r.Context(), user.ID, req.ExtractionID)
 	content := req.Topic
@@ -343,27 +353,16 @@ func (h *AIHandler) GenerateQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idempotencyKey := h.getIdempotencyKey(r)
-	cost := credits.QuizCost(req.QuestionCount)
-	actionType := "quiz_generation"
-	modelUsed := h.resolveModelUsed(r.Context(), req.Provider)
-
-	// In-process credit deduction
-	err := credits.Deduct(r.Context(), h.DB, h.Redis, user.ID, cost, idempotencyKey, actionType, modelUsed)
-	if err != nil {
-		if err == credits.ErrInsufficientCredits {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusPaymentRequired) // 402
-			json.NewEncoder(w).Encode(map[string]string{
-				"error": "You do not have enough credits to generate this quiz.",
-			})
-			return
-		}
-		if err != credits.ErrDuplicateRequest {
-			http.Error(w, `{"error":"Credit authorization failed: `+err.Error()+`"}`, http.StatusInternalServerError)
-			return
-		}
+	reservation, ok := h.reserveDailyUsage(w, r, user.ID, user.SubscriptionTier, h.getIdempotencyKey(r), dailyusage.Quiz)
+	if !ok {
+		return
 	}
+	usageSucceeded := false
+	defer func() {
+		if !usageSucceeded {
+			h.releaseDailyUsage(reservation)
+		}
+	}()
 
 	rc, stopHeartbeat, err := h.setupSSE(w)
 	if err != nil {
@@ -389,10 +388,6 @@ func (h *AIHandler) GenerateQuiz(w http.ResponseWriter, r *http.Request) {
 
 	if streamErr != nil {
 		log.Printf("[aiHandler] Quiz stream error for user %d: %v", user.ID, streamErr)
-		refundCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = credits.Refund(refundCtx, h.DB, h.Redis, user.ID, cost, "refund_"+idempotencyKey, actionType)
-
 		fmt.Fprintf(w, "event: error\ndata: {\"error\":\"stream_interrupted\"}\n\n")
 		_ = rc.Flush()
 		return
@@ -401,16 +396,14 @@ func (h *AIHandler) GenerateQuiz(w http.ResponseWriter, r *http.Request) {
 	// Validate JSON integrity to prevent partial array corruption
 	finalOutput := strings.TrimSpace(accumulatedText.String())
 	if !json.Valid([]byte(finalOutput)) {
-		log.Printf("[aiHandler] Quiz generation produced truncated/invalid JSON for user %d. Refunding.", user.ID)
-		refundCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = credits.Refund(refundCtx, h.DB, h.Redis, user.ID, cost, "refund_"+idempotencyKey, actionType)
-
+		log.Printf("[aiHandler] Quiz generation produced truncated/invalid JSON for user %d.", user.ID)
 		fmt.Fprintf(w, "event: error\ndata: {\"error\":\"incomplete_response\"}\n\n")
 		_ = rc.Flush()
 		return
 	}
 
+	h.completeDailyUsage(reservation)
+	usageSucceeded = true
 	fmt.Fprintf(w, "data: [DONE]\n\n")
 	_ = rc.Flush()
 }
@@ -444,6 +437,11 @@ func (h *AIHandler) GenerateFlashcards(w http.ResponseWriter, r *http.Request) {
 	if req.CardCount > 30 {
 		req.CardCount = 30
 	}
+	if dailyusage.IsFreeTier(user.SubscriptionTier) {
+		if req.CardCount > 10 {
+			req.CardCount = 10
+		}
+	}
 
 	extractedText := h.getExtractedText(r.Context(), user.ID, req.ExtractionID)
 	content := req.Topic
@@ -456,27 +454,16 @@ func (h *AIHandler) GenerateFlashcards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idempotencyKey := h.getIdempotencyKey(r)
-	cost := credits.FlashcardCost(req.CardCount)
-	actionType := "flashcard_generation"
-	modelUsed := h.resolveModelUsed(r.Context(), req.Provider)
-
-	// In-process credit deduction
-	err := credits.Deduct(r.Context(), h.DB, h.Redis, user.ID, cost, idempotencyKey, actionType, modelUsed)
-	if err != nil {
-		if err == credits.ErrInsufficientCredits {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusPaymentRequired) // 402
-			json.NewEncoder(w).Encode(map[string]string{
-				"error": "You do not have enough credits to generate these flashcards.",
-			})
-			return
-		}
-		if err != credits.ErrDuplicateRequest {
-			http.Error(w, `{"error":"Credit authorization failed: `+err.Error()+`"}`, http.StatusInternalServerError)
-			return
-		}
+	reservation, ok := h.reserveDailyUsage(w, r, user.ID, user.SubscriptionTier, h.getIdempotencyKey(r), dailyusage.Flashcards)
+	if !ok {
+		return
 	}
+	usageSucceeded := false
+	defer func() {
+		if !usageSucceeded {
+			h.releaseDailyUsage(reservation)
+		}
+	}()
 
 	rc, stopHeartbeat, err := h.setupSSE(w)
 	if err != nil {
@@ -502,10 +489,6 @@ func (h *AIHandler) GenerateFlashcards(w http.ResponseWriter, r *http.Request) {
 
 	if streamErr != nil {
 		log.Printf("[aiHandler] Flashcards stream error for user %d: %v", user.ID, streamErr)
-		refundCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = credits.Refund(refundCtx, h.DB, h.Redis, user.ID, cost, "refund_"+idempotencyKey, actionType)
-
 		fmt.Fprintf(w, "event: error\ndata: {\"error\":\"stream_interrupted\"}\n\n")
 		_ = rc.Flush()
 		return
@@ -514,16 +497,14 @@ func (h *AIHandler) GenerateFlashcards(w http.ResponseWriter, r *http.Request) {
 	// Validate JSON integrity to prevent partial array corruption
 	finalOutput := strings.TrimSpace(accumulatedText.String())
 	if !json.Valid([]byte(finalOutput)) {
-		log.Printf("[aiHandler] Flashcard generation produced truncated/invalid JSON for user %d. Refunding.", user.ID)
-		refundCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = credits.Refund(refundCtx, h.DB, h.Redis, user.ID, cost, "refund_"+idempotencyKey, actionType)
-
+		log.Printf("[aiHandler] Flashcard generation produced truncated/invalid JSON for user %d.", user.ID)
 		fmt.Fprintf(w, "event: error\ndata: {\"error\":\"incomplete_response\"}\n\n")
 		_ = rc.Flush()
 		return
 	}
 
+	h.completeDailyUsage(reservation)
+	usageSucceeded = true
 	fmt.Fprintf(w, "data: [DONE]\n\n")
 	_ = rc.Flush()
 }

@@ -34,7 +34,7 @@ const AI_SERVICE_URL = getAIServiceBaseUrl();
 export interface StreamCallbacks {
     onToken?: (token: string) => void;
     onComplete?: (fullText: string) => void;
-    onError?: (error: string, isInsufficientCredits?: boolean) => void;
+    onError?: (error: string, isDailyLimitReached?: boolean) => void;
     onStatus?: (message: string) => void;
 }
 
@@ -68,7 +68,7 @@ export function streamFromAI(
     } as any);
 
     let fullText = '';
-    let isInsufficientCredits = false;
+    let isDailyLimitReached = false;
 
     const listener = (event: any) => {
         if (event.type === 'open') {
@@ -103,19 +103,32 @@ export function streamFromAI(
                 } catch (_) {}
             }
 
-            if (event.message?.includes('402') || errorData?.error === 'insufficient_credits' || errorData?.error === 'limit_reached') {
-                isInsufficientCredits = true;
+            if (errorData?.code === 'daily_limit_reached' || errorData?.error === 'daily_limit_reached') {
+                isDailyLimitReached = true;
+                const endpointFeature: Record<string, 'scan' | 'quiz' | 'flashcard' | 'chat' | 'summary'> = {
+                    '/api/scan/solve': 'scan',
+                    '/api/scan/chat': 'chat',
+                    '/api/quizzes/generate': 'quiz',
+                    '/api/flashcards/generate': 'flashcard',
+                    '/api/summaries/generate': 'summary',
+                };
+                const responseFeature = errorData?.feature;
+                const validFeatures = ['scan', 'quiz', 'flashcard', 'chat', 'summary'];
+                const feature = validFeatures.includes(responseFeature)
+                    ? responseFeature
+                    : endpointFeature[endpoint];
+                useAuthStore.getState().togglePlanLimitModal(true, feature);
             }
 
             const errorMsg = errorData?.error || event.message || 'Stream connection failed';
 
             // If the server explicitly emitted an error event (e.g. incomplete_response or stream_interrupted),
-            // or if no text was received, or if insufficient credits, report clean error
-            if (errorData?.error || fullText.length === 0 || isInsufficientCredits) {
+            // or if no text was received, report a clean error.
+            if (errorData?.error || fullText.length === 0 || isDailyLimitReached) {
                 if (__DEV__) {
                     console.warn(`[AI Stream] ❌ Stream error on ${endpoint}:`, errorMsg);
                 }
-                callbacks.onError?.(errorMsg, isInsufficientCredits);
+                callbacks.onError?.(errorMsg, isDailyLimitReached);
             } else {
                 // If we have full text and connection simply closed without error event
                 callbacks.onComplete?.(fullText);

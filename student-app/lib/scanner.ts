@@ -1,6 +1,5 @@
 import { apiStandard } from './api';
 import { generateUUID } from './utils';
-import { useAuthStore } from '@/store/authStore';
 import { streamScanSolve } from './aiStream';
 
 export type ScanResult = {
@@ -15,8 +14,6 @@ export type ScanResult = {
 
 export type SolveResponse = {
     results: ScanResult[];
-    cost: number;
-    remaining_credits: number;
 };
 
 /**
@@ -26,7 +23,7 @@ export type SolveResponse = {
 export const scannerService = {
     /**
      * Solves a question using a base64 image or a File/Blob (multipart).
-     * Sends an idempotency key per attempt to prevent duplicate credit deductions.
+     * Sends an idempotency key per attempt to prevent duplicate usage reservations.
      */
     solve: async (image: string | any, mode: 'base64' | 'multipart' = 'base64'): Promise<SolveResponse> => {
         const idempotencyKey = generateUUID();
@@ -55,8 +52,8 @@ export const scannerService = {
             onStatus?: (message: string) => void;
             onDelta?: (partialResults: ScanResult[]) => void;
             onFullResult?: (results: ScanResult[]) => void;
-            onComplete?: (creditsRemaining: number, reward?: any, streak?: any) => void;
-            onError?: (error: string, isInsufficientCredits?: boolean) => void;
+            onComplete?: () => void;
+            onError?: (error: string, isDailyLimitReached?: boolean) => void;
             onDone?: () => void;
         }
     ): (() => void) => {
@@ -96,13 +93,12 @@ export const scannerService = {
                 if (parsed?.results) {
                     callbacks.onFullResult?.(parsed.results);
                 }
-                // Refresh credits from the server
-                callbacks.onComplete?.(0); // Credits will be refreshed by the UI
+                callbacks.onComplete?.();
                 callbacks.onDone?.();
             },
-            onError: (error, isInsufficientCredits) => {
+            onError: (error, isDailyLimitReached) => {
                 if (parseTimer) { clearTimeout(parseTimer); parseTimer = null; }
-                callbacks.onError?.(error, isInsufficientCredits);
+                callbacks.onError?.(error, isDailyLimitReached);
                 callbacks.onDone?.();
             }
         });

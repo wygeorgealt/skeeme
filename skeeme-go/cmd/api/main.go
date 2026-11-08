@@ -52,6 +52,7 @@ func main() {
 			}
 			defer database.Close()
 			jobs.PendingCleanup(database)
+			jobs.CleanupDailyUsageRequests(database)
 			log.Println("[API CLI] Cleanup finished.")
 			return
 		case "health":
@@ -65,6 +66,7 @@ func main() {
 			defer database.Close()
 			_ = jobs.ResetStreaks(database)
 			jobs.PendingCleanup(database)
+			jobs.CleanupDailyUsageRequests(database)
 			_ = jobs.RunPostgresBackup()
 			jobs.AIHealthCheck()
 			return
@@ -86,6 +88,11 @@ func main() {
 		c.AddFunc("0 * * * *", func() {
 			log.Println("[Scheduler] Running hourly pending student cleanup...")
 			jobs.PendingCleanup(database)
+		})
+
+		c.AddFunc("0 1 * * *", func() {
+			log.Println("[Scheduler] Pruning old daily AI usage request records...")
+			jobs.CleanupDailyUsageRequests(database)
 		})
 
 		// Run every 3 hours: AI Health Check
@@ -151,7 +158,6 @@ func main() {
 	oauthHandler := &handlers.OAuthHandler{DB: database, Redis: redisClient}
 	profileHandler := &handlers.ProfileHandler{DB: database}
 	internalAIHandler := &handlers.InternalAIHandler{DB: database, Redis: redisClient}
-	creditHandler := &handlers.CreditHandler{DB: database}
 	syncHandler := &handlers.SyncHandler{DB: database}
 	quizHandler := &handlers.QuizHandler{DB: database}
 	flashcardHandler := &handlers.FlashcardHandler{DB: database}
@@ -171,7 +177,6 @@ func main() {
 
 	// Middleware
 	requireAuth := middleware.AuthMiddleware(database)
-	requireInternalAuth := middleware.InternalAuthMiddleware
 
 	// Root & Health Checks (handles GET & HEAD for Brimble and cloud health-checks)
 	rootHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -248,6 +253,7 @@ func main() {
 		handleCleanup := func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("[Cron Route] Cleanup triggered via %s from %s\n", r.Method, r.RemoteAddr)
 			jobs.PendingCleanup(database)
+			jobs.CleanupDailyUsageRequests(database)
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte(`{"status":"ok","message":"cleanup completed successfully"}`))
 		}
@@ -276,7 +282,8 @@ func main() {
 	// Legacy Internal AI Routes (retained for backward compatibility)
 	r.Route("/api/v2/internal/ai", func(r chi.Router) {
 		r.With(requireAuth).Post("/authorize", internalAIHandler.Authorize)
-		r.With(requireInternalAuth).Post("/refund", internalAIHandler.Refund)
+		r.With(requireAuth).Post("/complete", internalAIHandler.Complete)
+		r.With(requireAuth).Post("/refund", internalAIHandler.Refund)
 	})
 
 	r.Route("/api/v2/student", func(r chi.Router) {
@@ -317,11 +324,6 @@ func main() {
 			// Support
 			r.Post("/support/contact", supportHandler.Contact)
 
-			// Credit Endpoints
-			r.Get("/credits/summary", creditHandler.Summary)
-			r.Post("/credits/checkout", creditHandler.Checkout)
-			r.Post("/credits/out-of-credits", creditHandler.OutOfCredits)
-
 			// Data & Session Endpoints
 			r.Get("/sync", syncHandler.Sync)
 
@@ -349,7 +351,6 @@ func main() {
 			r.Route("/streaks", func(r chi.Router) {
 				r.Get("/heatmap", streakHandler.Heatmap)
 				r.Get("/freezes", streakHandler.Freezes)
-				r.Post("/claim-reward", streakHandler.ClaimReward)
 			})
 
 			// Notifications
@@ -357,9 +358,6 @@ func main() {
 
 			// Referrals
 			r.Get("/referral/my-code", referralHandler.MyCode)
-			r.Get("/referral/stats", referralHandler.Stats)
-			r.Post("/referral/claim-rewards", referralHandler.ClaimRewards)
-			r.Get("/referral/pending-rewards", referralHandler.PendingRewards)
 			r.Post("/referral/redeem", referralHandler.Redeem)
 
 			// Billing

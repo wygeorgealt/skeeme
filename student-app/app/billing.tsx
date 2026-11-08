@@ -161,19 +161,13 @@ export default function BillingHistoryScreen() {
 
                         </View>
                         <Text style={[s.planTitle, isDark ? s.textWhite : s.textSlate900]}>
-                            {(user?.plan_name === 'standard' || user?.plan_name === 'pro' || user?.plan_name === 'elite' || user?.plan_name === 'max') ? 'Skeeme Pro' : 'Skeeme Free'}
-                        </Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-                            <Text style={s.planSubtitle}>
-                                {`${user?.credits?.toLocaleString() ?? 0} Credits remaining`}
+                            {(user?.plan_name && user.plan_name !== 'free') ? 'Skeeme Pro' : 'Skeeme Free'}
                             </Text>
-                            <TouchableOpacity
-                                onPress={() => router.push('/buy-credits')}
-                                style={[s.topUpButton, { backgroundColor: C.primaryLight }]}
-                            >
-                                <Text style={{ color: C.primary, fontWeight: '600', fontSize: 14 }}>Top Up</Text>
-                            </TouchableOpacity>
-                        </View>
+                            <Text style={[s.planSubtitle, { marginTop: 4 }]}>
+                                {user?.plan_name && user.plan_name !== 'free'
+                                    ? 'Higher daily limits for your study tools.'
+                                    : 'Core study tools with daily usage limits.'}
+                            </Text>
 
                     </View>
 

@@ -47,7 +47,7 @@ export async function deleteSummary(id: string): Promise<void> {
 
 export class SummaryError extends Error {
     constructor(
-        public code: 'insufficient_credits' | 'non_educational' | 'network' | 'incomplete' | 'unknown',
+        public code: 'daily_limit_reached' | 'non_educational' | 'network' | 'incomplete' | 'unknown',
         message: string
     ) {
         super(message);
@@ -105,8 +105,8 @@ export function generateAiSummary(
                         reject(e instanceof SummaryError ? e : new SummaryError('incomplete', 'The summary came back incomplete.'));
                     }
                 },
-                onError: (error, isInsufficientCredits) => {
-                    if (isInsufficientCredits) return reject(new SummaryError('insufficient_credits', error));
+                onError: (error, isDailyLimitReached) => {
+                    if (isDailyLimitReached) return reject(new SummaryError('daily_limit_reached', error));
                     if (error === 'non_educational') return reject(new SummaryError('non_educational', error));
                     if (error === 'incomplete_response') return reject(new SummaryError('incomplete', error));
                     reject(new SummaryError('network', error));

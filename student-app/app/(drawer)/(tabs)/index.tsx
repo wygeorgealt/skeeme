@@ -46,7 +46,6 @@ export default function HomeDashboard() {
     const scrollViewRef = React.useRef<ScrollView>(null);
 
     const user = useAuthStore((s) => s.user);
-    const toggleCreditsModal = useAuthStore((s) => s.toggleCreditsModal);
 
     const [profileMenuVisible, setProfileMenuVisible] = useState(false);
     const [streakPresentationVisible, setStreakPresentationVisible] = useState(false);
@@ -174,7 +173,6 @@ export default function HomeDashboard() {
     }));
 
     const firstName = user?.name ? user.name.split(' ')[0] : 'there';
-    const credits = user?.credits ?? 0;
     const streak = user?.streak?.current_streak ?? 0;
 
     return (
@@ -203,7 +201,7 @@ export default function HomeDashboard() {
                     />
                 </TouchableOpacity>
 
-                {/* Right Badges: Streak & Credits */}
+                {/* Current streak */}
                 <View style={styles.badgeRow}>
                     {/* Streak Badge */}
                     <TouchableOpacity
@@ -228,29 +226,6 @@ export default function HomeDashboard() {
                         <Text style={[styles.badgeText, { color: '#EA580C' }]}>{streak}</Text>
                     </TouchableOpacity>
 
-                    {/* Credits Badge */}
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={() => {
-                            haptics.selectionAsync();
-                            toggleCreditsModal(true, 'scan');
-                        }}
-                        delayLongPress={450}
-                        onLongPress={() => {
-                            haptics.impactAsync();
-                            router.push('/(drawer)/secret-credits' as any);
-                        }}
-                        style={[
-                            styles.badgePill,
-                            {
-                                backgroundColor: isDark ? 'rgba(0, 122, 255, 0.15)' : '#EFF6FF',
-                                borderColor: isDark ? 'rgba(0, 122, 255, 0.3)' : '#93C5FD',
-                            },
-                        ]}
-                    >
-                        <Icon name="Zap" size={17} color="primary" />
-                        <Text style={[styles.badgeText, { color: '#007AFF' }]}>{credits}</Text>
-                    </TouchableOpacity>
                 </View>
             </View>
 
@@ -416,7 +391,7 @@ export default function HomeDashboard() {
                             <View style={styles.proBannerTextWrap}>
                                 <Text style={styles.proBannerTitle}>Unlock Skeeme Pro</Text>
                                 <Text style={styles.proBannerSubtitle}>
-                                    Unlimited AI practice, homework scans, and exams.
+                                    More room for daily AI practice, scans, and study tools.
                                 </Text>
                             </View>
                         </View>

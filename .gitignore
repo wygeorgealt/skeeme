@@ -25,7 +25,7 @@ student-app/dist/
 student-app/.expo/
 
 # ── AI Service (ai-service/) ──────────────────────────────────────────────
-ai-service/node_modules/
+ai-service
 
 # ── Landing Page (when created) ───────────────────────────────────────────
 landing/node_modules/

@@ -27,8 +27,6 @@ import {
     deleteSummary,
     SummaryError,
 } from '@/lib/summaryService';
-import { useAuthStore } from '@/store/authStore';
-import { SUMMARY_COST, verifySufficientCredits, syncCreditBalance } from '@/lib/creditCosts';
 
 const SUGGESTIONS = [
     'Physics: Motion & Force',
@@ -43,9 +41,6 @@ export default function SummaryScreen() {
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     const params = useLocalSearchParams<{ topic?: string }>();
-    const toggleCreditsModal = useAuthStore((st) => st.toggleCreditsModal);
-    const checkAuth = useAuthStore((st) => st.checkAuth);
-
     const [mode, setMode] = useState<'topic' | 'file'>('topic');
     const [topic, setTopic] = useState(params.topic || '');
     const [selectedFile, setSelectedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
@@ -80,9 +75,6 @@ export default function SummaryScreen() {
         if (mode === 'file' && !selectedFile) {
             return Alert.alert('Required', 'Please select a document to summarize.');
         }
-
-        const canAfford = await verifySufficientCredits(SUMMARY_COST, 'scan', true);
-        if (!canAfford) return;
 
         setIsLoading(true);
         try {
@@ -120,16 +112,15 @@ export default function SummaryScreen() {
             setActiveTab('notes');
             setViewingSummary(summary);
             await loadSummaries();
-            syncCreditBalance().catch(() => {});
         } catch (e: any) {
-            if (e instanceof SummaryError && e.code === 'insufficient_credits') {
-                toggleCreditsModal(true, 'scan');
+            if (e instanceof SummaryError && e.code === 'daily_limit_reached') {
+                return;
             } else if (e instanceof SummaryError && e.code === 'non_educational') {
                 Alert.alert('Academic topics only', 'Skeemy summaries are for study subjects like maths, science, history, languages and exam prep. Try an academic topic.');
             } else if (e instanceof SummaryError && e.code === 'incomplete') {
-                Alert.alert('Summary incomplete', 'The AI returned an incomplete summary. Your credits were refunded. Please try again.');
+                Alert.alert('Summary incomplete', 'The AI returned an incomplete summary. Please try again.');
             } else {
-                Alert.alert('Network error', 'Could not reach the study server. Check your connection and try again. You were not charged.');
+                Alert.alert('Network error', 'Could not reach the study server. Check your connection and try again.');
             }
         } finally {
             setIsLoading(false);

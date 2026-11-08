@@ -30,19 +30,13 @@ interface AuthState {
     completeOnboarding: () => Promise<void>;
     clearOnboardingJustCompleted: () => void;
     devReset: () => Promise<void>;
-    // Credits Modal
-    showCreditsModal: boolean;
-    creditsModalFeature: 'scan' | 'quiz' | 'flashcard' | 'chat' | null;
-    // Only show the credits modal once per app session unless forced
-    creditsModalShownThisSession: boolean;
-    toggleCreditsModal: (show: boolean, feature?: 'scan' | 'quiz' | 'flashcard' | 'chat' | null, force?: boolean) => void;
+    // Daily plan limits
+    showPlanLimitModal: boolean;
+    planLimitFeature: 'scan' | 'quiz' | 'flashcard' | 'chat' | 'summary' | null;
+    togglePlanLimitModal: (show: boolean, feature?: 'scan' | 'quiz' | 'flashcard' | 'chat' | 'summary' | null) => void;
     // Cooldown Modal
     showCooldownModal: boolean;
     toggleCooldownModal: (show: boolean) => void;
-    // Streak Reward Modal
-    showStreakRewardModal: boolean;
-    streakRewardData: any;
-    toggleStreakRewardModal: (show: boolean, data?: any) => void;
     // Haptics
     hapticsEnabled: boolean;
     setHapticsEnabled: (enabled: boolean) => Promise<void>;
@@ -127,12 +121,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     storedEmail: null,
     onboardingComplete: false,
     onboardingJustCompleted: false,
-    showCreditsModal: false,
-    creditsModalFeature: null,
-    creditsModalShownThisSession: false,
+    showPlanLimitModal: false,
+    planLimitFeature: null,
     showCooldownModal: false,
-    showStreakRewardModal: false,
-    streakRewardData: null,
     hapticsEnabled: true,
     globalError: null,
     connectionState: 'online',
@@ -164,42 +155,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         } catch (e) {}
     },
 
-    toggleCreditsModal: (show, feature, force) => {
-        // Show the modal immediately -- never block user interactions
-        if (show) {
-            set({ showCreditsModal: true, creditsModalFeature: feature || null, creditsModalShownThisSession: true });
-
-            // Background refresh: silently check if credits were topped up.
-            // If they were, auto-dismiss the modal without blocking.
-            import('../lib/api').then(({ apiStandard }) => {
-                apiStandard.get('me').then((latest: any) => {
-                    if (latest) {
-                        const currentUser = get().user || {};
-                        const merged = { ...currentUser, ...latest } as any;
-                        set({ user: merged });
-
-                        const currentCredits = merged.credits ?? 0;
-                        const isUnlimited = (merged.plan_name ?? 'free') !== 'free';
-                        if (!isUnlimited && currentCredits > 0 && !force && feature !== 'chat') {
-                            // They have credits now -- auto-dismiss
-                            set({ showCreditsModal: false, creditsModalFeature: null, creditsModalShownThisSession: false });
-                        }
-                    }
-                }).catch(() => { /* ignore -- modal stays visible */ });
-            }).catch(() => {});
-            return;
-        }
-
-        // Always allow dismissal
-        set({ showCreditsModal: false, creditsModalFeature: null, creditsModalShownThisSession: false });
+    togglePlanLimitModal: (show, feature) => {
+        set({
+            showPlanLimitModal: show,
+            planLimitFeature: show ? feature || null : null,
+        });
     },
 
     toggleCooldownModal: (show) => {
         set({ showCooldownModal: show });
-    },
-
-    toggleStreakRewardModal: (show, data) => {
-        set({ showStreakRewardModal: show, streakRewardData: data || null });
     },
 
     setOnboardingData: async (data) => {

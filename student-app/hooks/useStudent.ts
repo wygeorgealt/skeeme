@@ -13,7 +13,7 @@ export function useStudent() {
             try {
                 const data: any = await apiStandard.get('me');
 
-                // Normalize API response shape so credits/fields land in the zustand user object.
+                // Normalize the API response shape before updating the Zustand user.
                 // This mirrors the logic in authStore.hydrate/checkAuth: `data.user || data`.
                 const refreshedUser = data?.user ?? data;
 
@@ -28,7 +28,7 @@ export function useStudent() {
                 return refreshedUser;
             } catch (e) {
                 // Network/temporary server errors shouldn't trigger global "Skeeme is down".
-                // Keep showing the last-known user (so credits don't jump to 0), and let NetworkStatus handle the UI.
+                // Keep showing the last-known user and let NetworkStatus handle the UI.
                 return user;
             }
         },

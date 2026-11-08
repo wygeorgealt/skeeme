@@ -15,3 +15,8 @@ Skeeme combines a high-performance Go backend with an intuitive React Native (Ex
 - 🎯 **Streaks & Gamification**: Daily activity logging, study heatmaps, streak freezes, and reward milestones.
 - 💳 **Credit & Subscription Economy**: Row-locked database transactions for atomic credit deductions, daily refills for Pro tier members, Paystack checkout integration, and RevenueCat/Superwall paywalls.
 - 🔀 **Admin AI Switchboard**: Live runtime model routing between Anthropic Claude and DeepSeek without service restarts.
+
+## Project documentation
+
+See [CORE.md](./CORE.md) for the architecture overview, durable product and
+engineering decisions, known follow-ups, and contributor handoff notes.

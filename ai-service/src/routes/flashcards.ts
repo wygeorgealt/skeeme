@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { streamObject } from 'ai';
 import { getModel } from '../services/aiProvider';
 import { z } from 'zod';
-import { authorizeAndDeduct, refundCredits } from '../services/laravelAuth';
+import { authorizeUsage, completeUsage, releaseUsage } from '../services/laravelAuth';
 import { randomUUID } from 'crypto';
 
 const router = Router();
@@ -23,16 +23,17 @@ function sendSseError(res: any, code: string) {
 
 router.post('/generate', async (req, res) => {
     let authResult: any = null;
+    let token: string | null = null;
     let headersSent = false;
     const idempotencyKey = req.headers['idempotency-key'] as string || randomUUID();
 
     try {
         const authHeader = req.headers.authorization;
-        const token = authHeader ? authHeader.replace('Bearer ', '') : null;
+        token = authHeader ? authHeader.replace('Bearer ', '') : null;
         const { topic, difficulty, deck_id, provider, extraction_id } = req.body;
 
         // m5: Cap card_count server-side — mirror the client clamp so API callers can't bypass it
-        const card_count = Math.min(Number(req.body.card_count) || 10, 30);
+        let cardCount = Math.min(Number(req.body.card_count) || 10, 30);
 
         if (!token) {
             return res.status(401).json({ error: 'Authentication required. Please log in to generate flashcards.' });
@@ -42,18 +43,22 @@ router.post('/generate', async (req, res) => {
             return res.status(400).json({ error: 'Please provide a topic or upload a document to generate flashcards.' });
         }
 
-        const cost = card_count * 5; // 5 credits per card
-
         try {
-            authResult = await authorizeAndDeduct(token, 'flashcard_generation', cost, idempotencyKey, extraction_id);
+            authResult = await authorizeUsage(token, 'flashcard_generation', idempotencyKey, extraction_id);
             if (!authResult.success) {
-                return res.status(authResult.status || 402).json({ 
-                    error: authResult.error || 'You do not have enough credits to generate these flashcards.' 
+                return res.status(authResult.status || 500).json({
+                    error: authResult.error || 'Daily usage authorization failed.',
+                    code: authResult.code,
+                    feature: authResult.feature,
+                    limit: authResult.limit,
+                    used: authResult.used,
+                    reset_at: authResult.resetAt,
                 });
             }
         } catch (e: any) {
-            return res.status(500).json({ error: 'Credit authorization service is currently unavailable. Please try again shortly.' });
+            return res.status(500).json({ error: 'Usage authorization service is currently unavailable. Please try again shortly.' });
         }
+        cardCount = Math.min(cardCount, authResult.maxItems || 30);
 
         const model = getModel(provider || 'anthropic');
         const finalTopic = authResult.extractedText ? authResult.extractedText : topic;
@@ -61,7 +66,7 @@ router.post('/generate', async (req, res) => {
         const result = streamObject({
             model,
             schema: flashcardSchema,
-            system: `You are an expert tutor creating high-quality flashcards for studying. Create ${card_count} flashcards about the topic. Make them ${difficulty} difficulty. Each card should have a clear question on the front and a comprehensive answer on the back. Use valid LaTeX for any mathematical content.`,
+            system: `You are an expert tutor creating high-quality flashcards for studying. Create ${cardCount} flashcards about the topic. Make them ${difficulty} difficulty. Each card should have a clear question on the front and a comprehensive answer on the back. Use valid LaTeX for any mathematical content.`,
             prompt: `Topic: ${finalTopic}`
         });
 
@@ -77,12 +82,13 @@ router.post('/generate', async (req, res) => {
         for await (const partialObject of result.partialObjectStream) {
             res.write(`data: ${JSON.stringify(partialObject)}\n\n`);
         }
+        await completeUsage(token, idempotencyKey);
         res.end();
 
     } catch (error: any) {
         console.error('Flashcard generate error:', error);
-        if (authResult?.success && authResult?.userId) {
-            await refundCredits(authResult.userId, idempotencyKey);
+        if (authResult?.success && authResult?.userId && token) {
+            await releaseUsage(token, authResult.userId, idempotencyKey);
         }
         if (headersSent) {
             // C7: Headers already sent — emit an SSE error event instead of JSON

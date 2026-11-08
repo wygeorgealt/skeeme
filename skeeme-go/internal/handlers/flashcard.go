@@ -361,10 +361,9 @@ func (h *FlashcardHandler) StoreSession(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var streak struct {
-		CurrentStreak   int          `db:"current_streak" json:"current_streak"`
-		LongestStreak   int          `db:"longest_streak" json:"longest_streak"`
-		UnclaimedReward int          `db:"unclaimed_reward" json:"unclaimed_reward"`
-		LastStudyDate   sql.NullTime `db:"last_study_date" json:"-"`
+		CurrentStreak int          `db:"current_streak" json:"current_streak"`
+		LongestStreak int          `db:"longest_streak" json:"longest_streak"`
+		LastStudyDate sql.NullTime `db:"last_study_date" json:"-"`
 	}
 	err = tx.GetContext(r.Context(), &streak, `
 		INSERT INTO study_streaks
@@ -389,7 +388,7 @@ func (h *FlashcardHandler) StoreSession(w http.ResponseWriter, r *http.Request) 
 				ELSE CURRENT_DATE
 			END,
 			updated_at = NOW()
-		RETURNING current_streak, longest_streak, unclaimed_reward, last_study_date
+		RETURNING current_streak, longest_streak, last_study_date
 	`, user.ID)
 	if err != nil {
 		log.Printf("[flashcard] StoreSession streak update error for user %d: %v", user.ID, err)
@@ -414,10 +413,9 @@ func (h *FlashcardHandler) StoreSession(w http.ResponseWriter, r *http.Request) 
 		"id":               newID,
 		"is_new_study_day": !alreadyStudiedToday,
 		"streak": map[string]interface{}{
-			"current_streak":   streak.CurrentStreak,
-			"longest_streak":   streak.LongestStreak,
-			"unclaimed_reward": streak.UnclaimedReward,
-			"last_study_date":  streak.LastStudyDate.Time,
+			"current_streak":  streak.CurrentStreak,
+			"longest_streak":  streak.LongestStreak,
+			"last_study_date": streak.LastStudyDate.Time,
 		},
 	})
 }

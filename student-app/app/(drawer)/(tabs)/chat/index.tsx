@@ -30,9 +30,6 @@ import { Colors } from '@/constants/theme';
 import * as Clipboard from 'expo-clipboard';
 import { streamScanFollowUpChat } from '@/lib/aiStream';
 import { scannerService, ScanResult } from '@/lib/scanner';
-import { useAuthStore } from '@/store/authStore';
-import { appStorage } from '@/lib/storage';
-import { SCAN_SOLVE_COST, hasEnoughCredits, verifySufficientCredits, syncCreditBalance } from '@/lib/creditCosts';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -300,37 +297,19 @@ function isNonEducationalMessage(rawText: string): boolean {
  */
 function getChatErrorResponse(
   error: any,
-  options?: { isScan?: boolean; isLimit?: boolean; isInsufficientCredits?: boolean }
+  options?: { isScan?: boolean; isLimit?: boolean }
 ): { markdown: string; errorAction?: 'retry' | 'upgrade' } {
   const errStr = (typeof error === 'string' ? error : error?.message || '').toLowerCase();
 
-  // 1. Quota / Limits (Daily free chat limit)
+  // Daily plan limits
   if (options?.isLimit || errStr.includes('limit_reached') || errStr.includes('free message')) {
     return {
       markdown: [
-        '### ⏳ Ur limit has reached',
+        '### ⏳ Daily limit reached',
         '',
-        "You've used your 2 free messages for today.",
+        "You've used today's allowance for this study tool.",
         '',
-        '**How to resolve this:**',
-        '• Your 2 free messages will automatically refill at midnight',
-        '• Upgrade to Pro for unlimited messages, instant explanations, and step-by-step math solutions',
-      ].join('\n'),
-      errorAction: 'upgrade',
-    };
-  }
-
-  // 2. Credits (Scan & solve insufficient credits)
-  if (options?.isInsufficientCredits || errStr.includes('insufficient') || errStr.includes('credit')) {
-    return {
-      markdown: [
-        '### ⚡ Insufficient credits',
-        '',
-        "You've used all your credits to scan and solve problems.",
-        '',
-        '**How to resolve this:**',
-        '• Upgrade to Pro to get a 500-credit daily refill and unlimited practice',
-        '• Top up your credit balance to continue scanning problems',
+        'Your allowance resets at midnight UTC. Pro includes higher daily limits across Skeeme.',
       ].join('\n'),
       errorAction: 'upgrade',
     };
@@ -485,36 +464,6 @@ function ThinkingLoader({ isDark }: { isDark: boolean }) {
   );
 }
 
-/** Get deterministic YYYY-MM-DD key in local time */
-const getTodayDateKey = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
-const getDailyChatKey = (userId?: number | string) =>
-  `skeeme_daily_chat_count_${getTodayDateKey()}_${userId || 'guest'}`;
-
-export const getDailyChatCount = async (userId?: number | string): Promise<number> => {
-  try {
-    const val = await appStorage.getItem(getDailyChatKey(userId));
-    return val ? parseInt(val, 10) || 0 : 0;
-  } catch {
-    return 0;
-  }
-};
-
-export const incrementDailyChatCount = async (userId?: number | string): Promise<number> => {
-  try {
-    const key = getDailyChatKey(userId);
-    const current = await getDailyChatCount(userId);
-    const next = current + 1;
-    await appStorage.setItem(key, String(next));
-    return next;
-  } catch {
-    return 1;
-  }
-};
-
 export default function ChatScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ openCamera?: string; prompt?: string }>();
@@ -524,21 +473,11 @@ export default function ChatScreen() {
   const C = Colors[isDark ? 'dark' : 'light'];
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const user = useAuthStore((s) => s.user);
-  const toggleCreditsModal = useAuthStore((s) => s.toggleCreditsModal);
-  const checkAuth = useAuthStore((s) => s.checkAuth);
-
-  const isPro = user?.plan_name === 'pro' || user?.plan_name === 'max';
-  const isOutOfCredits = !hasEnoughCredits(user, SCAN_SOLVE_COST);
-
   const [inputVal, setInputVal] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [promptIndex, setPromptIndex] = useState(() => Math.floor(Math.random() * PROMPTS.length));
-  const [dailyChatCount, setDailyChatCount] = useState<number>(0);
-
-  const isOutOfFreeMessages = !isPro && dailyChatCount >= 2;
 
   // Image attachment state (ChatGPT / Claude / Gemini composer style)
   const [attachedImageUri, setAttachedImageUri] = useState<string | null>(null);
@@ -546,7 +485,7 @@ export default function ChatScreen() {
 
   const abortStreamRef = useRef<(() => void) | null>(null);
 
-  // Pick a fresh greeting and sync daily chat count each time the screen is entered
+  // Pick a fresh greeting each time the screen is entered.
   useFocusEffect(
     useCallback(() => {
       setPromptIndex((prev) => {
@@ -554,24 +493,16 @@ export default function ChatScreen() {
         if (next === prev) next = (next + 1) % PROMPTS.length;
         return next;
       });
-      getDailyChatCount(user?.id).then((count) => {
-        setDailyChatCount(count);
-      });
-    }, [user?.id])
+    }, [])
   );
 
   // Auto-open camera if navigated with ?openCamera=1
   useEffect(() => {
     if (params.openCamera === '1' || params.openCamera === 'true') {
-      if (isOutOfCredits) {
-        router.setParams({ openCamera: undefined } as any);
-        router.push('/paywall');
-      } else {
-        handleOpenCamera();
-        router.setParams({ openCamera: undefined } as any);
-      }
+      handleOpenCamera();
+      router.setParams({ openCamera: undefined } as any);
     }
-  }, [params.openCamera, isOutOfCredits]);
+  }, [params.openCamera]);
 
   useEffect(() => {
     return () => {
@@ -603,10 +534,6 @@ export default function ChatScreen() {
   };
 
   const handleOpenCamera = async () => {
-    if (isOutOfCredits) {
-      router.push('/paywall');
-      return;
-    }
     try {
       await haptics.selectionAsync();
       const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -627,10 +554,6 @@ export default function ChatScreen() {
   };
 
   const handlePickImage = async () => {
-    if (isOutOfCredits) {
-      router.push('/paywall');
-      return;
-    }
     try {
       await haptics.selectionAsync();
       const res = await ImagePicker.launchImageLibraryAsync({
@@ -660,83 +583,8 @@ export default function ChatScreen() {
 
     const text = (textToSend !== undefined ? textToSend : inputVal).trim();
     const imageToSend = imageOverride !== undefined ? imageOverride : attachedImageUri;
-    const isPro = user?.plan_name === 'pro' || user?.plan_name === 'max';
     const isScanAction = Boolean(imageToSend);
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    // If an image is attached, this is a Scan & Solve action (uses credits, NOT free chat messages)
-    if (isScanAction) {
-      const canAfford = await verifySufficientCredits(SCAN_SOLVE_COST, 'scan', false);
-      if (!canAfford) {
-        haptics.impactAsync();
-        const { markdown, errorAction } = getChatErrorResponse('insufficient_credits', { isInsufficientCredits: true });
-        const userMsg: ChatMessage = {
-          id: `user-${Date.now()}`,
-          role: 'user',
-          content: text || 'Scan & solve study problem',
-          imageUri: imageToSend || undefined,
-          time: now,
-        };
-        const errorAssistantMsg: ChatMessage = {
-          id: retryMessage?.id ?? `assistant-${Date.now() + 1}`,
-          role: 'assistant',
-          content: markdown,
-          time: now,
-          isStreaming: false,
-          isError: true,
-          errorAction,
-          prompt: text,
-          imageUri: imageToSend || undefined,
-        };
-        setMessages((prev) =>
-          retryMessage
-            ? prev.map((m) => (m.id === retryMessage.id ? errorAssistantMsg : m))
-            : [...prev, userMsg, errorAssistantMsg]
-        );
-        setInputVal('');
-        setAttachedImageUri(null);
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-        return;
-      }
-    } else {
-      // Free users: 2 free messages per day (do not use credits to chat)
-      if (!isPro) {
-        const todayCount = await getDailyChatCount(user?.id);
-        setDailyChatCount(todayCount);
-        if (todayCount >= 2) {
-          haptics.impactAsync();
-          const { markdown, errorAction } = getChatErrorResponse('limit_reached', { isLimit: true });
-          const userMsg: ChatMessage = {
-            id: `user-${Date.now()}`,
-            role: 'user',
-            content: text || 'Study question',
-            time: now,
-          };
-          const errorAssistantMsg: ChatMessage = {
-            id: retryMessage?.id ?? `assistant-${Date.now() + 1}`,
-            role: 'assistant',
-            content: markdown,
-            time: now,
-            isStreaming: false,
-            isError: true,
-            errorAction,
-            prompt: text,
-          };
-          setMessages((prev) =>
-            retryMessage
-              ? prev.map((m) => (m.id === retryMessage.id ? errorAssistantMsg : m))
-              : [...prev, userMsg, errorAssistantMsg]
-          );
-          setInputVal('');
-          setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-          }, 100);
-          return;
-        }
-      }
-    }
 
     if (!text && !imageToSend) return;
 
@@ -810,11 +658,6 @@ export default function ChatScreen() {
     setAttachedImageUri(null);
     setIsGenerating(true);
 
-    if (!isPro && !isScanAction) {
-      const nextCount = await incrementDailyChatCount(user?.id);
-      setDailyChatCount(nextCount);
-    }
-
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
@@ -869,14 +712,13 @@ export default function ChatScreen() {
               prev.map((m) => (m.id === assistantId ? { ...m, isStreaming: false } : m))
             );
             abortStreamRef.current = null;
-            syncCreditBalance().catch(() => {});
             haptics.selectionAsync(true);
           },
-          onError: (err, isInsufficientCredits) => {
+          onError: (err, isDailyLimitReached) => {
             setIsGenerating(false);
             const { markdown, errorAction } = getChatErrorResponse(err, {
               isScan: true,
-              isInsufficientCredits,
+              isLimit: isDailyLimitReached,
             });
             setMessages((prev) =>
               prev.map((m) =>
@@ -947,10 +789,10 @@ export default function ChatScreen() {
           abortStreamRef.current = null;
           haptics.selectionAsync(true);
         },
-        onError: (err?: string, isInsufficient?: boolean) => {
+        onError: (err?: string, isDailyLimitReached?: boolean) => {
           setIsGenerating(false);
           const { markdown, errorAction } = getChatErrorResponse(err, {
-            isLimit: isInsufficient || err?.includes('limit_reached'),
+            isLimit: isDailyLimitReached || err?.includes('limit_reached'),
           });
           setMessages((prev) =>
             prev.map((m) =>
@@ -990,7 +832,7 @@ export default function ChatScreen() {
     ]);
   };
 
-  const canSend = !isGenerating && (isOutOfFreeMessages || Boolean(inputVal.trim()) || Boolean(attachedImageUri));
+  const canSend = !isGenerating && (Boolean(inputVal.trim()) || Boolean(attachedImageUri));
 
   return (
     <View style={{ flex: 1, backgroundColor: C.background }}>
@@ -1328,14 +1170,8 @@ export default function ChatScreen() {
                 <View style={styles.attachGrid}>
                   {/* Square 1: Camera */}
                   <TouchableOpacity
-                    activeOpacity={isOutOfCredits ? 0.7 : 0.85}
+                    activeOpacity={0.85}
                     onPress={() => {
-                      if (isOutOfCredits) {
-                        haptics.impactAsync();
-                        setAttachModalVisible(false);
-                        router.push('/paywall');
-                        return;
-                      }
                       haptics.selectionAsync();
                       setAttachModalVisible(false);
                       setTimeout(() => {
@@ -1350,33 +1186,13 @@ export default function ChatScreen() {
                           ? 'rgba(255,255,255,0.08)'
                           : 'rgba(0,0,0,0.08)',
                       },
-                      isOutOfCredits && {
-                        opacity: 0.45,
-                        backgroundColor: isDark ? '#1E1E20' : '#F0F1F3',
-                        borderColor: isDark
-                          ? 'rgba(255,255,255,0.04)'
-                          : 'rgba(0,0,0,0.04)',
-                      },
                     ]}
                   >
-                    {isOutOfCredits && (
-                      <View style={styles.attachLockBadge}>
-                        <Icon name="Lock" size={13} color="muted" />
-                      </View>
-                    )}
                     <View style={styles.attachIconWrap}>
-                      <Icon
-                        name="Camera"
-                        size={26}
-                        color={isOutOfCredits ? 'muted' : 'default'}
-                      />
+                      <Icon name="Camera" size={26} color="default" />
                     </View>
                     <Text
-                      style={[
-                        styles.attachSquareTitle,
-                        { color: isDark ? '#FFFFFF' : '#1C1C1E' },
-                        isOutOfCredits && { color: isDark ? '#8E8E93' : '#8E8E93' },
-                      ]}
+                      style={[styles.attachSquareTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}
                     >
                       Camera
                     </Text>
@@ -1384,14 +1200,8 @@ export default function ChatScreen() {
 
                   {/* Square 2: Photos */}
                   <TouchableOpacity
-                    activeOpacity={isOutOfCredits ? 0.7 : 0.85}
+                    activeOpacity={0.85}
                     onPress={() => {
-                      if (isOutOfCredits) {
-                        haptics.impactAsync();
-                        setAttachModalVisible(false);
-                        router.push('/paywall');
-                        return;
-                      }
                       haptics.selectionAsync();
                       setAttachModalVisible(false);
                       setTimeout(() => {
@@ -1406,33 +1216,13 @@ export default function ChatScreen() {
                           ? 'rgba(255,255,255,0.08)'
                           : 'rgba(0,0,0,0.08)',
                       },
-                      isOutOfCredits && {
-                        opacity: 0.45,
-                        backgroundColor: isDark ? '#1E1E20' : '#F0F1F3',
-                        borderColor: isDark
-                          ? 'rgba(255,255,255,0.04)'
-                          : 'rgba(0,0,0,0.04)',
-                      },
                     ]}
                   >
-                    {isOutOfCredits && (
-                      <View style={styles.attachLockBadge}>
-                        <Icon name="Lock" size={13} color="muted" />
-                      </View>
-                    )}
                     <View style={styles.attachIconWrap}>
-                      <Icon
-                        name="Image"
-                        size={26}
-                        color={isOutOfCredits ? 'muted' : 'default'}
-                      />
+                      <Icon name="Image" size={26} color="default" />
                     </View>
                     <Text
-                      style={[
-                        styles.attachSquareTitle,
-                        { color: isDark ? '#FFFFFF' : '#1C1C1E' },
-                        isOutOfCredits && { color: isDark ? '#8E8E93' : '#8E8E93' },
-                      ]}
+                      style={[styles.attachSquareTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}
                     >
                       Photos
                     </Text>

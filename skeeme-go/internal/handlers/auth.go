@@ -111,8 +111,6 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		json.Unmarshal([]byte(pricingStr), &pricing)
 	}
 
-	user.PopulateTransientFields(r.Context(), h.Redis)
-
 	res := AuthResponse{
 		User:    &user,
 		Token:   token,
@@ -257,12 +255,12 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	query := `
 		INSERT INTO users (
 			name, first_name, last_name, email, password, role, status, 
-			credits, referral_code, ai_preferences, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()) RETURNING id
+			referral_code, ai_preferences, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()) RETURNING id
 	`
 	err = h.DB.QueryRowContext(r.Context(), query,
 		fullName, firstName, lastName, cleanEmail, string(hashedPassword),
-		&role, "pending", 100, refCode, aiPrefsJSON,
+		&role, "pending", refCode, aiPrefsJSON,
 	).Scan(&userID)
 
 	if err != nil {
@@ -285,11 +283,6 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	h.DB.ExecContext(r.Context(), `
-		INSERT INTO transactions (user_id, type, amount, description, metadata, created_at, updated_at) 
-		VALUES ($1, 'reward', 100, 'Welcome bonus: Free tier signup credits', '{"source":"signup"}', NOW(), NOW())
-	`, userID)
 
 	if req.ReferralCode != "" {
 		h.Redis.Set(r.Context(), fmt.Sprintf("pending_referral_%d", userID), req.ReferralCode, 24*time.Hour)
@@ -336,7 +329,6 @@ func (h *AuthHandler) VerifyAccount(w http.ResponseWriter, r *http.Request) {
 
 	if user.Status == "active" {
 		token, _ := auth.GenerateSanctumToken(h.DB, user.ID, "mobile_app")
-		user.PopulateTransientFields(r.Context(), h.Redis)
 
 		res := AuthResponse{
 			User:  &user,
@@ -362,7 +354,6 @@ func (h *AuthHandler) VerifyAccount(w http.ResponseWriter, r *http.Request) {
 
 	token, _ := auth.GenerateSanctumToken(h.DB, user.ID, "mobile_app")
 	user.Status = "active"
-	user.PopulateTransientFields(r.Context(), h.Redis)
 
 	res := AuthResponse{
 		User:  &user,
@@ -451,17 +442,15 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.PopulateTransientFields(r.Context(), h.Redis)
 	var streak models.UserStreak
 	var lastStudyDate sql.NullTime
 	err := h.DB.QueryRowxContext(r.Context(), `
-		SELECT current_streak, longest_streak, unclaimed_reward, last_study_date
+		SELECT current_streak, longest_streak, last_study_date
 		FROM study_streaks
 		WHERE user_id = $1
 	`, user.ID).Scan(
 		&streak.CurrentStreak,
 		&streak.LongestStreak,
-		&streak.UnclaimedReward,
 		&lastStudyDate,
 	)
 	if err != nil && err != sql.ErrNoRows {

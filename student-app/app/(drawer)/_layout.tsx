@@ -1,10 +1,8 @@
 import { Stack, router, usePathname } from 'expo-router';
 import { AppState, type AppStateStatus } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { api } from '@/lib/api';
 import { registerForPushNotificationsAsync } from '@/lib/notifications';
-import ClaimRewardModal from '@/components/ClaimRewardModal';
 
 export const unstable_settings = {
     initialRouteName: '(tabs)',
@@ -17,7 +15,6 @@ export default function DrawerLayout() {
     const onboardingJustCompleted = useAuthStore((s) => s.onboardingJustCompleted);
     const clearOnboardingJustCompleted = useAuthStore((s) => s.clearOnboardingJustCompleted);
     const pathname = usePathname();
-    const [pendingReward, setPendingReward] = useState<{ total: number } | null>(null);
 
     useEffect(() => {
         if (!onboardingJustCompleted) return;
@@ -56,9 +53,6 @@ export default function DrawerLayout() {
         const timer = setTimeout(() => {
             if (token) {
                 registerForPushNotificationsAsync(token).catch(() => {});
-                api.get('referral/pending-rewards').then((res) => {
-                    if (res.data.total > 0) setPendingReward({ total: res.data.total });
-                }).catch(() => {});
             }
         }, 500);
         return () => clearTimeout(timer);
@@ -69,11 +63,6 @@ export default function DrawerLayout() {
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             </Stack>
-            <ClaimRewardModal
-                visible={pendingReward !== null}
-                total={pendingReward?.total || 0}
-                onClaim={() => setPendingReward(null)}
-            />
         </>
     );
 }

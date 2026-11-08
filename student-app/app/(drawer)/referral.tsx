@@ -13,7 +13,6 @@ import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import Gift from '@/assets/icons/pikaicons/gift-default.svg';
 import CopyDefault from '@/assets/icons/pikaicons/copy-default.svg';
 import SendPlane from '@/assets/icons/pikaicons/send-plane-horizontal.svg';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import Animated, {
     FadeInDown,
@@ -41,9 +40,7 @@ export default function ReferralScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
-    const insets = useSafeAreaInsets();
-
-    const [stats, setStats] = useState({ code: '', total_referred: 0, credits_earned: 0 });
+    const [stats, setStats] = useState({ code: '' });
     const [loadingStats, setLoadingStats] = useState(true);
     const [statsError, setStatsError] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -56,18 +53,10 @@ export default function ReferralScreen() {
     const loadStats = useCallback(() => {
         setLoadingStats(true);
         setStatsError(false);
-        Promise.all([
-            api.get('referral/my-code')
-                .then(res => setStats(prev => ({ ...prev, code: res.data.code })))
-                .catch(() => {}), // code missing is non-fatal — buttons disable themselves
-            api.get('referral/stats')
-                .then(res => setStats(prev => ({
-                    ...prev,
-                    total_referred: res.data.total_referred ?? res.data.total_referrals ?? 0,
-                    credits_earned: res.data.credits_earned || 0,
-                })))
-                .catch(() => { setStatsError(true); }),
-        ]).finally(() => setLoadingStats(false));
+        api.get('referral/my-code')
+            .then(res => setStats({ code: res.data.code || '' }))
+            .catch(() => setStatsError(true))
+            .finally(() => setLoadingStats(false));
     }, []);
 
     useEffect(() => { loadStats(); }, [loadStats]);
@@ -76,8 +65,8 @@ export default function ReferralScreen() {
         if (!stats.code) return;
         try {
             await Share.share({
-                message: `I've been using Skeeme to study smarter — it builds quizzes and flashcards from my notes using AI. Use my code ${stats.code} and get 100 bonus credits free. Download: https://play.google.com/store/apps/details?id=com.skeeme.app`,
-                title: 'Join me on Skeeme!',
+                message: `I've been using Skeeme as my AI study partner. Join me and use my code ${stats.code} when you sign up: https://play.google.com/store/apps/details?id=com.skeeme.app`,
+                title: 'Study with Skeeme',
             });
         } catch (error) {
             console.error('Share error:', error);
@@ -98,7 +87,7 @@ export default function ReferralScreen() {
     return (
         <View style={{ flex: 1, backgroundColor: C.background }}>
             <ScreenHeader 
-                title="Earn Rewards" 
+            title="Invite a Classmate"
                 onBack={() => (router.canGoBack() ? router.back() : router.replace('/(drawer)/settings' as any))}
             />
 
@@ -153,45 +142,31 @@ export default function ReferralScreen() {
                     </View>
                 </Animated.View>
 
-                {/* Stats Summary */}
-                <Animated.View key={`stats-${animKey}`} entering={FadeInDown.delay(80).duration(400)} style={s.statsRow}>
-                    {statsError ? (
-                        <View style={{ flex: 1, alignItems: 'center', gap: 12, paddingVertical: 20 }}>
-                            <Text style={{ color: C.textSecondary, fontSize: 14, fontWeight: '500' }}>Couldn't load your stats.</Text>
-                            <View style={{ width: 120 }}>
-                                <AnimatedButton
-                                    title="Retry"
-                                    onPress={loadStats}
-                                    type="capsule"
-                                    backgroundColor={C.primary}
-                                    shadowColor="#0066D6"
-                                    fullWidth
-                                />
-                            </View>
+                {statsError && (
+                    <View style={{ alignItems: 'center', gap: 12, paddingVertical: 8 }}>
+                        <Text style={{ color: C.textSecondary, fontSize: 14, fontWeight: '500' }}>Couldn't load your invite code.</Text>
+                        <View style={{ width: 120 }}>
+                            <AnimatedButton
+                                title="Retry"
+                                onPress={loadStats}
+                                type="capsule"
+                                backgroundColor={C.primary}
+                                shadowColor="#0066D6"
+                                fullWidth
+                            />
                         </View>
-                    ) : (
-                        <>
-                            <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
-                                <Text style={[s.statNum, { color: C.primary }]}>{stats.total_referred}</Text>
-                                <Text style={[s.statLabel, { color: C.textSecondary }]}>Friends Joined</Text>
-                            </View>
-                            <View style={[s.statCard, isDark ? s.statCardDark : s.statCardLight]}>
-                                <Text style={[s.statNum, { color: '#34C759' }]}>{stats.credits_earned}</Text>
-                                <Text style={[s.statLabel, { color: C.textSecondary }]}>Credits Earned</Text>
-                            </View>
-                        </>
-                    )}
-                </Animated.View>
+                    </View>
+                )}
 
-                {/* How It Works - Improved Design */}
+                {/* How it works */}
                 <Animated.View key={`how-${animKey}`} entering={FadeInDown.delay(160).duration(400)}>
-                    <Text style={[s.sectionHeading, { color: C.text }]}>How It Works</Text>
+                    <Text style={[s.sectionHeading, { color: C.text }]}>Study together</Text>
                     <View style={{ gap: 12 }}>
                         <Animated.View key={`step1-${animKey}`} entering={FadeInDown.delay(180).duration(400)}>
                             <RewardStep
                                 number="1"
                                 title="Share Your Code"
-                                desc="Send your code to friends or on social media"
+                                desc="Share your code with someone you study with"
                                 color={C.primary}
                                 isDark={isDark}
                             />
@@ -200,7 +175,7 @@ export default function ReferralScreen() {
                             <RewardStep
                                 number="2"
                                 title="Friend Joins Skeeme"
-                                desc="They download and enter your code during signup"
+                                desc="They enter your code when they create an account"
                                 color="#34C759"
                                 isDark={isDark}
                             />
@@ -208,18 +183,9 @@ export default function ReferralScreen() {
                         <Animated.View key={`step3-${animKey}`} entering={FadeInDown.delay(300).duration(400)}>
                             <RewardStep
                                 number="3"
-                                title="You Both Win"
-                                desc="You get 200 credits, they get 100 bonus credits"
+                                title="Learn with Skeeme"
+                                desc="Explore AI chats, quizzes, flashcards, and summaries together"
                                 color="#FF9500"
-                                isDark={isDark}
-                            />
-                        </Animated.View>
-                        <Animated.View key={`step4-${animKey}`} entering={FadeInDown.delay(360).duration(400)}>
-                            <RewardStep
-                                number="4"
-                                title="Earn More"
-                                desc="Get 50 credits when your friends refer others"
-                                color="#A78BFA"
                                 isDark={isDark}
                             />
                         </Animated.View>
@@ -265,13 +231,6 @@ const s = StyleSheet.create({
     copyBtn: {paddingHorizontal: 30},
     shareActionBtn: {},
     btnText: { color: 'white', fontWeight: '700', fontSize: 15 },
-
-    statsRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
-    statCard: { flex: 1, paddingVertical: 20, paddingHorizontal: 16, borderRadius: 18, borderWidth: 1, alignItems: 'center' },
-    statCardDark: { backgroundColor: '#1C1C1E', borderColor: 'transparent' },
-    statCardLight: { backgroundColor: 'white', borderColor: '#F1F5F9' },
-    statNum: { fontWeight: '900', fontSize: 28, marginBottom: 6 },
-    statLabel: { fontWeight: '600', fontSize: 12, textAlign: 'center' },
 
     sectionHeading: { fontSize: 18, fontWeight: '800', marginBottom: 16, letterSpacing: -0.3 },
 

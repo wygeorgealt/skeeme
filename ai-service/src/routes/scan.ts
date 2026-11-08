@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { streamText } from 'ai';
 import { getModel } from '../services/aiProvider';
-import { authorizeAndDeduct, refundCredits } from '../services/laravelAuth';
+import { authorizeUsage, completeUsage, releaseUsage } from '../services/laravelAuth';
 import { randomUUID } from 'crypto';
 import axios from 'axios';
 const router = Router();
@@ -16,12 +16,13 @@ function sendSseError(res: any, code: string) {
 
 router.post('/solve', async (req, res) => {
     let authResult: any = null;
+    let token: string | null = null;
     let headersSent = false;
     const idempotencyKey = req.headers['idempotency-key'] as string || randomUUID();
 
     try {
         const authHeader = req.headers.authorization;
-        const token = authHeader ? authHeader.replace('Bearer ', '') : null;
+        token = authHeader ? authHeader.replace('Bearer ', '') : null;
         const { image, provider } = req.body;
 
         if (!token) {
@@ -33,14 +34,19 @@ router.post('/solve', async (req, res) => {
         }
 
         try {
-            authResult = await authorizeAndDeduct(token, 'scan_solve', 25, idempotencyKey);
+            authResult = await authorizeUsage(token, 'scan_solve', idempotencyKey);
             if (!authResult.success) {
-                return res.status(authResult.status || 402).json({ 
-                    error: authResult.error || 'You do not have enough credits to solve this scan. Please refill or upgrade.' 
+                return res.status(authResult.status || 500).json({
+                    error: authResult.error || 'Daily usage authorization failed.',
+                    code: authResult.code,
+                    feature: authResult.feature,
+                    limit: authResult.limit,
+                    used: authResult.used,
+                    reset_at: authResult.resetAt,
                 });
             }
         } catch (e: any) {
-            return res.status(500).json({ error: 'Credit authorization service is currently unavailable. Please try again shortly.' });
+            return res.status(500).json({ error: 'Usage authorization service is currently unavailable. Please try again shortly.' });
         }
 
         const model = getModel(provider || 'anthropic');
@@ -129,13 +135,14 @@ Do not include any other text outside the JSON block.`,
         
         // Signal completion
         res.write('data: [DONE]\n\n');
+        await completeUsage(token, idempotencyKey);
         res.end();
 
     } catch (error: any) {
         console.error('Scan solve error:', error);
         
-        if (authResult?.success && authResult?.userId) {
-            await refundCredits(authResult.userId, idempotencyKey);
+        if (authResult?.success && authResult?.userId && token) {
+            await releaseUsage(token, authResult.userId, idempotencyKey);
         }
         if (headersSent) {
             // C7: Headers already sent — emit SSE error event instead of JSON
@@ -148,12 +155,13 @@ Do not include any other text outside the JSON block.`,
 
 router.post('/chat', async (req, res) => {
     let authResult: any = null;
+    let token: string | null = null;
     let headersSent = false;
     const idempotencyKey = req.headers['idempotency-key'] as string || randomUUID();
 
     try {
         const authHeader = req.headers.authorization;
-        const token = authHeader ? authHeader.replace('Bearer ', '') : null;
+        token = authHeader ? authHeader.replace('Bearer ', '') : null;
         const { messages, context, provider } = req.body;
 
         if (!token) {
@@ -165,9 +173,16 @@ router.post('/chat', async (req, res) => {
         }
 
         try {
-            authResult = await authorizeAndDeduct(token, 'scan_chat', 0, idempotencyKey);
+            authResult = await authorizeUsage(token, 'scan_chat', idempotencyKey);
             if (!authResult.success) {
-                return res.status(authResult.status || 402).json({ error: authResult.error });
+                return res.status(authResult.status || 500).json({
+                    error: authResult.error || 'Daily usage authorization failed.',
+                    code: authResult.code,
+                    feature: authResult.feature,
+                    limit: authResult.limit,
+                    used: authResult.used,
+                    reset_at: authResult.resetAt,
+                });
             }
         } catch (e: any) {
             return res.status(500).json({ error: 'Authorization service unavailable' });
@@ -195,11 +210,15 @@ Answer the user's follow-up questions clearly and concisely. Use markdown and va
         }
         
         res.write('data: [DONE]\n\n');
+        await completeUsage(token, idempotencyKey);
         res.end();
 
     } catch (error: any) {
         console.error('Scan chat error:', error);
         
+        if (authResult?.success && authResult?.userId && token) {
+            await releaseUsage(token, authResult.userId, idempotencyKey);
+        }
         if (headersSent) {
             sendSseError(res, 'stream_interrupted');
         } else {

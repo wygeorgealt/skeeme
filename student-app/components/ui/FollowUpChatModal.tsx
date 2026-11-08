@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, StyleSheet, KeyboardAvoidingView, Platform, useColorScheme, ActivityIndicator } from 'react-native';
 import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
-import { useAuthStore } from '@/store/authStore';
 import { streamScanFollowUpChat } from '@/lib/aiStream';
 import { Colors } from '@/constants/theme';
 import { ScanResult } from '@/lib/scanner';
@@ -26,13 +25,9 @@ export function FollowUpChatModal({ visible, onClose, scanContext, provider }: F
     const isDark = colorScheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     
-    const { user } = useAuthStore();
-    const isPro = (user?.plan_name ?? 'free') !== 'free';
-
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [questionsAsked, setQuestionsAsked] = useState(0);
 
     const scrollViewRef = useRef<ScrollView>(null);
     const abortStreamRef = useRef<(() => void) | null>(null);
@@ -40,7 +35,6 @@ export function FollowUpChatModal({ visible, onClose, scanContext, provider }: F
     useEffect(() => {
         if (visible) {
             setMessages([]);
-            setQuestionsAsked(0);
             setInput('');
         }
     }, [visible]);
@@ -48,16 +42,10 @@ export function FollowUpChatModal({ visible, onClose, scanContext, provider }: F
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
 
-        if (!isPro && questionsAsked >= 2) {
-            useAuthStore.getState().toggleCreditsModal(true, 'chat');
-            return;
-        }
-
         const userMsg: Message = { role: 'user', content: input.trim() };
         setMessages(prev => [...prev, userMsg]);
         setInput('');
         setIsLoading(true);
-        setQuestionsAsked(prev => prev + 1);
 
         const currentHistory = [...messages, userMsg];
 
@@ -83,9 +71,11 @@ export function FollowUpChatModal({ visible, onClose, scanContext, provider }: F
                     setIsLoading(false);
                     abortStreamRef.current = null;
                 },
-                onError: (err) => {
+                onError: (err, isDailyLimitReached) => {
                     setIsLoading(false);
-                    assistantMsg.content = `Error: ${err}`;
+                    assistantMsg.content = isDailyLimitReached
+                        ? "You've reached today's study chat limit. Your allowance resets at midnight UTC."
+                        : `Error: ${err}`;
                     setMessages(prev => {
                         const newMsgs = [...prev];
                         newMsgs[newMsgs.length - 1] = { ...assistantMsg };
@@ -104,8 +94,6 @@ export function FollowUpChatModal({ visible, onClose, scanContext, provider }: F
         }
         onClose();
     };
-
-    const limitReached = !isPro && questionsAsked >= 1;
 
     return (
         <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={handleClose}>
@@ -163,15 +151,7 @@ export function FollowUpChatModal({ visible, onClose, scanContext, provider }: F
                 </ScrollView>
 
                 <View style={[s.inputContainer, { borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', backgroundColor: C.background }]}>
-                    {limitReached ? (
-                        <TouchableOpacity 
-                            style={[s.upgradeBtn, { backgroundColor: C.primary }]}
-                            onPress={() => useAuthStore.getState().toggleCreditsModal(true, 'scan')}
-                        >
-                            <Text style={s.upgradeText}>Upgrade to Pro for unlimited questions</Text>
-                        </TouchableOpacity>
-                    ) : (
-                        <View style={[s.inputWrapper, isDark ? { backgroundColor: '#1C1C1E' } : { backgroundColor: '#F1F5F9' }]}>
+                    <View style={[s.inputWrapper, isDark ? { backgroundColor: '#1C1C1E' } : { backgroundColor: '#F1F5F9' }]}>
                             <TextInput
                                 style={[s.input, { color: C.text }]}
                                 placeholder="Ask a question..."
@@ -188,8 +168,7 @@ export function FollowUpChatModal({ visible, onClose, scanContext, provider }: F
                             >
                                 <AltArrowRight width={24} height={24} color={C.primary} />
                             </TouchableOpacity>
-                        </View>
-                    )}
+                    </View>
                 </View>
             </KeyboardAvoidingView>
         </Modal>

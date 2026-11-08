@@ -36,7 +36,6 @@ import { scannerService, ScanResult } from '@/lib/scanner';
 import { haptics } from '@/lib/haptics';
 import { MathText } from '@/components/ui/MathText';
 import { appStorage } from '@/lib/storage';
-import { SCAN_SOLVE_COST, verifySufficientCredits, syncCreditBalance } from '@/lib/creditCosts';
 
 const { width } = Dimensions.get('window');
 
@@ -57,10 +56,6 @@ export default function ScanScreen() {
     const C = Colors[isDark ? 'dark' : 'light'];
     const [permission, requestPermission] = useCameraPermissions();
     const cameraRef = useRef<CameraView>(null);
-
-    const user = useAuthStore((s) => s.user);
-    const credits = user?.credits ?? 0;
-    const toggleCreditsModal = useAuthStore((s) => s.toggleCreditsModal);
 
     const [enableTorch, setEnableTorch] = useState(false);
     const [scanMode, setScanMode] = useState<'single' | 'worksheet' | 'diagram'>('single');
@@ -156,9 +151,6 @@ export default function ScanScreen() {
     };
 
     const processImage = async (uri: string) => {
-        const canAfford = await verifySufficientCredits(SCAN_SOLVE_COST, 'scan', true);
-        if (!canAfford) return;
-
         setLoading(true);
         try {
             const manip = await manipulateAsync(
@@ -173,7 +165,6 @@ export default function ScanScreen() {
             if (resp.results && resp.results.length > 0) {
                 setResults(resp.results);
                 await haptics.notificationAsync();
-                syncCreditBalance().catch(() => {});
 
                 const topResult = resp.results[0];
                 const newScanItem: RecentScanItem = {
@@ -192,7 +183,9 @@ export default function ScanScreen() {
                 Alert.alert('No Questions Found', 'Could not detect any clear questions in the photo. Please try again.');
             }
         } catch (e: any) {
-            Alert.alert('Scan Failed', e.message || 'Failed to process question.');
+            if (e?.response?.data?.code !== 'daily_limit_reached') {
+                Alert.alert('Scan Failed', e.message || 'Failed to process question.');
+            }
         } finally {
             setLoading(false);
         }
@@ -251,8 +244,8 @@ export default function ScanScreen() {
                             </View>
                         </View>
 
-                        {/* Model Switcher & Credits Pill */}
-                        <View className="flex-row items-center justify-between gap-2 mt-4">
+                        {/* Model Switcher */}
+                        <View className="flex-row items-center gap-2 mt-4">
                             <View className="flex-row p-1 rounded-full" style={{ backgroundColor: C.surfaceLow }}>
                                 <Pressable
                                     onPress={() => { haptics.selectionAsync(); setActiveModel('cloud'); }}
@@ -275,15 +268,6 @@ export default function ScanScreen() {
                                     <Text className="text-[14px]" style={{ fontWeight: '600', color: activeModel === 'skeemy' ? '#FFFFFF' : C.textSecondary }}>Skeemy</Text>
                                 </Pressable>
                             </View>
-                            <Pressable
-                                onPress={() => toggleCreditsModal(true, 'scan')}
-                                className="flex-row items-center gap-1 px-3 py-1.5 rounded-full"
-                                style={{ backgroundColor: C.card, borderColor: C.border, borderWidth: 1 }}
-                            >
-                                <Icon name="Zap" size={15} color="primary" />
-                                <Text className="text-[12px] font-bold" style={{ color: C.text }}>{credits}</Text>
-                                <Text className="text-[11px]" style={{ color: C.textSecondary }}>left</Text>
-                            </Pressable>
                         </View>
 
                         {/* Solution Card */}
@@ -471,15 +455,7 @@ export default function ScanScreen() {
                         <Icon name="X" size={22} color="white" />
                     </Pressable>
 
-                    {/* Credits Pill */}
-                    <Pressable
-                        onPress={() => toggleCreditsModal(true, 'scan')}
-                        className="flex-row items-center gap-1.5 px-4 py-2 rounded-full bg-black/50 border border-white/15 shadow-xl"
-                    >
-                        <Icon name="Zap" size={19} color="primary" />
-                        <Text className="text-[14px] text-white" style={{ fontWeight: '700' }}>{credits}</Text>
-                        <Text className="text-[13px] text-white/70" style={{ fontWeight: '500' }}>Credits</Text>
-                    </Pressable>
+                    <View style={{ width: 44 }} />
 
                     {/* Torch Toggle */}
                     <Pressable

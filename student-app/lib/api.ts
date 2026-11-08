@@ -147,12 +147,16 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        if (error.response?.status === 402) {
-            useAuthStore.getState().toggleCreditsModal(true);
-            return Promise.reject(error);
-        }
-
         if (error.response?.status === 429) {
+            if (error.response.data?.code === 'daily_limit_reached') {
+                const feature = error.response.data?.feature;
+                const validFeatures = ['scan', 'quiz', 'flashcard', 'chat', 'summary'];
+                useAuthStore.getState().togglePlanLimitModal(
+                    true,
+                    validFeatures.includes(feature) ? feature : null
+                );
+                return Promise.reject(error);
+            }
             const aiRoutes = ['generate', 'stream', 'flashcards/decks', 'solve'];
             if (aiRoutes.some(r => url?.includes(r))) {
                 useAuthStore.getState().toggleCooldownModal(true);

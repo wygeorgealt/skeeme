@@ -15,7 +15,6 @@ import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { MathText } from '@/components/ui/MathText';
 import { useAuthStore } from '@/store/authStore';
 import { streamFlashcardGenerate } from '@/lib/aiStream';
-import { syncCreditBalance } from '@/lib/creditCosts';
 import * as SecureStore from 'expo-secure-store';
 import Animated, {
     interpolate,
@@ -413,11 +412,9 @@ export default function StudyDeckScreen() {
                 onComplete: (fullText) => {
                     handleStreamComplete(fullText || accumulatedJson);
                 },
-                onError: (error, isInsufficientCredits) => {
+                onError: (error, isDailyLimitReached) => {
                     setIsGenerating(false);
-                    if (isInsufficientCredits) {
-                        Alert.alert('Insufficient Credits', 'You need more credits to generate flashcards.');
-                    } else {
+                    if (!isDailyLimitReached) {
                         Alert.alert('Generation Error', error || 'The study generation server encountered an issue. Please try again.');
                     }
                     if (autoStart === 'true') {
@@ -462,8 +459,6 @@ export default function StudyDeckScreen() {
                 });
             }
             markGenerationSuccess('flashcard').catch(() => {});
-            // Refresh the credit balance so all screens show the post-generation balance
-            syncCreditBalance().catch(() => {});
             queryClient.invalidateQueries({ queryKey: ['student', 'me'] });
         } catch (err) {
             if (__DEV__) console.warn('Failed to save streamed flashcards:', err);

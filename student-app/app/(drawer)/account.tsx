@@ -119,7 +119,7 @@ export default function AccountScreen() {
 
     if (!user) return null;
 
-    const isPremium = user.plan_name === 'pro' || user.plan_name === 'max' || Boolean(user.is_premium);
+    const isPremium = (user.plan_name && user.plan_name !== 'free') || Boolean(user.is_premium);
 
     return (
         <View style={[s.container, { backgroundColor: C.background }]}>
@@ -145,22 +145,22 @@ export default function AccountScreen() {
                     </View>
                 </Animated.View>
 
-                {/* ── Credit Balance Banner ── */}
+                {/* ── Subscription Plan Banner ── */}
                 <Animated.View entering={FadeInDown.duration(400).delay(200)}>
                     <TouchableOpacity 
                         activeOpacity={0.9} 
                         style={[s.premiumBanner, { backgroundColor: isPremium ? '#F59E0B' : '#007AFF' }]}
-                        onPress={() => router.push(isPremium ? '/paywall' : '/buy-credits' as any)}
+                        onPress={() => router.push('/paywall')}
                     >
                         <Text style={s.premiumTitle}>
-                            {isPremium ? 'Skeeme Pro Active' : `${user.credits ?? 0} Credits Available`}
+                            {isPremium ? 'Skeeme Pro Active' : 'Skeeme Free'}
                         </Text>
                         <Text style={s.premiumSubtitle}>
-                            {isPremium ? 'Enjoying unlimited access.' : 'Tap to get more credits for scans and quizzes'}
+                            {isPremium ? 'Enjoy higher daily limits across your study tools.' : 'Upgrade for more room to study with your AI partner.'}
                         </Text>
                         {!isPremium && (
                             <View style={s.premiumBtn}>
-                                <Text style={[s.premiumBtnText, { color: '#007AFF' }]}>Top Up</Text>
+                                <Text style={[s.premiumBtnText, { color: '#007AFF' }]}>Explore Pro</Text>
                             </View>
                         )}
                     </TouchableOpacity>

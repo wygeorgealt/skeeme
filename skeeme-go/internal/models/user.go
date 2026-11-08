@@ -1,13 +1,9 @@
 package models
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
 type User struct {
@@ -28,7 +24,7 @@ type User struct {
 	ExpoPushToken          sql.NullString  `db:"expo_push_token" json:"expo_push_token"`
 	NotificationsEnabled   bool            `db:"notifications_enabled" json:"notifications_enabled"`
 	ReferralCode           sql.NullString  `db:"referral_code" json:"referral_code"`
-	LastCreditAlertAt      sql.NullTime    `db:"last_credit_alert_at" json:"last_credit_alert_at"`
+	LastCreditAlertAt      sql.NullTime    `db:"last_credit_alert_at" json:"-"`
 	Timezone               string          `db:"timezone" json:"timezone"`
 	CreatedAt              sql.NullTime    `db:"created_at" json:"created_at"`
 	UpdatedAt              sql.NullTime    `db:"updated_at" json:"updated_at"`
@@ -37,13 +33,13 @@ type User struct {
 	ApprovedAt             sql.NullTime    `db:"approved_at" json:"approved_at"`
 	Role                   sql.NullString  `db:"role" json:"role"`
 	Status                 string          `db:"status" json:"status"`
-	Credits                int             `db:"credits" json:"credits"`
+	Credits                int             `db:"credits" json:"-"`
 	SubscriptionTier       string          `db:"subscription_tier" json:"plan_name"` // Maps to plan_name in frontend
-	DailyFreeScansUsed     int             `db:"daily_free_scans_used" json:"daily_free_scans_used"`
-	LastFreeScanAt         sql.NullTime    `db:"last_free_scan_at" json:"last_free_scan_at"`
-	LastCreditRefillAt     sql.NullTime    `db:"last_credit_refill_at" json:"last_credit_refill_at"`
-	CreditsEmptiedAt       sql.NullTime    `db:"credits_emptied_at" json:"credits_emptied_at"`
-	NextFreeRefillAt       *time.Time      `db:"-" json:"next_free_refill_at,omitempty"`
+	DailyFreeScansUsed     int             `db:"daily_free_scans_used" json:"-"`
+	LastFreeScanAt         sql.NullTime    `db:"last_free_scan_at" json:"-"`
+	LastCreditRefillAt     sql.NullTime    `db:"last_credit_refill_at" json:"-"`
+	CreditsEmptiedAt       sql.NullTime    `db:"credits_emptied_at" json:"-"`
+	NextFreeRefillAt       *time.Time      `db:"-" json:"-"`
 	IsFlagged              bool            `db:"is_flagged" json:"is_flagged"`
 	FlagReason             sql.NullString  `db:"flag_reason" json:"flag_reason"`
 	IsVip                  bool            `db:"is_vip" json:"is_vip"`
@@ -66,21 +62,7 @@ type User struct {
 }
 
 type UserStreak struct {
-	CurrentStreak   int        `json:"current_streak"`
-	LongestStreak   int        `json:"longest_streak"`
-	UnclaimedReward int        `json:"unclaimed_reward"`
-	LastStudyDate   *time.Time `json:"last_study_date"`
-}
-
-func (u *User) PopulateTransientFields(ctx context.Context, rdb *redis.Client) {
-	if u.SubscriptionTier == "free" && rdb != nil {
-		emptiedKey := fmt.Sprintf("credits_emptied_at:%d", u.ID)
-		emptiedAtStr, err := rdb.Get(ctx, emptiedKey).Result()
-		if err == nil && emptiedAtStr != "" {
-			if emptiedAt, parseErr := time.Parse(time.RFC3339, emptiedAtStr); parseErr == nil {
-				refill := emptiedAt.AddDate(0, 0, 14)
-				u.NextFreeRefillAt = &refill
-			}
-		}
-	}
+	CurrentStreak int        `json:"current_streak"`
+	LongestStreak int        `json:"longest_streak"`
+	LastStudyDate *time.Time `json:"last_study_date"`
 }

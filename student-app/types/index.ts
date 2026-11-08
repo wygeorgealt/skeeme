@@ -6,15 +6,12 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    credits: number;
     plan_name?: string; // 'free', 'pro', 'max'
     is_premium?: boolean;
-    next_free_refill_at?: string | null;
     streak?: {
         current_streak: number;
         longest_streak: number;
         last_study_date: string | null;
-        unclaimed_reward?: number;
     };
     pricing?: {
         amount: string;
@@ -33,7 +30,6 @@ export interface User {
     };
     avatar?: string;
     avatar_url?: string;
-    credits_spent_this_week?: number;
     study_sessions_this_week?: number;
     weekly_activity_points?: (number | { value: number })[];
     nearest_exam?: {
@@ -45,21 +41,7 @@ export interface User {
 
 export interface StreakMilestone {
     days: 7 | 14 | 30 | 60;
-    credits: number;
     achieved: boolean;
-}
-
-export interface CreditTransaction {
-    id: number;
-    user_id: number;
-    amount: number;
-    type: 'usage' | 'purchase' | 'reward' | 'refund' | 'adjustment';
-    action_type?: 'quiz_generation' | 'flashcard_generation' | 'scan_solve' | 'ai_grading' | 'referral_bonus' | 'signup_bonus';
-    description: string;
-    model_used?: string | null;
-    request_id?: string | null;
-    metadata?: Record<string, any> | null;
-    created_at: string;
 }
 
 export type OtpType = 'verification' | 'password_reset';
@@ -83,14 +65,8 @@ export interface PricingPlan {
     monthly: number;
     yearly: number;
     promoMonthly?: number;
-    credits: number;
     weekly: number;
     save?: string; // e.g. "20%"
-}
-
-export interface CreditPack {
-    amount: number;
-    price: number;
 }
 
 export interface PricingConfig {
@@ -100,10 +76,6 @@ export interface PricingConfig {
         standard_end?: string;
         elite_end?: string;
         [key: string]: string | undefined;
-    };
-    credit_packs: {
-        ngn: CreditPack[];
-        usd: CreditPack[];
     };
     rates: {
         scan_solve: { free: number; paid: number };
