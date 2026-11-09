@@ -35,7 +35,8 @@ skeeme-go/
 │   └── services/               # External services (e.g. Resend Email)
 ├── migrations/
 │   ├── 001_schema.sql          # Reference PostgreSQL database schema
-│   └── 002_daily_ai_usage.sql  # Free/Pro daily AI quota tables
+│   ├── 002_daily_ai_usage.sql  # Free/Pro daily AI quota tables
+│   └── migrate.go              # Embedded, startup migration runner
 ├── Dockerfile                  # Production container definition
 ├── go.mod                      # Go module dependencies (Go 1.25+)
 ├── go.sum                      # Dependency checksums
@@ -43,6 +44,13 @@ skeeme-go/
 ```
 
 ---
+
+The API applies numbered SQL migrations automatically at startup, before serving
+requests or starting background jobs. Applied migrations are tracked in
+`skeeme_schema_migrations`; a PostgreSQL advisory lock prevents concurrent
+instances from applying the same migration. `001_schema.sql` is reference-only
+and is deliberately excluded. New forward-only migrations should use the next
+numbered filename and be committed with the backend release.
 
 ## ⚙️ Configuration & Environment Variables
 

@@ -201,13 +201,17 @@ flashcards. The app shows a plan-limit modal for a `429` response with code
 `daily_limit_reached`. Ads are deferred; do not add an ad SDK without a separate
 product decision. Current subscription prices remain unchanged.
 
-The additive migration [`skeeme-go/migrations/002_daily_ai_usage.sql`](./skeeme-go/migrations/002_daily_ai_usage.sql)
-must be applied to PostgreSQL before deploying quota-enforcing backend code.
-No automatic migration runner or production application of this migration has
-been confirmed. Student-facing credit screens/routes and signup/reward credit
-grants have been removed, while legacy database fields and admin credit tooling
-remain for compatibility. Request idempotency records older than 30 days are
-pruned by the backend scheduler/cleanup command; daily usage totals are retained.
+The Go API applies numbered SQL migrations automatically at startup using the
+embedded runner in `skeeme-go/migrations/migrate.go`; it tracks applied versions
+in `skeeme_schema_migrations` and takes a PostgreSQL advisory lock. The
+`001_schema.sql` file is reference-only and is deliberately skipped. This runner
+was added after production logs confirmed `002_daily_ai_usage.sql` had not run;
+the first restart after deployment applies its idempotent quota-table DDL before
+the API accepts requests. Student-facing credit screens/routes and signup/reward
+credit grants have been removed, while legacy database fields and admin credit
+tooling remain for compatibility. Request idempotency records older than 30
+days are pruned by the backend scheduler/cleanup command; daily usage totals are
+retained.
 
 ### Product decisions
 

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
@@ -18,6 +20,7 @@ import (
 	"skeeme-go/internal/handlers"
 	"skeeme-go/internal/jobs"
 	"skeeme-go/internal/middleware"
+	"skeeme-go/migrations"
 )
 
 func main() {
@@ -79,6 +82,13 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer database.Close()
+
+	migrationCtx, cancelMigrations := context.WithTimeout(context.Background(), 2*time.Minute)
+	if err := migrations.Apply(migrationCtx, database); err != nil {
+		cancelMigrations()
+		log.Fatalf("Failed to apply database migrations: %v", err)
+	}
+	cancelMigrations()
 
 	// Initialize in-process Background Scheduler (backups & cleanups)
 	if os.Getenv("DISABLE_INTERNAL_CRON") != "true" {
