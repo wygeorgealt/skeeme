@@ -90,16 +90,58 @@ func TestReplicateOCRPollsRunningPrediction(t *testing.T) {
 	}
 }
 
-func TestNewOCRClientPrefersReplicate(t *testing.T) {
-	client := NewOCRClient("replicate-token", "google-key")
+func TestNewOCRClientProviderSelection(t *testing.T) {
+	client, provider, err := NewOCRClient("rapidapi", "rapid-key", "replicate-token", "google-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if provider != OCRProviderRapidAPI {
+		t.Fatalf("got provider %q, want %q", provider, OCRProviderRapidAPI)
+	}
+	if _, ok := client.(*RapidAPIOCRClient); !ok {
+		t.Fatalf("expected RapidAPI OCR client, got %T", client)
+	}
+
+	client, provider, err = NewOCRClient("google_vision", "rapid-key", "replicate-token", "google-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if provider != OCRProviderGoogleVision {
+		t.Fatalf("got provider %q, want %q", provider, OCRProviderGoogleVision)
+	}
+	if _, ok := client.(*VisionClient); !ok {
+		t.Fatalf("expected Google Vision OCR client, got %T", client)
+	}
+
+	client, provider, err = NewOCRClient("replicate", "rapid-key", "replicate-token", "google-key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if provider != OCRProviderReplicate {
+		t.Fatalf("got provider %q, want %q", provider, OCRProviderReplicate)
+	}
 	if _, ok := client.(*ReplicateOCRClient); !ok {
 		t.Fatalf("expected Replicate OCR client, got %T", client)
 	}
-	if client := NewOCRClient("", "google-key"); client == nil {
-		t.Fatal("expected Google Vision fallback client")
+
+	client, provider, err = NewOCRClient("", "rapid-key", "replicate-token", "google-key")
+	if err != nil {
+		t.Fatal(err)
 	}
-	if client := NewOCRClient("", ""); client != nil {
-		t.Fatalf("expected nil OCR client without credentials, got %T", client)
+	if provider != OCRProviderRapidAPI {
+		t.Fatalf("default provider is %q, want %q", provider, OCRProviderRapidAPI)
+	}
+}
+
+func TestNewOCRClientRejectsMissingOrUnknownProvider(t *testing.T) {
+	if _, _, err := NewOCRClient("rapidapi", "", "", "google-key"); err == nil {
+		t.Fatal("expected missing RapidAPI key error")
+	}
+	if _, _, err := NewOCRClient("unknown", "rapid-key", "", "google-key"); err == nil {
+		t.Fatal("expected unsupported provider error")
+	}
+	if client, provider, err := NewOCRClient("", "", "", ""); err != nil || client != nil || provider != "" {
+		t.Fatalf("expected no provider without credentials, got client=%T provider=%q err=%v", client, provider, err)
 	}
 }
 

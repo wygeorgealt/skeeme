@@ -148,9 +148,12 @@ endpoint detail.
 
 - Main generation supports DeepSeek and Anthropic, with runtime provider selection
   documented in the Go README.
-- OCR is wired to use the Replicate-hosted `lucataco/deepseek-ocr` prediction when
-  `REPLICATE_API_TOKEN` is configured; Google Cloud Vision is the fallback when
-  it is not.
+- OCR supports RapidAPI Best OCR, Replicate DeepSeek OCR, and Google Cloud Vision.
+  `OCR_PROVIDER` explicitly selects the active provider; when unset, configuration
+  prefers RapidAPI, then Replicate, then Google Cloud Vision.
+- RapidAPI uses the `best-ocr-api.p.rapidapi.com/parse/image` multipart endpoint
+  and `RAPIDAPI_API_KEY`, which must remain a backend-only secret. Google Cloud
+  Vision remains selectable with `OCR_PROVIDER=google_vision`.
 - The Replicate client uses the predictions API, handles immediate and polled
   results, and uploads larger files through the Replicate file API. Current source
   recognizes both `succeeded` and `successful` statuses and uses the `content`

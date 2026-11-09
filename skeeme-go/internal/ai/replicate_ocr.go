@@ -24,6 +24,12 @@ type OCRClient interface {
 	ExtractText(ctx context.Context, imageBase64 string) (string, error)
 }
 
+const (
+	OCRProviderRapidAPI     = "rapidapi"
+	OCRProviderReplicate    = "replicate"
+	OCRProviderGoogleVision = "google_vision"
+)
+
 type ReplicateOCRClient struct {
 	apiToken   string
 	httpClient *http.Client
@@ -38,14 +44,44 @@ func NewReplicateOCRClient(apiToken string) *ReplicateOCRClient {
 	}
 }
 
-func NewOCRClient(replicateToken, googleVisionKey string) OCRClient {
-	if strings.TrimSpace(replicateToken) != "" {
-		return NewReplicateOCRClient(replicateToken)
+func NewOCRClient(provider, rapidAPIKey, replicateToken, googleVisionKey string) (OCRClient, string, error) {
+	provider = strings.ToLower(strings.TrimSpace(provider))
+	rapidAPIKey = strings.TrimSpace(rapidAPIKey)
+	replicateToken = strings.TrimSpace(replicateToken)
+	googleVisionKey = strings.TrimSpace(googleVisionKey)
+
+	if provider == "" {
+		switch {
+		case rapidAPIKey != "":
+			provider = OCRProviderRapidAPI
+		case replicateToken != "":
+			provider = OCRProviderReplicate
+		case googleVisionKey != "":
+			provider = OCRProviderGoogleVision
+		default:
+			return nil, "", nil
+		}
 	}
-	if strings.TrimSpace(googleVisionKey) != "" {
-		return NewVisionClient(googleVisionKey)
+
+	switch provider {
+	case OCRProviderRapidAPI:
+		if rapidAPIKey == "" {
+			return nil, provider, fmt.Errorf("RAPIDAPI_API_KEY is required when OCR_PROVIDER=rapidapi")
+		}
+		return NewRapidAPIOCRClient(rapidAPIKey), provider, nil
+	case OCRProviderReplicate:
+		if replicateToken == "" {
+			return nil, provider, fmt.Errorf("REPLICATE_API_TOKEN is required when OCR_PROVIDER=replicate")
+		}
+		return NewReplicateOCRClient(replicateToken), provider, nil
+	case "google", "googlevision", OCRProviderGoogleVision:
+		if googleVisionKey == "" {
+			return nil, OCRProviderGoogleVision, fmt.Errorf("GOOGLE_CLOUD_VISION_API_KEY is required when OCR_PROVIDER=%s", provider)
+		}
+		return NewVisionClient(googleVisionKey), OCRProviderGoogleVision, nil
+	default:
+		return nil, provider, fmt.Errorf("unsupported OCR_PROVIDER %q; use rapidapi, replicate, or google_vision", provider)
 	}
-	return nil
 }
 
 type replicatePredictionRequest struct {

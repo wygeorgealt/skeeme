@@ -56,9 +56,13 @@ func (h *AIHandler) GetAdminProvider(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
 		"active_provider":      active,
+		"active_ocr_provider":  h.AIService.GetOCRProvider(),
 		"anthropic_configured": status["anthropic_configured"],
 		"deepseek_configured":  status["deepseek_configured"],
 		"vision_configured":    status["vision_configured"],
+		"rapidapi_configured":  status["rapidapi_configured"],
+		"replicate_configured": status["replicate_configured"],
+		"ocr_configured":       status["ocr_configured"],
 	})
 }
 
@@ -679,8 +683,20 @@ const switchUIHTML = `<!DOCTYPE html>
           <span class="status-pill" id="status-anthropic">Checking...</span>
         </div>
         <div class="status-item">
-          <span class="label">Google Cloud Vision OCR</span>
+          <span class="label">Active OCR Provider</span>
+          <span class="status-pill" id="status-ocr-active">Checking...</span>
+        </div>
+        <div class="status-item">
+          <span class="label">RapidAPI OCR Key</span>
+          <span class="status-pill" id="status-rapidapi">Checking...</span>
+        </div>
+        <div class="status-item">
+          <span class="label">Google Cloud Vision Key</span>
           <span class="status-pill" id="status-vision">Checking...</span>
+        </div>
+        <div class="status-item">
+          <span class="label">Replicate OCR Token</span>
+          <span class="status-pill" id="status-replicate">Checking...</span>
         </div>
       </div>
 
@@ -806,9 +822,23 @@ const switchUIHTML = `<!DOCTYPE html>
         setKeyBadge('status-deepseek', data.deepseek_configured);
         setKeyBadge('status-anthropic', data.anthropic_configured);
         setKeyBadge('status-vision', data.vision_configured);
+        setKeyBadge('status-rapidapi', data.rapidapi_configured);
+        setKeyBadge('status-replicate', data.replicate_configured);
+        renderOCRProvider(data.active_ocr_provider, data.ocr_configured);
       } catch (e) {
         console.error('Failed to load provider info', e);
       }
+    }
+
+    function renderOCRProvider(provider, configured) {
+      const el = document.getElementById('status-ocr-active');
+      const labels = {
+        rapidapi: 'RapidAPI',
+        replicate: 'Replicate',
+        google_vision: 'Google Vision'
+      };
+      el.className = configured ? 'status-pill ready' : 'status-pill missing';
+      el.innerText = configured ? (labels[provider] || provider) : 'NOT CONFIGURED';
     }
 
     function setKeyBadge(id, isConfigured) {

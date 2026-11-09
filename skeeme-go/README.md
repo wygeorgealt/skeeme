@@ -71,7 +71,9 @@ ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 DEEPSEEK_API_KEY=sk-...
 DEEPSEEK_MODEL=deepseek-chat
 GOOGLE_CLOUD_VISION_API_KEY=AIzaSy...
+RAPIDAPI_API_KEY=your_rapidapi_key
 REPLICATE_API_TOKEN=your_replicate_api_token
+OCR_PROVIDER=rapidapi                 # rapidapi | google_vision | replicate
 DEFAULT_AI_PROVIDER=deepseek         # deepseek | anthropic
 
 # ── Administrative & Internal Secrets ────────────────────────
@@ -96,12 +98,16 @@ BACKUP_CRON_SCHEDULE="0 * * * *"    # Hourly at minute 0 UTC
 DISABLE_INTERNAL_CRON=false
 ```
 
-When `REPLICATE_API_TOKEN` is configured, scanned-image OCR uses
-the pinned `lucataco/deepseek-ocr` model version through Replicate's community
-predictions API; otherwise OCR falls back to Google Cloud Vision. Set the token
-as a server-side secret in the deployment platform, not in the mobile app or a
-committed environment file. Replicate charges for model predictions, and image
-uploads are sent to Replicate for processing.
+`OCR_PROVIDER` selects the OCR service for scan solving and scanned documents.
+The default is `rapidapi` when `RAPIDAPI_API_KEY` is configured, then Replicate
+when `REPLICATE_API_TOKEN` is configured, then Google Cloud Vision. Set
+`OCR_PROVIDER=google_vision` to switch back to Google Vision, or
+`OCR_PROVIDER=replicate` to select the existing Replicate integration. The
+RapidAPI client calls the `best-ocr-api.p.rapidapi.com/parse/image` endpoint
+using multipart form data. Keep all provider keys in server-side deployment
+secrets, never in the mobile app or a committed environment file. RapidAPI's
+free plan currently lists 50 requests per day; plan limits can change, and
+images/documents are sent to the selected provider for processing.
 
 ---
 

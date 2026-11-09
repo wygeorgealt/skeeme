@@ -164,7 +164,15 @@ func main() {
 	streakHandler := &handlers.StreakHandler{DB: database}
 	pushTokenHandler := &handlers.PushTokenHandler{DB: database}
 	onboardingHandler := &handlers.OnboardingHandler{DB: database}
-	ocrClient := ai.NewOCRClient(os.Getenv("REPLICATE_API_TOKEN"), os.Getenv("GOOGLE_CLOUD_VISION_API_KEY"))
+	ocrClient, _, ocrErr := ai.NewOCRClient(
+		os.Getenv("OCR_PROVIDER"),
+		os.Getenv("RAPIDAPI_API_KEY"),
+		os.Getenv("REPLICATE_API_TOKEN"),
+		os.Getenv("GOOGLE_CLOUD_VISION_API_KEY"),
+	)
+	if ocrErr != nil {
+		log.Printf("[API] OCR provider configuration error: %v", ocrErr)
+	}
 	fileExtractHandler := &handlers.FileExtractHandler{DB: database, Redis: redisClient, OCR: ocrClient}
 	userExamHandler := &handlers.UserExamHandler{DB: database}
 	billingHandler := &handlers.BillingHandler{DB: database}

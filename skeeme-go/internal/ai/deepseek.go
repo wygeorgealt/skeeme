@@ -14,22 +14,22 @@ import (
 )
 
 type DeepseekClient struct {
-	apiKey       string
-	model        string
-	httpClient   *http.Client
-	visionClient OCRClient
+	apiKey     string
+	model      string
+	httpClient *http.Client
+	ocrClient  OCRClient
 }
 
-func NewDeepseekClient(apiKey string, visionClient OCRClient) *DeepseekClient {
+func NewDeepseekClient(apiKey string, ocrClient OCRClient) *DeepseekClient {
 	model := os.Getenv("DEEPSEEK_MODEL")
 	if model == "" {
 		model = "deepseek-chat"
 	}
 	return &DeepseekClient{
-		apiKey:       apiKey,
-		model:        model,
-		httpClient:   &http.Client{Timeout: 120 * time.Second},
-		visionClient: visionClient,
+		apiKey:     apiKey,
+		model:      model,
+		httpClient: &http.Client{Timeout: 120 * time.Second},
+		ocrClient:  ocrClient,
 	}
 }
 
@@ -83,11 +83,11 @@ func (c *DeepseekClient) StreamCompletion(ctx context.Context, systemPrompt stri
 }
 
 func (c *DeepseekClient) StreamVisionCompletion(ctx context.Context, systemPrompt string, userPrompt string, imageBase64 string, onToken StreamCallback) error {
-	if c.visionClient == nil {
-		return fmt.Errorf("Google Cloud Vision client is not configured for Deepseek OCR fallback")
+	if c.ocrClient == nil {
+		return fmt.Errorf("OCR provider is not configured for DeepSeek scan processing")
 	}
 
-	extractedText, err := c.visionClient.ExtractText(ctx, imageBase64)
+	extractedText, err := c.ocrClient.ExtractText(ctx, imageBase64)
 	if err != nil {
 		return fmt.Errorf("failed to extract text from image for Deepseek: %w", err)
 	}

@@ -11,19 +11,28 @@ import (
 )
 
 type Service struct {
-	anthropic *AnthropicClient
-	deepseek  *DeepseekClient
-	vision    OCRClient
-	redis     *redis.Client
+	anthropic              *AnthropicClient
+	deepseek               *DeepseekClient
+	ocr                    OCRClient
+	ocrProvider            string
+	rapidAPIConfigured     bool
+	replicateConfigured    bool
+	googleVisionConfigured bool
+	redis                  *redis.Client
 }
 
 func NewService(rdb *redis.Client) *Service {
 	anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
 	deepseekKey := os.Getenv("DEEPSEEK_API_KEY")
 	visionKey := os.Getenv("GOOGLE_CLOUD_VISION_API_KEY")
+	rapidAPIKey := os.Getenv("RAPIDAPI_API_KEY")
 	replicateToken := os.Getenv("REPLICATE_API_TOKEN")
 
-	vision := NewOCRClient(replicateToken, visionKey)
+	ocr, ocrProvider, err := NewOCRClient(os.Getenv("OCR_PROVIDER"), rapidAPIKey, replicateToken, visionKey)
+	if err != nil {
+		log.Printf("[aiService] OCR provider configuration error: %v", err)
+		ocrProvider = ""
+	}
 
 	var anthropic *AnthropicClient
 	if anthropicKey != "" {
@@ -32,15 +41,23 @@ func NewService(rdb *redis.Client) *Service {
 
 	var deepseek *DeepseekClient
 	if deepseekKey != "" {
-		deepseek = NewDeepseekClient(deepseekKey, vision)
+		deepseek = NewDeepseekClient(deepseekKey, ocr)
 	}
 
 	return &Service{
-		anthropic: anthropic,
-		deepseek:  deepseek,
-		vision:    vision,
-		redis:     rdb,
+		anthropic:              anthropic,
+		deepseek:               deepseek,
+		ocr:                    ocr,
+		ocrProvider:            ocrProvider,
+		rapidAPIConfigured:     rapidAPIKey != "",
+		replicateConfigured:    replicateToken != "",
+		googleVisionConfigured: visionKey != "",
+		redis:                  rdb,
 	}
+}
+
+func (s *Service) GetOCRProvider() string {
+	return s.ocrProvider
 }
 
 // GetDefaultProvider returns the active default AI provider (checks Redis, then env, defaults to DeepSeek).
@@ -86,7 +103,10 @@ func (s *Service) GetProviderStatus() map[string]bool {
 	return map[string]bool{
 		"anthropic_configured": s.anthropic != nil,
 		"deepseek_configured":  s.deepseek != nil,
-		"vision_configured":    s.vision != nil,
+		"vision_configured":    s.googleVisionConfigured,
+		"rapidapi_configured":  s.rapidAPIConfigured,
+		"replicate_configured": s.replicateConfigured,
+		"ocr_configured":       s.ocr != nil,
 	}
 }
 
