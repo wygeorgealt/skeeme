@@ -134,16 +134,17 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 type RegisterRequest struct {
-	Name           string `json:"name"`
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	Email          string `json:"email"`
-	Password       string `json:"password"`
-	Device         string `json:"device_name"`
-	EducationLevel string `json:"education_level"`
-	FieldOfStudy   string `json:"field_of_study"`
-	LearningStyle  string `json:"learning_style"`
-	ReferralCode   string `json:"referral_code"`
+	Name           string             `json:"name"`
+	FirstName      string             `json:"first_name"`
+	LastName       string             `json:"last_name"`
+	Email          string             `json:"email"`
+	Password       string             `json:"password"`
+	Device         string             `json:"device_name"`
+	EducationLevel string             `json:"education_level"`
+	FieldOfStudy   string             `json:"field_of_study"`
+	LearningStyle  string             `json:"learning_style"`
+	ReferralCode   string             `json:"referral_code"`
+	OnboardingData *OnboardingAnswers `json:"onboarding_data"`
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -181,14 +182,23 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	aiPrefs := map[string]string{
+	aiPrefs := map[string]any{
 		"education_level": req.EducationLevel,
 		"field_of_study":  req.FieldOfStudy,
 		"learning_style":  req.LearningStyle,
 		"tone":            "encouraging",
 		"language":        "english",
 	}
-	aiPrefsJSON, _ := json.Marshal(aiPrefs)
+	if req.OnboardingData != nil {
+		aiPrefs["onboarding_answers"] = req.OnboardingData
+	}
+	aiPrefsJSON, err := json.Marshal(aiPrefs)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{"message": "Failed to encode learning preferences"})
+		return
+	}
 
 	// Check if user already exists (case-insensitive)
 	var existingUser models.User

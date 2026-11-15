@@ -1,7 +1,8 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, useColorScheme, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, StyleSheet, useColorScheme, ViewStyle, TextStyle } from 'react-native';
 import { Colors, FontSize, Spacing, Radius } from '@/constants/theme';
 import { LoadingSpinner } from '../LoadingSpinner';
+import { Text } from '@/components/ui/Text';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 type Size = 'sm' | 'md' | 'lg';

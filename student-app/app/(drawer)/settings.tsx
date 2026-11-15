@@ -1,4 +1,4 @@
-import { View, ScrollView, Pressable, Platform, Modal, TextInput, Alert, Switch, StyleSheet } from 'react-native';
+import { View, ScrollView, Pressable, Platform, Modal, Alert, Switch, StyleSheet } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/store/authStore';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -13,6 +13,7 @@ import { BlurView } from 'expo-blur';
 import { Colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { haptics } from '@/lib/haptics';
+import { TextInput } from '@/components/ui/TextInput';
 
 // ─── Row Component ───────────────────────────────────────────────────────────
 function SettingsRow({
@@ -191,13 +192,6 @@ export default function SettingsScreen() {
                         <SettingsRow isDark={isDark} icon="GraduationCap"
                             label="Target Exams"
                             onPress={() => router.push('/(drawer)/exams' as any)} />
-                        <SettingsRow isDark={isDark} icon="Compass"
-                            label="Replay Onboarding Flow"
-                            sublabel="Walk through the setup screens again"
-                            onPress={() => {
-                                haptics.selectionAsync();
-                                router.push('/(onboarding)/name' as any);
-                            }} />
                         <SettingsRow isDark={isDark} icon="Bell"
                             label="Study Reminders"
                             hasSwitch switchValue={notificationsEnabled} onSwitch={setNotificationsEnabled} isLast />

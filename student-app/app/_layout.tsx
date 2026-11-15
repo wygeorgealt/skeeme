@@ -82,12 +82,14 @@ export default function RootLayout() {
   const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.skeeme.app';
 
   const [fontsLoaded] = useFonts({
-    'ClashGrotesk-Regular': require('@/assets/fonts/ClashGrotesk-Regular.ttf'),
-    'ClashGrotesk-Light': require('@/assets/fonts/ClashGrotesk-Light.ttf'),
-    'ClashGrotesk-Extralight': require('@/assets/fonts/ClashGrotesk-Extralight.ttf'),
-    'ClashGrotesk-Medium': require('@/assets/fonts/ClashGrotesk-Medium.ttf'),
-    'ClashGrotesk-Semibold': require('@/assets/fonts/ClashGrotesk-Semibold.ttf'),
-    'ClashGrotesk-Bold': require('@/assets/fonts/ClashGrotesk-Bold.ttf'),
+    'Satoshi-Regular': require('@/assets/fonts/Satoshi-Regular.ttf'),
+    'Satoshi-Medium': require('@/assets/fonts/Satoshi-Medium.ttf'),
+    'Satoshi-Bold': require('@/assets/fonts/Satoshi-Bold.ttf'),
+    'Satoshi-Black': require('@/assets/fonts/Satoshi-Black.ttf'),
+    'Bungee-Regular': require('@/assets/fonts/Bungee-Regular.ttf'),
+    'ComicNeue-Bold': require('@/assets/fonts/ComicNeue-Bold.ttf'),
+    BodoniModa: require('@/assets/fonts/BodoniModa[opsz,wght].ttf'),
+    'Pacifico-Regular': require('@/assets/fonts/Pacifico-Regular.ttf'),
   });
 
   const segments = useSegments();
@@ -119,11 +121,19 @@ export default function RootLayout() {
     if (user) {
       if (!onboardingComplete) {
         if (currentSegment !== '(onboarding)') {
-          router.replace('/(onboarding)/name');
+          router.replace('/(onboarding)/start');
         }
       } else {
         // Allow all users (Free or Pro) to access the app after onboarding.
-        const authOnlyOnboardingRoutes = ['auth-select', 'create-account', 'preview'];
+        const authOnlyOnboardingRoutes = [
+          'auth-select',
+          'start',
+          'explanation-preferences',
+          'study-challenges',
+          'daily-goal',
+          'personalized-plan',
+          'reminders',
+        ];
         const isAuthEntryRoute =
           ['login', 'signup', 'welcome', 'forgot-password', 'otp', 'new-password'].includes(currentSegment) ||
           (currentSegment === '(onboarding)' && (!segments[1] || authOnlyOnboardingRoutes.includes(segments[1] as string)));

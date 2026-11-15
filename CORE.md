@@ -1,6 +1,6 @@
 # Skeeme Core Project Memory
 
-Last compiled: 2026-11-08
+Last compiled: 2026-11-15
 
 This is the project handoff document for future agents and contributors. It records
 the main architecture, durable product/engineering decisions, completed work known
@@ -21,11 +21,12 @@ materials, explanations, practice, revision, and progress into one workflow. The
 main mobile features include:
 
 - Scan or upload questions and request step-by-step AI explanations.
-- Chat with an AI tutor using the student's learning preferences.
+- AI tutor chat code remains in the app, but its screen is currently hidden from
+  navigation.
 - Generate quizzes and flashcards from topics or study materials.
 - Study flashcards with review tracking and spaced repetition.
 - Summarize documents and export study materials.
-- Track daily activities, streaks, rewards, exams, and study progress.
+- Track streaks, rewards, exams, and study progress.
 - Use a Free plan for core study tools and Pro for higher daily usage limits.
 
 Product and marketing guardrails are in [PRODUCT.md](./PRODUCT.md): the service is
@@ -68,8 +69,9 @@ README.
 Important locations:
 
 - `student-app/app/`: screens and Expo Router routes.
-- `student-app/app/(onboarding)/`: personalization/onboarding.
-- `student-app/app/(drawer)/(tabs)/`: primary Home, History, and Chat tabs.
+- `student-app/app/(onboarding)/`: auth selection and learning-preference onboarding.
+- `student-app/app/(drawer)/(tabs)/`: Home is the only visible tab; Chat and
+  retained History routes are hidden from app navigation.
 - `student-app/components/`: reusable UI, quiz and flashcard views.
 - `student-app/hooks/`: student and app hooks.
 - `student-app/lib/api.ts`: API client and network behavior.
@@ -82,9 +84,11 @@ Important locations:
 ### Navigation and visual direction
 
 The mobile app was moved toward Expo Router native tabs and native stack headers.
-The primary tabs are Home, History, and Chat; Chat hides the tab bar. Other screens
-remain stack routes. Route-group names are not URL segments, so validate deep links
-and redirects after route-file moves.
+Home is the only visible primary tab. Chat and History routes remain in the code
+but are hidden from app navigation; quiz and flashcard history persistence
+continues. Other screens remain stack routes.
+Route-group names are not URL segments, so validate deep links and redirects
+after route-file moves.
 
 `expo-glass-effect` is a direct dependency. `components/ui/Glass.tsx` centralizes
 Liquid Glass availability checks and solid fallbacks. Glass is intended for
@@ -94,6 +98,38 @@ decorative blur/rims where the OS control is appropriate. The app has an iOS-fir
 SF Symbols mapping through `components/ui/Icon.tsx`, with Lucide fallback for
 non-iOS and unmapped icons. Symbol coverage and device-level visual validation are
 not complete.
+
+The auth selection screen holds the static blue `#0057B8` and yellow `#FFDF00`
+theme shown in the user's simulator screenshot. Its bottom-aligned, narrower
+"Get started" button is yellow with blue text, and the text-only "Already have
+an account? Log in" link sits below it and opens `/login`. Satoshi Regular,
+Medium, Bold, and Black are loaded by the root font loader and applied across
+app-owned React Native text through shared `Text` and `TextInput` wrappers. The
+wrappers map React Native weights and NativeWind weight classes to the
+corresponding static Satoshi face, then remove generic weight styling so the
+selected face controls its own weight. Explicit non-Satoshi families and
+monospaced math remain supported. Above the CTA, “Turn pages into” uses Satoshi
+Bold at 32/40 in yellow. “BRIGHT IDEAS” stays in Bungee Regular at 40, also in
+yellow; the headline and page no longer cycle colors or fonts. The four added
+display fonts use the SIL Open Font License, with license files alongside the
+assets. The headline group has a 36-point gap above the CTA. A centered,
+flexible hero stage above the headline hosts the looping, muted “Idle → Wakes”
+test mascot. It uses the Masko React Native player with HEVC on iOS and stacked
+MP4 on Android, pauses when offscreen or backgrounded, and shows its still frame
+when Reduce Motion is enabled. The current auth-select JSX does not render a
+legal notice.
+The “Get started” CTA opens a seven-step learning-preference flow: learning
+goals, explanation preferences, study challenges, daily goal, a personalized
+summary, and optional reminders, following the auth-selection welcome screen.
+Answers persist while navigating backward, and the summary only includes
+selected preferences. Registration follows onboarding through the existing
+signup flow; registration and authenticated onboarding save answers under
+`ai_preferences.onboarding_answers`. Reminder permission is requested only
+after an explicit time selection and opt-in action. Users who skip or decline
+reminders do not receive a permission prompt. The shared onboarding shell keeps
+progress at the top and anchors the mascot, question, bordered text-only choices,
+and fixed Continue action toward the bottom. Unselected borders are gray;
+selected borders and checkmarks are blue, with the enabled action in yellow.
 
 The user explicitly prefers:
 
@@ -388,10 +424,23 @@ relevant source/tests for exact diffs.
    handling after the latest code changes.
 7. **Visual migration:** smoke-test native tabs/headers, route redirects, flashcard
    back behavior, streak modal presentation, and accessibility settings on a
-   simulator/device. The last confirmed simulator was an iPhone 17 on iOS 26.3;
-   that runtime may no longer be open.
+   simulator/device. Home simplification, single-Home-tab navigation, onboarding
+   header spacing, the auth selection's bottom CTA/account link, and the mascot
+   were checked on the current iPhone 17 simulator after a native dev-client
+   rebuild. The iPhone 17 also showed the auth page holding the static
+   blue/yellow theme after the latest change. Metro's nested encoded font path
+   caused the iOS dev-client `ENOENT`; the new asset plugin rewrites local TTFs
+   to direct asset paths. Remaining migration checks are open.
 8. **SwiftUI:** SwiftUI migration was discussed only. The current mobile app is
    Expo/React Native; no SwiftUI rewrite was started or approved.
+9. **Auth mascot:** replace the current “Idle → Wakes” test clip with the final
+   mascot asset/direction when the user provides it.
+10. **Onboarding verification:** the latest iPhone 17 simulator capture still
+    shows borderless, vertically stacked choices and a text-only Continue
+    control, although the current source has bordered rows and a full-width
+    button. Reload the development client when the simulator is available, then
+    verify selected states, back-navigation, summary, and reminder paths. The
+    Settings screen's Study Reminders switch remains local-only.
 
 ## Development and validation
 
@@ -441,6 +490,295 @@ is pre-existing rather than silently broadening scope.
 Add one short dated entry after each engineering task. Include the user goal,
 important files/areas changed, exact validation performed, and any remaining
 action. Do not include unrelated personal information or secrets.
+
+### 2026-11-15 — Build learning-preference onboarding
+
+- Replaced the blank onboarding entry with the learning-goals, explanation,
+  study-challenges, daily-goal, personalized-summary, and optional-reminder
+  screens. Connected answer persistence to signup and authenticated profiles,
+  and gated notification registration on explicit reminder opt-in.
+- Added a focused handler test covering authenticated onboarding profile
+  persistence. Updated the mobile route documentation.
+- Validation: student-app TypeScript check, Go handler tests, and iOS Expo
+  export passed. `git diff --check` passed. Targeted ESLint on the onboarding
+  routes and related files reported zero errors and 56 warnings; a broader
+  targeted run still reports the existing `login.tsx` state-in-effect error.
+  Simulator interaction was interrupted, so the onboarding screens remain
+  visually unverified.
+
+### 2026-11-15 — Refine onboarding selection layout
+
+- Removed decorative option icons and tightened the choice rows into separate
+  bordered cards. The question and choices now bottom-align below the top
+  progress bar; selection uses a gray border by default and a blue border/check
+  when selected. The enabled Continue action is a full-width yellow button with
+  blue text.
+- Validation: TypeScript, targeted ESLint, iOS Expo export, `git diff --check`,
+  and the Impeccable layout detector passed. Expo export continues to show the
+  existing expo-superwall resolution warning. A follow-up simulator capture
+  still showed the previous choice and Continue styling; a reload attempt was
+  blocked by the simulator's focus guard, so runtime visual confirmation is
+  still open.
+
+### 2026-11-15 — Hold auth selection on blue and yellow
+
+- Removed the 800ms headline color/font loop and its focus, app-state, and
+  reduced-motion scheduling. The auth screen now stays on the blue `#0057B8`
+  and yellow `#FFDF00` Bungee theme from the supplied screenshot; the mascot
+  animation remains.
+- Validation: student-app TypeScript check and iOS Expo export passed; targeted
+  ESLint had zero errors and three existing unused legal-link warnings.
+  `git diff --check` passed, and no headline-cycle logic remains. The Expo export
+  still reports the existing expo-superwall resolution warning. The iPhone 17
+  simulator showed the static blue/yellow screen and mascot.
+
+### 2026-11-15 — Replace onboarding flow with blank start
+
+- Routed “Get started” to a blank, theme-aware onboarding start screen, removed
+  the old multi-step routes and their now-unused shared components, and removed
+  the obsolete settings replay entry. Updated the auth guard and mobile route
+  documentation.
+- Validation: student-app TypeScript check and iOS Expo export passed; targeted
+  ESLint had zero errors and 34 existing warnings. Including settings exposed
+  its pre-existing `react-hooks/set-state-in-effect` error at `settings.tsx:90`.
+  `git diff --check` passed, and no references to the deleted routes or
+  components remained in app source.
+
+### 2026-11-14 — Fix Metro font asset requests
+
+- Fixed the nested encoded font asset URL that caused the iOS dev-client
+  `ENOENT` and left the app on its splash screen. A Metro asset plugin now
+  rewrites only TTFs in `assets/fonts` to direct asset paths; other assets are
+  unchanged.
+- Validation: plugin assertions passed; a fresh iOS dev bundle used direct
+  paths for all eight fonts and all eight asset requests returned HTTP 200;
+  TypeScript, targeted ESLint, iOS Expo export, and `git diff --check` passed.
+  The simulator later returned to auth-select; the headline-size visual check
+  is recorded below.
+
+### 2026-11-15 — Fit Pacifico auth headline
+
+- Reduced only the Pacifico theme's headline size from 40 to 34 so its script
+  lettering has more room inside the existing highlight.
+- Validation: student-app TypeScript check passed; targeted ESLint had no errors
+  (three existing unused legal-link warnings); `git diff --check` passed. The
+  simulator was inspected on the Bodoni theme; Pacifico's green theme still
+  needs a visual fit check.
+
+### 2026-11-15 — Match auth page to headline colors
+
+- Made the full auth-selection background follow the headline's color cycle and
+  matched the intro, CTA, account prompt, and status-bar style to each theme for
+  contrast.
+- Validation: student-app TypeScript check passed; targeted ESLint had no errors
+  (three existing unused legal-link warnings); `git diff --check` passed. The
+  iPhone 17 screenshot showed the blue/yellow theme; other cycle states remain
+  to be visually checked.
+
+### 2026-11-14 — Cycle auth headline colors and fonts
+
+- Added five high-contrast headline color/font themes that switch together every
+  800ms. The cycle pauses when auth-select loses focus, the app backgrounds, or
+  Reduce Motion is enabled. Added Bungee, Comic Neue, Bodoni Moda, and Pacifico
+  font assets with their SIL Open Font License files.
+- Validation: student-app TypeScript check passed; targeted ESLint had no errors
+  (three existing unused legal-link warnings in auth-select and warnings in
+  app/_layout.tsx); `git diff --check` passed for the changed UI files; the iOS
+  Expo export succeeded and included all four new fonts; the generated Metro
+  `unstable_path` requests for those assets returned HTTP 200; each color pair's
+  contrast exceeds 5:1. The iPhone 17 Simulator remains at the dev-client
+  launcher, so the animated screen still needs a visual review.
+
+### 2026-11-14 — Add auth-selection mascot test animation
+
+- Added the supplied “Idle → Wakes” clip above the auth headline using the
+  maintained `@masko/player-react-native` Expo module. The player uses the
+  transparent HEVC file on iOS and stacked MP4 on Android, mutes audio, respects
+  Reduce Motion, and pauses when offscreen/backgrounded. The deprecated
+  `expo-transparent-video` package was not added.
+- Validation: student-app TypeScript check passed; targeted ESLint had no errors
+  (three existing unused legal-link warnings); iOS and Android Expo autolinking
+  resolved the Masko module; `git diff --check` passed. The iOS dev-client build
+  succeeded, installed, and launched on iPhone 17; the auth screen showed the
+  mascot and no unimplemented native-view error. Android was autolink-checked
+  only; native build/device review remains open.
+
+### 2026-11-14 — Migrate app typography to Satoshi
+
+- Routed app-owned React Native `Text` and `TextInput` usage through shared
+  Satoshi-aware wrappers across 48 files. The wrappers map weight styles to
+  static Satoshi faces and remove generic font weights when a Satoshi face is
+  selected, while preserving explicit families and monospaced text.
+- Validation: `cd student-app && npx tsc --noEmit`, targeted ESLint for the
+  shared font resolver and wrappers, and `git diff --check` passed. The iPhone 17
+  screen was inspected, but a reload after the final weight-resolution change
+  was blocked by the computer-use focus guard; fresh visual confirmation remains
+  open.
+
+### 2026-11-14 — Remove onboarding header gap
+
+- Hid the blank nested stack header on the auth selection screen only; the
+  screen's safe-area padding and headers on other onboarding routes are
+  unchanged.
+- Validation: student-app TypeScript check passed; targeted ESLint reported no
+  errors and four warnings in `auth-select.tsx`; layout detector returned no
+  findings; `git diff --check` passed. The iPhone 17 simulator confirmed the
+  white gap is gone.
+
+### 2026-11-14 — Simplify auth selection screen
+
+- Replaced the carousel, onboarding copy, and legal footer with a white screen
+  containing uniformly styled Google, Apple (iOS only), and Email buttons.
+  Buttons use `#007AFF` with a `#FFDF00` accent and retain their existing actions.
+- Validation: student-app TypeScript check, targeted ESLint, layout detector,
+  and `git diff --check` passed; the iPhone 17 simulator showed the three
+  buttons on the white screen.
+
+### 2026-11-14 — Replace auth choices with Get started
+
+- Replaced the provider buttons with one "Get started" button that opens the
+  existing `/signup` flow.
+- Validation: student-app TypeScript check and targeted ESLint passed; layout
+  detector returned no findings; `git diff --check` passed; iPhone 17 simulator
+  confirmed the single CTA on white.
+
+### 2026-11-14 — Move Get started to bottom
+
+- Anchored the auth selection CTA to the bottom of its white screen while
+  preserving safe-area spacing.
+- Validation: student-app TypeScript check and targeted ESLint passed; layout
+  detector returned no findings; `git diff --check` passed; iPhone 17 simulator
+  confirmed the bottom placement.
+
+### 2026-11-14 — Narrow CTA and add login link
+
+- Narrowed the bottom CTA and added a text-only existing-account prompt linking
+  to `/login`. Used the accessible blue text token for the link; kept yellow as
+  the CTA's signature shadow accent rather than low-contrast text on white.
+- Validation: student-app TypeScript check and targeted ESLint passed; layout
+  detector returned no findings; `git diff --check` passed; iPhone 17 simulator
+  confirmed the narrower button and text link.
+
+### 2026-11-14 — Add auth legal notice
+
+- Added the requested subdued Terms of Use and Privacy Notice links beneath the
+  Get started and Log in actions; the bottom-anchored group raises the actions to
+  make room.
+- Validation: student-app TypeScript check and targeted ESLint passed; layout
+  detector returned no findings; `git diff --check` passed. Simulator review of
+  this latest legal notice remains open because computer-use access was not
+  approved.
+
+### 2026-11-14 — Fix auth legal wrapping and link targets
+
+- Kept “Privacy Notice” together by separating the legal sentence from a row of
+  links, and gave the Log in, Terms of Use, and Privacy Notice links at least
+  44-point touch targets without adding visible button styling.
+- Validation: student-app TypeScript check and targeted ESLint passed; layout
+  detector returned no findings; `git diff --check` passed. Simulator review
+  remains open because computer-use access was not approved.
+
+### 2026-11-14 — Tighten auth legal spacing
+
+- Aligned legal-link labels to the start of their 44-point touch targets so the
+  Terms row sits closer to the disclosure text without shrinking hit areas.
+- Validation: student-app TypeScript check and targeted ESLint passed; layout
+  detector returned no findings; `git diff --check` passed. Simulator review
+  remains open because computer-use access was not approved.
+
+### 2026-11-14 — Apply Satoshi to auth selection
+
+- Added Fontshare Satoshi Regular, Medium, and Bold TTF assets; preloaded them
+  with the existing Expo font loader and applied them only to the auth-select
+  screen.
+- Validation: student-app TypeScript check passed; targeted ESLint reported no
+  errors (34 warnings across the two targeted files); type detector returned no
+  findings; iOS Expo export succeeded with an existing expo-superwall resolution
+  warning; `git diff --check` passed. The user-provided simulator screenshot
+  showed the font applied.
+
+### 2026-11-14 — Bold Get started label
+
+- Added the Satoshi Black weight and applied it to the Get started button label.
+- Validation: student-app TypeScript check passed; targeted ESLint reported no
+  errors (34 warnings across the two targeted files); type detector returned no
+  findings; `git diff --check` passed; iOS Expo export succeeded with the
+  expo-superwall resolution warning. A post-change simulator review was not
+  performed.
+
+### 2026-11-14 — Add auth-selection headline
+
+- Added “Turn pages into” in Satoshi Bold and “BRIGHT iDEAS” in Satoshi Black
+  above the CTA, with blue text on a yellow highlight for contrast. Kept the
+  white area above open for the planned animated mascot.
+- Validation: student-app TypeScript check passed; targeted ESLint reported no
+  errors and three existing unused legal-link warnings; Impeccable type scan
+  returned no findings; iPhone 17 Simulator confirmed the headline placement.
+
+### 2026-11-14 — Refine auth headline weight and spacing
+
+- Kept “BRIGHT IDEAS” blue on yellow, changed its face to Satoshi Bold, and
+  increased the gap below the headline group to 36 points. Both headline lines
+  remain enlarged.
+- Validation: student-app TypeScript check passed; targeted ESLint reported no
+  errors and three existing unused legal-link warnings; Impeccable type scan
+  returned no findings; iPhone 17 Simulator showed the larger headline and
+  increased spacing.
+
+### 2026-11-14 — Strengthen auth headline weight
+
+- Switched “BRIGHT IDEAS” to the heavier Satoshi Black face while retaining blue
+  lettering on the yellow highlight, 40/48 sizing, and 36-point CTA spacing.
+- Validation: student-app TypeScript check passed; targeted ESLint reported no
+  errors and three existing unused legal-link warnings; Impeccable type scan
+  returned no findings; iPhone 17 Simulator was reviewed; `git diff --check`
+  passed.
+
+### 2026-11-14 — Reduce Home to its header and prompt
+
+- Removed the study-tool shortcuts from Home so only the greeting/streak header
+  and "Need help studying today?" prompt remain. Hid Chat alongside History in
+  the tab bar, leaving Home as the only visible tab; route and feature code is
+  retained.
+- Updated the student-app route/capability notes.
+- Validation: student-app TypeScript check and targeted ESLint passed;
+  `git diff --check` passed; the iPhone 17 simulator showed only the requested
+  Home content and tab.
+
+### 2026-11-13 — Remove Home tasks and hide History navigation
+
+- Removed the Home daily-goal/task UI and generation/completion logic, including
+  its service and unused API fetches. Kept quiz and flashcard history writes and
+  the history screens in code, but hid History from the primary tabs and removed
+  account shortcuts that would navigate to those hidden routes.
+- Updated the student-app route/capability notes.
+- Validation: student-app TypeScript check passed; targeted ESLint reported no
+  errors and eight warnings in `account.tsx`; `git diff --check` passed and the
+  Impeccable detector returned no findings. The simulator confirmed the Home
+  task/goal UI and History tab are absent.
+
+### 2026-11-12 — Remove Pro upsell from Home
+
+- Removed the Skeeme Pro promotion from the Home dashboard and tightened the
+  goal-to-tools layout. Reworked the three study actions as compact blue-backed
+  shortcuts and made goal/streak taps scroll to the measured task section rather
+  than a fixed offset.
+- Validation: `cd student-app && ./node_modules/.bin/tsc --noEmit` passed;
+  targeted ESLint reported no errors and two existing warnings (unused `width`
+  and animation hook dependencies); `git diff --check` passed. The user's
+  simulator screenshot was reviewed to add more space above Daily Goal.
+- No app build or release was produced. Fresh device/simulator review remains
+  open under Visual migration.
+
+### 2026-11-12 — Restore Home content and space the goal card
+
+- The user's simulator capture showed the dashboard content missing and the
+  Daily Goal card too close to the headline. Removed the delayed opacity
+  animation from the full content section, added explicit top spacing to the
+  goal card, and retained generous hero bottom padding.
+- Validation: `cd student-app && ./node_modules/.bin/tsc --noEmit` passed;
+  targeted ESLint reported no errors and one existing unused-`width` warning;
+  `git diff --check` passed. No fresh native simulator capture was completed.
 
 ### 2026-11-08 — Add iOS yearly discount follow-up draft
 

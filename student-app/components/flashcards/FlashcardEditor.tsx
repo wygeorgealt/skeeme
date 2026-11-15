@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
-import { 
-    Pressable, 
-    View,
-    Text,
-    TextInput,
-    ActivityIndicator,
-    ScrollView,
-} from 'react-native';
+import { Pressable, View, ActivityIndicator, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
+import { Text } from '@/components/ui/Text';
+import { TextInput } from '@/components/ui/TextInput';
 
 interface Props {
     onGenerate: (data: { topic?: string; count: number; contentFocus: string[]; mode: 'topic' | 'file' }) => Promise<void>;

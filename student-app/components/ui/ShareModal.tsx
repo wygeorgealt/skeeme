@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TouchableWithoutFeedback, Alert } from 'react-native';
+import { View, StyleSheet, Modal, TouchableOpacity, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Colors } from '@/constants/theme';
 import Share from '@/assets/icons/pikaicons/send-plane-horizontal.svg';
 import Dislike from '@/assets/icons/pikaicons/minus-circle.svg'; // Using Dislike/Like or just an icon for Feedback
 
 import { useRouter } from 'expo-router';
+import { Text } from '@/components/ui/Text';
 
 interface ShareModalProps {
     visible: boolean;

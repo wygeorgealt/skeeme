@@ -3,14 +3,14 @@ import { Platform, Appearance } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as FileSystem from 'expo-file-system/legacy';
 
-import { User, PricingConfig } from '@/types';
+import { User, PricingConfig, OnboardingData } from '@/types';
 import { posthog } from '@/lib/posthog';
 
 interface AuthState {
     user: User | null;
     token: string | null;
     isLoading: boolean;
-    login: (user: User, token: string) => void;
+    login: (user: User, token: string) => Promise<void>;
     updateUser: (user: Partial<User>) => void;
     logout: () => void;
     hydrate: () => Promise<void>;
@@ -21,12 +21,12 @@ interface AuthState {
     fetchPricingConfig: () => Promise<void>;
     // Onboarding
     onboardingStep: number;
-    onboardingData: Record<string, any>;
+    onboardingData: OnboardingData;
     storedEmail: string | null;
     onboardingComplete: boolean;
     onboardingJustCompleted: boolean;
     setOnboardingStep: (step: number) => Promise<void>;
-    setOnboardingData: (data: Record<string, any>) => Promise<void>;
+    setOnboardingData: (data: Partial<OnboardingData>) => Promise<void>;
     completeOnboarding: () => Promise<void>;
     clearOnboardingJustCompleted: () => void;
     devReset: () => Promise<void>;
@@ -127,7 +127,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     hapticsEnabled: true,
     globalError: null,
     connectionState: 'online',
-    notificationsEnabled: true,
+    notificationsEnabled: false,
     shouldAskForReview: false,
     showEnjoyReviewModal: false,
 
@@ -210,23 +210,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             onboardingStep: 0,
             onboardingData: {},
             storedEmail: null,
+            notificationsEnabled: false,
         });
         try {
             await standardStorage.deleteItem('onboarding_complete');
             await standardStorage.deleteItem('onboarding_step');
             await standardStorage.deleteItem('onboarding_data');
             await standardStorage.deleteItem('stored_email');
+            await standardStorage.deleteItem('notifications_enabled');
             await standardStorage.deleteItem('auth_user');
             await secureStorage.deleteItem('auth_token');
         } catch (e) {}
     },
 
     login: async (user, token) => {
-        // Keep onboardingComplete until the onboarding flow explicitly finishes.
-        // Hydration/guards will read persisted flags once available.
-        set({ user, token, onboardingComplete: false });
+        const current = get();
+        const savedAnswers = user.ai_preferences?.onboarding_answers;
+        const onboardingComplete =
+            !!savedAnswers?.learning_goals?.length &&
+            !!savedAnswers.explanation_preference &&
+            !!savedAnswers.study_challenges?.length &&
+            !!savedAnswers.daily_goal;
+        const localReminderChoice = current.onboardingData.reminder_enabled;
+        const notificationsEnabled =
+            typeof localReminderChoice === 'boolean'
+                ? localReminderChoice
+                : savedAnswers?.reminder_enabled === true;
+
+        set({ user, token, onboardingComplete, notificationsEnabled });
         try {
-            await standardStorage.setItem('onboarding_complete', 'true');
+            await standardStorage.setItem('onboarding_complete', String(onboardingComplete));
+            await standardStorage.setItem('notifications_enabled', String(notificationsEnabled));
             await secureStorage.setItem('auth_token', token);
             await standardStorage.setItem('auth_user', JSON.stringify(user));
             try {
@@ -254,10 +268,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     },
 
     logout: async () => {
-        set({ user: null, token: null });
+        set({
+            user: null,
+            token: null,
+            notificationsEnabled: false,
+            onboardingComplete: false,
+            onboardingStep: 0,
+            onboardingData: {},
+        });
         try {
             await secureStorage.deleteItem('auth_token');
             await standardStorage.deleteItem('auth_user');
+            await standardStorage.deleteItem('notifications_enabled');
+            await standardStorage.deleteItem('onboarding_complete');
+            await standardStorage.deleteItem('onboarding_step');
+            await standardStorage.deleteItem('onboarding_data');
             try { posthog.reset(); } catch (e) { /* ignore */ }
         } catch (e) {
             if (__DEV__) console.error('Failed to clear auth state', e);
@@ -304,13 +329,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 const obComplete = await standardStorage.getItem('onboarding_complete');
                 const obStep = await standardStorage.getItem('onboarding_step');
                 const obData = await standardStorage.getItem('onboarding_data');
+                const notificationPreference = await standardStorage.getItem('notifications_enabled');
 
                 set({
                     token,
                     user,
                     theme: themeStr || 'system',
                     hapticsEnabled: haptics === null ? true : haptics === 'true',
-                    notificationsEnabled: (await standardStorage.getItem('notifications_enabled')) !== 'false',
+                    notificationsEnabled:
+                        notificationPreference === null
+                            ? user.ai_preferences?.onboarding_answers?.reminder_enabled === true
+                            : notificationPreference === 'true',
                     onboardingComplete: obComplete === 'true',
                     onboardingStep: obStep ? parseInt(obStep, 10) : 0,
                     onboardingData: obData ? JSON.parse(obData) : {},
@@ -357,11 +386,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 const obData = await standardStorage.getItem('onboarding_data');
                 const savedEmail = await standardStorage.getItem('stored_email');
                 const haptics = await standardStorage.getItem('haptics_enabled');
+                const notificationPreference = await standardStorage.getItem('notifications_enabled');
  
                 set({
                     theme: themeStr || 'system',
                     hapticsEnabled: haptics === null ? true : haptics === 'true',
-                    notificationsEnabled: (await standardStorage.getItem('notifications_enabled')) !== 'false',
+                    notificationsEnabled: notificationPreference === 'true',
                     onboardingComplete: obComplete === 'true',
                     onboardingStep: obStep ? parseInt(obStep, 10) : 0,
                     onboardingData: obData ? JSON.parse(obData) : {},

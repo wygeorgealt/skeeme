@@ -1,4 +1,4 @@
-import { Pressable, Text, View, ActivityIndicator, TextInput, SectionList, RefreshControl, Platform, Alert, StyleSheet } from 'react-native';
+import { Pressable, View, ActivityIndicator, SectionList, RefreshControl, Platform, Alert, StyleSheet } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,8 @@ import { Colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { saveOfflineQuiz, saveOfflineDeck, isQuizSaved, isDeckSaved } from '@/lib/offlineSaved';
 import { formatTopicTitle } from '@/lib/formatTopicTitle';
+import { Text } from '@/components/ui/Text';
+import { TextInput } from '@/components/ui/TextInput';
 
 type QuizSession = {
     id: number;

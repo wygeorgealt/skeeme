@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Pressable, View, Text, ScrollView } from 'react-native';
+import { Pressable, View, ScrollView } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { MathText, formatMathPlainText } from '@/components/ui/MathText';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
+import { Text } from '@/components/ui/Text';
 
 interface AiSummaryViewProps {
   title: string;

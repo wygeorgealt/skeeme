@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Pressable, ScrollView, Alert, Animated, StyleSheet, Modal, Platform, BackHandler } from 'react-native';
+import { View, TouchableOpacity, Pressable, ScrollView, Alert, Animated, StyleSheet, Modal, Platform, BackHandler } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import ReanimatedAnimated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
@@ -38,6 +38,8 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { GlassSurface } from '@/components/liquid-glass/GlassSurface';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import Svg, { Circle } from 'react-native-svg';
+import { Text } from '@/components/ui/Text';
+import { TextInput } from '@/components/ui/TextInput';
 
 // ── SKELETON COMPONENTS ──────────────────────────────────────────────────────
 const SkeletonCard = ({ isDark }: { isDark: boolean }) => {

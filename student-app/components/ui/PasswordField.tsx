@@ -1,9 +1,10 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, useColorScheme, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { View, TouchableOpacity, useColorScheme, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native';
 import { Colors } from '@/constants/theme';
 import Eye from '@/assets/icons/pikaicons/photo-image-default.svg';
 import EyeClosed from '@/assets/icons/pikaicons/lock-close.svg';
+import { TextInput } from '@/components/ui/TextInput';
 
 interface PasswordFieldProps {
     value: string;

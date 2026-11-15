@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useEffect, useCallback } from 'react';
-import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useColorScheme, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useColorScheme, StyleSheet } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
@@ -13,6 +13,7 @@ import { Colors, Spacing, FontSize, Radius } from '@/constants/theme';
 import CloseCircle from '@/assets/icons/pikaicons/multiple-cross-cancel-circle.svg';
 
 import { StatusBar } from 'expo-status-bar';
+import { TextInput } from '@/components/ui/TextInput';
 
 export default function LoginScreen() {
     const scheme = useColorScheme();
@@ -72,7 +73,7 @@ export default function LoginScreen() {
                 device_name: `${Platform.OS}_app`,
             });
             const { token, user } = response.data;
-            login(user, token);
+            await login(user, token);
             setFailedAttempts(0);
             setLockoutTimeLeft(0);
             router.replace('/(drawer)/(tabs)');
@@ -195,7 +196,7 @@ export default function LoginScreen() {
                     </Animated.View>
 
                     <Animated.View key={`signup-${animKey}`} entering={FadeInDown.delay(320).duration(400)}>
-                        <TouchableOpacity onPress={() => router.push('/signup')} style={s.signupRow}>
+                        <TouchableOpacity onPress={() => router.push('/(onboarding)/start')} style={s.signupRow}>
                             <Text style={[s.signupText, { color: C.textSecondary }]}>
                                 New to Skeeme?{' '}
                                 <Text style={[s.signupText, { color: C.primary, fontWeight: '700' }]}>Create account</Text>

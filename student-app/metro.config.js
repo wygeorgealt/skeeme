@@ -11,6 +11,10 @@ module.exports = (() => {
 
   config.transformer = {
     ...transformer,
+    assetPlugins: [
+      ...(transformer.assetPlugins ?? []),
+      require.resolve("./metro-font-asset-path-plugin"),
+    ],
     babelTransformerPath: require.resolve("react-native-svg-transformer/expo")
   };
   config.resolver = {

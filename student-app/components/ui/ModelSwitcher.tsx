@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'expo-router';
+import { Text } from '@/components/ui/Text';
 export type ProviderType = 'deepseek' | 'anthropic';
 
 interface ModelSwitcherProps {

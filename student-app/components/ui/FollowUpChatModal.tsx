@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, StyleSheet, KeyboardAvoidingView, Platform, useColorScheme, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, ScrollView, Modal, StyleSheet, KeyboardAvoidingView, Platform, useColorScheme, ActivityIndicator } from 'react-native';
 import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 import AltArrowRight from '@/assets/icons/pikaicons/arrow-right.svg';
 import { streamScanFollowUpChat } from '@/lib/aiStream';
@@ -7,6 +7,8 @@ import { Colors } from '@/constants/theme';
 import { ScanResult } from '@/lib/scanner';
 import { MathText } from '@/components/ui/MathText';
 import Animated, { FadeIn, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { Text } from '@/components/ui/Text';
+import { TextInput } from '@/components/ui/TextInput';
 
 interface Message {
     role: 'user' | 'assistant';

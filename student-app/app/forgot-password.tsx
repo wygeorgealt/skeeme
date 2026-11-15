@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { useCallback, useState } from 'react';
-import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, useColorScheme, StyleSheet, ScrollView } from 'react-native';
+import { View, TouchableOpacity, KeyboardAvoidingView, Platform, useColorScheme, StyleSheet, ScrollView } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 import { StatusBar } from 'expo-status-bar';
@@ -10,6 +10,7 @@ import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { TextInput } from '@/components/ui/TextInput';
 
 export default function ForgotPasswordScreen() {
     const [animKey, setAnimKey] = useState(0);

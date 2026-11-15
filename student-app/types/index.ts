@@ -27,7 +27,9 @@ export interface User {
         analogy_focus?: string;
         academic_goal?: string;
         custom_weakness?: string;
+        onboarding_answers?: OnboardingAnswers;
     };
+    notifications_enabled?: boolean;
     avatar?: string;
     avatar_url?: string;
     study_sessions_this_week?: number;
@@ -37,6 +39,52 @@ export interface User {
         title: string;
         exam_date: string;
     } | null;
+}
+
+export type LearningGoal =
+    | 'understand_difficult_topics'
+    | 'clear_study_notes'
+    | 'prepare_for_exams'
+    | 'remember_learning'
+    | 'test_knowledge'
+    | 'make_studying_easier';
+
+export type ExplanationPreference =
+    | 'simple'
+    | 'step_by_step'
+    | 'real_life_examples'
+    | 'detailed'
+    | 'mixture';
+
+export type StudyChallenge =
+    | 'understanding_concepts'
+    | 'remembering_reading'
+    | 'staying_focused'
+    | 'knowing_where_to_start'
+    | 'exam_preparation'
+    | 'managing_study_time';
+
+export type DailyGoal = '5' | '10' | '15' | '20' | '30' | 'flexible';
+export type ReminderChoice = 'morning' | 'afternoon' | 'evening' | 'custom' | 'none';
+
+export interface OnboardingAnswers {
+    learning_goals: LearningGoal[];
+    explanation_preference: ExplanationPreference;
+    study_challenges: StudyChallenge[];
+    daily_goal: DailyGoal;
+    reminder_choice: ReminderChoice;
+    reminder_enabled: boolean;
+    reminder_time?: string;
+}
+
+export interface OnboardingData extends Partial<OnboardingAnswers> {
+    onboarding_flow_completed?: boolean;
+    education_level?: string;
+    field_of_study?: string;
+    learning_style?: string;
+    dob_month?: string | number;
+    dob_year?: string | number;
+    age?: number;
 }
 
 export interface StreakMilestone {

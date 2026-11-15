@@ -1,10 +1,11 @@
 import React from 'react';
-import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import { Pressable, View, type TextStyle, type ViewStyle } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { haptics } from '@/lib/haptics';
 import { Icon } from './Icon';
+import { Text } from '@/components/ui/Text';
 
 export interface ScreenHeaderProps {
   title: string | React.ReactNode;

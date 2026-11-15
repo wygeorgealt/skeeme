@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, useColorScheme, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard, useColorScheme, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -14,6 +14,8 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import RevenueCatUI from 'react-native-purchases-ui';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
+import { TextInput } from '@/components/ui/TextInput';
+import type { TextInput as RNTextInput } from 'react-native';
 
 /* Animated re-trigger on focus */
 
@@ -40,7 +42,7 @@ export default function OtpScreen() {
     const [resendSuccess, setResendSuccess] = useState('');
     const [focusedIndex, setFocusedIndex] = useState(0);
 
-    const inputs = useRef<Array<TextInput | null>>([]);
+    const inputs = useRef<Array<RNTextInput | null>>([]);
 
     useEffect(() => {
         if (!email || !type) {
@@ -112,7 +114,11 @@ export default function OtpScreen() {
                 const { user: authedUser, token: authToken } = verifyRes.data;
                 const { login } = useAuthStore.getState();
                 await login(authedUser, authToken);
-                router.replace('/(drawer)/(tabs)');
+                router.replace(
+                    useAuthStore.getState().onboardingComplete
+                        ? '/(drawer)/(tabs)'
+                        : '/(onboarding)/start',
+                );
 
             } else {
                 router.replace(`/new-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`);

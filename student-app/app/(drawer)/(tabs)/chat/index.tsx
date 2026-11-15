@@ -1,20 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  Pressable,
-  TouchableOpacity,
-  View,
-  Text,
-  TextInput,
-  ScrollView,
-  Platform,
-  KeyboardAvoidingView,
-  Alert,
-  Image,
-  Modal,
-  Dimensions,
-  StyleSheet,
-  Animated as RNAnimated,
-} from 'react-native';
+import { Pressable, TouchableOpacity, View, ScrollView, Platform, KeyboardAvoidingView, Alert, Image, Modal, Dimensions, StyleSheet, Animated as RNAnimated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -42,6 +27,8 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+import { Text } from '@/components/ui/Text';
+import { TextInput } from '@/components/ui/TextInput';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

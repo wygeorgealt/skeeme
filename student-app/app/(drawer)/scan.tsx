@@ -1,16 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Pressable, 
-    View,
-    Text,
-    TouchableOpacity,
-    ScrollView,
-    StyleSheet,
-    Dimensions,
-    Alert,
-    Platform,
-    TextInput,
-    ActivityIndicator,
-} from 'react-native';
+import { Pressable, View, TouchableOpacity, ScrollView, StyleSheet, Dimensions, Alert, Platform, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
@@ -36,6 +25,8 @@ import { scannerService, ScanResult } from '@/lib/scanner';
 import { haptics } from '@/lib/haptics';
 import { MathText } from '@/components/ui/MathText';
 import { appStorage } from '@/lib/storage';
+import { Text } from '@/components/ui/Text';
+import { TextInput } from '@/components/ui/TextInput';
 
 const { width } = Dimensions.get('window');
 

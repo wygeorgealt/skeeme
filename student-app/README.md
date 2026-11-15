@@ -15,28 +15,31 @@ student-app/
 │   ├── otp.tsx                 # One-time passcode verification
 │   ├── forgot-password.tsx     # Password recovery
 │   ├── paywall.tsx             # Monetization & upgrade screen
-│   ├── (onboarding)/           # Multi-step personalization onboarding flow
-│   │   ├── name.tsx            # Student name input
-│   │   ├── education.tsx       # Educational tier selection
-│   │   ├── field.tsx           # Study subject & field
-│   │   ├── goal.tsx            # Academic target / exam preparation
-│   │   ├── style.tsx           # Learning style preferences
-│   │   ├── tone.tsx            # AI persona & tutor tone
-│   │   └── exam-date.tsx       # Exam countdown setup
-│   └── (drawer)/               # Main application navigation drawer
-│       ├── _layout.tsx         # Drawer layout & navigation menu
-│       ├── index.tsx           # Home dashboard & daily study activity
+│   ├── (onboarding)/           # Auth selection and learning preferences
+│   │   ├── auth-select.tsx     # Auth entry screen
+│   │   ├── start.tsx           # Learning goals
+│   │   ├── explanation-preferences.tsx
+│   │   ├── study-challenges.tsx
+│   │   ├── daily-goal.tsx
+│   │   ├── personalized-plan.tsx
+│   │   └── reminders.tsx       # Optional daily reminder setup
+│   └── (drawer)/               # Main application routes
+│       ├── _layout.tsx         # Authenticated app layout
+│       ├── (tabs)/             # Home visible; Chat and History are hidden
+│       │   ├── _layout.tsx     # Native tab navigation
+│       │   ├── index.tsx       # Home dashboard & study tools
+│       │   ├── chat/           # Retained AI tutor route, hidden from navigation
+│       │   └── history/        # Retained history screens, hidden from navigation
 │       ├── scan.tsx            # Camera / photo problem solver
-│       ├── chat.tsx            # Interactive AI tutor chat (SSE streaming)
 │       ├── generate.tsx        # Quiz & summary generation studio
 │       ├── flashcards/         # Spaced repetition flashcard decks & review
-│       ├── history/            # Quiz & problem-solving history
 │       ├── exams.tsx           # Upcoming exams countdown tracker
 │       ├── summary.tsx         # Lecture & document summary viewer
 │       ├── referral.tsx        # Invite code sharing
 │       └── settings.tsx        # User settings & profile
 ├── assets/                     # App icons, SVG illustrations, splash screens
 ├── components/                 # Reusable UI components (LatexRenderer, Modals, Buttons)
+│   └── onboarding/             # Shared question shell, choices, and content
 ├── constants/                  # Color palettes, typography, theme definitions
 ├── hooks/                      # Custom React hooks (camera, network, audio/haptics)
 ├── lib/                        # Core utilities & service clients
@@ -57,6 +60,11 @@ student-app/
 ├── tailwind.config.js          # Tailwind CSS styling configuration
 └── tsconfig.json               # TypeScript compiler options
 ```
+
+Home now contains only the greeting/streak header and the "Need help studying
+today?" prompt. Daily tasks and the daily-goal feature are removed. Chat and
+History screens remain in code but are hidden from navigation; quiz/flashcard
+history saving continues.
 
 ---
 

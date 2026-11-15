@@ -11,6 +11,7 @@ export const unstable_settings = {
 export default function DrawerLayout() {
     const user = useAuthStore((s) => s.user);
     const token = useAuthStore((s) => s.token);
+    const notificationsEnabled = useAuthStore((s) => s.notificationsEnabled);
     const onboardingComplete = useAuthStore((s) => s.onboardingComplete);
     const onboardingJustCompleted = useAuthStore((s) => s.onboardingJustCompleted);
     const clearOnboardingJustCompleted = useAuthStore((s) => s.clearOnboardingJustCompleted);
@@ -51,12 +52,12 @@ export default function DrawerLayout() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (token) {
+            if (token && user && notificationsEnabled) {
                 registerForPushNotificationsAsync(token).catch(() => {});
             }
         }, 500);
         return () => clearTimeout(timer);
-    }, [token]);
+    }, [token, user, notificationsEnabled]);
 
     return (
         <>

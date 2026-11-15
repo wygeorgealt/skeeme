@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, ScrollView, Alert, Image } from 'react-native';
+import { View, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, ScrollView, Alert, Image } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -21,6 +21,7 @@ import { Text } from '@/components/ui/Text';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { GlassSurface } from '@/components/liquid-glass/GlassSurface';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TextInput } from '@/components/ui/TextInput';
 
 export default function SupportScreen() {
     const router = useRouter();

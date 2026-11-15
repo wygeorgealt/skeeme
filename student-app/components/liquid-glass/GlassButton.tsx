@@ -1,6 +1,7 @@
 import { Icon } from '@/components/ui/Icon';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import type { GlassButtonVariant } from './types';
+import { Text } from '@/components/ui/Text';
 
 interface Props {
   label?: string;

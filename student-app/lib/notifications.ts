@@ -34,6 +34,55 @@ if (Notifications) {
     }
 }
 
+export type ReminderPermission = 'granted' | 'denied' | 'unsupported';
+
+export async function scheduleDailyLearningReminder(
+    hour: number,
+    minute: number,
+): Promise<ReminderPermission> {
+    if (isAndroidExpoGo || !Notifications) return 'unsupported';
+
+    const currentPermission = await Notifications.getPermissionsAsync();
+    const permission =
+        currentPermission.status === 'granted'
+            ? currentPermission
+            : await Notifications.requestPermissionsAsync();
+    if (permission.status !== 'granted') return 'denied';
+
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notification of scheduled) {
+        if (notification.content.data?.kind === 'daily-learning-reminder') {
+            await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+        }
+    }
+
+    await Notifications.scheduleNotificationAsync({
+        content: {
+            title: 'A little learning goes a long way',
+            body: 'Ready for a quick study session?',
+            data: { kind: 'daily-learning-reminder' },
+        },
+        trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DAILY,
+            hour,
+            minute,
+        },
+    });
+
+    return 'granted';
+}
+
+export async function cancelDailyLearningReminder(): Promise<void> {
+    if (isAndroidExpoGo || !Notifications) return;
+
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notification of scheduled) {
+        if (notification.content.data?.kind === 'daily-learning-reminder') {
+            await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+        }
+    }
+}
+
 /**
  * Register for push notifications and sync with the backend.
  */

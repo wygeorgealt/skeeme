@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import { useState, useCallback } from 'react';
-import { View, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useColorScheme, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useColorScheme, StyleSheet } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
@@ -15,6 +15,30 @@ import AltArrowLeft from '@/assets/icons/pikaicons/arrow-left.svg';
 import { StatusBar } from 'expo-status-bar';
 import { posthog, isPostHogEnabled } from '@/lib/posthog';
 import { openLegalLink, PRIVACY_URL, TERMS_URL } from '@/lib/legalLinks';
+import { TextInput } from '@/components/ui/TextInput';
+import type { OnboardingAnswers, OnboardingData } from '@/types';
+
+function getRegistrationOnboardingAnswers(data: OnboardingData): OnboardingAnswers | null {
+    if (
+        !data.onboarding_flow_completed ||
+        !data.learning_goals?.length ||
+        !data.explanation_preference ||
+        !data.study_challenges?.length ||
+        !data.daily_goal
+    ) {
+        return null;
+    }
+
+    return {
+        learning_goals: data.learning_goals,
+        explanation_preference: data.explanation_preference,
+        study_challenges: data.study_challenges,
+        daily_goal: data.daily_goal,
+        reminder_choice: data.reminder_choice ?? 'none',
+        reminder_enabled: data.reminder_enabled === true,
+        reminder_time: data.reminder_time ?? '',
+    };
+}
 
 export default function SignupScreen() {
     const [animKey, setAnimKey] = useState(0);
@@ -53,6 +77,12 @@ export default function SignupScreen() {
 
     const handleSignup = async () => {
         setEmailError(''); setPasswordError('');
+        const onboardingAnswers = getRegistrationOnboardingAnswers(onboardingData);
+        if (onboardingData.onboarding_flow_completed && !onboardingAnswers) {
+            setPasswordError('Please finish the onboarding questions before creating your account.');
+            return;
+        }
+
         let hasError = false;
         if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setEmailError('Please enter a valid email.'); hasError = true; }
         
@@ -74,7 +104,10 @@ export default function SignupScreen() {
                 device_name: `${Platform.OS}_app`,
                 ...(onboardingData?.education_level && { education_level: onboardingData.education_level }),
                 ...(onboardingData?.field_of_study && { field_of_study: onboardingData.field_of_study }),
-                ...(onboardingData?.learning_style && { learning_style: onboardingData.learning_style }),
+                ...((onboardingData?.learning_style || onboardingData?.explanation_preference) && {
+                    learning_style: onboardingData.learning_style || onboardingData.explanation_preference,
+                }),
+                ...(onboardingAnswers && { onboarding_data: onboardingAnswers }),
                 ...(onboardingData?.dob_month && { dob_month: onboardingData.dob_month }),
                 ...(onboardingData?.dob_year && { dob_year: onboardingData.dob_year }),
                 ...(onboardingData?.age && { age: onboardingData.age }),

@@ -1,5 +1,5 @@
 import { Text } from '@/components/ui/Text';
-import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
+import { View, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
@@ -16,6 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { AnimatedIcon } from '@/components/ui/AnimatedIcon';
 import { Icon } from '@/components/ui/Icon';
 import { useRouter } from 'expo-router';
+import { TextInput } from '@/components/ui/TextInput';
 
 export default function ExamsScreen() {
     const { user, updateUser } = useAuthStore();

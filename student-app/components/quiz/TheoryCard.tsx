@@ -1,6 +1,6 @@
 import { Text } from '@/components/ui/Text';
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, useColorScheme } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, useColorScheme } from 'react-native';
 import { api } from '@/lib/api';
 import { Question, TheoryResult } from './QuizTypes';
 import { MathText } from '../ui/MathText';
@@ -9,6 +9,7 @@ import { Colors, Spacing, Radius } from '@/constants/theme';
 import DangerTriangle from '@/assets/icons/pikaicons/troubleshoot.svg';
 import Star from '@/assets/icons/pikaicons/award-medal.svg';
 import Stars from '@/assets/icons/pikaicons/award-medal.svg';
+import { TextInput } from '@/components/ui/TextInput';
 
 export function TheoryCard({
     q, qi, onGraded,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Pressable, View, TextInput, ScrollView, Alert, StyleSheet } from 'react-native';
+import { Pressable, View, ScrollView, Alert, StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/Text';
 import { useAuthStore } from '@/store/authStore';
 import * as ExpoHaptics from 'expo-haptics';
@@ -15,6 +15,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
+import { TextInput } from '@/components/ui/TextInput';
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 

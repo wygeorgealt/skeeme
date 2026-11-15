@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Pressable,  View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { Pressable, View, TouchableOpacity, ScrollView } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import Svg, { Circle } from 'react-native-svg';
 import Animated, {
@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { haptics } from '@/lib/haptics';
 import { router } from 'expo-router';
+import { Text } from '@/components/ui/Text';
 
 export interface FlashcardDeckSummaryProps {
   deckTitle: string;

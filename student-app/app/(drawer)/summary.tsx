@@ -1,14 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-    View, 
-    Text, 
-    TextInput, 
-    Pressable, 
-    ScrollView, 
-    Alert, 
-    StyleSheet, 
-    TouchableOpacity 
-} from 'react-native';
+import { View, Pressable, ScrollView, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -27,6 +18,8 @@ import {
     deleteSummary,
     SummaryError,
 } from '@/lib/summaryService';
+import { Text } from '@/components/ui/Text';
+import { TextInput } from '@/components/ui/TextInput';
 
 const SUGGESTIONS = [
     'Physics: Motion & Force',

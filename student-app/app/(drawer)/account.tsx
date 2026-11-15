@@ -188,26 +188,6 @@ export default function AccountScreen() {
                     </TouchableOpacity>
 
                     <TouchableOpacity 
-                        style={[s.gridItem, { backgroundColor: isDark ? C.card : C.surfaceLow }]}
-                        onPress={() => router.push('/(drawer)/(tabs)/history' as any)}
-                        activeOpacity={0.7}
-                    >
-                        <Icon name="Clock" size={30} color="default" style={{ marginBottom: 6 }} />
-                        <Text style={[s.gridTitle, { color: C.text }]}>History</Text>
-                        <Text style={[s.gridSub, { color: C.textTertiary }]}>Past sessions</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity 
-                        style={[s.gridItem, { backgroundColor: isDark ? C.card : C.surfaceLow }]}
-                        onPress={() => router.push('/(drawer)/(tabs)/history/saved' as any)}
-                        activeOpacity={0.7}
-                    >
-                        <Icon name="Bookmark" size={30} color="default" style={{ marginBottom: 6 }} />
-                        <Text style={[s.gridTitle, { color: C.text }]}>Saved</Text>
-                        <Text style={[s.gridSub, { color: C.textTertiary }]}>Bookmarks</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity 
                         style={[s.gridItem, { backgroundColor: C.selectedBackground, borderColor: C.selectedBorder, borderWidth: 1 }]}
                         onPress={() => router.push('/(drawer)/generate' as any)}
                         activeOpacity={0.7}

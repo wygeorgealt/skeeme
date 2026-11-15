@@ -1,175 +1,44 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    ScrollView,
-    StyleSheet,
-    Dimensions,
-    Modal,
-} from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { Glass } from '@/components/ui/Glass';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
     withTiming,
-    withDelay,
     Easing,
 } from 'react-native-reanimated';
-import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
 import { haptics } from '@/lib/haptics';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
 import { StreakAnimation } from '@/components/StreakAnimation';
-import {
-    DailyActivityTask,
-    getDailyActivities,
-    toggleTaskCompletion,
-    calculateDailyGoalProgress,
-} from '@/lib/dailyActivitiesService';
-
-const { width } = Dimensions.get('window');
-const EMPTY_ARRAY: any[] = [];
+import { Text } from '@/components/ui/Text';
 
 export default function HomeDashboard() {
     const insets = useSafeAreaInsets();
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
-    const C = Colors[isDark ? 'dark' : 'light'];
     const router = useRouter();
-    const scrollViewRef = React.useRef<ScrollView>(null);
 
     const user = useAuthStore((s) => s.user);
 
     const [profileMenuVisible, setProfileMenuVisible] = useState(false);
     const [streakPresentationVisible, setStreakPresentationVisible] = useState(false);
-    const [dailyTasks, setDailyTasks] = useState<DailyActivityTask[]>([]);
-
-    // Queries for live data from Brimble API
-    const { data: userExams = EMPTY_ARRAY } = useQuery({
-        queryKey: ['user-exams'],
-        queryFn: async () => {
-            try {
-                const res = await api.get('user-exams');
-                return (res.data || []) as any[];
-            } catch {
-                return [];
-            }
-        },
-        staleTime: 60 * 1000,
-    });
-
-    const { data: quizSessions = EMPTY_ARRAY } = useQuery({
-        queryKey: ['quiz-history'],
-        queryFn: async () => {
-            try {
-                const res = await api.get('quizzes/history');
-                const raw = res.data;
-                return (Array.isArray(raw) ? raw : (raw?.data || [])) as any[];
-            } catch {
-                return [];
-            }
-        },
-        staleTime: 60 * 1000,
-    });
-
-    const { data: flashcardDecks = EMPTY_ARRAY } = useQuery({
-        queryKey: ['flashcard-history'],
-        queryFn: async () => {
-            try {
-                const res = await api.get('flashcards/decks');
-                const raw = res.data;
-                return (Array.isArray(raw) ? raw : (raw?.data || [])) as any[];
-            } catch {
-                return [];
-            }
-        },
-        staleTime: 60 * 1000,
-    });
-
-    const {
-        data: flashcardSessions = EMPTY_ARRAY,
-        refetch: refetchFlashcardSessions,
-    } = useQuery({
-        queryKey: ['flashcard-session-history'],
-        queryFn: async () => {
-            const res = await api.get('flashcards/history');
-            const raw = res.data;
-            return (Array.isArray(raw) ? raw : (raw?.data || [])) as any[];
-        },
-        staleTime: 60 * 1000,
-    });
-
-    const syncDailyTasks = useCallback((sessions = flashcardSessions) => {
-        getDailyActivities({
-            user,
-            exams: userExams,
-            flashcardDecks,
-            flashcardSessions: sessions,
-            quizSessions,
-        })
-            .then(setDailyTasks)
-            .catch(() => {});
-    }, [user, userExams, flashcardDecks, flashcardSessions, quizSessions]);
-
-    // Generate dynamic daily tasks based on user prefs, exams, and history
-    useEffect(() => {
-        syncDailyTasks();
-    }, [syncDailyTasks]);
-
-    // Refresh tasks when returning to dashboard
-    useFocusEffect(
-        useCallback(() => {
-            refetchFlashcardSessions().then(({ data }) => {
-                syncDailyTasks(data ?? flashcardSessions);
-            });
-        }, [refetchFlashcardSessions, syncDailyTasks, flashcardSessions])
-    );
-
-    const handleToggleTask = async (taskId: string) => {
-        haptics.selectionAsync();
-        const target = dailyTasks.find((t) => t.id === taskId);
-        const nextStatus = target ? !target.completed : true;
-
-        // Optimistically update UI immediately so Daily Goal bar moves right away
-        setDailyTasks((prev) =>
-            prev.map((t) => (t.id === taskId ? { ...t, completed: nextStatus } : t))
-        );
-
-        const persistedStatus = await toggleTaskCompletion(taskId, nextStatus);
-        setDailyTasks((prev) =>
-            prev.map((t) => (t.id === taskId ? { ...t, completed: persistedStatus } : t))
-        );
-    };
-
-    // Daily progress calculations from dynamic tasks
-    const goalProgress = calculateDailyGoalProgress(dailyTasks);
-    const progressPct = goalProgress.percentage;
 
     // Animations
     const headerOpacity = useSharedValue(0);
     const headerY = useSharedValue(14);
-    const contentOpacity = useSharedValue(0);
 
     useEffect(() => {
         headerOpacity.value = withTiming(1, { duration: 400 });
         headerY.value = withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) });
-        contentOpacity.value = withDelay(150, withTiming(1, { duration: 500 }));
-    }, []);
+    }, [headerOpacity, headerY]);
 
     const headerAnimatedStyle = useAnimatedStyle(() => ({
         opacity: headerOpacity.value,
         transform: [{ translateY: headerY.value }],
-    }));
-
-    const contentAnimatedStyle = useAnimatedStyle(() => ({
-        opacity: contentOpacity.value,
     }));
 
     const firstName = user?.name ? user.name.split(' ')[0] : 'there';
@@ -208,11 +77,7 @@ export default function HomeDashboard() {
                         activeOpacity={0.8}
                         onPress={() => {
                             haptics.selectionAsync();
-                            if (streak > 0) {
-                                setStreakPresentationVisible(true);
-                            } else {
-                                scrollViewRef.current?.scrollTo({ y: 320, animated: true });
-                            }
+                            setStreakPresentationVisible(true);
                         }}
                         style={[
                             styles.badgePill,
@@ -298,258 +163,14 @@ export default function HomeDashboard() {
                 </Modal>
             )}
 
-            {/* Main Scrollable Content */}
-            <ScrollView
-                ref={scrollViewRef}
-                style={styles.scrollView}
-                contentContainerStyle={[
-                    styles.scrollContent,
-                    { paddingBottom: Math.max(insets.bottom, 20) + 90 },
-                ]}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* Hero Greeting */}
+            <View style={styles.content}>
                 <Animated.View style={[styles.heroSection, headerAnimatedStyle]}>
                     <Text style={[styles.heroHeading, { color: isDark ? '#FFFFFF' : '#1B1B1D' }]}>
                         Need help{'\n'}
                         <Text style={styles.heroHeadingLight}>studying</Text> today?
                     </Text>
                 </Animated.View>
-
-                <Animated.View style={[contentAnimatedStyle, { marginTop: 20 }]}>
-                    {/* Daily Goal Card */}
-                    <TouchableOpacity
-                        activeOpacity={0.9}
-                        onPress={() => {
-                            haptics.selectionAsync();
-                            scrollViewRef.current?.scrollTo({ y: 320, animated: true });
-                        }}
-                        style={[
-                            styles.dailyGoalCard,
-                            {
-                                backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                            },
-                        ]}
-                    >
-                        <View style={styles.dailyGoalHeader}>
-                            <View style={styles.dailyGoalLeft}>
-                                <View style={styles.targetIconWrap}>
-                                    <Icon name="Target" size={20} color="default" />
-                                </View>
-                                <View>
-                                    <Text style={[styles.dailyGoalTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
-                                        Daily Goal
-                                    </Text>
-                                    <Text style={styles.dailyGoalSub}>
-                                        {goalProgress.isGoalMet
-                                            ? 'Goal completed! Streak active'
-                                            : `${goalProgress.totalCount - goalProgress.completedCount} more tasks to reach goal`}
-                                    </Text>
-                                </View>
-                            </View>
-                            <View style={styles.dailyGoalCountPill}>
-                                <Text style={styles.dailyGoalCountCurrent}>{goalProgress.completedCount}</Text>
-                                <Text style={styles.dailyGoalCountTotal}>/ {goalProgress.totalCount}</Text>
-                            </View>
-                        </View>
-
-                        {/* Progress Bar */}
-                        <View
-                            accessibilityRole="progressbar"
-                            accessibilityValue={{
-                                min: 0,
-                                max: goalProgress.totalCount,
-                                now: goalProgress.completedCount,
-                            }}
-                            style={[styles.progressBarTrack, { backgroundColor: isDark ? '#2C2C2E' : '#EFEFF4' }]}
-                        >
-                            <View
-                                style={[
-                                    styles.progressBarFill,
-                                    { backgroundColor: goalProgress.isGoalMet ? '#34C759' : '#007AFF' },
-                                    {
-                                        width: `${progressPct}%`,
-                                        minWidth: progressPct > 0 ? 12 : 0,
-                                    },
-                                ]}
-                            />
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Pro Banner */}
-                    <LinearGradient
-                        colors={['#007AFF', '#38BDF8']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.proBanner}
-                    >
-                        <View style={styles.proBannerContent}>
-                            <View style={styles.crownCircle}>
-                                <Icon name="Award" size={26} color="white" />
-                            </View>
-                            <View style={styles.proBannerTextWrap}>
-                                <Text style={styles.proBannerTitle}>Unlock Skeeme Pro</Text>
-                                <Text style={styles.proBannerSubtitle}>
-                                    More room for daily AI practice, scans, and study tools.
-                                </Text>
-                            </View>
-                        </View>
-
-                        <TouchableOpacity
-                            activeOpacity={0.88}
-                            style={styles.proUpgradeBtn}
-                            onPress={() => {
-                                haptics.selectionAsync();
-                                router.push('/paywall');
-                            }}
-                        >
-                            <Text style={styles.proUpgradeBtnText}>Upgrade to Pro</Text>
-                        </TouchableOpacity>
-                    </LinearGradient>
-
-                    {/* Quick Actions 3-Column Grid */}
-                    <View style={styles.actionsGrid}>
-                        {/* Quiz */}
-                        <TouchableOpacity
-                            activeOpacity={0.85}
-                            style={[
-                                styles.actionTile,
-                                {
-                                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                                },
-                            ]}
-                            onPress={() => {
-                                haptics.impactAsync();
-                                router.push('/(drawer)/generate');
-                            }}
-                        >
-                            <View style={styles.tileIconCircle}>
-                                <Icon name="HelpCircle" size={26} color="default" />
-                            </View>
-                            <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>Quiz</Text>
-                        </TouchableOpacity>
-
-                        {/* Flashcards */}
-                        <TouchableOpacity
-                            activeOpacity={0.85}
-                            style={[
-                                styles.actionTile,
-                                {
-                                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                                },
-                            ]}
-                            onPress={() => {
-                                haptics.impactAsync();
-                                router.push('/(drawer)/flashcards/create' as any);
-                            }}
-                        >
-                            <View style={styles.tileIconCircle}>
-                                <Icon name="Flashcards" size={26} color="default" />
-                            </View>
-                            <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
-                                Flashcards
-                            </Text>
-                        </TouchableOpacity>
-
-                        {/* Summary */}
-                        <TouchableOpacity
-                            activeOpacity={0.85}
-                            style={[
-                                styles.actionTile,
-                                {
-                                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                                },
-                            ]}
-                            onPress={() => {
-                                haptics.impactAsync();
-                                router.push('/(drawer)/summary' as any);
-                            }}
-                        >
-                            <View style={styles.tileIconCircle}>
-                                <Icon name="BookOpen" size={26} color="default" />
-                            </View>
-                            <Text style={[styles.tileTitle, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>Summary</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Today's Tasks Section */}
-                    <View style={styles.tasksSection}>
-                        <View style={styles.tasksSectionHeader}>
-                            <Text style={[styles.sectionHeading, { color: isDark ? '#FFFFFF' : '#1C1C1E' }]}>
-                                Today's Tasks
-                            </Text>
-                        </View>
-
-                        <View style={styles.tasksList}>
-                            {dailyTasks.map((task) => (
-                                <TouchableOpacity
-                                    key={task.id}
-                                    activeOpacity={0.85}
-                                    style={[
-                                        styles.taskCard,
-                                        {
-                                            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
-                                            borderColor: task.completed
-                                                ? (isDark ? 'rgba(52, 199, 89, 0.35)' : 'rgba(52, 199, 89, 0.45)')
-                                                : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'),
-                                        },
-                                    ]}
-                                    onPress={() => {
-                                        haptics.impactAsync();
-                                        router.push(task.route as any);
-                                    }}
-                                >
-                                    <View style={styles.taskCardLeft}>
-                                        <TouchableOpacity
-                                            activeOpacity={0.7}
-                                            onPress={() => handleToggleTask(task.id)}
-                                            style={styles.taskIconCircle}
-                                            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                                        >
-                                            <Icon
-                                                name={task.completed ? 'CheckCircle2' : 'Circle'}
-                                                size={20}
-                                                color={task.completed ? 'primary' : 'secondary'}
-                                            />
-                                        </TouchableOpacity>
-                                        <View style={styles.taskTextWrap}>
-                                            <Text
-                                                style={[
-                                                    styles.taskTitle,
-                                                    {
-                                                        color: isDark ? '#FFFFFF' : '#1C1C1E',
-                                                        textDecorationLine: task.completed ? 'line-through' : 'none',
-                                                        opacity: task.completed ? 0.65 : 1,
-                                                    },
-                                                ]}
-                                                numberOfLines={1}
-                                            >
-                                                {task.title}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                    <TouchableOpacity
-                                        activeOpacity={0.7}
-                                        onPress={() => handleToggleTask(task.id)}
-                                        style={styles.arrowPill}
-                                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                                    >
-                                        <Icon
-                                            name={task.completed ? 'CheckCircle2' : 'ArrowUpRight'}
-                                            size={18}
-                                            color={task.completed ? 'primary' : 'secondary'}
-                                        />
-                                    </TouchableOpacity>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
-                </Animated.View>
-            </ScrollView>
+            </View>
             <Modal
                 visible={streakPresentationVisible}
                 transparent
@@ -731,15 +352,13 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
-    scrollView: {
+    content: {
         flex: 1,
-    },
-    scrollContent: {
         paddingHorizontal: 18,
     },
     heroSection: {
         paddingTop: 16,
-        paddingBottom: 28,
+        paddingBottom: 32,
     },
     heroHeading: {
         fontSize: 32,
@@ -750,223 +369,5 @@ const styles = StyleSheet.create({
     heroHeadingLight: {
         fontWeight: '400',
         color: '#8E8E93',
-    },
-    dailyGoalCard: {
-        borderRadius: 22,
-        padding: 16,
-        borderWidth: 1,
-        marginTop: 20,
-        marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.04,
-        shadowRadius: 12,
-        elevation: 2,
-    },
-    dailyGoalHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 12,
-    },
-    dailyGoalLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-    targetIconWrap: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    dailyGoalTitle: {
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    dailyGoalSub: {
-        fontSize: 12,
-        color: '#8E8E93',
-        marginTop: 2,
-    },
-    dailyGoalCountPill: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        backgroundColor: '#EFF6FF',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: 'rgba(0, 122, 255, 0.25)',
-        gap: 2,
-    },
-    dailyGoalCountCurrent: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: '#007AFF',
-    },
-    dailyGoalCountTotal: {
-        fontSize: 11,
-        fontWeight: '500',
-        color: 'rgba(0, 122, 255, 0.7)',
-    },
-    progressBarTrack: {
-        width: '100%',
-        height: 8,
-        borderRadius: 999,
-        overflow: 'hidden',
-    },
-    progressBarFill: {
-        height: '100%',
-        backgroundColor: '#007AFF',
-        borderRadius: 999,
-        minWidth: 0,
-    },
-    proBanner: {
-        borderRadius: 24,
-        padding: 18,
-        marginBottom: 16,
-        shadowColor: '#007AFF',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 18,
-        elevation: 5,
-    },
-    proBannerContent: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    crownCircle: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    proBannerTextWrap: {
-        flex: 1,
-    },
-    proBannerTitle: {
-        fontSize: 17,
-        fontWeight: '700',
-        color: '#FFFFFF',
-    },
-    proBannerSubtitle: {
-        fontSize: 12,
-        color: 'rgba(255,255,255,0.92)',
-        marginTop: 4,
-        lineHeight: 17,
-    },
-    proUpgradeBtn: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 999,
-        paddingVertical: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 14,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
-        elevation: 2,
-    },
-    proUpgradeBtnText: {
-        color: '#007AFF',
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    actionsGrid: {
-        flexDirection: 'row',
-        gap: 10,
-        marginBottom: 20,
-    },
-    actionTile: {
-        flex: 1,
-        borderRadius: 20,
-        borderWidth: 1,
-        paddingVertical: 16,
-        paddingHorizontal: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.03,
-        shadowRadius: 8,
-        elevation: 1,
-    },
-    tileIconCircle: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-    },
-    tileTitle: {
-        fontSize: 14,
-        fontWeight: '700',
-        letterSpacing: -0.2,
-    },
-    tileSubtitle: {
-        fontSize: 11,
-        color: '#8E8E93',
-        marginTop: 2,
-    },
-    tasksSection: {
-        marginTop: 4,
-    },
-    tasksSectionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 12,
-        paddingHorizontal: 2,
-    },
-    sectionHeading: {
-        fontSize: 18,
-        fontWeight: '700',
-        letterSpacing: -0.3,
-    },
-    viewAllText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#8E8E93',
-    },
-    tasksList: {
-        gap: 12,
-    },
-    taskCard: {
-        borderRadius: 20,
-        borderWidth: 1,
-        paddingVertical: 18,
-        paddingHorizontal: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.03,
-        shadowRadius: 8,
-        elevation: 1,
-    },
-    taskCardLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        flex: 1,
-    },
-    taskIconCircle: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    taskTextWrap: {
-        flex: 1,
-    },
-    taskTitle: {
-        fontSize: 14,
-        fontWeight: '700',
-        lineHeight: 18,
-    },
-    taskDesc: {
-        fontSize: 12,
-        color: '#8E8E93',
-        marginTop: 2,
-    },
-    arrowPill: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginLeft: 8,
     },
 });

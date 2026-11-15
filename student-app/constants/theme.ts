@@ -6,6 +6,9 @@ export const Palette = {
   blue: {
     primary: '#007AFF',
     accent: '#0A84FF',
+    primaryTextLight: '#0066CC',
+    primaryTextDark: '#66B2FF',
+    deep: '#0052CC',
     lightContainer: '#E5F1FF',
     darkContainer: 'rgba(0, 122, 255, 0.18)',
     border: '#007AFF',
@@ -39,6 +42,12 @@ export const Palette = {
     destructiveLight: 'rgba(239, 68, 68, 0.15)',
     warning: '#F59E0B',
     warningLight: 'rgba(245, 158, 11, 0.15)',
+    warningTextLight: '#9A3412',
+    warningTextDark: '#FDBA74',
+    warningSurfaceLight: '#FFF7ED',
+    warningSurfaceDark: 'rgba(245, 158, 11, 0.15)',
+    warningBorderLight: '#FDBA74',
+    warningBorderDark: 'rgba(255, 149, 0, 0.3)',
   },
 };
 
@@ -59,6 +68,8 @@ export const Colors = {
     // Brand / Primary Action
     primary: Palette.blue.primary,
     primaryAccent: Palette.blue.accent,
+    primaryText: Palette.blue.primaryTextLight,
+    primaryDeep: Palette.blue.deep,
     primaryLight: Palette.blue.lightContainer,
     
     // Semantic
@@ -66,6 +77,9 @@ export const Colors = {
     success: Palette.semantic.success,
     successLight: Palette.semantic.successLight,
     warning: Palette.semantic.warning,
+    warningText: Palette.semantic.warningTextLight,
+    warningSurface: Palette.semantic.warningSurfaceLight,
+    warningBorder: Palette.semantic.warningBorderLight,
     
     // Separators & Borders
     separator: Palette.light.border,
@@ -115,6 +129,8 @@ export const Colors = {
     // Brand / Primary Action
     primary: Palette.blue.primary,
     primaryAccent: Palette.blue.accent,
+    primaryText: Palette.blue.primaryTextDark,
+    primaryDeep: Palette.blue.deep,
     primaryLight: Palette.blue.darkContainer,
     
     // Semantic
@@ -122,6 +138,9 @@ export const Colors = {
     success: Palette.semantic.success,
     successLight: Palette.semantic.successLight,
     warning: Palette.semantic.warning,
+    warningText: Palette.semantic.warningTextDark,
+    warningSurface: Palette.semantic.warningSurfaceDark,
+    warningBorder: Palette.semantic.warningBorderDark,
     
     // Separators & Borders
     separator: Palette.dark.border,
@@ -161,6 +180,7 @@ export const Colors = {
 export const Spacing = {
   xs: 4,
   sm: 8,
+  smPlus: 12,
   md: 16,
   lg: 24,
   xl: 32,
@@ -195,19 +215,19 @@ export const FontSize = {
 // ─── Platform Fonts ─────────────────────────────────────────────────────────
 export const Fonts = Platform.select({
   ios: {
-    sans: 'system-ui',
+    sans: 'Satoshi-Regular',
     serif: 'ui-serif',
     rounded: 'ui-rounded',
     mono: 'ui-monospace',
   },
   default: {
-    sans: 'normal',
+    sans: 'Satoshi-Regular',
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    sans: 'Satoshi-Regular',
     serif: "Georgia, 'Times New Roman', serif",
     rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
