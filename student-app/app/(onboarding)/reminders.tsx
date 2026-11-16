@@ -1,510 +1,305 @@
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Check, Clock } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { Clock } from 'lucide-react-native';
 import {
     Alert,
     Platform,
-    Pressable,
     ScrollView,
     StyleSheet,
-    useColorScheme,
+    TouchableOpacity,
     View,
+    useColorScheme,
 } from 'react-native';
-import { AnimatedMascot } from '@/components/AnimatedMascot';
+import { OnboardingCard } from '@/components/onboarding/OnboardingCard';
 import { OnboardingFooter } from '@/components/onboarding/OnboardingFooter';
+import { OnboardingReveal } from '@/components/onboarding/OnboardingReveal';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
+import { OnboardingQuestion } from '@/components/onboarding/OnboardingQuestion';
+import { useOnboardingEntrance } from '@/components/onboarding/useOnboardingEntrance';
 import { reminderChoices } from '@/components/onboarding/onboardingContent';
+import { ONBOARDING_BLUE, onboardingStyles } from '@/components/onboarding/onboardingStyles';
 import { Text } from '@/components/ui/Text';
 import { Colors } from '@/constants/theme';
+import { haptics } from '@/lib/haptics';
+import { api } from '@/lib/api';
 import {
     cancelDailyLearningReminder,
     scheduleDailyLearningReminder,
 } from '@/lib/notifications';
-import { haptics } from '@/lib/haptics';
-import { api } from '@/lib/api';
-import type { OnboardingAnswers, ReminderChoice } from '@/types';
 import { useAuthStore } from '@/store/authStore';
+import type { OnboardingAnswers, ReminderChoice } from '@/types';
 
-const reminderChoiceIds = reminderChoices.map((choice) => choice.id);
-const dayPartChoices = reminderChoices.slice(0, 3);
-const secondaryChoices = reminderChoices.slice(3);
+const reminderChoiceIds = reminderChoices.map((c) => c.id);
 
-function isReminderChoice(value: unknown): value is ReminderChoice {
-    return typeof value === 'string' && reminderChoiceIds.includes(value as ReminderChoice);
+function isReminderChoice(v: unknown): v is ReminderChoice {
+    return typeof v === 'string' && reminderChoiceIds.includes(v as ReminderChoice);
 }
 
 function formatTime(value: string) {
     const [hour, minute] = value.split(':').map(Number);
     const suffix = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${String(minute).padStart(2, '0')} ${suffix}`;
+    return `${(hour % 12) || 12}:${String(minute).padStart(2, '0')} ${suffix}`;
 }
 
 function dateForTime(value: string) {
-    const [hour = 9, minute = 0] = value.split(':').map(Number);
-    const date = new Date();
-    date.setHours(hour, minute, 0, 0);
-    return date;
+    const [h = 9, m = 0] = value.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    return d;
 }
 
 export default function RemindersScreen() {
     const router = useRouter();
     const isDark = useColorScheme() === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
+    const pageBg = isDark ? C.background : '#F8F9FA';
     const {
-        user,
-        onboardingData,
-        setOnboardingData,
-        setOnboardingStep,
-        setNotificationsEnabled,
-        completeOnboarding,
-        updateUser,
+        user, onboardingData, setOnboardingData, setOnboardingStep,
+        setNotificationsEnabled, completeOnboarding, updateUser,
     } = useAuthStore();
+
     const savedChoice = isReminderChoice(onboardingData.reminder_choice)
-        ? onboardingData.reminder_choice
-        : undefined;
+        ? onboardingData.reminder_choice : undefined;
     const [choice, setChoice] = useState<ReminderChoice | undefined>(savedChoice);
     const [reminderTime, setReminderTime] = useState(
         onboardingData.reminder_time ||
-            reminderChoices.find((option) => option.id === savedChoice)?.time ||
-            '09:00',
+        reminderChoices.find((o) => o.id === savedChoice)?.time || '09:00',
     );
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const entrance = useOnboardingEntrance('reminders');
 
-    useEffect(() => {
-        void setOnboardingStep(7);
-    }, [setOnboardingStep]);
+    useEffect(() => { void setOnboardingStep(6); }, [setOnboardingStep]);
 
     const pickerDate = useMemo(() => dateForTime(reminderTime), [reminderTime]);
 
-    const chooseReminder = (nextChoice: ReminderChoice) => {
+    const chooseReminder = (next: ReminderChoice) => {
         haptics.selectionAsync();
-        const nextTime =
-            reminderChoices.find((option) => option.id === nextChoice)?.time ?? '';
-        setChoice(nextChoice);
-        setReminderTime(nextTime);
-        setShowTimePicker(false);
+        const t = reminderChoices.find((o) => o.id === next)?.time ?? '';
+        setChoice(next);
+        if (next !== 'custom') { setReminderTime(t); setShowTimePicker(false); }
+        else { setShowTimePicker(true); }
         setErrorMessage('');
         void setOnboardingData({
-            reminder_choice: nextChoice,
-            reminder_enabled: nextChoice !== 'none',
-            reminder_time: nextTime,
+            reminder_choice: next,
+            reminder_enabled: next !== 'none',
+            reminder_time: next === 'custom' ? reminderTime : t,
         });
     };
 
     const handleTimeChange = (event: DateTimePickerEvent, value?: Date) => {
-        if (Platform.OS === 'android') {
-            setShowTimePicker(false);
-        }
+        if (Platform.OS === 'android') setShowTimePicker(false);
         if (event.type !== 'set' || !value) return;
-
-        const nextTime = `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
-        setReminderTime(nextTime);
-        void setOnboardingData({ reminder_time: nextTime });
+        const t = `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
+        setReminderTime(t);
+        void setOnboardingData({ reminder_time: t });
     };
 
     const saveAndContinue = async (remindersEnabled: boolean, skipped = false) => {
         setIsSubmitting(true);
         setErrorMessage('');
-
         try {
-            if (skipped || !remindersEnabled) {
-                await cancelDailyLearningReminder();
+            if (skipped || !remindersEnabled) await cancelDailyLearningReminder();
+            const cd = useAuthStore.getState().onboardingData;
+            if (!cd.learning_goals?.length || !cd.explanation_preference ||
+                !cd.study_challenges?.length || !cd.daily_goal) {
+                router.replace('/(onboarding)/start'); return;
             }
-
-            const currentData = useAuthStore.getState().onboardingData;
-            if (
-                !currentData.learning_goals?.length ||
-                !currentData.explanation_preference ||
-                !currentData.study_challenges?.length ||
-                !currentData.daily_goal
-            ) {
-                router.replace('/(onboarding)/start');
-                return;
-            }
-
             const answers: OnboardingAnswers = {
-                learning_goals: currentData.learning_goals,
-                explanation_preference: currentData.explanation_preference,
-                study_challenges: currentData.study_challenges,
-                daily_goal: currentData.daily_goal,
+                learning_goals: cd.learning_goals,
+                explanation_preference: cd.explanation_preference,
+                study_challenges: cd.study_challenges,
+                daily_goal: cd.daily_goal,
                 reminder_choice: skipped ? 'none' : choice ?? 'none',
                 reminder_enabled: remindersEnabled,
-                reminder_time:
-                    (choice && choice !== 'none') || remindersEnabled ? reminderTime : '',
+                reminder_time: (choice && choice !== 'none') || remindersEnabled ? reminderTime : '',
             };
-
             await setNotificationsEnabled(remindersEnabled);
-            await setOnboardingData({
-                ...answers,
-                onboarding_flow_completed: true,
-            });
-
+            await setOnboardingData({ ...answers, onboarding_flow_completed: true });
             if (user) {
                 await api.post('me/onboarding', {
                     learning_style: answers.explanation_preference,
                     onboarding_data: answers,
                 });
-
-                const currentUser = useAuthStore.getState().user;
-                if (currentUser) {
-                    updateUser({
-                        ai_preferences: {
-                            ...currentUser.ai_preferences,
-                            learning_style: answers.explanation_preference,
-                            onboarding_answers: answers,
-                        },
-                    });
-                }
-
+                const cu = useAuthStore.getState().user;
+                if (cu) updateUser({
+                    ai_preferences: { ...cu.ai_preferences, learning_style: answers.explanation_preference, onboarding_answers: answers },
+                });
                 await completeOnboarding();
-                router.replace('/(drawer)/(tabs)');
-                return;
+                router.replace('/(drawer)/(tabs)'); return;
             }
-
             router.replace('/signup');
         } catch (error) {
-            console.error('[Onboarding] Could not save learning preferences', error);
-            setErrorMessage('Your answers could not be saved. Check your connection and try again.');
-        } finally {
-            setIsSubmitting(false);
-        }
+            console.error('[Onboarding] save error', error);
+            setErrorMessage('Could not save. Check your connection and try again.');
+        } finally { setIsSubmitting(false); }
     };
 
     const handleContinue = async () => {
         if (!choice) return;
-        if (choice === 'none') {
-            await saveAndContinue(false);
-            return;
-        }
-
-        setIsSubmitting(true);
-        setErrorMessage('');
+        if (choice === 'none') { await saveAndContinue(false); return; }
+        setIsSubmitting(true); setErrorMessage('');
         try {
-            const [hour, minute] = reminderTime.split(':').map(Number);
-            const permission = await scheduleDailyLearningReminder(hour, minute);
-
-            if (permission !== 'granted') {
+            const [h, m] = reminderTime.split(':').map(Number);
+            const perm = await scheduleDailyLearningReminder(h, m);
+            if (perm !== 'granted') {
                 setIsSubmitting(false);
                 Alert.alert(
-                    permission === 'denied' ? 'Reminders are off' : 'Reminders are unavailable',
-                    permission === 'denied'
-                        ? 'You can continue without reminders or enable them in your device settings.'
-                        : 'This build cannot schedule notifications. You can continue without reminders.',
+                    perm === 'denied' ? 'Reminders are off' : 'Reminders unavailable',
+                    perm === 'denied'
+                        ? 'Continue without reminders or enable them in settings.'
+                        : 'This build cannot schedule notifications.',
                     [
-                        {
-                            text: 'Continue without reminders',
-                            onPress: () => {
-                                void saveAndContinue(false);
-                            },
-                        },
+                        { text: 'Continue without', onPress: () => { void saveAndContinue(false); } },
                         { text: 'Go back', style: 'cancel' },
                     ],
                 );
                 return;
             }
-
             await saveAndContinue(true);
         } catch (error) {
-            console.error('[Onboarding] Could not schedule study reminder', error);
-            setErrorMessage('The reminder could not be scheduled. Try again or choose no reminders.');
+            console.error('[Onboarding] reminder error', error);
+            setErrorMessage('Could not schedule reminder. Try again.');
             setIsSubmitting(false);
         }
     };
 
     const handleSkip = async () => {
-        setChoice('none');
-        setReminderTime('');
-        await setOnboardingData({
-            reminder_choice: 'none',
-            reminder_enabled: false,
-            reminder_time: '',
-        });
+        setChoice('none'); setReminderTime('');
+        await setOnboardingData({ reminder_choice: 'none', reminder_enabled: false, reminder_time: '' });
         await saveAndContinue(false, true);
     };
 
     return (
-        <View style={[styles.root, { backgroundColor: C.background }]}>
-            <OnboardingProgress step={7} />
-            <ScrollView
-                contentContainerStyle={styles.content}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.intro}>
-                    <View style={[styles.question, { backgroundColor: isDark ? '#13243A' : '#EAF3FF' }]}>
-                        <Text style={[styles.prompt, { color: C.text }]}>
-                            When should Lumi remind you to study?
-                        </Text>
-                        <Text style={[styles.helper, { color: C.textSecondary }]}>
-                            I&apos;ll give you a little nudge when it&apos;s time to learn.
-                        </Text>
-                    </View>
-                    <View style={styles.mascot}>
-                        <AnimatedMascot size={76} />
-                    </View>
-                </View>
-                <View style={styles.dayParts}>
-                    {dayPartChoices.map((option) => {
-                        const isSelected = choice === option.id;
-                        return (
-                            <Pressable
-                                key={option.id}
-                                accessibilityLabel={option.label}
-                                accessibilityRole="radio"
-                                accessibilityState={{ checked: isSelected }}
-                                onPress={() => chooseReminder(option.id)}
-                                style={({ pressed }) => [
-                                    styles.dayPart,
-                                    {
-                                        backgroundColor: isSelected
-                                            ? isDark ? '#342D10' : '#FFF8D6'
-                                            : C.card,
-                                        borderColor: isSelected ? BLUE : isDark ? '#647080' : '#AEB8C4',
-                                    },
-                                    isSelected && styles.selected,
-                                    pressed && styles.pressed,
-                                ]}
-                            >
-                                <Text style={[styles.dayPartLabel, { color: C.text }]}>
-                                    {option.label}
-                                </Text>
-                                <View
-                                    style={[
-                                        styles.check,
-                                        {
-                                            backgroundColor: isSelected ? BLUE : 'transparent',
-                                            borderColor: isSelected ? BLUE : isDark ? '#647080' : '#AEB8C4',
-                                        },
-                                    ]}
-                                >
-                                    {isSelected ? <Check color="#FFFFFF" size={13} strokeWidth={3} /> : null}
-                                </View>
-                            </Pressable>
-                        );
-                    })}
-                </View>
-                <View style={styles.secondaryChoices}>
-                    {secondaryChoices.map((option) => {
-                        const isSelected = choice === option.id;
-                        return (
-                            <Pressable
-                                key={option.id}
-                                accessibilityLabel={option.label}
-                                accessibilityRole="radio"
-                                accessibilityState={{ checked: isSelected }}
-                                onPress={() => chooseReminder(option.id)}
-                                style={({ pressed }) => [
-                                    styles.secondaryChoice,
-                                    {
-                                        backgroundColor: isSelected
-                                            ? isDark ? '#342D10' : '#FFF8D6'
-                                            : C.card,
-                                        borderColor: isSelected ? BLUE : isDark ? '#647080' : '#AEB8C4',
-                                    },
-                                    isSelected && styles.selected,
-                                    pressed && styles.pressed,
-                                ]}
-                            >
-                                <Text style={[styles.secondaryLabel, { color: C.text }]}>
-                                    {option.label}
-                                </Text>
-                                <View
-                                    style={[
-                                        styles.check,
-                                        {
-                                            backgroundColor: isSelected ? BLUE : 'transparent',
-                                            borderColor: isSelected ? BLUE : isDark ? '#647080' : '#AEB8C4',
-                                        },
-                                    ]}
-                                >
-                                    {isSelected ? <Check color="#FFFFFF" size={13} strokeWidth={3} /> : null}
-                                </View>
-                            </Pressable>
-                        );
-                    })}
-                </View>
+        <View style={[onboardingStyles.root, { backgroundColor: pageBg }]}>
+            <OnboardingProgress step={6} />
 
-                {choice && choice !== 'none' ? (
-                    <View style={styles.timeSection}>
-                        <Pressable
-                            accessibilityRole="button"
-                            onPress={() => setShowTimePicker((visible) => !visible)}
-                            style={[
-                                styles.timeButton,
-                                { backgroundColor: C.surfaceLow, borderColor: C.separatorOpaque },
-                            ]}
-                        >
-                            <Clock color={BLUE} size={18} />
-                            <Text style={[styles.timeText, { color: C.text }]}>
-                                Change time · {formatTime(reminderTime)}
-                            </Text>
-                        </Pressable>
-                        {showTimePicker ? (
-                            <View style={styles.pickerWrap}>
-                                <DateTimePicker
-                                    value={pickerDate}
-                                    mode="time"
-                                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                                    onChange={handleTimeChange}
-                                />
-                                {Platform.OS === 'ios' ? (
-                                    <Pressable
-                                        accessibilityRole="button"
-                                        onPress={() => setShowTimePicker(false)}
-                                        style={styles.pickerDone}
-                                    >
-                                        <Text style={styles.pickerDoneText}>Done</Text>
-                                    </Pressable>
-                                ) : null}
-                            </View>
-                        ) : null}
-                    </View>
-                ) : null}
+            <View style={onboardingStyles.body}>
+                <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={onboardingStyles.scroll}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={onboardingStyles.topSpacer} />
+                    <OnboardingQuestion
+                        prompt="When would you like me to remind you to study?"
+                        shouldType={!entrance.isComplete}
+                        onTypingComplete={entrance.complete}
+                    />
 
-                {errorMessage ? (
-                    <Text
-                        accessibilityLiveRegion="polite"
-                        style={[styles.error, { color: C.destructive }]}
+                    <OnboardingReveal
+                        visible={entrance.isComplete}
+                        animateOnMount={entrance.shouldAnimate}
                     >
-                        {errorMessage}
-                    </Text>
-                ) : null}
-            </ScrollView>
+                        {errorMessage ? (
+                            <Text style={[styles.error, { color: C.destructive }]}>
+                                {errorMessage}
+                            </Text>
+                        ) : null}
+
+                        <View style={onboardingStyles.options}>
+                            {reminderChoices.map((option) => {
+                                const isSelected = choice === option.id;
+                                const isCustom = option.id === 'custom';
+                                const sub = isCustom && reminderTime
+                                    ? formatTime(reminderTime) : option.description;
+
+                                return (
+                                    <View key={option.id}>
+                                        <OnboardingCard
+                                            label={option.label}
+                                            description={sub}
+                                            isSelected={isSelected}
+                                            onPress={() => chooseReminder(option.id)}
+                                            accessibilityRole="radio"
+                                        />
+
+                                        {isCustom && isSelected && Platform.OS === 'ios' ? (
+                                            <View style={[styles.pickerWrap, {
+                                                backgroundColor: isDark ? '#0D1B30' : '#F6FAFF',
+                                                borderColor: ONBOARDING_BLUE,
+                                            }]}>
+                                                <DateTimePicker
+                                                    display="spinner"
+                                                    mode="time"
+                                                    onChange={handleTimeChange}
+                                                    value={pickerDate}
+                                                    textColor={C.text}
+                                                />
+                                            </View>
+                                        ) : null}
+                                    </View>
+                                );
+                            })}
+                        </View>
+
+                        {choice === 'custom' && Platform.OS === 'android' ? (
+                            <TouchableOpacity
+                                onPress={() => setShowTimePicker(true)}
+                                activeOpacity={0.7}
+                                style={[styles.androidBtn, { borderColor: ONBOARDING_BLUE }]}
+                            >
+                                <Clock size={18} color={ONBOARDING_BLUE} />
+                                <Text style={[styles.androidBtnText, { color: ONBOARDING_BLUE }]}>
+                                    {formatTime(reminderTime)} — Tap to change
+                                </Text>
+                            </TouchableOpacity>
+                        ) : null}
+
+                        {showTimePicker && Platform.OS === 'android' ? (
+                            <DateTimePicker
+                                display="default"
+                                mode="time"
+                                onChange={handleTimeChange}
+                                value={pickerDate}
+                            />
+                        ) : null}
+                    </OnboardingReveal>
+                </ScrollView>
+            </View>
+
             <OnboardingFooter
-                disabled={!choice || isSubmitting}
+                disabled={!choice}
                 loading={isSubmitting}
-                label={choice && choice !== 'none' ? 'Turn on reminders' : 'Continue'}
-                skipLabel="Skip for now"
-                onContinue={() => void handleContinue()}
-                onSkip={() => void handleSkip()}
+                label="Complete Setup"
+                skipLabel="Skip reminders"
+                onSkip={handleSkip}
+                onContinue={handleContinue}
             />
         </View>
     );
 }
 
-const BLUE = '#0057B8';
-
 const styles = StyleSheet.create({
-    root: { flex: 1 },
-    content: {
-        flexGrow: 1,
-        justifyContent: 'flex-end',
-        paddingHorizontal: 20,
-        paddingTop: 4,
-        paddingBottom: 16,
-    },
-    intro: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    question: {
-        flex: 1,
-        borderRadius: 22,
-        paddingHorizontal: 17,
-        paddingVertical: 16,
-    },
-    prompt: {
-        fontFamily: 'Satoshi-Black',
-        fontSize: 19,
-        lineHeight: 25,
-    },
-    helper: {
-        marginTop: 6,
-        fontFamily: 'Satoshi-Medium',
-        fontSize: 13,
-        lineHeight: 18,
-    },
-    mascot: {
-        width: 80,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: -5,
-    },
-    dayParts: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 8,
-    },
-    dayPart: {
-        flex: 1,
-        minHeight: 86,
-        borderRadius: 18,
-        borderWidth: 1.5,
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
-        paddingHorizontal: 7,
-    },
-    dayPartLabel: {
-        fontFamily: 'Satoshi-Bold',
-        fontSize: 12,
-        lineHeight: 16,
-        textAlign: 'center',
-    },
-    secondaryChoices: { gap: 9, marginTop: 10 },
-    secondaryChoice: {
-        minHeight: 56,
-        borderRadius: 16,
-        borderWidth: 1.5,
-        paddingHorizontal: 15,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    secondaryLabel: {
-        flex: 1,
-        fontFamily: 'Satoshi-Bold',
-        fontSize: 14,
-        lineHeight: 19,
-    },
-    selected: { borderWidth: 2 },
-    check: {
-        width: 21,
-        height: 21,
-        borderRadius: 11,
-        borderWidth: 1.5,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    pressed: { opacity: 0.82 },
-    timeSection: { marginTop: 12 },
-    timeButton: {
-        minHeight: 48,
-        borderWidth: 1,
-        borderRadius: 14,
-        flexDirection: 'row' as const,
-        alignItems: 'center' as const,
-        justifyContent: 'center' as const,
-        gap: 8,
-    },
-    timeText: {
-        fontFamily: 'Satoshi-Bold',
-        fontSize: 14,
-    },
-    pickerWrap: {
-        alignItems: 'center' as const,
-        marginTop: 8,
-    },
-    pickerDone: {
-        minWidth: 64,
-        minHeight: 40,
-        alignItems: 'center' as const,
-        justifyContent: 'center' as const,
-    },
-    pickerDoneText: {
-        color: BLUE,
-        fontFamily: 'Satoshi-Bold',
-        fontSize: 14,
-    },
     error: {
         fontFamily: 'Satoshi-Medium',
         fontSize: 13,
-        lineHeight: 18,
-        marginTop: 8,
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    pickerWrap: {
+        borderRadius: 18,
+        borderWidth: 2,
+        padding: 8,
+        marginBottom: 10,
+        marginTop: -4,
+        alignItems: 'center',
+    },
+    androidBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        padding: 16,
+        borderRadius: 18,
+        borderWidth: 1.5,
+        marginTop: 6,
+    },
+    androidBtnText: {
+        fontFamily: 'Satoshi-Bold',
+        fontSize: 14,
     },
 });

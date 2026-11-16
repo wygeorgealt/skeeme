@@ -126,10 +126,26 @@ selected preferences. Registration follows onboarding through the existing
 signup flow; registration and authenticated onboarding save answers under
 `ai_preferences.onboarding_answers`. Reminder permission is requested only
 after an explicit time selection and opt-in action. Users who skip or decline
-reminders do not receive a permission prompt. The shared onboarding shell keeps
-progress at the top and anchors the mascot, question, bordered text-only choices,
-and fixed Continue action toward the bottom. Unselected borders are gray;
-selected borders and checkmarks are blue, with the enabled action in yellow.
+reminders do not receive a permission prompt. The onboarding routes use shared
+progress, question, and choice components with per-screen layouts. Question lists
+and the personalized result reserve trailing scroll space so the final option or
+content does not sit against the fixed lower action area or screen edge. The
+onboarding voice treats Skeemy as a study companion, using first-person
+questions where natural. Explanation preferences use the prompt “How would you
+like me to explain things?” and four choices with supporting descriptions.
+Previously saved step-by-step preferences remain readable in the personalized
+summary. Onboarding screens use native fades;
+question prompts type once before their options softly reveal. Completed
+entrances are remembered for the current app session, so returning to a step
+does not replay the sequence. Reduced Motion skips typing and uses a brief fade.
+The option list stays in layout while hidden to keep the mascot and question
+stationary. Question screens use the animated mascot player and the native
+platform-default stack transition rather than fading in. Platform-specific
+mascot clips are bundled and loaded from the welcome screen, so later questions
+reuse a local file instead of waiting for a remote download. The updated
+sequence and appearance still need device visual verification. The daily-goal
+question asks “How long can we study for?” and offers 5, 10, 15, 20 minutes or
+the flexible option; legacy 30-minute answers remain readable in the summary.
 
 The user explicitly prefers:
 
@@ -491,6 +507,91 @@ Add one short dated entry after each engineering task. Include the user goal,
 important files/areas changed, exact validation performed, and any remaining
 action. Do not include unrelated personal information or secrets.
 
+### 2026-11-16 — Set companion voice across onboarding questions
+
+- Updated the explanation prompt and all four preference labels/descriptions,
+  changed the study-challenge and reminder questions to Skeemy's first-person
+  companion voice, and documented the voice rule for future onboarding copy.
+- Validation: student-app TypeScript check, targeted ESLint, and
+  `git diff --check` passed.
+
+### 2026-11-16 — Simplify daily learning goal choices
+
+- Removed the 30-minute choice, changed the prompt to “How long can we study
+  for?”, and kept previously saved 30-minute answers readable in the summary.
+- Validation: student-app TypeScript check, targeted ESLint, and
+  `git diff --check` passed.
+
+### 2026-11-16 — Load onboarding mascot from bundled clips
+
+- Bundled the iOS HEVC and Android stacked clips and load them through Expo
+  Assets on the welcome screen. Later screens reuse the local file instead of
+  waiting for a network request; a logged remote fallback remains for asset
+  extraction failures.
+- Validation: student-app TypeScript check, targeted ESLint, iOS and Android
+  Expo exports, and `git diff --check` passed. Expo export reports the existing
+  non-blocking `expo-superwall` resolution warning. Device visual verification
+  is still outstanding.
+
+### 2026-11-16 — Restore animated mascot and native screen entry
+
+- Restored the animated mascot on onboarding question screens and changed the
+  stack from a fade to the platform-default transition so it moves in with the
+  page's normal navigation gesture.
+- Validation: student-app TypeScript check, targeted ESLint, iOS Expo export,
+  and `git diff --check` passed. Device visual verification is still outstanding.
+
+### 2026-11-15 — Show onboarding mascot immediately
+
+- Replaced the question screen's streamed mascot with a bundled transparent still
+  extracted from the existing Skeeme animation, so it is present immediately
+  instead of waiting for remote media.
+- Validation: student-app TypeScript check, targeted ESLint, iOS Expo export,
+  and `git diff --check` passed.
+
+### 2026-11-15 — Delay choice reveal until typing completes
+
+- Added a short pause after the final typed character before revealing options
+  and set hidden option opacity from the initial render to prevent a flash.
+  Restored normal in-place mascot playback so it appears while the question is
+  written, without an entrance effect.
+- Validation: student-app TypeScript check, targeted ESLint, iOS Expo export,
+  and `git diff --check` passed. The result still needs a device visual check.
+
+### 2026-11-15 — Keep onboarding question layout steady
+
+- Reserved the option list's layout space before reveal so the question and
+  mascot stay in their final positions. Options reveal without causing layout
+  movement.
+- Validation: student-app TypeScript check, targeted ESLint, iOS Expo export,
+  and `git diff --check` passed. The result still needs a device visual check.
+
+### 2026-11-15 — Sequence onboarding question reveals
+
+- Changed onboarding page navigation to native fades. Question prompts type in
+  before their options fade up as a group; completed sequences are remembered
+  for the app session and reset when a new flow starts from auth selection.
+  Reduced Motion skips typing and retains a short opacity fade.
+- Added the same one-time soft reveal to the personalized result screen.
+- Validation: student-app TypeScript check, targeted ESLint (0 errors; 3 existing
+  unused legal-link warnings in `auth-select.tsx`), iOS Expo export, and
+  `git diff --check` passed. The motion still needs a real-device feel check.
+
+### 2026-11-15 — Simplify explanation preferences
+
+- Removed the step-by-step choice and the secondary descriptions from the simple
+  and detailed choices. Kept previously saved step-by-step answers readable in
+  the personalized summary.
+- Validation: student-app TypeScript check, targeted ESLint, and `git diff --check`
+  passed.
+
+### 2026-11-15 — Add breathing room below onboarding choices
+
+- Increased the shared onboarding list's trailing scroll padding and matched the
+  personalized result screen so the final option/content clears the bottom edge.
+- Validation: student-app TypeScript check, targeted ESLint, and `git diff --check`
+  passed. The updated spacing has not yet been visually rechecked in Simulator.
+
 ### 2026-11-15 — Build learning-preference onboarding
 
 - Replaced the blank onboarding entry with the learning-goals, explanation,
@@ -505,6 +606,59 @@ action. Do not include unrelated personal information or secrets.
   targeted run still reports the existing `login.tsx` state-in-effect error.
   Simulator interaction was interrupted, so the onboarding screens remain
   visually unverified.
+
+### 2026-11-15 — Realign onboarding flow to Fox App design reference
+
+- Completely overhauled the onboarding screens (`start`, `explanation-preferences`,
+  `study-challenges`, `daily-goal`, `personalized-plan`, `reminders`) to faithfully
+  match the Fox App reference screens:
+  - Unified onboarding styling architecture under [`onboardingStyles.ts`](file:///Users/gcg/skeeme/student-app/components/onboarding/onboardingStyles.ts)
+    and [`OnboardingCard.tsx`](file:///Users/gcg/skeeme/student-app/components/onboarding/OnboardingCard.tsx).
+  - Replaced `Pressable` functional styles with `TouchableOpacity` to eliminate NativeWind
+    v4 style dropping issues (where `flexDirection: 'row'`, borders, and backgrounds
+    were stripped).
+  - Cards redesigned as solid white, elevated elements with no harsh borders (`borderWidth: 1`,
+    `borderColor: 'rgba(0,0,0,0.03)'` / almost invisible), defined by soft ambient drop shadows
+    (`shadowOffset: { width: 0, height: 4 }`, `shadowOpacity: 0.08`, `shadowRadius: 12`, `elevation: 3`),
+    fatter and roomier proportions (`minHeight: 64`, `borderRadius: 18`, `paddingHorizontal: 20`,
+    `paddingVertical: 16`), sitting against an off-white canvas (`#F8F9FA`).
+  - Removed background strip and top border behind the Continue button in [`OnboardingFooter.tsx`](file:///Users/gcg/skeeme/student-app/components/onboarding/OnboardingFooter.tsx),
+    allowing the blue pill button to float freely over the canvas.
+  - Question card next to mascot redesigned as a compact, solid floating cloud (`maxWidth: 220`, `borderRadius: 22`,
+    `shadowOffset: { width: 0, height: 6 }`, `shadowOpacity: 0.08`, `shadowRadius: 16`, `borderWidth: 0`),
+    centralized into [`OnboardingQuestion.tsx`](file:///Users/gcg/skeeme/student-app/components/onboarding/OnboardingQuestion.tsx)
+    featuring punchy Satoshi-Black typography (`fontSize: 20`, `lineHeight: 25`, `letterSpacing: -0.4`).
+  - Increased mascot size from 86px to 130px for a prominent character presence matching the Fox reference.
+  - Eliminated the pale disabled card style on the Continue button: button now stays solid blue (`ONBOARDING_BLUE` `#007AFF`) with white text, using `opacity: 0.45` when disabled so it never resembles a white background card.
+  - Option card labels set in crisp `Satoshi-Bold` typography (`fontSize: 16`, `lineHeight: 21`) for clean readability without overpowering the question header.
+  - Streamlined the initial goals list to 4 focused options (removed "Understand difficult topics" and "Turn my materials into clear notes"), fitting the viewport cleanly without scrolling.
+  - Refactored onboarding interaction to single-selection tap-to-advance flow:
+    - Removed Continue button from question screens 01 (`start`), 02 (`explanation-preferences`), 03 (`study-challenges`), and 04 (`daily-goal`).
+    - Every question is single-select; selecting an option triggers haptic feedback and immediately advances to the next screen after an 180ms visual confirmation delay.
+    - Preserved answers when navigating backwards via Expo Router stack and Zustand `onboardingData` state.
+    - Updated question 06 to "When should Lumi remind you?" with one-tap selection or skip.
+    - Screen 05 (`personalized-plan`) retains the primary Continue CTA to proceed to reminders.
+    - Updated progress bar to reflect 6 total screens (`const STEPS = 6;`).
+  - Tastefully integrated Skeeme's Primary Blue (`#007AFF`) and Secondary Yellow (`#FFDF00`):
+    yellow milestone cap on the progress bar, yellow `STAGE 1 • FOUNDATION` pill badge and
+    bullet dots on the celebratory plan card, and rich blue primary action button with ambient glow.
+  - Subtitled cards on subsequent screens matching reference screen 2 ("Brand new", "Some words").
+  - Personalized plan screen matching phone 4 with a centered celebratory mascot and
+    deep blue "UNIT 1" plan card.
+- Diagnosed and resolved the root cause of non-bold Satoshi text rendering:
+  - Discovered that `student-app/assets/fonts/Satoshi-*.ttf` font binaries had corrupted
+    `name` tables with PostScript names (`nameID=6`), full names (`nameID=4`), and family names
+    (`nameID=1`) set to literal `'false'`.
+  - On iOS CoreText / React Native, this caused custom font matching to silently fail and fall back
+    to system default (San Francisco Regular).
+  - Rebuilt all four font binaries (`Satoshi-Regular.ttf`, `Satoshi-Medium.ttf`, `Satoshi-Bold.ttf`,
+    `Satoshi-Black.ttf`) with correct OpenType `name` table records, table directory offsets, and
+    head table checksum adjustments.
+  - Validation: verified TTF name tables for all 4 weights via binary inspection; ran
+    `./student-app/node_modules/.bin/tsc --noEmit --project student-app/tsconfig.json` (0 errors);
+    `git diff --check` passed clean.
+- Validation: `npx tsc --noEmit` passed with 0 errors across `student-app`; targeted
+  ESLint on onboarding components and routes passed with 0 errors; `git diff --check` passed.
 
 ### 2026-11-15 — Refine onboarding selection layout
 

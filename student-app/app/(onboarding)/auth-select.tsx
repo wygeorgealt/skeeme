@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AnimatedButton } from 'react-native-3d-animated-buttons';
 import { haptics } from '@/lib/haptics';
+import { resetOnboardingEntrances } from '@/components/onboarding/useOnboardingEntrance';
 import { Colors } from '@/constants/theme';
 import { openLegalLink, PRIVACY_URL, TERMS_URL } from '@/lib/legalLinks';
 import { AnimatedMascot } from '@/components/AnimatedMascot';
@@ -33,6 +34,7 @@ export default function AuthSelectScreen() {
 
     const handleGetStarted = () => {
         haptics.selectionAsync();
+        resetOnboardingEntrances();
         router.push('/(onboarding)/start');
     };
 

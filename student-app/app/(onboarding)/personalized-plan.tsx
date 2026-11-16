@@ -1,16 +1,18 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { Check } from 'lucide-react-native';
 import { ScrollView, StyleSheet, View, useColorScheme } from 'react-native';
 import { AnimatedMascot } from '@/components/AnimatedMascot';
 import { OnboardingFooter } from '@/components/onboarding/OnboardingFooter';
+import { OnboardingReveal } from '@/components/onboarding/OnboardingReveal';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
+import { useOnboardingEntrance } from '@/components/onboarding/useOnboardingEntrance';
 import {
     dailyGoals,
     explanationPreferences,
     learningGoals,
     studyChallenges,
 } from '@/components/onboarding/onboardingContent';
+import { ONBOARDING_BLUE, ONBOARDING_YELLOW, onboardingStyles } from '@/components/onboarding/onboardingStyles';
 import { Text } from '@/components/ui/Text';
 import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/authStore';
@@ -20,199 +22,191 @@ export default function PersonalizedPlanScreen() {
     const isDark = useColorScheme() === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     const { onboardingData, setOnboardingStep } = useAuthStore();
-    const selectedGoals = learningGoals.filter((option) =>
-        onboardingData.learning_goals?.includes(option.id),
+    const {
+        isComplete: entranceComplete,
+        shouldAnimate: animateEntrance,
+        complete: completeEntrance,
+    } = useOnboardingEntrance('personalized-plan');
+
+    const selectedGoals = learningGoals.filter((o) =>
+        onboardingData.learning_goals?.includes(o.id),
     );
-    const selectedChallenges = studyChallenges.filter((option) =>
-        onboardingData.study_challenges?.includes(option.id),
-    );
-    const learningStyle = explanationPreferences.find(
-        (option) => option.id === onboardingData.explanation_preference,
-    );
-    const dailyGoal = dailyGoals.find((option) => option.id === onboardingData.daily_goal);
+    const selectedChallengeLabels = [
+        ...studyChallenges
+            .filter((o) => onboardingData.study_challenges?.includes(o.id))
+            .map((o) => o.label),
+        ...(onboardingData.study_challenges?.includes('knowing_where_to_start')
+            ? ['Knowing where to start']
+            : []),
+    ];
+    const learningStyle =
+        explanationPreferences.find(
+            (o) => o.id === onboardingData.explanation_preference,
+        ) ??
+        (onboardingData.explanation_preference === 'step_by_step'
+            ? { label: 'Step-by-step breakdowns' }
+            : undefined);
+    const dailyGoal =
+        dailyGoals.find((o) => o.id === onboardingData.daily_goal) ??
+        (onboardingData.daily_goal === '30'
+            ? { id: '30', label: '30 min' }
+            : undefined);
+
     const isReady =
         selectedGoals.length > 0 &&
-        selectedChallenges.length > 0 &&
+        selectedChallengeLabels.length > 0 &&
         !!learningStyle &&
         !!dailyGoal;
 
+    const pageBg = isDark ? C.background : '#F8F9FA';
+
     useEffect(() => {
-        void setOnboardingStep(6);
+        void setOnboardingStep(5);
         if (!isReady) {
             router.replace('/(onboarding)/start');
+        } else {
+            completeEntrance();
         }
-    }, [isReady, router, setOnboardingStep]);
+    }, [completeEntrance, isReady, router, setOnboardingStep]);
+
+    const planItems = [
+        selectedGoals[0]?.label ?? 'Master difficult topics',
+        learningStyle?.label ?? 'Step-by-step breakdowns',
+        selectedChallengeLabels[0] ?? 'Exam preparation',
+        dailyGoal
+            ? dailyGoal.id === 'flexible'
+                ? 'Flexible daily sessions'
+                : `${dailyGoal.label} daily sessions`
+            : '15 min / day sessions',
+    ];
 
     return (
-        <View style={[styles.root, { backgroundColor: C.background }]}>
-            <OnboardingProgress step={6} />
-            <ScrollView
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.hero}>
-                    <AnimatedMascot size={112} />
-                    <Text style={[styles.title, { color: BLUE }]}>I&apos;ve got a bright idea!</Text>
-                    <Text style={[styles.subtitle, { color: C.text }]}>
-                        Your learning journey starts here.
-                    </Text>
-                    <Text style={[styles.intro, { color: C.textSecondary }]}>
-                        Here&apos;s what we&apos;ll focus on together.
-                    </Text>
-                </View>
-                <View
-                    style={[
-                        styles.summary,
-                        {
-                            backgroundColor: C.card,
-                            borderColor: C.separatorOpaque,
-                        },
-                    ]}
+        <View style={[onboardingStyles.root, { backgroundColor: pageBg }]}>
+            <OnboardingProgress step={5} />
+            <View style={onboardingStyles.body}>
+                <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={styles.scroll}
+                    showsVerticalScrollIndicator={false}
                 >
-                    {selectedGoals.length > 0 ? (
-                        <SummarySection
-                            title="Your priorities"
-                            items={selectedGoals.map((option) => option.label)}
-                            isDark={isDark}
-                            isLast={false}
-                        />
-                    ) : null}
-                    {learningStyle ? (
-                        <SummarySection
-                            title="How you like to learn"
-                            items={[learningStyle.label]}
-                            isDark={isDark}
-                            isLast={false}
-                        />
-                    ) : null}
-                    {selectedChallenges.length > 0 ? (
-                        <SummarySection
-                            title="Your study focus"
-                            items={selectedChallenges.map((option) => option.label)}
-                            isDark={isDark}
-                            isLast={false}
-                        />
-                    ) : null}
-                    {dailyGoal ? (
-                        <SummarySection
-                            title="Your daily goal"
-                            items={[
-                                dailyGoal.id === 'flexible'
-                                    ? dailyGoal.label
-                                    : `${dailyGoal.id} minutes of learning`,
-                            ]}
-                            isDark={isDark}
-                            isLast
-                        />
-                    ) : null}
-                </View>
-                <Text style={[styles.closing, { color: C.textSecondary }]}>Let&apos;s do this!</Text>
-            </ScrollView>
+                    <OnboardingReveal
+                        visible={entranceComplete}
+                        animateOnMount={animateEntrance}
+                        style={styles.reveal}
+                    >
+                        <>
+                            <View style={styles.hero}>
+                                <AnimatedMascot size={135} />
+                                <Text style={[styles.title, { color: C.text }]}>
+                                    Skeeme for your studies.
+                                </Text>
+                                <Text style={[styles.subtitle, { color: C.textSecondary }]}>
+                                    We&apos;ve customized your learning path.
+                                </Text>
+                            </View>
+
+                            <View style={styles.planCard}>
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>STAGE 1 &bull; FOUNDATION</Text>
+                                </View>
+                                <View style={styles.items}>
+                                    {planItems.map((item, i) => (
+                                        <View key={i} style={styles.itemRow}>
+                                            <View style={styles.dot} />
+                                            <Text style={styles.itemText}>{item}</Text>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        </>
+                    </OnboardingReveal>
+                </ScrollView>
+            </View>
             <OnboardingFooter
-                disabled={!isReady}
+                label="Continue"
                 onContinue={() => router.push('/(onboarding)/reminders')}
             />
         </View>
     );
 }
 
-function SummarySection({
-    title,
-    items,
-    isDark,
-    isLast,
-}: {
-    title: string;
-    items: string[];
-    isDark: boolean;
-    isLast: boolean;
-}) {
-    const C = Colors[isDark ? 'dark' : 'light'];
-
-    return (
-        <View
-            style={[
-                styles.summarySection,
-                !isLast && { borderBottomColor: C.separator, borderBottomWidth: 1 },
-            ]}
-        >
-            <Text style={[styles.summaryTitle, { color: C.text }]}>{title}</Text>
-            {items.map((item) => (
-                <View key={item} style={styles.summaryItem}>
-                    <Check color="#0057B8" size={16} strokeWidth={2.6} />
-                    <Text style={[styles.summaryCopy, { color: C.textSecondary }]}>{item}</Text>
-                </View>
-            ))}
-        </View>
-    );
-}
-
-const BLUE = '#0057B8';
-
 const styles = StyleSheet.create({
-    root: { flex: 1 },
-    content: {
+    scroll: {
         flexGrow: 1,
         justifyContent: 'center',
         paddingHorizontal: 20,
-        paddingTop: 8,
-        paddingBottom: 20,
+        paddingTop: 12,
+        paddingBottom: 40,
+    },
+    reveal: {
+        flex: 1,
+        justifyContent: 'center',
     },
     hero: {
         alignItems: 'center',
-        marginBottom: 18,
+        marginBottom: 24,
     },
     title: {
         fontFamily: 'Satoshi-Black',
-        fontSize: 23,
-        lineHeight: 29,
+        fontSize: 25,
+        lineHeight: 31,
         textAlign: 'center',
-        marginTop: -3,
+        marginTop: 10,
+        letterSpacing: -0.4,
     },
     subtitle: {
-        fontFamily: 'Satoshi-Bold',
-        fontSize: 16,
-        lineHeight: 22,
-        textAlign: 'center',
-        marginTop: 5,
-    },
-    intro: {
         fontFamily: 'Satoshi-Medium',
-        fontSize: 13,
-        lineHeight: 18,
-        textAlign: 'center',
-        marginTop: 9,
-    },
-    summary: {
-        borderWidth: 1,
-        borderRadius: 22,
-        paddingHorizontal: 18,
-    },
-    summarySection: {
-        paddingVertical: 13,
-        gap: 8,
-    },
-    summaryTitle: {
-        fontFamily: 'Satoshi-Bold',
-        fontSize: 14,
-        marginBottom: 1,
-    },
-    summaryItem: {
-        flexDirection: 'row' as const,
-        alignItems: 'flex-start' as const,
-        gap: 8,
-    },
-    summaryCopy: {
-        flex: 1,
-        fontFamily: 'Satoshi-Regular',
-        fontSize: 13,
-        lineHeight: 18,
-    },
-    closing: {
-        fontFamily: 'Satoshi-Bold',
         fontSize: 14,
         lineHeight: 20,
-        marginTop: 14,
         textAlign: 'center',
+        marginTop: 6,
+    },
+    planCard: {
+        backgroundColor: ONBOARDING_BLUE,
+        borderRadius: 22,
+        paddingHorizontal: 22,
+        paddingVertical: 22,
+        shadowColor: ONBOARDING_BLUE,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.28,
+        shadowRadius: 16,
+        elevation: 6,
+    },
+    badge: {
+        alignSelf: 'flex-start',
+        backgroundColor: 'rgba(255, 223, 0, 0.18)',
+        borderColor: ONBOARDING_YELLOW,
+        borderWidth: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 12,
+        marginBottom: 16,
+    },
+    badgeText: {
+        fontFamily: 'Satoshi-Bold',
+        fontSize: 11,
+        color: ONBOARDING_YELLOW,
+        letterSpacing: 0.8,
+    },
+    items: {
+        gap: 13,
+    },
+    itemRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    dot: {
+        width: 7,
+        height: 7,
+        borderRadius: 3.5,
+        backgroundColor: ONBOARDING_YELLOW,
+    },
+    itemText: {
+        flex: 1,
+        fontFamily: 'Satoshi-Bold',
+        fontSize: 15.5,
+        lineHeight: 21,
+        color: '#FFFFFF',
     },
 });

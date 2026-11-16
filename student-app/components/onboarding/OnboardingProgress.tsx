@@ -1,12 +1,13 @@
-import { ArrowLeft } from 'lucide-react-native';
+import React from 'react';
+import { ChevronLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
+import { ONBOARDING_BLUE, ONBOARDING_YELLOW } from './onboardingStyles';
 
-const STEPS = 7;
-const BLUE = '#0057B8';
+const STEPS = 6;
 
 export function OnboardingProgress({ step }: { step: number }) {
     const router = useRouter();
@@ -22,26 +23,35 @@ export function OnboardingProgress({ step }: { step: number }) {
         }
     };
 
+    const progressWidth = `${Math.min(step / STEPS, 1) * 100}%` as const;
+
     return (
         <>
             <StatusBar style={isDark ? 'light' : 'dark'} />
             <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-                <Pressable
+                <TouchableOpacity
                     accessibilityLabel="Go back"
                     accessibilityRole="button"
-                    hitSlop={8}
+                    hitSlop={12}
+                    activeOpacity={0.6}
                     onPress={handleBack}
-                    style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+                    style={styles.backButton}
                 >
-                    <ArrowLeft color={C.text} size={21} strokeWidth={2.4} />
-                </Pressable>
+                    <ChevronLeft color={C.text} size={26} strokeWidth={2.4} />
+                </TouchableOpacity>
                 <View
                     accessibilityLabel={`Step ${step} of ${STEPS}`}
                     accessibilityRole="progressbar"
                     accessibilityValue={{ min: 1, max: STEPS, now: step }}
-                    style={[styles.track, { backgroundColor: C.elevated }]}
+                    style={[
+                        styles.track,
+                        { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E9ECEF' },
+                    ]}
                 >
-                    <View style={[styles.fill, { width: `${Math.min(step / STEPS, 1) * 100}%` }]} />
+                    <View style={[styles.fill, { width: progressWidth }]}>
+                        {/* Subtle secondary yellow cap representing Skeemy's spark */}
+                        <View style={styles.yellowCap} />
+                    </View>
                 </View>
             </View>
         </>
@@ -52,27 +62,37 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 14,
-        paddingHorizontal: 20,
-        paddingBottom: 6,
+        paddingHorizontal: 16,
+        paddingBottom: 8,
+        gap: 12,
     },
     backButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
     track: {
         flex: 1,
-        height: 5,
+        height: 6,
         borderRadius: 3,
         overflow: 'hidden',
     },
     fill: {
         height: '100%',
         borderRadius: 3,
-        backgroundColor: BLUE,
+        backgroundColor: ONBOARDING_BLUE,
+        position: 'relative',
     },
-    pressed: { opacity: 0.72 },
+    yellowCap: {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: 5,
+        borderTopRightRadius: 3,
+        borderBottomRightRadius: 3,
+        backgroundColor: ONBOARDING_YELLOW,
+    },
 });

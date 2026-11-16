@@ -11,30 +11,64 @@ export interface OnboardingChoice<T extends string> {
     description?: string;
 }
 
+export interface OnboardingReplyChoice<T extends string> extends OnboardingChoice<T> {
+    response: string;
+}
+
+export const learningGoalsResponse =
+    "Everyone gets stuck sometimes. Let's find the light at the end of the tunnel.";
+
 export const learningGoals: OnboardingChoice<LearningGoal>[] = [
-    { id: 'understand_difficult_topics', label: 'Understand difficult topics' },
-    { id: 'clear_study_notes', label: 'Turn my materials into clear notes' },
-    { id: 'prepare_for_exams', label: 'Prepare for examinations' },
-    { id: 'remember_learning', label: "Remember what I've learned" },
-    { id: 'test_knowledge', label: 'Test my knowledge' },
-    { id: 'make_studying_easier', label: 'Make studying easier' },
+    { id: 'prepare_for_exams', label: 'Preparing for examinations' },
+    { id: 'remember_learning', label: "Remembering what I've learned" },
+    { id: 'test_knowledge', label: 'Testing my knowledge' },
+    { id: 'make_studying_easier', label: 'Studying is hard' },
 ];
 
-export const explanationPreferences: OnboardingChoice<ExplanationPreference>[] = [
-    { id: 'simple', label: 'Simple explanations without complicated words' },
-    { id: 'step_by_step', label: 'Step-by-step breakdowns' },
-    { id: 'real_life_examples', label: 'Real-life examples and analogies' },
-    { id: 'detailed', label: 'Detailed explanations that cover everything' },
-    { id: 'mixture', label: 'A mixture of everything' },
+export const explanationPreferences: OnboardingReplyChoice<ExplanationPreference>[] = [
+    {
+        id: 'simple',
+        label: 'Keep it simple',
+        response: 'Gotcha! No complicated explanations, just the clear stuff.',
+    },
+    {
+        id: 'real_life_examples',
+        label: 'Show me examples',
+        response: 'Say less! Sometimes seeing it makes all the difference.',
+    },
+    {
+        id: 'detailed',
+        label: 'Give me the details',
+        response: "I like your curiosity! Let's get into the details.",
+    },
+    {
+        id: 'mixture',
+        label: 'A little bit of everything',
+        response: 'I guess a little variety keeps things interesting!',
+    },
 ];
 
-export const studyChallenges: OnboardingChoice<StudyChallenge>[] = [
-    { id: 'understanding_concepts', label: 'Understanding difficult concepts' },
-    { id: 'remembering_reading', label: "Remembering what I've read" },
-    { id: 'staying_focused', label: 'Staying focused' },
-    { id: 'knowing_where_to_start', label: 'Knowing where to start' },
-    { id: 'exam_preparation', label: 'Preparing for examinations' },
-    { id: 'managing_study_time', label: 'Managing my study time' },
+export const studyChallenges: OnboardingReplyChoice<StudyChallenge>[] = [
+    {
+        id: 'understanding_concepts',
+        label: 'Understanding difficult concepts',
+        response: "We'll break those big ideas into bite-sized pieces!",
+    },
+    {
+        id: 'remembering_reading',
+        label: "Remembering what I've read",
+        response: "Let's give those memories a reason to stick around!",
+    },
+    {
+        id: 'staying_focused',
+        label: 'Staying focused',
+        response: "Let's help you keep your mind on the bright side!",
+    },
+    {
+        id: 'managing_study_time',
+        label: 'Managing my study time',
+        response: "We'll make every study minute count!",
+    },
 ];
 
 export const dailyGoals: OnboardingChoice<DailyGoal>[] = [
@@ -42,14 +76,20 @@ export const dailyGoals: OnboardingChoice<DailyGoal>[] = [
     { id: '10', label: '10 min', description: 'A quick learning session' },
     { id: '15', label: '15 min', description: 'A steady study habit' },
     { id: '20', label: '20 min', description: 'A focused session' },
-    { id: '30', label: '30 min', description: 'Deep learning time' },
     { id: 'flexible', label: "I'll decide as I go", description: 'Keep things flexible' },
 ];
 
-export const reminderChoices = [
-    { id: 'morning', label: 'Morning', time: '08:00' },
-    { id: 'afternoon', label: 'Afternoon', time: '13:00' },
-    { id: 'evening', label: 'Evening', time: '19:00' },
-    { id: 'custom', label: 'Let me choose a time', time: '09:00' },
-    { id: 'none', label: 'No reminders for now', time: '' },
+export interface ReminderChoiceItem {
+    id: 'morning' | 'afternoon' | 'evening' | 'custom' | 'none';
+    label: string;
+    description: string;
+    time: string;
+}
+
+export const reminderChoices: readonly ReminderChoiceItem[] = [
+    { id: 'morning', label: 'Morning', description: '8:00 AM', time: '08:00' },
+    { id: 'afternoon', label: 'Afternoon', description: '1:00 PM', time: '13:00' },
+    { id: 'evening', label: 'Evening', description: '7:00 PM', time: '19:00' },
+    { id: 'custom', label: 'Let me choose a time', description: 'Pick your own', time: '09:00' },
+    { id: 'none', label: 'No reminders for now', description: "I'll study on my own", time: '' },
 ] as const;

@@ -1,10 +1,9 @@
-import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';
+import React from 'react';
+import { StyleSheet, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
 import { Colors } from '@/constants/theme';
-
-const BLUE = '#0057B8';
-const YELLOW = '#FFDF00';
+import { ONBOARDING_BLUE } from './onboardingStyles';
 
 interface OnboardingFooterProps {
     onContinue: () => void;
@@ -33,39 +32,48 @@ export function OnboardingFooter({
             style={[
                 styles.footer,
                 {
-                    paddingBottom: Math.max(insets.bottom, 12),
-                    backgroundColor: C.background,
+                    paddingBottom: Math.max(insets.bottom, 16) + 4,
                 },
             ]}
         >
             {skipLabel && onSkip ? (
-                <Pressable
+                <TouchableOpacity
                     accessibilityRole="button"
                     disabled={loading}
                     onPress={onSkip}
+                    activeOpacity={0.7}
                     style={styles.skipButton}
                 >
                     <Text style={[styles.skipText, { color: C.textSecondary }]}>{skipLabel}</Text>
-                </Pressable>
+                </TouchableOpacity>
             ) : null}
-            <Pressable
+
+            <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityState={{ disabled: isDisabled }}
                 disabled={isDisabled}
                 onPress={onContinue}
-                style={({ pressed }) => [
+                activeOpacity={0.85}
+                style={[
                     styles.continueButton,
                     {
-                        backgroundColor: isDisabled ? '#FFF2A6' : YELLOW,
-                        borderColor: isDisabled ? '#D8C45A' : BLUE,
-                        elevation: isDisabled ? 0 : 2,
-                        shadowOpacity: isDisabled ? 0 : 0.14,
+                        backgroundColor: ONBOARDING_BLUE,
+                        opacity: isDisabled ? 0.45 : 1,
                     },
-                    pressed && !isDisabled && styles.pressed,
+                    !isDisabled && styles.continueButtonActive,
                 ]}
             >
-                <Text style={styles.continueText}>{loading ? 'Saving…' : label}</Text>
-            </Pressable>
+                <Text
+                    style={[
+                        styles.continueText,
+                        {
+                            color: '#FFFFFF',
+                        },
+                    ]}
+                >
+                    {loading ? 'Saving…' : label}
+                </Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -73,33 +81,36 @@ export function OnboardingFooter({
 const styles = StyleSheet.create({
     footer: {
         paddingHorizontal: 20,
-        paddingTop: 8,
+        paddingTop: 4,
+        backgroundColor: 'transparent',
     },
     skipButton: {
-        minHeight: 40,
+        minHeight: 36,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 4,
+        marginBottom: 6,
     },
     skipText: {
         fontFamily: 'Satoshi-Bold',
         fontSize: 14,
     },
     continueButton: {
-        alignSelf: 'stretch',
+        width: '100%',
         minHeight: 56,
         borderRadius: 28,
-        borderWidth: 2,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: BLUE,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
+    },
+    continueButtonActive: {
+        shadowColor: ONBOARDING_BLUE,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.32,
+        shadowRadius: 14,
+        elevation: 4,
     },
     continueText: {
-        color: BLUE,
         fontFamily: 'Satoshi-Bold',
-        fontSize: 16,
+        fontSize: 17,
+        letterSpacing: -0.2,
     },
-    pressed: { opacity: 0.88 },
 });

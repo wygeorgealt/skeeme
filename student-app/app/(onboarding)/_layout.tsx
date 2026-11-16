@@ -1,14 +1,12 @@
 import { Stack } from 'expo-router';
-import { useReducedMotion } from 'react-native-reanimated';
 
 export default function OnboardingLayout() {
-    const reduceMotion = useReducedMotion();
-
     return (
         <Stack
             screenOptions={{
                 headerShown: false,
-                animation: reduceMotion ? 'fade' : 'slide_from_right',
+                animation: 'default',
+                animationMatchesGesture: true,
                 gestureEnabled: true,
                 contentStyle: { backgroundColor: 'transparent' },
             }}
