@@ -1,6 +1,6 @@
 # Skeeme Core Project Memory
 
-Last compiled: 2026-11-15
+Last compiled: 2026-11-18
 
 This is the project handoff document for future agents and contributors. It records
 the main architecture, durable product/engineering decisions, completed work known
@@ -63,6 +63,9 @@ README.
 - KaTeX / markdown rendering for math and explanations.
 - Native integrations include camera and image picker, notifications, secure
   storage, PDF export/sharing, RevenueCat, Superwall, PostHog, and Google sign-in.
+- The onboarding account handoff supports Google and Apple provider sign-in,
+  plus email signup and existing-account login; onboarding answers are persisted
+  to the signed-in account before local onboarding data is cleared.
 - The app uses the Go API by default:
   `https://skeeme.brimble.app/api/v2/student/`.
 
@@ -102,22 +105,21 @@ not complete.
 The auth selection screen holds the static blue `#0057B8` and yellow `#FFDF00`
 theme shown in the user's simulator screenshot. Its bottom-aligned, narrower
 "Get started" button is yellow with blue text, and the text-only "Already have
-an account? Log in" link sits below it and opens `/login`. Satoshi Regular,
-Medium, Bold, and Black are loaded by the root font loader and applied across
-app-owned React Native text through shared `Text` and `TextInput` wrappers. The
-wrappers map React Native weights and NativeWind weight classes to the
-corresponding static Satoshi face, then remove generic weight styling so the
-selected face controls its own weight. Explicit non-Satoshi families and
-monospaced math remain supported. Above the CTA, “Turn pages into” uses Satoshi
-Bold at 32/40 in yellow. “BRIGHT IDEAS” stays in Bungee Regular at 40, also in
-yellow; the headline and page no longer cycle colors or fonts. The four added
-display fonts use the SIL Open Font License, with license files alongside the
-assets. The headline group has a 36-point gap above the CTA. A centered,
-flexible hero stage above the headline hosts the looping, muted “Idle → Wakes”
-test mascot. It uses the Masko React Native player with HEVC on iOS and stacked
-MP4 on Android, pauses when offscreen or backgrounded, and shows its still frame
-when Reduce Motion is enabled. The current auth-select JSX does not render a
-legal notice.
+an account? Log in" link sits below it and opens `/login`. Allo Regular, Medium,
+Bold, and Black replace Satoshi across app-owned text. iOS and Android use
+bundled static OTF faces; web uses Allo's variable WOFF2 from `allo-font`.
+Shared `Text` and `TextInput` wrappers map native weights and NativeWind
+classes to static faces, and preserve variable weights on web. Explicit display
+families and monospaced math remain supported. Above the CTA, “Turn pages into”
+uses Allo Bold at 32/40 in yellow. “BRIGHT IDEAS” stays in Bungee Regular at
+40, also in yellow; the headline and page no longer cycle colors or fonts. The
+four added display fonts use the SIL Open Font License, with license files
+alongside the assets. The headline group has a 36-point gap above the CTA. A
+centered,
+flexible hero stage above the headline hosts Lumi's looping enthusiastic
+scribbling animation. It uses the Masko React Native player with HEVC on iOS
+and stacked MP4 on Android, and shows its still frame when Reduce Motion is
+enabled. The current auth-select JSX does not render a legal notice.
 The “Get started” CTA opens a seven-step learning-preference flow: learning
 goals, explanation preferences, study challenges, daily goal, a personalized
 summary, and optional reminders, following the auth-selection welcome screen.
@@ -129,23 +131,81 @@ after an explicit time selection and opt-in action. Users who skip or decline
 reminders do not receive a permission prompt. The onboarding routes use shared
 progress, question, and choice components with per-screen layouts. Question lists
 and the personalized result reserve trailing scroll space so the final option or
-content does not sit against the fixed lower action area or screen edge. The
-onboarding voice treats Skeemy as a study companion, using first-person
+content does not sit against the fixed lower action area or screen edge. The top
+progress track is 75% of header content width (capped at 300 points) and is
+centered independently of the Back button. The onboarding voice treats Skeemy
+as a study companion, using first-person
 questions where natural. Explanation preferences use the prompt “How would you
 like me to explain things?” and four choices with supporting descriptions.
 Previously saved step-by-step preferences remain readable in the personalized
-summary. Onboarding screens use native fades;
+summary. Selecting an answer on the first three question screens replaces
+Skeemy's prompt with a choice-specific typed reply before advancing; daily-goal
+selection advances to the summary from the explicit Continue button. Answers
+remain selectable after returning with Back. Onboarding screens use native fades;
 question prompts type once before their options softly reveal. Completed
 entrances are remembered for the current app session, so returning to a step
 does not replay the sequence. Reduced Motion skips typing and uses a brief fade.
 The option list stays in layout while hidden to keep the mascot and question
 stationary. Question screens use the animated mascot player and the native
 platform-default stack transition rather than fading in. Platform-specific
-mascot clips are bundled and loaded from the welcome screen, so later questions
-reuse a local file instead of waiting for a remote download. The updated
-sequence and appearance still need device visual verification. The daily-goal
-question asks “How long can we study for?” and offers 5, 10, 15, 20 minutes or
-the flexible option; legacy 30-minute answers remain readable in the summary.
+mascot clips are bundled for the quietly writing onboarding animation, the
+enthusiastic auth-selection animation, and the splash animation where Skeemy
+peacefully opens his eyes. Choosing a daily study duration opens the
+personalized study plan screen with the supplied lights-up animation. The
+5.167-second clip is paused at 5.14 seconds, near its end. On screen entry, a
+custom three-stage loader reads “Shedding light on your goals...”,
+“Finding your brightest approach”, and “Setting your daily rhythm”; one
+progress bar is visible at a time, without subtext. It fills in 4.2 seconds
+(about 1.4 seconds per stage), reaching 100% before 4.5 seconds. The active
+label uses primary text; inactive labels use readable secondary text. The
+32/39 Allo Black heading and yellow progress/completion accents remain. The bar
+stays full through the 860 ms final-pose hold. Skeemy then rises and shrinks as
+the plan card slides into view on the same screen. The onboarding progress bar
+and Continue button return after the card settles, while Back stays available
+throughout; Back on the plan dismisses directly to the daily-goal picker.
+Reduced Motion skips the loader and choreography and shows the
+completed profile state. The latest timing and visual changes still need a
+Simulator check. The startup splash uses the auth screen's blue (`#0057B8`) and stays visible for
+5.2 seconds to give the animation time to
+play. The revealed plan presents the user's learning goal, challenge,
+explanation preference, and daily target as one concise conversational
+summary selected from a local response bank. The bank is available immediately
+and works offline; no live AI request is made during onboarding. The action
+reads “Let’s do this!” with a right-arrow icon.
+The daily-goal question asks “How long can we study for?” and uses a large,
+vertically snapping carousel for 1–20 minutes, defaulting to 10 when there is no
+supported saved value. The selected number and unit render inline to prevent
+the unit wrapping below the number. A separate Continue action saves the
+selected duration and opens the personalized plan. Summary copy handles one
+minute as singular; saved legacy 30-minute and flexible answers remain
+supported but are no longer offered in the picker. The carousel was reviewed
+in the iPhone 17 Simulator; a final post-fix capture and gesture feel-check
+remain open.
+
+Before the first learning question, a name screen types “Hey, I'm Skeemy.
+What's your name?” and waits for a non-empty first name. Continue saves it in
+local onboarding data, replays the bundled name-wave animation while typing
+“Nice to meet you, [name]!”, then advances to the first question. The clip is
+restarted with an explicit Masko reset/play when the greeting begins, then
+paused after 1.8 seconds rather than looping. The first name is sent with email
+signup and social account creation.
+
+After reminders, the completed plan is kept locally while the user creates or
+signs into an account on the “Save your study plan” screen. Google uses the
+existing native sign-in helper and browser Google Identity Services; Apple
+identity tokens are verified by the Go API against Apple's signing keys. The
+signed-in onboarding payload is saved before local answers are cleared. The
+screen uses the supplied “Study Glow” Masko canvas; set
+`EXPO_PUBLIC_MASKO_STUDY_GLOW_URL` in local or build environment configuration.
+The key-bearing delivery URL is intentionally not kept in tracked source.
+The first live pose clip (or pose event fallback) sets `behavior::focus`
+instantly to interrupt the Idle loop and start the existing Idle-to-Reading
+transition; the Reading self-edge keeps it looping. The auth choices are
+full-width Apple, Google, and email buttons with distinct visual hierarchy.
+Apple Sign-In requires an iOS native build with the Apple authentication module
+and Sign in with Apple capability enabled. A development-only shortcut below
+“Get started” on auth selection opens this screen with a preview parameter; its
+Back action returns to auth selection. Normal startup routing is unchanged.
 
 The user explicitly prefers:
 
@@ -451,12 +511,25 @@ relevant source/tests for exact diffs.
    Expo/React Native; no SwiftUI rewrite was started or approved.
 9. **Auth mascot:** replace the current “Idle → Wakes” test clip with the final
    mascot asset/direction when the user provides it.
-10. **Onboarding verification:** the latest iPhone 17 simulator capture still
-    shows borderless, vertically stacked choices and a text-only Continue
-    control, although the current source has bordered rows and a full-width
-    button. Reload the development client when the simulator is available, then
-    verify selected states, back-navigation, summary, and reminder paths. The
+10. **Onboarding verification:** verify selected states, name-entry/greeting
+    back-navigation and one-shot wave, choice-specific reply timing, summary,
+    reminder paths, the three-stage personalized-plan loader, Save your study
+    plan mascot playback, Google/Apple auth, and post-auth answer persistence on
+    an iPhone 17 Simulator. The save screen groups the mascot and copy above a
+    bottom-aligned provider section; the first live pose clip sets
+    `behavior::focus` instantly to start the Idle-to-Reading edge. The supplied
+    graph already loops Reading without another trigger. TypeScript, focused
+    ESLint, and iOS export pass. The Simulator accessibility tree exposes Apple,
+    but its screenshot did not show the updated button styling or mascot
+    animation; refresh the native bundle and recheck when the Simulator is not
+    in active use. Native provider flows remain untested. The centered,
+    shortened progress track was checked on the current iPhone 17 Simulator.
+    A development-only button below “Get started” on auth selection now opens
+    Save Your Study Plan directly; verify it in the current Metro session. The
     Settings screen's Study Reminders switch remains local-only.
+11. **Apple OAuth deployment:** verify the deployed Go API has outbound access
+    to Apple's signing-key endpoint and configure `APPLE_CLIENT_IDS` if Apple
+    identity tokens use client IDs beyond the app bundle identifier.
 
 ## Development and validation
 
@@ -506,6 +579,244 @@ is pre-existing rather than silently broadening scope.
 Add one short dated entry after each engineering task. Include the user goal,
 important files/areas changed, exact validation performed, and any remaining
 action. Do not include unrelated personal information or secrets.
+
+### 2026-11-18 — Add the Save Your Study Plan handoff
+
+- Added the post-onboarding account screen and kept answers local until the
+  signed-in account accepts them. Reused the native Google sign-in helper,
+  added Apple identity-token verification, and integrated the supplied Study
+  Glow mascot canvas.
+- Validation: student-app TypeScript, focused ESLint (0 errors; existing
+  warnings), iOS Expo export, `cd skeeme-go && go test ./...`, and
+  `git diff --check` passed. The iPhone 17 Simulator loaded the auth-selection
+  screen, but UI taps failed as unverified; the save screen and native provider
+  flows still need Simulator verification and an Apple-enabled native rebuild.
+
+### 2026-11-18 — Polish the Save Your Study Plan screen
+
+- Rebalanced the iOS layout around the animated mascot and grouped the Apple,
+  Google, and email choices with existing-account/legal links below. The player
+  sets `behavior::focus` on its first pose so the existing Idle-to-Reading
+  transition can run; the supplied Reading pose is already a looping edge.
+- Validation: student-app TypeScript, focused ESLint, iOS Expo export, and
+  `git diff --check` passed. Simulator visual confirmation remains open.
+
+### 2026-11-18 — Refine auth choices and trigger Reading animation
+
+- Made email a full-width secondary button, strengthened the Google outline,
+  and set the Masko focus input on the first live pose clip so Idle transitions
+  into the existing Reading loop immediately.
+- Validation: student-app TypeScript, focused ESLint, iOS Expo export, and
+  `git diff --check` passed. The iOS export completed with the existing
+  expo-superwall resolution warning. The iPhone 17 Simulator exposed Apple in
+  its accessibility tree, but its screenshot did not reflect the updated
+  styles or animation; repeat after a safe native bundle refresh.
+
+### 2026-11-18 — Add a development shortcut to Save Your Study Plan
+
+- Added a `__DEV__` button below “Get started” that opens the save screen
+  without completing onboarding; its preview Back action returns to auth
+  selection. Removed the attempted root startup redirect.
+- Validation: student-app TypeScript, focused ESLint (0 errors; existing
+  warnings), Impeccable detector (no findings), and `git diff --check` passed.
+  No rebuild or Simulator interaction was performed.
+
+### 2026-11-18 — Center the onboarding progress track
+
+- Shortened the shared top progress track and centered it independently of the
+  Back button, keeping the bar responsive with a 300-point maximum width.
+- Validation: student-app TypeScript, focused ESLint, layout detector,
+  `git diff --check`, and visual inspection in the iPhone 17 Simulator.
+
+### 2026-11-18 — Return plan Back to the duration picker
+
+- Made the personalized-plan Back button dismiss directly to the existing
+  daily-goal route, avoiding intermediate onboarding pages.
+- Validation: student-app TypeScript, focused ESLint, and `git diff --check`
+  passed.
+
+### 2026-11-18 — Add a name greeting before onboarding
+
+- Added a name step before the first question, with typed Skeemy prompts,
+  trimmed input, a personalized typed greeting, and automatic advance. Bundled
+  the supplied one-shot wave clips for iOS and Android and routed onboarding
+  entry points through the new screen. Updated the `OnboardingQuestion`
+  component, `OnboardingData`, and the onboarding route guards.
+- Validation: student-app TypeScript; targeted ESLint (no errors, existing
+  warnings); iOS and Android Expo exports; `git diff --check`; Impeccable
+  detector. Simulator visual verification remains open. Linting the login file
+  also surfaced an unrelated existing set-state-in-effect error.
+
+### 2026-11-18 — Replay Skeemy for the name greeting
+
+- Fixed the personalized greeting handoff to explicitly reset and play the
+  already-mounted Masko clip when the dialogue phase changes, rather than relying
+  on remount autoplay.
+- Validation: student-app TypeScript, focused ESLint, iOS Expo export, and
+  `git diff --check` passed. Simulator playback confirmation remains open.
+
+### 2026-11-17 — Design the sequential plan loader
+
+- Replaced the “Powering up...” caption with a reference-inspired four-step
+  loader: completed steps check off, one active progress bar fills at a time,
+  and the last reaches 100% with Skeemy's 5.14-second playback stop. Kept the
+  860 ms pose hold and plan reveal, moved Skeemy to the lower stage, used the
+  brand's yellow sparkle accent, and avoided unsupported user-count claims.
+- Added a playback-start callback to the shared mascot so the loader clock
+  starts from Masko's pose/clip event. Updated the onboarding handoff notes.
+- Validation: student-app TypeScript, targeted ESLint, iOS Expo export, and
+  `git diff --check` passed. The iPhone 17 Simulator returned to auth during
+  export; a final capture of the redesigned loader remains open.
+
+### 2026-11-17 — Refine personalized plan loader
+
+- Replaced the four loader labels with the user's three requested stages,
+  removed their subtexts, and used Skeeme yellow on the progress fill and
+  completed-stage badges.
+- Validation: student-app TypeScript, targeted ESLint, and `git diff --check`
+  passed. The final loader still needs a Simulator visual check.
+
+### 2026-11-17 — Tighten plan-loader timing
+
+- Started the progress clock on screen entry so all three stages complete in
+  4.2 seconds, ahead of the 4.5-second target. Kept the mascot's 5.14-second
+  stop and final-pose hold, dimmed inactive labels, and enlarged the heading.
+- Added a clip-ready fallback for the mascot playback-start event so the stop
+  timer works even if the native event is delayed.
+- Validation: student-app TypeScript, targeted ESLint, and `git diff --check`
+  passed. The latest loader still needs a Simulator visual check.
+
+### 2026-11-17 — Replace Satoshi with Allo typography
+
+- Installed `allo-font`; switched app-owned text styles and shared text
+  wrappers to Allo while preserving the existing weight roles and separate
+  display faces. Native platforms bundle the licensed OTF weights; web loads
+  the variable WOFF2 through a web-only font map.
+- Validation: TypeScript, targeted ESLint (0 errors; 34 existing warnings),
+  iOS/Android/web Expo exports, `git diff --check`, and the Impeccable type
+  detector passed. Web export exited successfully despite the existing
+  Expo Superwall static-render error log. Simulator visual verification
+  remains open; restart Metro after the WOFF2 asset configuration change.
+
+### 2026-11-17 — Turn daily-goal choices into a wheel picker
+
+- Replaced the duration cards with a centered, snapping 1–20-minute wheel,
+  kept the unit to the selected number's right, reduced the space above
+  Skeemy's question, and added a separate Continue action. Updated the local
+  summary bank to generate singular/plural duration copy while preserving
+  support for saved legacy values.
+- Validation: student-app TypeScript check, targeted ESLint, iOS Expo export,
+  and `git diff --check` passed. The iPhone 17 Simulator showed the new wheel;
+  its unit-label alignment was corrected in source, but a final post-fix
+  screenshot and gesture feel-check remain open.
+
+### 2026-11-17 — Keep the duration unit on one line
+
+- Changed the selected duration to one inline text run and removed its fixed
+  width constraint, preventing “minutes” from wrapping under the number.
+- Validation: student-app TypeScript check, targeted ESLint, iOS Expo export,
+  and `git diff --check` passed. A post-fix Simulator capture remains open.
+
+### 2026-11-17 — Set auth and splash mascot animations
+
+- Bundled the supplied enthusiastic and resting clips for iOS and Android,
+  added selectable variants to the shared Masko player, used the enthusiastic
+  animation on auth selection and the resting animation on the startup splash.
+- Validation: student-app TypeScript check, targeted ESLint (0 errors; existing
+  warnings remain), iOS and Android Expo exports, and `git diff --check` passed.
+  Expo exports reported the existing non-blocking `expo-superwall` resolution
+  warning. Device visual verification remains open.
+
+### 2026-11-17 — Allow time for the resting splash animation
+
+- Extended the custom splash duration to 4.5 seconds so the resting animation
+  has more time to play before the app continues.
+- Validation: student-app TypeScript check, targeted ESLint, and
+  `git diff --check` passed. Device visual verification remains open.
+
+### 2026-11-17 — Match splash duration and color to request
+
+- Set the startup splash to the welcome screen's blue (`#0057B8`) and extended
+  its duration to 5 seconds.
+- Validation: student-app TypeScript check, targeted ESLint, and
+  `git diff --check` passed. Device visual verification remains open.
+
+### 2026-11-17 — Set the onboarding mascot animation
+
+- Bundled the supplied quietly writing clip for iOS and Android and use it on
+  onboarding question and personalized-plan screens.
+- Validation: student-app TypeScript check, targeted ESLint, iOS and Android
+  Expo exports, and `git diff --check` passed. Exports reported the existing
+  non-blocking `expo-superwall` resolution warning. Device visual verification
+  remains open.
+
+### 2026-11-17 — Add profile preparation mascot transition
+
+- After a daily-goal choice, show the supplied lights-up animation for six
+  seconds before the personalized plan; bundle the platform clips, retain
+  onboarding progress/back navigation, and skip the wait with Reduced Motion.
+- Validation: student-app TypeScript check, targeted ESLint, iOS and Android
+  Expo exports, and `git diff --check` passed. Exports reported the existing
+  non-blocking `expo-superwall` resolution warning. Device visual verification
+  remains open.
+
+### 2026-11-17 — Hold the profile-ready mascot pose
+
+- Stop the Masko clip near its 5.167-second end, hold the thumbs-up pose for
+  860 ms, then continue to the personalized plan instead of showing the clip's
+  automatic loop.
+- Validation: student-app TypeScript check, targeted ESLint, and
+  `git diff --check` passed. Device visual verification remains open.
+
+### 2026-11-17 — Clarify profile preparation state
+
+- Added “Powering up...” under the mascot and hid the progress bar on the
+  profile transition while keeping Back navigation.
+- Validation: student-app TypeScript check, targeted ESLint, and
+  `git diff --check` passed. Device visual verification remains open.
+
+### 2026-11-17 — Reveal the study profile in place
+
+- Replaced the separate profile-loading route with a same-screen reveal:
+  Skeemy holds the final pose, rises and shrinks as the plan card enters, then
+  the progress bar and Continue button return. Back remains available and
+  Reduced Motion skips the choreography.
+- Validation: student-app TypeScript check, targeted ESLint, and
+  `git diff --check` passed. Device visual verification remains open.
+
+### 2026-11-17 — Clarify personalized study plan
+
+- Reworded the plan intro in Skeemy's companion voice, replaced the stage
+  badge with labeled focus/style/daily-goal summaries, and changed the CTA to
+  “Let's do this!” with an arrow icon.
+- Validation: student-app TypeScript check, targeted ESLint, and
+  `git diff --check` passed. Device visual verification remains open.
+
+### 2026-11-17 — Add offline personalized learning summaries
+
+- Replaced the individual answer recap with a concise local summary bank
+  composed from the selected learning goal, study challenge, explanation
+  preference, and daily target. This keeps the response ready during Skeemy's
+  lights-up animation without a network request.
+- Validation: student-app TypeScript check, targeted ESLint, `git diff
+  --check`, and a Node check covering 1,080 current and legacy combinations
+  passed. Device visual verification remains open.
+
+### 2026-11-17 — Replace splash mascot animation
+
+- Replaced the splash's resting clip with Skeemy's new eye-opening animation,
+  bundled from the supplied iOS and Android assets. Kept the blue background
+  and existing 5.2-second splash duration.
+- Validation: student-app TypeScript check, targeted ESLint, and
+  `git diff --check` passed. Device visual verification remains open.
+
+### 2026-11-16 — Add interactive onboarding replies
+
+- Added choice-specific Skeemy responses to the first three question screens,
+  removed “Knowing where to start” from visible study challenges, and kept
+  daily-goal choices moving directly to the personalized summary.
+- Validation: student-app TypeScript check, targeted ESLint, and
+  `git diff --check` passed. Device visual verification remains open.
 
 ### 2026-11-16 — Set companion voice across onboarding questions
 

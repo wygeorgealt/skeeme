@@ -72,11 +72,10 @@ export const studyChallenges: OnboardingReplyChoice<StudyChallenge>[] = [
 ];
 
 export const dailyGoals: OnboardingChoice<DailyGoal>[] = [
-    { id: '5', label: '5 min', description: 'A little progress' },
-    { id: '10', label: '10 min', description: 'A quick learning session' },
-    { id: '15', label: '15 min', description: 'A steady study habit' },
-    { id: '20', label: '20 min', description: 'A focused session' },
-    { id: 'flexible', label: "I'll decide as I go", description: 'Keep things flexible' },
+    ...Array.from({ length: 20 }, (_, index) => {
+        const id = String(index + 1) as DailyGoal;
+        return { id, label: `${id} min` };
+    }),
 ];
 
 export interface ReminderChoiceItem {

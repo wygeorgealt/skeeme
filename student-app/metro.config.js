@@ -8,6 +8,9 @@ module.exports = (() => {
   if (!resolver.assetExts.includes('riv')) {
     resolver.assetExts.push('riv');
   }
+  if (!resolver.assetExts.includes('woff2')) {
+    resolver.assetExts.push('woff2');
+  }
 
   config.transformer = {
     ...transformer,

@@ -2,12 +2,17 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Text as RNText, View, useColorScheme } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 import { AnimatedMascot } from '@/components/AnimatedMascot';
+import type { MascotAnimation } from '@/components/mascotClipUrls';
 import { onboardingStyles } from './onboardingStyles';
 
 interface OnboardingQuestionProps {
     prompt: string;
     mascotSize?: number;
+    mascotAnimation?: MascotAnimation;
+    mascotPlaybackKey?: string | number;
+    mascotStopAfterMs?: number;
     shouldType?: boolean;
+    typingDurationMs?: number;
     reducedMotionCompletionDelayMs?: number;
     onTypingComplete?: () => void;
 }
@@ -18,7 +23,11 @@ const TYPE_COMPLETE_PAUSE_MS = 180;
 export function OnboardingQuestion({
     prompt,
     mascotSize = 130,
+    mascotAnimation = 'quietly-writes-looks',
+    mascotPlaybackKey,
+    mascotStopAfterMs,
     shouldType = false,
+    typingDurationMs,
     reducedMotionCompletionDelayMs = 0,
     onTypingComplete,
 }: OnboardingQuestionProps) {
@@ -27,7 +36,12 @@ export function OnboardingQuestion({
     return (
         <View style={onboardingStyles.questionRow}>
             <View style={onboardingStyles.mascotWrapper}>
-                <AnimatedMascot size={mascotSize} />
+                <AnimatedMascot
+                    size={mascotSize}
+                    animation={mascotAnimation}
+                    playbackKey={mascotPlaybackKey}
+                    stopAfterMs={mascotStopAfterMs}
+                />
             </View>
             <View
                 style={[
@@ -44,14 +58,15 @@ export function OnboardingQuestion({
                     ]}
                 />
                 <OnboardingPrompt
-                key={prompt}
-                prompt={prompt}
-                shouldType={shouldType}
-                reducedMotionCompletionDelayMs={
-                    reducedMotionCompletionDelayMs
-                }
-                onTypingComplete={onTypingComplete}
-                color={isDark ? '#FFFFFF' : '#0B0F19'}
+                    key={prompt}
+                    prompt={prompt}
+                    shouldType={shouldType}
+                    typingDurationMs={typingDurationMs}
+                    reducedMotionCompletionDelayMs={
+                        reducedMotionCompletionDelayMs
+                    }
+                    onTypingComplete={onTypingComplete}
+                    color={isDark ? '#FFFFFF' : '#0B0F19'}
                 />
             </View>
         </View>
@@ -61,6 +76,7 @@ export function OnboardingQuestion({
 interface OnboardingPromptProps {
     prompt: string;
     shouldType: boolean;
+    typingDurationMs?: number;
     reducedMotionCompletionDelayMs: number;
     onTypingComplete?: () => void;
     color: string;
@@ -69,12 +85,19 @@ interface OnboardingPromptProps {
 function OnboardingPrompt({
     prompt,
     shouldType,
+    typingDurationMs,
     reducedMotionCompletionDelayMs,
     onTypingComplete,
     color,
 }: OnboardingPromptProps) {
     const reduceMotion = useReducedMotion();
     const characters = useMemo(() => Array.from(prompt), [prompt]);
+    const characterDelayMs = typingDurationMs === undefined
+        ? TYPE_DELAY_MS
+        : Math.max(
+            12,
+            Math.ceil(typingDurationMs / Math.max(characters.length, 1)),
+        );
     const [typedCount, setTypedCount] = useState(
         shouldType && !reduceMotion ? 0 : characters.length,
     );
@@ -108,21 +131,23 @@ function OnboardingPrompt({
 
             if (index >= characters.length) {
                 timeout = setTimeout(
-                () => onTypingComplete?.(),
-                TYPE_COMPLETE_PAUSE_MS,
+                    () => onTypingComplete?.(),
+                    TYPE_COMPLETE_PAUSE_MS,
                 );
                 return;
             }
 
-            timeout = setTimeout(typeNextCharacter, TYPE_DELAY_MS);
+            timeout = setTimeout(typeNextCharacter, characterDelayMs);
         };
 
-        timeout = setTimeout(typeNextCharacter, TYPE_DELAY_MS);
+        timeout = setTimeout(typeNextCharacter, characterDelayMs);
         return () => clearTimeout(timeout);
     }, [
+        characterDelayMs,
         characters,
         onTypingComplete,
         reduceMotion,
+        typingDurationMs,
         reducedMotionCompletionDelayMs,
         shouldType,
     ]);

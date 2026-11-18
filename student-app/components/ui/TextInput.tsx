@@ -3,7 +3,7 @@ import {
   TextInput as RNTextInput,
   type TextInputProps as RNTextInputProps,
 } from 'react-native';
-import { resolveSatoshiTextProps } from './satoshiFont';
+import { resolveAlloTextProps } from './alloFont';
 
 type AppTextInputProps = RNTextInputProps & {
   className?: string;
@@ -11,7 +11,7 @@ type AppTextInputProps = RNTextInputProps & {
 
 export const TextInput = React.forwardRef<RNTextInput, AppTextInputProps>(
   ({ style, className, ...rest }, ref) => {
-    const resolved = resolveSatoshiTextProps(style, className);
+    const resolved = resolveAlloTextProps(style, className);
 
     return (
       <RNTextInput

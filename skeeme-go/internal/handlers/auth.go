@@ -253,9 +253,15 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fullName := req.Name
-	firstName := ""
-	lastName := ""
+	firstName := strings.TrimSpace(req.FirstName)
+	lastName := strings.TrimSpace(req.LastName)
+	fullName := strings.TrimSpace(req.Name)
+	if fullName == "" {
+		fullName = strings.TrimSpace(firstName + " " + lastName)
+	}
+	if fullName == "" {
+		fullName = "Student"
+	}
 
 	rand.Seed(time.Now().UnixNano())
 	refCode := fmt.Sprintf("%06X", rand.Intn(0xFFFFFF))

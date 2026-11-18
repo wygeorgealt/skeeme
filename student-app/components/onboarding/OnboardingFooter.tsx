@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity, View, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
+import { Icon } from '@/components/ui/Icon';
 import { Colors } from '@/constants/theme';
 import { ONBOARDING_BLUE } from './onboardingStyles';
 
@@ -10,6 +11,7 @@ interface OnboardingFooterProps {
     disabled?: boolean;
     loading?: boolean;
     label?: string;
+    showArrow?: boolean;
     skipLabel?: string;
     onSkip?: () => void;
 }
@@ -19,6 +21,7 @@ export function OnboardingFooter({
     disabled = false,
     loading = false,
     label = 'Continue',
+    showArrow = false,
     skipLabel,
     onSkip,
 }: OnboardingFooterProps) {
@@ -63,16 +66,19 @@ export function OnboardingFooter({
                     !isDisabled && styles.continueButtonActive,
                 ]}
             >
-                <Text
-                    style={[
-                        styles.continueText,
-                        {
-                            color: '#FFFFFF',
-                        },
-                    ]}
-                >
-                    {loading ? 'Saving…' : label}
-                </Text>
+                <View style={styles.continueContent}>
+                    <Text style={styles.continueText}>
+                        {loading ? 'Saving…' : label}
+                    </Text>
+                    {showArrow && !loading ? (
+                        <View
+                            accessible={false}
+                            importantForAccessibility="no"
+                        >
+                            <Icon name="ArrowRight" size={18} color="#FFFFFF" />
+                        </View>
+                    ) : null}
+                </View>
             </TouchableOpacity>
         </View>
     );
@@ -91,7 +97,7 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
     skipText: {
-        fontFamily: 'Satoshi-Bold',
+        fontFamily: 'Allo-Bold',
         fontSize: 14,
     },
     continueButton: {
@@ -109,8 +115,15 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     continueText: {
-        fontFamily: 'Satoshi-Bold',
+        fontFamily: 'Allo-Bold',
         fontSize: 17,
         letterSpacing: -0.2,
+        color: '#FFFFFF',
+    },
+    continueContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
     },
 });

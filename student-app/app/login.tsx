@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/Text';
 import { useState, useEffect, useCallback } from 'react';
 import { View, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, useColorScheme, StyleSheet } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
 import { api } from '@/lib/api';
 import { PasswordField } from '@/components/ui/PasswordField';
@@ -14,12 +14,14 @@ import CloseCircle from '@/assets/icons/pikaicons/multiple-cross-cancel-circle.s
 
 import { StatusBar } from 'expo-status-bar';
 import { TextInput } from '@/components/ui/TextInput';
+import { saveOnboardingToAccount } from '@/lib/saveOnboardingToAccount';
 
 export default function LoginScreen() {
     const scheme = useColorScheme();
     const isDark = scheme === 'dark';
     const C = Colors[isDark ? 'dark' : 'light'];
     const router = useRouter();
+    const { saveStudyPlan } = useLocalSearchParams<{ saveStudyPlan?: string }>();
     const insets = useSafeAreaInsets();
     const { login, storedEmail } = useAuthStore();
     const [animKey, setAnimKey] = useState(0);
@@ -74,6 +76,15 @@ export default function LoginScreen() {
             });
             const { token, user } = response.data;
             await login(user, token);
+            if (saveStudyPlan === 'true') {
+                try {
+                    await saveOnboardingToAccount();
+                } catch (error) {
+                    setPasswordError(error instanceof Error ? error.message : 'Could not save your study plan. Please try again.');
+                    setIsNetworkError(true);
+                    return;
+                }
+            }
             setFailedAttempts(0);
             setLockoutTimeLeft(0);
             router.replace('/(drawer)/(tabs)');
@@ -196,7 +207,7 @@ export default function LoginScreen() {
                     </Animated.View>
 
                     <Animated.View key={`signup-${animKey}`} entering={FadeInDown.delay(320).duration(400)}>
-                        <TouchableOpacity onPress={() => router.push('/(onboarding)/start')} style={s.signupRow}>
+                        <TouchableOpacity onPress={() => router.push('/(onboarding)/name')} style={s.signupRow}>
                             <Text style={[s.signupText, { color: C.textSecondary }]}>
                                 New to Skeeme?{' '}
                                 <Text style={[s.signupText, { color: C.primary, fontWeight: '700' }]}>Create account</Text>

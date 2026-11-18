@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text as RNText, type TextProps as RNTextProps } from 'react-native';
-import { resolveSatoshiTextProps } from './satoshiFont';
+import { resolveAlloTextProps } from './alloFont';
 
 type AppTextProps = RNTextProps & {
   className?: string;
@@ -8,7 +8,7 @@ type AppTextProps = RNTextProps & {
 
 export const Text = React.forwardRef<RNText, AppTextProps>(
   ({ style, className, ...rest }, ref) => {
-    const resolved = resolveSatoshiTextProps(style, className);
+    const resolved = resolveAlloTextProps(style, className);
 
     return (
       <RNText

@@ -57,7 +57,7 @@ export const onboardingStyles = StyleSheet.create({
         borderBottomColor: 'transparent',
     },
     prompt: {
-        fontFamily: 'Satoshi-Black',
+        fontFamily: 'Allo-Black',
         fontSize: 20,
         lineHeight: 25,
         letterSpacing: -0.4,
@@ -91,14 +91,14 @@ export const onboardingStyles = StyleSheet.create({
         marginRight: 14,
     },
     cardText: {
-        fontFamily: 'Satoshi-Bold',
+        fontFamily: 'Allo-Bold',
         fontSize: 16,
         lineHeight: 21,
         letterSpacing: -0.1,
     },
     cardSub: {
         marginTop: 3,
-        fontFamily: 'Satoshi-Medium',
+        fontFamily: 'Allo-Medium',
         fontSize: 13,
         lineHeight: 17,
     },

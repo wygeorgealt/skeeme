@@ -35,7 +35,15 @@ export default function AuthSelectScreen() {
     const handleGetStarted = () => {
         haptics.selectionAsync();
         resetOnboardingEntrances();
-        router.push('/(onboarding)/start');
+        router.push('/(onboarding)/name');
+    };
+
+    const handleDevSaveStudyPlan = () => {
+        haptics.selectionAsync();
+        router.push({
+            pathname: '/(onboarding)/save-study-plan',
+            params: { devPreview: 'true' },
+        });
     };
 
     const handleLogin = () => {
@@ -61,7 +69,7 @@ export default function AuthSelectScreen() {
                 ]}
             >
                 <View style={styles.mascotStage}>
-                    <AnimatedMascot />
+                    <AnimatedMascot animation="enthusiastic-scribbles" />
                 </View>
                 <View style={styles.actions}>
                     <View
@@ -115,6 +123,21 @@ export default function AuthSelectScreen() {
                         textStyle={styles.buttonText}
                         fullWidth={false}
                     />
+                    {__DEV__ ? (
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityHint="Opens the save screen without completing onboarding."
+                            onPress={handleDevSaveStudyPlan}
+                            style={({ pressed }) => [
+                                styles.devShortcut,
+                                pressed ? styles.devShortcutPressed : null,
+                            ]}
+                        >
+                            <Text style={styles.devShortcutText}>
+                                Dev: Open Save Your Study Plan
+                            </Text>
+                        </Pressable>
+                    ) : null}
                     <View style={styles.accountPrompt}>
                         <Text
                             style={[
@@ -171,7 +194,7 @@ const styles = StyleSheet.create({
         marginBottom: 36,
     },
     headlineIntro: {
-        fontFamily: 'Satoshi-Bold',
+        fontFamily: 'Allo-Bold',
         color: '#007AFF',
         fontSize: 32,
         lineHeight: 40,
@@ -187,7 +210,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     headlineEmphasis: {
-        fontFamily: 'Satoshi-Black',
+        fontFamily: 'Allo-Black',
         includeFontPadding: false,
         color: '#003B95',
         fontSize: 40,
@@ -200,9 +223,29 @@ const styles = StyleSheet.create({
         marginBottom: 0,
     },
     buttonText: {
-        fontFamily: 'Satoshi-Black',
+        fontFamily: 'Allo-Black',
         fontSize: 18,
         fontWeight: '900',
+    },
+    devShortcut: {
+        minHeight: 44,
+        marginTop: 10,
+        paddingHorizontal: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderRadius: 22,
+        borderColor: '#FFDF00',
+        backgroundColor: 'rgba(255, 223, 0, 0.08)',
+    },
+    devShortcutPressed: {
+        opacity: 0.72,
+    },
+    devShortcutText: {
+        fontFamily: 'Allo-Bold',
+        color: '#FFDF00',
+        fontSize: 14,
+        textAlign: 'center',
     },
     accountPrompt: {
         marginTop: 16,
@@ -213,7 +256,7 @@ const styles = StyleSheet.create({
         columnGap: 4,
     },
     accountPromptText: {
-        fontFamily: 'Satoshi-Regular',
+        fontFamily: 'Allo-Regular',
         color: Colors.light.textSecondary,
         fontSize: 15,
         lineHeight: 22,
@@ -225,7 +268,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     loginLink: {
-        fontFamily: 'Satoshi-Bold',
+        fontFamily: 'Allo-Bold',
         color: Colors.light.primaryText,
         fontWeight: '700',
     },
@@ -234,7 +277,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     legalCopy: {
-        fontFamily: 'Satoshi-Regular',
+        fontFamily: 'Allo-Regular',
         color: Colors.light.textSecondary,
         fontSize: 12,
         lineHeight: 18,
@@ -255,13 +298,13 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start',
     },
     legalConjunction: {
-        fontFamily: 'Satoshi-Regular',
+        fontFamily: 'Allo-Regular',
         color: Colors.light.textSecondary,
         fontSize: 12,
         lineHeight: 18,
     },
     legalLink: {
-        fontFamily: 'Satoshi-Medium',
+        fontFamily: 'Allo-Medium',
         color: Colors.light.primaryText,
         fontWeight: '500',
         lineHeight: 18,

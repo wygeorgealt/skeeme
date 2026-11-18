@@ -10,6 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.skeeme.app",
+      "usesAppleSignIn": true,
       "buildNumber": "6",
       "infoPlist": {
         "NSCameraUsageDescription": "Skeeme uses the camera to scan questions or flashcard source material for AI solving.",
@@ -98,6 +99,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-apple-authentication",
       [
         "expo-splash-screen",
         {

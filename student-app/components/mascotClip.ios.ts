@@ -1,37 +1,69 @@
 import { Asset } from 'expo-asset';
 import type { ClipFiles } from '@masko/player-react-native';
-import { REMOTE_MASCOT_CLIP } from './mascotClipUrls';
+import {
+  DEFAULT_MASCOT_ANIMATION,
+  REMOTE_MASCOT_CLIPS,
+  type MascotAnimation,
+} from './mascotClipUrls';
 
-export { REMOTE_MASCOT_CLIP };
+export { REMOTE_MASCOT_CLIPS };
 
-const bundledClip = Asset.fromModule(
-  require('../assets/mascot/idle-wakes-ios.mov'),
-);
+const bundledClips: Record<MascotAnimation, Asset> = {
+  'idle-wakes': Asset.fromModule(
+    require('../assets/mascot/idle-wakes-ios.mov'),
+  ),
+  'enthusiastic-scribbles': Asset.fromModule(
+    require('../assets/mascot/enthusiastic-scribbles-ios.mov'),
+  ),
+  'peacefully-opens': Asset.fromModule(
+    require('../assets/mascot/peacefully-opens-ios.mov'),
+  ),
+  'peacefully-resting': Asset.fromModule(
+    require('../assets/mascot/peacefully-resting-ios.mov'),
+  ),
+  'quietly-writes-looks': Asset.fromModule(
+    require('../assets/mascot/quietly-writes-looks-ios.mov'),
+  ),
+  'profile-ready': Asset.fromModule(
+    require('../assets/mascot/profile-ready-ios.mov'),
+  ),
+  'name-wave': Asset.fromModule(
+    require('../assets/mascot/name-wave-ios.mov'),
+  ),
+};
 
-let cachedClip: ClipFiles | null = null;
-let loadingClip: Promise<ClipFiles> | null = null;
+const cachedClips: Partial<Record<MascotAnimation, ClipFiles>> = {};
+const loadingClips: Partial<Record<MascotAnimation, Promise<ClipFiles>>> = {};
 
-export function getCachedMascotClip() {
-  return cachedClip;
+export function getCachedMascotClip(
+  animation: MascotAnimation = DEFAULT_MASCOT_ANIMATION,
+) {
+  return cachedClips[animation] ?? null;
 }
 
-export function loadMascotClip(): Promise<ClipFiles> {
+export function loadMascotClip(
+  animation: MascotAnimation = DEFAULT_MASCOT_ANIMATION,
+): Promise<ClipFiles> {
+  const cachedClip = cachedClips[animation];
   if (cachedClip) return Promise.resolve(cachedClip);
+  const loadingClip = loadingClips[animation];
   if (loadingClip) return loadingClip;
 
-  loadingClip = bundledClip
+  const nextClip = bundledClips[animation]
     .downloadAsync()
     .then((asset) => {
       if (!asset.localUri) {
-        throw new Error('The bundled iOS mascot clip has no local URI.');
+        throw new Error(`The bundled iOS ${animation} clip has no local URI.`);
       }
 
-      cachedClip = { hevc: asset.localUri };
-      return cachedClip;
+      const clip: ClipFiles = { hevc: asset.localUri };
+      cachedClips[animation] = clip;
+      return clip;
     })
     .finally(() => {
-      loadingClip = null;
+      delete loadingClips[animation];
     });
 
-  return loadingClip;
+  loadingClips[animation] = nextClip;
+  return nextClip;
 }

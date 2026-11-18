@@ -21,6 +21,7 @@ export default function LearningGoalsScreen() {
     const C = Colors[isDark ? 'dark' : 'light'];
     const pageBg = isDark ? C.background : '#F8F9FA';
     const { onboardingData, setOnboardingData, setOnboardingStep } = useAuthStore();
+    const hasName = !!onboardingData.first_name?.trim();
     const selected = onboardingData.learning_goals?.[0] ?? null;
     const entrance = useOnboardingEntrance('learning-goals');
     const completeEntrance = entrance.complete;
@@ -38,6 +39,12 @@ export default function LearningGoalsScreen() {
         void setOnboardingStep(1);
     }, [setOnboardingStep]);
 
+    useEffect(() => {
+        if (!hasName) {
+            router.replace('/(onboarding)/name');
+        }
+    }, [hasName, router]);
+
     const handleTypingComplete = useCallback(() => {
         if (dialogResponse !== null) {
             router.push('/(onboarding)/explanation-preferences');
@@ -54,6 +61,8 @@ export default function LearningGoalsScreen() {
         void setOnboardingData({ learning_goals: [id] });
         setDialogResponse(learningGoalsResponse);
     };
+
+    if (!hasName) return null;
 
     return (
         <View style={[onboardingStyles.root, { backgroundColor: pageBg }]}>

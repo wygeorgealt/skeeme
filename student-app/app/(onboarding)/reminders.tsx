@@ -105,7 +105,7 @@ export default function RemindersScreen() {
             const cd = useAuthStore.getState().onboardingData;
             if (!cd.learning_goals?.length || !cd.explanation_preference ||
                 !cd.study_challenges?.length || !cd.daily_goal) {
-                router.replace('/(onboarding)/start'); return;
+                router.replace('/(onboarding)/name'); return;
             }
             const answers: OnboardingAnswers = {
                 learning_goals: cd.learning_goals,
@@ -130,7 +130,7 @@ export default function RemindersScreen() {
                 await completeOnboarding();
                 router.replace('/(drawer)/(tabs)'); return;
             }
-            router.replace('/signup');
+            router.replace('/(onboarding)/save-study-plan');
         } catch (error) {
             console.error('[Onboarding] save error', error);
             setErrorMessage('Could not save. Check your connection and try again.');
@@ -275,7 +275,7 @@ export default function RemindersScreen() {
 
 const styles = StyleSheet.create({
     error: {
-        fontFamily: 'Satoshi-Medium',
+        fontFamily: 'Allo-Medium',
         fontSize: 13,
         textAlign: 'center',
         marginBottom: 12,
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
         marginTop: 6,
     },
     androidBtnText: {
-        fontFamily: 'Satoshi-Bold',
+        fontFamily: 'Allo-Bold',
         fontSize: 14,
     },
 });

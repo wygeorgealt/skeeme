@@ -215,19 +215,19 @@ export const FontSize = {
 // ─── Platform Fonts ─────────────────────────────────────────────────────────
 export const Fonts = Platform.select({
   ios: {
-    sans: 'Satoshi-Regular',
+    sans: 'Allo-Regular',
     serif: 'ui-serif',
     rounded: 'ui-rounded',
     mono: 'ui-monospace',
   },
   default: {
-    sans: 'Satoshi-Regular',
+    sans: 'Allo-Regular',
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
   },
   web: {
-    sans: 'Satoshi-Regular',
+    sans: 'Allo',
     serif: "Georgia, 'Times New Roman', serif",
     rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",

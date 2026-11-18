@@ -16,29 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import { posthog, isPostHogEnabled } from '@/lib/posthog';
 import { openLegalLink, PRIVACY_URL, TERMS_URL } from '@/lib/legalLinks';
 import { TextInput } from '@/components/ui/TextInput';
-import type { OnboardingAnswers, OnboardingData } from '@/types';
-
-function getRegistrationOnboardingAnswers(data: OnboardingData): OnboardingAnswers | null {
-    if (
-        !data.onboarding_flow_completed ||
-        !data.learning_goals?.length ||
-        !data.explanation_preference ||
-        !data.study_challenges?.length ||
-        !data.daily_goal
-    ) {
-        return null;
-    }
-
-    return {
-        learning_goals: data.learning_goals,
-        explanation_preference: data.explanation_preference,
-        study_challenges: data.study_challenges,
-        daily_goal: data.daily_goal,
-        reminder_choice: data.reminder_choice ?? 'none',
-        reminder_enabled: data.reminder_enabled === true,
-        reminder_time: data.reminder_time ?? '',
-    };
-}
+import { getCompletedOnboardingAnswers } from '@/lib/onboardingAnswers';
 
 export default function SignupScreen() {
     const [animKey, setAnimKey] = useState(0);
@@ -77,7 +55,7 @@ export default function SignupScreen() {
 
     const handleSignup = async () => {
         setEmailError(''); setPasswordError('');
-        const onboardingAnswers = getRegistrationOnboardingAnswers(onboardingData);
+        const onboardingAnswers = getCompletedOnboardingAnswers(onboardingData);
         if (onboardingData.onboarding_flow_completed && !onboardingAnswers) {
             setPasswordError('Please finish the onboarding questions before creating your account.');
             return;
@@ -102,6 +80,10 @@ export default function SignupScreen() {
                 password,
                 password_confirmation: password,
                 device_name: `${Platform.OS}_app`,
+                ...(onboardingData.first_name && {
+                    name: onboardingData.first_name,
+                    first_name: onboardingData.first_name,
+                }),
                 ...(onboardingData?.education_level && { education_level: onboardingData.education_level }),
                 ...(onboardingData?.field_of_study && { field_of_study: onboardingData.field_of_study }),
                 ...((onboardingData?.learning_style || onboardingData?.explanation_preference) && {

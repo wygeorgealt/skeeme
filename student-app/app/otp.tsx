@@ -117,7 +117,7 @@ export default function OtpScreen() {
                 router.replace(
                     useAuthStore.getState().onboardingComplete
                         ? '/(drawer)/(tabs)'
-                        : '/(onboarding)/start',
+                        : '/(onboarding)/name',
                 );
 
             } else {

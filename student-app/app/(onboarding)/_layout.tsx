@@ -12,12 +12,14 @@ export default function OnboardingLayout() {
             }}
         >
             <Stack.Screen name="auth-select" />
+            <Stack.Screen name="name" />
             <Stack.Screen name="start" />
             <Stack.Screen name="explanation-preferences" />
             <Stack.Screen name="study-challenges" />
             <Stack.Screen name="daily-goal" />
             <Stack.Screen name="personalized-plan" />
             <Stack.Screen name="reminders" />
+            <Stack.Screen name="save-study-plan" />
         </Stack>
     );
 }

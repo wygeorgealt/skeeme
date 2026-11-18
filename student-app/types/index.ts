@@ -64,7 +64,29 @@ export type StudyChallenge =
     | 'exam_preparation'
     | 'managing_study_time';
 
-export type DailyGoal = '5' | '10' | '15' | '20' | '30' | 'flexible';
+export type DailyGoal =
+    | '1'
+    | '2'
+    | '3'
+    | '4'
+    | '5'
+    | '6'
+    | '7'
+    | '8'
+    | '9'
+    | '10'
+    | '11'
+    | '12'
+    | '13'
+    | '14'
+    | '15'
+    | '16'
+    | '17'
+    | '18'
+    | '19'
+    | '20'
+    | '30'
+    | 'flexible';
 export type ReminderChoice = 'morning' | 'afternoon' | 'evening' | 'custom' | 'none';
 
 export interface OnboardingAnswers {
@@ -78,6 +100,7 @@ export interface OnboardingAnswers {
 }
 
 export interface OnboardingData extends Partial<OnboardingAnswers> {
+    first_name?: string;
     onboarding_flow_completed?: boolean;
     education_level?: string;
     field_of_study?: string;

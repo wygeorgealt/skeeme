@@ -1,9 +1,10 @@
 import { Text } from '@/components/ui/Text';
+import { ALLO_FONT_ASSETS } from '@/components/ui/alloFontAssets';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
-import { Stack, useRouter, useSegments, ErrorBoundaryProps, SplashScreen, router } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter, useSegments, ErrorBoundaryProps, SplashScreen, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { QueryProvider } from '@/components/QueryProvider';
 import { useStudent } from '@/hooks/useStudent';
@@ -71,8 +72,12 @@ function isVersionLess(a: string, b: string) {
 }
 
 export default function RootLayout() {
-  const { hydrate, isLoading, user, onboardingComplete, onboardingStep, storedEmail } = useAuthStore();
+  const { hydrate, isLoading, user, onboardingComplete, onboardingStep, onboardingData, storedEmail } = useAuthStore();
   const [isAnimationFinished, setIsAnimationFinished] = useState(false);
+  const finishSplashAnimation = useCallback(
+    () => setIsAnimationFinished(true),
+    [],
+  );
 
   // Force-update modal state
   const [needsUpdate, setNeedsUpdate] = useState(false);
@@ -82,10 +87,7 @@ export default function RootLayout() {
   const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.skeeme.app';
 
   const [fontsLoaded] = useFonts({
-    'Satoshi-Regular': require('@/assets/fonts/Satoshi-Regular.ttf'),
-    'Satoshi-Medium': require('@/assets/fonts/Satoshi-Medium.ttf'),
-    'Satoshi-Bold': require('@/assets/fonts/Satoshi-Bold.ttf'),
-    'Satoshi-Black': require('@/assets/fonts/Satoshi-Black.ttf'),
+    ...ALLO_FONT_ASSETS,
     'Bungee-Regular': require('@/assets/fonts/Bungee-Regular.ttf'),
     'ComicNeue-Bold': require('@/assets/fonts/ComicNeue-Bold.ttf'),
     BodoniModa: require('@/assets/fonts/BodoniModa[opsz,wght].ttf'),
@@ -94,6 +96,7 @@ export default function RootLayout() {
 
   const segments = useSegments();
   const router = useRouter();
+  const { saveStudyPlan } = useLocalSearchParams<{ saveStudyPlan?: string }>();
 
   const systemTheme = useNativeColorScheme();
   const { colorScheme: tailwindScheme, setColorScheme: setTailwindScheme } = useTailwindColorScheme();
@@ -120,22 +123,30 @@ export default function RootLayout() {
 
     if (user) {
       if (!onboardingComplete) {
-        if (currentSegment !== '(onboarding)') {
-          router.replace('/(onboarding)/start');
+        if (currentSegment !== '(onboarding)' && !(currentSegment === 'login' && saveStudyPlan === 'true')) {
+          router.replace(
+            onboardingData.onboarding_flow_completed
+              ? '/(onboarding)/save-study-plan'
+              : '/(onboarding)/name',
+          );
         }
       } else {
         // Allow all users (Free or Pro) to access the app after onboarding.
         const authOnlyOnboardingRoutes = [
           'auth-select',
+          'name',
           'start',
           'explanation-preferences',
           'study-challenges',
           'daily-goal',
           'personalized-plan',
           'reminders',
+          'save-study-plan',
         ];
+        const returningToStudyPlan = currentSegment === 'login' && saveStudyPlan === 'true';
         const isAuthEntryRoute =
-          ['login', 'signup', 'welcome', 'forgot-password', 'otp', 'new-password'].includes(currentSegment) ||
+          (!returningToStudyPlan &&
+            ['login', 'signup', 'welcome', 'forgot-password', 'otp', 'new-password'].includes(currentSegment)) ||
           (currentSegment === '(onboarding)' && (!segments[1] || authOnlyOnboardingRoutes.includes(segments[1] as string)));
         if (isAuthEntryRoute || !currentSegment) {
           router.replace('/(drawer)/(tabs)');
@@ -149,7 +160,7 @@ export default function RootLayout() {
         router.replace('/(onboarding)/auth-select');
       }
     }
-  }, [user, isLoading, segments, router, onboardingComplete, onboardingStep, storedEmail]);
+  }, [user, isLoading, segments, router, onboardingComplete, onboardingStep, onboardingData, storedEmail, saveStudyPlan]);
 
   useEffect(() => {
     if (fontsLoaded && !isLoading) {
@@ -247,7 +258,7 @@ export default function RootLayout() {
               {/* High-Fidelity Animated Splash Overlay */}
               {!isAnimationFinished && (
                 <Animated.View exiting={FadeOut.duration(500)} style={{ position: 'absolute', zIndex: 99999, width: '100%', height: '100%' }}>
-                  <AnimatedSplash onFinish={() => setIsAnimationFinished(true)} />
+                  <AnimatedSplash onFinish={finishSplashAnimation} />
                 </Animated.View>
               )}
 

@@ -1,9 +1,16 @@
 import { api } from '@/lib/api';
 import { Platform, Alert } from 'react-native';
 
-// Lazy-loaded Google Sign-In (H5: avoid require() for tree-shaking safety)
-let GoogleSignin: any = null;
-let statusCodes: any = {};
+type GoogleSignInPackage = typeof import('@react-native-google-signin/google-signin');
+
+export interface SocialAuthResult {
+    user: any;
+    token: string;
+    isNewUser: boolean;
+}
+
+let GoogleSignin: GoogleSignInPackage['GoogleSignin'] | null = null;
+let statusCodes: GoogleSignInPackage['statusCodes'] | null = null;
 let googleSignInInitialized = false;
 
 async function initGoogleSignIn() {
@@ -19,13 +26,26 @@ async function initGoogleSignIn() {
             offlineAccess: false,
         });
     } catch (error) {
-        if (__DEV__) console.log("Google Sign-In native module not available (likely running in Expo Go or Web).");
+        if (__DEV__) console.log('Google Sign-In native module not available (likely running in Expo Go or Web).', error);
     }
 }
 
-// ─── GOOGLE SIGN IN ────────────────────────────────────────────────────────
+export async function exchangeGoogleAccessToken(accessToken: string, firstName = ''): Promise<SocialAuthResult> {
+    if (!accessToken) throw new Error('Google did not return an access token.');
+    const apiResponse = await api.post('oauth/google', {
+        token: accessToken,
+        device_name: `${Platform.OS}_app`,
+        ...(firstName ? { first_name: firstName } : {}),
+    });
 
-export async function signInWithGoogle(): Promise<{
+    return {
+        user: apiResponse.data.user,
+        token: apiResponse.data.token,
+        isNewUser: apiResponse.data.is_new_user,
+    };
+}
+
+export async function signInWithGoogle(firstName = ''): Promise<{
     user: any;
     token: string;
     isNewUser: boolean;
@@ -35,7 +55,7 @@ export async function signInWithGoogle(): Promise<{
     if (!GoogleSignin) {
         Alert.alert(
             'Native Module Missing',
-            'Google Sign-In requires a custom dev build. It will not work in Expo Go. Please run `npx expo run:android` or use EAS Build.'
+            'Google Sign-In requires a custom dev build. It will not work in Expo Go. Please run `npx expo run:android` or use EAS Build.',
         );
         return null;
     }
@@ -43,6 +63,7 @@ export async function signInWithGoogle(): Promise<{
     try {
         await GoogleSignin.hasPlayServices();
         const response = await GoogleSignin.signIn();
+        if (response.type === 'cancelled') return null;
 
         // Laravel Socialite userFromToken() requires an Access Token, not an ID Token.
         const tokens = await GoogleSignin.getTokens();
@@ -53,29 +74,16 @@ export async function signInWithGoogle(): Promise<{
             return null;
         }
 
-        // Exchange the Google access token with our Laravel API for a Sanctum token
-        const apiResponse = await api.post('oauth/google', {
-            token: accessToken,
-            device_name: `${Platform.OS}_app`,
-        });
-
-        return {
-            user: apiResponse.data.user,
-            token: apiResponse.data.token,
-            isNewUser: apiResponse.data.is_new_user,
-        };
+        return await exchangeGoogleAccessToken(accessToken, firstName);
     } catch (error: any) {
-        if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-            // User cancelled - do nothing
+        if (error.code === statusCodes?.SIGN_IN_CANCELLED) {
             return null;
-        } else if (error.code === statusCodes.IN_PROGRESS) {
-            // Sign in already in progress
+        } else if (error.code === statusCodes?.IN_PROGRESS) {
             return null;
-        } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        } else if (error.code === statusCodes?.PLAY_SERVICES_NOT_AVAILABLE) {
             Alert.alert('Error', 'Google Play Services are not available on this device.');
             return null;
         } else {
-            // API or network error
             const message = error.response?.data?.message || error.message || 'Google Sign-In failed.';
             Alert.alert('Authentication Error', message);
             return null;
@@ -83,16 +91,63 @@ export async function signInWithGoogle(): Promise<{
     }
 }
 
-// ─── APPLE SIGN IN (Placeholder) ───────────────────────────────────────────
-// Apple Sign-In requires `expo-apple-authentication` which is iOS-only.
-// Implementation will follow the same pattern: get the identity token from
-// Apple's native SDK, then POST it to oauth/apple.
+export function getSocialAuthErrorMessage(error: unknown, fallback: string): string {
+    if (!error || typeof error !== 'object') return fallback;
 
-export async function signInWithApple(): Promise<{
+    const candidate = error as {
+        message?: unknown;
+        response?: { data?: { message?: unknown } | string };
+    };
+    const responseMessage = typeof candidate.response?.data === 'string'
+        ? candidate.response.data
+        : candidate.response?.data?.message;
+
+    if (typeof responseMessage === 'string' && responseMessage.trim()) {
+        return responseMessage.trim();
+    }
+    if (typeof candidate.message === 'string' && candidate.message.trim()) {
+        return candidate.message.trim();
+    }
+    return fallback;
+}
+
+export async function signInWithApple(firstName = ''): Promise<{
     user: any;
     token: string;
     isNewUser: boolean;
 } | null> {
-    Alert.alert('Coming Soon', 'Apple Sign-In will be available soon.');
-    return null;
+    if (Platform.OS !== 'ios') {
+        throw new Error('Apple Sign-In is available on Apple devices.');
+    }
+
+    const appleAuth = await import('expo-apple-authentication');
+    if (!(await appleAuth.isAvailableAsync())) {
+        throw new Error('Apple Sign-In is not available on this device.');
+    }
+
+    try {
+        const credential = await appleAuth.signInAsync({
+            requestedScopes: [
+                appleAuth.AppleAuthenticationScope.FULL_NAME,
+                appleAuth.AppleAuthenticationScope.EMAIL,
+            ],
+        });
+        if (!credential.identityToken) {
+            throw new Error('Apple did not return an identity token.');
+        }
+
+        const response = await api.post('oauth/apple', {
+            token: credential.identityToken,
+            device_name: `${Platform.OS}_app`,
+            ...(firstName ? { first_name: firstName } : {}),
+        });
+        return {
+            user: response.data.user,
+            token: response.data.token,
+            isNewUser: response.data.is_new_user,
+        };
+    } catch (error: any) {
+        if (error.code === 'ERR_REQUEST_CANCELED') return null;
+        throw error;
+    }
 }

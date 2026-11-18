@@ -1,13 +1,19 @@
 import { Platform, StyleSheet, type StyleProp, type TextStyle } from 'react-native';
 
 const families = {
-  regular: 'Satoshi-Regular',
-  medium: 'Satoshi-Medium',
-  bold: 'Satoshi-Bold',
-  black: 'Satoshi-Black',
+  regular: 'Allo-Regular',
+  medium: 'Allo-Medium',
+  bold: 'Allo-Bold',
+  black: 'Allo-Black',
 } as const;
 
-const satoshiFamilies = new Set<string>(Object.values(families));
+const alloFamilies = new Set<string>(Object.values(families));
+const fontWeightForFamily: Record<string, TextStyle['fontWeight']> = {
+  [families.regular]: '400',
+  [families.medium]: '500',
+  [families.bold]: '700',
+  [families.black]: '900',
+};
 
 const weightClasses: Record<string, string> = {
   'font-thin': families.regular,
@@ -83,7 +89,7 @@ const utilityForClassToken = (token: string) => {
   return utility?.replace(/^!/, '');
 };
 
-export function resolveSatoshiTextProps(
+export function resolveAlloTextProps(
   style?: StyleProp<TextStyle>,
   className?: string,
 ) {
@@ -95,8 +101,12 @@ export function resolveSatoshiTextProps(
     families.regular;
   const resolvedStyle = flattenedStyle && { ...flattenedStyle };
 
-  if (resolvedStyle && satoshiFamilies.has(resolvedFamily)) {
-    delete resolvedStyle.fontWeight;
+  if (resolvedStyle && alloFamilies.has(resolvedFamily)) {
+    if (Platform.OS === 'web') {
+      resolvedStyle.fontWeight ??= fontWeightForFamily[resolvedFamily];
+    } else {
+      delete resolvedStyle.fontWeight;
+    }
   }
 
   const resolvedClassName = className
@@ -106,13 +116,15 @@ export function resolveSatoshiTextProps(
       return (
         utility !== 'font-sans' &&
         utility !== 'font-mono' &&
-        !weightClassNames.has(utility ?? '')
+        (Platform.OS === 'web' || !weightClassNames.has(utility ?? ''))
       );
     })
     .join(' ');
 
   return {
-    fontFamily: resolvedFamily,
+    fontFamily: Platform.OS === 'web' && alloFamilies.has(resolvedFamily)
+      ? 'Allo'
+      : resolvedFamily,
     style: resolvedStyle,
     className: resolvedClassName || undefined,
   };
