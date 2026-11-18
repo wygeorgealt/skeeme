@@ -73,8 +73,9 @@ Important locations:
 
 - `student-app/app/`: screens and Expo Router routes.
 - `student-app/app/(onboarding)/`: auth selection and learning-preference onboarding.
-- `student-app/app/(drawer)/(tabs)/`: Home is the only visible tab; Chat and
-  retained History routes are hidden from app navigation.
+- `student-app/app/(drawer)/(tabs)/`: Home, Library, and Profile are visible tabs;
+  Create opens a separate action sheet, and Chat and retained History routes are
+  hidden from app navigation.
 - `student-app/components/`: reusable UI, quiz and flashcard views.
 - `student-app/hooks/`: student and app hooks.
 - `student-app/lib/api.ts`: API client and network behavior.
@@ -86,10 +87,13 @@ Important locations:
 
 ### Navigation and visual direction
 
-The mobile app was moved toward Expo Router native tabs and native stack headers.
-Home is the only visible primary tab. Chat and History routes remain in the code
-but are hidden from app navigation; quiz and flashcard history persistence
-continues. Other screens remain stack routes.
+The mobile app uses Expo Router tabs and native stack headers. Home, Library,
+and Profile sit in a floating, borderless pill with a BlurView confined to the
+pill; its blur strengthens when the selected tab's content is scrolled. Create
+is a separate blue circular action that opens the create sheet, with no
+full-width rectangle behind the controls. Chat and History routes remain in
+the code but are hidden from app navigation; quiz and flashcard history
+persistence continues. Other screens remain stack routes.
 Route-group names are not URL segments, so validate deep links and redirects
 after route-file moves.
 
@@ -101,6 +105,13 @@ decorative blur/rims where the OS control is appropriate. The app has an iOS-fir
 SF Symbols mapping through `components/ui/Icon.tsx`, with Lucide fallback for
 non-iOS and unmapped icons. Symbol coverage and device-level visual validation are
 not complete.
+
+The Learning Plan dashboard, bottom navigation, and Create sheet use Kubai
+icons through `components/ui/KubaiNativeIcon.tsx`. Since `kubai-icons-react`
+renders browser DOM, native screens use the static `kubai-icons` SVG data with
+`react-native-svg`; onboarding, login, and welcome screens remain unchanged.
+The detached Create Plus stays Lucide because no Kubai standalone match was a
+good fit.
 
 The auth selection screen holds the static blue `#0057B8` and yellow `#FFDF00`
 theme shown in the user's simulator screenshot. Its bottom-aligned, narrower
@@ -214,6 +225,50 @@ The user explicitly prefers:
   accessibility fallbacks.
 - Spacious, sufficiently large navigation targets.
 - Preserving app behavior and Android behavior during iOS-specific work.
+
+### Dashboard architecture and design philosophy
+
+#### 1. Design philosophy
+The dashboard functions as the student's personal study workspace, guided by three core principles:
+- **Clarity:** Students immediately understand where to go and what to do without cognitive overload.
+- **Continuity:** Students resume exactly where they left off across notes, summaries, flashcards, or quizzes.
+- **Companionship:** Skeemy brings warmth and life to the workspace without competing with the actual study material.
+
+Visual identity and palette:
+- **Primary:** `#0755B5` (deep workspace blue reserved for important actions and primary focus)
+- **Accent:** `#FFD500` (yellow highlight used sparingly for focal moments)
+- **Surface:** `#F7F9FC` (calm, light grey/white workspace backgrounds; distinct from onboarding, which is allowed to be visually bold, whereas the dashboard is calmer and sustainable over hundreds of visits)
+- **Text:** `#202B3C` (high-contrast dark slate text)
+- Home labels and supporting copy use the dark text color rather than grey.
+
+#### 2. Four-tab permanent navigation structure
+The application's permanent primary navigation structure consists of four bottom tabs:
+1. **Home:** Personal dashboard, recent activity, study overview, and learning rhythm.
+2. **Library:** Comprehensive repository of all student notes, uploads, summaries, flashcards, and quizzes.
+3. **Create:** Central action trigger that opens a native bottom sheet rather than navigating to a separate screen:
+   - *New notes* (Start writing ideas)
+   - *Upload material* (Bring in study documents)
+   - *Generate summary* (Understand material faster)
+   - *Create flashcards* (Build revision decks)
+   - *Create a quiz* (Challenge understanding)
+4. **Profile:** Account management, study preferences, daily goals, and application settings.
+
+*Study Planner placement:* Not a standalone 5th tab. Upcoming scheduled study sessions are previewed directly on the Home dashboard with a direct link to the full planner, and study goals/scheduling remain accessible via Profile.
+
+#### 3. Dashboard layout & section breakdown
+The Home screen follows this hierarchy:
+1. **Learning Plan header:** Screen title and an ellipsis options icon that
+   currently opens Profile.
+2. **Three direct destinations:** My Notes opens the notes filter, My Quizzes
+   opens the quiz filter, and My Streaks opens the streak detail. Each card
+   shows one Kubai icon and its title, without a subtitle or extra arrow; taps
+   use a 120ms scale response, disabled when Reduce Motion is enabled.
+3. **Weekly progress:** Active study days out of seven, derived only from
+   available account activity data; do not invent percentages or counts.
+4. **Learning activity:** A seven-day chart based on the account's activity
+   points, with an explicit empty state when data is unavailable.
+The screen uses the Skeeme blue, yellow, and surface palette, with dark ink for
+all labels and supporting text.
 
 ### Mobile functionality and service boundaries
 
@@ -498,15 +553,22 @@ relevant source/tests for exact diffs.
 6. **Offline saves:** rerun `cd student-app && npx tsc --noEmit` and focused tests
    for full quiz/deck fetch, validation, persistence, offline reopen, and error
    handling after the latest code changes.
-7. **Visual migration:** smoke-test native tabs/headers, route redirects, flashcard
-   back behavior, streak modal presentation, and accessibility settings on a
-   simulator/device. Home simplification, single-Home-tab navigation, onboarding
-   header spacing, the auth selection's bottom CTA/account link, and the mascot
-   were checked on the current iPhone 17 simulator after a native dev-client
-   rebuild. The iPhone 17 also showed the auth page holding the static
-   blue/yellow theme after the latest change. Metro's nested encoded font path
-   caused the iOS dev-client `ENOENT`; the new asset plugin rewrites local TTFs
-   to direct asset paths. Remaining migration checks are open.
+7. **Visual migration:** smoke-test the pill-shaped BlurView (including its
+   scroll state), Learning Plan home layout, separate Create action, native
+   headers, route redirects, flashcard back behavior, streak modal presentation,
+   and accessibility settings on a simulator/device.
+   The auth selection's bottom CTA/account link, onboarding header spacing,
+   mascot, and static blue/yellow auth theme were checked on the current iPhone
+   17 simulator after a native dev-client rebuild. Metro's nested encoded font
+   path caused the iOS dev-client `ENOENT`; the new asset plugin rewrites local
+   TTFs to direct asset paths. The current Learning Plan and its empty-data
+   states rendered in the iPhone 17 simulator with the Kubai icons visible;
+   Simulator I/O errors prevented opening the Create sheet or verifying
+   Notes/Quizzes navigation. The latest card-motion update initially hit an
+   unsupported Reanimated timing string, now corrected to `ease-out`; a
+   subsequent screenshot showed the final card layout. Simulator tap calls
+   still return I/O errors, so press feedback and navigation remain unverified.
+   Remaining migration checks are open.
 8. **SwiftUI:** SwiftUI migration was discussed only. The current mobile app is
    Expo/React Native; no SwiftUI rewrite was started or approved.
 9. **Auth mascot:** replace the current “Idle → Wakes” test clip with the final
@@ -579,6 +641,173 @@ is pre-existing rather than silently broadening scope.
 Add one short dated entry after each engineering task. Include the user goal,
 important files/areas changed, exact validation performed, and any remaining
 action. Do not include unrelated personal information or secrets.
+
+### 2026-11-18 — Simplify dashboard quick actions and add press feedback
+
+- Removed the redundant action arrows and all subtitles from the Notes, Quizzes,
+  and Streaks cards; reduced their minimum height and removed the unused streak
+  subtitle input.
+- Added a reduced-motion-aware 120ms, 3% Reanimated press scale using the
+  supported `ease-out` timing function; removed the now-unused arrow icon.
+- Validation: TypeScript, `git diff --check`, and the iOS Expo export passed.
+  Targeted ESLint had no errors and 13 Kubai wildcard-module
+  `import/no-duplicates` warnings. The Simulator exposed the unsupported curve
+  before it was corrected. A later screenshot verified the cards render without
+  subtitles or extra arrows; Simulator tap calls returned I/O errors, so press
+  feedback and destination navigation remain unverified.
+
+### 2026-11-18 — Change Home profile icon to options
+
+- Replaced the Learning Plan header's profile glyph with an ellipsis options
+  icon while keeping its existing Profile destination.
+- Validation: `npx tsc --noEmit`, targeted ESLint, and `git diff --check`
+  passed; the updated Home header was visually checked in the iPhone 17
+  Simulator.
+
+### 2026-11-18 — Replace dashboard action icons with Kubai
+
+- Installed `kubai-icons-react` and its static `kubai-icons` data dependency;
+  added `KubaiNativeIcon` to render Kubai SVGs natively with `react-native-svg`.
+- Replaced the tab icons (Home, Library, Profile), Learning Plan options,
+  Notes, Quizzes, Streaks and progress/action icons, and Create-sheet action
+  icons. Kept the standalone Create Plus as Lucide because Kubai had no good
+  match; onboarding, login, and welcome icons were not changed.
+- Validation: `npx tsc --noEmit` and `git diff --check` passed; targeted ESLint
+  had no errors and 14 `import/no-duplicates` warnings caused by Kubai's
+  wildcard icon-module type declaration. `npx expo export --platform ios
+  --output-dir /tmp/skeeme-kubai-export` succeeded. The iPhone 17 Simulator
+  displayed the dashboard icons; repeated Simulator I/O errors prevented
+  testing the Create sheet and navigation taps.
+
+### 2026-11-18 — Keep tab blur inside the floating pill
+
+- Kept Home, Library, and Profile inside a pill-shaped BlurView, removing the
+  full-width rectangle behind it. The pill blur strengthens when the active tab
+  is scrolled; Create remains a separate blue circular button.
+- Added extra scroll clearance beneath the floating controls and updated the
+  navigation notes.
+- Validation: mobile TypeScript check and `git diff --check` passed; targeted
+  ESLint had no errors and one existing unused `BookMarked` warning in
+  `profile.tsx`. A final Simulator refresh was blocked by active user input, so
+  visual verification of the revised pill remains open.
+
+### 2026-11-18 — Rework Home as a Learning Plan overview
+
+- Replaced the Home greeting, sample resume item, and feature grid with Notes,
+  Quizzes, and Streaks destinations, honest weekly-activity summaries, and a
+  seven-day chart using account data only.
+- Used the requested blue, yellow, surface, and dark-ink palette; routed Notes
+  and Quizzes to their matching Library filters.
+- Validation: `npx tsc --noEmit`, targeted ESLint, and `git diff --check`
+  passed. The iPhone 17 Simulator displayed the Home screen and empty-data
+  states; a Notes destination tap returned an unverified Computer Use error,
+  so that navigation smoke test remains open.
+
+### 2026-11-18 — Route directly to dashboard on launch for design iteration
+
+- Updated `app/_layout.tsx` so unauthenticated app launches open directly into `/(drawer)/(tabs)` (Dashboard), bypassing the welcome/auth-selection and onboarding flows.
+- Ensured all 4 tabs (Home, Library, Create, Profile) operate seamlessly on mock/fallback data without requiring live backend APIs or active tokens.
+- Validation: `npx tsc --noEmit` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Implement new 4-tab navigation and calm workspace dashboard
+
+- Built the new permanent 4-tab navigation structure in `app/(drawer)/(tabs)/_layout.tsx`: Home (`index`), Library (`library.tsx`), Create action sheet trigger (`create.tsx`), and Profile (`profile.tsx`).
+- Created `CreateBottomSheet.tsx` presenting the 5 core creation actions (New notes, Upload material, Generate summary, Create flashcards, Create a quiz) as a native modal with smooth backdrop.
+- Redesigned the Home dashboard (`app/(drawer)/(tabs)/index.tsx`) using the new calm workspace philosophy:
+  - `DashboardHeader.tsx`: Time-aware greeting (`Good morning! ☀️` / `Good afternoon!` / `Good evening! 🌙`), student name, formatted date, streak badge, and avatar.
+  - `SkeemyCompanionCard.tsx`: Warm, friendly card with Skeemy avatar and dynamic contextual messages (`dashboardMascotDialogue.ts`).
+  - `RecentActivitySection.tsx`: "Pick up where you left off" queue with measurable progress and direct "Continue →" CTA.
+  - `LearningSpaceSection.tsx`: 2x2 functional feature discovery grid for My notes, Flashcards, Summaries, and Quizzes.
+  - `LearningRhythmSection.tsx`: Consistency tracker with study time, streak, and M-T-W-T-F-S-S weekly activity points.
+- Fixed SDK 57 Expo Router compatibility by replacing `@react-navigation/native`'s `useFocusEffect` with `expo-router`'s export in `create.tsx`.
+- Validation: `npx tsc --noEmit` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Document dashboard design philosophy, layout, and four-tab navigation
+
+- Added `Dashboard architecture and design philosophy` section to `CORE.md`.
+- Documented the three core principles (Clarity, Continuity, Companionship) and the calm workspace palette (Primary `#0755B5`, Accent `#FFD500`, Surface `#F7F9FC`, Text `#202B3C`).
+- Documented the 4-tab navigation structure (Home, Library, Create bottom sheet, Profile) and Study Planner placement.
+- Documented the full dashboard layout hierarchy: Welcome header with time-aware greetings and dynamic Skeemy dialogues, "Pick up where you left off" priority queue with measurable progress, "Your learning space" feature cards, and "Your learning rhythm" consistency metrics without toxic gamification.
+- Validation: `git diff --check` passed clean.
+
+### 2026-11-18 — Preload Study Glow mascot and show instant poster
+
+- Created `preloadStudyGlow.ts` which background-downloads the Study Glow `.mov` clips into `FileSystem.cacheDirectory` and swaps runtime graph video URLs to local `file://` URIs, enabling instant playback like `AnimatedMascot`.
+- Triggered background preloading early in `app/_layout.tsx` on launch and `app/(onboarding)/_layout.tsx` on onboarding start.
+- In `StudyGlowMascot.tsx`, added a zero-latency still poster (`study-glow-idle.png`) on frame 0 until `onClip` / `onPose` fires, eliminating blank transparent gaps while video buffers.
+- Synchronized the Idle -> Reading transition timer to start only after video playback begins (`videoReady`).
+- Validation: `npx tsc --noEmit` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Reset onboarding selections on app reload
+
+- Changed onboarding data handling in `authStore.ts` so in-progress onboarding selections (`onboardingData` and `onboardingStep`) are purely in-memory during an active onboarding run and never persisted across app reloads.
+- In `hydrate()`, explicitly deleted any residual `onboarding_data` and `onboarding_step` from `standardStorage` and initialized `onboardingData: {}` and `onboardingStep: 0`.
+- Validation: `npx tsc --noEmit` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Increase separation between mascot stage and headline
+
+- Increased `marginBottom` on `mascotStage` in `save-study-plan.tsx` to 43px, lifting the grouped Skeemy and 3D scattered papers higher up and giving comfortable breathing room above "Save your study plan".
+- Validation: `npx tsc --noEmit` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Remove Continue with email from save study plan screen
+
+- Removed the "Continue with email" yellow CTA button, the "or" divider, and unused `Mail` icon imports from `save-study-plan.tsx`. The screen now directly presents the native Apple and Google sign-in options under the study plan hero.
+- Validation: `npx tsc --noEmit` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Elevate Skeemy slightly above surrounding 3D papers
+
+- Lifted Skeemy slightly (`translateY: -16`) and moved his contact ground shadow up (`bottom: 12 * scale`) so he sits cleanly elevated above the scattered floor papers, preventing the front notes from overlapping his blue base and hands.
+- Adjusted front papers (sheet 6 and sticky note 7) downwards slightly (`bottom: -22 * scale` and `-20 * scale`) to frame his footing on the perspective floor plane.
+- Validation: `npx tsc --noEmit` passed with 0 errors.
+
+### 2026-11-18 — Fix Study Glow mascot: use delivery JSON instead of canvas URL
+
+- Root cause: `url=` prop routes through `KeptRelease.swift` which downloads all files to disk before rendering — this stalls silently on device so Skeemy never appears. The `delivery=` prop streams `.mov` via `WebLoader`/AVPlayer (the same path `AnimatedMascot` uses with `clip=`).
+- Fix: import `studyGlowDelivery.json` (verified 200-OK signed URLs) and pass `delivery={deliveryJson}` with `getDelivery` callback for link refresh. Removed `url=` prop entirely.
+- Files: `components/StudyGlowMascot.tsx`, `components/studyGlowDelivery.json`.
+- Validation: `npx tsc --noEmit` passed with 0 errors.
+
+### 2026-11-18 — Render 3D perspective floor plane with flat scattered papers around Skeemy
+
+- Transformed the scattered study papers in `save-study-plan.tsx` into a 3D ground plane surrounding Skeemy's base using `perspective: 450` and `rotateX: '68deg'–'70deg'`, making the sheets lie completely flat on the floor in perspective.
+- Split papers into behind and front depth layers with an elliptical contact ground shadow, immersing Skeemy in the center of scattered notes, piles, and yellow sticky pads on the floor.
+- Validation: `./student-app/node_modules/.bin/tsc --noEmit --project student-app/tsconfig.json` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Add scattered study papers under Skeemy and optimize save screen layout
+
+- Added `ScatteredStudyPapers` surrounding Skeemy's base in `save-study-plan.tsx`, depicting scattered note sheets, lined exam pages, dog-eared cards, and yellow sticky pads underneath him to illustrate physical notes becoming organized on the phone.
+- Pinned the top back arrow further up at `insets.top + 4` (matching other onboarding screens) and anchored the entire content block downwards via `justifyContent: 'flex-end'` and balanced padding to eliminate excess bottom space.
+- Validation: `./student-app/node_modules/.bin/tsc --noEmit --project student-app/tsconfig.json` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Provide direct release delivery for Study Glow mascot and tighten screen layout
+
+- Bundled the `Study Glow` canvas delivery schema directly in `studyGlowDelivery.ts` and passed `delivery={STUDY_GLOW_DELIVERY}` with `getDelivery` into `MaskoView`. This bypasses the native iOS player's `KeptRelease` disk-download requirement for `url`, streaming the alpha HEVC video directly via `WebLoader` upon mount.
+- Reduced excessive vertical spacing above the "Continue with email" button in `save-study-plan.tsx` by removing `flexGrow: 1` from `hero`, centering the content block, and setting a compact 16px bottom margin on the subtitle.
+- Validation: `./student-app/node_modules/.bin/tsc --noEmit --project student-app/tsconfig.json` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Unify Save Study Plan headline typography in Allo font
+
+- Unified "Save your study plan" headline into a single cohesive title in `save-study-plan.tsx`, removing the split multi-box layout and the `Bungee-Regular` font in favor of `Allo-Bold` with an `Allo-Black` emphasis for "study plan" in `#FFDF00` yellow.
+- Validation: `./student-app/node_modules/.bin/tsc --noEmit --project student-app/tsconfig.json` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Match Save Study Plan to Blue & Yellow brand theme and fix Masko playback
+
+- Aligned `save-study-plan.tsx` with the brand theme established on `auth-select.tsx`: vibrant `#0057B8` background, `#FFDF00` yellow header typography (`Bungee-Regular` for "STUDY PLAN"), bright yellow capsule primary button for email sign-up, clean white cards for Apple and Google, and light status bar.
+- Fixed `StudyGlowMascot`: stripped all artificial React Native `<Image>` overlay wrappers that were sitting on top of `MaskoView` and blocking animation frames. `MaskoView` now renders directly with autoPlay, and triggers `behavior::focus = true` after 1.5s to smoothly transition from Idle into Reading.
+- Validation: `./student-app/node_modules/.bin/tsc --noEmit --project student-app/tsconfig.json` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Refine Save Study Plan with Blue & Yellow theme and persistent mascot loading
+
+- Fixed mascot disappearing in `StudyGlowMascot`: eliminated premature fallback timer so the still poster image persists seamlessly over the view until live video playback actually starts (`onClip`/`onPose`), preventing any flash of empty space. Scheduled the Idle-to-Reading transition 1.8s after live frames begin.
+- Redesigned `save-study-plan.tsx` around the core Skeeme Blue (`#007AFF`) and Yellow (`#FFDF00`) palette: added a glowing ambient yellow halo behind Lumi, a `✨ PLAN GENERATED` golden badge, and promoted "Continue with email" to the primary solid blue CTA button with vibrant elevated shadow.
+- Removed the "Already have an account? Log in" section entirely as requested.
+- Validation: `./student-app/node_modules/.bin/tsc --noEmit --project student-app/tsconfig.json` passed with 0 errors; `git diff --check` passed clean.
+
+### 2026-11-18 — Fix buttons and mascot Idle-to-Reading animation in Save Study Plan
+
+- Replaced `Pressable` functional styles in `GoogleSignInButton`, `AppleSignInButton`, and `save-study-plan.tsx` with `TouchableOpacity` + `activeOpacity` to prevent NativeWind v4 from stripping button box layout and styling. Styled all auth choices as solid elevated cards with proper shadows, 56px height, and rounded corners (18px).
+- Fixed `StudyGlowMascot`: supplied the updated canvas delivery URL key as the default, prevented the static poster image overlay from permanently covering the live player, and scheduled `behavior::focus = true` after initial idle playback so the graph triggers the `Idle -> Reading` transition clip and loops reading state.
+- Validation: `./student-app/node_modules/.bin/tsc --noEmit --project student-app/tsconfig.json` passed with 0 errors; `git diff --check` passed clean.
 
 ### 2026-11-18 — Add the Save Your Study Plan handoff
 

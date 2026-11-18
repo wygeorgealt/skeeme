@@ -1,6 +1,12 @@
+import { useEffect } from 'react';
 import { Stack } from 'expo-router';
+import { preloadStudyGlow } from '@/lib/preloadStudyGlow';
 
 export default function OnboardingLayout() {
+    useEffect(() => {
+        void preloadStudyGlow();
+    }, []);
+
     return (
         <Stack
             screenOptions={{

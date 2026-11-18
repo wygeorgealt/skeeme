@@ -33,6 +33,7 @@ import * as SystemUI from 'expo-system-ui';
 import DangerTriangle from '@/assets/icons/pikaicons/troubleshoot.svg';
 import Refresh from '@/assets/icons/pikaicons/arrow-down.svg';
 import { initializeMonetization } from '@/lib/monetization';
+import { preloadStudyGlow } from '@/lib/preloadStudyGlow';
 import * as Application from 'expo-application';
 import NetInfo from '@react-native-community/netinfo';
 import { api, apiStandard, resetServiceFailureNotification } from '@/lib/api';
@@ -103,6 +104,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     hydrate();
+    void preloadStudyGlow();
   }, [hydrate]);
 
   // Initialize monetization SDK (Superwall when configured, otherwise RevenueCat),
@@ -153,11 +155,9 @@ export default function RootLayout() {
         }
       }
     } else {
-
-
-      // Not logged in — always start at auth-select
-      if (!isPublicRoute) {
-        router.replace('/(onboarding)/auth-select');
+      // Direct to dashboard so you can immediately focus on the workspace design
+      if (currentSegment !== '(drawer)' && currentSegment !== '(tabs)') {
+        router.replace('/(drawer)/(tabs)');
       }
     }
   }, [user, isLoading, segments, router, onboardingComplete, onboardingStep, onboardingData, storedEmail, saveStudyPlan]);

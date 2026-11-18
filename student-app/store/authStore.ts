@@ -150,9 +150,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     setOnboardingStep: async (step) => {
         set({ onboardingStep: step });
-        try {
-            await standardStorage.setItem('onboarding_step', String(step));
-        } catch (e) {}
     },
 
     togglePlanLimitModal: (show, feature) => {
@@ -170,9 +167,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const current = get().onboardingData;
         const merged = { ...current, ...data };
         set({ onboardingData: merged });
-        try {
-            await standardStorage.setItem('onboarding_data', JSON.stringify(merged));
-        } catch (e) {}
     },
 
     completeOnboarding: async () => {
@@ -320,6 +314,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 }
             } catch (e) { /* ignore */ }
 
+            // Always clear in-progress onboarding data & step on app launch/reload
+            try {
+                await standardStorage.deleteItem('onboarding_data');
+                await standardStorage.deleteItem('onboarding_step');
+            } catch (e) { /* ignore */ }
+
             if (token && userStr) {
                 const haptics = await standardStorage.getItem('haptics_enabled');
                 const user = JSON.parse(userStr);
@@ -327,8 +327,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 // Important: do NOT assume onboarding is complete just because we have a cached session.
                 // Hydrate onboarding state from persisted onboarding flags so signup → onboarding flow is preserved.
                 const obComplete = await standardStorage.getItem('onboarding_complete');
-                const obStep = await standardStorage.getItem('onboarding_step');
-                const obData = await standardStorage.getItem('onboarding_data');
                 const notificationPreference = await standardStorage.getItem('notifications_enabled');
 
                 set({
@@ -341,8 +339,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                             ? user.ai_preferences?.onboarding_answers?.reminder_enabled === true
                             : notificationPreference === 'true',
                     onboardingComplete: obComplete === 'true',
-                    onboardingStep: obStep ? parseInt(obStep, 10) : 0,
-                    onboardingData: obData ? JSON.parse(obData) : {},
+                    onboardingStep: 0,
+                    onboardingData: {},
                     isLoading: false,
                 });
 
@@ -382,8 +380,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             } else {
                 // No session — check onboarding state
                 const obComplete = await standardStorage.getItem('onboarding_complete');
-                const obStep = await standardStorage.getItem('onboarding_step');
-                const obData = await standardStorage.getItem('onboarding_data');
                 const savedEmail = await standardStorage.getItem('stored_email');
                 const haptics = await standardStorage.getItem('haptics_enabled');
                 const notificationPreference = await standardStorage.getItem('notifications_enabled');
@@ -393,8 +389,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     hapticsEnabled: haptics === null ? true : haptics === 'true',
                     notificationsEnabled: notificationPreference === 'true',
                     onboardingComplete: obComplete === 'true',
-                    onboardingStep: obStep ? parseInt(obStep, 10) : 0,
-                    onboardingData: obData ? JSON.parse(obData) : {},
+                    onboardingStep: 0,
+                    onboardingData: {},
                     storedEmail: savedEmail || null,
                     isLoading: false,
                 });

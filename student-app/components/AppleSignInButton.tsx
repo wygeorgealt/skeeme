@@ -1,5 +1,5 @@
 import { FontAwesome } from '@expo/vector-icons';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/Text';
 
 interface AppleSignInButtonProps {
@@ -14,16 +14,16 @@ export default function AppleSignInButton({
     onPress,
 }: AppleSignInButtonProps) {
     return (
-        <Pressable
+        <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Continue with Apple"
             accessibilityState={{ disabled }}
+            activeOpacity={0.8}
             disabled={disabled}
             onPress={onPress}
-            style={({ pressed }) => [
+            style={[
                 styles.button,
                 { backgroundColor: dark ? '#FFFFFF' : '#000000' },
-                pressed && !disabled ? styles.pressed : null,
                 disabled ? styles.disabled : null,
             ]}
         >
@@ -31,7 +31,7 @@ export default function AppleSignInButton({
             <Text style={[styles.label, { color: dark ? '#000000' : '#FFFFFF' }]}>
                 Continue with Apple
             </Text>
-        </Pressable>
+        </TouchableOpacity>
     );
 }
 
@@ -39,20 +39,22 @@ const styles = StyleSheet.create({
     button: {
         width: '100%',
         minHeight: 56,
-        borderRadius: 16,
+        borderRadius: 18,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 12,
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+        elevation: 3,
     },
     label: {
+        fontFamily: 'Allo-Bold',
         fontSize: 16,
         fontWeight: '700',
-    },
-    pressed: {
-        opacity: 0.72,
-        transform: [{ scale: 0.985 }],
     },
     disabled: {
         opacity: 0.55,

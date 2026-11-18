@@ -133,9 +133,6 @@ export default function AuthSelectScreen() {
                                 pressed ? styles.devShortcutPressed : null,
                             ]}
                         >
-                            <Text style={styles.devShortcutText}>
-                                Dev: Open Save Your Study Plan
-                            </Text>
                         </Pressable>
                     ) : null}
                     <View style={styles.accountPrompt}>

@@ -1,0 +1,25 @@
+export const DASHBOARD_THEME = {
+    primary: '#0755B5',
+    accent: '#FFD500',
+    surface: '#F7F9FC',
+    card: '#FFFFFF',
+    text: '#202B3C',
+    textSecondary: '#64748B',
+    textMuted: '#94A3B8',
+    border: '#E2E8F0',
+    borderLight: '#F1F5F9',
+    cardShadow: {
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    cardShadowHover: {
+        shadowColor: '#0755B5',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 3,
+    },
+};
